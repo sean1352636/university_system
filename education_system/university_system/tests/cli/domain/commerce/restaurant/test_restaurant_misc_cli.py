@@ -24,10 +24,10 @@ class TestMain:
 
     def test_main_initialization_success(self, mock_auth):
         """Test successful main initialization"""
-        with mock.patch('university_system.modules.core.services.restaurant_misc.cli.init_db', return_value=True):
-            with mock.patch('university_system.modules.core.services.restaurant_misc.cli.UserAuth', return_value=mock_auth):
-                with mock.patch('university_system.modules.core.services.restaurant_misc.cli.set_auth') as mock_set_auth:
-                    with mock.patch('university_system.modules.core.services.restaurant_misc.cli.display_auth_menu', return_value=False):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.init_db', return_value=True):
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.UserAuth', return_value=mock_auth):
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.set_auth') as mock_set_auth:
+                    with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.display_auth_menu', return_value=False):
                         with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                             cli.main()
 
@@ -37,7 +37,7 @@ class TestMain:
 
     def test_main_database_init_failure(self):
         """Test main when database initialization fails"""
-        with mock.patch('university_system.modules.core.services.restaurant_misc.cli.init_db', return_value=False):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.init_db', return_value=False):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                 cli.main()
 
@@ -52,20 +52,20 @@ class TestMain:
         login_sequence = [None, {'id': 'USER001', 'username': 'testuser'}]
         mock_auth.current_user = mock.PropertyMock(side_effect=login_sequence + [{'id': 'USER001'}] * 10)
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.cli.init_db', return_value=True):
-            with mock.patch('university_system.modules.core.services.restaurant_misc.cli.UserAuth', return_value=mock_auth):
-                with mock.patch('university_system.modules.core.services.restaurant_misc.cli.set_auth'):
-                    with mock.patch('university_system.modules.core.services.restaurant_misc.cli.display_auth_menu', side_effect=[True, False]) as mock_auth_menu:
-                        with mock.patch('university_system.modules.core.services.restaurant_misc.cli.display_main_menu', side_effect=Exception("Exit")):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.init_db', return_value=True):
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.UserAuth', return_value=mock_auth):
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.set_auth'):
+                    with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.display_auth_menu', side_effect=[True, False]) as mock_auth_menu:
+                        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.display_main_menu', side_effect=Exception("Exit")):
                             with pytest.raises(Exception, match="Exit"):
                                 cli.main()
 
     def test_main_exits_on_false_auth_menu(self, mock_auth):
         """Test main exits when auth menu returns False"""
-        with mock.patch('university_system.modules.core.services.restaurant_misc.cli.init_db', return_value=True):
-            with mock.patch('university_system.modules.core.services.restaurant_misc.cli.UserAuth', return_value=mock_auth):
-                with mock.patch('university_system.modules.core.services.restaurant_misc.cli.set_auth'):
-                    with mock.patch('university_system.modules.core.services.restaurant_misc.cli.display_auth_menu', return_value=False):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.init_db', return_value=True):
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.UserAuth', return_value=mock_auth):
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.set_auth'):
+                    with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.display_auth_menu', return_value=False):
                         with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                             cli.main()
 
@@ -74,11 +74,11 @@ class TestMain:
 
     def test_main_creates_user_auth_with_database_file(self, mock_auth):
         """Test that main creates UserAuth with correct database file"""
-        with mock.patch('university_system.modules.core.services.restaurant_misc.cli.init_db', return_value=True):
-            with mock.patch('university_system.modules.core.services.restaurant_misc.cli.UserAuth', return_value=mock_auth) as mock_user_auth:
-                with mock.patch('university_system.modules.core.services.restaurant_misc.cli.set_auth'):
-                    with mock.patch('university_system.modules.core.services.restaurant_misc.cli.display_auth_menu', return_value=False):
-                        with mock.patch('university_system.modules.core.services.restaurant_misc.cli.DATABASE_FILE', 'test.db'):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.init_db', return_value=True):
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.UserAuth', return_value=mock_auth) as mock_user_auth:
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.set_auth'):
+                    with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.display_auth_menu', return_value=False):
+                        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.DATABASE_FILE', 'test.db'):
                             with mock.patch('sys.stdout', new=StringIO()):
                                 cli.main()
 
@@ -87,11 +87,11 @@ class TestMain:
 
     def test_main_sets_auth_context(self, mock_auth):
         """Test that main properly sets auth context"""
-        with mock.patch('university_system.modules.core.services.restaurant_misc.cli.init_db', return_value=True):
-            with mock.patch('university_system.modules.core.services.restaurant_misc.cli.UserAuth', return_value=mock_auth):
-                with mock.patch('university_system.modules.core.services.restaurant_misc.cli.set_auth') as mock_set_auth:
-                    with mock.patch('university_system.modules.core.services.restaurant_misc.cli.display_auth_menu', return_value=False):
-                        with mock.patch('university_system.modules.core.services.restaurant_misc.cli.ctx') as mock_ctx:
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.init_db', return_value=True):
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.UserAuth', return_value=mock_auth):
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.set_auth') as mock_set_auth:
+                    with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.display_auth_menu', return_value=False):
+                        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.ctx') as mock_ctx:
                             with mock.patch('sys.stdout', new=StringIO()):
                                 cli.main()
 
@@ -109,10 +109,10 @@ class TestMain:
                 return False  # Exit on third call
             return True
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.cli.init_db', return_value=True):
-            with mock.patch('university_system.modules.core.services.restaurant_misc.cli.UserAuth', return_value=mock_auth):
-                with mock.patch('university_system.modules.core.services.restaurant_misc.cli.set_auth'):
-                    with mock.patch('university_system.modules.core.services.restaurant_misc.cli.display_auth_menu', side_effect=side_effect):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.init_db', return_value=True):
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.UserAuth', return_value=mock_auth):
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.set_auth'):
+                    with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.display_auth_menu', side_effect=side_effect):
                         with mock.patch('sys.stdout', new=StringIO()):
                             cli.main()
 
@@ -154,11 +154,11 @@ class TestMain:
             if len(main_menu_calls) >= 2:
                 raise Exception("Exit")  # Force exit
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.cli.init_db', return_value=True):
-            with mock.patch('university_system.modules.core.services.restaurant_misc.cli.UserAuth', return_value=mock_auth):
-                with mock.patch('university_system.modules.core.services.restaurant_misc.cli.set_auth'):
-                    with mock.patch('university_system.modules.core.services.restaurant_misc.cli.display_auth_menu', side_effect=auth_menu_side_effect):
-                        with mock.patch('university_system.modules.core.services.restaurant_misc.cli.display_main_menu', side_effect=main_menu_side_effect):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.init_db', return_value=True):
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.UserAuth', return_value=mock_auth):
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.set_auth'):
+                    with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.display_auth_menu', side_effect=auth_menu_side_effect):
+                        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.cli.display_main_menu', side_effect=main_menu_side_effect):
                             with mock.patch('sys.stdout', new=StringIO()):
                                 try:
                                     cli.main()

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/gui/student_union_gui/elections/election_setup.py
+# hypothesis_version: 6.151.9
+
+[1.0, '%Y-%m-%d', '700x600', '800x700', '<Configure>', 'Arial', 'all', 'bold', 'both', 'common.cancel', 'common.error', 'common.submit', 'common.success', 'common.warning', 'ew', 'left', 'nw', 'readonly', 'right', 'values', 'vertical', 'w', 'x', 'y']

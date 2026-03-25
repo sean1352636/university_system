@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/assignments/maintenance/maintenance.py
+# hypothesis_version: 6.151.9
+
+[365, '%Y%m%d_%H%M%S', '%Y-%m-%d %H:%M:%S', '*', '*.tmp', '.DS_Store', 'Database backed up', 'SELECT * FROM [', ']', 'assignment_groups', 'assignment_templates', 'assignments', 'backup_date', 'backup_info.json', 'backup_type', 'backups', 'database.db', 'database_size', 'due_reminder', 'exports', 'extension_requests', 'files_count', 'full', 'manage_assignments', 'messages', 'notifications', 'rubrics', 'submissions', 'submitted', 'w']

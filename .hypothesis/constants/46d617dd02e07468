@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/shared_context.py
+# hypothesis_version: 6.151.9
+
+['check_permission', 'current_user', 'get_auth', 'get_current_user', 'initialize_auth', 'is_auth_initialized', 'require_permission', 'set_auth']

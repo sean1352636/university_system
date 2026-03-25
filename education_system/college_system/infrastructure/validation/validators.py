@@ -1,23 +1,35 @@
-"""Input validation utilities."""
-
-import re
-from datetime import datetime
+"""Input validation utilities for the Sixth Form College system."""
 
 from education_system.college_system.core.exceptions import ValidationError
+from education_system.shared.auth.exceptions import ValidationError as _SharedValidationError
+from education_system.shared.validation import validators as _shared
 
 
-def validate_email(email: str) -> str:
-    """Validate and return a normalized email address."""
-    if not email:
-        raise ValidationError("Email is required.")
-    pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-    if not re.match(pattern, email):
-        raise ValidationError(f"Invalid email format: {email}")
-    return email.lower().strip()
+def _wrap(fn):
+    """Wrap a shared validator so it raises the college-specific ValidationError."""
+    def wrapper(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except _SharedValidationError as exc:
+            raise ValidationError(str(exc)) from exc
+    wrapper.__name__ = fn.__name__
+    wrapper.__doc__ = fn.__doc__
+    return wrapper
+
+
+validate_email = _wrap(_shared.validate_email)
+validate_non_empty = _wrap(_shared.validate_non_empty)
+validate_date = _wrap(_shared.validate_date)
+validate_grade_score = _wrap(_shared.validate_grade_score)
+validate_positive_int = _wrap(_shared.validate_positive_int)
+validate_day_of_week = _wrap(_shared.validate_day_of_week)
+validate_time = _wrap(_shared.validate_time)
+validate_time_range = _wrap(_shared.validate_time_range)
 
 
 def validate_student_id(student_id: str) -> str:
     """Validate student ID format (e.g., SFC0001)."""
+    import re
     if not student_id:
         raise ValidationError("Student ID is required.")
     pattern = r"^SFC\d{4,}$"
@@ -60,85 +72,10 @@ def validate_alevel_grade(grade: str) -> str:
 
 def validate_course_code(code: str) -> str:
     """Validate course code format (e.g., CS101, MATH201)."""
+    import re
     if not code:
         raise ValidationError("Course code is required.")
     pattern = r"^[A-Z]{2,5}\d{3,4}$"
     if not re.match(pattern, code.upper()):
         raise ValidationError(f"Invalid course code format: {code}. Expected format: CS101")
     return code.upper()
-
-
-def validate_date(date_str: str, fmt: str = "%Y-%m-%d") -> str:
-    """Validate a date string and return it normalized."""
-    if not date_str:
-        raise ValidationError("Date is required.")
-    try:
-        datetime.strptime(date_str, fmt)
-        return date_str
-    except ValueError:
-        raise ValidationError(f"Invalid date format: {date_str}. Expected: {fmt}")
-
-
-def validate_grade_score(score: float) -> float:
-    """Validate a grade score is between 0 and 100."""
-    try:
-        score = float(score)
-    except (TypeError, ValueError):
-        raise ValidationError(f"Invalid score: {score}. Must be a number.")
-
-    if score < 0 or score > 100:
-        raise ValidationError(f"Score must be between 0 and 100, got {score}.")
-    return score
-
-
-def validate_non_empty(value: str, field_name: str) -> str:
-    """Validate that a string value is not empty."""
-    if not value or not value.strip():
-        raise ValidationError(f"{field_name} cannot be empty.")
-    return value.strip()
-
-
-def validate_positive_int(value, field_name: str) -> int:
-    """Validate that a value is a positive integer."""
-    try:
-        val = int(value)
-    except (TypeError, ValueError):
-        raise ValidationError(f"{field_name} must be a positive integer.")
-    if val <= 0:
-        raise ValidationError(f"{field_name} must be a positive integer.")
-    return val
-
-
-_VALID_DAYS = {"Mon", "Tue", "Wed", "Thu", "Fri"}
-
-
-def validate_day_of_week(day: str) -> str:
-    """Validate a day-of-week string (Mon-Fri)."""
-    if not day:
-        raise ValidationError("Day of week is required.")
-    day = day.strip().capitalize()[:3]
-    if day not in _VALID_DAYS:
-        raise ValidationError(f"Invalid day of week: {day}. Must be one of: {', '.join(sorted(_VALID_DAYS))}")
-    return day
-
-
-def validate_time(time_str: str) -> str:
-    """Validate a time string in HH:MM format."""
-    if not time_str:
-        raise ValidationError("Time is required.")
-    time_str = time_str.strip()
-    if not re.match(r"^\d{2}:\d{2}$", time_str):
-        raise ValidationError(f"Invalid time format: {time_str}. Expected HH:MM.")
-    hours, minutes = time_str.split(":")
-    if not (0 <= int(hours) <= 23 and 0 <= int(minutes) <= 59):
-        raise ValidationError(f"Invalid time value: {time_str}.")
-    return time_str
-
-
-def validate_time_range(start: str, end: str) -> tuple[str, str]:
-    """Validate that start time is before end time."""
-    start = validate_time(start)
-    end = validate_time(end)
-    if start >= end:
-        raise ValidationError(f"Start time ({start}) must be before end time ({end}).")
-    return start, end

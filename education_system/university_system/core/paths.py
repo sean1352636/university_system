@@ -44,9 +44,7 @@ DATA_DIR: Path = PROJECT_ROOT / "data"
 # Database paths
 DB_DIR: Path = DATA_DIR / "db_files"
 DB_FILES_DIR: Path = DB_DIR  # Alias for clarity
-DB_EXPORTS_DIR: Path = DB_DIR / "exports"
 DEFAULT_DB_PATH: Path = DB_DIR / "student_records.db"
-DB_BACKUPS_DIR: Path = PROJECT_ROOT / "backups"  # Backups at top level
 
 # Backup metadata file
 BACKUP_METADATA_FILE: Path = DATA_DIR / "backup_metadata.json"
@@ -54,8 +52,28 @@ BACKUP_METADATA_FILE: Path = DATA_DIR / "backup_metadata.json"
 # Logging paths - centralized location within university_system directory
 LOG_DIR: Path = PROJECT_ROOT / "logs"
 
-# Backup paths
+# Backup paths - organised by type under a single top-level directory
 BACKUP_DIR: Path = PROJECT_ROOT / "backups"
+BACKUP_DATABASE_DIR: Path = BACKUP_DIR / "database"
+BACKUP_FILES_DIR: Path = BACKUP_DIR / "files"
+BACKUP_ATTENDANCE_DIR: Path = BACKUP_DIR / "attendance"
+BACKUP_FINANCE_DIR: Path = BACKUP_DIR / "finance"
+BACKUP_LIBRARY_DIR: Path = BACKUP_DIR / "library"
+BACKUP_HEALTH_DIR: Path = BACKUP_DIR / "health"
+BACKUP_SETTINGS_DIR: Path = BACKUP_DIR / "settings"
+BACKUP_CALENDAR_DIR: Path = BACKUP_DIR / "calendar"
+# Backward-compatible aliases
+DB_BACKUPS_DIR: Path = BACKUP_DATABASE_DIR
+
+# Export paths - organised by type under a single top-level directory
+EXPORTS_DIR: Path = PROJECT_ROOT / "exports"
+EXPORTS_DATABASE_DIR: Path = EXPORTS_DIR / "database"
+EXPORTS_PDF_DIR: Path = EXPORTS_DIR / "pdf"
+EXPORTS_TICKETS_DIR: Path = EXPORTS_DIR / "tickets"
+EXPORTS_SUBMISSIONS_DIR: Path = EXPORTS_DIR / "submissions"
+EXPORTS_REPORTS_DIR: Path = EXPORTS_DIR / "reports"
+# Backward-compatible alias
+DB_EXPORTS_DIR: Path = EXPORTS_DATABASE_DIR
 
 # Reports paths - centralized in templates directory
 REPORTS_DIR: Path = PROJECT_ROOT / "data" / "reports"
@@ -127,8 +145,7 @@ NLTK_DATA_DIR: Path = DATA_DIR / "nltk_data"
 # Student documents directory - for student document storage
 STUDENT_DOCUMENTS_DIR: Path = DATA_DIR / "student_documents"
 
-# General exports directory - for general exports (separate from DB exports)
-EXPORTS_DIR: Path = DATA_DIR / "exports"
+# EXPORTS_DIR is now defined above under "Export paths"
 
 # Charts directory - for chart outputs
 CHARTS_DIR: Path = REPORTS_DIR / "charts"
@@ -153,9 +170,22 @@ def ensure_directories() -> None:
     """
     _ensure(DATA_DIR)
     _ensure(DB_DIR)
-    _ensure(DB_EXPORTS_DIR)
     _ensure(LOG_DIR)
-    _ensure(BACKUP_DIR)
+    # Backup subdirectories
+    _ensure(BACKUP_DATABASE_DIR)
+    _ensure(BACKUP_FILES_DIR)
+    _ensure(BACKUP_ATTENDANCE_DIR)
+    _ensure(BACKUP_FINANCE_DIR)
+    _ensure(BACKUP_LIBRARY_DIR)
+    _ensure(BACKUP_HEALTH_DIR)
+    _ensure(BACKUP_SETTINGS_DIR)
+    _ensure(BACKUP_CALENDAR_DIR)
+    # Export subdirectories
+    _ensure(EXPORTS_DATABASE_DIR)
+    _ensure(EXPORTS_PDF_DIR)
+    _ensure(EXPORTS_TICKETS_DIR)
+    _ensure(EXPORTS_SUBMISSIONS_DIR)
+    _ensure(EXPORTS_REPORTS_DIR)
     _ensure(REPORTS_DIR)
     _ensure(REPORT_TEMPLATES_DIR)
     _ensure(REPORT_CACHE_DIR)
@@ -180,11 +210,11 @@ def ensure_directories() -> None:
     _ensure(FINANCE_TEMPLATES_DIR)
     _ensure(NLTK_DATA_DIR)
     _ensure(STUDENT_DOCUMENTS_DIR)
-    _ensure(EXPORTS_DIR)
     _ensure(TEMP_DIR)
     _ensure(CONFIG_DIR)
     _ensure(CHARTS_DIR)
     _ensure(LOCALES_DIR)
+
 
 
 __all__ = [
@@ -202,6 +232,19 @@ __all__ = [
     "BACKUP_METADATA_FILE",
     "LOG_DIR",
     "BACKUP_DIR",
+    "BACKUP_DATABASE_DIR",
+    "BACKUP_FILES_DIR",
+    "BACKUP_ATTENDANCE_DIR",
+    "BACKUP_FINANCE_DIR",
+    "BACKUP_LIBRARY_DIR",
+    "BACKUP_HEALTH_DIR",
+    "BACKUP_SETTINGS_DIR",
+    "BACKUP_CALENDAR_DIR",
+    "EXPORTS_DATABASE_DIR",
+    "EXPORTS_PDF_DIR",
+    "EXPORTS_TICKETS_DIR",
+    "EXPORTS_SUBMISSIONS_DIR",
+    "EXPORTS_REPORTS_DIR",
     "REPORTS_DIR",
     "REPORT_TEMPLATES_DIR",
     "REPORT_CACHE_DIR",

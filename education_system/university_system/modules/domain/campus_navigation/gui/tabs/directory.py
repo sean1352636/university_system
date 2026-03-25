@@ -1,6 +1,6 @@
 """Building directory tab for Campus Navigation GUI."""
 
-from .._imports import tk, ttk, Optional, _t
+from education_system.university_system.modules.domain.campus_navigation.gui._imports import tk, ttk, Optional, _t
 
 
 class DirectoryTabMixin:

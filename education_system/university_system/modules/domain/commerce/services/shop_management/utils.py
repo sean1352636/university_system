@@ -1,9 +1,9 @@
 from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
-from . import config
-from .config import get_system_settings
-from .inventory import get_inventory_valuation
+from education_system.university_system.modules.domain.commerce.services.shop_management import config
+from education_system.university_system.modules.domain.commerce.services.shop_management.config import get_system_settings
+from education_system.university_system.modules.domain.commerce.services.shop_management.inventory import get_inventory_valuation
 
 
 def log_shop_activity(activity_type, description, user_id=None, details=None):
@@ -41,9 +41,9 @@ def get_transaction_summary(transaction_id):
         cursor.execute(
             '''
             SELECT t.*, u.username, u.email
-            FROM shop_transactions t
-            LEFT JOIN users u ON t.user_id = u.id
-            WHERE t.transaction_id = ?
+            FROM transactions t
+            LEFT JOIN users u ON t.customer_id = u.id
+            WHERE t.source_type = 'shop' AND t.source_transaction_id = ?
             ''',
             [transaction_id]
         )
@@ -59,7 +59,7 @@ def get_transaction_summary(transaction_id):
             '''
             SELECT ti.*, p.name, p.category
             FROM shop_transaction_items ti
-            JOIN shop_products p ON ti.product_id = p.product_id
+            JOIN products p ON ti.product_id = p.source_product_id AND p.source_type = 'shop'
             WHERE ti.transaction_id = ?
             ORDER BY p.name
             ''',
@@ -113,7 +113,7 @@ def test_shop_system():
         cursor = conn.cursor()
 
         # Test tables exist
-        tables = ['shop_products', 'shop_inventory', 'shop_transactions', 'shop_transaction_items', 'shop_discounts', 'shop_cart']
+        tables = ['products', 'shop_inventory', 'transactions', 'shop_transaction_items', 'shop_discounts', 'cart']
 
         for table in tables:
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,))
@@ -123,7 +123,7 @@ def test_shop_system():
                 return False
 
         # Test sample data
-        cursor.execute("SELECT COUNT(*) FROM shop_products")
+        cursor.execute("SELECT COUNT(*) FROM products WHERE source_type = 'shop'")
         product_count = cursor.fetchone()[0]
 
         cursor.execute("SELECT COUNT(*) FROM shop_inventory")

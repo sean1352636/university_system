@@ -105,34 +105,67 @@ def init_career_services_system_db():
         )
         ''')
 
-        # Career fairs and events
+        # Career fairs and events (unified_events)
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS career_events (
+        CREATE TABLE IF NOT EXISTS unified_events (
             event_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            event_name TEXT NOT NULL,
-            event_type TEXT NOT NULL,
-            event_date TEXT NOT NULL,
-            event_time TEXT NOT NULL,
-            location TEXT,
+            source_type TEXT NOT NULL,
+            source_event_id INTEGER,
+            title TEXT NOT NULL,
             description TEXT,
-            max_attendees INTEGER,
+            event_type TEXT,
+            event_category TEXT,
+            start_datetime TEXT,
+            end_datetime TEXT,
+            location TEXT,
+            building TEXT,
+            room TEXT,
+            room_id INTEGER,
+            organizer_id TEXT,
+            organizer_name TEXT,
+            organizer_type TEXT,
+            max_capacity INTEGER,
+            registration_required INTEGER DEFAULT 0,
             registration_deadline TEXT,
-            is_published BOOLEAN DEFAULT 0,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            is_public INTEGER DEFAULT 1,
+            is_featured INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'scheduled',
+            tags TEXT,
+            image_url TEXT,
+            virtual_link TEXT,
+            event_fee REAL DEFAULT 0,
+            payment_required INTEGER DEFAULT 0,
+            waitlist_enabled INTEGER DEFAULT 0,
+            qr_code_path TEXT,
+            club_id INTEGER,
+            created_by TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT,
+            notes TEXT
         )
         ''')
 
-        # Event registrations
+        # Event registrations (unified_event_registrations)
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS career_event_registrations (
+        CREATE TABLE IF NOT EXISTS unified_event_registrations (
             registration_id INTEGER PRIMARY KEY AUTOINCREMENT,
             event_id INTEGER NOT NULL,
-            student_id TEXT NOT NULL,
-            registered_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            attended BOOLEAN DEFAULT 0,
-            feedback TEXT,
-            FOREIGN KEY (event_id) REFERENCES career_events (event_id),
-            FOREIGN KEY (student_id) REFERENCES students (student_id)
+            user_id TEXT,
+            user_type TEXT,
+            registration_date TEXT DEFAULT (datetime('now')),
+            attendance_status TEXT DEFAULT 'registered',
+            checked_in_at TEXT,
+            check_out_time TEXT,
+            payment_status TEXT,
+            payment_amount REAL,
+            payment_method TEXT,
+            is_waitlisted INTEGER DEFAULT 0,
+            num_guests INTEGER DEFAULT 0,
+            feedback_rating INTEGER,
+            feedback_comment TEXT,
+            qr_code TEXT,
+            cpd_credits REAL,
+            FOREIGN KEY (event_id) REFERENCES unified_events(event_id)
         )
         ''')
 
@@ -265,38 +298,67 @@ def init_alumni_relations_system_db():
         )
         ''')
 
-        # Alumni events
+        # Alumni events (unified_events - IF NOT EXISTS so safe to call multiple times)
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS alumni_events (
+        CREATE TABLE IF NOT EXISTS unified_events (
             event_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            event_name TEXT NOT NULL,
-            event_type TEXT NOT NULL,
-            event_date TEXT NOT NULL,
-            event_time TEXT NOT NULL,
-            location TEXT,
-            is_virtual BOOLEAN DEFAULT 0,
-            meeting_link TEXT,
+            source_type TEXT NOT NULL,
+            source_event_id INTEGER,
+            title TEXT NOT NULL,
             description TEXT,
-            target_class_year TEXT,
-            max_attendees INTEGER,
-            current_attendees INTEGER DEFAULT 0,
-            registration_fee REAL DEFAULT 0,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            event_type TEXT,
+            event_category TEXT,
+            start_datetime TEXT,
+            end_datetime TEXT,
+            location TEXT,
+            building TEXT,
+            room TEXT,
+            room_id INTEGER,
+            organizer_id TEXT,
+            organizer_name TEXT,
+            organizer_type TEXT,
+            max_capacity INTEGER,
+            registration_required INTEGER DEFAULT 0,
+            registration_deadline TEXT,
+            is_public INTEGER DEFAULT 1,
+            is_featured INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'scheduled',
+            tags TEXT,
+            image_url TEXT,
+            virtual_link TEXT,
+            event_fee REAL DEFAULT 0,
+            payment_required INTEGER DEFAULT 0,
+            waitlist_enabled INTEGER DEFAULT 0,
+            qr_code_path TEXT,
+            club_id INTEGER,
+            created_by TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT,
+            notes TEXT
         )
         ''')
 
-        # Alumni event registrations
+        # Alumni event registrations (unified_event_registrations - IF NOT EXISTS)
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS alumni_event_registrations (
+        CREATE TABLE IF NOT EXISTS unified_event_registrations (
             registration_id INTEGER PRIMARY KEY AUTOINCREMENT,
             event_id INTEGER NOT NULL,
-            alumni_id INTEGER NOT NULL,
+            user_id TEXT,
+            user_type TEXT,
+            registration_date TEXT DEFAULT (datetime('now')),
+            attendance_status TEXT DEFAULT 'registered',
+            checked_in_at TEXT,
+            check_out_time TEXT,
+            payment_status TEXT,
+            payment_amount REAL,
+            payment_method TEXT,
+            is_waitlisted INTEGER DEFAULT 0,
             num_guests INTEGER DEFAULT 0,
-            registration_date TEXT DEFAULT CURRENT_TIMESTAMP,
-            payment_status TEXT DEFAULT 'pending',
-            attended BOOLEAN DEFAULT 0,
-            FOREIGN KEY (event_id) REFERENCES alumni_events (event_id),
-            FOREIGN KEY (alumni_id) REFERENCES alumni_profiles (alumni_id)
+            feedback_rating INTEGER,
+            feedback_comment TEXT,
+            qr_code TEXT,
+            cpd_credits REAL,
+            FOREIGN KEY (event_id) REFERENCES unified_events(event_id)
         )
         ''')
 

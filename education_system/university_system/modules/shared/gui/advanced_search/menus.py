@@ -873,7 +873,7 @@ def get_connection():
             print_error(f"Database connection error: {e}")
             return None
 
-from .base import AdvancedSearchGUI
+from education_system.university_system.modules.shared.gui.advanced_search.base import AdvancedSearchGUI
 
 def show_analytics_dashboard(self):
     """Show analytics dashboard in a separate window"""
@@ -915,9 +915,12 @@ def show_advanced_text_search_menu(self):
     ]
     
     for text, command in search_options:
-        ttk.Button(frame, text=text, command=lambda cmd=command: (dialog.destroy(), cmd()), 
+        def _on_search_click(cmd=command):
+            dialog.destroy()
+            self.master.after(50, cmd)
+        ttk.Button(frame, text=text, command=_on_search_click,
                   width=30).pack(pady=5)
-    
+
     ttk.Button(frame, text=f"❌ {_t('advanced_search.close_button')}", command=dialog.destroy).pack(pady=(20, 0))
 AdvancedSearchGUI.show_advanced_text_search_menu = show_advanced_text_search_menu
 
@@ -936,14 +939,16 @@ def show_admin_features_menu(self):
 
     admin_options = [
         (f"📋 {_t('advanced_search.menus.audit_trail')}", self.show_audit_trail),
-        (f"👥 {_t('advanced_search.menus.user_permissions')}", self.show_user_permissions_manager),
         (f"📅 {_t('advanced_search.menus.scheduled_reports')}", self.show_scheduled_reports_manager),
         (f"💾 {_t('advanced_search.menus.cache_management')}", self.show_cache_management),
         (f"🛠️ {_t('advanced_search.menus.system_maintenance')}", self.show_system_maintenance)
     ]
     
     for text, command in admin_options:
-        ttk.Button(frame, text=text, command=lambda cmd=command: (dialog.destroy(), cmd()), 
+        def _on_click(cmd=command):
+            dialog.destroy()
+            self.master.after(50, cmd)
+        ttk.Button(frame, text=text, command=_on_click,
                   width=30).pack(pady=5)
     
     ttk.Button(frame, text=f"❌ {_t('advanced_search.close_button')}", command=dialog.destroy).pack(pady=(20, 0))
@@ -970,7 +975,10 @@ def show_smart_features_menu(self):
     ]
     
     for text, command in smart_options:
-        ttk.Button(frame, text=text, command=lambda cmd=command: (dialog.destroy(), cmd()), 
+        def _on_smart_click(cmd=command):
+            dialog.destroy()
+            self.master.after(50, cmd)
+        ttk.Button(frame, text=text, command=_on_smart_click,
                   width=30).pack(pady=5)
     
     ttk.Button(frame, text=f"❌ {_t('advanced_search.close_button')}", command=dialog.destroy).pack(pady=(20, 0))
@@ -1037,14 +1045,7 @@ AdvancedSearchGUI.show_demographics_reports = show_demographics_reports
 
 def show_advanced_demographics_window(self):
     """Open the advanced demographics report in a new window"""
-    self.update_status(_t("advanced_search.menus.generating_demographics"))
-    try:
-        result = self.capture_function_output(student_demographics_reports)
-        self._show_report_viewer(result, _t("advanced_search.menus.demographics_report_title"))
-        self.update_status(_t("advanced_search.menus.demographics_generated"))
-    except Exception as e:
-        messagebox.showerror(_t('common.error'), _t('advanced_search.menus.failed_demographics_report', error=str(e)))
-        self.update_status(_t('advanced_search.menus.failed_demographics'))
+    self.show_advanced_demographic_report()
 AdvancedSearchGUI.show_advanced_demographics_window = show_advanced_demographics_window
 
 def show_advanced_demographic_report(self):

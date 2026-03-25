@@ -296,34 +296,36 @@ class AssignmentGUI:
             # Add permissions to database
             from education_system.university_system.infrastructure.database.db import sqlite3
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            for perm_code, perm_desc in permissions:
-                cursor.execute('''
-                INSERT OR IGNORE INTO permissions (code, description)
-                VALUES (?, ?)
-                ''', (perm_code, perm_desc))
-
-            # Assign permissions to roles
-            role_permissions = {
-                'Admin': ['manage_assignments', 'view_all_submissions', 'delete_assignments',
-                         'manage_groups', 'manage_peer_reviews', 'export_analytics'],
-                'Faculty': ['view_assignments', 'create_assignments', 'edit_assignments',
-                           'grade_assignments', 'view_all_submissions', 'manage_groups',
-                           'manage_peer_reviews', 'export_analytics'],
-                'Student': ['view_assignments'],
-                'Staff': ['view_assignments', 'view_all_submissions']
-            }
-
-            for role, perms in role_permissions.items():
-                for perm_code in perms:
+                for perm_code, perm_desc in permissions:
                     cursor.execute('''
-                    INSERT OR IGNORE INTO role_permissions (role_name, permission_code)
+                    INSERT OR IGNORE INTO permissions (code, description)
                     VALUES (?, ?)
-                    ''', (role, perm_code))
+                    ''', (perm_code, perm_desc))
 
-            conn.commit()
-            conn.close()
+                # Assign permissions to roles
+                role_permissions = {
+                    'Admin': ['manage_assignments', 'view_all_submissions', 'delete_assignments',
+                             'manage_groups', 'manage_peer_reviews', 'export_analytics'],
+                    'Faculty': ['view_assignments', 'create_assignments', 'edit_assignments',
+                               'grade_assignments', 'view_all_submissions', 'manage_groups',
+                               'manage_peer_reviews', 'export_analytics'],
+                    'Student': ['view_assignments'],
+                    'Staff': ['view_assignments', 'view_all_submissions']
+                }
+
+                for role, perms in role_permissions.items():
+                    for perm_code in perms:
+                        cursor.execute('''
+                        INSERT OR IGNORE INTO role_permissions (role_name, permission_code)
+                        VALUES (?, ?)
+                        ''', (role, perm_code))
+
+                conn.commit()
+            finally:
+                conn.close()
 
             messagebox.showinfo(_("common.success"), _("assignment.messages.permissions_configured"))
 
@@ -496,17 +498,19 @@ class AssignmentGUI:
             from datetime import datetime
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-            cursor.execute('''
-            INSERT INTO notifications (user_id, type, title, message, related_id, is_read, created_at)
-            VALUES (?, ?, ?, ?, ?, 0, ?)
-            ''', (user_id, notification_type, title, message, related_id, timestamp))
+                cursor.execute('''
+                INSERT INTO notifications (user_id, type, title, message, related_id, is_read, created_at)
+                VALUES (?, ?, ?, ?, ?, 0, ?)
+                ''', (user_id, notification_type, title, message, related_id, timestamp))
 
-            conn.commit()
-            conn.close()
+                conn.commit()
+            finally:
+                conn.close()
 
             return True
 
@@ -578,7 +582,7 @@ def launch_gui(assignment_system, auth):
 
 def display_assignment_menu_gui(auth):
     """Display assignment menu in GUI mode"""
-    from education_system.university_system.modules.academics.services.assignment_submission import AssignmentSubmission
+    from education_system.university_system.modules.domain.academics.services.assignments.assignment_submission import AssignmentSubmission
     assignment_system = AssignmentSubmission()
     launch_gui(assignment_system, auth)
 

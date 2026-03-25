@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/student_registration/common_imports.py
+# hypothesis_version: 6.151.9
+
+['#27ae60', '#2c3e50', '#34495e', '#3498db', '#e74c3c', '#ecf0f1', '#f39c12', '#ffffff', 'Arial', 'COLORS', 'Optional', '__dict__', '_t', 'bold', 'create_stat_card', 'current_user', 'danger', 'dark', 'date', 'datetime', 'filedialog', 'get_auth', 'get_connection', 'get_student_id', 'id', 'info', 'light', 'logger', 'logging', 'messagebox', 'primary', 'raised', 'secondary', 'student_id', 'success', 'tk', 'to_dict', 'ttk', 'user_id', 'warning', 'white']

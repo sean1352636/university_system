@@ -38,9 +38,9 @@ Example Usage:
     )
 """
 
-from .aid_manager import FinancialAidManager
-from .scholarship_manager import ScholarshipManager
-from .schema import create_financial_aid_tables
+from education_system.university_system.modules.domain.finance.services.financial_aid.aid_manager import FinancialAidManager
+from education_system.university_system.modules.domain.finance.services.financial_aid.scholarship_manager import ScholarshipManager
+from education_system.university_system.modules.domain.finance.services.financial_aid.schema import create_financial_aid_tables
 
 __all__ = [
     'FinancialAidManager',

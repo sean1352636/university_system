@@ -646,7 +646,7 @@ from education_system.university_system.modules.domain.career.services.career_se
 
 # Import Extras Launcher (games, utilities, mini-projects)
 try:
-    from education_system.university_system.extras.launcher import launch_as_toplevel as launch_extras_gui
+    from education_system.shared.extras.launcher import launch_as_toplevel as launch_extras_gui
     EXTRAS_LAUNCHER_AVAILABLE = True
 except Exception as e:
     launch_extras_gui = None

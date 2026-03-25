@@ -7,6 +7,7 @@ Provides command-line access to all security features
 import os
 import sys
 from education_system.university_system.infrastructure.database.db import sqlite3
+from education_system.university_system.core.sql_safety import escape_like
 import json
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
@@ -833,7 +834,7 @@ def audit_log_menu(dashboard):
             WHERE se.event_type LIKE ?
             ORDER BY se.event_time DESC
             LIMIT 50
-        """, (f"%{event_type}%",))
+        """, (f"%{escape_like(event_type)}%",))
         events = cursor.fetchall()
         conn.close()
 

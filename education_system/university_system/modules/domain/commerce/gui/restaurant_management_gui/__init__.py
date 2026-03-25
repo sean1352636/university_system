@@ -1,1 +1,1 @@
-from .core.main_gui import RestaurantManagementGUI
+from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.core.main_gui import RestaurantManagementGUI

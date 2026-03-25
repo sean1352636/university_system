@@ -1,5 +1,5 @@
-from . import common as _common
-from .common import (
+from education_system.university_system.modules.domain.housing.services.housing_accommodation import common as _common
+from education_system.university_system.modules.domain.housing.services.housing_accommodation.common import (
     sqlite3, datetime, random,
     get_text, get_connection, generate_id,
 )
@@ -92,26 +92,8 @@ def init_housing_db():
         )
         ''')
 
-        # Create housing_payments table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS housing_payments (
-            payment_id TEXT PRIMARY KEY,
-            assignment_id TEXT NOT NULL,
-            student_id TEXT NOT NULL,
-            amount REAL NOT NULL,
-            payment_date TEXT NOT NULL,
-            payment_method TEXT NOT NULL,
-            transaction_reference TEXT,
-            payment_period_start TEXT NOT NULL,
-            payment_period_end TEXT NOT NULL,
-            status TEXT NOT NULL,
-            received_by TEXT NOT NULL,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL,
-            FOREIGN KEY (assignment_id) REFERENCES housing_assignments (assignment_id),
-            FOREIGN KEY (student_id) REFERENCES students (student_id)
-        )
-        ''')
+        # Housing payments now use the unified 'payments' table with source_type = 'housing'
+        # No separate housing_payments table needed
 
         # Create housing_maintenance_requests table
         cursor.execute('''

@@ -1008,9 +1008,9 @@ University Gym & Fitness Center"""
 
                 # Record transaction with account_id
                 conn.execute('''
-                    INSERT INTO student_finance_transactions
-                    (account_id, student_id, transaction_type, amount, balance_before, balance_after, description, created_at)
-                    VALUES (?, ?, 'debit', ?, ?, ?, 'Gym Payment', CURRENT_TIMESTAMP)
+                    INSERT INTO transactions
+                    (source_type, account_id, student_id, transaction_type, amount, balance_before, balance_after, description, created_at)
+                    VALUES ('student_finance', ?, ?, 'debit', ?, ?, ?, 'Gym Payment', CURRENT_TIMESTAMP)
                 ''', (account_id, self.user_id, amount, balance_before, balance_after))
             return True
         except Exception as e:
@@ -1030,19 +1030,19 @@ University Gym & Fitness Center"""
                 # Only show bookings: membership, membership_renewal, pt_session
                 if search_term:
                     cursor = conn.execute('''
-                        SELECT transaction_id, reference, user_id, transaction_type,
+                        SELECT transaction_id, reference_number, user_id, transaction_type,
                                amount, payment_method, created_at, status
-                        FROM gym_transactions
-                        WHERE transaction_type IN ('membership', 'membership_renewal', 'pt_session')
+                        FROM transactions
+                        WHERE source_type = 'gym' AND transaction_type IN ('membership', 'membership_renewal', 'pt_session')
                           AND user_id LIKE ?
                         ORDER BY created_at DESC
                     ''', (f'%{search_term}%',))
                 else:
                     cursor = conn.execute('''
-                        SELECT transaction_id, reference, user_id, transaction_type,
+                        SELECT transaction_id, reference_number, user_id, transaction_type,
                                amount, payment_method, created_at, status
-                        FROM gym_transactions
-                        WHERE transaction_type IN ('membership', 'membership_renewal', 'pt_session')
+                        FROM transactions
+                        WHERE source_type = 'gym' AND transaction_type IN ('membership', 'membership_renewal', 'pt_session')
                         ORDER BY created_at DESC
                         LIMIT 100
                     ''')
@@ -1177,17 +1177,17 @@ Status: {values[7]}
                 from education_system.university_system.infrastructure.database.db import transaction as db_transaction
                 with db_transaction() as conn:
                     conn.execute('''
-                        UPDATE gym_transactions
+                        UPDATE transactions
                         SET status = 'refunded'
-                        WHERE transaction_id = ?
+                        WHERE source_type = 'gym' AND transaction_id = ?
                     ''', (transaction_id,))
 
                     # Record refund transaction
                     refund_ref = f"REFUND-{generate_reference()}"
                     conn.execute('''
-                        INSERT INTO gym_transactions
-                        (reference, user_id, transaction_type, amount, payment_method, status, processed_by)
-                        VALUES (?, ?, ?, ?, ?, 'completed', ?)
+                        INSERT INTO transactions
+                        (source_type, reference_number, user_id, transaction_type, amount, payment_method, status, processed_by)
+                        VALUES ('gym', ?, ?, ?, ?, ?, 'completed', ?)
                     ''', (refund_ref, user_id, f'refund_{transaction_type}', amount,
                           refund_method.lower().replace(' ', '_'), self.user_id))
 
@@ -1320,10 +1320,10 @@ Status: {values[7]}
 
                 # Record transaction
                 conn.execute('''
-                    INSERT INTO student_finance_transactions
-                    (account_id, student_id, transaction_type, amount, balance_before,
+                    INSERT INTO transactions
+                    (source_type, account_id, student_id, transaction_type, amount, balance_before,
                      balance_after, description, created_at)
-                    VALUES (?, ?, 'credit', ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, CURRENT_TIMESTAMP)
                 ''', (account_id, user_id, amount, balance_before, balance_after,
                       f'Gym Refund - Ref: {original_ref}'))
 
@@ -1400,22 +1400,21 @@ University Gym & Fitness Center"""
             from education_system.university_system.infrastructure.database.db import transaction as db_transaction
             from datetime import datetime
             with db_transaction() as conn:
-                # Insert into finance refunds table with correct column names
+                # Insert into unified refunds table
                 try:
                     conn.execute('''
-                        INSERT INTO finance_refunds
-                        (student_id, refund_reference, department, transaction_id,
-                         amount, refund_method, refund_date, refund_time, processed_by, notes)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO unified_refunds
+                        (student_id, refund_reference, source_type, reference_type,
+                         amount, refund_method, refund_date, processed_by, notes)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ''', (
                         user_id,
                         refund_ref,
-                        'Gym',
-                        None,  # transaction_id
+                        'gym',
+                        'gym_service',
                         amount,
                         method.lower().replace(' ', '_'),
                         datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                        datetime.now().strftime('%H:%M:%S'),
                         self.user_id,
                         'Gym Service Refund'
                     ))

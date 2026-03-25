@@ -3,8 +3,8 @@
 import time
 from datetime import datetime, timedelta
 
-from . import app, request, jsonify, jwt
-from ..config import config
+from education_system.university_system.utils.logging.log_management.api import app, request, jsonify, jwt
+from education_system.university_system.utils.logging.log_management.config import config
 
 # Use the logger from the refactored utils module
 from education_system.university_system.modules.shared.utils.simple_activity_logger import logger
@@ -20,6 +20,7 @@ def token_required(f):
         try:
             token = request.headers.get('Authorization')  # type: ignore
         except Exception:
+            logger.exception("Failed to retrieve Authorization header from request")
             token = None
         if not token:
             return f(None, *args, **kwargs)
@@ -29,13 +30,14 @@ def token_required(f):
             data = jwt.decode(token, app.config.get('SECRET_KEY'), algorithms=['HS256'])  # type: ignore
             current_user = data.get('user_id') if isinstance(data, dict) else None
         except Exception:
+            logger.exception("Auth token validation failed")
             current_user = None
         return f(current_user, *args, **kwargs)
     # Preserve the original function's name to avoid Flask endpoint collisions
     try:
         decorated.__name__ = f.__name__  # type: ignore
     except Exception:
-        pass
+        logger.exception("Failed to set decorator __name__ for token_required wrapper")
     return decorated
 
 
@@ -48,7 +50,7 @@ def admin_required(f):
     try:
         decorated.__name__ = f.__name__  # type: ignore
     except Exception:
-        pass
+        logger.exception("Failed to set decorator __name__ for admin_required wrapper")
     return decorated
 
 

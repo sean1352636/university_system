@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/college_system/modules/domain/gdpr/services/gdpr_service.py
+# hypothesis_version: 6.151.9
+
+[100, ', ', '?', 'Subject not found.', 'cnt', 'consent_analytics', 'consent_marketing', 'consent_third_party', 'erasure_completed_at', 'erasure_requested', 'id', 'updated_at', 'user_id', 'user_id is required.']

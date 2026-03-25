@@ -5,7 +5,7 @@ Handles external system integrations including calendar, trip management,
 and dashboard integration.
 """
 
-from .imports import (
+from education_system.university_system.modules.shared.cli.imports import (
     logging, sqlite3, datetime, DB_PATH, logger, _t,
     log_activity, get_auth
 )
@@ -17,6 +17,23 @@ from education_system.university_system.infrastructure.exceptions import (
 )
 
 auth = None
+
+try:
+    from education_system.university_system.modules.domain.academics.services.academic_calendar.cli import display_academic_calendar_menu
+except ImportError:
+    display_academic_calendar_menu = None
+
+try:
+    from education_system.university_system.modules.domain.mobility.services.trip_management.menu import display_trip_management_menu
+except ImportError:
+    display_trip_management_menu = None
+
+try:
+    from education_system.university_system.modules.services.cli.academic_misconduct_cli import academic_misconduct_menu
+    ACADEMIC_MISCONDUCT_AVAILABLE = True
+except ImportError:
+    academic_misconduct_menu = None
+    ACADEMIC_MISCONDUCT_AVAILABLE = False
 
 def set_auth(auth_instance):
     """Set the authentication instance for this module"""
@@ -43,8 +60,8 @@ def link_attendance_to_calendar_events():
         (attendance_record_id, event_id, module_code, date, created_at)
         SELECT ar.id, e.id, ar.module_code, ar.date, datetime('now')
         FROM attendance_records ar
-        JOIN events e ON e.name LIKE '%' || ar.module_code || '%' 
-        AND e.date = ar.date
+        JOIN unified_events e ON e.title LIKE '%' || ar.module_code || '%'
+        AND e.start_datetime = ar.date
         WHERE NOT EXISTS (
             SELECT 1 FROM attendance_calendar_links acl 
             WHERE acl.attendance_record_id = ar.id
@@ -80,13 +97,13 @@ def create_integrated_dashboard_data():
         
         # Get upcoming events with attendance status
         cursor.execute('''
-        SELECT e.id, e.name, e.date, e.event_type,
+        SELECT e.event_id, e.title, e.start_datetime, e.description,
                COUNT(ar.id) as attendance_count
-        FROM events e
-        LEFT JOIN attendance_records ar ON e.date = ar.date
-        WHERE e.date >= date('now')
-        GROUP BY e.id
-        ORDER BY e.date
+        FROM unified_events e
+        LEFT JOIN attendance_records ar ON e.start_datetime = ar.date
+        WHERE e.start_datetime >= date('now')
+        GROUP BY e.event_id
+        ORDER BY e.start_datetime
         LIMIT 10
         ''')
         
@@ -265,13 +282,13 @@ def add_communication_dashboard_to_main_menu(auth):
     """Add the communication dashboard to the main menu"""
     # This function can be called from main.py
     try:
-        # Initialize the dashboard with the current auth object
-        dashboard = CommunicationDashboard(auth=auth)
-        
-        # Display the dashboard
+        from education_system.university_system.infrastructure.email.admin.menus import display_communication_dashboard
         display_communication_dashboard(auth)
         return True
-    except (ValueError, TypeError, ValidationError) as e:
+    except ImportError:
+        logging.warning("CommunicationDashboard not available")
+        return False
+    except Exception as e:
         logging.error(f"Error displaying communication dashboard: {e}")
         return False
 
@@ -585,10 +602,10 @@ def view_trip_calendar_links():
         
         cursor.execute('''
         SELECT t.trip_name, t.destination, t.start_date, t.end_date,
-               e.name as event_name, e.event_type, tce.created_at
+               e.title as event_name, e.description, tce.created_at
         FROM trip_calendar_events tce
         JOIN trips t ON tce.trip_id = t.id
-        JOIN events e ON tce.event_id = e.id
+        JOIN unified_events e ON tce.event_id = e.event_id
         ORDER BY t.start_date
         ''')
         
@@ -655,13 +672,13 @@ def display_integrated_academic_menu():
             option_num += 1
         
         # Calendar System
-        if calendar_access:
+        if calendar_access and display_academic_calendar_menu:
             print(f"{option_num}. Academic Calendar Management")
             options.append(('calendar', display_academic_calendar_menu))
             option_num += 1
-        
+
         # Trip System
-        if trips_access:
+        if trips_access and display_trip_management_menu:
             print(f"{option_num}. Trip Management")
             options.append(('trips', display_trip_management_menu))
             option_num += 1

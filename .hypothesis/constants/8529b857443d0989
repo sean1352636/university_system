@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/database/operations/restore_ops.py
+# hypothesis_version: 6.151.9
+
+[')', ',', '.db', '.encrypted', '.gz', '.zip', '?', 'INSERT INTO [', 'SELECT * FROM [', ']', '] VALUES (', 'encryption_password', 'restore']

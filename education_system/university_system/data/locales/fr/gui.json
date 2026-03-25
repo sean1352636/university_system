@@ -46,7 +46,34 @@
     "export": "Exporter",
     "save_changes": "Enregistrer les Modifications",
     "create": "Créer",
-    "select": "Sélectionner"
+    "select": "Sélectionner",
+    "switch_system": {
+      "title": "Changer de Système",
+      "header": "Passer à un autre système",
+      "choose_system": "Choisissez un système à lancer :",
+      "failed": "Échec du changement de système : {error}",
+      "college": "Système de Lycée",
+      "secondary": "Système d'École Secondaire",
+      "primary": "Système d'École Primaire"
+    },
+    "mfa": {
+      "verification_status_disabled": "Désactivé (Mot de passe uniquement)",
+      "verification_status_enabled": "Activé",
+      "login_verification_label": "Vérification de connexion : ",
+      "configured": "Configuré",
+      "primary_method": "Principal",
+      "turned_off_success": "MFA a été désactivé.\n\nVos paramètres ont été sauvegardés.\nVous pouvez les restaurer plus tard depuis ce menu.",
+      "module_not_available": "Module MFA non disponible : {error}",
+      "error_opening_setup": "Erreur lors de l'ouverture de la configuration MFA : {error}",
+      "error_opening_wizard": "Erreur lors de l'ouverture de l'assistant MFA : {error}",
+      "reenable_email_subject": "MFA Réactivé pour Votre Compte",
+      "reenable_email_body": "Bonjour {username},\n\nL'Authentification Multi-Facteurs (MFA) a été réactivée pour votre compte en utilisant vos paramètres précédemment sauvegardés.\n\nDétails :\n- Compte : {username}\n- E-mail : {email}\n- Méthodes restaurées : {methods_count}\n\nSi vous n'avez pas effectué ce changement, contactez le support immédiatement et changez votre mot de passe.\n\nMerci,\nÉquipe de Sécurité du Système Universitaire",
+      "reenabled_title": "MFA Réactivé",
+      "reenabled_with_email": "MFA a été réactivé avec succès en utilisant vos paramètres sauvegardés.\n\nUn e-mail de confirmation a été envoyé à :\n{email}",
+      "reenabled_no_email": "MFA a été réactivé avec succès en utilisant vos paramètres sauvegardés.\n\n(La notification par e-mail n'a pas pu être envoyée)",
+      "reenabled_email_error": "MFA a été réactivé avec succès en utilisant vos paramètres sauvegardés.\n\n(L'e-mail de confirmation n'a pas pu être envoyé : {error})",
+      "reenabled_simple": "MFA a été réactivé avec succès en utilisant vos paramètres sauvegardés."
+    }
   },
   "nav": {
     "categories": {

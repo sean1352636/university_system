@@ -4,9 +4,9 @@ import csv
 import pandas as pd
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.modules.shared.utils.simple_activity_logger import log_read, log_export
-from . import config
-from .inventory import get_low_stock_alert
-from .products import get_popular_products
+from education_system.university_system.modules.domain.commerce.services.shop_management import config
+from education_system.university_system.modules.domain.commerce.services.shop_management.inventory import get_low_stock_alert
+from education_system.university_system.modules.domain.commerce.services.shop_management.products import get_popular_products
 
 
 @log_read(module="shop", description="Generating daily sales report")
@@ -45,10 +45,10 @@ def generate_daily_sales_report():
             cursor.execute(
                 '''
                 SELECT t.*, u.username
-                FROM shop_transactions t
-                LEFT JOIN users u ON t.user_id = u.id
-                WHERE t.transaction_date LIKE ?
-                ORDER BY t.transaction_date
+                FROM transactions t
+                LEFT JOIN users u ON t.customer_id = u.id
+                WHERE t.source_type = 'shop' AND t.created_at LIKE ?
+                ORDER BY t.created_at
                 ''',
                 [f"{date_str}%"]
             )
@@ -78,7 +78,7 @@ def generate_daily_sales_report():
             # Get hourly breakdown
             hourly_sales = {}
             for t in transactions:
-                hour = t['transaction_date'].split()[1].split(':')[0]
+                hour = t['created_at'].split()[1].split(':')[0]
                 if hour not in hourly_sales:
                     hourly_sales[hour] = {'count': 0, 'amount': 0}
 
@@ -118,9 +118,9 @@ def generate_daily_sales_report():
                 SELECT ti.product_id, p.name, SUM(ti.quantity) as total_qty,
                        SUM(ti.subtotal) as total_amount
                 FROM shop_transaction_items ti
-                JOIN shop_transactions t ON ti.transaction_id = t.transaction_id
-                JOIN shop_products p ON ti.product_id = p.product_id
-                WHERE t.transaction_date LIKE ?
+                JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
+                JOIN products p ON ti.product_id = p.source_product_id AND p.source_type = 'shop'
+                WHERE t.created_at LIKE ?
                 GROUP BY ti.product_id
                 ORDER BY total_amount DESC
                 LIMIT 10
@@ -218,9 +218,9 @@ def generate_weekly_sales_report():
         cursor.execute(
             '''
             SELECT t.*
-            FROM shop_transactions t
-            WHERE t.transaction_date BETWEEN ? AND ?
-            ORDER BY t.transaction_date
+            FROM transactions t
+            WHERE t.source_type = 'shop' AND t.created_at BETWEEN ? AND ?
+            ORDER BY t.created_at
             ''',
             [f"{start_str} 00:00:00", f"{end_str} 23:59:59"]
         )
@@ -240,7 +240,7 @@ def generate_weekly_sales_report():
         # Get daily breakdown
         daily_sales = {}
         for t in transactions:
-            day = t['transaction_date'].split()[0]  # YYYY-MM-DD
+            day = t['created_at'].split()[0]  # YYYY-MM-DD
             if day not in daily_sales:
                 daily_sales[day] = {'count': 0, 'amount': 0}
 
@@ -282,9 +282,9 @@ def generate_weekly_sales_report():
                    SUM(ti.subtotal) as total_amount,
                    COUNT(DISTINCT ti.transaction_id) as transaction_count
             FROM shop_transaction_items ti
-            JOIN shop_transactions t ON ti.transaction_id = t.transaction_id
-            JOIN shop_products p ON ti.product_id = p.product_id
-            WHERE t.transaction_date BETWEEN ? AND ?
+            JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
+            JOIN products p ON ti.product_id = p.source_product_id AND p.source_type = 'shop'
+            WHERE t.created_at BETWEEN ? AND ?
             GROUP BY p.category
             ORDER BY total_amount DESC
             ''',
@@ -308,9 +308,9 @@ def generate_weekly_sales_report():
             SELECT ti.product_id, p.name, p.category, SUM(ti.quantity) as total_qty,
                    SUM(ti.subtotal) as total_amount
             FROM shop_transaction_items ti
-            JOIN shop_transactions t ON ti.transaction_id = t.transaction_id
-            JOIN shop_products p ON ti.product_id = p.product_id
-            WHERE t.transaction_date BETWEEN ? AND ?
+            JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
+            JOIN products p ON ti.product_id = p.source_product_id AND p.source_type = 'shop'
+            WHERE t.created_at BETWEEN ? AND ?
             GROUP BY ti.product_id
             ORDER BY total_amount DESC
             LIMIT 10
@@ -411,9 +411,9 @@ def generate_monthly_sales_report():
         cursor.execute(
             '''
             SELECT t.*
-            FROM shop_transactions t
-            WHERE t.transaction_date BETWEEN ? AND ?
-            ORDER BY t.transaction_date
+            FROM transactions t
+            WHERE t.source_type = 'shop' AND t.created_at BETWEEN ? AND ?
+            ORDER BY t.created_at
             ''',
             [f"{first_day_str} 00:00:00", f"{last_day_str} 23:59:59"]
         )
@@ -433,7 +433,7 @@ def generate_monthly_sales_report():
         # Get daily breakdown
         daily_sales = {}
         for t in transactions:
-            day = t['transaction_date'].split()[0]  # YYYY-MM-DD
+            day = t['created_at'].split()[0]  # YYYY-MM-DD
             if day not in daily_sales:
                 daily_sales[day] = {'count': 0, 'amount': 0}
 
@@ -495,8 +495,8 @@ def generate_monthly_sales_report():
         cursor.execute(
             '''
             SELECT payment_method, COUNT(*) as count, SUM(total_amount) as amount
-            FROM shop_transactions
-            WHERE transaction_date BETWEEN ? AND ?
+            FROM transactions
+            WHERE source_type = 'shop' AND created_at BETWEEN ? AND ?
             GROUP BY payment_method
             ORDER BY amount DESC
             ''',
@@ -517,12 +517,12 @@ def generate_monthly_sales_report():
         # Category breakdown
         cursor.execute(
             '''
-            SELECT p.category, COUNT(DISTINCT t.transaction_id) as transaction_count,
+            SELECT p.category, COUNT(DISTINCT t.source_transaction_id) as transaction_count,
                    SUM(ti.quantity) as quantity, SUM(ti.subtotal) as amount
             FROM shop_transaction_items ti
-            JOIN shop_transactions t ON ti.transaction_id = t.transaction_id
-            JOIN shop_products p ON ti.product_id = p.product_id
-            WHERE t.transaction_date BETWEEN ? AND ?
+            JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
+            JOIN products p ON ti.product_id = p.source_product_id AND p.source_type = 'shop'
+            WHERE t.created_at BETWEEN ? AND ?
             GROUP BY p.category
             ORDER BY amount DESC
             ''',
@@ -543,12 +543,12 @@ def generate_monthly_sales_report():
         # Top products
         cursor.execute(
             '''
-            SELECT p.product_id, p.name, SUM(ti.quantity) as quantity, SUM(ti.subtotal) as amount
+            SELECT p.source_product_id as product_id, p.name, SUM(ti.quantity) as quantity, SUM(ti.subtotal) as amount
             FROM shop_transaction_items ti
-            JOIN shop_transactions t ON ti.transaction_id = t.transaction_id
-            JOIN shop_products p ON ti.product_id = p.product_id
-            WHERE t.transaction_date BETWEEN ? AND ?
-            GROUP BY p.product_id
+            JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
+            JOIN products p ON ti.product_id = p.source_product_id AND p.source_type = 'shop'
+            WHERE t.created_at BETWEEN ? AND ?
+            GROUP BY p.source_product_id
             ORDER BY amount DESC
             LIMIT 10
             ''',
@@ -605,7 +605,7 @@ def generate_product_sales_report():
         if product_id:
             # Check if product exists
             cursor.execute(
-                "SELECT * FROM shop_products WHERE product_id = ?",
+                "SELECT * FROM products WHERE source_type = 'shop' AND source_product_id = ?",
                 [product_id]
             )
             product = cursor.fetchone()
@@ -663,13 +663,13 @@ def generate_product_sales_report():
             # Get sales for this product
             cursor.execute(
                 '''
-                SELECT ti.transaction_id, t.transaction_date, t.payment_method,
+                SELECT ti.transaction_id, t.created_at, t.payment_method,
                        ti.quantity, ti.price_per_item, ti.subtotal
                 FROM shop_transaction_items ti
-                JOIN shop_transactions t ON ti.transaction_id = t.transaction_id
+                JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
                 WHERE ti.product_id = ? AND
-                      t.transaction_date BETWEEN ? AND ?
-                ORDER BY t.transaction_date DESC
+                      t.created_at BETWEEN ? AND ?
+                ORDER BY t.created_at DESC
                 ''',
                 [product_id, f"{start_date} 00:00:00", f"{end_date} 23:59:59"]
             )
@@ -707,7 +707,7 @@ def generate_product_sales_report():
                 if (end - start).days >= 60:
                     monthly_sales = {}
                     for sale in sales:
-                        month_key = sale['transaction_date'][:7]  # YYYY-MM
+                        month_key = sale['created_at'][:7]  # YYYY-MM
                         if month_key not in monthly_sales:
                             monthly_sales[month_key] = {'quantity': 0, 'revenue': 0}
 
@@ -729,7 +729,7 @@ def generate_product_sales_report():
                 elif (end - start).days >= 14:
                     weekly_sales = {}
                     for sale in sales:
-                        sale_date = datetime.strptime(sale['transaction_date'].split()[0], '%Y-%m-%d')
+                        sale_date = datetime.strptime(sale['created_at'].split()[0], '%Y-%m-%d')
                         week_num = sale_date.isocalendar()[1]  # ISO week number
                         week_key = f"{sale_date.year}-W{week_num:02d}"
 
@@ -763,7 +763,7 @@ def generate_product_sales_report():
 
                 price_formatted = f"£{sale['price_per_item']:.2f}"
                 subtotal_formatted = f"£{sale['subtotal']:.2f}"
-                date_formatted = sale['transaction_date']
+                date_formatted = sale['created_at']
 
                 print(f"{date_formatted:<20} {sale['transaction_id']:<20} {sale['quantity']:<10} {price_formatted:<10} {subtotal_formatted}")
 
@@ -831,16 +831,16 @@ def generate_product_sales_report():
             # Get sales data
             cursor.execute(
                 '''
-                SELECT p.product_id, p.name, p.category, p.price,
+                SELECT p.source_product_id as product_id, p.name, p.category, p.price,
                        SUM(ti.quantity) as total_quantity,
                        SUM(ti.subtotal) as total_revenue,
                        COUNT(DISTINCT ti.transaction_id) as transaction_count,
                        AVG(ti.price_per_item) as avg_price
                 FROM shop_transaction_items ti
-                JOIN shop_products p ON ti.product_id = p.product_id
-                JOIN shop_transactions t ON ti.transaction_id = t.transaction_id
-                WHERE t.transaction_date BETWEEN ? AND ?
-                GROUP BY p.product_id
+                JOIN products p ON ti.product_id = p.source_product_id AND p.source_type = 'shop'
+                JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
+                WHERE t.created_at BETWEEN ? AND ?
+                GROUP BY p.source_product_id
                 ORDER BY total_revenue DESC
                 ''',
                 [f"{start_date} 00:00:00", f"{end_date} 23:59:59"]
@@ -887,9 +887,9 @@ def generate_product_sales_report():
                        SUM(ti.subtotal) as total_revenue,
                        COUNT(DISTINCT p.product_id) as product_count
                 FROM shop_transaction_items ti
-                JOIN shop_products p ON ti.product_id = p.product_id
-                JOIN shop_transactions t ON ti.transaction_id = t.transaction_id
-                WHERE t.transaction_date BETWEEN ? AND ?
+                JOIN products p ON ti.product_id = p.source_product_id AND p.source_type = 'shop'
+                JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
+                WHERE t.created_at BETWEEN ? AND ?
                 GROUP BY p.category
                 ORDER BY total_revenue DESC
                 ''',
@@ -942,7 +942,7 @@ def generate_category_sales_report():
 
         # Get available categories
         cursor.execute(
-            "SELECT DISTINCT category FROM shop_products ORDER BY category"
+            "SELECT DISTINCT category FROM products WHERE source_type = 'shop' ORDER BY category"
         )
 
         categories = cursor.fetchall()
@@ -1023,7 +1023,7 @@ def generate_category_sales_report():
         cursor.execute(
             '''
             SELECT product_id, name, price, is_active
-            FROM shop_products
+            FROM products WHERE source_type = 'shop'
             WHERE category = ?
             ORDER BY name
             ''',
@@ -1040,15 +1040,15 @@ def generate_category_sales_report():
         # Get sales data
         cursor.execute(
             '''
-            SELECT p.product_id, p.name, p.price,
+            SELECT p.source_product_id as product_id, p.name, p.price,
                    SUM(ti.quantity) as total_quantity,
                    SUM(ti.subtotal) as total_revenue,
                    COUNT(DISTINCT ti.transaction_id) as transaction_count
             FROM shop_transaction_items ti
-            JOIN shop_products p ON ti.product_id = p.product_id
-            JOIN shop_transactions t ON ti.transaction_id = t.transaction_id
-            WHERE p.category = ? AND t.transaction_date BETWEEN ? AND ?
-            GROUP BY p.product_id
+            JOIN products p ON ti.product_id = p.source_product_id AND p.source_type = 'shop'
+            JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
+            WHERE p.category = ? AND t.created_at BETWEEN ? AND ?
+            GROUP BY p.source_product_id
             ORDER BY total_revenue DESC
             ''',
             [selected_category, f"{start_date} 00:00:00", f"{end_date} 23:59:59"]
@@ -1121,13 +1121,13 @@ def generate_category_sales_report():
             if days_diff >= 60:  # If at least 60 days, show monthly trend
                 cursor.execute(
                     '''
-                    SELECT strftime('%Y-%m', t.transaction_date) as month,
+                    SELECT strftime('%Y-%m', t.created_at) as month,
                            SUM(ti.quantity) as quantity,
                            SUM(ti.subtotal) as revenue
                     FROM shop_transaction_items ti
-                    JOIN shop_transactions t ON ti.transaction_id = t.transaction_id
-                    JOIN shop_products p ON ti.product_id = p.product_id
-                    WHERE p.category = ? AND t.transaction_date BETWEEN ? AND ?
+                    JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
+                    JOIN products p ON ti.product_id = p.source_product_id AND p.source_type = 'shop'
+                    WHERE p.category = ? AND t.created_at BETWEEN ? AND ?
                     GROUP BY month
                     ORDER BY month
                     ''',
@@ -1301,12 +1301,12 @@ def export_sales_data():
         if data_choice in ['1', '5']:  # Transactions
             cursor.execute(
                 '''
-                SELECT t.transaction_id, t.transaction_date, u.username, t.student_id,
+                SELECT t.source_transaction_id, t.created_at, u.username, t.student_id,
                        t.total_amount, t.payment_method, t.status
-                FROM shop_transactions t
-                LEFT JOIN users u ON t.user_id = u.id
-                WHERE t.transaction_date BETWEEN ? AND ?
-                ORDER BY t.transaction_date
+                FROM transactions t
+                LEFT JOIN users u ON t.customer_id = u.id
+                WHERE t.source_type = 'shop' AND t.created_at BETWEEN ? AND ?
+                ORDER BY t.created_at
                 ''',
                 [f"{start_date} 00:00:00", f"{end_date} 23:59:59"]
             )
@@ -1318,8 +1318,8 @@ def export_sales_data():
                 transaction_data = []
                 for t in transactions:
                     transaction_data.append({
-                        'transaction_id': t['transaction_id'],
-                        'date': t['transaction_date'],
+                        'transaction_id': t['source_transaction_id'],
+                        'date': t['created_at'],
                         'username': t['username'],
                         'student_id': t['student_id'],
                         'amount': t['total_amount'],
@@ -1335,15 +1335,15 @@ def export_sales_data():
         if data_choice in ['2', '5']:  # Product Sales
             cursor.execute(
                 '''
-                SELECT p.product_id, p.name, p.category,
+                SELECT p.source_product_id as product_id, p.name, p.category,
                        SUM(ti.quantity) as total_quantity,
                        SUM(ti.subtotal) as total_revenue,
                        COUNT(DISTINCT ti.transaction_id) as transaction_count
                 FROM shop_transaction_items ti
-                JOIN shop_products p ON ti.product_id = p.product_id
-                JOIN shop_transactions t ON ti.transaction_id = t.transaction_id
-                WHERE t.transaction_date BETWEEN ? AND ?
-                GROUP BY p.product_id
+                JOIN products p ON ti.product_id = p.source_product_id AND p.source_type = 'shop'
+                JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
+                WHERE t.created_at BETWEEN ? AND ?
+                GROUP BY p.source_product_id
                 ORDER BY total_revenue DESC
                 ''',
                 [f"{start_date} 00:00:00", f"{end_date} 23:59:59"]
@@ -1379,9 +1379,9 @@ def export_sales_data():
                        SUM(ti.subtotal) as total_revenue,
                        COUNT(DISTINCT ti.transaction_id) as transaction_count
                 FROM shop_transaction_items ti
-                JOIN shop_products p ON ti.product_id = p.product_id
-                JOIN shop_transactions t ON ti.transaction_id = t.transaction_id
-                WHERE t.transaction_date BETWEEN ? AND ?
+                JOIN products p ON ti.product_id = p.source_product_id AND p.source_type = 'shop'
+                JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
+                WHERE t.created_at BETWEEN ? AND ?
                 GROUP BY p.category
                 ORDER BY total_revenue DESC
                 ''',
@@ -1411,14 +1411,14 @@ def export_sales_data():
         if data_choice in ['4', '5']:  # Daily Sales
             cursor.execute(
                 '''
-                SELECT date(t.transaction_date) as sale_date,
-                       COUNT(DISTINCT t.transaction_id) as transaction_count,
+                SELECT date(t.created_at) as sale_date,
+                       COUNT(DISTINCT t.source_transaction_id) as transaction_count,
                        SUM(t.total_amount) as total_revenue,
                        COUNT(DISTINCT ti.product_id) as products_sold,
                        SUM(ti.quantity) as quantity_sold
-                FROM shop_transactions t
-                JOIN shop_transaction_items ti ON t.transaction_id = ti.transaction_id
-                WHERE t.transaction_date BETWEEN ? AND ?
+                FROM transactions t
+                JOIN shop_transaction_items ti ON t.source_transaction_id = ti.transaction_id
+                WHERE t.source_type = 'shop' AND t.created_at BETWEEN ? AND ?
                 GROUP BY sale_date
                 ORDER BY sale_date
                 ''',
@@ -1561,13 +1561,13 @@ def get_sales_statistics(days=30):
         cursor.execute(
             '''
             SELECT
-                COUNT(DISTINCT transaction_id) as transaction_count,
+                COUNT(DISTINCT source_transaction_id) as transaction_count,
                 SUM(total_amount) as total_revenue,
                 AVG(total_amount) as avg_transaction,
                 MIN(total_amount) as min_transaction,
                 MAX(total_amount) as max_transaction
-            FROM shop_transactions
-            WHERE transaction_date >= ?
+            FROM transactions
+            WHERE source_type = 'shop' AND created_at >= ?
             ''',
             [start_date.strftime('%Y-%m-%d %H:%M:%S')]
         )
@@ -1578,8 +1578,8 @@ def get_sales_statistics(days=30):
         cursor.execute(
             '''
             SELECT payment_method, COUNT(*) as count, SUM(total_amount) as amount
-            FROM shop_transactions
-            WHERE transaction_date >= ?
+            FROM transactions
+            WHERE source_type = 'shop' AND created_at >= ?
             GROUP BY payment_method
             ORDER BY amount DESC
             ''',
@@ -1593,9 +1593,9 @@ def get_sales_statistics(days=30):
             '''
             SELECT p.category, SUM(ti.subtotal) as revenue, SUM(ti.quantity) as quantity
             FROM shop_transaction_items ti
-            JOIN shop_transactions t ON ti.transaction_id = t.transaction_id
-            JOIN shop_products p ON ti.product_id = p.product_id
-            WHERE t.transaction_date >= ?
+            JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
+            JOIN products p ON ti.product_id = p.source_product_id AND p.source_type = 'shop'
+            WHERE t.created_at >= ?
             GROUP BY p.category
             ORDER BY revenue DESC
             LIMIT 5

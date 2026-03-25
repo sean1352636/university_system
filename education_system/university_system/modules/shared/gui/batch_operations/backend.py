@@ -9,8 +9,11 @@ The class is composed from mixins in the mixins/ package, each providing
 a cohesive group of related methods.
 """
 
+from contextlib import contextmanager
+
 from education_system.university_system.modules.shared.gui.batch_operations.constants import (
     DEFAULT_BATCH_DB,
+    DatabaseManager,
 )
 
 from education_system.university_system.modules.shared.gui.batch_operations.models import (
@@ -73,7 +76,24 @@ class EnhancedBatchOperationManager(
 
     def __init__(self, db_path: str = DEFAULT_BATCH_DB):
         super().__init__(db_path)
+        self.db_manager = _DbManagerAdapter(self.db_path)
         self.progress_callback = None
+
+
+class _DbManagerAdapter:
+    """Adapter that provides the get_connection/close/db_path interface
+    expected by the batch operation mixins, backed by DatabaseManager."""
+
+    def __init__(self, db_path: str):
+        self.db_path = db_path
+
+    @contextmanager
+    def get_connection(self):
+        with DatabaseManager(self.db_path) as db:
+            yield db.conn
+
+    def close(self):
+        pass  # connections are closed by the context manager
 
 
 # ========================================

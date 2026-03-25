@@ -23,15 +23,16 @@ def get_modules():
             if has_module_name:
                 # Use the original query with module_name
                 cursor.execute('''
-                SELECT DISTINCT module_code,
-                       COALESCE(module_name, module_code) as module_name
+                SELECT module_code,
+                       COALESCE(MAX(module_name), module_code) as module_name
                 FROM (
                     SELECT DISTINCT module_code, NULL as module_name
                     FROM attendance_records
-                    UNION
+                    UNION ALL
                     SELECT DISTINCT module_code, module_name
                     FROM student_modules
                 )
+                GROUP BY module_code
                 ORDER BY module_code
                 ''')
             else:

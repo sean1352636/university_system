@@ -1,6 +1,6 @@
 """Tab UI components for the Exam Scheduling System."""
 
-from .schedule_tab import ScheduleTabMixin
-from .exams_tab import ExamsTabMixin
-from .rooms_tab import RoomsTabMixin
-from .calendar_tab import CalendarTabMixin
+from education_system.university_system.modules.domain.academics.gui.exam_scheduler.tabs.schedule_tab import ScheduleTabMixin
+from education_system.university_system.modules.domain.academics.gui.exam_scheduler.tabs.exams_tab import ExamsTabMixin
+from education_system.university_system.modules.domain.academics.gui.exam_scheduler.tabs.rooms_tab import RoomsTabMixin
+from education_system.university_system.modules.domain.academics.gui.exam_scheduler.tabs.calendar_tab import CalendarTabMixin

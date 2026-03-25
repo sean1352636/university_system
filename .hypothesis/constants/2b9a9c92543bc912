@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/academic_calendar/mobile_api.py
+# hypothesis_version: 6.151.9
+
+[100, 200, 404, 500, '#15803D', '#1E3A8A', '#6B7280', '#7C2D12', '#7C3AED', '#DC2626', '#EA580C', '%Y-%m-%d', ',', '/api/mobile/events', '/api/mobile/sync', 'APP_ENV', 'Academic', 'Administrative', 'CORS_ALLOWED_ORIGINS', 'Deadline', 'Event not found', 'GET', 'Holiday', 'POST', 'Social', 'Sports', 'attachments', 'canEdit', 'color', 'data', 'date', 'dateRange', 'date_end', 'date_start', 'day', 'description', 'dev', 'development', 'end', 'endDate', 'error', 'event', 'event_type', 'events', 'hasMore', 'id', 'isAllDay', 'lastSync', 'limit', 'local', 'location', 'manage_schedules', 'month', 'name', 'production', 'reminders', 'start', 'success', 'syncTime', 'title', 'type', 'view', 'viewType', 'week']

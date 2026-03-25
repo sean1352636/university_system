@@ -13,7 +13,7 @@ Functions
 - display_chatbot_integration_menu: Chatbot menu
 """
 
-from .cli_menus import (
+from education_system.university_system.infrastructure.auth.cli.cli_menus import (
     display_auth_menu,
     display_user_management_menu,
     display_role_management_menu,

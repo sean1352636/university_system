@@ -1,4 +1,4 @@
-from ._common import (
+from education_system.university_system.modules.shared.utils.document_manager._common import (
     datetime, timedelta, sqlite3,
     get_connection, _t, log_event,
     EMAIL_SYSTEM_AVAILABLE,
@@ -129,9 +129,10 @@ class NotificationsMixin:
                 future_date = (datetime.now() + timedelta(days=days)).strftime('%Y-%m-%d')
 
                 cursor.execute('''
-                SELECT DISTINCT student_id
-                FROM student_documents
-                WHERE expiry_date <= ? AND expiry_date >= date('now')
+                SELECT DISTINCT owner_id
+                FROM documents
+                WHERE source_type = 'student'
+                AND expiry_date <= ? AND expiry_date >= date('now')
                 ''', (future_date,))
                 recipients = [row[0] for row in cursor.fetchall()]
 
@@ -191,7 +192,8 @@ class NotificationsMixin:
                 SELECT DISTINCT s.student_id, s.first_name, s.last_name
                 FROM students s
                 CROSS JOIN document_types dt
-                LEFT JOIN student_documents sd ON s.student_id = sd.student_id
+                LEFT JOIN documents sd ON s.student_id = sd.owner_id
+                    AND sd.source_type = 'student'
                     AND dt.type_id = sd.type_id AND sd.is_current_version = 1
                 WHERE dt.is_required = 1 AND dt.is_active = 1 AND sd.document_id IS NULL
                 ''')
@@ -211,10 +213,10 @@ class NotificationsMixin:
                 future_date = (datetime.now() + timedelta(days=days)).strftime('%Y-%m-%d')
 
                 cursor.execute('''
-                SELECT DISTINCT sd.student_id, s.first_name, dt.type_name, sd.expiry_date
-                FROM student_documents sd
+                SELECT DISTINCT sd.owner_id as student_id, s.first_name, dt.type_name, sd.expiry_date
+                FROM documents sd
                 JOIN document_types dt ON sd.type_id = dt.type_id
-                JOIN students s ON sd.student_id = s.student_id
+                JOIN students s ON sd.owner_id = s.student_id
                 WHERE sd.expiry_date <= ? AND sd.expiry_date >= date('now')
                   AND sd.is_current_version = 1
                 ''', (future_date,))

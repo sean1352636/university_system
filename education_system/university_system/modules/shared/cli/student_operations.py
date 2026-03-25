@@ -8,7 +8,7 @@ import hashlib
 import random
 import secrets
 
-from .imports import (
+from education_system.university_system.modules.shared.cli.imports import (
     logging, sqlite3, time, datetime, DB_PATH, logger, _t,
     log_activity, log_create, log_read, log_update, log_delete, get_auth,
     compulsory_module_1, compulsory_module_2,
@@ -17,8 +17,8 @@ from .imports import (
     DS_optional_module_1, DS_optional_module_2, DS_optional_module_3, DS_optional_module_4,
 )
 
-from .auth_manager import ensure_user_in_communication_system
-from .database_manager import DatabaseError, ValidationError, safe_db_operation_with_retry, enhanced_db_operation
+from education_system.university_system.modules.shared.cli.auth_manager import ensure_user_in_communication_system
+from education_system.university_system.modules.shared.cli.database_manager import DatabaseError, ValidationError, safe_db_operation_with_retry, enhanced_db_operation
 from education_system.university_system.infrastructure.database.data_backup import backup_before_operation
 from education_system.university_system.infrastructure.email.email_service import (
     send_registration_confirmation, send_update_confirmation
@@ -108,7 +108,7 @@ def create_student_record():
     input("Press Enter to proceed...")
 
     # Generate student ID and email
-    student_id = random.randint(0, 9999999)
+    student_id = secrets.randbelow(10000000)
     student_id_str = str(student_id).zfill(7)
     email_address = f"C{student_id_str}@tees.ac.uk"
     print(f"Student ID: {student_id_str}")
@@ -163,7 +163,10 @@ def create_student_record():
             # Insert into students table with better error handling
             try:
                 cursor.execute(
-                    'INSERT INTO students VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    '''INSERT INTO students (student_id, email_address, title,
+                       first_name, middle_name, last_name, gender, dob, age,
+                       course, registration_datetime, status, enrollment_date)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                     (
                         student_id_str,
                         email_address,
@@ -1073,16 +1076,16 @@ def display_student_records_menu():
             elif action == 'delete_student':
                 delete_student_record()
             elif action == 'search_first_name':
-                from .student_search import search_student_by_first_name
+                from education_system.university_system.modules.shared.cli.student_search import search_student_by_first_name
                 search_student_by_first_name()
             elif action == 'search_last_name':
-                from .student_search import search_student_by_last_name
+                from education_system.university_system.modules.shared.cli.student_search import search_student_by_last_name
                 search_student_by_last_name()
             elif action == 'search_id':
-                from .student_search import search_student_by_student_id
+                from education_system.university_system.modules.shared.cli.student_search import search_student_by_student_id
                 search_student_by_student_id()
             elif action == 'search_date':
-                from .student_search import search_student_by_registration_date
+                from education_system.university_system.modules.shared.cli.student_search import search_student_by_registration_date
                 search_student_by_registration_date()
         elif choice == str(option_num):
             return

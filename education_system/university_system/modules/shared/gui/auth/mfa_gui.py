@@ -646,6 +646,12 @@ class MFASetupWizard(tk.Toplevel):
         codes_text.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         recovery_codes = self.setup_data.get('recovery_codes', [])
+        # Generate recovery codes if not already created (e.g. email/SMS-only setup)
+        if not recovery_codes:
+            result = self.mfa_service.generate_recovery_codes(self.user_id)
+            if result.get('success'):
+                recovery_codes = result.get('codes', [])
+                self.setup_data['recovery_codes'] = recovery_codes
         codes_text.insert(tk.END, _t("mfa.recovery.codes_header") + "\n")
         codes_text.insert(tk.END, "=" * 40 + "\n\n")
         for i, code in enumerate(recovery_codes, 1):

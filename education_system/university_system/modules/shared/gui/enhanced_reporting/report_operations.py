@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from .core import ReportingSystemGUI
-from .core import send_report_email  # standalone helper
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import ReportingSystemGUI
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import send_report_email  # standalone helper
 
 
 def open_report(gui: ReportingSystemGUI, *args: Any, **kwargs: Any) -> None:

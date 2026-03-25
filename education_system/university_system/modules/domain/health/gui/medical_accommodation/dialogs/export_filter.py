@@ -1,10 +1,10 @@
 # dialogs/export_filter.py
 # Dialog for selecting export filters.
 
-from .._common import tk, ttk, messagebox, CLI_AVAILABLE
+from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import tk, ttk, messagebox, CLI_AVAILABLE
 
 if CLI_AVAILABLE:
-    from .._common import get_accommodation_types
+    from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import get_accommodation_types
 
 
 class ExportFilterDialog:

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/__init__.py
+# hypothesis_version: 6.151.9
+
+['barber_cli', 'betting_shop_cli', 'butcher_cli', 'cinema_cli', 'nailbar_cli', 'schedule_appointment', 'view_health_records', 'view_medical_history']

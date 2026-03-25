@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/student_union/services/volunteering.py
+# hypothesis_version: 6.151.9
+
+[100, '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', '1', '2', '3', '4', '=', 'Community Service', 'completed', 'id', 'signed_up', 'y']

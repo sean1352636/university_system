@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/student_union/clubs/club_management/competitions.py
+# hypothesis_version: 6.151.9
+
+['\nYour clubs:', '%Y-%m-%d %H:%M:%S', '1', '2', '3', '4', '5', '6', '7', '7. Update scores', '8', 'Choose an option: ', 'Coming soon...', 'Invalid choice.', 'Invalid selection.', 'id', 'manage_all_clubs', 'manage_union_reps']

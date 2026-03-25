@@ -277,20 +277,22 @@ class AnalyticsMixin:
                 student_id = self._get_student_id()
 
             conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('''
-                SELECT
-                    COUNT(*) as total_submissions,
-                    COUNT(CASE WHEN grade IS NOT NULL THEN 1 END) as graded_count,
-                    AVG(grade) as avg_grade,
-                    COUNT(CASE WHEN late_submission = 1 THEN 1 END) as late_count
-                FROM assignment_submissions
-                WHERE student_id = ?
-            ''', (student_id,))
+                cursor.execute('''
+                    SELECT
+                        COUNT(*) as total_submissions,
+                        COUNT(CASE WHEN grade IS NOT NULL THEN 1 END) as graded_count,
+                        AVG(grade) as avg_grade,
+                        COUNT(CASE WHEN late_submission = 1 THEN 1 END) as late_count
+                    FROM assignment_submissions
+                    WHERE student_id = ?
+                ''', (student_id,))
 
-            result = cursor.fetchone()
-            conn.close()
+                result = cursor.fetchone()
+            finally:
+                conn.close()
 
             return {
                 'total_submissions': result[0],

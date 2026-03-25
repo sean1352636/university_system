@@ -5,6 +5,7 @@ Manages lost and found items with photo uploads, claim verification, and matchin
 """
 
 from education_system.university_system.infrastructure.database.db import sqlite3
+from education_system.university_system.core.sql_safety import escape_like
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Tuple
 import json
@@ -523,7 +524,7 @@ class LostFoundService:
                 WHERE (item_name LIKE ? OR description LIKE ?
                        OR distinctive_features LIKE ? OR brand LIKE ?)
             """
-            params = [f"%{search_term}%"] * 4
+            params = [f"%{escape_like(search_term)}%"] * 4
 
             if category:
                 query += " AND category = ?"

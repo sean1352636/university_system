@@ -154,7 +154,7 @@ class CampusEventsGUI:
         ttk.Button(btn_frame, text=_t("common.refresh"), command=self._load_events).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=_t("campus_events.cancel_event"), command=self._cancel_event).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=_t("campus_events.uncancel_event"), command=self._uncancel_event).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text=_t("campus_events.add_to_calendar"), command=self._add_to_calendar).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t("campus_events.buttons.export_to_ics"), command=self._export_selected_to_ics).pack(side=tk.LEFT, padx=5)
 
         # Events list
         list_frame = ttk.LabelFrame(tab, text=_t("campus_events.events_list"), padding="10")
@@ -400,10 +400,13 @@ class CampusEventsGUI:
 
             with get_connection() as conn:
                 cursor = conn.execute('''
-                    SELECT event_id, event_name, event_type, event_category,
-                           event_date, start_time, location, capacity, status
-                    FROM campus_events
-                    ORDER BY event_date DESC, start_time DESC
+                    SELECT event_id, title AS event_name, event_type, event_category,
+                           DATE(start_datetime) AS event_date,
+                           TIME(start_datetime) AS start_time,
+                           location, max_capacity AS capacity, status
+                    FROM unified_events
+                    WHERE source_type = 'campus'
+                    ORDER BY start_datetime DESC
                     LIMIT 100
                 ''')
 
@@ -431,9 +434,11 @@ class CampusEventsGUI:
 
             with get_connection() as conn:
                 cursor = conn.execute('''
-                    SELECT registration_id, event_id, user_id, user_type,
+                    SELECT registration_id, r.event_id, user_id, user_type,
                            registration_date, attendance_status, checked_in_at
-                    FROM campus_event_registrations
+                    FROM unified_event_registrations r
+                    JOIN unified_events e ON r.event_id = e.event_id
+                    WHERE e.source_type = 'campus'
                     ORDER BY registration_date DESC
                     LIMIT 100
                 ''')
@@ -564,7 +569,7 @@ class CampusEventsGUI:
 
         try:
             with transaction() as conn:
-                conn.execute('UPDATE campus_events SET status = ? WHERE event_id = ?', ('cancelled', event_id))
+                conn.execute('UPDATE unified_events SET status = ? WHERE event_id = ? AND source_type = ?', ('cancelled', event_id, 'campus'))
 
             log_activity(f'Cancelled campus event: {event_id}',
                         user=self.auth.current_user.get('username'))
@@ -595,7 +600,7 @@ class CampusEventsGUI:
 
         try:
             with transaction() as conn:
-                conn.execute('UPDATE campus_events SET status = ? WHERE event_id = ?', ('scheduled', event_id))
+                conn.execute('UPDATE unified_events SET status = ? WHERE event_id = ? AND source_type = ?', ('scheduled', event_id, 'campus'))
 
             log_activity(f'Un-cancelled campus event: {event_id}',
                         user=self.auth.current_user.get('username'))
@@ -605,8 +610,8 @@ class CampusEventsGUI:
         except Exception as e:
             messagebox.showerror(_t("common.error"), _t("campus_events.errors.uncancel_event", error=str(e)))
 
-    def _add_to_calendar(self):
-        """Add selected event to Academic Calendar or export to .ics file"""
+    def _export_selected_to_ics(self):
+        """Export selected event to .ics file"""
         selection = self.events_tree.selection()
         if not selection:
             messagebox.showwarning(_t("common.warning"), _t("campus_events.warnings.select_event_calendar"))
@@ -616,13 +621,15 @@ class CampusEventsGUI:
         event_id = item['values'][0]
 
         try:
-            # Get full event details
             with get_connection() as conn:
                 cursor = conn.execute('''
-                    SELECT event_name, event_date, start_time, end_time,
-                           location, description, event_type
-                    FROM campus_events
-                    WHERE event_id = ?
+                    SELECT title AS event_name,
+                           DATE(start_datetime) AS event_date,
+                           TIME(start_datetime) AS start_time,
+                           TIME(end_datetime) AS end_time,
+                           location, description
+                    FROM unified_events
+                    WHERE event_id = ? AND source_type = 'campus'
                 ''', (event_id,))
                 event = cursor.fetchone()
 
@@ -630,104 +637,12 @@ class CampusEventsGUI:
                     messagebox.showerror(_t("common.error"), _t("campus_events.errors.event_not_found"))
                     return
 
-            event_name = event['event_name']
-            event_date = event['event_date']
-            start_time = event['start_time']
-            end_time = event['end_time']
-            location = event['location'] or _t("campus_events.defaults.tba")
-            description = event['description'] or _t("campus_events.defaults.campus_event")
-            event_type = event['event_type'] or _t("campus_events.defaults.campus_event")
-
-            # Ask user what they want to do
-            choice_dialog = tk.Toplevel(self.window)
-            choice_dialog.title(_t("campus_events.dialogs.add_to_calendar"))
-            choice_dialog.geometry("400x200")
-            choice_dialog.transient(self.window)
-            choice_dialog.grab_set()
-
-            user_choice = tk.StringVar(value="")
-
-            ttk.Label(
-                choice_dialog,
-                text=_t("campus_events.dialogs.calendar_choice_prompt"),
-                font=('Arial', 11, 'bold')
-            ).pack(pady=20)
-
-            ttk.Button(
-                choice_dialog,
-                text=_t("campus_events.buttons.add_to_academic_calendar"),
-                command=lambda: [user_choice.set("academic"), choice_dialog.destroy()]
-            ).pack(pady=5, padx=20, fill=tk.X)
-
-            ttk.Button(
-                choice_dialog,
-                text=_t("campus_events.buttons.export_to_ics"),
-                command=lambda: [user_choice.set("export"), choice_dialog.destroy()]
-            ).pack(pady=5, padx=20, fill=tk.X)
-
-            ttk.Button(
-                choice_dialog,
-                text=_t("common.cancel"),
-                command=lambda: [user_choice.set(""), choice_dialog.destroy()]
-            ).pack(pady=5, padx=20, fill=tk.X)
-
-            self.window.wait_window(choice_dialog)
-
-            if user_choice.get() == "academic":
-                # Add to Academic Calendar
-                self._add_to_academic_calendar(event_name, event_date, description, event_type)
-            elif user_choice.get() == "export":
-                # Export to .ics file
-                self._export_to_ics(event_id, event_name, event_date, start_time, end_time, location, description)
-
-        except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("campus_events.errors.add_to_calendar", error=str(e)))
-
-    def _add_to_academic_calendar(self, event_name, event_date, description, event_type):
-        """Add event to the Academic Calendar system"""
-        try:
-            from datetime import datetime
-            from education_system.university_system.infrastructure.database.db import transaction
-
-            current_time = datetime.now().isoformat()
-            user_id = self.auth.current_user.get('user_id') or self.auth.current_user.get('username')
-
-            # Map campus event fields to academic calendar schema
-            # events table schema: event_id (auto), title, description, category,
-            # start_datetime, end_datetime, location, organizer_id, etc.
-
-            # Create datetime strings (academic calendar expects datetime, not separate date/time)
-            start_datetime = f"{event_date}T00:00:00"
-            end_datetime = f"{event_date}T23:59:59"
-
-            # Insert directly into events table using standard transaction
-            with transaction() as conn:
-                cursor = conn.execute('''
-                    INSERT INTO events (
-                        title, description, category,
-                        start_datetime, end_datetime, location,
-                        organizer_id, organizer_type,
-                        created_at, updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    event_name,
-                    description,
-                    event_type,
-                    start_datetime,
-                    end_datetime,
-                    'TBA',  # Default location
-                    user_id,
-                    'staff',  # Organizer type
-                    current_time,
-                    current_time
-                ))
-                event_id = cursor.lastrowid
-
-            log_activity(f'Added campus event to academic calendar: {event_name}',
-                        user=self.auth.current_user.get('username'))
-
-            messagebox.showinfo(_t("common.success"),
-                f"Event added to Academic Calendar!\n\nEvent ID: {event_id}\nName: {event_name}\nDate: {event_date}\nCategory: {event_type}")
+            self._export_to_ics(
+                event_id, event['event_name'], event['event_date'],
+                event['start_time'], event['end_time'],
+                event['location'] or 'TBA',
+                event['description'] or ''
+            )
 
         except Exception as e:
             messagebox.showerror(_t("common.error"),
@@ -1021,12 +936,56 @@ class CreateEventDialog:
 
             messagebox.showinfo(_t("common.success"), _t("campus_events.messages.event_created", event_id=event_id))
             self.callback()
+
+            # Offer ICS export
+            if messagebox.askyesno(_t("common.export"),
+                                   "Would you like to export this event as an .ics calendar file?"):
+                self._offer_ics_export(event_id, name, event_date, start_time, end_time, location, description)
+
             self.dialog.destroy()
 
         except ValueError:
             messagebox.showerror(_t("common.error"), _t("campus_events.errors.invalid_capacity"))
         except Exception as e:
             messagebox.showerror(_t("common.error"), _t("campus_events.errors.create_event", error=str(e)))
+
+    def _offer_ics_export(self, event_id, event_name, event_date, start_time, end_time, location, description):
+        """Export event to .ics file"""
+        try:
+            from tkinter import filedialog
+
+            start_dt = datetime.strptime(f"{event_date} {start_time}", "%Y-%m-%d %H:%M")
+            end_dt = datetime.strptime(f"{event_date} {end_time}", "%Y-%m-%d %H:%M")
+
+            ics_content = (
+                "BEGIN:VCALENDAR\nVERSION:2.0\n"
+                "PRODID:-//Campus Events//University System//EN\n"
+                "BEGIN:VEVENT\n"
+                f"UID:{event_id}@campusevents.university.edu\n"
+                f"DTSTAMP:{datetime.now().strftime('%Y%m%dT%H%M%S')}\n"
+                f"DTSTART:{start_dt.strftime('%Y%m%dT%H%M%S')}\n"
+                f"DTEND:{end_dt.strftime('%Y%m%dT%H%M%S')}\n"
+                f"SUMMARY:{event_name}\n"
+                f"LOCATION:{location or 'TBA'}\n"
+                f"DESCRIPTION:{description or ''}\n"
+                "STATUS:CONFIRMED\n"
+                "END:VEVENT\nEND:VCALENDAR"
+            )
+
+            filename = filedialog.asksaveasfilename(
+                defaultextension=".ics",
+                filetypes=[("iCalendar files", "*.ics"), ("All files", "*.*")],
+                initialfile=f"{event_name.replace(' ', '_')}.ics"
+            )
+
+            if filename:
+                with open(filename, 'w') as f:
+                    f.write(ics_content)
+                messagebox.showinfo(_t("common.success"),
+                    _t("campus_events.messages.exported_to_ics", filename=filename))
+
+        except Exception as e:
+            messagebox.showerror(_t("common.error"), f"Failed to export: {e}")
 
 
 class ViewUpcomingEventsDialog:
@@ -1163,11 +1122,15 @@ class RegisterForEventDialog:
         try:
             with get_connection() as conn:
                 cursor = conn.execute('''
-                    SELECT event_id, event_name, event_date, start_time, location
-                    FROM campus_events
-                    WHERE event_date >= DATE('now')
+                    SELECT event_id, title AS event_name,
+                           DATE(start_datetime) AS event_date,
+                           TIME(start_datetime) AS start_time,
+                           location
+                    FROM unified_events
+                    WHERE source_type = 'campus'
+                      AND DATE(start_datetime) >= DATE('now')
                       AND status = 'scheduled'
-                    ORDER BY event_date, start_time
+                    ORDER BY start_datetime
                     LIMIT 50
                 ''')
                 for row in cursor.fetchall():
@@ -1382,13 +1345,15 @@ class SendAnnouncementDialog:
         try:
             with get_connection() as conn:
                 cursor = conn.execute('''
-                    SELECT DISTINCT e.event_id, e.event_name, e.event_date, e.start_time,
+                    SELECT DISTINCT e.event_id, e.title AS event_name,
+                           DATE(e.start_datetime) AS event_date,
+                           TIME(e.start_datetime) AS start_time,
                            COUNT(r.registration_id) as reg_count
-                    FROM campus_events e
-                    LEFT JOIN campus_event_registrations r ON e.event_id = r.event_id
-                    WHERE e.status = 'scheduled'
+                    FROM unified_events e
+                    LEFT JOIN unified_event_registrations r ON e.event_id = r.event_id
+                    WHERE e.source_type = 'campus' AND e.status = 'scheduled'
                     GROUP BY e.event_id
-                    ORDER BY e.event_date DESC, e.start_time DESC
+                    ORDER BY e.start_datetime DESC
                     LIMIT 50
                 ''')
                 for row in cursor.fetchall():

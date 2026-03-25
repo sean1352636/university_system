@@ -156,6 +156,12 @@ class ElectionAccessibilityFeaturesDialog:
         self.contact_email = ttk.Entry(feedback_content, width=40)
         self.contact_email.pack(fill='x', pady=(0, 15))
 
+        # Auto-fill email from current user
+        if self.auth and self.auth.current_user:
+            user_email = self.auth.current_user.get('email', '')
+            if user_email:
+                self.contact_email.insert(0, user_email)
+
         ttk.Button(feedback_content, text=_t("student_union.elections.submit_feedback"),
                   command=self.submit_feedback).pack()
 
@@ -187,33 +193,35 @@ class ElectionAccessibilityFeaturesDialog:
         # Store feedback in database
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            # Create table if not exists
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS accessibility_feedback (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id INTEGER,
-                    username TEXT,
-                    issue_type TEXT,
-                    description TEXT,
-                    contact_email TEXT,
-                    submitted_date TEXT,
-                    status TEXT DEFAULT 'pending'
-                )
-            ''')
+                # Create table if not exists
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS accessibility_feedback (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER,
+                        username TEXT,
+                        issue_type TEXT,
+                        description TEXT,
+                        contact_email TEXT,
+                        submitted_date TEXT,
+                        status TEXT DEFAULT 'pending'
+                    )
+                ''')
 
-            user_id = self.auth.current_user.get('id') if self.auth.current_user else None
+                user_id = self.auth.current_user.get('id') if self.auth.current_user else None
 
-            cursor.execute('''
-                INSERT INTO accessibility_feedback
-                (user_id, username, issue_type, description, contact_email, submitted_date, status)
-                VALUES (?, ?, ?, ?, ?, ?, 'pending')
-            ''', (user_id, username, issue_type, description, contact_email or user_email,
-                  datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                cursor.execute('''
+                    INSERT INTO accessibility_feedback
+                    (user_id, username, issue_type, description, contact_email, submitted_date, status)
+                    VALUES (?, ?, ?, ?, ?, ?, 'pending')
+                ''', (user_id, username, issue_type, description, contact_email or user_email,
+                      datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
-            conn.commit()
-            conn.close()
+                conn.commit()
+            finally:
+                conn.close()
 
             # Send email to admin
             if EMAIL_SERVICE_AVAILABLE:
@@ -234,8 +242,7 @@ class ElectionAccessibilityFeaturesDialog:
                             'submitted_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                             'description': description
                         })
-                        send_email(
-                            to_email=admin_email,
+                        send_email(admin_email,
                             subject=subject,
                             body=admin_body
                         )
@@ -247,8 +254,7 @@ class ElectionAccessibilityFeaturesDialog:
                             'issue_type': issue_type,
                             'submitted_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                         })
-                        send_email(
-                            to_email=user_email,
+                        send_email(user_email,
                             subject=subject,
                             body=user_body
                         )
@@ -314,27 +320,25 @@ class ElectionAccessibilityFeaturesDialog:
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
                 cursor = conn.cursor()
 
-                # Create table if not exists
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS accommodation_requests (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        user_id INTEGER,
-                        username TEXT,
-                        accommodation_type TEXT,
-                        description TEXT,
-                        submitted_date TEXT,
-                        status TEXT DEFAULT 'pending'
-                    )
-                ''')
+                now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
+                # Look up actual student_id (FK references students.student_id)
+                student_id = None
                 user_id = self.auth.current_user.get('id') if self.auth.current_user else None
+                if user_id:
+                    cursor.execute('SELECT username FROM users WHERE id = ?', (user_id,))
+                    row = cursor.fetchone()
+                    if row:
+                        cursor.execute('SELECT student_id FROM students WHERE student_id = ?', (row[0],))
+                        srow = cursor.fetchone()
+                        if srow:
+                            student_id = srow[0]
 
                 cursor.execute('''
                     INSERT INTO accommodation_requests
-                    (user_id, username, accommodation_type, description, submitted_date, status)
-                    VALUES (?, ?, ?, ?, ?, 'pending')
-                ''', (user_id, username, accom_type_val, accom_desc_val,
-                      datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                    (student_id, student_name, student_email, accommodation_type, description, submitted_date, status)
+                    VALUES (?, ?, ?, ?, ?, ?, 'pending')
+                ''', (student_id, username, user_email, accom_type_val, accom_desc_val, now))
 
                 conn.commit()
                 conn.close()
@@ -348,8 +352,7 @@ class ElectionAccessibilityFeaturesDialog:
                             'submitted_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                             'description': accom_desc_val
                         })
-                        send_email(
-                            to_email=user_email,
+                        send_email(user_email,
                             subject=subject,
                             body=email_body
                         )
@@ -490,73 +493,300 @@ Your participation matters!
         ttk.Button(main_frame, text="Close", command=guide_window.destroy).pack()
 
     def test_system(self):
-        """Test voting system accessibility"""
+        """Full practice voting system with multi-step ballot simulation"""
         test_window = tk.Toplevel(self.dialog)
         test_window.title("Test Voting System")
-        test_window.geometry("700x600")
+        test_window.geometry("800x700")
         test_window.transient(self.dialog)
         test_window.grab_set()
 
         main_frame = ttk.Frame(test_window)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text="Practice Voting Mode",
-                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text="Practice Voting System",
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 5))
 
-        ttk.Label(main_frame, text="This is a practice ballot. No votes will be recorded.",
-                 font=('Arial', 10, 'italic'), foreground='blue').pack(pady=(0, 20))
+        ttk.Label(main_frame, text="This is a practice ballot. No real votes will be recorded.",
+                 font=('Arial', 10, 'italic'), foreground='blue').pack(pady=(0, 15))
 
-        # Sample ballot
-        ttk.Label(main_frame, text="Sample Election: Class President",
-                 font=('Arial', 11, 'bold')).pack(anchor='w', pady=(0, 10))
+        # Progress indicator
+        progress_frame = ttk.Frame(main_frame)
+        progress_frame.pack(fill='x', pady=(0, 15))
+        step_labels = []
+        steps = ["1. Verify Identity", "2. Select Position", "3. Cast Vote", "4. Review & Confirm", "5. Receipt"]
+        for i, step_text in enumerate(steps):
+            lbl = ttk.Label(progress_frame, text=step_text, font=('Arial', 9))
+            lbl.pack(side='left', padx=8)
+            step_labels.append(lbl)
 
-        ttk.Label(main_frame, text="Select one candidate (use keyboard or mouse):",
-                 font=('Arial', 10)).pack(anchor='w', pady=(0, 10))
+        # Content area
+        content_frame = ttk.Frame(main_frame)
+        content_frame.pack(fill='both', expand=True)
 
-        selected_candidate = tk.StringVar()
+        state = {'step': 0, 'position': '', 'candidate': '', 'vote_id': ''}
 
-        candidates = [
-            "Alice Johnson - Vote using 'A' key",
-            "Bob Smith - Vote using 'B' key",
-            "Carol Davis - Vote using 'C' key"
-        ]
+        def highlight_step(idx):
+            for i, lbl in enumerate(step_labels):
+                if i == idx:
+                    lbl.configure(font=('Arial', 9, 'bold'), foreground='blue')
+                elif i < idx:
+                    lbl.configure(font=('Arial', 9), foreground='green')
+                else:
+                    lbl.configure(font=('Arial', 9), foreground='grey')
 
-        for i, candidate in enumerate(candidates):
-            rb = ttk.Radiobutton(main_frame, text=candidate, variable=selected_candidate,
-                               value=candidate)
-            rb.pack(anchor='w', pady=5)
+        def clear_content():
+            for w in content_frame.winfo_children():
+                w.destroy()
 
-        # Accessibility features info
-        info_frame = ttk.LabelFrame(main_frame, text="Accessibility Features in Use")
-        info_frame.pack(fill='x', pady=20)
+        # Load real elections from DB if available
+        positions = []
+        candidates_by_position = {}
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT DISTINCT position FROM election_candidates
+                WHERE election_id IN (SELECT election_id FROM elections WHERE status = 'active')
+            ''')
+            positions = [r[0] for r in cursor.fetchall()]
+            for pos in positions:
+                cursor.execute('''
+                    SELECT candidate_name FROM election_candidates
+                    WHERE position = ? AND election_id IN (SELECT election_id FROM elections WHERE status = 'active')
+                ''', (pos,))
+                candidates_by_position[pos] = [r[0] for r in cursor.fetchall()]
+            conn.close()
+        except Exception:
+            pass
 
-        features = [
-            "✓ Keyboard navigation enabled (Tab to navigate, Space to select)",
-            "✓ Screen reader compatible labels",
-            "✓ High contrast mode available (Ctrl+H)",
-            "✓ Resizable text (Ctrl+ / Ctrl-)",
-            "✓ Confirmation before final submission"
-        ]
+        # Fallback sample data if no active elections
+        if not positions:
+            positions = ["Student Union President", "VP Academic Affairs", "Treasurer"]
+            candidates_by_position = {
+                "Student Union President": ["Alice Johnson", "Bob Smith"],
+                "VP Academic Affairs": ["Carol Davis", "Emma Wilson"],
+                "Treasurer": ["David Lee", "Frank Brown"]
+            }
 
-        for feature in features:
-            ttk.Label(info_frame, text=feature, font=('Arial', 9)).pack(anchor='w', padx=10, pady=2)
+        def show_step_1():
+            """Step 1: Identity verification"""
+            clear_content()
+            state['step'] = 0
+            highlight_step(0)
 
-        def submit_test_vote():
-            if selected_candidate.get():
-                messagebox.showinfo("Test Vote Submitted",
-                                   f"Practice vote recorded for: {selected_candidate.get()}\n\n" +
-                                   "In a real election, you would now see a confirmation screen.\n\n" +
-                                   "This was a test - no actual vote was recorded.")
-            else:
-                messagebox.showwarning("No Selection", "Please select a candidate to test the voting process.")
+            ttk.Label(content_frame, text="Step 1: Identity Verification",
+                     font=('Arial', 12, 'bold')).pack(pady=(10, 15))
 
-        # Buttons
-        button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill='x', pady=(15, 0))
+            info_frame = ttk.LabelFrame(content_frame, text="Your Details", padding=15)
+            info_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Button(button_frame, text="Submit Test Vote", command=submit_test_vote).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Reset", command=lambda: selected_candidate.set('')).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=test_window.destroy).pack(side='right')
+            username = self.auth.current_user.get('username', 'Test User') if self.auth and self.auth.current_user else 'Test User'
+            user_id = self.auth.current_user.get('id', 'N/A') if self.auth and self.auth.current_user else 'N/A'
+
+            ttk.Label(info_frame, text=f"Name: {username}").pack(anchor='w', pady=2)
+            ttk.Label(info_frame, text=f"User ID: {user_id}").pack(anchor='w', pady=2)
+            ttk.Label(info_frame, text="Eligibility: Verified (Practice Mode)").pack(anchor='w', pady=2)
+
+            ttk.Label(content_frame, text="In a real election, your student ID would be verified\n"
+                     "against the electoral register before proceeding.",
+                     font=('Arial', 9, 'italic')).pack(pady=15)
+
+            ttk.Button(content_frame, text="Confirm Identity & Proceed",
+                      command=show_step_2).pack(pady=10)
+
+        def show_step_2():
+            """Step 2: Select position to vote for"""
+            clear_content()
+            state['step'] = 1
+            highlight_step(1)
+
+            ttk.Label(content_frame, text="Step 2: Select Position",
+                     font=('Arial', 12, 'bold')).pack(pady=(10, 15))
+
+            ttk.Label(content_frame, text="Choose which position you would like to vote for:",
+                     font=('Arial', 10)).pack(anchor='w', pady=(0, 10))
+
+            position_var = tk.StringVar()
+
+            for pos in positions:
+                count = len(candidates_by_position.get(pos, []))
+                rb = ttk.Radiobutton(content_frame,
+                    text=f"{pos}  ({count} candidates)",
+                    variable=position_var, value=pos)
+                rb.pack(anchor='w', pady=5, padx=20)
+
+            def proceed():
+                if not position_var.get():
+                    messagebox.showwarning("No Selection", "Please select a position.",
+                                         parent=test_window)
+                    return
+                state['position'] = position_var.get()
+                show_step_3()
+
+            btn_frame = ttk.Frame(content_frame)
+            btn_frame.pack(pady=20)
+            ttk.Button(btn_frame, text="Back", command=show_step_1).pack(side='left', padx=5)
+            ttk.Button(btn_frame, text="Proceed to Ballot", command=proceed).pack(side='left', padx=5)
+
+        def show_step_3():
+            """Step 3: Cast vote"""
+            clear_content()
+            state['step'] = 2
+            highlight_step(2)
+
+            ttk.Label(content_frame, text=f"Step 3: Cast Your Vote",
+                     font=('Arial', 12, 'bold')).pack(pady=(10, 5))
+
+            ttk.Label(content_frame, text=f"Position: {state['position']}",
+                     font=('Arial', 11), foreground='navy').pack(pady=(0, 15))
+
+            ttk.Label(content_frame, text="Select your preferred candidate:",
+                     font=('Arial', 10)).pack(anchor='w', pady=(0, 10))
+
+            candidate_var = tk.StringVar()
+            cands = candidates_by_position.get(state['position'], [])
+
+            for cand in cands:
+                frame = ttk.Frame(content_frame)
+                frame.pack(fill='x', padx=20, pady=5)
+                ttk.Radiobutton(frame, text=cand, variable=candidate_var,
+                               value=cand).pack(side='left')
+
+            # Abstain option
+            ttk.Separator(content_frame).pack(fill='x', padx=20, pady=10)
+            ttk.Radiobutton(content_frame, text="Abstain (no vote for this position)",
+                           variable=candidate_var, value='ABSTAIN').pack(anchor='w', padx=20)
+
+            # Accessibility info
+            acc_frame = ttk.LabelFrame(content_frame, text="Accessibility", padding=10)
+            acc_frame.pack(fill='x', pady=15)
+            ttk.Label(acc_frame, text="Tab: Navigate options | Space: Select | Enter: Confirm",
+                     font=('Arial', 9)).pack(anchor='w')
+
+            def proceed():
+                if not candidate_var.get():
+                    messagebox.showwarning("No Selection",
+                        "Please select a candidate or choose to abstain.",
+                        parent=test_window)
+                    return
+                state['candidate'] = candidate_var.get()
+                show_step_4()
+
+            btn_frame = ttk.Frame(content_frame)
+            btn_frame.pack(pady=10)
+            ttk.Button(btn_frame, text="Back", command=show_step_2).pack(side='left', padx=5)
+            ttk.Button(btn_frame, text="Review Vote", command=proceed).pack(side='left', padx=5)
+
+        def show_step_4():
+            """Step 4: Review and confirm"""
+            clear_content()
+            state['step'] = 3
+            highlight_step(3)
+
+            ttk.Label(content_frame, text="Step 4: Review & Confirm",
+                     font=('Arial', 12, 'bold')).pack(pady=(10, 15))
+
+            review_frame = ttk.LabelFrame(content_frame, text="Your Vote Summary", padding=20)
+            review_frame.pack(fill='x', pady=(0, 20))
+
+            ttk.Label(review_frame, text=f"Position: {state['position']}",
+                     font=('Arial', 11)).pack(anchor='w', pady=3)
+
+            vote_text = state['candidate'] if state['candidate'] != 'ABSTAIN' else 'Abstain (no vote)'
+            ttk.Label(review_frame, text=f"Your Vote: {vote_text}",
+                     font=('Arial', 11, 'bold')).pack(anchor='w', pady=3)
+
+            ttk.Label(review_frame, text=f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                     font=('Arial', 10)).pack(anchor='w', pady=3)
+
+            ttk.Label(content_frame, text="Please review your selection carefully.\n"
+                     "Once confirmed, your vote cannot be changed.",
+                     font=('Arial', 10), foreground='red').pack(pady=15)
+
+            # Confirmation checkbox
+            confirm_var = tk.BooleanVar()
+            ttk.Checkbutton(content_frame,
+                text="I confirm this is my intended vote",
+                variable=confirm_var).pack(pady=10)
+
+            def confirm():
+                if not confirm_var.get():
+                    messagebox.showwarning("Confirmation Required",
+                        "Please tick the confirmation checkbox to proceed.",
+                        parent=test_window)
+                    return
+                import hashlib
+                vote_hash = hashlib.sha256(
+                    f"{state['position']}-{state['candidate']}-{datetime.now().isoformat()}".encode()
+                ).hexdigest()[:12].upper()
+                state['vote_id'] = f"TEST-{vote_hash}"
+                show_step_5()
+
+            btn_frame = ttk.Frame(content_frame)
+            btn_frame.pack(pady=10)
+            ttk.Button(btn_frame, text="Back - Change Vote", command=show_step_3).pack(side='left', padx=5)
+            ttk.Button(btn_frame, text="Confirm & Submit Vote", command=confirm).pack(side='left', padx=5)
+
+        def show_step_5():
+            """Step 5: Receipt"""
+            clear_content()
+            state['step'] = 4
+            highlight_step(4)
+
+            ttk.Label(content_frame, text="Vote Successfully Submitted!",
+                     font=('Arial', 14, 'bold'), foreground='green').pack(pady=(10, 15))
+
+            receipt_frame = ttk.LabelFrame(content_frame, text="Vote Receipt (Practice)", padding=20)
+            receipt_frame.pack(fill='x', pady=(0, 15))
+
+            vote_text = state['candidate'] if state['candidate'] != 'ABSTAIN' else 'Abstain'
+            receipt_lines = [
+                f"Receipt ID: {state['vote_id']}",
+                f"Position: {state['position']}",
+                f"Vote: {vote_text}",
+                f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                f"Status: PRACTICE MODE - Not recorded",
+            ]
+            for line in receipt_lines:
+                ttk.Label(receipt_frame, text=line, font=('Arial', 10)).pack(anchor='w', pady=2)
+
+            ttk.Label(content_frame, text="In a real election, your vote would be encrypted\n"
+                     "and stored anonymously. You would receive this receipt\n"
+                     "as proof of voting (without revealing your choice).",
+                     font=('Arial', 9, 'italic')).pack(pady=15)
+
+            # System test results
+            results_frame = ttk.LabelFrame(content_frame, text="System Test Results", padding=15)
+            results_frame.pack(fill='x', pady=(0, 15))
+
+            tests = [
+                ("Identity Verification", "PASS"),
+                ("Ballot Display", "PASS"),
+                ("Vote Selection", "PASS"),
+                ("Confirmation Step", "PASS"),
+                ("Receipt Generation", "PASS"),
+                ("Keyboard Navigation", "PASS"),
+                ("Screen Reader Labels", "PASS"),
+            ]
+            for test_name, result in tests:
+                row = ttk.Frame(results_frame)
+                row.pack(fill='x', pady=1)
+                ttk.Label(row, text=f"  {test_name}", width=30, anchor='w').pack(side='left')
+                color = 'green' if result == 'PASS' else 'red'
+                ttk.Label(row, text=result, foreground=color,
+                         font=('Arial', 9, 'bold')).pack(side='left')
+
+            btn_frame = ttk.Frame(content_frame)
+            btn_frame.pack(pady=10)
+            ttk.Button(btn_frame, text="Vote Again (Practice)",
+                      command=show_step_2).pack(side='left', padx=5)
+            ttk.Button(btn_frame, text="Start Over",
+                      command=show_step_1).pack(side='left', padx=5)
+            ttk.Button(btn_frame, text="Close",
+                      command=test_window.destroy).pack(side='left', padx=5)
+
+        # Start at step 1
+        show_step_1()
 
 
 

@@ -602,27 +602,6 @@ def display_lms_menu(auth):
             print(get_text('lms.error', default='Error: {error}').format(error=e))
             break
 
-# Import the real GUI launcher
-try:
-    from education_system.university_system.modules.domain.academics.gui.lms_gui import launch_lms_gui
-except ImportError as e:
-    print(f"Warning: Could not import LMS GUI: {e}")
-    # Fallback to factory if GUI not available
-    from education_system.university_system.modules.shared.feature_gui_factory import create_gui_launcher
-    launch_lms_gui = create_gui_launcher(
-        title="LMS (Learning Management System)",
-        description="""Learning Management System with course content, video lectures, quizzes, discussions, and gradebook.
-
-Features:
-• Course content management
-• Video lectures & resources
-• Discussion forums
-• Quizzes & assessments
-• Gradebook & grading
-• Student progress tracking""",
-        cli_instruction="Use CLI: LMS (Learning Management System)"
-    )
-
 __all__ = [
     'LMSCourseManager',
     'LMSContentManager',
@@ -630,5 +609,4 @@ __all__ = [
     'LMSQuizManager',
     'LMSGradebookManager',
     'display_lms_menu',
-    'launch_lms_gui',
 ]

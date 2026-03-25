@@ -41,7 +41,7 @@ except ImportError:
 
 
 
-from .base import ParentPortalGUI
+from education_system.university_system.modules.domain.academics.gui.parent_portal.base import ParentPortalGUI
 
 def update_profile_photo(self):
     """Update parent profile photo"""
@@ -431,33 +431,35 @@ def show_documents_interface(self):
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
-            # Check if student_documents table exists (main document storage)
+            # Check if documents table exists (unified document storage)
             cursor.execute("""
             SELECT name FROM sqlite_master
-            WHERE type='table' AND name='student_documents'
+            WHERE type='table' AND name='documents'
             """)
 
             if cursor.fetchone():
-                # Query student documents joined with document_types
+                # Query student documents from unified documents table
                 cursor.execute("""
                 SELECT sd.original_filename, COALESCE(dt.type_name, 'Unknown'),
                        sd.upload_date, sd.uploaded_by, sd.verification_status,
                        sd.document_id, sd.file_path
-                FROM student_documents sd
+                FROM documents sd
                 LEFT JOIN document_types dt ON sd.type_id = dt.type_id
-                WHERE sd.student_id = ? AND sd.is_current_version = 1
+                WHERE sd.owner_id = ? AND sd.owner_type = 'student'
+                  AND sd.is_current_version = 1
                 ORDER BY sd.upload_date DESC
                 LIMIT 50
                 """, (student_id,))
 
                 documents = cursor.fetchall()
 
-                # Also check parent_documents table
+                # Also check parent-uploaded documents
                 cursor.execute("""
                 SELECT document_name, document_type, upload_date, 'Parent' as uploaded_by,
-                       status, id, file_path
-                FROM parent_documents
-                WHERE student_id = ?
+                       status, document_id, file_path
+                FROM documents
+                WHERE source_type = 'parent' AND reference_id = ?
+                  AND reference_type = 'student'
                 ORDER BY upload_date DESC
                 LIMIT 50
                 """, (student_id,))
@@ -564,32 +566,8 @@ def upload_document(self, student_id):
     ttk.Label(main_frame, text="Upload Document",
              font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
-    # Ensure parent_documents table exists
-    try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-        cursor = conn.cursor()
-
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS parent_documents (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            parent_id TEXT,
-            student_id TEXT,
-            document_type TEXT,
-            document_name TEXT,
-            file_path TEXT,
-            upload_date TEXT,
-            status TEXT DEFAULT 'pending',
-            expiry_date TEXT,
-            FOREIGN KEY (parent_id) REFERENCES parent_accounts (parent_id),
-            FOREIGN KEY (student_id) REFERENCES students (student_id)
-        )
-        """)
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        messagebox.showerror("Error", f"Failed to initialize database: {str(e)}")
-        dialog.destroy()
-        return
+    # Parent documents now use the unified documents table with source_type = 'parent'
+    # No separate parent_documents table needed
 
     # Create form fields
     fields = {}
@@ -648,24 +626,28 @@ def upload_document(self, student_id):
             expiry_date = fields['expiry_date'].get().strip() or None
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            # Insert document record into parent_documents
-            cursor.execute("""
-            INSERT INTO parent_documents (parent_id, student_id, document_type, document_name,
-                                         file_path, upload_date, status, expiry_date)
-            VALUES (?, ?, ?, ?, ?, datetime('now'), 'pending', ?)
-            """, (
-                self.parent_id,
-                student_id,
-                fields['document_type'].get(),
-                file_name,
-                file_path,
-                expiry_date
-            ))
+                # Insert document record into unified documents table
+                cursor.execute("""
+                INSERT INTO documents (source_type, owner_id, owner_type,
+                                       reference_id, reference_type,
+                                       document_type, document_name,
+                                       file_path, upload_date, status, expiry_date)
+                VALUES ('parent', ?, 'parent', ?, 'student', ?, ?, ?, datetime('now'), 'pending', ?)
+                """, (
+                    self.parent_id,
+                    student_id,
+                    fields['document_type'].get(),
+                    file_name,
+                    file_path,
+                    expiry_date
+                ))
 
-            conn.commit()
-            conn.close()
+                conn.commit()
+            finally:
+                conn.close()
 
             messagebox.showinfo("Success",
                 f"Document '{file_name}' uploaded successfully!\n\n"
@@ -742,7 +724,7 @@ def show_calendar_interface(self):
             # Check available event tables
             cursor.execute("""
             SELECT name FROM sqlite_master WHERE type='table'
-            AND name IN ('academic_calendar_events', 'campus_events', 'school_calendar')
+            AND name IN ('academic_calendar_events', 'unified_events', 'school_calendar')
             """)
             available_tables = {row[0] for row in cursor.fetchall()}
 
@@ -773,28 +755,34 @@ def show_calendar_interface(self):
                     """, (today, event_filter))
                 all_events.extend(cursor.fetchall())
 
-            # 2. Query campus_events
-            if 'campus_events' in available_tables:
+            # 2. Query unified_events (campus events)
+            if 'unified_events' in available_tables:
                 if event_filter == "all events":
                     cursor.execute("""
-                    SELECT event_name, description, event_date,
-                           start_time, end_time,
+                    SELECT title AS event_name, description,
+                           DATE(start_datetime) AS event_date,
+                           TIME(start_datetime) AS start_time,
+                           TIME(end_datetime) AS end_time,
                            COALESCE(location, 'Campus') as location,
                            COALESCE(event_type, 'Other') as event_type
-                    FROM campus_events
-                    WHERE event_date >= ? AND status = 'scheduled'
-                    ORDER BY event_date, start_time
+                    FROM unified_events
+                    WHERE source_type = 'campus'
+                      AND DATE(start_datetime) >= ? AND status = 'scheduled'
+                    ORDER BY start_datetime
                     """, (today,))
                 else:
                     cursor.execute("""
-                    SELECT event_name, description, event_date,
-                           start_time, end_time,
+                    SELECT title AS event_name, description,
+                           DATE(start_datetime) AS event_date,
+                           TIME(start_datetime) AS start_time,
+                           TIME(end_datetime) AS end_time,
                            COALESCE(location, 'Campus') as location,
                            COALESCE(event_type, 'Other') as event_type
-                    FROM campus_events
-                    WHERE event_date >= ? AND status = 'scheduled'
+                    FROM unified_events
+                    WHERE source_type = 'campus'
+                      AND DATE(start_datetime) >= ? AND status = 'scheduled'
                       AND LOWER(COALESCE(event_type, 'Other')) = ?
-                    ORDER BY event_date, start_time
+                    ORDER BY start_datetime
                     """, (today, event_filter))
                 all_events.extend(cursor.fetchall())
 
@@ -904,53 +892,58 @@ ParentPortalGUI.show_calendar_interface = show_calendar_interface
 def _fetch_all_calendar_events(self):
     """Fetch upcoming events from all available event tables."""
     conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-    cursor = conn.cursor()
-    today = datetime.datetime.now().strftime('%Y-%m-%d')
+    try:
+        cursor = conn.cursor()
+        today = datetime.datetime.now().strftime('%Y-%m-%d')
 
-    cursor.execute("""
-    SELECT name FROM sqlite_master WHERE type='table'
-    AND name IN ('academic_calendar_events', 'campus_events', 'school_calendar')
-    """)
-    available_tables = {row[0] for row in cursor.fetchall()}
-
-    all_events = []
-
-    if 'academic_calendar_events' in available_tables:
         cursor.execute("""
-        SELECT name, description,
-               COALESCE(date, date_start) as event_date,
-               '08:00' as start_time, '17:00' as end_time,
-               'Campus' as location,
-               COALESCE(event_type, 'Academic') as event_type
-        FROM academic_calendar_events
-        WHERE COALESCE(date, date_start) >= ?
-        ORDER BY event_date
-        """, (today,))
-        all_events.extend(cursor.fetchall())
+        SELECT name FROM sqlite_master WHERE type='table'
+        AND name IN ('academic_calendar_events', 'unified_events', 'school_calendar')
+        """)
+        available_tables = {row[0] for row in cursor.fetchall()}
 
-    if 'campus_events' in available_tables:
-        cursor.execute("""
-        SELECT event_name, description, event_date,
-               start_time, end_time,
-               COALESCE(location, 'Campus') as location,
-               COALESCE(event_type, 'Other') as event_type
-        FROM campus_events
-        WHERE event_date >= ? AND status = 'scheduled'
-        ORDER BY event_date, start_time
-        """, (today,))
-        all_events.extend(cursor.fetchall())
+        all_events = []
 
-    if 'school_calendar' in available_tables:
-        cursor.execute("""
-        SELECT event_name, event_description, event_date,
-               start_time, end_time, location, event_type
-        FROM school_calendar
-        WHERE event_date >= ? AND audience IN ('all', 'parents')
-        ORDER BY event_date, start_time
-        """, (today,))
-        all_events.extend(cursor.fetchall())
+        if 'academic_calendar_events' in available_tables:
+            cursor.execute("""
+            SELECT name, description,
+                   COALESCE(date, date_start) as event_date,
+                   '08:00' as start_time, '17:00' as end_time,
+                   'Campus' as location,
+                   COALESCE(event_type, 'Academic') as event_type
+            FROM academic_calendar_events
+            WHERE COALESCE(date, date_start) >= ?
+            ORDER BY event_date
+            """, (today,))
+            all_events.extend(cursor.fetchall())
 
-    conn.close()
+        if 'unified_events' in available_tables:
+            cursor.execute("""
+            SELECT title AS event_name, description,
+                   DATE(start_datetime) AS event_date,
+                   TIME(start_datetime) AS start_time,
+                   TIME(end_datetime) AS end_time,
+                   COALESCE(location, 'Campus') as location,
+                   COALESCE(event_type, 'Other') as event_type
+            FROM unified_events
+            WHERE source_type = 'campus'
+              AND DATE(start_datetime) >= ? AND status = 'scheduled'
+            ORDER BY start_datetime
+            """, (today,))
+            all_events.extend(cursor.fetchall())
+
+        if 'school_calendar' in available_tables:
+            cursor.execute("""
+            SELECT event_name, event_description, event_date,
+                   start_time, end_time, location, event_type
+            FROM school_calendar
+            WHERE event_date >= ? AND audience IN ('all', 'parents')
+            ORDER BY event_date, start_time
+            """, (today,))
+            all_events.extend(cursor.fetchall())
+
+    finally:
+        conn.close()
 
     # Sort by date, deduplicate by name+date
     all_events.sort(key=lambda e: (e[2] or '', e[3] or ''))

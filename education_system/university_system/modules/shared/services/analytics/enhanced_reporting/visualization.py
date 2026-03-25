@@ -3,11 +3,11 @@
 import os
 from datetime import datetime
 
-from ._compat import (
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting._compat import (
     pd, np, plt, sns, go, px, pyo,
     Paragraph, getSampleStyleSheet, ParagraphStyle, Table, TableStyle, colors,
 )
-from .config import CONFIG, get_reporting_db_connection, logger
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.config import CONFIG, get_reporting_db_connection, logger
 
 
 class AdvancedVisualization:

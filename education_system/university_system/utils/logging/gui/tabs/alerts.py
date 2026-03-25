@@ -93,18 +93,20 @@ class AlertsMixin:
 
             # Get recent alerts from database
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
+            try:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
 
-            cursor.execute('''
-                SELECT * FROM alerts
-                WHERE triggered_at > datetime('now', '-24 hours')
-                ORDER BY triggered_at DESC
-                LIMIT 50
-            ''')
+                cursor.execute('''
+                    SELECT * FROM alerts
+                    WHERE triggered_at > datetime('now', '-24 hours')
+                    ORDER BY triggered_at DESC
+                    LIMIT 50
+                ''')
 
-            alerts = cursor.fetchall()
-            conn.close()
+                alerts = cursor.fetchall()
+            finally:
+                conn.close()
 
             # Add alerts to tree
             for alert in alerts:

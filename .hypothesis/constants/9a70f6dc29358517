@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/parent_portal/notifications.py
+# hypothesis_version: 6.151.9
+
+['\nOptions:', '%H:%M', ',', '07:00', '08:00', '1', '2', '20:00', '3', '4', '4. Back to menu', '5', '6', '7', '8', '8. Save and Return', 'Invalid choice.', 'Invalid time format.', 'No subjects entered.', 'Quiet hours updated.', 'Select option: ', '] = NOT [', 'assignment_alerts', 'attendance_alerts', 'behavior_alerts', 'column', 'email_notifications', 'grade_alerts', 'id', 'parent', 'role', 'sms_notifications', 'subjects', 'weekly_summary']

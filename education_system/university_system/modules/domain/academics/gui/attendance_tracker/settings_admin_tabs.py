@@ -31,16 +31,16 @@ except ImportError:
     ORIGINAL_FUNCTIONS_AVAILABLE = False
 
 # Import window classes
-from .qr_windows import QRGeneratorWindow
-from .face_recognition_windows import FaceRecognitionWindow, BiometricsManagementWindow
-from .misc_windows import (
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker.qr_windows import QRGeneratorWindow
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker.face_recognition_windows import FaceRecognitionWindow, BiometricsManagementWindow
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker.misc_windows import (
     GeofencingWindow, LMSIntegrationWindow, CalendarSyncWindow,
     ImportPreviewWindow, ExportDataWindow, AttendancePoliciesWindow
 )
-from .admin_windows import APIManagementWindow, AuditLogsViewer, SystemDiagnosticsWindow
-from .backup_database_windows import BackupRecoveryWindow, DatabaseMaintenanceWindow
-from .alerts_predictive_windows import AlertsWindow, PredictiveAnalyticsWindow, AttendanceAlertsWindow
-from .notifications_windows import ParentNotificationWindow, NotificationSettingsWindow
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker.admin_windows import APIManagementWindow, AuditLogsViewer, SystemDiagnosticsWindow
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker.backup_database_windows import BackupRecoveryWindow, DatabaseMaintenanceWindow
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker.alerts_predictive_windows import AlertsWindow, PredictiveAnalyticsWindow, AttendanceAlertsWindow
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker.notifications_windows import ParentNotificationWindow, NotificationSettingsWindow
 
 
 def open_lms_integration(self):
@@ -313,11 +313,47 @@ def create_notifications_settings(self, parent):
                   command=self.save_notification_settings, style='Success.TButton').pack(pady=(10, 0))
 
 def cleanup_old_data(self):
-        """Cleanup old data"""
+        """Cleanup old attendance data beyond a specified number of days"""
         days = simpledialog.askinteger(_("attendance.dialogs.cleanup"), _("attendance.messages.cleanup_prompt"), initialvalue=365)
-        if days:
-            if messagebox.askyesno(_("attendance.messages.cleanup_confirm"), _("attendance.messages.cleanup_confirm_message").format(days=days)):
-                messagebox.showinfo(_("attendance.dialogs.cleanup"), _("attendance.messages.cleanup_would").format(days=days))
+        if not days or days < 1:
+            return
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+
+            cutoff_date = (datetime.datetime.now() - datetime.timedelta(days=days)).strftime('%Y-%m-%d')
+
+            # Count records that would be deleted
+            cursor.execute("SELECT COUNT(*) as cnt FROM attendance_records WHERE date < ?", (cutoff_date,))
+            count = cursor.fetchone()['cnt']
+
+            if count == 0:
+                messagebox.showinfo(_("attendance.dialogs.cleanup"),
+                                    f"No attendance records older than {days} days found.",
+                                    parent=self.root)
+                conn.close()
+                return
+
+            if not messagebox.askyesno(_("attendance.messages.cleanup_confirm"),
+                                       f"This will permanently delete {count} attendance records older than {cutoff_date}.\n\nContinue?",
+                                       parent=self.root):
+                conn.close()
+                return
+
+            # Perform deletion
+            cursor.execute("DELETE FROM attendance_records WHERE date < ?", (cutoff_date,))
+            deleted = cursor.rowcount
+            conn.commit()
+            conn.close()
+
+            messagebox.showinfo(_("attendance.dialogs.cleanup"),
+                                f"Cleanup complete.\n\nDeleted {deleted} records older than {cutoff_date}.",
+                                parent=self.root)
+
+        except Exception as e:
+            messagebox.showerror(_("common.error"), f"Cleanup failed: {e}", parent=self.root)
 
 def import_data(self):
         """Import data from file"""

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/grade_tracking/analytics_manager/exports.py
+# hypothesis_version: 6.151.9
+
+[0.2, '*.*', '*.csv', '*.pdf', '*.xlsx', '.csv', '.pdf', '.xlsx', '1.0', 'All files', 'CSV files', 'Error', 'Excel files', 'Feature Unavailable', 'No Report', 'Normal', 'PDF files', 'Report', 'Success', 'report_preview', 'utf-8', 'w']

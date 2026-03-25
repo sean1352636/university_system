@@ -1,9 +1,9 @@
-from . import _common
-from ._common import (
+from education_system.university_system.modules.domain.mobility.services.trip_management import _common
+from education_system.university_system.modules.domain.mobility.services.trip_management._common import (
     sqlite3, get_text, logging, datetime, os, log_create,
     REPORTS_DIR, PDF_AVAILABLE,
 )
-from .database import safe_db_operation, get_db_connection
+from education_system.university_system.modules.domain.mobility.services.trip_management.database import safe_db_operation, get_db_connection
 
 # Conditional reportlab imports
 try:

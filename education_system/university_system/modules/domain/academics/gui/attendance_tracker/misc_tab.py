@@ -6,7 +6,7 @@ from education_system.university_system.modules.shared.utils.i18n import get_tex
 init_i18n()
 
 # Import HelpWindow from misc_windows
-from .misc_windows import HelpWindow
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker.misc_windows import HelpWindow
 
 
 def show_help(self):

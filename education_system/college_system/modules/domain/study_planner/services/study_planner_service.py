@@ -3,6 +3,7 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import StudyPlannerError, ValidationError
 from education_system.college_system.infrastructure.database.db import connect
+from education_system.college_system.core.sql_safety import validate_identifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -27,10 +28,22 @@ class StudyPlannerService:
             raise ValidationError("planned_date is required.")
         conn = self._conn()
         try:
+            # Build INSERT with only non-None values so DB defaults apply
+            fields = {k: v for k, v in {
+                'student_id': kwargs.get('student_id'),
+                'subject': kwargs.get('subject'),
+                'topic': kwargs.get('topic'),
+                'planned_date': kwargs.get('planned_date'),
+                'planned_duration': kwargs.get('planned_duration'),
+                'actual_duration': kwargs.get('actual_duration'),
+                'session_type': kwargs.get('session_type'),
+                'completed': kwargs.get('completed'),
+            }.items() if v is not None}
+            cols = ", ".join(fields.keys())
+            placeholders = ", ".join("?" for _ in fields)
             conn.execute(
-                """INSERT INTO study_sessions (student_id, subject, topic, planned_date, planned_duration, actual_duration, session_type, completed)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                (kwargs.get('student_id'), kwargs.get('subject'), kwargs.get('topic'), kwargs.get('planned_date'), kwargs.get('planned_duration'), kwargs.get('actual_duration'), kwargs.get('session_type'), kwargs.get('completed'),),
+                f"INSERT INTO study_sessions ({cols}) VALUES ({placeholders})",
+                list(fields.values()),
             )
             conn.commit()
             row = conn.execute(
@@ -62,7 +75,7 @@ class StudyPlannerService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -80,7 +93,7 @@ class StudyPlannerService:
         if not updates:
             raise ValidationError("No valid fields to update.")
         updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [pk]
         conn = self._conn()
         try:
@@ -118,7 +131,7 @@ class StudyPlannerService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         conn = self._conn()
         try:

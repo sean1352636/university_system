@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.college_system.modules.domain.finance.services.finance_service import FinanceService
+from education_system.college_system.core.i18n import t
 
 
 class FinanceFrame(tk.Frame):
@@ -22,7 +23,7 @@ class FinanceFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Finance Management",
+        tk.Label(header, text=t("finance.management"),
                  font=("Helvetica", 15, "bold"), bg="#2c3e50", fg="white"
                  ).pack(side="left", padx=20, pady=10)
 
@@ -38,7 +39,7 @@ class FinanceFrame(tk.Frame):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
         self._nb.add(tab, text="Fee Items")
 
-        form = tk.LabelFrame(tab, text="New Fee Item", bg="#ecf0f1", padx=10, pady=8)
+        form = tk.LabelFrame(tab, text=t("finance.new_fee_item"), bg="#ecf0f1", padx=10, pady=8)
         self._fee_form = form
         form.pack(fill="x", pady=(0, 8))
         row = tk.Frame(form, bg="#ecf0f1")
@@ -54,7 +55,8 @@ class FinanceFrame(tk.Frame):
         ttk.Combobox(row, textvariable=self._fee_type_var,
                      values=["tuition", "exam", "trip", "materials", "other"],
                      width=10, state="readonly").pack(side="left", padx=5)
-        ttk.Button(row, text="Create", command=self._create_fee).pack(side="left", padx=10)
+        ttk.Button(row, text=t("common.create"), command=self._create_fee).pack(side="left", padx=10)
+        ttk.Button(row, text="Export CSV", command=self._export_csv).pack(side="right", padx=10)
 
         cols = ("id", "title", "fee_type", "amount", "mandatory")
         self._fee_tree = ttk.Treeview(tab, columns=cols, show="headings", selectmode="browse")
@@ -123,7 +125,7 @@ class FinanceFrame(tk.Frame):
                     f["id"], f["title"], f["fee_type"],
                     f"{f['amount']:.2f}", "Yes" if f["mandatory"] else "No"))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _load_invoices(self):
         self._inv_tree.delete(*self._inv_tree.get_children())
@@ -134,7 +136,7 @@ class FinanceFrame(tk.Frame):
                     f"{inv['paid_amount']:.2f}", inv["status"],
                     inv.get("due_date") or "-"))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _load_payments(self):
         self._pay_tree.delete(*self._pay_tree.get_children())
@@ -145,7 +147,7 @@ class FinanceFrame(tk.Frame):
                     p["payment_method"], p.get("reference") or "-",
                     p.get("created_at") or "-"))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _load_payroll(self):
         self._payroll_tree.delete(*self._payroll_tree.get_children())
@@ -156,7 +158,15 @@ class FinanceFrame(tk.Frame):
                     f"{r['gross_pay']:.2f}", f"{r['deductions']:.2f}",
                     f"{r['net_pay']:.2f}", r["status"]))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
+
+    def _export_csv(self):
+        """Export the currently visible finance tab's treeview to CSV."""
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        current_tab = self._nb.index(self._nb.select())
+        trees = [self._fee_tree, self._inv_tree, self._pay_tree, self._payroll_tree]
+        names = ["fee_items.csv", "invoices.csv", "payments.csv", "payroll.csv"]
+        export_treeview_to_csv(trees[current_tab], default_filename=names[current_tab])
 
     def _create_fee(self):
         try:
@@ -165,9 +175,9 @@ class FinanceFrame(tk.Frame):
                 self._fee_type_var.get(),
                 float(self._fee_amount_var.get().strip()),
             )
-            messagebox.showinfo("Success", f"Fee item created (ID: {fee['id']}).")
+            messagebox.showinfo(t("common.success"), t("finance.fee_created", id=fee['id']))
             self._fee_title_var.set("")
             self._fee_amount_var.set("")
             self._load_fees()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))

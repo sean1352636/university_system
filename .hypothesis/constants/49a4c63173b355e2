@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/academic_calendar/auth.py
+# hypothesis_version: 6.151.9
+
+[100, 3600, 'Invalid email format', 'User creation failed', 'permissions', 'student']

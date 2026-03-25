@@ -12,11 +12,6 @@ class ConfigurationMixin:
     def show_group_configuration(self):
         """Show comprehensive group configuration interface"""
         try:
-            # Check if module is selected - using group_module_var instead
-            if not hasattr(self, 'group_module_var') or not self.group_module_var.get():
-                messagebox.showwarning("Module Required", "Please select a module from the Create Group Assignment form first")
-                return
-
             dialog = tk.Toplevel(self.root)
             dialog.title("Group Configuration")
             dialog.geometry("1000x700")
@@ -24,6 +19,45 @@ class ConfigurationMixin:
 
             ttk.Label(dialog, text="Group Configuration & Student Assignment",
                      font=('TkDefaultFont', 14, 'bold')).pack(pady=10)
+
+            # Module selector at the top of the dialog
+            module_select_frame = ttk.LabelFrame(dialog, text="Select Module", padding=10)
+            module_select_frame.pack(fill='x', padx=10, pady=(0, 5))
+
+            ttk.Label(module_select_frame, text="Module:").pack(side='left', padx=5)
+            config_module_combo = ttk.Combobox(module_select_frame, width=40, state='readonly')
+            config_module_combo.pack(side='left', padx=5)
+
+            # Load modules into the dropdown
+            config_module_map = {}
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cur = conn.cursor()
+                cur.execute("SELECT module_code, module_name FROM modules WHERE is_active = 1 ORDER BY module_code")
+                for code, name in cur.fetchall():
+                    label = f"{code} - {name}"
+                    config_module_map[label] = code
+                conn.close()
+                config_module_combo['values'] = list(config_module_map.keys())
+                # Pre-select from create form if available
+                if hasattr(self, 'group_module_var') and self.group_module_var.get():
+                    config_module_combo.set(self.group_module_var.get())
+                elif config_module_map:
+                    config_module_combo.current(0)
+            except Exception:
+                pass
+
+            # Store for use by child methods
+            if not hasattr(self, 'group_module_var'):
+                self.group_module_var = tk.StringVar()
+            if not hasattr(self, 'module_map'):
+                self.module_map = {}
+            self.module_map.update(config_module_map)
+
+            def _sync_module(*_a):
+                self.group_module_var.set(config_module_combo.get())
+            config_module_combo.bind('<<ComboboxSelected>>', _sync_module)
+            _sync_module()  # sync initial selection
 
             # Create notebook for different group management options
             notebook = ttk.Notebook(dialog)
@@ -203,19 +237,21 @@ class ConfigurationMixin:
                 return
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            # Get enrolled students
-            cursor.execute('''
-            SELECT s.student_id, u.first_name, u.last_name
-            FROM student_enrollments s
-            JOIN users u ON s.student_id = u.id
-            WHERE s.module_code = ?
-            ORDER BY u.last_name, u.first_name
-            ''', (module_code,))
+                # Get enrolled students
+                cursor.execute('''
+                SELECT sm.student_id, s.first_name, s.last_name
+                FROM student_modules sm
+                JOIN students s ON sm.student_id = s.student_id
+                WHERE sm.module_code = ?
+                ORDER BY s.last_name, s.first_name
+                ''', (module_code,))
 
-            students = cursor.fetchall()
-            conn.close()
+                students = cursor.fetchall()
+            finally:
+                conn.close()
 
             if not students:
                 messagebox.showwarning("No Students", "No students enrolled in this module")
@@ -268,18 +304,20 @@ class ConfigurationMixin:
                 return
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('''
-            SELECT s.student_id, u.first_name, u.last_name
-            FROM student_enrollments s
-            JOIN users u ON s.student_id = u.id
-            WHERE s.module_code = ?
-            ORDER BY u.last_name, u.first_name
-            ''', (module_code,))
+                cursor.execute('''
+                SELECT sm.student_id, s.first_name, s.last_name
+                FROM student_modules sm
+                JOIN students s ON sm.student_id = s.student_id
+                WHERE sm.module_code = ?
+                ORDER BY s.last_name, s.first_name
+                ''', (module_code,))
 
-            students = cursor.fetchall()
-            conn.close()
+                students = cursor.fetchall()
+            finally:
+                conn.close()
 
             for student in students:
                 sid, fname, lname = student

@@ -4,7 +4,7 @@ System monitoring for CLI system.
 Handles system health checks, performance metrics, backups, and monitoring.
 """
 
-from .imports import (
+from education_system.university_system.modules.shared.cli.imports import (
     logging, sqlite3, datetime, os, DB_PATH, logger, _t,
     log_activity, get_auth, paths
 )

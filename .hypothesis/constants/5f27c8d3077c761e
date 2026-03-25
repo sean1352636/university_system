@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/student_analytics_gui/dialogs.py
+# hypothesis_version: 6.151.9
+
+['*', '10', '15', '300', '500x600', '587', '600x700', '<Configure>', 'All', 'All Courses', 'Arial', 'HTML', 'PDF', 'Word', 'age_range', 'all', 'analytics.labels.dpi', 'bold', 'both', 'cohorts', 'common.all', 'common.cancel', 'common.clear_all', 'common.email', 'common.error', 'common.female', 'common.male', 'common.other', 'common.password', 'common.save_settings', 'common.select_all', 'correlations', 'course', 'demographics', 'dpi', 'email_config', 'end', 'engagement', 'excel', 'export_formats', 'figure_size', 'gender', 'gpa_range', 'grades', 'gray', 'left', 'modules', 'nw', 'pdf', 'png', 'readonly', 'right', 'risk', 'sender_email', 'sender_password', 'smtp.gmail.com', 'smtp_port', 'smtp_server', 'svg', 'trends', 'values', 'vertical', 'w', 'x', 'y']

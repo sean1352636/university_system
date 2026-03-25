@@ -504,7 +504,7 @@ class TakeawayGUI:
 
         user_id = self.current_user.get('id', 0)
 
-        if add_to_cart(user_id, restaurant_id, item['item_id'], quantity):
+        if add_to_cart(user_id, restaurant_id, item['product_id'], quantity):
             messagebox.showinfo(_t("takeaway.added_title"), _t("takeaway.added_msg", quantity=quantity, name=item['name']))
             self.update_cart_count()
         else:
@@ -943,12 +943,12 @@ class TakeawayGUI:
             if search_term:
                 # Search by order_id, student_id, or restaurant name
                 query = '''
-                    SELECT o.order_id, o.order_date, o.student_id, o.user_id,
+                    SELECT o.source_order_id as order_id, o.order_date, o.student_id, o.user_id,
                            o.total_amount, o.payment_method, o.payment_status,
                            r.name as restaurant_name
-                    FROM takeaway_orders o
+                    FROM orders o
                     LEFT JOIN takeaway_restaurants r ON o.restaurant_id = r.restaurant_id
-                    WHERE o.order_id LIKE ? OR o.student_id LIKE ? OR r.name LIKE ?
+                    WHERE o.source_type = 'takeaway' AND (o.source_order_id LIKE ? OR o.student_id LIKE ? OR r.name LIKE ?)
                     ORDER BY o.order_date DESC
                     LIMIT 500
                 '''
@@ -957,11 +957,12 @@ class TakeawayGUI:
             else:
                 # Get all orders
                 query = '''
-                    SELECT o.order_id, o.order_date, o.student_id, o.user_id,
+                    SELECT o.source_order_id as order_id, o.order_date, o.student_id, o.user_id,
                            o.total_amount, o.payment_method, o.payment_status,
                            r.name as restaurant_name
-                    FROM takeaway_orders o
+                    FROM orders o
                     LEFT JOIN takeaway_restaurants r ON o.restaurant_id = r.restaurant_id
+                    WHERE o.source_type = 'takeaway'
                     ORDER BY o.order_date DESC
                     LIMIT 500
                 '''
@@ -986,7 +987,7 @@ class TakeawayGUI:
                     order_date,
                     customer_display,
                     restaurant_name or 'N/A',
-                    f"£{amount:.2f}",
+                    f"\u00a3{amount:.2f}",
                     payment_display,
                     status_display
                 ))
@@ -1016,7 +1017,7 @@ class TakeawayGUI:
             return
 
         order_id = values[0]
-        amount_str = values[4].replace('£', '').strip()
+        amount_str = values[4].replace('\u00a3', '').strip()
         try:
             amount = float(amount_str)
         except ValueError:
@@ -1031,7 +1032,7 @@ class TakeawayGUI:
             return
 
         # Confirm refund
-        if not messagebox.askyesno("Confirm Refund", f"Process refund of £{amount:.2f} for order {order_id}?"):
+        if not messagebox.askyesno("Confirm Refund", f"Process refund of \u00a3{amount:.2f} for order {order_id}?"):
             return
 
         # Get order details to find user_id
@@ -1041,8 +1042,8 @@ class TakeawayGUI:
 
             cursor.execute('''
                 SELECT user_id, payment_method
-                FROM takeaway_orders
-                WHERE order_id = ?
+                FROM orders
+                WHERE source_type = 'takeaway' AND source_order_id = ?
             ''', (order_id,))
 
             order_data = cursor.fetchone()
@@ -1071,47 +1072,29 @@ class TakeawayGUI:
 
             # Update order status to refunded
             cursor.execute('''
-                UPDATE takeaway_orders
+                UPDATE orders
                 SET payment_status = 'refunded'
-                WHERE order_id = ?
+                WHERE source_type = 'takeaway' AND source_order_id = ?
             ''', (order_id,))
 
             # Generate unique refund reference
             refund_ref = f"TAKEAWAY-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-            # Create takeaway_refunds table if it doesn't exist
+            # Get student_id for the user if available
+            cursor.execute('SELECT student_id FROM users WHERE id = ?', (user_id,))
+            student_row = cursor.fetchone()
+            resolved_student_id = student_row[0] if student_row and student_row[0] else user_id
+
+            # Insert refund record into unified_refunds
             cursor.execute('''
-                CREATE TABLE IF NOT EXISTS takeaway_refunds (
-                    refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    order_id TEXT NOT NULL,
-                    refund_date TEXT NOT NULL,
-                    refund_amount REAL NOT NULL,
-                    refund_method TEXT NOT NULL,
-                    refund_reference TEXT UNIQUE,
-                    user_id INTEGER,
-                    processed_by TEXT,
-                    notes TEXT,
-                    FOREIGN KEY (order_id) REFERENCES takeaway_orders (order_id),
-                    FOREIGN KEY (user_id) REFERENCES users (id)
-                )
-            ''')
-
-            # Migrate from old schema (student_id) to new schema (user_id)
-            cursor.execute("PRAGMA table_info(takeaway_refunds)")
-            columns = [row[1] for row in cursor.fetchall()]
-
-            if 'student_id' in columns and 'user_id' not in columns:
-                # Add user_id column
-                cursor.execute('ALTER TABLE takeaway_refunds ADD COLUMN user_id INTEGER')
-                print("Migration: Added user_id column to takeaway_refunds table")
-
-            # Insert refund record
-            cursor.execute('''
-                INSERT INTO takeaway_refunds
-                (order_id, refund_date, refund_amount, refund_method, refund_reference, user_id, processed_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (order_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), amount, refund_method,
-                  refund_ref, user_id, self.current_user.get('username', 'System')))
+                INSERT INTO unified_refunds
+                (source_type, reference_id, reference_type, refund_date, amount,
+                 refund_method, refund_reference, student_id, processed_by, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', ('takeaway', order_id, 'order',
+                  datetime.now().strftime('%Y-%m-%d %H:%M:%S'), amount, refund_method,
+                  refund_ref, resolved_student_id,
+                  self.current_user.get('username', 'System'), None))
 
             conn.commit()
             conn.close()
@@ -1130,7 +1113,7 @@ class TakeawayGUI:
             self.notify_takeaway_finance_gui(order_id, amount, refund_method, refund_ref, user_id)
 
             messagebox.showinfo("Refund Processed",
-                              f"Refund of £{amount:.2f} processed successfully.\nRefund Reference: {refund_ref}")
+                              f"Refund of \u00a3{amount:.2f} processed successfully.\nRefund Reference: {refund_ref}")
 
             # Refresh the list
             self.refresh_refunds_list()
@@ -1153,7 +1136,7 @@ class TakeawayGUI:
 
         result = {'method': None}
 
-        ttk.Label(dialog, text=f"Refund Amount: £{amount:.2f}", font=('Arial', 12, 'bold')).pack(pady=10)
+        ttk.Label(dialog, text=f"Refund Amount: \u00a3{amount:.2f}", font=('Arial', 12, 'bold')).pack(pady=10)
         ttk.Label(dialog, text=f"Order ID: {order_id}").pack(pady=5)
 
         # Get student_id from users table if available
@@ -1179,8 +1162,8 @@ class TakeawayGUI:
                     balance_frame = ttk.LabelFrame(dialog, text="Student Finance Account", padding=10)
                     balance_frame.pack(pady=10, padx=20, fill=tk.X)
 
-                    ttk.Label(balance_frame, text=f"Current Balance: £{current_balance:.2f}").pack(anchor='w')
-                    ttk.Label(balance_frame, text=f"After Refund: £{new_balance:.2f}",
+                    ttk.Label(balance_frame, text=f"Current Balance: \u00a3{current_balance:.2f}").pack(anchor='w')
+                    ttk.Label(balance_frame, text=f"After Refund: \u00a3{new_balance:.2f}",
                             font=('Arial', 10, 'bold')).pack(anchor='w')
             except Exception as e:
                 print(f"Error getting balance: {e}")
@@ -1258,10 +1241,10 @@ class TakeawayGUI:
 
             # Record transaction
             cursor.execute('''
-                INSERT INTO student_finance_transactions
-                (account_id, student_id, transaction_type, amount, balance_before, balance_after,
+                INSERT INTO transactions
+                (source_type, account_id, student_id, transaction_type, amount, balance_before, balance_after,
                  description, reference_id, processed_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES ('student_finance', ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (account_id, student_id, 'credit', amount, balance_before, balance_after,
                   'Takeaway Order Refund', refund_ref, self.current_user.get('username', 'System')))
 
@@ -1304,7 +1287,7 @@ class TakeawayGUI:
                 try:
                     new_balance = get_student_finance_account_balance(student_id)
                     if new_balance is not None:
-                        balance_text = f"\n\nYour updated account balance is: £{new_balance:.2f}"
+                        balance_text = f"\n\nYour updated account balance is: \u00a3{new_balance:.2f}"
                 except Exception:
                     pass
 
@@ -1336,7 +1319,11 @@ class TakeawayGUI:
             print(f"Error sending refund receipt: {e}")
 
     def notify_takeaway_finance_gui(self, order_id, amount, method, refund_ref, user_id):
-        """Notify finance GUI about the refund"""
+        """Notify finance GUI about the refund.
+
+        Finance refund records are now handled via the unified_refunds table.
+        This method logs the notification for finance GUI awareness.
+        """
         try:
             conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
             cursor = conn.cursor()
@@ -1356,54 +1343,10 @@ class TakeawayGUI:
             else:
                 user_info = f"User ID: {user_id}"
 
-            # Create finance_refunds table if it doesn't exist
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS finance_refunds (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    refund_reference TEXT UNIQUE,
-                    department TEXT,
-                    amount REAL,
-                    refund_method TEXT,
-                    refund_date TEXT,
-                    refund_time TEXT,
-                    transaction_reference TEXT,
-                    processed_by TEXT,
-                    notes TEXT
-                )
-            ''')
-
-            # Migrate finance_refunds table to ensure all columns exist
-            cursor.execute("PRAGMA table_info(finance_refunds)")
-            columns = [row[1] for row in cursor.fetchall()]
-
-            # Add missing columns if needed
-            if 'transaction_reference' not in columns:
-                cursor.execute('ALTER TABLE finance_refunds ADD COLUMN transaction_reference TEXT')
-                print("Migration: Added transaction_reference column to finance_refunds table")
-
-            if 'refund_time' not in columns:
-                cursor.execute('ALTER TABLE finance_refunds ADD COLUMN refund_time TEXT')
-                print("Migration: Added refund_time column to finance_refunds table")
-
-            if 'notes' not in columns:
-                cursor.execute('ALTER TABLE finance_refunds ADD COLUMN notes TEXT')
-                print("Migration: Added notes column to finance_refunds table")
-
-            # Insert into finance_refunds table
-            cursor.execute('''
-                INSERT INTO finance_refunds
-                (refund_reference, department, amount, refund_method, refund_date,
-                 refund_time, transaction_reference, processed_by, notes)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (refund_ref, 'Takeaway', amount, method,
-                  datetime.now().strftime('%Y-%m-%d'),
-                  datetime.now().strftime('%H:%M:%S'),
-                  f'order_{order_id}',
-                  self.current_user.get('username', 'System'),
-                  f'Takeaway Order #{order_id} Refund - {user_info}'))
-
-            conn.commit()
             conn.close()
+
+            # Log for finance GUI notification
+            print(f"Finance notification: Takeaway refund {refund_ref} - \u00a3{amount:.2f} via {method} for {user_info}")
 
         except sqlite3.Error as e:
             print(f"Error notifying finance GUI: {e}")
@@ -1436,9 +1379,9 @@ class TakeawayGUI:
             # Get order details
             cursor.execute('''
                 SELECT o.*, r.name as restaurant_name
-                FROM takeaway_orders o
+                FROM orders o
                 LEFT JOIN takeaway_restaurants r ON o.restaurant_id = r.restaurant_id
-                WHERE o.order_id = ?
+                WHERE o.source_type = 'takeaway' AND o.source_order_id = ?
             ''', (order_id,))
 
             order = cursor.fetchone()
@@ -1451,8 +1394,8 @@ class TakeawayGUI:
             # Get order items
             cursor.execute('''
                 SELECT item_name, quantity, unit_price, subtotal
-                FROM takeaway_order_items
-                WHERE order_id = ?
+                FROM order_items
+                WHERE source_type = 'takeaway' AND order_id = ?
             ''', (order_id,))
 
             items = cursor.fetchall()
@@ -1473,7 +1416,7 @@ class TakeawayGUI:
 
             # Format order details
             details = f"""ORDER DETAILS
-═══════════════════════════════════════════════════════
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 Order ID:           {order[0]}
 Order Date:         {order[4]}
@@ -1489,27 +1432,27 @@ Payment Method:     {order[10].replace('_', ' ').title() if order[10] else 'N/A'
 Payment Status:     {order[11].upper() if order[11] else 'N/A'}
 Order Status:       {order[12].upper() if order[12] else 'N/A'}
 
-═══════════════════════════════════════════════════════
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 ORDER ITEMS
-═══════════════════════════════════════════════════════
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 """
 
             for item in items:
                 item_name, quantity, unit_price, subtotal = item
                 details += f"\n{item_name}\n"
-                details += f"  Quantity: {quantity} x £{unit_price:.2f} = £{subtotal:.2f}\n"
+                details += f"  Quantity: {quantity} x \u00a3{unit_price:.2f} = \u00a3{subtotal:.2f}\n"
 
             details += f"""
-═══════════════════════════════════════════════════════
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 TOTALS
-═══════════════════════════════════════════════════════
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
-Subtotal:           £{order[7]:.2f}
-Delivery Fee:       £{order[8]:.2f}
-───────────────────────────────────────────────────────
-TOTAL:              £{order[9]:.2f}
+Subtotal:           \u00a3{order[7]:.2f}
+Delivery Fee:       \u00a3{order[8]:.2f}
+\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+TOTAL:              \u00a3{order[9]:.2f}
 
-═══════════════════════════════════════════════════════
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 Notes:              {order[15] if order[15] else 'None'}
 

@@ -21,7 +21,7 @@ def show_academic_progress_gui(self):
     try:
         from education_system.university_system.modules.domain.academic_progress.gui.progress_gui import AcademicProgressGUI
         # AcademicProgressGUI creates its own window
-        gui = AcademicProgressGUI(parent=self.root)
+        gui = AcademicProgressGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Academic Progress GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Academic Progress", error=str(e)))
@@ -33,8 +33,7 @@ def show_ai_study_gui(self):
     """Launch AI Study Companion GUI"""
     try:
         from education_system.university_system.modules.domain.ai_study.gui.ai_study_gui import AIStudyGUI
-        # AIStudyGUI creates its own window
-        gui = AIStudyGUI(parent=self.root)
+        gui = AIStudyGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import AI Study GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="AI Study", error=str(e)))
@@ -86,7 +85,7 @@ def show_study_matching_gui(self):
     """Launch Peer Study Matching GUI"""
     try:
         from education_system.university_system.modules.domain.study_matching.gui.study_matching_gui import StudyMatchingGUI
-        gui = StudyMatchingGUI(parent=self.root)
+        gui = StudyMatchingGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Study Matching GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Study Matching", error=str(e)))
@@ -113,7 +112,7 @@ def show_roommate_finder_gui(self):
     """Launch Roommate Finder GUI"""
     try:
         from education_system.university_system.modules.domain.roommate_finder.gui.roommate_gui import RoommateFinderGUI
-        gui = RoommateFinderGUI(parent=self.root)
+        gui = RoommateFinderGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Roommate Finder GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Roommate Finder", error=str(e)))
@@ -142,7 +141,7 @@ def show_lost_found_gui(self):
     """Launch Lost & Found GUI"""
     try:
         from education_system.university_system.modules.domain.lost_found.gui.lost_found_gui import LostFoundGUI
-        gui = LostFoundGUI(parent=self.root)
+        gui = LostFoundGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Lost & Found GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Lost & Found", error=str(e)))
@@ -154,7 +153,7 @@ def show_marketplace_gui(self):
     """Launch Student Marketplace GUI"""
     try:
         from education_system.university_system.modules.domain.marketplace.gui.marketplace_gui import MarketplaceGUI
-        gui = MarketplaceGUI(parent=self.root)
+        gui = MarketplaceGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Student Marketplace GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Student Marketplace", error=str(e)))
@@ -166,7 +165,7 @@ def show_wellness_hub_gui(self):
     """Launch Wellness Hub GUI"""
     try:
         from education_system.university_system.modules.domain.wellness.gui.wellness_gui import WellnessGUI
-        gui = WellnessGUI(parent=self.root)
+        gui = WellnessGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Wellness Hub GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Wellness Hub", error=str(e)))

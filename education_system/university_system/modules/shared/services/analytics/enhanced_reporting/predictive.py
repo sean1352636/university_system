@@ -1,10 +1,10 @@
 """Machine learning for predictive insights."""
 
-from ._compat import (
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting._compat import (
     pd, np, RandomForestClassifier, IsolationForest,
     train_test_split, accuracy_score,
 )
-from .config import get_reporting_db_connection, logger
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.config import get_reporting_db_connection, logger
 
 
 class PredictiveAnalytics:

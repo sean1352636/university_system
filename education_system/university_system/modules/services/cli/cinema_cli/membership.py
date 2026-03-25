@@ -6,11 +6,11 @@ from typing import Optional, Dict
 
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 
-from .constants import (
+from education_system.university_system.modules.services.cli.cinema_cli.constants import (
     MEMBERSHIP_PRICE, POINTS_PER_POUND, MEMBER_DISCOUNT,
     ACTIVITY_LOGGING,
 )
-from .utils import print_header, print_subheader, get_current_user
+from education_system.university_system.modules.services.cli.cinema_cli.utils import print_header, print_subheader, get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -255,7 +255,7 @@ def join_membership():
         print("\n   Start enjoying your benefits today!")
 
         if ACTIVITY_LOGGING:
-            from .constants import log_activity
+            from education_system.university_system.modules.services.cli.cinema_cli.constants import log_activity
             log_activity('create', 'cinema_membership',
                        user_id=user.get('username'),
                        details={'membership_type': 'standard'})
@@ -508,7 +508,7 @@ def cancel_membership():
         print("   You can rejoin anytime.")
 
         if ACTIVITY_LOGGING:
-            from .constants import log_activity
+            from education_system.university_system.modules.services.cli.cinema_cli.constants import log_activity
             log_activity('delete', 'cinema_membership',
                        user_id=user.get('username'),
                        details={'reason': 'user_requested'})

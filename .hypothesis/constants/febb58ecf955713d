@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/ai_detector/settings_advanced_view.py
+# hypothesis_version: 6.151.9
+
+[0.1, 0.7, 1.0, 300, '600x400', 'Accent.TButton', 'Card.TFrame', 'Subtitle.TLabel', 'Title.TLabel', '_', 'advanced_ml_trainer', 'ai_detector.ml.title', 'bg_primary', 'both', 'common.error', 'common.warning', 'detection_methods', 'detection_threshold', 'horizontal', 'left', 'models', 'predictive_analytics', 'risk_model', 'w', 'x']

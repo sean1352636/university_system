@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/financial_aid/student_portal/applications.py
+# hypothesis_version: 6.151.9
+
+[100, 120, 150, 250, 'Aid ID', 'Amount', 'App ID', 'Applied', 'Awarded', 'Back to Dashboard', 'Disbursed', 'My Applications', 'N/A', 'Scholarship', 'Status', 'Submitted', 'Title.TLabel', 'Type', 'aid_id', 'aid_type_id', 'amount', 'application_date', 'application_id', 'approved', 'awarded_amount', 'both', 'denied', 'disbursed_amount', 'end', 'left', 'pending', 'red', 'right', 'scholarship_name', 'status', 'submitted_date', 'x']

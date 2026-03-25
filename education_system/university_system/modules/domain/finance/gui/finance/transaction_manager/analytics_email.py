@@ -377,37 +377,37 @@ class AnalyticsEmailMixin:
                     FROM payments WHERE status = 'completed'
                     UNION ALL
                     SELECT payment_method, amount, created_at as trans_date, 'Gym' as source
-                    FROM gym_transactions
+                    FROM transactions WHERE source_type = 'gym'
                     UNION ALL
                     SELECT payment_method, amount, created_at as trans_date, 'Dentist' as source
-                    FROM dentist_transactions
+                    FROM transactions WHERE source_type = 'dentist'
                     UNION ALL
-                    SELECT payment_method, total_amount as amount, transaction_date as trans_date, 'Grocery' as source
-                    FROM grocery_transactions
+                    SELECT payment_method, total_amount as amount, created_at as trans_date, 'Grocery' as source
+                    FROM transactions WHERE source_type = 'grocery'
                     UNION ALL
                     SELECT payment_method, amount, created_at as trans_date, 'Betting' as source
-                    FROM betting_transactions WHERE status = 'completed'
+                    FROM transactions WHERE source_type = 'betting' AND status = 'completed'
                     UNION ALL
-                    SELECT payment_method, total_amount as amount, transaction_date as trans_date, 'Shop' as source
-                    FROM shop_transactions WHERE status = 'completed'
+                    SELECT payment_method, total_amount as amount, created_at as trans_date, 'Shop' as source
+                    FROM transactions WHERE source_type = 'shop' AND status = 'completed'
                     UNION ALL
                     SELECT payment_method, amount, created_at as trans_date, 'Butcher' as source
-                    FROM butcher_transactions WHERE status = 'completed'
+                    FROM transactions WHERE source_type = 'butcher' AND status = 'completed'
                     UNION ALL
                     SELECT payment_method, amount, created_at as trans_date, 'Barber' as source
-                    FROM barber_transactions WHERE status = 'completed'
+                    FROM transactions WHERE source_type = 'barber' AND status = 'completed'
                     UNION ALL
                     SELECT payment_method, amount, created_at as trans_date, 'NailBar' as source
-                    FROM nailbar_transactions WHERE status = 'completed'
+                    FROM transactions WHERE source_type = 'nail_bar' AND status = 'completed'
                     UNION ALL
                     SELECT payment_method, amount, created_at as trans_date, 'CarRental' as source
-                    FROM carrental_transactions WHERE status = 'completed'
+                    FROM transactions WHERE source_type = 'car_rental' AND status = 'completed'
                     UNION ALL
                     SELECT payment_method, amount, created_at as trans_date, 'PhoneShop' as source
-                    FROM phoneshop_transactions WHERE status = 'completed'
+                    FROM transactions WHERE source_type = 'phone_shop' AND status = 'completed'
                     UNION ALL
                     SELECT payment_method, amount, created_at as trans_date, 'MusicShop' as source
-                    FROM musicshop_transactions WHERE status = 'completed'
+                    FROM transactions WHERE source_type = 'music_shop' AND status = 'completed'
                 )
             '''
 

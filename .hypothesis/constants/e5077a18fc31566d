@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/barber/gui/tabs/services_tab.py
+# hypothesis_version: 6.151.9
+
+[120, 150, ' (min):', ' (£):', '10', '30', '5', ':', 'ID', 'barber.labels.price', 'barber.labels.type', 'barber.tabs.services', 'duration', 'headings', 'id', 'name', 'price', 'readonly', 'type', 'values']

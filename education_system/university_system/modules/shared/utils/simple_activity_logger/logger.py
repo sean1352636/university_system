@@ -20,11 +20,11 @@ from cryptography.fernet import Fernet
 
 from education_system.university_system.modules.shared.constants import paths
 
-from .models import LogLevel, OutputFormat, SecurityLevel, LogEntry
-from .security import PIIDetector, SecurityMonitor
-from .storage import LogRotationManager, DatabaseLogger
-from .cloud import CloudIntegration
-from .analytics import AnalyticsEngine
+from education_system.university_system.modules.shared.utils.simple_activity_logger.models import LogLevel, OutputFormat, SecurityLevel, LogEntry
+from education_system.university_system.modules.shared.utils.simple_activity_logger.security import PIIDetector, SecurityMonitor
+from education_system.university_system.modules.shared.utils.simple_activity_logger.storage import LogRotationManager, DatabaseLogger
+from education_system.university_system.modules.shared.utils.simple_activity_logger.cloud import CloudIntegration
+from education_system.university_system.modules.shared.utils.simple_activity_logger.analytics import AnalyticsEngine
 
 _logger = logging.getLogger(__name__)
 

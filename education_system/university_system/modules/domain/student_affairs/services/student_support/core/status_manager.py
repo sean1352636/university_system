@@ -22,12 +22,12 @@ from education_system.university_system.core.sql_safety import validate_identifi
 from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH, TICKET_TEMPLATES_DIR, UPLOAD_DIR
 from education_system.university_system.utils.logging.log_config import get_log_file
 
-from ..config import (
+from education_system.university_system.modules.domain.student_affairs.services.student_support.config import (
     SUPPORT_DB, TICKET_STATUSES, TICKET_PRIORITIES, SUPPORT_CATEGORIES,
     NotificationType, TicketSentiment, FileType, SupportConfig
 )
-from .. import auth as _auth_mod
-from ..auth import get_current_user_safe, require_auth, has_staff_permissions
+from education_system.university_system.modules.domain.student_affairs.services.student_support import auth as _auth_mod
+from education_system.university_system.modules.domain.student_affairs.services.student_support.auth import get_current_user_safe, require_auth, has_staff_permissions
 
 logger = logging.getLogger(__name__)
 
@@ -44,55 +44,57 @@ def update_ticket_status(ticket_id, new_status, resolution_notes=None):
             raise ValueError(f"Invalid status. Choose from: {', '.join(TICKET_STATUSES)}")
         
         conn = sqlite3.connect(SUPPORT_DB)
-        cursor = conn.cursor()
-        
-        # Get current ticket
-        cursor.execute('SELECT * FROM support_tickets WHERE ticket_id = ?', (ticket_id,))
-        ticket = cursor.fetchone()
-        
-        if not ticket:
-            raise ValueError(f"Ticket #{ticket_id} not found")
-        
-        old_status = ticket[6]
-        update_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
-        # Build update query based on status
-        update_fields = {
-            'status': new_status,
-            'last_updated_datetime': update_time,
-            'assigned_to': _auth_mod.auth.current_user['username']
-        }
-        
-        if new_status == 'Resolved':
-            update_fields['resolved_at'] = update_time
-        elif new_status == 'Closed':
-            update_fields['closed_at'] = update_time
-        
-        # Build SQL
-        set_clause = ', '.join([validate_identifier(k, "column") + " = ?" for k in update_fields.keys()])
-        values = list(update_fields.values()) + [ticket_id]
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('UPDATE support_tickets SET ' + set_clause + ' WHERE ticket_id = ?', values)
-        
-        # Add system response about status change
-        response_text = f"Ticket status updated from '{old_status}' to '{new_status}'"
-        if resolution_notes:
-            response_text += f"\n\nResolution Notes: {resolution_notes}"
-        
-        cursor.execute('''
-        INSERT INTO ticket_responses (
-            ticket_id, responder_id, responder_role, response_text, 
-            response_datetime, is_auto_generated
-        ) VALUES (?, ?, ?, ?, ?, ?)
-        ''', (
-            ticket_id, _auth_mod.auth.current_user['id'], _auth_mod.auth.current_user['role'], 
-            response_text, update_time, 1
-        ))
-        
-        # Commit and close main transaction BEFORE calling helper methods
-        # This prevents database locks from nested connections
-        conn.commit()
-        conn.close()
+            # Get current ticket
+            cursor.execute('SELECT * FROM support_tickets WHERE ticket_id = ?', (ticket_id,))
+            ticket = cursor.fetchone()
+
+            if not ticket:
+                raise ValueError(f"Ticket #{ticket_id} not found")
+
+            old_status = ticket[6]
+            update_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+            # Build update query based on status
+            update_fields = {
+                'status': new_status,
+                'last_updated_datetime': update_time,
+                'assigned_to': _auth_mod.auth.current_user['username']
+            }
+
+            if new_status == 'Resolved':
+                update_fields['resolved_at'] = update_time
+            elif new_status == 'Closed':
+                update_fields['closed_at'] = update_time
+
+            # Build SQL
+            set_clause = ', '.join([validate_identifier(k, "column") + " = ?" for k in update_fields.keys()])
+            values = list(update_fields.values()) + [ticket_id]
+
+            cursor.execute('UPDATE support_tickets SET ' + set_clause + ' WHERE ticket_id = ?', values)
+
+            # Add system response about status change
+            response_text = f"Ticket status updated from '{old_status}' to '{new_status}'"
+            if resolution_notes:
+                response_text += f"\n\nResolution Notes: {resolution_notes}"
+
+            cursor.execute('''
+            INSERT INTO ticket_responses (
+                ticket_id, responder_id, responder_role, response_text, 
+                response_datetime, is_auto_generated
+            ) VALUES (?, ?, ?, ?, ?, ?)
+            ''', (
+                ticket_id, _auth_mod.auth.current_user['id'], _auth_mod.auth.current_user['role'], 
+                response_text, update_time, 1
+            ))
+
+            # Commit and close main transaction BEFORE calling helper methods
+            # This prevents database locks from nested connections
+            conn.commit()
+        finally:
+            conn.close()
 
         # Store values needed for helper methods (ticket data no longer accessible after close)
         student_id = ticket[1]

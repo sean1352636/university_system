@@ -1,6 +1,6 @@
 """Settings sub-package – drop-in replacement for the former settings.py module."""
 
-from ._base import (
+from education_system.university_system.modules.domain.finance.gui.finance.settings._base import (
     SettingsManager,
     PAYMENT_GATEWAYS,
     SUPPORTED_CURRENCIES,

@@ -35,8 +35,8 @@ class TestParkingManagementGUIBasic(unittest.TestCase):
         except Exception:
             pass
 
-    @patch('university_system.modules.domain.mobility.gui.parking_management_gui.get_connection')
-    @patch('university_system.modules.domain.mobility.gui.parking_management_gui.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.transaction')
     def test_gui_can_be_imported(self, mock_transaction, mock_conn):
         """Test that GUI module can be imported"""
         try:
@@ -45,8 +45,8 @@ class TestParkingManagementGUIBasic(unittest.TestCase):
         except ImportError as e:
             self.fail(f"Failed to import parking_management_gui: {e}")
 
-    @patch('university_system.modules.domain.mobility.gui.parking_management_gui.get_connection')
-    @patch('university_system.modules.domain.mobility.gui.parking_management_gui.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.transaction')
     def test_gui_class_exists(self, mock_transaction, mock_conn):
         """Test that ParkingManagementGUI class exists"""
         try:
@@ -55,8 +55,8 @@ class TestParkingManagementGUIBasic(unittest.TestCase):
         except ImportError:
             self.skipTest("ParkingManagementGUI not available")
 
-    @patch('university_system.modules.domain.mobility.gui.parking_management_gui.get_centralized_auth')
-    @patch('university_system.modules.domain.mobility.gui.parking_management_gui.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.get_centralized_auth')
+    @patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.transaction')
     def test_gui_initialization_with_auth(self, mock_transaction, mock_auth):
         """Test GUI initialization with authentication"""
         try:
@@ -88,7 +88,7 @@ class TestParkingPermitsManagement(unittest.TestCase):
         except Exception:
             pass
 
-    @patch('university_system.modules.domain.mobility.gui.parking_management_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.get_connection')
     def test_load_permits(self, mock_conn):
         """Test loading parking permits"""
         mock_cursor = Mock()
@@ -106,8 +106,8 @@ class TestParkingPermitsManagement(unittest.TestCase):
         try:
             from education_system.university_system.modules.domain.mobility.gui.parking_management_gui import ParkingManagementGUI
 
-            with patch('university_system.modules.domain.mobility.gui.parking_management_gui.transaction'):
-                with patch('university_system.modules.domain.mobility.gui.parking_management_gui.get_centralized_auth',
+            with patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.transaction'):
+                with patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.get_centralized_auth',
                           return_value=self.mock_auth):
                     app = ParkingManagementGUI(self.root, self.mock_auth)
                     if hasattr(app, 'load_permits'):
@@ -115,8 +115,8 @@ class TestParkingPermitsManagement(unittest.TestCase):
         except Exception:
             self.skipTest("GUI method not available")
 
-    @patch('university_system.modules.domain.mobility.gui.parking_management_gui.transaction')
-    @patch('university_system.modules.domain.mobility.gui.parking_management_gui.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.log_activity')
     def test_create_permit(self, mock_log, mock_transaction):
         """Test creating a parking permit"""
         mock_cursor = Mock()
@@ -132,7 +132,7 @@ class TestParkingPermitsManagement(unittest.TestCase):
         try:
             from education_system.university_system.modules.domain.mobility.gui.parking_management_gui import ParkingManagementGUI
 
-            with patch('university_system.modules.domain.mobility.gui.parking_management_gui.get_centralized_auth',
+            with patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.get_centralized_auth',
                       return_value=self.mock_auth):
                 app = ParkingManagementGUI(self.root, self.mock_auth)
         except Exception:
@@ -155,7 +155,7 @@ class TestVehicleManagement(unittest.TestCase):
         except Exception:
             pass
 
-    @patch('university_system.modules.domain.mobility.gui.parking_management_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.get_connection')
     def test_load_vehicles(self, mock_conn):
         """Test loading vehicles"""
         mock_cursor = Mock()
@@ -172,8 +172,8 @@ class TestVehicleManagement(unittest.TestCase):
         try:
             from education_system.university_system.modules.domain.mobility.gui.parking_management_gui import ParkingManagementGUI
 
-            with patch('university_system.modules.domain.mobility.gui.parking_management_gui.transaction'):
-                with patch('university_system.modules.domain.mobility.gui.parking_management_gui.get_centralized_auth',
+            with patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.transaction'):
+                with patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.get_centralized_auth',
                           return_value=self.mock_auth):
                     app = ParkingManagementGUI(self.root, self.mock_auth)
                     if hasattr(app, 'load_vehicles'):
@@ -198,7 +198,7 @@ class TestViolationsManagement(unittest.TestCase):
         except Exception:
             pass
 
-    @patch('university_system.modules.domain.mobility.gui.parking_management_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.get_connection')
     def test_load_violations(self, mock_conn):
         """Test loading parking violations"""
         mock_cursor = Mock()
@@ -216,8 +216,8 @@ class TestViolationsManagement(unittest.TestCase):
         try:
             from education_system.university_system.modules.domain.mobility.gui.parking_management_gui import ParkingManagementGUI
 
-            with patch('university_system.modules.domain.mobility.gui.parking_management_gui.transaction'):
-                with patch('university_system.modules.domain.mobility.gui.parking_management_gui.get_centralized_auth',
+            with patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.transaction'):
+                with patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.get_centralized_auth',
                           return_value=self.mock_auth):
                     app = ParkingManagementGUI(self.root, self.mock_auth)
                     if hasattr(app, 'load_violations'):
@@ -242,7 +242,7 @@ class TestParkingLotsManagement(unittest.TestCase):
         except Exception:
             pass
 
-    @patch('university_system.modules.domain.mobility.gui.parking_management_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.get_connection')
     def test_load_parking_lots(self, mock_conn):
         """Test loading parking lots"""
         mock_cursor = Mock()
@@ -259,8 +259,8 @@ class TestParkingLotsManagement(unittest.TestCase):
         try:
             from education_system.university_system.modules.domain.mobility.gui.parking_management_gui import ParkingManagementGUI
 
-            with patch('university_system.modules.domain.mobility.gui.parking_management_gui.transaction'):
-                with patch('university_system.modules.domain.mobility.gui.parking_management_gui.get_centralized_auth',
+            with patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.transaction'):
+                with patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.get_centralized_auth',
                           return_value=self.mock_auth):
                     app = ParkingManagementGUI(self.root, self.mock_auth)
                     if hasattr(app, 'load_parking_lots'):
@@ -285,8 +285,8 @@ class TestReportsAndAnalytics(unittest.TestCase):
         except Exception:
             pass
 
-    @patch('university_system.modules.domain.mobility.gui.parking_management_gui.get_connection')
-    @patch('university_system.modules.domain.mobility.gui.parking_management_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.messagebox')
     def test_generate_report(self, mock_msgbox, mock_conn):
         """Test generating reports"""
         mock_cursor = Mock()
@@ -301,8 +301,8 @@ class TestReportsAndAnalytics(unittest.TestCase):
         try:
             from education_system.university_system.modules.domain.mobility.gui.parking_management_gui import ParkingManagementGUI
 
-            with patch('university_system.modules.domain.mobility.gui.parking_management_gui.transaction'):
-                with patch('university_system.modules.domain.mobility.gui.parking_management_gui.get_centralized_auth',
+            with patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.transaction'):
+                with patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.get_centralized_auth',
                           return_value=self.mock_auth):
                     app = ParkingManagementGUI(self.root, self.mock_auth)
         except Exception:
@@ -325,8 +325,8 @@ class TestDataExport(unittest.TestCase):
         except Exception:
             pass
 
-    @patch('university_system.modules.domain.mobility.gui.parking_management_gui.filedialog')
-    @patch('university_system.modules.domain.mobility.gui.parking_management_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.filedialog')
+    @patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.get_connection')
     def test_export_data(self, mock_conn, mock_filedialog):
         """Test exporting data"""
         mock_filedialog.asksaveasfilename.return_value = '/tmp/test_export.csv'
@@ -343,8 +343,8 @@ class TestDataExport(unittest.TestCase):
         try:
             from education_system.university_system.modules.domain.mobility.gui.parking_management_gui import ParkingManagementGUI
 
-            with patch('university_system.modules.domain.mobility.gui.parking_management_gui.transaction'):
-                with patch('university_system.modules.domain.mobility.gui.parking_management_gui.get_centralized_auth',
+            with patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.transaction'):
+                with patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.get_centralized_auth',
                           return_value=self.mock_auth):
                     app = ParkingManagementGUI(self.root, self.mock_auth)
         except Exception:

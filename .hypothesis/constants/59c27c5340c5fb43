@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/cinema_cli/screenings.py
+# hypothesis_version: 6.151.9
+
+[100, ' (PREMIUM)', '0', '=', 'premium', '❌ Invalid movie ID', '❌ Movie not found', '🔴 SOLD OUT']

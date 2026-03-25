@@ -83,113 +83,108 @@ def init_db():
 
         cursor = conn.cursor()
 
-        # Bar menu items table
+        # Unified products table (bar items have source_type='bar')
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS bar_menu_items (
-                item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            CREATE TABLE IF NOT EXISTS products (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source_type TEXT NOT NULL DEFAULT 'bar',
+                source_product_id INTEGER,
                 name TEXT NOT NULL,
                 category TEXT NOT NULL,
                 description TEXT,
                 price REAL NOT NULL,
                 is_alcoholic INTEGER DEFAULT 0,
-                available INTEGER DEFAULT 1,
+                is_available INTEGER DEFAULT 1,
                 stock_quantity INTEGER DEFAULT 100,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
 
-        # Bar orders table
+        # Unified orders table (bar orders have source_type='bar')
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS bar_orders (
-                order_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            CREATE TABLE IF NOT EXISTS orders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source_type TEXT NOT NULL DEFAULT 'bar',
+                source_order_id INTEGER,
                 student_id TEXT,
                 customer_name TEXT,
                 order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 total_amount REAL NOT NULL,
                 payment_method TEXT,
                 age_verified INTEGER DEFAULT 0,
-                status TEXT DEFAULT 'completed',
+                order_status TEXT DEFAULT 'completed',
                 notes TEXT
             )
         ''')
 
-        # Bar order items table
+        # Unified order_items table (bar order items have source_type='bar')
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS bar_order_items (
+            CREATE TABLE IF NOT EXISTS order_items (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                order_id INTEGER,
-                item_id INTEGER,
+                source_type TEXT NOT NULL DEFAULT 'bar',
+                source_order_id INTEGER,
+                product_id INTEGER,
                 item_name TEXT,
                 quantity INTEGER,
                 unit_price REAL,
                 subtotal REAL,
-                FOREIGN KEY (order_id) REFERENCES bar_orders(order_id),
-                FOREIGN KEY (item_id) REFERENCES bar_menu_items(item_id)
+                FOREIGN KEY (source_order_id) REFERENCES orders(order_id),
+                FOREIGN KEY (product_id) REFERENCES products(product_id)
             )
         ''')
 
-        # Bar inventory transactions table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS bar_inventory_transactions (
-                transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                item_id INTEGER,
-                quantity_change INTEGER,
-                transaction_type TEXT,
-                transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                notes TEXT,
-                FOREIGN KEY (item_id) REFERENCES bar_menu_items(item_id)
-            )
-        ''')
+        # NOTE: bar inventory transactions now use the unified 'transactions' table
+        # with source_type = 'bar_inventory'
 
         conn.commit()
 
         # Insert sample menu items if table is empty
-        cursor.execute('SELECT COUNT(*) FROM bar_menu_items')
+        cursor.execute("SELECT COUNT(*) FROM products WHERE source_type = 'bar'")
         if cursor.fetchone()[0] == 0:
             sample_items = [
                 # Beer
-                ('Lager', 'Beer', 'Refreshing lager beer', 3.50, 1, 1, 100),
-                ('Ale', 'Beer', 'Traditional English ale', 4.00, 1, 1, 80),
-                ('IPA', 'Beer', 'India Pale Ale with hoppy flavor', 4.50, 1, 1, 60),
-                ('Stout', 'Beer', 'Rich dark stout', 5.00, 1, 1, 50),
-                ('Cider', 'Beer', 'Crisp apple cider', 4.00, 1, 1, 70),
+                ('bar', 'Lager', 'Beer', 'Refreshing lager beer', 3.50, 1, 1, 100),
+                ('bar', 'Ale', 'Beer', 'Traditional English ale', 4.00, 1, 1, 80),
+                ('bar', 'IPA', 'Beer', 'India Pale Ale with hoppy flavor', 4.50, 1, 1, 60),
+                ('bar', 'Stout', 'Beer', 'Rich dark stout', 5.00, 1, 1, 50),
+                ('bar', 'Cider', 'Beer', 'Crisp apple cider', 4.00, 1, 1, 70),
                 # Wine
-                ('House Red', 'Wine', 'Glass of house red wine', 4.50, 1, 1, 40),
-                ('House White', 'Wine', 'Glass of house white wine', 4.50, 1, 1, 40),
-                ('Prosecco', 'Wine', 'Glass of Italian sparkling wine', 6.00, 1, 1, 30),
-                ('Rose', 'Wine', 'Glass of rose wine', 5.00, 1, 1, 35),
+                ('bar', 'House Red', 'Wine', 'Glass of house red wine', 4.50, 1, 1, 40),
+                ('bar', 'House White', 'Wine', 'Glass of house white wine', 4.50, 1, 1, 40),
+                ('bar', 'Prosecco', 'Wine', 'Glass of Italian sparkling wine', 6.00, 1, 1, 30),
+                ('bar', 'Rose', 'Wine', 'Glass of rose wine', 5.00, 1, 1, 35),
                 # Spirits
-                ('Vodka', 'Spirits', 'Single shot of vodka', 3.00, 1, 1, 100),
-                ('Gin', 'Spirits', 'Single shot of gin', 3.50, 1, 1, 100),
-                ('Rum', 'Spirits', 'Single shot of rum', 3.00, 1, 1, 100),
-                ('Whisky', 'Spirits', 'Single shot of whisky', 4.00, 1, 1, 80),
-                ('Tequila', 'Spirits', 'Single shot of tequila', 3.50, 1, 1, 60),
+                ('bar', 'Vodka', 'Spirits', 'Single shot of vodka', 3.00, 1, 1, 100),
+                ('bar', 'Gin', 'Spirits', 'Single shot of gin', 3.50, 1, 1, 100),
+                ('bar', 'Rum', 'Spirits', 'Single shot of rum', 3.00, 1, 1, 100),
+                ('bar', 'Whisky', 'Spirits', 'Single shot of whisky', 4.00, 1, 1, 80),
+                ('bar', 'Tequila', 'Spirits', 'Single shot of tequila', 3.50, 1, 1, 60),
                 # Cocktails
-                ('Mojito', 'Cocktails', 'Rum, mint, lime, soda', 7.00, 1, 1, 50),
-                ('Margarita', 'Cocktails', 'Tequila, lime, triple sec', 7.50, 1, 1, 50),
-                ('Long Island', 'Cocktails', 'Vodka, gin, rum, tequila, cola', 8.50, 1, 1, 40),
-                ('Cosmopolitan', 'Cocktails', 'Vodka, cranberry, lime', 7.00, 1, 1, 45),
-                ('Pina Colada', 'Cocktails', 'Rum, coconut, pineapple', 7.50, 1, 1, 40),
+                ('bar', 'Mojito', 'Cocktails', 'Rum, mint, lime, soda', 7.00, 1, 1, 50),
+                ('bar', 'Margarita', 'Cocktails', 'Tequila, lime, triple sec', 7.50, 1, 1, 50),
+                ('bar', 'Long Island', 'Cocktails', 'Vodka, gin, rum, tequila, cola', 8.50, 1, 1, 40),
+                ('bar', 'Cosmopolitan', 'Cocktails', 'Vodka, cranberry, lime', 7.00, 1, 1, 45),
+                ('bar', 'Pina Colada', 'Cocktails', 'Rum, coconut, pineapple', 7.50, 1, 1, 40),
                 # Soft Drinks
-                ('Cola', 'Soft Drinks', 'Classic cola', 1.80, 0, 1, 200),
-                ('Lemonade', 'Soft Drinks', 'Sparkling lemonade', 1.80, 0, 1, 200),
-                ('Orange Juice', 'Soft Drinks', 'Fresh orange juice', 2.50, 0, 1, 100),
-                ('Tonic Water', 'Soft Drinks', 'Schweppes tonic', 1.50, 0, 1, 150),
-                ('Sparkling Water', 'Soft Drinks', 'Mineral water', 1.50, 0, 1, 200),
+                ('bar', 'Cola', 'Soft Drinks', 'Classic cola', 1.80, 0, 1, 200),
+                ('bar', 'Lemonade', 'Soft Drinks', 'Sparkling lemonade', 1.80, 0, 1, 200),
+                ('bar', 'Orange Juice', 'Soft Drinks', 'Fresh orange juice', 2.50, 0, 1, 100),
+                ('bar', 'Tonic Water', 'Soft Drinks', 'Schweppes tonic', 1.50, 0, 1, 150),
+                ('bar', 'Sparkling Water', 'Soft Drinks', 'Mineral water', 1.50, 0, 1, 200),
                 # Snacks
-                ('Crisps', 'Snacks', 'Variety of crisps', 1.50, 0, 1, 100),
-                ('Nuts', 'Snacks', 'Salted peanuts', 2.00, 0, 1, 80),
-                ('Nachos', 'Snacks', 'Nachos with salsa and cheese', 5.00, 0, 1, 50),
-                ('Chips', 'Snacks', 'Portion of chips', 3.50, 0, 1, 60),
-                ('Onion Rings', 'Snacks', 'Crispy onion rings', 4.00, 0, 1, 50),
+                ('bar', 'Crisps', 'Snacks', 'Variety of crisps', 1.50, 0, 1, 100),
+                ('bar', 'Nuts', 'Snacks', 'Salted peanuts', 2.00, 0, 1, 80),
+                ('bar', 'Nachos', 'Snacks', 'Nachos with salsa and cheese', 5.00, 0, 1, 50),
+                ('bar', 'Chips', 'Snacks', 'Portion of chips', 3.50, 0, 1, 60),
+                ('bar', 'Onion Rings', 'Snacks', 'Crispy onion rings', 4.00, 0, 1, 50),
                 # Hot Drinks
-                ('Coffee', 'Hot Drinks', 'Fresh brewed coffee', 2.50, 0, 1, 100),
-                ('Tea', 'Hot Drinks', 'Selection of teas', 2.00, 0, 1, 100),
-                ('Hot Chocolate', 'Hot Drinks', 'Rich hot chocolate', 3.00, 0, 1, 80),
+                ('bar', 'Coffee', 'Hot Drinks', 'Fresh brewed coffee', 2.50, 0, 1, 100),
+                ('bar', 'Tea', 'Hot Drinks', 'Selection of teas', 2.00, 0, 1, 100),
+                ('bar', 'Hot Chocolate', 'Hot Drinks', 'Rich hot chocolate', 3.00, 0, 1, 80),
             ]
             cursor.executemany('''
-                INSERT INTO bar_menu_items (name, category, description, price, is_alcoholic, available, stock_quantity)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO products (source_type, name, category, description, price, is_alcoholic, is_available, stock_quantity)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ''', sample_items)
             conn.commit()
 
@@ -236,7 +231,7 @@ class BarGUI:
             if not conn:
                 return ['Beer', 'Wine', 'Spirits', 'Cocktails', 'Soft Drinks', 'Snacks', 'Hot Drinks']
             cursor = conn.cursor()
-            cursor.execute('SELECT DISTINCT category FROM bar_menu_items ORDER BY category')
+            cursor.execute("SELECT DISTINCT category FROM products WHERE source_type = 'bar' ORDER BY category")
             categories = [row[0] for row in cursor.fetchall()]
             conn.close()
             return categories if categories else ['Beer', 'Wine', 'Spirits', 'Cocktails', 'Soft Drinks', 'Snacks', 'Hot Drinks']
@@ -536,9 +531,9 @@ class BarGUI:
 
             category = self.category_filter.get()
             if category == 'All':
-                cursor.execute('SELECT item_id, name, category, price, is_alcoholic FROM bar_menu_items WHERE available = 1 ORDER BY category, name')
+                cursor.execute("SELECT product_id, name, category, price, is_alcoholic FROM products WHERE source_type = 'bar' AND is_available = 1 ORDER BY category, name")
             else:
-                cursor.execute('SELECT item_id, name, category, price, is_alcoholic FROM bar_menu_items WHERE available = 1 AND category = ? ORDER BY name', (category,))
+                cursor.execute("SELECT product_id, name, category, price, is_alcoholic FROM products WHERE source_type = 'bar' AND is_available = 1 AND category = ? ORDER BY name", (category,))
 
             self.menu_item_data = {}
             for row in cursor.fetchall():
@@ -690,8 +685,8 @@ class BarGUI:
 
             # Insert order
             cursor.execute('''
-                INSERT INTO bar_orders (student_id, customer_name, total_amount, payment_method, age_verified, status)
-                VALUES (?, ?, ?, ?, ?, 'completed')
+                INSERT INTO orders (source_type, student_id, customer_name, total_amount, payment_method, age_verified, order_status)
+                VALUES ('bar', ?, ?, ?, ?, ?, 'completed')
             ''', (student_id, customer_name, self.order_total, payment_method, 1 if self.age_verified else 0))
 
             order_id = cursor.lastrowid
@@ -699,13 +694,13 @@ class BarGUI:
             # Insert order items
             for item in self.current_order:
                 cursor.execute('''
-                    INSERT INTO bar_order_items (order_id, item_id, item_name, quantity, unit_price, subtotal)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    INSERT INTO order_items (source_type, source_order_id, product_id, item_name, quantity, unit_price, subtotal)
+                    VALUES ('bar', ?, ?, ?, ?, ?, ?)
                 ''', (order_id, item['item_id'], item['name'], item['quantity'], item['price'], item['subtotal']))
 
                 # Update stock
                 cursor.execute('''
-                    UPDATE bar_menu_items SET stock_quantity = stock_quantity - ? WHERE item_id = ?
+                    UPDATE products SET stock_quantity = stock_quantity - ? WHERE product_id = ? AND source_type = 'bar'
                 ''', (item['quantity'], item['item_id']))
 
             conn.commit()
@@ -888,8 +883,8 @@ Questions? Contact the University Bar staff.
             # Get sales data
             cursor.execute('''
                 SELECT COUNT(*), SUM(total_amount), AVG(total_amount)
-                FROM bar_orders
-                WHERE order_date >= ? AND status = 'completed'
+                FROM orders
+                WHERE source_type = 'bar' AND order_date >= ? AND order_status = 'completed'
             ''', (start_date.strftime('%Y-%m-%d %H:%M:%S'),))
 
             result = cursor.fetchone()
@@ -900,8 +895,8 @@ Questions? Contact the University Bar staff.
             # Get top items
             cursor.execute('''
                 SELECT item_name, SUM(quantity) as qty, SUM(subtotal) as revenue
-                FROM bar_order_items
-                WHERE order_id IN (SELECT order_id FROM bar_orders WHERE order_date >= ?)
+                FROM order_items
+                WHERE source_type = 'bar' AND source_order_id IN (SELECT order_id FROM orders WHERE source_type = 'bar' AND order_date >= ?)
                 GROUP BY item_name
                 ORDER BY qty DESC
                 LIMIT 5
@@ -1006,7 +1001,7 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
             if not conn:
                 return
             cursor = conn.cursor()
-            cursor.execute('SELECT item_id, name, category, price, is_alcoholic, available, stock_quantity FROM bar_menu_items ORDER BY category, name')
+            cursor.execute("SELECT product_id, name, category, price, is_alcoholic, is_available, stock_quantity FROM products WHERE source_type = 'bar' ORDER BY category, name")
 
             for row in cursor.fetchall():
                 alcoholic = "Yes" if row[4] else "No"
@@ -1071,8 +1066,8 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
                 conn = get_db_connection()
                 cursor = conn.cursor()
                 cursor.execute('''
-                    INSERT INTO bar_menu_items (name, category, description, price, is_alcoholic, available, stock_quantity)
-                    VALUES (?, ?, ?, ?, ?, 1, ?)
+                    INSERT INTO products (source_type, name, category, description, price, is_alcoholic, is_available, stock_quantity)
+                    VALUES ('bar', ?, ?, ?, ?, ?, 1, ?)
                 ''', (name, category, description, price, 1 if alcoholic_var.get() else 0, stock))
                 conn.commit()
                 conn.close()
@@ -1110,7 +1105,7 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         # Get current item data
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM bar_menu_items WHERE item_id = ?', (item_id,))
+        cursor.execute("SELECT * FROM products WHERE product_id = ? AND source_type = 'bar'", (item_id,))
         item = cursor.fetchone()
         conn.close()
 
@@ -1168,9 +1163,9 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
                 conn = get_db_connection()
                 cursor = conn.cursor()
                 cursor.execute('''
-                    UPDATE bar_menu_items
-                    SET name=?, category=?, description=?, price=?, is_alcoholic=?, available=?, stock_quantity=?
-                    WHERE item_id=?
+                    UPDATE products
+                    SET name=?, category=?, description=?, price=?, is_alcoholic=?, is_available=?, stock_quantity=?
+                    WHERE product_id=? AND source_type = 'bar'
                 ''', (name, category, description, price,
                       1 if alcoholic_var.get() else 0,
                       1 if available_var.get() else 0,
@@ -1208,7 +1203,7 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
-            cursor.execute('DELETE FROM bar_menu_items WHERE item_id = ?', (item_id,))
+            cursor.execute("DELETE FROM products WHERE product_id = ? AND source_type = 'bar'", (item_id,))
             conn.commit()
             conn.close()
 
@@ -1273,8 +1268,9 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
                 return
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT order_id, order_date, customer_name, total_amount, payment_method, status
-                FROM bar_orders
+                SELECT order_id, order_date, customer_name, total_amount, payment_method, order_status
+                FROM orders
+                WHERE source_type = 'bar'
                 ORDER BY order_date DESC
                 LIMIT 100
             ''')
@@ -1307,8 +1303,8 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         cursor = conn.cursor()
         cursor.execute('''
             SELECT item_name, quantity, unit_price, subtotal
-            FROM bar_order_items
-            WHERE order_id = ?
+            FROM order_items
+            WHERE source_type = 'bar' AND source_order_id = ?
         ''', (order_id,))
         items = cursor.fetchall()
         conn.close()
@@ -1383,7 +1379,7 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
             if not conn:
                 return
             cursor = conn.cursor()
-            cursor.execute('SELECT item_id, name, category, stock_quantity FROM bar_menu_items ORDER BY stock_quantity ASC')
+            cursor.execute("SELECT product_id, name, category, stock_quantity FROM products WHERE source_type = 'bar' ORDER BY stock_quantity ASC")
 
             for row in cursor.fetchall():
                 stock = row[3]
@@ -1423,13 +1419,13 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
             try:
                 conn = get_db_connection()
                 cursor = conn.cursor()
-                cursor.execute('UPDATE bar_menu_items SET stock_quantity = stock_quantity + ? WHERE item_id = ?',
+                cursor.execute("UPDATE products SET stock_quantity = stock_quantity + ? WHERE product_id = ? AND source_type = 'bar'",
                               (quantity, item_id))
 
                 # Log inventory transaction
                 cursor.execute('''
-                    INSERT INTO bar_inventory_transactions (item_id, quantity_change, transaction_type, notes)
-                    VALUES (?, ?, 'restock', ?)
+                    INSERT INTO transactions (source_type, reference_id, reference_type, quantity_change, transaction_type, notes)
+                    VALUES ('bar_inventory', ?, 'item', ?, 'restock', ?)
                 ''', (item_id, quantity, f"Restocked by {self.current_user.get('username', 'unknown')}"))
 
                 conn.commit()
@@ -1496,8 +1492,8 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
             # Get summary
             cursor.execute('''
                 SELECT COUNT(*), COALESCE(SUM(total_amount), 0), COALESCE(AVG(total_amount), 0)
-                FROM bar_orders
-                WHERE order_date >= ? AND status = 'completed'
+                FROM orders
+                WHERE source_type = 'bar' AND order_date >= ? AND order_status = 'completed'
             ''', (start_date.strftime('%Y-%m-%d %H:%M:%S'),))
 
             result = cursor.fetchone()
@@ -1508,8 +1504,8 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
             # Get top items
             cursor.execute('''
                 SELECT item_name, SUM(quantity) as qty, SUM(subtotal) as revenue
-                FROM bar_order_items
-                WHERE order_id IN (SELECT order_id FROM bar_orders WHERE order_date >= ? AND status = 'completed')
+                FROM order_items
+                WHERE source_type = 'bar' AND source_order_id IN (SELECT order_id FROM orders WHERE source_type = 'bar' AND order_date >= ? AND order_status = 'completed')
                 GROUP BY item_name
                 ORDER BY qty DESC
                 LIMIT 10
@@ -1519,11 +1515,11 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
             # Get category breakdown
             cursor.execute('''
-                SELECT bmi.category, SUM(boi.quantity) as qty, SUM(boi.subtotal) as revenue
-                FROM bar_order_items boi
-                JOIN bar_menu_items bmi ON boi.item_id = bmi.item_id
-                WHERE boi.order_id IN (SELECT order_id FROM bar_orders WHERE order_date >= ? AND status = 'completed')
-                GROUP BY bmi.category
+                SELECT p.category, SUM(oi.quantity) as qty, SUM(oi.subtotal) as revenue
+                FROM order_items oi
+                JOIN products p ON oi.product_id = p.product_id AND p.source_type = 'bar'
+                WHERE oi.source_type = 'bar' AND oi.source_order_id IN (SELECT order_id FROM orders WHERE source_type = 'bar' AND order_date >= ? AND order_status = 'completed')
+                GROUP BY p.category
                 ORDER BY revenue DESC
             ''', (start_date.strftime('%Y-%m-%d %H:%M:%S'),))
 

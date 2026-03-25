@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 from typing import Dict, Tuple, Any
 from education_system.university_system.utils.logging.log_config import configure_logging
-from .exceptions import ValidationError, PermissionError
+from education_system.university_system.modules.domain.academics.services.academic_calendar.exceptions import ValidationError, PermissionError
 
 logger = configure_logging(name=__name__)
 

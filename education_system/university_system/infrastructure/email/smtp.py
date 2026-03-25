@@ -95,6 +95,13 @@ class SMTPClient:
                 use_authentication=config.get('use_authentication', False),
             )
 
+    @staticmethod
+    def _validate_email_header(value: str) -> str:
+        """Reject email header values containing CRLF characters to prevent header injection."""
+        if '\r' in value or '\n' in value:
+            raise ValueError(f"Email header value contains illegal newline characters: {value!r}")
+        return value
+
     def send(
         self,
         recipient_email: str,
@@ -118,6 +125,14 @@ class SMTPClient:
             True if email was sent successfully, False otherwise
         """
         try:
+            # Validate all header fields against CRLF injection
+            self._validate_email_header(recipient_email)
+            self._validate_email_header(subject)
+            if cc:
+                self._validate_email_header(cc)
+            if bcc:
+                self._validate_email_header(bcc)
+
             msg = MIMEMultipart()
             msg['From'] = f"{self.config.sender_name} <{self.config.sender_email}>"
             msg['To'] = recipient_email
@@ -245,8 +260,8 @@ def send_email_via_smtp(recipient_email, subject, body, cc, bcc, attachments, cu
     are imported at call time to avoid circular dependencies.
     """
     # Deferred imports to avoid circular dependencies
-    from .email_service import get_appropriate_sender_id, safe_log_email
-    from .reports import log_email_metrics
+    from education_system.university_system.infrastructure.email.email_service import get_appropriate_sender_id, safe_log_email
+    from education_system.university_system.infrastructure.email.reports import log_email_metrics
 
     # Use the new SMTPClient
     client = SMTPClient()

@@ -23,7 +23,7 @@ class TestRestaurantContext(unittest.TestCase):
         self.mock_auth = MagicMock()
         self.mock_auth.current_user = {'id': 'TEST_USER', 'username': 'test'}
 
-    @patch('university_system.modules.core.services.restaurant_misc.restaurant_context.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.restaurant_context.get_db_connection')
     def test_database_connection_import(self, mock_get_conn):
         """Test database connection can be imported"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.restaurant_context import get_db_connection
@@ -31,7 +31,7 @@ class TestRestaurantContext(unittest.TestCase):
         # Should be callable
         assert callable(get_db_connection)
 
-    @patch('university_system.modules.core.services.restaurant_misc.restaurant_context.get_auth')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.restaurant_context.get_auth')
     def test_auth_context_import(self, mock_get_auth):
         """Test auth context can be imported"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.restaurant_context import get_auth
@@ -54,7 +54,7 @@ class TestRestaurantContext(unittest.TestCase):
         # Should have logger configured
         assert hasattr(restaurant_context, 'logger')
 
-    @patch('university_system.modules.core.services.restaurant_misc.restaurant_context.set_global_auth')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.restaurant_context.set_global_auth')
     def test_set_auth_function(self, mock_set_global_auth):
         """Test set_auth function"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.restaurant_context import set_auth
@@ -189,7 +189,7 @@ class TestRestaurantContextImports(unittest.TestCase):
 class TestRestaurantContextAuth(unittest.TestCase):
     """Test auth context management"""
 
-    @patch('university_system.modules.core.services.restaurant_misc.restaurant_context.get_auth')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.restaurant_context.get_auth')
     def test_auth_instance_retrieval(self, mock_get_auth):
         """Test retrieving auth instance"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.connection import restaurant_context
@@ -197,7 +197,7 @@ class TestRestaurantContextAuth(unittest.TestCase):
         # Auth should be retrieved on module load
         assert hasattr(restaurant_context, 'auth')
 
-    @patch('university_system.modules.core.services.restaurant_misc.restaurant_context.get_auth')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.restaurant_context.get_auth')
     def test_auth_none_handling(self, mock_get_auth):
         """Test handling when auth is None"""
         mock_get_auth.return_value = None
@@ -214,12 +214,12 @@ class TestRestaurantContextDatabase(unittest.TestCase):
     def test_database_path_from_constants(self):
         """Test DATABASE_FILE comes from constants"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.restaurant_context import DATABASE_FILE
-        from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+        from education_system.university_system.core.paths import DEFAULT_DB_PATH
 
         # Should use centralized path
         assert DATABASE_FILE == str(DEFAULT_DB_PATH)
 
-    @patch('university_system.modules.core.services.restaurant_misc.restaurant_context.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.restaurant_context.get_db_connection')
     def test_database_connection_callable(self, mock_get_conn):
         """Test database connection is callable"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.restaurant_context import get_db_connection
@@ -264,7 +264,7 @@ class TestRestaurantContextLogging(unittest.TestCase):
 
         assert hasattr(restaurant_context, 'logger')
 
-    @patch('university_system.modules.core.services.restaurant_misc.restaurant_context.os.makedirs')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.restaurant_context.os.makedirs')
     def test_log_directory_creation(self, mock_makedirs):
         """Test log directory is created"""
         # Re-import to trigger makedirs
@@ -279,8 +279,8 @@ class TestRestaurantContextLogging(unittest.TestCase):
 class TestRestaurantContextIntegration(unittest.TestCase):
     """Integration tests for context module"""
 
-    @patch('university_system.modules.core.services.restaurant_misc.restaurant_context.get_auth')
-    @patch('university_system.modules.core.services.restaurant_misc.restaurant_context.set_global_auth')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.restaurant_context.get_auth')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.restaurant_context.set_global_auth')
     def test_full_auth_workflow(self, mock_set_global, mock_get_auth):
         """Test full auth initialization workflow"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.restaurant_context import set_auth

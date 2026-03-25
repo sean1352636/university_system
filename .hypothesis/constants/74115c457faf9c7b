@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/grading/learning_outcomes/achievement.py
+# hypothesis_version: 6.151.9
+
+[2.5, 4.0, 5.5, 100, '\nLearning Outcomes:', '\nSummary Statistics:', '%Y%m%d_%H%M%S', '%Y-%m-%d', '-', '--', '...', 'Agg', 'High Achievement', 'Low Achievement', 'N/A', 'Not assessed', 'Student not found.', 'g', 'outcome_plots', 'r', 'recorded', 'right', 'updated', 'upper right', 'y']

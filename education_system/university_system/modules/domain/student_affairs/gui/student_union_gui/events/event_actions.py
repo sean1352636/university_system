@@ -88,8 +88,8 @@ def register_for_selected_event(self):
         cursor = conn.cursor()
         cursor.execute(
             '''
-            SELECT 1 FROM union_event_registrations
-            WHERE event_id = ? AND user_id = ?
+            SELECT 1 FROM unified_event_registrations
+            WHERE event_id = ? AND user_id = ? AND user_type = 'student'
             ''',
             (event_id, self.current_user['id'])
         )
@@ -124,14 +124,12 @@ def register_for_selected_event(self):
 def _register_event_operation(self, conn, event_id):
     """Database operation to register user for an event"""
     cursor = conn.cursor()
-    # Get student_id if available
-    student_id = self.current_user.get('student_id')
 
     # Get event details for email
     cursor.execute(
         '''
-        SELECT event_name, event_date, event_time, location
-        FROM union_events
+        SELECT title, start_datetime, NULL, location
+        FROM unified_events
         WHERE event_id = ?
         ''',
         (event_id,)
@@ -141,20 +139,11 @@ def _register_event_operation(self, conn, event_id):
     # Insert registration
     cursor.execute(
         '''
-        INSERT INTO union_event_registrations
-        (event_id, user_id, student_id, registration_date, status)
+        INSERT INTO unified_event_registrations
+        (event_id, user_id, user_type, registration_date, attendance_status)
         VALUES (?, ?, ?, ?, ?)
         ''',
-        (event_id, self.current_user['id'], student_id, datetime.now().isoformat(), 'registered')
-    )
-    # Update event attendance count
-    cursor.execute(
-        '''
-        UPDATE union_events
-        SET current_attendees = current_attendees + 1
-        WHERE event_id = ?
-        ''',
-        (event_id,)
+        (event_id, self.current_user['id'], 'student', datetime.now().isoformat(), 'registered')
     )
     conn.commit()
 
@@ -289,13 +278,15 @@ def create_event_dialog(self):
             cursor = conn.cursor()
 
             # Insert new event
+            start_dt = f"{date} {start_time}" if start_time else date
+            end_dt = f"{date} {end_time}" if end_time else None
             cursor.execute('''
-                INSERT INTO union_events (event_name, description, event_date, start_time,
-                                        end_time, location, category, max_attendees, status, created_at)
+                INSERT INTO unified_events (title, description, start_datetime, end_datetime,
+                                        location, event_category, max_capacity, status, created_at, source_type)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (name, description, date, start_time or None, end_time or None,
+            ''', (name, description, start_dt, end_dt,
                   location or None, category or None, max_attendees_int, 'upcoming',
-                  datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                  datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'student_union'))
 
             conn.commit()
             conn.close()

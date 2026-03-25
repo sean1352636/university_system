@@ -5,7 +5,7 @@ This module provides at-risk student identification, automated interventions,
 success coaching, progress monitoring, and tutoring recommendations.
 """
 
-from .early_warning_core import (
+from education_system.university_system.modules.domain.student_affairs.services.early_warning.early_warning_core import (
     RiskAssessmentManager,
     IndicatorManager,
     InterventionManager,

@@ -3,6 +3,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
+from education_system.college_system.core.i18n import t
 from education_system.college_system.modules.domain.student_wellbeing.services.student_wellbeing_service import (
     StudentWellbeingService,
 )
@@ -37,7 +38,7 @@ class StudentWellbeingFrame(tk.Frame):
         header.pack(fill="x")
         header.pack_propagate(False)
         tk.Label(
-            header, text="Student Wellbeing",
+            header, text=t("student_wellbeing.management"),
             font=("Helvetica", 15, "bold"), bg="#2c3e50", fg="white",
         ).pack(side="left", padx=20, pady=10)
 
@@ -55,32 +56,32 @@ class StudentWellbeingFrame(tk.Frame):
 
     def _build_referrals_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Referrals")
+        self._nb.add(tab, text=t("student_wellbeing.referrals"))
 
         # Filters
         filt = tk.Frame(tab, bg="#ecf0f1")
         filt.pack(fill="x", pady=(0, 5))
 
-        tk.Label(filt, text="Status:", bg="#ecf0f1").pack(side="left", padx=(0, 3))
+        tk.Label(filt, text=t("common.status") + ":", bg="#ecf0f1").pack(side="left", padx=(0, 3))
         self._ref_status_var = tk.StringVar()
         ttk.Combobox(filt, textvariable=self._ref_status_var,
                       values=self.REFERRAL_STATUSES, width=14, state="readonly"
                       ).pack(side="left", padx=(0, 10))
 
-        tk.Label(filt, text="Risk:", bg="#ecf0f1").pack(side="left", padx=(0, 3))
+        tk.Label(filt, text=t("student_wellbeing.risk") + ":", bg="#ecf0f1").pack(side="left", padx=(0, 3))
         self._ref_risk_var = tk.StringVar()
         ttk.Combobox(filt, textvariable=self._ref_risk_var,
                       values=self.RISK_LEVELS, width=10, state="readonly"
                       ).pack(side="left", padx=(0, 10))
 
-        tk.Label(filt, text="Category:", bg="#ecf0f1").pack(side="left", padx=(0, 3))
+        tk.Label(filt, text=t("common.category") + ":", bg="#ecf0f1").pack(side="left", padx=(0, 3))
         self._ref_cat_var = tk.StringVar()
         ttk.Combobox(filt, textvariable=self._ref_cat_var,
                       values=self.CONCERN_CATEGORIES, width=14, state="readonly"
                       ).pack(side="left", padx=(0, 10))
 
-        ttk.Button(filt, text="Filter", command=self._load_referrals).pack(side="left", padx=3)
-        ttk.Button(filt, text="Clear", command=self._clear_ref_filters).pack(side="left", padx=3)
+        ttk.Button(filt, text=t("common.filter"), command=self._load_referrals).pack(side="left", padx=3)
+        ttk.Button(filt, text=t("common.clear"), command=self._clear_ref_filters).pack(side="left", padx=3)
 
         # Treeview
         cols = ("id", "student_id", "type", "category", "risk_level", "status", "appointment")
@@ -88,10 +89,11 @@ class StudentWellbeingFrame(tk.Frame):
         tree_frame.pack(fill="both", expand=True)
 
         self._ref_tree = ttk.Treeview(tree_frame, columns=cols, show="headings", selectmode="browse")
-        for c, h, w in [("id", "ID", 40), ("student_id", "Student ID", 70),
-                         ("type", "Type", 80), ("category", "Category", 110),
-                         ("risk_level", "Risk Level", 80), ("status", "Status", 100),
-                         ("appointment", "Appointment", 100)]:
+        for c, h, w in [("id", t("common.id"), 40), ("student_id", t("common.student_id"), 70),
+                         ("type", t("common.type"), 80), ("category", t("common.category"), 110),
+                         ("risk_level", t("student_wellbeing.risk_level"), 80),
+                         ("status", t("common.status"), 100),
+                         ("appointment", t("student_wellbeing.appointment"), 100)]:
             self._ref_tree.heading(c, text=h)
             self._ref_tree.column(c, width=w, anchor="center")
         vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self._ref_tree.yview)
@@ -102,12 +104,13 @@ class StudentWellbeingFrame(tk.Frame):
         # Buttons
         btn = tk.Frame(tab, bg="#ecf0f1")
         btn.pack(fill="x", pady=(5, 0))
-        ttk.Button(btn, text="New", command=self._new_referral).pack(side="left", padx=3)
-        ttk.Button(btn, text="View", command=self._view_referral).pack(side="left", padx=3)
-        ttk.Button(btn, text="Update", command=self._update_referral).pack(side="left", padx=3)
-        ttk.Button(btn, text="Resolve", command=self._resolve_referral).pack(side="left", padx=3)
-        ttk.Button(btn, text="Delete", command=self._delete_referral).pack(side="left", padx=3)
-        ttk.Button(btn, text="High Risk", command=self._show_high_risk).pack(side="right", padx=3)
+        ttk.Button(btn, text=t("common.new"), command=self._new_referral).pack(side="left", padx=3)
+        ttk.Button(btn, text=t("common.view"), command=self._view_referral).pack(side="left", padx=3)
+        ttk.Button(btn, text=t("common.update"), command=self._update_referral).pack(side="left", padx=3)
+        ttk.Button(btn, text=t("student_wellbeing.resolve"), command=self._resolve_referral).pack(side="left", padx=3)
+        ttk.Button(btn, text=t("common.delete"), command=self._delete_referral).pack(side="left", padx=3)
+        ttk.Button(btn, text="Export CSV", command=self._export_referrals_csv).pack(side="left", padx=3)
+        ttk.Button(btn, text=t("student_wellbeing.high_risk"), command=self._show_high_risk).pack(side="right", padx=3)
 
     def _clear_ref_filters(self):
         self._ref_status_var.set("")
@@ -129,18 +132,18 @@ class StudentWellbeingFrame(tk.Frame):
                     r.get("status", ""), r.get("appointment_date", "") or "",
                 ))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _selected_referral_id(self):
         sel = self._ref_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a referral first.")
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"))
             return None
         return self._ref_tree.item(sel[0], "values")[0]
 
     def _new_referral(self):
         dlg = tk.Toplevel(self)
-        dlg.title("New Referral")
+        dlg.title(t("student_wellbeing.new_referral"))
         dlg.geometry("450x520")
         dlg.configure(bg="#ecf0f1")
         dlg.transient(self)
@@ -149,14 +152,14 @@ class StudentWellbeingFrame(tk.Frame):
         fields = {}
         row = 0
         for label, key, widget_type, opts in [
-            ("Student ID*:", "student_id", "entry", {}),
-            ("Referral Type:", "referral_type", "combo", {"values": self.REFERRAL_TYPES}),
-            ("Category:", "concern_category", "combo", {"values": self.CONCERN_CATEGORIES[1:]}),
-            ("Risk Level:", "risk_level", "combo", {"values": self.RISK_LEVELS[1:]}),
-            ("Service Referred To:", "service_referred_to", "entry", {}),
-            ("External Agency:", "external_agency", "entry", {}),
-            ("Consent Obtained:", "consent_obtained", "check", {}),
-            ("Appointment Date:", "appointment_date", "entry", {}),
+            (t("common.student_id") + "*:", "student_id", "entry", {}),
+            (t("student_wellbeing.referral_type") + ":", "referral_type", "combo", {"values": self.REFERRAL_TYPES}),
+            (t("common.category") + ":", "concern_category", "combo", {"values": self.CONCERN_CATEGORIES[1:]}),
+            (t("student_wellbeing.risk_level") + ":", "risk_level", "combo", {"values": self.RISK_LEVELS[1:]}),
+            (t("student_wellbeing.service_referred_to") + ":", "service_referred_to", "entry", {}),
+            (t("student_wellbeing.external_agency") + ":", "external_agency", "entry", {}),
+            (t("student_wellbeing.consent_obtained") + ":", "consent_obtained", "check", {}),
+            (t("student_wellbeing.appointment_date") + ":", "appointment_date", "entry", {}),
         ]:
             tk.Label(dlg, text=label, bg="#ecf0f1").grid(row=row, column=0, sticky="w", padx=10, pady=3)
             if widget_type == "entry":
@@ -174,7 +177,7 @@ class StudentWellbeingFrame(tk.Frame):
                 fields[key] = var
             row += 1
 
-        tk.Label(dlg, text="Concern Details*:", bg="#ecf0f1").grid(row=row, column=0, sticky="nw", padx=10, pady=3)
+        tk.Label(dlg, text=t("student_wellbeing.concern_details") + "*:", bg="#ecf0f1").grid(row=row, column=0, sticky="nw", padx=10, pady=3)
         details_text = tk.Text(dlg, width=30, height=5)
         details_text.grid(row=row, column=1, padx=10, pady=3)
 
@@ -182,7 +185,7 @@ class StudentWellbeingFrame(tk.Frame):
             sid = fields["student_id"].get().strip()
             details = details_text.get("1.0", "end").strip()
             if not sid or not details:
-                messagebox.showwarning("Warning", "Student ID and Concern Details are required.")
+                messagebox.showwarning(t("common.validation"), t("common.both_required"))
                 return
             try:
                 kwargs = {}
@@ -197,13 +200,13 @@ class StudentWellbeingFrame(tk.Frame):
                 if self._auth and hasattr(self._auth, "current_user"):
                     kwargs["referred_by"] = self._auth.current_user.get("user_id")
                 self._svc.create_referral(int(sid), details, **kwargs)
-                messagebox.showinfo("Success", "Referral created.")
+                messagebox.showinfo(t("common.success"), t("common.created_success"))
                 dlg.destroy()
                 self._load_referrals()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(dlg, text="Save", command=save).grid(row=row + 1, column=0, columnspan=2, pady=10)
+        ttk.Button(dlg, text=t("common.save"), command=save).grid(row=row + 1, column=0, columnspan=2, pady=10)
 
     def _view_referral(self):
         rid = self._selected_referral_id()
@@ -212,40 +215,40 @@ class StudentWellbeingFrame(tk.Frame):
         try:
             r = self._svc.get_referral(int(rid))
             if not r:
-                messagebox.showwarning("Warning", "Referral not found.")
+                messagebox.showwarning(t("common.warning"), t("common.no_data"))
                 return
             dlg = tk.Toplevel(self)
-            dlg.title(f"Referral #{r['id']}")
+            dlg.title(f"{t('student_wellbeing.referral')} #{r['id']}")
             dlg.geometry("500x500")
             dlg.configure(bg="#ecf0f1")
             dlg.transient(self)
 
-            text = tk.Text(dlg, wrap="word", bg="white", padx=10, pady=10)
-            text.pack(fill="both", expand=True, padx=10, pady=10)
+            text_widget = tk.Text(dlg, wrap="word", bg="white", padx=10, pady=10)
+            text_widget.pack(fill="both", expand=True, padx=10, pady=10)
 
-            name = f"{r.get('first_name', '')} {r.get('last_name', '')}".strip() or "N/A"
+            name = f"{r.get('first_name', '')} {r.get('last_name', '')}".strip() or t("common.not_applicable")
             lines = [
-                f"Referral ID: {r['id']}",
-                f"Student: {name} (ID: {r['student_id']})",
-                f"Type: {r.get('referral_type', '')}",
-                f"Category: {r.get('concern_category', '')}",
-                f"Risk Level: {r.get('risk_level', '')}",
-                f"Status: {r.get('status', '')}",
-                f"Service Referred To: {r.get('service_referred_to', '') or ''}",
-                f"External Agency: {r.get('external_agency', '') or ''}",
-                f"Consent: {'Yes' if r.get('consent_obtained') else 'No'}",
-                f"Appointment: {r.get('appointment_date', '') or ''}",
-                f"Outcome: {r.get('outcome', '') or ''}",
-                f"Created: {r.get('created_at', '')}",
-                f"Updated: {r.get('updated_at', '') or ''}",
+                f"{t('student_wellbeing.referral')} {t('common.id')}: {r['id']}",
+                f"{t('tutorial.student')}: {name} ({t('common.id')}: {r['student_id']})",
+                f"{t('common.type')}: {r.get('referral_type', '')}",
+                f"{t('common.category')}: {r.get('concern_category', '')}",
+                f"{t('student_wellbeing.risk_level')}: {r.get('risk_level', '')}",
+                f"{t('common.status')}: {r.get('status', '')}",
+                f"{t('student_wellbeing.service_referred_to')}: {r.get('service_referred_to', '') or ''}",
+                f"{t('student_wellbeing.external_agency')}: {r.get('external_agency', '') or ''}",
+                f"{t('student_wellbeing.consent')}: {t('common.yes') if r.get('consent_obtained') else t('common.no')}",
+                f"{t('student_wellbeing.appointment')}: {r.get('appointment_date', '') or ''}",
+                f"{t('student_wellbeing.outcome')}: {r.get('outcome', '') or ''}",
+                f"{t('common.created_at')}: {r.get('created_at', '')}",
+                f"{t('common.updated_at')}: {r.get('updated_at', '') or ''}",
                 "",
-                "Concern Details:",
+                f"{t('student_wellbeing.concern_details')}:",
                 r.get("concern_details", ""),
             ]
-            text.insert("1.0", "\n".join(lines))
-            text.configure(state="disabled")
+            text_widget.insert("1.0", "\n".join(lines))
+            text_widget.configure(state="disabled")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _update_referral(self):
         rid = self._selected_referral_id()
@@ -254,14 +257,14 @@ class StudentWellbeingFrame(tk.Frame):
         try:
             r = self._svc.get_referral(int(rid))
             if not r:
-                messagebox.showwarning("Warning", "Referral not found.")
+                messagebox.showwarning(t("common.warning"), t("common.no_data"))
                 return
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
             return
 
         dlg = tk.Toplevel(self)
-        dlg.title(f"Update Referral #{rid}")
+        dlg.title(f"{t('student_wellbeing.update_referral')} #{rid}")
         dlg.geometry("450x450")
         dlg.configure(bg="#ecf0f1")
         dlg.transient(self)
@@ -270,13 +273,13 @@ class StudentWellbeingFrame(tk.Frame):
         fields = {}
         row = 0
         for label, key, widget_type, opts, default in [
-            ("Type:", "referral_type", "combo", {"values": self.REFERRAL_TYPES}, r.get("referral_type", "")),
-            ("Category:", "concern_category", "combo", {"values": self.CONCERN_CATEGORIES[1:]}, r.get("concern_category", "")),
-            ("Risk Level:", "risk_level", "combo", {"values": self.RISK_LEVELS[1:]}, r.get("risk_level", "")),
-            ("Status:", "status", "combo", {"values": self.REFERRAL_STATUSES[1:]}, r.get("status", "")),
-            ("Service Referred To:", "service_referred_to", "entry", {}, r.get("service_referred_to", "") or ""),
-            ("External Agency:", "external_agency", "entry", {}, r.get("external_agency", "") or ""),
-            ("Appointment Date:", "appointment_date", "entry", {}, r.get("appointment_date", "") or ""),
+            (t("common.type") + ":", "referral_type", "combo", {"values": self.REFERRAL_TYPES}, r.get("referral_type", "")),
+            (t("common.category") + ":", "concern_category", "combo", {"values": self.CONCERN_CATEGORIES[1:]}, r.get("concern_category", "")),
+            (t("student_wellbeing.risk_level") + ":", "risk_level", "combo", {"values": self.RISK_LEVELS[1:]}, r.get("risk_level", "")),
+            (t("common.status") + ":", "status", "combo", {"values": self.REFERRAL_STATUSES[1:]}, r.get("status", "")),
+            (t("student_wellbeing.service_referred_to") + ":", "service_referred_to", "entry", {}, r.get("service_referred_to", "") or ""),
+            (t("student_wellbeing.external_agency") + ":", "external_agency", "entry", {}, r.get("external_agency", "") or ""),
+            (t("student_wellbeing.appointment_date") + ":", "appointment_date", "entry", {}, r.get("appointment_date", "") or ""),
         ]:
             tk.Label(dlg, text=label, bg="#ecf0f1").grid(row=row, column=0, sticky="w", padx=10, pady=3)
             if widget_type == "entry":
@@ -290,7 +293,7 @@ class StudentWellbeingFrame(tk.Frame):
                 fields[key] = var
             row += 1
 
-        tk.Label(dlg, text="Concern Details:", bg="#ecf0f1").grid(row=row, column=0, sticky="nw", padx=10, pady=3)
+        tk.Label(dlg, text=t("student_wellbeing.concern_details") + ":", bg="#ecf0f1").grid(row=row, column=0, sticky="nw", padx=10, pady=3)
         details_text = tk.Text(dlg, width=30, height=4)
         details_text.grid(row=row, column=1, padx=10, pady=3)
         details_text.insert("1.0", r.get("concern_details", ""))
@@ -309,15 +312,15 @@ class StudentWellbeingFrame(tk.Frame):
                     kwargs["concern_details"] = details
                 if kwargs:
                     self._svc.update_referral(int(rid), **kwargs)
-                    messagebox.showinfo("Success", "Referral updated.")
+                    messagebox.showinfo(t("common.success"), t("common.updated_success"))
                     dlg.destroy()
                     self._load_referrals()
                 else:
-                    messagebox.showwarning("Warning", "No changes made.")
+                    messagebox.showwarning(t("common.warning"), t("student_wellbeing.no_changes"))
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(dlg, text="Save", command=save).grid(row=row + 1, column=0, columnspan=2, pady=10)
+        ttk.Button(dlg, text=t("common.save"), command=save).grid(row=row + 1, column=0, columnspan=2, pady=10)
 
     def _resolve_referral(self):
         rid = self._selected_referral_id()
@@ -325,58 +328,60 @@ class StudentWellbeingFrame(tk.Frame):
             return
 
         dlg = tk.Toplevel(self)
-        dlg.title(f"Resolve Referral #{rid}")
+        dlg.title(f"{t('student_wellbeing.resolve_referral')} #{rid}")
         dlg.geometry("400x200")
         dlg.configure(bg="#ecf0f1")
         dlg.transient(self)
         dlg.grab_set()
 
-        tk.Label(dlg, text="Outcome:", bg="#ecf0f1").pack(padx=10, pady=(10, 3), anchor="w")
+        tk.Label(dlg, text=t("student_wellbeing.outcome") + ":", bg="#ecf0f1").pack(padx=10, pady=(10, 3), anchor="w")
         outcome_text = tk.Text(dlg, width=40, height=4)
         outcome_text.pack(padx=10, pady=3)
 
         def save():
             outcome = outcome_text.get("1.0", "end").strip()
             if not outcome:
-                messagebox.showwarning("Warning", "Outcome is required.")
+                messagebox.showwarning(t("common.validation"), t("common.field_required"))
                 return
             try:
                 self._svc.resolve_referral(int(rid), outcome)
-                messagebox.showinfo("Success", "Referral resolved.")
+                messagebox.showinfo(t("common.success"), t("student_wellbeing.referral_resolved"))
                 dlg.destroy()
                 self._load_referrals()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(dlg, text="Resolve", command=save).pack(pady=10)
+        ttk.Button(dlg, text=t("student_wellbeing.resolve"), command=save).pack(pady=10)
 
     def _delete_referral(self):
         rid = self._selected_referral_id()
         if not rid:
             return
-        if not messagebox.askyesno("Confirm", f"Delete referral #{rid}?"):
+        if not messagebox.askyesno(t("common.confirm"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_referral(int(rid))
-            messagebox.showinfo("Success", "Referral deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_referrals()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _show_high_risk(self):
         try:
             items = self._svc.get_high_risk_students()
             dlg = tk.Toplevel(self)
-            dlg.title("High Risk Students")
+            dlg.title(t("student_wellbeing.high_risk_students"))
             dlg.geometry("600x400")
             dlg.configure(bg="#ecf0f1")
             dlg.transient(self)
 
             cols = ("id", "student", "category", "risk", "status", "created")
             tree = ttk.Treeview(dlg, columns=cols, show="headings", selectmode="browse")
-            for c, h, w in [("id", "ID", 40), ("student", "Student", 140),
-                             ("category", "Category", 110), ("risk", "Risk", 70),
-                             ("status", "Status", 90), ("created", "Created", 100)]:
+            for c, h, w in [("id", t("common.id"), 40), ("student", t("tutorial.student"), 140),
+                             ("category", t("common.category"), 110),
+                             ("risk", t("student_wellbeing.risk"), 70),
+                             ("status", t("common.status"), 90),
+                             ("created", t("common.created_at"), 100)]:
                 tree.heading(c, text=h)
                 tree.column(c, width=w, anchor="center")
             tree.pack(fill="both", expand=True, padx=10, pady=10)
@@ -389,10 +394,10 @@ class StudentWellbeingFrame(tk.Frame):
                     r.get("status", ""), r.get("created_at", ""),
                 ))
             if not items:
-                tk.Label(dlg, text="No high-risk students found.", bg="#ecf0f1",
+                tk.Label(dlg, text=t("student_wellbeing.no_high_risk"), bg="#ecf0f1",
                          font=("Helvetica", 12)).pack(pady=20)
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ================================================================
     # Tab 2: Wellbeing Logs
@@ -400,24 +405,24 @@ class StudentWellbeingFrame(tk.Frame):
 
     def _build_logs_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Wellbeing Logs")
+        self._nb.add(tab, text=t("student_wellbeing.wellbeing_logs"))
 
         # Filters
         filt = tk.Frame(tab, bg="#ecf0f1")
         filt.pack(fill="x", pady=(0, 5))
 
-        tk.Label(filt, text="Student ID:", bg="#ecf0f1").pack(side="left", padx=(0, 3))
+        tk.Label(filt, text=t("common.student_id") + ":", bg="#ecf0f1").pack(side="left", padx=(0, 3))
         self._log_student_var = tk.StringVar()
         tk.Entry(filt, textvariable=self._log_student_var, width=8).pack(side="left", padx=(0, 10))
 
-        tk.Label(filt, text="Follow Up:", bg="#ecf0f1").pack(side="left", padx=(0, 3))
+        tk.Label(filt, text=t("student_wellbeing.follow_up") + ":", bg="#ecf0f1").pack(side="left", padx=(0, 3))
         self._log_followup_var = tk.StringVar()
         ttk.Combobox(filt, textvariable=self._log_followup_var,
                       values=self.FOLLOW_UP_OPTIONS, width=8, state="readonly"
                       ).pack(side="left", padx=(0, 10))
 
-        ttk.Button(filt, text="Filter", command=self._load_logs).pack(side="left", padx=3)
-        ttk.Button(filt, text="Clear", command=self._clear_log_filters).pack(side="left", padx=3)
+        ttk.Button(filt, text=t("common.filter"), command=self._load_logs).pack(side="left", padx=3)
+        ttk.Button(filt, text=t("common.clear"), command=self._clear_log_filters).pack(side="left", padx=3)
 
         # Treeview
         cols = ("id", "student_id", "date", "mood", "anxiety", "sleep", "follow_up")
@@ -425,10 +430,12 @@ class StudentWellbeingFrame(tk.Frame):
         tree_frame.pack(fill="both", expand=True)
 
         self._log_tree = ttk.Treeview(tree_frame, columns=cols, show="headings", selectmode="browse")
-        for c, h, w in [("id", "ID", 40), ("student_id", "Student ID", 70),
-                         ("date", "Date", 90), ("mood", "Mood", 50),
-                         ("anxiety", "Anxiety", 60), ("sleep", "Sleep", 70),
-                         ("follow_up", "Follow Up", 70)]:
+        for c, h, w in [("id", t("common.id"), 40), ("student_id", t("common.student_id"), 70),
+                         ("date", t("common.date"), 90),
+                         ("mood", t("student_wellbeing.mood"), 50),
+                         ("anxiety", t("student_wellbeing.anxiety"), 60),
+                         ("sleep", t("student_wellbeing.sleep"), 70),
+                         ("follow_up", t("student_wellbeing.follow_up"), 70)]:
             self._log_tree.heading(c, text=h)
             self._log_tree.column(c, width=w, anchor="center")
         vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self._log_tree.yview)
@@ -439,10 +446,11 @@ class StudentWellbeingFrame(tk.Frame):
         # Buttons
         btn = tk.Frame(tab, bg="#ecf0f1")
         btn.pack(fill="x", pady=(5, 0))
-        ttk.Button(btn, text="New", command=self._new_log).pack(side="left", padx=3)
-        ttk.Button(btn, text="View", command=self._view_log).pack(side="left", padx=3)
-        ttk.Button(btn, text="Update", command=self._update_log).pack(side="left", padx=3)
-        ttk.Button(btn, text="Delete", command=self._delete_log).pack(side="left", padx=3)
+        ttk.Button(btn, text=t("common.new"), command=self._new_log).pack(side="left", padx=3)
+        ttk.Button(btn, text=t("common.view"), command=self._view_log).pack(side="left", padx=3)
+        ttk.Button(btn, text=t("common.update"), command=self._update_log).pack(side="left", padx=3)
+        ttk.Button(btn, text=t("common.delete"), command=self._delete_log).pack(side="left", padx=3)
+        ttk.Button(btn, text="Export CSV", command=self._export_logs_csv).pack(side="left", padx=3)
 
     def _clear_log_filters(self):
         self._log_student_var.set("")
@@ -461,26 +469,26 @@ class StudentWellbeingFrame(tk.Frame):
             elif fu_str == "No":
                 fu = 0
             items = self._svc.list_logs(student_id=sid, follow_up_needed=fu)
-            for l in items:
+            for log_item in items:
                 self._log_tree.insert("", "end", values=(
-                    l["id"], l["student_id"], l.get("log_date", ""),
-                    l.get("mood_rating", "") or "", l.get("anxiety_level", "") or "",
-                    l.get("sleep_quality", "") or "",
-                    "Yes" if l.get("follow_up_needed") else "No",
+                    log_item["id"], log_item["student_id"], log_item.get("log_date", ""),
+                    log_item.get("mood_rating", "") or "", log_item.get("anxiety_level", "") or "",
+                    log_item.get("sleep_quality", "") or "",
+                    t("common.yes") if log_item.get("follow_up_needed") else t("common.no"),
                 ))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _selected_log_id(self):
         sel = self._log_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a log first.")
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"))
             return None
         return self._log_tree.item(sel[0], "values")[0]
 
     def _new_log(self):
         dlg = tk.Toplevel(self)
-        dlg.title("New Wellbeing Log")
+        dlg.title(t("student_wellbeing.new_log"))
         dlg.geometry("400x400")
         dlg.configure(bg="#ecf0f1")
         dlg.transient(self)
@@ -489,12 +497,12 @@ class StudentWellbeingFrame(tk.Frame):
         fields = {}
         row = 0
         for label, key, widget_type, opts in [
-            ("Student ID*:", "student_id", "entry", {}),
-            ("Log Date (YYYY-MM-DD):", "log_date", "entry", {}),
-            ("Mood Rating (1-10):", "mood_rating", "entry", {}),
-            ("Anxiety Level (1-10):", "anxiety_level", "entry", {}),
-            ("Sleep Quality:", "sleep_quality", "combo", {"values": self.SLEEP_QUALITIES[1:]}),
-            ("Follow Up Needed:", "follow_up_needed", "check", {}),
+            (t("common.student_id") + "*:", "student_id", "entry", {}),
+            (t("student_wellbeing.log_date") + ":", "log_date", "entry", {}),
+            (t("student_wellbeing.mood_rating") + ":", "mood_rating", "entry", {}),
+            (t("student_wellbeing.anxiety_level") + ":", "anxiety_level", "entry", {}),
+            (t("student_wellbeing.sleep_quality") + ":", "sleep_quality", "combo", {"values": self.SLEEP_QUALITIES[1:]}),
+            (t("student_wellbeing.follow_up_needed") + ":", "follow_up_needed", "check", {}),
         ]:
             tk.Label(dlg, text=label, bg="#ecf0f1").grid(row=row, column=0, sticky="w", padx=10, pady=3)
             if widget_type == "entry":
@@ -512,14 +520,14 @@ class StudentWellbeingFrame(tk.Frame):
                 fields[key] = var
             row += 1
 
-        tk.Label(dlg, text="Notes:", bg="#ecf0f1").grid(row=row, column=0, sticky="nw", padx=10, pady=3)
+        tk.Label(dlg, text=t("common.notes") + ":", bg="#ecf0f1").grid(row=row, column=0, sticky="nw", padx=10, pady=3)
         notes_text = tk.Text(dlg, width=25, height=4)
         notes_text.grid(row=row, column=1, padx=10, pady=3)
 
         def save():
             sid = fields["student_id"].get().strip()
             if not sid:
-                messagebox.showwarning("Warning", "Student ID is required.")
+                messagebox.showwarning(t("common.validation"), t("common.field_required"))
                 return
             try:
                 kwargs = {}
@@ -543,66 +551,66 @@ class StudentWellbeingFrame(tk.Frame):
                 if self._auth and hasattr(self._auth, "current_user"):
                     kwargs["logged_by"] = self._auth.current_user.get("user_id")
                 self._svc.create_log(int(sid), **kwargs)
-                messagebox.showinfo("Success", "Wellbeing log created.")
+                messagebox.showinfo(t("common.success"), t("common.created_success"))
                 dlg.destroy()
                 self._load_logs()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(dlg, text="Save", command=save).grid(row=row + 1, column=0, columnspan=2, pady=10)
+        ttk.Button(dlg, text=t("common.save"), command=save).grid(row=row + 1, column=0, columnspan=2, pady=10)
 
     def _view_log(self):
         lid = self._selected_log_id()
         if not lid:
             return
         try:
-            l = self._svc.get_log(int(lid))
-            if not l:
-                messagebox.showwarning("Warning", "Log not found.")
+            log_item = self._svc.get_log(int(lid))
+            if not log_item:
+                messagebox.showwarning(t("common.warning"), t("common.no_data"))
                 return
             dlg = tk.Toplevel(self)
-            dlg.title(f"Wellbeing Log #{l['id']}")
+            dlg.title(f"{t('student_wellbeing.wellbeing_log')} #{log_item['id']}")
             dlg.geometry("420x380")
             dlg.configure(bg="#ecf0f1")
             dlg.transient(self)
 
-            text = tk.Text(dlg, wrap="word", bg="white", padx=10, pady=10)
-            text.pack(fill="both", expand=True, padx=10, pady=10)
+            text_widget = tk.Text(dlg, wrap="word", bg="white", padx=10, pady=10)
+            text_widget.pack(fill="both", expand=True, padx=10, pady=10)
 
-            name = f"{l.get('first_name', '')} {l.get('last_name', '')}".strip() or "N/A"
+            name = f"{log_item.get('first_name', '')} {log_item.get('last_name', '')}".strip() or t("common.not_applicable")
             lines = [
-                f"Log ID: {l['id']}",
-                f"Student: {name} (ID: {l['student_id']})",
-                f"Date: {l.get('log_date', '')}",
-                f"Mood Rating: {l.get('mood_rating', '') or 'N/A'}",
-                f"Anxiety Level: {l.get('anxiety_level', '') or 'N/A'}",
-                f"Sleep Quality: {l.get('sleep_quality', '') or 'N/A'}",
-                f"Follow Up Needed: {'Yes' if l.get('follow_up_needed') else 'No'}",
-                f"Created: {l.get('created_at', '')}",
+                f"{t('student_wellbeing.log')} {t('common.id')}: {log_item['id']}",
+                f"{t('tutorial.student')}: {name} ({t('common.id')}: {log_item['student_id']})",
+                f"{t('common.date')}: {log_item.get('log_date', '')}",
+                f"{t('student_wellbeing.mood_rating')}: {log_item.get('mood_rating', '') or t('common.not_applicable')}",
+                f"{t('student_wellbeing.anxiety_level')}: {log_item.get('anxiety_level', '') or t('common.not_applicable')}",
+                f"{t('student_wellbeing.sleep_quality')}: {log_item.get('sleep_quality', '') or t('common.not_applicable')}",
+                f"{t('student_wellbeing.follow_up_needed')}: {t('common.yes') if log_item.get('follow_up_needed') else t('common.no')}",
+                f"{t('common.created_at')}: {log_item.get('created_at', '')}",
                 "",
-                "Notes:",
-                l.get("notes", "") or "",
+                f"{t('common.notes')}:",
+                log_item.get("notes", "") or "",
             ]
-            text.insert("1.0", "\n".join(lines))
-            text.configure(state="disabled")
+            text_widget.insert("1.0", "\n".join(lines))
+            text_widget.configure(state="disabled")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _update_log(self):
         lid = self._selected_log_id()
         if not lid:
             return
         try:
-            l = self._svc.get_log(int(lid))
-            if not l:
-                messagebox.showwarning("Warning", "Log not found.")
+            log_item = self._svc.get_log(int(lid))
+            if not log_item:
+                messagebox.showwarning(t("common.warning"), t("common.no_data"))
                 return
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
             return
 
         dlg = tk.Toplevel(self)
-        dlg.title(f"Update Log #{lid}")
+        dlg.title(f"{t('student_wellbeing.update_log')} #{lid}")
         dlg.geometry("400x380")
         dlg.configure(bg="#ecf0f1")
         dlg.transient(self)
@@ -611,11 +619,11 @@ class StudentWellbeingFrame(tk.Frame):
         fields = {}
         row = 0
         for label, key, widget_type, opts, default in [
-            ("Log Date:", "log_date", "entry", {}, l.get("log_date", "") or ""),
-            ("Mood (1-10):", "mood_rating", "entry", {}, str(l.get("mood_rating", "") or "")),
-            ("Anxiety (1-10):", "anxiety_level", "entry", {}, str(l.get("anxiety_level", "") or "")),
-            ("Sleep Quality:", "sleep_quality", "combo", {"values": self.SLEEP_QUALITIES[1:]}, l.get("sleep_quality", "") or ""),
-            ("Follow Up:", "follow_up_needed", "check", {}, l.get("follow_up_needed", 0)),
+            (t("student_wellbeing.log_date") + ":", "log_date", "entry", {}, log_item.get("log_date", "") or ""),
+            (t("student_wellbeing.mood") + " (1-10):", "mood_rating", "entry", {}, str(log_item.get("mood_rating", "") or "")),
+            (t("student_wellbeing.anxiety") + " (1-10):", "anxiety_level", "entry", {}, str(log_item.get("anxiety_level", "") or "")),
+            (t("student_wellbeing.sleep_quality") + ":", "sleep_quality", "combo", {"values": self.SLEEP_QUALITIES[1:]}, log_item.get("sleep_quality", "") or ""),
+            (t("student_wellbeing.follow_up") + ":", "follow_up_needed", "check", {}, log_item.get("follow_up_needed", 0)),
         ]:
             tk.Label(dlg, text=label, bg="#ecf0f1").grid(row=row, column=0, sticky="w", padx=10, pady=3)
             if widget_type == "entry":
@@ -633,10 +641,10 @@ class StudentWellbeingFrame(tk.Frame):
                 fields[key] = var
             row += 1
 
-        tk.Label(dlg, text="Notes:", bg="#ecf0f1").grid(row=row, column=0, sticky="nw", padx=10, pady=3)
+        tk.Label(dlg, text=t("common.notes") + ":", bg="#ecf0f1").grid(row=row, column=0, sticky="nw", padx=10, pady=3)
         notes_text = tk.Text(dlg, width=25, height=4)
         notes_text.grid(row=row, column=1, padx=10, pady=3)
-        notes_text.insert("1.0", l.get("notes", "") or "")
+        notes_text.insert("1.0", log_item.get("notes", "") or "")
 
         def save():
             try:
@@ -659,28 +667,28 @@ class StudentWellbeingFrame(tk.Frame):
                     kwargs["notes"] = notes
                 if kwargs:
                     self._svc.update_log(int(lid), **kwargs)
-                    messagebox.showinfo("Success", "Log updated.")
+                    messagebox.showinfo(t("common.success"), t("common.updated_success"))
                     dlg.destroy()
                     self._load_logs()
                 else:
-                    messagebox.showwarning("Warning", "No changes made.")
+                    messagebox.showwarning(t("common.warning"), t("student_wellbeing.no_changes"))
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(dlg, text="Save", command=save).grid(row=row + 1, column=0, columnspan=2, pady=10)
+        ttk.Button(dlg, text=t("common.save"), command=save).grid(row=row + 1, column=0, columnspan=2, pady=10)
 
     def _delete_log(self):
         lid = self._selected_log_id()
         if not lid:
             return
-        if not messagebox.askyesno("Confirm", f"Delete log #{lid}?"):
+        if not messagebox.askyesno(t("common.confirm"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_log(int(lid))
-            messagebox.showinfo("Success", "Log deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_logs()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ================================================================
     # Tab 3: Counselling Sessions
@@ -688,26 +696,26 @@ class StudentWellbeingFrame(tk.Frame):
 
     def _build_sessions_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Counselling Sessions")
+        self._nb.add(tab, text=t("student_wellbeing.counselling_sessions"))
 
         # Filters
         filt = tk.Frame(tab, bg="#ecf0f1")
         filt.pack(fill="x", pady=(0, 5))
 
-        tk.Label(filt, text="Status:", bg="#ecf0f1").pack(side="left", padx=(0, 3))
+        tk.Label(filt, text=t("common.status") + ":", bg="#ecf0f1").pack(side="left", padx=(0, 3))
         self._sess_status_var = tk.StringVar()
         ttk.Combobox(filt, textvariable=self._sess_status_var,
                       values=self.SESSION_STATUSES, width=12, state="readonly"
                       ).pack(side="left", padx=(0, 10))
 
-        tk.Label(filt, text="Type:", bg="#ecf0f1").pack(side="left", padx=(0, 3))
+        tk.Label(filt, text=t("common.type") + ":", bg="#ecf0f1").pack(side="left", padx=(0, 3))
         self._sess_type_var = tk.StringVar()
         ttk.Combobox(filt, textvariable=self._sess_type_var,
                       values=self.SESSION_TYPES, width=12, state="readonly"
                       ).pack(side="left", padx=(0, 10))
 
-        ttk.Button(filt, text="Filter", command=self._load_sessions).pack(side="left", padx=3)
-        ttk.Button(filt, text="Clear", command=self._clear_sess_filters).pack(side="left", padx=3)
+        ttk.Button(filt, text=t("common.filter"), command=self._load_sessions).pack(side="left", padx=3)
+        ttk.Button(filt, text=t("common.clear"), command=self._clear_sess_filters).pack(side="left", padx=3)
 
         # Treeview
         cols = ("id", "student_id", "counsellor", "date", "session_num", "type", "status")
@@ -715,10 +723,12 @@ class StudentWellbeingFrame(tk.Frame):
         tree_frame.pack(fill="both", expand=True)
 
         self._sess_tree = ttk.Treeview(tree_frame, columns=cols, show="headings", selectmode="browse")
-        for c, h, w in [("id", "ID", 40), ("student_id", "Student ID", 70),
-                         ("counsellor", "Counsellor", 80), ("date", "Date", 90),
-                         ("session_num", "Session #", 65), ("type", "Type", 80),
-                         ("status", "Status", 80)]:
+        for c, h, w in [("id", t("common.id"), 40), ("student_id", t("common.student_id"), 70),
+                         ("counsellor", t("student_wellbeing.counsellor"), 80),
+                         ("date", t("common.date"), 90),
+                         ("session_num", t("student_wellbeing.session_num"), 65),
+                         ("type", t("common.type"), 80),
+                         ("status", t("common.status"), 80)]:
             self._sess_tree.heading(c, text=h)
             self._sess_tree.column(c, width=w, anchor="center")
         vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self._sess_tree.yview)
@@ -729,10 +739,11 @@ class StudentWellbeingFrame(tk.Frame):
         # Buttons
         btn = tk.Frame(tab, bg="#ecf0f1")
         btn.pack(fill="x", pady=(5, 0))
-        ttk.Button(btn, text="New", command=self._new_session).pack(side="left", padx=3)
-        ttk.Button(btn, text="View", command=self._view_session).pack(side="left", padx=3)
-        ttk.Button(btn, text="Update", command=self._update_session).pack(side="left", padx=3)
-        ttk.Button(btn, text="Delete", command=self._delete_session).pack(side="left", padx=3)
+        ttk.Button(btn, text=t("common.new"), command=self._new_session).pack(side="left", padx=3)
+        ttk.Button(btn, text=t("common.view"), command=self._view_session).pack(side="left", padx=3)
+        ttk.Button(btn, text=t("common.update"), command=self._update_session).pack(side="left", padx=3)
+        ttk.Button(btn, text=t("common.delete"), command=self._delete_session).pack(side="left", padx=3)
+        ttk.Button(btn, text="Export CSV", command=self._export_sessions_csv).pack(side="left", padx=3)
 
     def _clear_sess_filters(self):
         self._sess_status_var.set("")
@@ -752,18 +763,18 @@ class StudentWellbeingFrame(tk.Frame):
                     s.get("session_type", ""), s.get("status", ""),
                 ))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _selected_session_id(self):
         sel = self._sess_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a session first.")
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"))
             return None
         return self._sess_tree.item(sel[0], "values")[0]
 
     def _new_session(self):
         dlg = tk.Toplevel(self)
-        dlg.title("New Counselling Session")
+        dlg.title(t("student_wellbeing.new_session"))
         dlg.geometry("450x520")
         dlg.configure(bg="#ecf0f1")
         dlg.transient(self)
@@ -772,13 +783,13 @@ class StudentWellbeingFrame(tk.Frame):
         fields = {}
         row = 0
         for label, key, widget_type, opts in [
-            ("Student ID*:", "student_id", "entry", {}),
-            ("Session Date* (YYYY-MM-DD):", "session_date", "entry", {}),
-            ("Counsellor ID:", "counsellor_id", "entry", {}),
-            ("Session Number:", "session_number", "entry", {}),
-            ("Session Type:", "session_type", "combo", {"values": self.SESSION_TYPES[1:]}),
-            ("Status:", "status", "combo", {"values": self.SESSION_STATUSES[1:]}),
-            ("Next Appointment:", "next_appointment", "entry", {}),
+            (t("common.student_id") + "*:", "student_id", "entry", {}),
+            (t("student_wellbeing.session_date") + "*:", "session_date", "entry", {}),
+            (t("student_wellbeing.counsellor_id") + ":", "counsellor_id", "entry", {}),
+            (t("student_wellbeing.session_number") + ":", "session_number", "entry", {}),
+            (t("student_wellbeing.session_type") + ":", "session_type", "combo", {"values": self.SESSION_TYPES[1:]}),
+            (t("common.status") + ":", "status", "combo", {"values": self.SESSION_STATUSES[1:]}),
+            (t("student_wellbeing.next_appointment") + ":", "next_appointment", "entry", {}),
         ]:
             tk.Label(dlg, text=label, bg="#ecf0f1").grid(row=row, column=0, sticky="w", padx=10, pady=3)
             if widget_type == "entry":
@@ -792,17 +803,17 @@ class StudentWellbeingFrame(tk.Frame):
                 fields[key] = var
             row += 1
 
-        tk.Label(dlg, text="Presenting Issues:", bg="#ecf0f1").grid(row=row, column=0, sticky="nw", padx=10, pady=3)
+        tk.Label(dlg, text=t("student_wellbeing.presenting_issues") + ":", bg="#ecf0f1").grid(row=row, column=0, sticky="nw", padx=10, pady=3)
         issues_text = tk.Text(dlg, width=28, height=3)
         issues_text.grid(row=row, column=1, padx=10, pady=3)
         row += 1
 
-        tk.Label(dlg, text="Session Notes:", bg="#ecf0f1").grid(row=row, column=0, sticky="nw", padx=10, pady=3)
+        tk.Label(dlg, text=t("student_wellbeing.session_notes") + ":", bg="#ecf0f1").grid(row=row, column=0, sticky="nw", padx=10, pady=3)
         notes_text = tk.Text(dlg, width=28, height=3)
         notes_text.grid(row=row, column=1, padx=10, pady=3)
         row += 1
 
-        tk.Label(dlg, text="Risk Assessment:", bg="#ecf0f1").grid(row=row, column=0, sticky="nw", padx=10, pady=3)
+        tk.Label(dlg, text=t("student_wellbeing.risk_assessment") + ":", bg="#ecf0f1").grid(row=row, column=0, sticky="nw", padx=10, pady=3)
         risk_text = tk.Text(dlg, width=28, height=2)
         risk_text.grid(row=row, column=1, padx=10, pady=3)
 
@@ -810,7 +821,7 @@ class StudentWellbeingFrame(tk.Frame):
             sid = fields["student_id"].get().strip()
             sdate = fields["session_date"].get().strip()
             if not sid or not sdate:
-                messagebox.showwarning("Warning", "Student ID and Session Date are required.")
+                messagebox.showwarning(t("common.validation"), t("common.both_required"))
                 return
             try:
                 kwargs = {}
@@ -839,13 +850,13 @@ class StudentWellbeingFrame(tk.Frame):
                 if risk:
                     kwargs["risk_assessment"] = risk
                 self._svc.create_session(int(sid), sdate, **kwargs)
-                messagebox.showinfo("Success", "Counselling session created.")
+                messagebox.showinfo(t("common.success"), t("common.created_success"))
                 dlg.destroy()
                 self._load_sessions()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(dlg, text="Save", command=save).grid(row=row + 1, column=0, columnspan=2, pady=10)
+        ttk.Button(dlg, text=t("common.save"), command=save).grid(row=row + 1, column=0, columnspan=2, pady=10)
 
     def _view_session(self):
         sid = self._selected_session_id()
@@ -854,42 +865,42 @@ class StudentWellbeingFrame(tk.Frame):
         try:
             s = self._svc.get_session(int(sid))
             if not s:
-                messagebox.showwarning("Warning", "Session not found.")
+                messagebox.showwarning(t("common.warning"), t("common.no_data"))
                 return
             dlg = tk.Toplevel(self)
-            dlg.title(f"Session #{s['id']}")
+            dlg.title(f"{t('student_wellbeing.session')} #{s['id']}")
             dlg.geometry("480x450")
             dlg.configure(bg="#ecf0f1")
             dlg.transient(self)
 
-            text = tk.Text(dlg, wrap="word", bg="white", padx=10, pady=10)
-            text.pack(fill="both", expand=True, padx=10, pady=10)
+            text_widget = tk.Text(dlg, wrap="word", bg="white", padx=10, pady=10)
+            text_widget.pack(fill="both", expand=True, padx=10, pady=10)
 
-            name = f"{s.get('first_name', '')} {s.get('last_name', '')}".strip() or "N/A"
+            name = f"{s.get('first_name', '')} {s.get('last_name', '')}".strip() or t("common.not_applicable")
             lines = [
-                f"Session ID: {s['id']}",
-                f"Student: {name} (ID: {s['student_id']})",
-                f"Counsellor ID: {s.get('counsellor_id', '') or 'N/A'}",
-                f"Date: {s.get('session_date', '')}",
-                f"Session #: {s.get('session_number', 1)}",
-                f"Type: {s.get('session_type', '')}",
-                f"Status: {s.get('status', '')}",
-                f"Next Appointment: {s.get('next_appointment', '') or 'N/A'}",
-                f"Created: {s.get('created_at', '')}",
+                f"{t('student_wellbeing.session')} {t('common.id')}: {s['id']}",
+                f"{t('tutorial.student')}: {name} ({t('common.id')}: {s['student_id']})",
+                f"{t('student_wellbeing.counsellor_id')}: {s.get('counsellor_id', '') or t('common.not_applicable')}",
+                f"{t('common.date')}: {s.get('session_date', '')}",
+                f"{t('student_wellbeing.session_num')}: {s.get('session_number', 1)}",
+                f"{t('common.type')}: {s.get('session_type', '')}",
+                f"{t('common.status')}: {s.get('status', '')}",
+                f"{t('student_wellbeing.next_appointment')}: {s.get('next_appointment', '') or t('common.not_applicable')}",
+                f"{t('common.created_at')}: {s.get('created_at', '')}",
                 "",
-                "Presenting Issues:",
+                f"{t('student_wellbeing.presenting_issues')}:",
                 s.get("presenting_issues", "") or "",
                 "",
-                "Session Notes:",
+                f"{t('student_wellbeing.session_notes')}:",
                 s.get("session_notes", "") or "",
                 "",
-                "Risk Assessment:",
+                f"{t('student_wellbeing.risk_assessment')}:",
                 s.get("risk_assessment", "") or "",
             ]
-            text.insert("1.0", "\n".join(lines))
-            text.configure(state="disabled")
+            text_widget.insert("1.0", "\n".join(lines))
+            text_widget.configure(state="disabled")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _update_session(self):
         sid = self._selected_session_id()
@@ -898,14 +909,14 @@ class StudentWellbeingFrame(tk.Frame):
         try:
             s = self._svc.get_session(int(sid))
             if not s:
-                messagebox.showwarning("Warning", "Session not found.")
+                messagebox.showwarning(t("common.warning"), t("common.no_data"))
                 return
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
             return
 
         dlg = tk.Toplevel(self)
-        dlg.title(f"Update Session #{sid}")
+        dlg.title(f"{t('student_wellbeing.update_session')} #{sid}")
         dlg.geometry("450x520")
         dlg.configure(bg="#ecf0f1")
         dlg.transient(self)
@@ -914,12 +925,12 @@ class StudentWellbeingFrame(tk.Frame):
         fields = {}
         row = 0
         for label, key, widget_type, opts, default in [
-            ("Session Date:", "session_date", "entry", {}, s.get("session_date", "")),
-            ("Counsellor ID:", "counsellor_id", "entry", {}, str(s.get("counsellor_id", "") or "")),
-            ("Session Number:", "session_number", "entry", {}, str(s.get("session_number", 1))),
-            ("Type:", "session_type", "combo", {"values": self.SESSION_TYPES[1:]}, s.get("session_type", "")),
-            ("Status:", "status", "combo", {"values": self.SESSION_STATUSES[1:]}, s.get("status", "")),
-            ("Next Appointment:", "next_appointment", "entry", {}, s.get("next_appointment", "") or ""),
+            (t("student_wellbeing.session_date") + ":", "session_date", "entry", {}, s.get("session_date", "")),
+            (t("student_wellbeing.counsellor_id") + ":", "counsellor_id", "entry", {}, str(s.get("counsellor_id", "") or "")),
+            (t("student_wellbeing.session_number") + ":", "session_number", "entry", {}, str(s.get("session_number", 1))),
+            (t("common.type") + ":", "session_type", "combo", {"values": self.SESSION_TYPES[1:]}, s.get("session_type", "")),
+            (t("common.status") + ":", "status", "combo", {"values": self.SESSION_STATUSES[1:]}, s.get("status", "")),
+            (t("student_wellbeing.next_appointment") + ":", "next_appointment", "entry", {}, s.get("next_appointment", "") or ""),
         ]:
             tk.Label(dlg, text=label, bg="#ecf0f1").grid(row=row, column=0, sticky="w", padx=10, pady=3)
             if widget_type == "entry":
@@ -933,19 +944,19 @@ class StudentWellbeingFrame(tk.Frame):
                 fields[key] = var
             row += 1
 
-        tk.Label(dlg, text="Presenting Issues:", bg="#ecf0f1").grid(row=row, column=0, sticky="nw", padx=10, pady=3)
+        tk.Label(dlg, text=t("student_wellbeing.presenting_issues") + ":", bg="#ecf0f1").grid(row=row, column=0, sticky="nw", padx=10, pady=3)
         issues_text = tk.Text(dlg, width=28, height=3)
         issues_text.grid(row=row, column=1, padx=10, pady=3)
         issues_text.insert("1.0", s.get("presenting_issues", "") or "")
         row += 1
 
-        tk.Label(dlg, text="Session Notes:", bg="#ecf0f1").grid(row=row, column=0, sticky="nw", padx=10, pady=3)
+        tk.Label(dlg, text=t("student_wellbeing.session_notes") + ":", bg="#ecf0f1").grid(row=row, column=0, sticky="nw", padx=10, pady=3)
         notes_text = tk.Text(dlg, width=28, height=3)
         notes_text.grid(row=row, column=1, padx=10, pady=3)
         notes_text.insert("1.0", s.get("session_notes", "") or "")
         row += 1
 
-        tk.Label(dlg, text="Risk Assessment:", bg="#ecf0f1").grid(row=row, column=0, sticky="nw", padx=10, pady=3)
+        tk.Label(dlg, text=t("student_wellbeing.risk_assessment") + ":", bg="#ecf0f1").grid(row=row, column=0, sticky="nw", padx=10, pady=3)
         risk_text = tk.Text(dlg, width=28, height=2)
         risk_text.grid(row=row, column=1, padx=10, pady=3)
         risk_text.insert("1.0", s.get("risk_assessment", "") or "")
@@ -982,28 +993,28 @@ class StudentWellbeingFrame(tk.Frame):
                     kwargs["risk_assessment"] = risk
                 if kwargs:
                     self._svc.update_session(int(sid), **kwargs)
-                    messagebox.showinfo("Success", "Session updated.")
+                    messagebox.showinfo(t("common.success"), t("common.updated_success"))
                     dlg.destroy()
                     self._load_sessions()
                 else:
-                    messagebox.showwarning("Warning", "No changes made.")
+                    messagebox.showwarning(t("common.warning"), t("student_wellbeing.no_changes"))
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(dlg, text="Save", command=save).grid(row=row + 1, column=0, columnspan=2, pady=10)
+        ttk.Button(dlg, text=t("common.save"), command=save).grid(row=row + 1, column=0, columnspan=2, pady=10)
 
     def _delete_session(self):
         sid = self._selected_session_id()
         if not sid:
             return
-        if not messagebox.askyesno("Confirm", f"Delete session #{sid}?"):
+        if not messagebox.askyesno(t("common.confirm"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_session(int(sid))
-            messagebox.showinfo("Success", "Session deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_sessions()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ================================================================
     # Tab 4: Statistics
@@ -1011,7 +1022,7 @@ class StudentWellbeingFrame(tk.Frame):
 
     def _build_stats_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Statistics")
+        self._nb.add(tab, text=t("common.summary"))
         self._stats_tab = tab
 
         # Will be populated on refresh
@@ -1025,66 +1036,78 @@ class StudentWellbeingFrame(tk.Frame):
             stats = self._svc.get_stats()
 
             # Referrals section
-            ref_lf = tk.LabelFrame(self._stats_frame, text="Referrals", bg="#ecf0f1",
+            ref_lf = tk.LabelFrame(self._stats_frame, text=t("student_wellbeing.referrals"), bg="#ecf0f1",
                                     font=("Helvetica", 11, "bold"), padx=10, pady=5)
             ref_lf.pack(fill="x", pady=(0, 8))
 
             row_frame = tk.Frame(ref_lf, bg="#ecf0f1")
             row_frame.pack(fill="x")
-            tk.Label(row_frame, text=f"Total: {stats['total_referrals']}", bg="#ecf0f1",
+            tk.Label(row_frame, text=f"{t('common.total')}: {stats['total_referrals']}", bg="#ecf0f1",
                      font=("Helvetica", 10)).pack(side="left", padx=10)
-            tk.Label(row_frame, text=f"Open: {stats['open_referrals']}", bg="#ecf0f1",
+            tk.Label(row_frame, text=f"{t('student_wellbeing.open')}: {stats['open_referrals']}", bg="#ecf0f1",
                      font=("Helvetica", 10)).pack(side="left", padx=10)
-            tk.Label(row_frame, text=f"High Risk: {stats['high_risk_count']}", bg="#ecf0f1",
+            tk.Label(row_frame, text=f"{t('student_wellbeing.high_risk')}: {stats['high_risk_count']}", bg="#ecf0f1",
                      font=("Helvetica", 10), fg="red").pack(side="left", padx=10)
 
             if stats["by_status"]:
                 status_str = ", ".join(f"{k}: {v}" for k, v in stats["by_status"].items())
-                tk.Label(ref_lf, text=f"By Status: {status_str}", bg="#ecf0f1",
+                tk.Label(ref_lf, text=f"{t('student_wellbeing.by_status')}: {status_str}", bg="#ecf0f1",
                          font=("Helvetica", 9)).pack(anchor="w", padx=10)
             if stats["by_risk_level"]:
                 risk_str = ", ".join(f"{k}: {v}" for k, v in stats["by_risk_level"].items())
-                tk.Label(ref_lf, text=f"By Risk Level: {risk_str}", bg="#ecf0f1",
+                tk.Label(ref_lf, text=f"{t('student_wellbeing.by_risk_level')}: {risk_str}", bg="#ecf0f1",
                          font=("Helvetica", 9)).pack(anchor="w", padx=10)
             if stats["by_category"]:
                 cat_str = ", ".join(f"{k}: {v}" for k, v in stats["by_category"].items())
-                tk.Label(ref_lf, text=f"By Category: {cat_str}", bg="#ecf0f1",
+                tk.Label(ref_lf, text=f"{t('student_wellbeing.by_category')}: {cat_str}", bg="#ecf0f1",
                          font=("Helvetica", 9), wraplength=500, justify="left").pack(anchor="w", padx=10)
 
             # Logs section
-            log_lf = tk.LabelFrame(self._stats_frame, text="Wellbeing Logs", bg="#ecf0f1",
+            log_lf = tk.LabelFrame(self._stats_frame, text=t("student_wellbeing.wellbeing_logs"), bg="#ecf0f1",
                                     font=("Helvetica", 11, "bold"), padx=10, pady=5)
             log_lf.pack(fill="x", pady=(0, 8))
 
             log_row = tk.Frame(log_lf, bg="#ecf0f1")
             log_row.pack(fill="x")
-            tk.Label(log_row, text=f"Total Logs: {stats['total_logs']}", bg="#ecf0f1",
+            tk.Label(log_row, text=f"{t('student_wellbeing.total_logs')}: {stats['total_logs']}", bg="#ecf0f1",
                      font=("Helvetica", 10)).pack(side="left", padx=10)
-            tk.Label(log_row, text=f"Follow-ups Needed: {stats['follow_ups_needed']}", bg="#ecf0f1",
+            tk.Label(log_row, text=f"{t('student_wellbeing.follow_ups_needed')}: {stats['follow_ups_needed']}", bg="#ecf0f1",
                      font=("Helvetica", 10)).pack(side="left", padx=10)
-            tk.Label(log_row, text=f"Avg Mood: {stats['avg_mood']}", bg="#ecf0f1",
+            tk.Label(log_row, text=f"{t('student_wellbeing.avg_mood')}: {stats['avg_mood']}", bg="#ecf0f1",
                      font=("Helvetica", 10)).pack(side="left", padx=10)
 
             # Sessions section
-            sess_lf = tk.LabelFrame(self._stats_frame, text="Counselling Sessions", bg="#ecf0f1",
+            sess_lf = tk.LabelFrame(self._stats_frame, text=t("student_wellbeing.counselling_sessions"), bg="#ecf0f1",
                                      font=("Helvetica", 11, "bold"), padx=10, pady=5)
             sess_lf.pack(fill="x", pady=(0, 8))
 
             sess_row = tk.Frame(sess_lf, bg="#ecf0f1")
             sess_row.pack(fill="x")
-            tk.Label(sess_row, text=f"Total Sessions: {stats['total_sessions']}", bg="#ecf0f1",
+            tk.Label(sess_row, text=f"{t('student_wellbeing.total_sessions')}: {stats['total_sessions']}", bg="#ecf0f1",
                      font=("Helvetica", 10)).pack(side="left", padx=10)
             if stats["by_session_type"]:
                 type_str = ", ".join(f"{k}: {v}" for k, v in stats["by_session_type"].items())
-                tk.Label(sess_lf, text=f"By Type: {type_str}", bg="#ecf0f1",
+                tk.Label(sess_lf, text=f"{t('student_wellbeing.by_type')}: {type_str}", bg="#ecf0f1",
                          font=("Helvetica", 9)).pack(anchor="w", padx=10)
 
-            ttk.Button(self._stats_frame, text="Refresh Statistics",
+            ttk.Button(self._stats_frame, text=t("common.refresh"),
                        command=self._load_stats).pack(pady=10)
 
         except Exception as e:
-            tk.Label(self._stats_frame, text=f"Error loading stats: {e}",
+            tk.Label(self._stats_frame, text=f"{t('common.error')}: {e}",
                      bg="#ecf0f1", fg="red").pack(pady=20)
+
+    def _export_referrals_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._ref_tree, "student_wellbeing.csv")
+
+    def _export_logs_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._log_tree, "student_wellbeing_logs_export.csv")
+
+    def _export_sessions_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._sess_tree, "student_wellbeing_sessions_export.csv")
 
     # ================================================================
     # Main refresh

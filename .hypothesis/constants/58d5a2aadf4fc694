@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/course_management_gui/waitlists/view_dialog.py
+# hypothesis_version: 6.151.9
+
+[120, 140, 240, '800x500', 'Added', 'Close', 'Code', 'ID', 'Name', 'Position', 'Refresh', 'Remove Selected', 'Status', 'Student ID', 'common.confirm', 'headings', 'values']

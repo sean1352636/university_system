@@ -36,8 +36,8 @@ class TestApplyGradingCurve:
 
         return cursor
 
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.get_connection')
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.select_assessment')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.select_assessment')
     @patch('builtins.input', side_effect=['1', '10', 'n'])  # Add 10 points, don't apply
     @patch('builtins.print')
     def test_apply_grading_curve_add_points_no_apply(
@@ -54,9 +54,9 @@ class TestApplyGradingCurve:
         # Verify curve was calculated but not applied
         assert not mock_cursor_with_grades.connection.commit.called
 
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.get_connection')
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.select_assessment')
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.update_module_grade')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.select_assessment')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.update_module_grade')
     @patch('builtins.input', side_effect=['1', '10', 'y'])  # Add 10 points, apply
     @patch('builtins.print')
     def test_apply_grading_curve_add_points_apply(
@@ -73,8 +73,8 @@ class TestApplyGradingCurve:
         # Verify curve was applied
         mock_cursor_with_grades.connection.commit.assert_called_once()
 
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.get_connection')
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.select_assessment')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.select_assessment')
     @patch('builtins.input', side_effect=['2', '1.1', 'n'])  # Multiply by 1.1
     @patch('builtins.print')
     def test_apply_grading_curve_multiply(
@@ -91,8 +91,8 @@ class TestApplyGradingCurve:
         # Verify calculation was done (output shown)
         assert mock_print.called
 
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.get_connection')
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.select_assessment')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.select_assessment')
     @patch('builtins.input', return_value='3')  # Set highest to max
     @patch('builtins.print')
     def test_apply_grading_curve_set_highest(
@@ -107,8 +107,8 @@ class TestApplyGradingCurve:
         with patch('builtins.input', side_effect=['3', 'n']):
             apply_grading_curve()
 
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.get_connection')
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.select_assessment')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.select_assessment')
     def test_apply_grading_curve_no_assessment_selected(
         self, mock_select, mock_get_conn
     ):
@@ -122,8 +122,8 @@ class TestApplyGradingCurve:
 
         conn.close.assert_called_once()
 
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.get_connection')
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.select_assessment')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.select_assessment')
     @patch('builtins.print')
     def test_apply_grading_curve_no_grades(
         self, mock_print, mock_select, mock_get_conn
@@ -153,7 +153,7 @@ class TestPerformanceAnalysisMenu:
         assert mock_print.called
 
     @patch('builtins.input', side_effect=['1', '9'])  # Select at-risk students, then exit
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.identify_at_risk_students')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.identify_at_risk_students')
     def test_performance_analysis_menu_at_risk(self, mock_at_risk, mock_input):
         """Test selecting at-risk students option"""
         performance_analysis_menu()
@@ -171,9 +171,9 @@ class TestPerformanceAnalysisMenu:
 class TestComparativePerformanceAnalysis:
     """Test the comparative_performance_analysis function"""
 
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.get_connection')
     @patch('builtins.input', return_value='1')  # Compare by course
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.compare_by_course')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.compare_by_course')
     def test_comparative_performance_analysis_by_course(
         self, mock_compare, mock_input, mock_get_conn
     ):
@@ -186,9 +186,9 @@ class TestComparativePerformanceAnalysis:
 
         mock_compare.assert_called_once_with(cursor)
 
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.get_connection')
     @patch('builtins.input', return_value='2')  # Compare by gender
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.compare_by_gender')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.compare_by_gender')
     def test_comparative_performance_analysis_by_gender(
         self, mock_compare, mock_input, mock_get_conn
     ):
@@ -201,7 +201,7 @@ class TestComparativePerformanceAnalysis:
 
         mock_compare.assert_called_once_with(cursor)
 
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.get_connection')
     @patch('builtins.input', return_value='invalid')  # Invalid choice
     @patch('builtins.print')
     def test_comparative_performance_analysis_invalid(
@@ -219,9 +219,9 @@ class TestComparativePerformanceAnalysis:
 class TestPerformanceTrendsAnalysis:
     """Test the performance_trends_analysis function"""
 
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.get_connection')
     @patch('builtins.input', return_value='1')  # Overall trends
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.analyze_overall_grade_trends')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.analyze_overall_grade_trends')
     def test_performance_trends_analysis_overall(
         self, mock_analyze, mock_input, mock_get_conn
     ):
@@ -234,9 +234,9 @@ class TestPerformanceTrendsAnalysis:
 
         mock_analyze.assert_called_once_with(cursor)
 
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.get_connection')
     @patch('builtins.input', return_value='2')  # Individual student
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.analyze_individual_student_trends')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.analyze_individual_student_trends')
     def test_performance_trends_analysis_individual(
         self, mock_analyze, mock_input, mock_get_conn
     ):
@@ -263,7 +263,7 @@ class TestAnalyzeDistributionByCourse:
             ('Data Science', 'B', 12),
         ]
 
-        with patch('university_system.modules.domain.academics.grading.curve_analysis.letter_to_gpa'):
+        with patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.letter_to_gpa'):
             analyze_distribution_by_course(cursor)
 
         # Verify output was printed
@@ -293,7 +293,7 @@ class TestAnalyzeDistributionByModuleType:
             ('Elective', 'B', 25),
         ]
 
-        with patch('university_system.modules.domain.academics.grading.curve_analysis.letter_to_gpa'):
+        with patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.letter_to_gpa'):
             analyze_distribution_by_module_type(cursor)
 
         assert mock_print.call_count > 0
@@ -322,7 +322,7 @@ class TestAnalyzeOverallDistribution:
             [('A', 100), ('B', 150), ('C', 50)],  # Assessment grades
         ]
 
-        with patch('university_system.modules.domain.academics.grading.curve_analysis.letter_to_gpa'):
+        with patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.letter_to_gpa'):
             analyze_overall_distribution(cursor)
 
         # Should print both module and assessment distributions
@@ -342,9 +342,9 @@ class TestAnalyzeOverallDistribution:
 class TestDropoutRiskAnalysis:
     """Test the dropout_risk_analysis function"""
 
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.get_connection')
     @patch('builtins.input', return_value='1')  # Identify high risk
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.identify_high_dropout_risk')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.identify_high_dropout_risk')
     def test_dropout_risk_analysis_high_risk(
         self, mock_identify, mock_input, mock_get_conn
     ):
@@ -357,9 +357,9 @@ class TestDropoutRiskAnalysis:
 
         mock_identify.assert_called_once_with(cursor)
 
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.get_connection')
     @patch('builtins.input', return_value='2')  # Analyze risk factors
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.analyze_dropout_risk_factors')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.analyze_dropout_risk_factors')
     def test_dropout_risk_analysis_factors(
         self, mock_analyze, mock_input, mock_get_conn
     ):
@@ -372,9 +372,9 @@ class TestDropoutRiskAnalysis:
 
         mock_analyze.assert_called_once_with(cursor)
 
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.get_connection')
     @patch('builtins.input', return_value='3')  # Build prediction model
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.build_dropout_prediction_model')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.build_dropout_prediction_model')
     def test_dropout_risk_analysis_prediction_model(
         self, mock_build, mock_input, mock_get_conn
     ):
@@ -387,9 +387,9 @@ class TestDropoutRiskAnalysis:
 
         mock_build.assert_called_once_with(cursor)
 
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.get_connection')
     @patch('builtins.input', return_value='4')  # Early intervention
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.generate_dropout_interventions')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.generate_dropout_interventions')
     def test_dropout_risk_analysis_interventions(
         self, mock_interventions, mock_input, mock_get_conn
     ):
@@ -402,7 +402,7 @@ class TestDropoutRiskAnalysis:
 
         mock_interventions.assert_called_once_with(cursor)
 
-    @patch('university_system.modules.domain.academics.grading.curve_analysis.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.get_connection')
     @patch('builtins.input', return_value='invalid')
     @patch('builtins.print')
     def test_dropout_risk_analysis_invalid_choice(

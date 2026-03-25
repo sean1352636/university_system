@@ -28,16 +28,16 @@ jobs:
 
       - name: Run Bandit Security Scan
         run: |
-          bandit -r university_system/ \
+          bandit -r education_system/ \
             -c pyproject.toml \
             -f json \
             -o bandit-report.json || true
 
-      - name: Run Bandit (exit on high severity)
+      - name: Run Bandit (fail on medium+ severity)
         run: |
-          bandit -r university_system/ \
+          bandit -r education_system/ \
             -c pyproject.toml \
-            -lll \
+            -ll \
             -f txt
 
       - name: Upload Bandit Report
@@ -67,7 +67,7 @@ jobs:
         run: |
           pip install -r requirements.txt
           safety check --json > safety-report.json || true
-          safety check --full-report || true
+          safety check --full-report
 
       - name: Upload Safety Report
         if: always()
@@ -99,7 +99,7 @@ jobs:
       - name: Run pip-audit
         run: |
           pip-audit --format json > pip-audit-report.json || true
-          pip-audit || true
+          pip-audit
 
       - name: Upload pip-audit Report
         if: always()
@@ -124,8 +124,8 @@ jobs:
             --config p/owasp-top-ten \
             --error \
             --exclude "university_system/extras/" \
-            --exclude "university_system/tests/" \
-            university_system/ || true
+            --exclude "*/tests/" \
+            education_system/
 
   codeql:
     name: CodeQL Analysis

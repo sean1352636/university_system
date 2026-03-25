@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/attendance/cli/geofencing_cli.py
+# hypothesis_version: 6.151.9
+
+['\nAvailable Modules:', '1', '2', 'Enter latitude: ', 'Enter longitude: ', 'Enter student ID: ', 'Invalid input.', 'No modules found.']

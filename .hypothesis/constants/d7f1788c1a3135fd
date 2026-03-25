@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/phoneshop_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/phoneshop', '/orders', '/products', '/warranties', 'GET', 'POST', 'brand', 'category', 'category = ?', 'cost_price', 'create', 'customer_email', 'customer_id', 'customer_id = ?', 'customer_name', 'customer_phone', 'description', 'end_date', 'is_active', 'is_active = ?', 'items', 'model', 'name', 'notes', 'order_item_id', 'payment_method', 'phoneshop', 'phoneshop_orders', 'phoneshop_products', 'phoneshop_warranties', 'price', 'product_id', 'search', 'serial_number', 'shipping_address', 'sku', 'specifications', 'start_date', 'status', 'status = ?', 'stock_quantity', 'sub', 'total', 'total_amount', 'view', 'warranty_months', 'warranty_type']

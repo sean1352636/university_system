@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/attendance/cli/qr_cli.py
+# hypothesis_version: 6.151.9
+
+['\nAvailable Modules:', '-', '..', '1', '2', '3', '=', 'Enter student ID: ', 'Invalid selection.', 'N/A', 'No modules found.']

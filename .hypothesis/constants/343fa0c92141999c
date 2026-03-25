@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/email_service/storage.py
+# hypothesis_version: 6.151.9
+
+[' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', 'attachment_paths', 'bcc_recipients', 'body', 'cc_recipients', 'created_date', 'emails', 'error', 'id', 'info', 'limit', 'offset', 'recipient_email', 'related_to', 'sender_email', 'sender_email = ?', 'sender_name', 'student_id', 'subject', 'template_name', 'template_vars', 'total_count', 'warning']

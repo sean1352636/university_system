@@ -300,10 +300,10 @@ def generate_vat_report(self):
         cursor = conn.cursor()
         # VAT collected on sales
         cursor.execute('''
-            SELECT SUM(total_price), SUM(tax_amount)
-            FROM restaurant_orders
-            WHERE DATE(order_time) BETWEEN ? AND ?
-            AND status = 'Completed'
+            SELECT SUM(total_amount), SUM(tax_amount)
+            FROM orders
+            WHERE DATE(order_date) BETWEEN ? AND ?
+            AND order_status = 'Completed'
         ''', (start_date, end_date))
         sales_data = cursor.fetchone()
         # VAT paid on purchases (check if table exists)
@@ -380,19 +380,19 @@ def generate_sales_tax_summary(self):
         cursor = conn.cursor()
         # Sales by payment method
         cursor.execute('''
-            SELECT payment_method, COUNT(*), SUM(total_price), SUM(tax_amount)
-            FROM restaurant_orders
-            WHERE DATE(order_time) BETWEEN ? AND ?
-            AND status = 'Completed'
+            SELECT payment_method, COUNT(*), SUM(total_amount), SUM(tax_amount)
+            FROM orders
+            WHERE DATE(order_date) BETWEEN ? AND ?
+            AND order_status = 'Completed'
             GROUP BY payment_method
         ''', (start_date, end_date))
         payment_breakdown = cursor.fetchall()
         # Total sales
         cursor.execute('''
-            SELECT COUNT(*), SUM(total_price), SUM(tax_amount)
-            FROM restaurant_orders
-            WHERE DATE(order_time) BETWEEN ? AND ?
-            AND status = 'Completed'
+            SELECT COUNT(*), SUM(total_amount), SUM(tax_amount)
+            FROM orders
+            WHERE DATE(order_date) BETWEEN ? AND ?
+            AND order_status = 'Completed'
         ''', (start_date, end_date))
         totals = cursor.fetchone()
         conn.close()
@@ -433,12 +433,12 @@ def financial_forecasting(self):
         cursor = conn.cursor()
         # Get historical revenue by month (last 12 months)
         cursor.execute('''
-            SELECT strftime('%Y-%m', order_time) as month,
-                   SUM(total_price) as revenue,
+            SELECT strftime('%Y-%m', order_date) as month,
+                   SUM(total_amount) as revenue,
                    COUNT(*) as order_count
-            FROM restaurant_orders
-            WHERE status = 'Completed'
-            AND order_time >= date('now', '-12 months')
+            FROM orders
+            WHERE order_status = 'Completed'
+            AND order_date >= date('now', '-12 months')
             GROUP BY month
             ORDER BY month
         ''')
@@ -622,10 +622,10 @@ def export_complete_financial_data(self):
             writer.writerow(['SALES REVENUE'])
             writer.writerow(['Order ID', 'Date', 'Total Price', 'Tax Amount', 'Payment Method', 'Status'])
             cursor.execute('''
-                SELECT order_id, order_time, total_price, tax_amount, payment_method, status
-                FROM restaurant_orders
-                WHERE DATE(order_time) BETWEEN ? AND ?
-                ORDER BY order_time
+                SELECT order_id, order_date, total_amount, tax_amount, payment_method, order_status
+                FROM orders
+                WHERE DATE(order_date) BETWEEN ? AND ?
+                ORDER BY order_date
             ''', (start_date, end_date))
             sales = cursor.fetchall()
             for record in sales:
@@ -670,10 +670,10 @@ def export_complete_financial_data(self):
                 writer.writerow([])
             # Summary
             cursor.execute('''
-                SELECT SUM(total_price), SUM(tax_amount)
-                FROM restaurant_orders
-                WHERE DATE(order_time) BETWEEN ? AND ?
-                AND status = 'Completed'
+                SELECT SUM(total_amount), SUM(tax_amount)
+                FROM orders
+                WHERE DATE(order_date) BETWEEN ? AND ?
+                AND order_status = 'Completed'
             ''', (start_date, end_date))
             sales_summary = cursor.fetchone()
             # Get expense and waste summaries only if tables exist
@@ -762,12 +762,12 @@ def export_sales_data(self):
             writer.writerow(['Order ID', 'Customer ID', 'Date/Time', 'Subtotal',
                            'Tax Amount', 'Total Price', 'Payment Method', 'Status'])
             cursor.execute('''
-                SELECT order_id, customer_id, order_time,
-                       (total_price - tax_amount) as subtotal,
-                       tax_amount, total_price, payment_method, status
-                FROM restaurant_orders
-                WHERE DATE(order_time) BETWEEN ? AND ?
-                ORDER BY order_time
+                SELECT order_id, customer_id, order_date,
+                       (total_amount - tax_amount) as subtotal,
+                       tax_amount, total_amount, payment_method, order_status
+                FROM orders
+                WHERE DATE(order_date) BETWEEN ? AND ?
+                ORDER BY order_date
             ''', (start_date, end_date))
             transactions = cursor.fetchall()
             for record in transactions:
@@ -778,9 +778,9 @@ def export_sales_data(self):
             writer.writerow(['Order ID', 'Item ID', 'Item Name', 'Quantity', 'Unit Price', 'Subtotal'])
             cursor.execute('''
                 SELECT oi.order_id, oi.item_id, oi.item_name, oi.quantity, oi.unit_price, oi.subtotal
-                FROM restaurant_order_items oi
-                JOIN restaurant_orders ro ON oi.order_id = ro.order_id
-                WHERE DATE(ro.order_time) BETWEEN ? AND ?
+                FROM order_items oi
+                JOIN orders ro ON oi.order_id = ro.order_id
+                WHERE DATE(ro.order_date) BETWEEN ? AND ?
                 ORDER BY oi.order_id
             ''', (start_date, end_date))
             items = cursor.fetchall()
@@ -792,13 +792,13 @@ def export_sales_data(self):
             cursor.execute('''
                 SELECT
                     COUNT(*) as total_orders,
-                    SUM(total_price - tax_amount) as total_sales,
+                    SUM(total_amount - tax_amount) as total_sales,
                     SUM(tax_amount) as total_tax,
-                    SUM(total_price) as total_with_tax,
-                    AVG(total_price) as avg_order_value
-                FROM restaurant_orders
-                WHERE DATE(order_time) BETWEEN ? AND ?
-                AND status = 'Completed'
+                    SUM(total_amount) as total_with_tax,
+                    AVG(total_amount) as avg_order_value
+                FROM orders
+                WHERE DATE(order_date) BETWEEN ? AND ?
+                AND order_status = 'Completed'
             ''', (start_date, end_date))
             summary = cursor.fetchone()
             writer.writerow(['Total Orders', summary[0]])

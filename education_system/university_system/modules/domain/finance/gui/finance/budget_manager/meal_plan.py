@@ -6,7 +6,7 @@ from datetime import datetime
 
 from education_system.university_system.infrastructure.database.db import get_connection
 
-from .constants import logger
+from education_system.university_system.modules.domain.finance.gui.finance.budget_manager.constants import logger
 
 
 class MealPlanMixin:

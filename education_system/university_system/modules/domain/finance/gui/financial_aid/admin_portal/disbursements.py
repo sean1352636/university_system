@@ -2,7 +2,7 @@
 Disbursement management mixin for AdminPortal.
 """
 
-from ._imports import (
+from education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal._imports import (
     tk, ttk, logging, datetime, date,
     get_connection, transaction, log_activity,
     get_current_user, confirm_action,

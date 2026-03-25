@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/plagiarism/cli/admin.py
+# hypothesis_version: 6.151.9
+
+['\nDocuments:', '1', '1. Delete Document', '2', '3', '3. Back', 'DELETE', 'Deletion cancelled.', 'Invalid selection.', 'id', 'title', 'y']

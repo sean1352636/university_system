@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/gui/charity_shop_gui/basket_ops.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d %H:%M:%S', 'Added', 'Added to Basket', 'Charity Shop', 'Charity Shop Sale', 'Checkout Complete', 'Empty Basket', 'Error', 'Finance Account', 'Limit Reached', 'No Selection', 'Not Available', 'Out of Stock', 'Payment Failed', 'Sold', 'System', 'Valued Customer', 'WALK-IN', 'charity_shop_basket', 'checkout', 'customer_email', 'customer_name', 'datetime', 'full_name', 'id', 'items_count', 'items_list', 'max_qty', 'name', 'payment_method', 'price', 'quantity', 'receipt_sent', 'status', 'student_id', 'subtotal', 'success', 'total', 'total_amount', 'total_revenue', 'transaction_ref', 'username']

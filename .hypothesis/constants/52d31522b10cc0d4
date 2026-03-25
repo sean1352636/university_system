@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/analytics/advanced_search/smart.py
+# hypothesis_version: 6.151.9
+
+[0.5, 100, '-', '1', '2', '3', '4', '=', 'Available analytics:', 'COUNT', 'CS', 'DS', 'GROUP BY', 'Graduated', 'High Success', 'Invalid selection.', 'Low Success', 'Moderate Success', 'No progress', 'Stalled', '] = ?', 'auto_complete', 'course', 'decreasing', 'description', 'first_name', 'increasing', 'last_name', 'search field', 'smart_suggestion']

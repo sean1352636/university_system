@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/assessment_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' = ?', ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', ', ', '/<int:assessment_id>', '/api/assessments', 'GET', 'POST', 'PUT', 'assessment', 'assessment_name', 'assessment_type', 'assessment_type = ?', 'assessments', 'create', 'description', 'due_date', 'duration_minutes', 'max_points', 'module_code', 'module_code = ?', 'status', 'sub', 'type', 'update', 'updated_at = ?', 'view', 'weight']

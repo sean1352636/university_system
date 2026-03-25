@@ -11,14 +11,14 @@ from education_system.university_system.infrastructure.database.db import sqlite
 from education_system.university_system.modules.shared.constants.paths import TEMP_DIR
 from education_system.university_system.modules.shared.utils.simple_activity_logger import logger
 
-from . import app, request, jsonify, send_file
-from .auth import token_required, admin_required
-from ..config import config
+from education_system.university_system.utils.logging.log_management.api import app, request, jsonify, send_file
+from education_system.university_system.utils.logging.log_management.api.auth import token_required, admin_required
+from education_system.university_system.utils.logging.log_management.config import config
 
 
 def _get_log_manager():
     """Lazy import to avoid circular dependency."""
-    from ..manager import get_log_manager
+    from education_system.university_system.utils.logging.log_management.manager import get_log_manager
     return get_log_manager()
 
 
@@ -421,20 +421,38 @@ def get_system_status(current_user):
 def webhook_log_entry():
     """Webhook endpoint for receiving log entries from external systems"""
     try:
-        # Verify webhook authenticity
-        webhook_key = request.headers.get('X-Webhook-Key')
-        if not webhook_key or not secrets.compare_digest(webhook_key, config.get('webhook_secret', '')):
-            return jsonify({'error': 'Invalid webhook key'}), 401
+        import hmac
+        import hashlib as _hashlib
+
+        webhook_secret = config.get('webhook_secret', '')
+        if not webhook_secret:
+            return jsonify({'error': 'Webhook not configured'}), 500
 
         # Validate timestamp to prevent replay attacks (5 min window)
         webhook_ts = request.headers.get('X-Webhook-Timestamp', '')
-        if webhook_ts:
-            try:
-                ts = datetime.fromisoformat(webhook_ts)
-                if abs((datetime.utcnow() - ts).total_seconds()) > 300:
-                    return jsonify({'error': 'Request timestamp expired'}), 401
-            except ValueError:
-                pass
+        if not webhook_ts:
+            return jsonify({'error': 'Missing timestamp header'}), 401
+        try:
+            ts = datetime.fromisoformat(webhook_ts)
+            if abs((datetime.utcnow() - ts).total_seconds()) > 300:
+                return jsonify({'error': 'Request timestamp expired'}), 401
+        except ValueError:
+            return jsonify({'error': 'Invalid timestamp format'}), 401
+
+        # Verify HMAC-SHA256 signature of request body
+        signature = request.headers.get('X-Webhook-Signature', '')
+        if not signature:
+            # Fall back to legacy key-based auth
+            webhook_key = request.headers.get('X-Webhook-Key')
+            if not webhook_key or not secrets.compare_digest(webhook_key, webhook_secret):
+                return jsonify({'error': 'Invalid webhook key'}), 401
+        else:
+            body = request.get_data()
+            expected = hmac.new(
+                webhook_secret.encode(), webhook_ts.encode() + b'.' + body, _hashlib.sha256
+            ).hexdigest()
+            if not hmac.compare_digest(signature, expected):
+                return jsonify({'error': 'Invalid webhook signature'}), 401
 
         log_data = request.get_json()
 

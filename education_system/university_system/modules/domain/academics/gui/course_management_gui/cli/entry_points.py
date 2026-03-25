@@ -99,7 +99,6 @@ except ImportError:
 
 # Import academic system launchers
 try:
-    from education_system.university_system.modules.domain.academics.services.lms.lms_core import launch_lms_gui
     from education_system.university_system.modules.domain.academics.services.degree_audit.degree_audit_core import launch_degree_audit_gui
     from education_system.university_system.modules.domain.academics.services.evaluation.course_evaluation_core import launch_course_evaluation_gui
     ACADEMIC_SYSTEMS_AVAILABLE = True
@@ -190,58 +189,60 @@ def cli_interface():
                     return 1
 
                 conn = sqlite3.connect(str(_CENTRALDEFAULT_DB_PATH))
-                cursor = conn.cursor()
-                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                try:
+                    cursor = conn.cursor()
+                    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-                for row_num, row in enumerate(reader, 1):
-                    try:
-                        course_code = row['course_code'].strip().upper()
-                        course_name = row['course_name'].strip()
-                        department = row['department'].strip()
+                    for row_num, row in enumerate(reader, 1):
+                        try:
+                            course_code = row['course_code'].strip().upper()
+                            course_name = row['course_name'].strip()
+                            department = row['department'].strip()
 
-                        if not course_code or not course_name:
-                            print("  " + _("course_management.cli.import_row_warning", row=row_num))
+                            if not course_code or not course_name:
+                                print("  " + _("course_management.cli.import_row_warning", row=row_num))
+                                error_count += 1
+                                continue
+
+                            # Check for duplicates
+                            cursor.execute("SELECT id FROM courses WHERE code = ?", (course_code,))
+                            if cursor.fetchone():
+                                print("  " + _("course_management.cli.import_course_exists", code=course_code))
+                                error_count += 1
+                                continue
+
+                            # Prepare optional fields
+                            description = row.get('description', '').strip()
+                            level = row.get('level', '').strip()
+                            credit_hours = float(row.get('credit_hours', 3.0))
+                            max_enrollment = int(row.get('max_enrollment', 30))
+                            course_type = row.get('course_type', 'Core').strip()
+
+                            import uuid
+                            course_id = str(uuid.uuid4())
+
+                            # Insert course
+                            cursor.execute('''
+                            INSERT INTO courses (
+                                id, code, name, credits, date_added,
+                                course_code, course_name, description, level, department,
+                                credit_hours, max_enrollment, course_type, created_at, updated_at
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ''', (course_id, course_code, course_name, int(credit_hours), timestamp,
+                                  course_code, course_name, description, level, department,
+                                  credit_hours, max_enrollment, course_type, timestamp, timestamp))
+
+                            imported_count += 1
+                            print("  " + _("course_management.cli.import_course_success", code=course_code, name=course_name))
+
+                        except (ValueError, sqlite3.Error) as e:
+                            print("  " + _("course_management.cli.import_row_error", row=row_num, error=str(e)))
                             error_count += 1
                             continue
 
-                        # Check for duplicates
-                        cursor.execute("SELECT id FROM courses WHERE code = ?", (course_code,))
-                        if cursor.fetchone():
-                            print("  " + _("course_management.cli.import_course_exists", code=course_code))
-                            error_count += 1
-                            continue
-
-                        # Prepare optional fields
-                        description = row.get('description', '').strip()
-                        level = row.get('level', '').strip()
-                        credit_hours = float(row.get('credit_hours', 3.0))
-                        max_enrollment = int(row.get('max_enrollment', 30))
-                        course_type = row.get('course_type', 'Core').strip()
-
-                        import uuid
-                        course_id = str(uuid.uuid4())
-
-                        # Insert course
-                        cursor.execute('''
-                        INSERT INTO courses (
-                            id, code, name, credits, date_added,
-                            course_code, course_name, description, level, department,
-                            credit_hours, max_enrollment, course_type, created_at, updated_at
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ''', (course_id, course_code, course_name, int(credit_hours), timestamp,
-                              course_code, course_name, description, level, department,
-                              credit_hours, max_enrollment, course_type, timestamp, timestamp))
-
-                        imported_count += 1
-                        print("  " + _("course_management.cli.import_course_success", code=course_code, name=course_name))
-
-                    except (ValueError, sqlite3.Error) as e:
-                        print("  " + _("course_management.cli.import_row_error", row=row_num, error=str(e)))
-                        error_count += 1
-                        continue
-
-                conn.commit()
-                conn.close()
+                    conn.commit()
+                finally:
+                    conn.close()
 
             print("\n" + _("course_management.cli.import_completed"))
             print("  " + _("course_management.cli.import_success_count", count=imported_count))
@@ -302,8 +303,10 @@ def cli_interface():
             else:
                 # Binary database copy
                 backup_conn = sqlite3.connect(args.backup)
-                conn.backup(backup_conn)
-                backup_conn.close()
+                try:
+                    conn.backup(backup_conn)
+                finally:
+                    backup_conn.close()
                 print(_("course_management.cli.backup_binary_created", file=args.backup))
 
             conn.close()

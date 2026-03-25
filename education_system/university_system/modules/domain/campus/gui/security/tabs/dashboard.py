@@ -5,7 +5,7 @@ from datetime import datetime
 
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
-from ..dialogs.emergency_alert import EmergencyAlertDialog
+from education_system.university_system.modules.domain.campus.gui.security.dialogs.emergency_alert import EmergencyAlertDialog
 
 
 class DashboardMixin:

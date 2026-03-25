@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/academic_calendar/reporting.py
+# hypothesis_version: 6.151.9
+
+['-', 'academic_year', 'all', 'attendee_count', 'count', 'end', 'event_breakdown', 'event_type', 'event_types', 'events', 'monthly_distribution', 'operation', 'period', 'resource_type', 'resources', 'room', 'start', 'summary', 'total_attendees', 'total_bookings', 'total_events', 'total_resources']

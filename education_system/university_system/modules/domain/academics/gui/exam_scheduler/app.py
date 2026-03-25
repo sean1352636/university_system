@@ -3,9 +3,9 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 
-from .data_manager import DataManager
-from .tabs import ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin, CalendarTabMixin
-from .dialogs import DialogsMixin
+from education_system.university_system.modules.domain.academics.gui.exam_scheduler.data_manager import DataManager
+from education_system.university_system.modules.domain.academics.gui.exam_scheduler.tabs import ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin, CalendarTabMixin
+from education_system.university_system.modules.domain.academics.gui.exam_scheduler.dialogs import DialogsMixin
 
 # i18n import
 try:

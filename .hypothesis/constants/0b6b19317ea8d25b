@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/research_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' = ?', ' AND ', ' WHERE ', ', ', '/api/research', '/projects', '/publications', 'GET', 'POST', 'PUT', 'abstract', 'authors', 'conference_name', 'create', 'department', 'department = ?', 'doi', 'end_date', 'ethics_approval_date', 'funding_source', 'is_peer_reviewed', 'items', 'journal_name', 'keywords', 'project_description', 'project_id', 'project_title', 'project_type', 'publication_date', 'publication_type', 'research', 'research_project', 'research_projects', 'research_publication', 'search', 'start_date', 'status', 'status = ?', 'sub', 'title', 'total', 'total_budget', 'update', 'url', 'view']

@@ -20,19 +20,19 @@ from collections import defaultdict
 import zipfile
 import tempfile
 
-from .core.database import DatabaseMixin
-from .core.permissions import PermissionsMixin
-from .core.utils import UtilsMixin
-from .assignments.crud import AssignmentCrudMixin
-from .assignments.submissions import SubmissionsMixin
-from .grading.grading import GradingMixin
-from .groups.group_management import GroupManagementMixin
-from .peer_review.peer_review import PeerReviewMixin
-from .extensions.extensions import ExtensionsMixin
-from .templates.templates import TemplatesMixin
-from .notifications.messaging import MessagingMixin
-from .analytics.analytics import AnalyticsMixin
-from .maintenance.maintenance import MaintenanceMixin
+from education_system.university_system.modules.domain.academics.services.assignments.core.database import DatabaseMixin
+from education_system.university_system.modules.domain.academics.services.assignments.core.permissions import PermissionsMixin
+from education_system.university_system.modules.domain.academics.services.assignments.core.utils import UtilsMixin
+from education_system.university_system.modules.domain.academics.services.assignments.assignments.crud import AssignmentCrudMixin
+from education_system.university_system.modules.domain.academics.services.assignments.assignments.submissions import SubmissionsMixin
+from education_system.university_system.modules.domain.academics.services.assignments.grading.grading import GradingMixin
+from education_system.university_system.modules.domain.academics.services.assignments.groups.group_management import GroupManagementMixin
+from education_system.university_system.modules.domain.academics.services.assignments.peer_review.peer_review import PeerReviewMixin
+from education_system.university_system.modules.domain.academics.services.assignments.extensions.extensions import ExtensionsMixin
+from education_system.university_system.modules.domain.academics.services.assignments.templates.templates import TemplatesMixin
+from education_system.university_system.modules.domain.academics.services.assignments.notifications.messaging import MessagingMixin
+from education_system.university_system.modules.domain.academics.services.assignments.analytics.analytics import AnalyticsMixin
+from education_system.university_system.modules.domain.academics.services.assignments.maintenance.maintenance import MaintenanceMixin
 
 
 class AssignmentSubmission(

@@ -6,7 +6,10 @@ commonly used features such as grades, timetable, module registration,
 exams, library, and financial aid.
 """
 
-from .common_imports import *
+import tkinter as tk
+from tkinter import ttk, messagebox
+
+from education_system.university_system.modules.domain.academics.gui.student_dashboard.common_imports import COLORS, _t
 
 
 class QuickActionsMixin:
@@ -66,10 +69,10 @@ class QuickActionsMixin:
         """
         action_map = {
             'grades': ('show_grades', _t('dashboard.view_grades', 'View Grades')),
-            'timetable': ('show_timetable', _t('dashboard.timetable', 'My Timetable')),
-            'register': ('show_module_registration', _t('dashboard.register_modules', 'Register for Modules')),
-            'exams': ('show_exams', _t('dashboard.view_exams', 'View Exams')),
-            'library': ('show_library', _t('dashboard.library', 'Library')),
+            'timetable': ('show_student_timetable_gui', _t('dashboard.timetable', 'My Timetable')),
+            'register': ('show_student_registration_gui', _t('dashboard.register_modules', 'Register for Modules')),
+            'exams': ('show_exam_scheduler_gui', _t('dashboard.view_exams', 'View Exams')),
+            'library': ('show_library_management', _t('dashboard.library', 'Library')),
             'financial_aid': ('show_financial_aid', _t('dashboard.financial_aid', 'Financial Aid')),
         }
 

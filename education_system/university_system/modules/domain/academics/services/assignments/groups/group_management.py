@@ -595,18 +595,20 @@ class GroupManagementMixin:
                 export_path = os.path.join(self.submission_dir, 'exports', f'groups_{assignment_id}.csv')
 
             conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('''
-                SELECT g.id, g.group_name, GROUP_CONCAT(gm.student_id, ', ')
-                FROM assignment_groups g
-                LEFT JOIN assignment_group_members gm ON g.id = gm.group_id
-                WHERE g.assignment_id = ?
-                GROUP BY g.id, g.group_name
-            ''', (assignment_id,))
+                cursor.execute('''
+                    SELECT g.id, g.group_name, GROUP_CONCAT(gm.student_id, ', ')
+                    FROM assignment_groups g
+                    LEFT JOIN assignment_group_members gm ON g.id = gm.group_id
+                    WHERE g.assignment_id = ?
+                    GROUP BY g.id, g.group_name
+                ''', (assignment_id,))
 
-            groups = cursor.fetchall()
-            conn.close()
+                groups = cursor.fetchall()
+            finally:
+                conn.close()
 
             with open(export_path, 'w', newline='') as csvfile:
                 writer = csv.writer(csvfile)

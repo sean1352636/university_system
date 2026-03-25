@@ -1,9 +1,9 @@
-from ..checker import PlagiarismChecker
-from .submission import submit_document, view_my_documents
-from .checking import check_document, view_results
-from .search import search_repository
-from .reporting import view_statistics
-from .admin import manage_repository
+from education_system.university_system.modules.domain.academics.services.plagiarism.checker import PlagiarismChecker
+from education_system.university_system.modules.domain.academics.services.plagiarism.cli.submission import submit_document, view_my_documents
+from education_system.university_system.modules.domain.academics.services.plagiarism.cli.checking import check_document, view_results
+from education_system.university_system.modules.domain.academics.services.plagiarism.cli.search import search_repository
+from education_system.university_system.modules.domain.academics.services.plagiarism.cli.reporting import view_statistics
+from education_system.university_system.modules.domain.academics.services.plagiarism.cli.admin import manage_repository
 
 
 def safe_input(prompt, default=None, validator=None):

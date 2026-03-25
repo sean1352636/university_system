@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/student_union/__init__.py
+# hypothesis_version: 6.151.9
+
+['set_auth', 'set_auth_all']

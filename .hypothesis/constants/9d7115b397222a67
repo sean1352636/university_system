@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/academic_calendar/visualization.py
+# hypothesis_version: 6.151.9
+
+[0.2, 0.3, 0.6, 0.7, 0.8, 1.05, 100, 300, 365, 366, 600, '#15803D', '#1E3A8A', '#6B7280', '#7C2D12', '#7C3AED', '#DC2626', '#EA580C', '%A', '%U', '%Y-%m', '%Y-%m-%d', 'Academic', 'Administrative', 'Conflicts', 'Date', 'Day of Week', 'Deadline', 'Event 1', 'Event 2', 'Event Types', 'Holiday', 'Social', 'Sports', 'Timeline displayed', 'Viridis', 'Week of Year', 'blue', 'center', 'count', 'date', 'date_start', 'div', 'end1', 'end2', 'event1', 'event1_end', 'event1_name', 'event1_start', 'event2', 'event2_end', 'event2_name', 'event2_start', 'event_count', 'event_date', 'event_type', 'export_data', 'inside', 'left', 'month', 'name', 'offset points', 'percent+label', 'red', 'semester', 'semester_name', 'start1', 'start2', 'tight', 'upper left', 'year']

@@ -3,21 +3,21 @@
 import os
 from datetime import datetime, timedelta
 
-from ._compat import (
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting._compat import (
     pd, SimpleDocTemplate, Paragraph, Spacer, Image,
     getSampleStyleSheet, ParagraphStyle, colors, A4, inch,
 )
-from .config import CONFIG, AVAILABLE_SECTIONS, SystemConfig, logger
-from .cache import CacheManager
-from .data_quality import DataQualityMonitor
-from .predictive import PredictiveAnalytics
-from .visualization import (
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.config import CONFIG, AVAILABLE_SECTIONS, SystemConfig, logger
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.cache import CacheManager
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.data_quality import DataQualityMonitor
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.predictive import PredictiveAnalytics
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.visualization import (
     AdvancedVisualization,
     create_advanced_visualization, create_standard_chart,
     generate_statistical_summary, create_enhanced_data_table,
 )
-from .templates_db import get_template as _get_template
-from .data_retrieval import get_section_dataframe
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.templates_db import get_template as _get_template
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.data_retrieval import get_section_dataframe
 
 
 def generate_report(template, start_date=None, end_date=None, format="pdf", comparison_date=None):

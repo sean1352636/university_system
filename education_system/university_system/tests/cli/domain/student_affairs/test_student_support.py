@@ -27,9 +27,20 @@ from education_system.university_system.modules.domain.student_affairs.services.
 )
 
 @pytest.fixture
-def setup_database():
+def setup_database(_isolate_db, monkeypatch):
     """Set up test database with support tables"""
-    conn = sqlite3.connect(SUPPORT_DB)
+    # Patch SUPPORT_DB in all service modules to use the isolated test DB
+    import education_system.university_system.modules.domain.student_affairs.services.student_support as _pkg
+    _support_modules = [
+        _pkg, _pkg.config, _pkg.database,
+    ]
+    # Dynamically find submodules that have SUPPORT_DB
+    import sys
+    for mod_name, mod in list(sys.modules.items()):
+        if mod and mod_name.startswith('education_system.university_system.modules.domain.student_affairs.services.student_support') and hasattr(mod, 'SUPPORT_DB'):
+            monkeypatch.setattr(mod, 'SUPPORT_DB', _isolate_db)
+
+    conn = get_connection()
     cursor = conn.cursor()
 
     # Create support_tickets table
@@ -141,7 +152,7 @@ def setup_database():
     yield
 
     # Cleanup
-    conn = sqlite3.connect(SUPPORT_DB)
+    conn = get_connection()
     cursor = conn.cursor()
 
     tables = [
@@ -219,7 +230,7 @@ class TestTicketManagement:
 
     def test_create_ticket(self, setup_database):
         """Test creating a support ticket"""
-        conn = sqlite3.connect(SUPPORT_DB)
+        conn = get_connection()
         cursor = conn.cursor()
 
         cursor.execute('''
@@ -240,7 +251,7 @@ class TestTicketManagement:
 
     def test_update_ticket_status(self, setup_database):
         """Test updating ticket status"""
-        conn = sqlite3.connect(SUPPORT_DB)
+        conn = get_connection()
         cursor = conn.cursor()
 
         # Create ticket
@@ -268,7 +279,7 @@ class TestNotifications:
 
     def test_get_user_notifications(self, setup_database, support_system, mock_auth):
         """Test retrieving user notifications"""
-        conn = sqlite3.connect(SUPPORT_DB)
+        conn = get_connection()
         cursor = conn.cursor()
 
         # Create notifications
@@ -291,7 +302,7 @@ class TestNotifications:
 
     def test_mark_notification_read(self, setup_database, support_system, mock_auth):
         """Test marking a notification as read"""
-        conn = sqlite3.connect(SUPPORT_DB)
+        conn = get_connection()
         cursor = conn.cursor()
 
         # Create notification
@@ -314,7 +325,7 @@ class TestNotifications:
         assert result is True
 
         # Verify
-        conn = sqlite3.connect(SUPPORT_DB)
+        conn = get_connection()
         cursor = conn.cursor()
         cursor.execute('SELECT is_read FROM notifications WHERE notification_id = ?', (notification_id,))
         is_read = cursor.fetchone()[0]
@@ -327,7 +338,7 @@ class TestSatisfactionRatings:
 
     def test_submit_satisfaction_rating(self, setup_database, support_system, mock_auth):
         """Test submitting a satisfaction rating"""
-        conn = sqlite3.connect(SUPPORT_DB)
+        conn = get_connection()
         cursor = conn.cursor()
 
         # Create resolved ticket
@@ -351,7 +362,7 @@ class TestSatisfactionRatings:
         assert result is True
 
         # Verify rating
-        conn = sqlite3.connect(SUPPORT_DB)
+        conn = get_connection()
         cursor = conn.cursor()
         cursor.execute('SELECT satisfaction_rating FROM support_tickets WHERE ticket_id = ?', (ticket_id,))
         rating = cursor.fetchone()[0]
@@ -364,7 +375,7 @@ class TestFAQManagement:
 
     def test_create_faq(self, setup_database):
         """Test creating an FAQ"""
-        conn = sqlite3.connect(SUPPORT_DB)
+        conn = get_connection()
         cursor = conn.cursor()
 
         cursor.execute('''
@@ -384,7 +395,7 @@ class TestFAQManagement:
 
     def test_search_faqs(self, setup_database):
         """Test searching FAQs"""
-        conn = sqlite3.connect(SUPPORT_DB)
+        conn = get_connection()
         cursor = conn.cursor()
 
         # Create FAQs
@@ -413,7 +424,7 @@ class TestResourceLibrary:
 
     def test_add_resource(self, setup_database):
         """Test adding a support resource"""
-        conn = sqlite3.connect(SUPPORT_DB)
+        conn = get_connection()
         cursor = conn.cursor()
 
         cursor.execute('''
@@ -439,7 +450,7 @@ class TestResourceLibrary:
 
     def test_increment_access_count(self, setup_database):
         """Test incrementing resource access count"""
-        conn = sqlite3.connect(SUPPORT_DB)
+        conn = get_connection()
         cursor = conn.cursor()
 
         # Create resource
@@ -468,7 +479,7 @@ class TestKnowledgeBase:
 
     def test_create_article(self, setup_database):
         """Test creating a knowledge base article"""
-        conn = sqlite3.connect(SUPPORT_DB)
+        conn = get_connection()
         cursor = conn.cursor()
 
         cursor.execute('''
@@ -496,7 +507,7 @@ class TestKnowledgeBase:
 
     def test_search_articles(self, setup_database):
         """Test searching knowledge base"""
-        conn = sqlite3.connect(SUPPORT_DB)
+        conn = get_connection()
         cursor = conn.cursor()
 
         # Create articles
@@ -553,7 +564,7 @@ class TestIntegrationScenarios:
 
     def test_complete_support_workflow(self, setup_database, support_system, mock_auth):
         """Test complete support ticket workflow"""
-        conn = sqlite3.connect(SUPPORT_DB)
+        conn = get_connection()
         cursor = conn.cursor()
 
         # Set auth

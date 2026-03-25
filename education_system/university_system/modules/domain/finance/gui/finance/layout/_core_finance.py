@@ -72,17 +72,17 @@ class CoreFinanceMixin:
             cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status = 'completed'")
             total_revenue = cursor.fetchone()[0] or 0
 
-            # Add club payments to total revenue
+            # Add club payments to total revenue (from payments table with source_type='club')
             try:
-                cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM club_payments WHERE status = 'completed'")
+                cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE source_type = 'club' AND status = 'completed'")
                 club_revenue = cursor.fetchone()[0] or 0
                 total_revenue += club_revenue
             except Exception:
-                pass  # Table may not exist
+                pass  # Column may not exist
 
             # Add housing payments to total revenue
             try:
-                cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM housing_payments WHERE status = 'completed'")
+                cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE source_type = 'housing' AND status = 'completed'")
                 housing_revenue = cursor.fetchone()[0] or 0
                 total_revenue += housing_revenue
             except Exception:
@@ -90,7 +90,7 @@ class CoreFinanceMixin:
 
             # Add butcher shop orders to total revenue
             try:
-                cursor.execute("SELECT COALESCE(SUM(total_amount), 0) FROM butcher_orders WHERE payment_status = 'paid'")
+                cursor.execute("SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE source_type = 'butcher' AND payment_status = 'paid'")
                 butcher_revenue = cursor.fetchone()[0] or 0
                 total_revenue += butcher_revenue
             except Exception:
@@ -98,7 +98,7 @@ class CoreFinanceMixin:
 
             # Add gym payments to total revenue
             try:
-                cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM gym_transactions WHERE transaction_type IN ('membership', 'membership_renewal', 'pt_session')")
+                cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE source_type = 'gym' AND transaction_type IN ('membership', 'membership_renewal', 'pt_session')")
                 gym_revenue = cursor.fetchone()[0] or 0
                 total_revenue += gym_revenue
             except Exception:
@@ -106,7 +106,7 @@ class CoreFinanceMixin:
 
             # Add dentist payments to total revenue
             try:
-                cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM dentist_transactions WHERE status = 'completed'")
+                cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE source_type = 'dentist' AND status = 'completed'")
                 dentist_revenue = cursor.fetchone()[0] or 0
                 total_revenue += dentist_revenue
             except Exception:
@@ -116,22 +116,14 @@ class CoreFinanceMixin:
             cursor.execute("SELECT COUNT(*) FROM payments WHERE status = 'pending'")
             pending = cursor.fetchone()[0]
 
-            # Total refunds from finance_refunds table (includes all department refunds)
+            # Total refunds from unified_refunds table (includes all department refunds)
             try:
-                cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM finance_refunds")
+                cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM unified_refunds")
                 refunds = cursor.fetchone()[0] or 0
             except Exception:
-                # Fallback to old method if finance_refunds doesn't exist
+                # Fallback if unified_refunds doesn't exist
                 cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE payment_method = 'refund'")
-                general_refunds = cursor.fetchone()[0] or 0
-
-                try:
-                    cursor.execute("SELECT COALESCE(SUM(refund_amount), 0) FROM library_fine_payments WHERE refund_amount > 0")
-                    library_refunds = cursor.fetchone()[0] or 0
-                except Exception:
-                    library_refunds = 0
-
-                refunds = general_refunds + library_refunds
+                refunds = cursor.fetchone()[0] or 0
 
             # Active students
             cursor.execute("SELECT COUNT(*) FROM students WHERE status = 'Active'")

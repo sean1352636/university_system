@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from tkinter.font import Font
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 import json
@@ -420,7 +421,7 @@ except ImportError:
         except Exception as e:
             print(f"Error setting up enhanced helpdesk permissions: {e}")
 
-from .base import HelpdeskGUI
+from education_system.university_system.modules.domain.student_affairs.gui.helpdesk.base import HelpdeskGUI
 
 def create_knowledge_base_tab(self):
     """Create knowledge base tab"""
@@ -1605,7 +1606,7 @@ def suggest_knowledge_base_articles_gui(self, ticket_id, content):
 
         for keyword in keywords[:5]:  # Limit to top 5 keywords
             keyword_conditions.append("(title LIKE ? OR content LIKE ? OR search_keywords LIKE ?)")
-            params.extend([f"%{keyword}%", f"%{keyword}%", f"%{keyword}%"])
+            params.extend([f"%{escape_like(keyword)}%", f"%{escape_like(keyword)}%", f"%{escape_like(keyword)}%"])
 
         if keyword_conditions:
             query = f'''

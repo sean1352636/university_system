@@ -118,10 +118,12 @@ class ApplicationManager:
                     raise ValueError(f"Application ID {application_id} does not exist.")
 
                 cursor = conn.execute('''
-                    INSERT INTO application_documents (
-                        application_id, document_type, document_name, file_url
-                    ) VALUES (?, ?, ?, ?)
-                ''', (application_id, document_type, document_name, file_url))
+                    INSERT INTO documents (
+                        source_type, reference_id, reference_type,
+                        document_type, document_name, file_path,
+                        verification_status
+                    ) VALUES ('application', ?, 'application', ?, ?, ?, 'pending')
+                ''', (str(application_id), document_type, document_name, file_url))
                 document_id = cursor.lastrowid
                 return document_id
         except ValueError as ve:

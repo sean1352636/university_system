@@ -96,8 +96,8 @@ def get_revenue_by_source(
 
             -- Gym transactions (not in central payments)
             SELECT 'Gym' as source, amount, created_at as trans_date
-            FROM gym_transactions
-            WHERE transaction_id NOT IN (
+            FROM transactions
+            WHERE source_type = 'gym' AND transaction_id NOT IN (
                 SELECT DISTINCT SUBSTR(notes, INSTR(notes, 'Ref: ') + 5)
                 FROM payments WHERE notes LIKE 'Gym:%'
             )
@@ -106,8 +106,8 @@ def get_revenue_by_source(
 
             -- Dentist transactions (not in central payments)
             SELECT 'Dentist' as source, amount, created_at as trans_date
-            FROM dentist_transactions
-            WHERE transaction_id NOT IN (
+            FROM transactions
+            WHERE source_type = 'dentist' AND transaction_id NOT IN (
                 SELECT DISTINCT SUBSTR(notes, INSTR(notes, 'Ref: ') + 5)
                 FROM payments WHERE notes LIKE 'Dental:%'
             )
@@ -115,9 +115,9 @@ def get_revenue_by_source(
             UNION ALL
 
             -- Grocery transactions (not in central payments)
-            SELECT 'Grocery' as source, total_amount as amount, transaction_date as trans_date
-            FROM grocery_transactions
-            WHERE transaction_id NOT IN (
+            SELECT 'Grocery' as source, total_amount as amount, created_at as trans_date
+            FROM transactions
+            WHERE source_type = 'grocery' AND source_transaction_id NOT IN (
                 SELECT DISTINCT SUBSTR(notes, INSTR(notes, 'Ref: ') + 5)
                 FROM payments WHERE notes LIKE '[Grocery]%'
             )
@@ -126,16 +126,16 @@ def get_revenue_by_source(
 
             -- Betting transactions
             SELECT 'Betting' as source, amount, created_at as trans_date
-            FROM betting_transactions
-            WHERE status = 'completed'
+            FROM transactions
+            WHERE source_type = 'betting' AND status = 'completed'
 
             UNION ALL
 
             -- Shop transactions (not in central payments)
-            SELECT 'Shop' as source, total_amount as amount, transaction_date as trans_date
-            FROM shop_transactions
-            WHERE status = 'completed'
-            AND transaction_id NOT IN (
+            SELECT 'Shop' as source, total_amount as amount, created_at as trans_date
+            FROM transactions
+            WHERE source_type = 'shop' AND status = 'completed'
+            AND source_transaction_id NOT IN (
                 SELECT DISTINCT SUBSTR(notes, INSTR(notes, 'Ref: ') + 5)
                 FROM payments WHERE notes LIKE '[Shop]%'
             )
@@ -144,43 +144,43 @@ def get_revenue_by_source(
 
             -- Butcher transactions
             SELECT 'Butcher' as source, amount, created_at as trans_date
-            FROM butcher_transactions
-            WHERE status = 'completed'
+            FROM transactions
+            WHERE source_type = 'butcher' AND status = 'completed'
 
             UNION ALL
 
             -- Barber transactions
             SELECT 'Barber' as source, amount, created_at as trans_date
-            FROM barber_transactions
-            WHERE status = 'completed'
+            FROM transactions
+            WHERE source_type = 'barber' AND status = 'completed'
 
             UNION ALL
 
             -- NailBar transactions
             SELECT 'NailBar' as source, amount, created_at as trans_date
-            FROM nailbar_transactions
-            WHERE status = 'completed'
+            FROM transactions
+            WHERE source_type = 'nail_bar' AND status = 'completed'
 
             UNION ALL
 
             -- CarRental transactions
             SELECT 'CarRental' as source, amount, created_at as trans_date
-            FROM carrental_transactions
-            WHERE status = 'completed'
+            FROM transactions
+            WHERE source_type = 'car_rental' AND status = 'completed'
 
             UNION ALL
 
             -- PhoneShop transactions
             SELECT 'PhoneShop' as source, amount, created_at as trans_date
-            FROM phoneshop_transactions
-            WHERE status = 'completed'
+            FROM transactions
+            WHERE source_type = 'phone_shop' AND status = 'completed'
 
             UNION ALL
 
             -- MusicShop transactions
             SELECT 'MusicShop' as source, amount, created_at as trans_date
-            FROM musicshop_transactions
-            WHERE status = 'completed'
+            FROM transactions
+            WHERE source_type = 'music_shop' AND status = 'completed'
         )
         SELECT
             source,

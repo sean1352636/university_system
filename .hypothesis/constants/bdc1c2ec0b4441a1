@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance_reporting/dashboard_tab.py
+# hypothesis_version: 6.151.9
+
+[0.1, 0.3, 0.6, 0.7, 0.9, 100, 30000, '#27ae60', '#2980b9', '#2ecc71', '#3498db', '#95a5a6', '#c0392b', '#e74c3c', '#f39c12', '%1.1f%%', '%H:%M:%S', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '%Y-%m-%d %H:00:00', '10', '1000x700', 'Accent.TButton', 'Amount (£)', 'Arial', 'Current Hour', 'Date', 'Heading.TLabel', 'Live Activity', 'Live Metrics', 'Loading...', 'Online', 'Outstanding\nFees', 'Payment Velocity', 'Revenue\nCollected', 'System Status', 'Title.TLabel', 'TkAgg', 'WM_DELETE_WINDOW', 'active_students', 'alert_count', 'bold', 'bottom', 'center', 'collection_rate', 'common.error', 'lightgreen', 'monospace', 'o', 'off', 'overdue', 'overdue_amount', 'paid', 'pending', 'round', 'today_payments', 'top', 'total_revenue', 'unpaid', 'x', 'y', '🔄 Manual Refresh']

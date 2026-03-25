@@ -1066,7 +1066,7 @@ def init_additional_missing_tables():
             document_id INTEGER NOT NULL,
             accessed_at TEXT,
             FOREIGN KEY (parent_id) REFERENCES parent_accounts (id),
-            FOREIGN KEY (document_id) REFERENCES parent_documents (id)
+            FOREIGN KEY (document_id) REFERENCES documents (document_id)
         )
         ''')
 

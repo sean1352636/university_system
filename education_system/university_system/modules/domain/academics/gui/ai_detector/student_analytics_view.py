@@ -132,26 +132,28 @@ def _save_plagiarism_config(self):
             return
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS ai_integration_config (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                service_name TEXT UNIQUE,
-                api_key TEXT,
-                enabled INTEGER DEFAULT 1,
-                last_sync TIMESTAMP,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS ai_integration_config (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    service_name TEXT UNIQUE,
+                    api_key TEXT,
+                    enabled INTEGER DEFAULT 1,
+                    last_sync TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
 
-        cursor.execute('''
-            INSERT OR REPLACE INTO ai_integration_config (service_name, api_key, enabled)
-            VALUES (?, ?, 1)
-        ''', (service, api_key))
+            cursor.execute('''
+                INSERT OR REPLACE INTO ai_integration_config (service_name, api_key, enabled)
+                VALUES (?, ?, 1)
+            ''', (service, api_key))
 
-        conn.commit()
-        conn.close()
+            conn.commit()
+        finally:
+            conn.close()
 
         messagebox.showinfo("Success", f"{service} configuration saved")
         self._load_integration_status()
@@ -189,27 +191,29 @@ def _load_integration_status(self):
             self.integration_tree.delete(item)
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('''
-            SELECT name FROM sqlite_master
-            WHERE type='table' AND name='ai_integration_config'
-        ''')
-
-        if cursor.fetchone():
             cursor.execute('''
-                SELECT service_name,
-                       CASE WHEN enabled = 1 THEN 'Active' ELSE 'Inactive' END,
-                       datetime(last_sync),
-                       0
-                FROM ai_integration_config
+                SELECT name FROM sqlite_master
+                WHERE type='table' AND name='ai_integration_config'
             ''')
-            integrations = cursor.fetchall()
 
-            for integration in integrations:
-                self.integration_tree.insert('', 'end', values=integration)
+            if cursor.fetchone():
+                cursor.execute('''
+                    SELECT service_name,
+                           CASE WHEN enabled = 1 THEN 'Active' ELSE 'Inactive' END,
+                           datetime(last_sync),
+                           0
+                    FROM ai_integration_config
+                ''')
+                integrations = cursor.fetchall()
 
-        conn.close()
+                for integration in integrations:
+                    self.integration_tree.insert('', 'end', values=integration)
+
+        finally:
+            conn.close()
     except Exception:
         pass
 
@@ -431,20 +435,22 @@ def analyze_writing_style_fingerprint(self):
         self.enhanced_results_text.delete('1.0', tk.END)
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        # Get student's previous submissions
-        cursor.execute('''
-            SELECT text_content, ai_probability, analysis_date
-            FROM ai_analysis_history
-            WHERE student_id = ?
-            ORDER BY analysis_date
-            LIMIT 10
-        ''', (student_id,))
-        submissions = cursor.fetchall()
+            # Get student's previous submissions
+            cursor.execute('''
+                SELECT text_content, ai_probability, analysis_date
+                FROM ai_analysis_history
+                WHERE student_id = ?
+                ORDER BY analysis_date
+                LIMIT 10
+            ''', (student_id,))
+            submissions = cursor.fetchall()
 
-        if not submissions:
-            self.enhanced_results_text.insert('1.0', f"No submission history found for student {student_id}")
+            if not submissions:
+                self.enhanced_results_text.insert('1.0', f"No submission history found for student {student_id}")
+        finally:
             conn.close()
             return
 
@@ -843,29 +849,31 @@ def analyze_knowledge_consistency(self):
         self.enhanced_results_text.delete('1.0', tk.END)
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        # Get student's course enrollments
-        cursor.execute('''
-            SELECT DISTINCT c.course_name, c.level
-            FROM enrollments e
-            JOIN courses c ON e.course_id = c.id
-            JOIN users u ON e.student_id = u.id
-            WHERE u.username = ? OR u.id = ?
-        ''', (student_id, student_id))
-        courses = cursor.fetchall()
+            # Get student's course enrollments
+            cursor.execute('''
+                SELECT DISTINCT c.course_name, c.level
+                FROM enrollments e
+                JOIN courses c ON e.course_id = c.id
+                JOIN users u ON e.student_id = u.id
+                WHERE u.username = ? OR u.id = ?
+            ''', (student_id, student_id))
+            courses = cursor.fetchall()
 
-        # Get student's submissions
-        cursor.execute('''
-            SELECT text_content, course_name, ai_probability
-            FROM ai_analysis_history
-            WHERE student_id = ?
-            ORDER BY analysis_date DESC
-            LIMIT 5
-        ''', (student_id,))
-        submissions = cursor.fetchall()
+            # Get student's submissions
+            cursor.execute('''
+                SELECT text_content, course_name, ai_probability
+                FROM ai_analysis_history
+                WHERE student_id = ?
+                ORDER BY analysis_date DESC
+                LIMIT 5
+            ''', (student_id,))
+            submissions = cursor.fetchall()
 
-        conn.close()
+        finally:
+            conn.close()
 
         result = f"Knowledge Consistency Analysis - Student {student_id}\n"
         result += "=" * 50 + "\n\n"
@@ -1137,45 +1145,47 @@ def view_student_profile(self):
         self.student_results_text.delete('1.0', tk.END)
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        # Get student info
-        cursor.execute('''
-            SELECT username, first_name, last_name, email
-            FROM users WHERE username = ? OR id = ?
-        ''', (student_id, student_id))
-        student = cursor.fetchone()
+            # Get student info
+            cursor.execute('''
+                SELECT username, first_name, last_name, email
+                FROM users WHERE username = ? OR id = ?
+            ''', (student_id, student_id))
+            student = cursor.fetchone()
 
-        # Get submission history
-        cursor.execute('''
-            SELECT COUNT(*), AVG(ai_probability),
-                   MAX(ai_probability), MIN(ai_probability),
-                   SUM(CASE WHEN ai_probability > 80 THEN 1 ELSE 0 END)
-            FROM ai_analysis_history
-            WHERE student_id = ?
-        ''', (student_id,))
-        stats = cursor.fetchone()
+            # Get submission history
+            cursor.execute('''
+                SELECT COUNT(*), AVG(ai_probability),
+                       MAX(ai_probability), MIN(ai_probability),
+                       SUM(CASE WHEN ai_probability > 80 THEN 1 ELSE 0 END)
+                FROM ai_analysis_history
+                WHERE student_id = ?
+            ''', (student_id,))
+            stats = cursor.fetchone()
 
-        # Get recent submissions
-        cursor.execute('''
-            SELECT submission_id, document_name, ai_probability, analysis_date
-            FROM ai_analysis_history
-            WHERE student_id = ?
-            ORDER BY analysis_date DESC
-            LIMIT 10
-        ''', (student_id,))
-        recent = cursor.fetchall()
+            # Get recent submissions
+            cursor.execute('''
+                SELECT submission_id, document_name, ai_probability, analysis_date
+                FROM ai_analysis_history
+                WHERE student_id = ?
+                ORDER BY analysis_date DESC
+                LIMIT 10
+            ''', (student_id,))
+            recent = cursor.fetchall()
 
-        # Get any flags
-        cursor.execute('''
-            SELECT flag_reason, flagged_by, flagged_at
-            FROM ai_student_flags
-            WHERE student_id = ?
-            ORDER BY flagged_at DESC
-        ''', (student_id,))
-        flags = cursor.fetchall()
+            # Get any flags
+            cursor.execute('''
+                SELECT flag_reason, flagged_by, flagged_at
+                FROM ai_student_flags
+                WHERE student_id = ?
+                ORDER BY flagged_at DESC
+            ''', (student_id,))
+            flags = cursor.fetchall()
 
-        conn.close()
+        finally:
+            conn.close()
 
         result = f"Student Profile: {student_id}\n"
         result += "=" * 50 + "\n\n"
@@ -1238,33 +1248,35 @@ def compare_students(self):
         self.student_results_text.delete('1.0', tk.END)
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        comparisons = {}
-        for student_id in [student1, student2]:
-            cursor.execute('''
-                SELECT COUNT(*), AVG(ai_probability),
-                       AVG(LENGTH(text_content))
-                FROM ai_analysis_history
-                WHERE student_id = ?
-            ''', (student_id,))
-            stats = cursor.fetchone()
+            comparisons = {}
+            for student_id in [student1, student2]:
+                cursor.execute('''
+                    SELECT COUNT(*), AVG(ai_probability),
+                           AVG(LENGTH(text_content))
+                    FROM ai_analysis_history
+                    WHERE student_id = ?
+                ''', (student_id,))
+                stats = cursor.fetchone()
 
-            # Get writing fingerprint if exists
-            cursor.execute('''
-                SELECT fingerprint_data FROM ai_writing_fingerprints
-                WHERE student_id = ?
-            ''', (student_id,))
-            fingerprint = cursor.fetchone()
+                # Get writing fingerprint if exists
+                cursor.execute('''
+                    SELECT fingerprint_data FROM ai_writing_fingerprints
+                    WHERE student_id = ?
+                ''', (student_id,))
+                fingerprint = cursor.fetchone()
 
-            comparisons[student_id] = {
-                'submissions': stats[0] if stats else 0,
-                'avg_ai_score': stats[1] if stats and stats[1] else 0,
-                'avg_length': stats[2] if stats and stats[2] else 0,
-                'fingerprint': json.loads(fingerprint[0]) if fingerprint else None
-            }
+                comparisons[student_id] = {
+                    'submissions': stats[0] if stats else 0,
+                    'avg_ai_score': stats[1] if stats and stats[1] else 0,
+                    'avg_length': stats[2] if stats and stats[2] else 0,
+                    'fingerprint': json.loads(fingerprint[0]) if fingerprint else None
+                }
 
-        conn.close()
+        finally:
+            conn.close()
 
         result = "Student Comparison\n"
         result += "=" * 50 + "\n\n"
@@ -1462,17 +1474,19 @@ def view_student_progression(self):
         self.student_results_text.delete('1.0', tk.END)
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('''
-            SELECT analysis_date, ai_probability, document_name,
-                   LENGTH(text_content) as length
-            FROM ai_analysis_history
-            WHERE student_id = ?
-            ORDER BY analysis_date
-        ''', (student_id,))
-        submissions = cursor.fetchall()
-        conn.close()
+            cursor.execute('''
+                SELECT analysis_date, ai_probability, document_name,
+                       LENGTH(text_content) as length
+                FROM ai_analysis_history
+                WHERE student_id = ?
+                ORDER BY analysis_date
+            ''', (student_id,))
+            submissions = cursor.fetchall()
+        finally:
+            conn.close()
 
         result = f"Writing Progression - Student {student_id}\n"
         result += "=" * 50 + "\n\n"
@@ -1536,20 +1550,22 @@ def bulk_student_analysis(self):
         self.student_results_text.delete('1.0', tk.END)
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('''
-            SELECT student_id, student_name, COUNT(*) as submissions,
-                   AVG(ai_probability) as avg_score,
-                   MAX(ai_probability) as max_score,
-                   SUM(CASE WHEN ai_probability > 80 THEN 1 ELSE 0 END) as high_risk
-            FROM ai_analysis_history
-            WHERE course_name LIKE ?
-            GROUP BY student_id
-            ORDER BY avg_score DESC
-        ''', (f'%{course}%',))
-        students = cursor.fetchall()
-        conn.close()
+            cursor.execute('''
+                SELECT student_id, student_name, COUNT(*) as submissions,
+                       AVG(ai_probability) as avg_score,
+                       MAX(ai_probability) as max_score,
+                       SUM(CASE WHEN ai_probability > 80 THEN 1 ELSE 0 END) as high_risk
+                FROM ai_analysis_history
+                WHERE course_name LIKE ?
+                GROUP BY student_id
+                ORDER BY avg_score DESC
+            ''', (f'%{course}%',))
+            students = cursor.fetchall()
+        finally:
+            conn.close()
 
         result = f"Bulk Analysis - {course}\n"
         result += "=" * 50 + "\n\n"
@@ -1652,11 +1668,13 @@ def show_detection_confidence_distribution(self):
         self.analytics_results_text.delete('1.0', tk.END)
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('SELECT ai_probability FROM ai_analysis_history')
-        scores = [row[0] for row in cursor.fetchall() if row[0] is not None]
-        conn.close()
+            cursor.execute('SELECT ai_probability FROM ai_analysis_history')
+            scores = [row[0] for row in cursor.fetchall() if row[0] is not None]
+        finally:
+            conn.close()
 
         if not scores:
             self.analytics_results_text.insert('1.0', "No data available for distribution analysis.")
@@ -1717,24 +1735,26 @@ def generate_word_cloud(self):
         self.analytics_results_text.delete('1.0', tk.END)
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        # Get flagged submissions (high AI score)
-        cursor.execute('''
-            SELECT text_content FROM ai_analysis_history
-            WHERE ai_probability > 70 AND text_content IS NOT NULL
-            LIMIT 50
-        ''')
-        flagged_texts = [row[0] for row in cursor.fetchall()]
+            # Get flagged submissions (high AI score)
+            cursor.execute('''
+                SELECT text_content FROM ai_analysis_history
+                WHERE ai_probability > 70 AND text_content IS NOT NULL
+                LIMIT 50
+            ''')
+            flagged_texts = [row[0] for row in cursor.fetchall()]
 
-        # Get clean submissions (low AI score)
-        cursor.execute('''
-            SELECT text_content FROM ai_analysis_history
-            WHERE ai_probability < 30 AND text_content IS NOT NULL
-            LIMIT 50
-        ''')
-        clean_texts = [row[0] for row in cursor.fetchall()]
-        conn.close()
+            # Get clean submissions (low AI score)
+            cursor.execute('''
+                SELECT text_content FROM ai_analysis_history
+                WHERE ai_probability < 30 AND text_content IS NOT NULL
+                LIMIT 50
+            ''')
+            clean_texts = [row[0] for row in cursor.fetchall()]
+        finally:
+            conn.close()
 
         def get_word_freq(texts):
             words = {}
@@ -1796,20 +1816,22 @@ def plot_submission_timeline(self):
         self.analytics_results_text.delete('1.0', tk.END)
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('''
-            SELECT date(analysis_date) as date, COUNT(*) as count,
-                   AVG(ai_probability) as avg_score,
-                   SUM(CASE WHEN ai_probability > 80 THEN 1 ELSE 0 END) as high_risk
-            FROM ai_analysis_history
-            WHERE analysis_date IS NOT NULL
-            GROUP BY date(analysis_date)
-            ORDER BY date DESC
-            LIMIT 30
-        ''')
-        data = cursor.fetchall()
-        conn.close()
+            cursor.execute('''
+                SELECT date(analysis_date) as date, COUNT(*) as count,
+                       AVG(ai_probability) as avg_score,
+                       SUM(CASE WHEN ai_probability > 80 THEN 1 ELSE 0 END) as high_risk
+                FROM ai_analysis_history
+                WHERE analysis_date IS NOT NULL
+                GROUP BY date(analysis_date)
+                ORDER BY date DESC
+                LIMIT 30
+            ''')
+            data = cursor.fetchall()
+        finally:
+            conn.close()
 
         result = "Submission Timeline (Last 30 Days)\n"
         result += "=" * 50 + "\n\n"
@@ -1850,17 +1872,19 @@ def show_correlation_matrix(self):
         self.analytics_results_text.delete('1.0', tk.END)
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('''
-            SELECT ai_probability, LENGTH(text_content),
-                   (LENGTH(text_content) - LENGTH(REPLACE(text_content, ' ', ''))) as word_count
-            FROM ai_analysis_history
-            WHERE text_content IS NOT NULL
-            LIMIT 500
-        ''')
-        data = cursor.fetchall()
-        conn.close()
+            cursor.execute('''
+                SELECT ai_probability, LENGTH(text_content),
+                       (LENGTH(text_content) - LENGTH(REPLACE(text_content, ' ', ''))) as word_count
+                FROM ai_analysis_history
+                WHERE text_content IS NOT NULL
+                LIMIT 500
+            ''')
+            data = cursor.fetchall()
+        finally:
+            conn.close()
 
         if len(data) < 10:
             self.analytics_results_text.insert('1.0', "Insufficient data for correlation analysis.")
@@ -1921,17 +1945,19 @@ def cluster_similar_submissions(self):
         self.analytics_results_text.delete('1.0', tk.END)
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('''
-            SELECT submission_id, student_id, student_name, text_content, ai_probability
-            FROM ai_analysis_history
-            WHERE text_content IS NOT NULL AND LENGTH(text_content) > 100
-            ORDER BY analysis_date DESC
-            LIMIT 100
-        ''')
-        submissions = cursor.fetchall()
-        conn.close()
+            cursor.execute('''
+                SELECT submission_id, student_id, student_name, text_content, ai_probability
+                FROM ai_analysis_history
+                WHERE text_content IS NOT NULL AND LENGTH(text_content) > 100
+                ORDER BY analysis_date DESC
+                LIMIT 100
+            ''')
+            submissions = cursor.fetchall()
+        finally:
+            conn.close()
 
         if len(submissions) < 5:
             self.analytics_results_text.insert('1.0', "Insufficient submissions for clustering.")
@@ -1998,19 +2024,21 @@ def generate_department_comparison(self):
         self.analytics_results_text.delete('1.0', tk.END)
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('''
-            SELECT course_name, COUNT(*) as submissions,
-                   AVG(ai_probability) as avg_score,
-                   SUM(CASE WHEN ai_probability > 80 THEN 1 ELSE 0 END) as high_risk
-            FROM ai_analysis_history
-            WHERE course_name IS NOT NULL
-            GROUP BY course_name
-            ORDER BY avg_score DESC
-        ''')
-        departments = cursor.fetchall()
-        conn.close()
+            cursor.execute('''
+                SELECT course_name, COUNT(*) as submissions,
+                       AVG(ai_probability) as avg_score,
+                       SUM(CASE WHEN ai_probability > 80 THEN 1 ELSE 0 END) as high_risk
+                FROM ai_analysis_history
+                WHERE course_name IS NOT NULL
+                GROUP BY course_name
+                ORDER BY avg_score DESC
+            ''')
+            departments = cursor.fetchall()
+        finally:
+            conn.close()
 
         result = "Department/Course Comparison\n"
         result += "=" * 50 + "\n\n"
@@ -2059,21 +2087,23 @@ def show_weekly_trends(self):
         self.analytics_results_text.delete('1.0', tk.END)
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('''
-            SELECT strftime('%Y-W%W', analysis_date) as week,
-                   COUNT(*) as submissions,
-                   AVG(ai_probability) as avg_score,
-                   SUM(CASE WHEN ai_probability > 80 THEN 1 ELSE 0 END) as high_risk
-            FROM ai_analysis_history
-            WHERE analysis_date IS NOT NULL
-            GROUP BY week
-            ORDER BY week DESC
-            LIMIT 12
-        ''')
-        weeks = cursor.fetchall()
-        conn.close()
+            cursor.execute('''
+                SELECT strftime('%Y-W%W', analysis_date) as week,
+                       COUNT(*) as submissions,
+                       AVG(ai_probability) as avg_score,
+                       SUM(CASE WHEN ai_probability > 80 THEN 1 ELSE 0 END) as high_risk
+                FROM ai_analysis_history
+                WHERE analysis_date IS NOT NULL
+                GROUP BY week
+                ORDER BY week DESC
+                LIMIT 12
+            ''')
+            weeks = cursor.fetchall()
+        finally:
+            conn.close()
 
         result = "Weekly Trend Analysis\n"
         result += "=" * 50 + "\n\n"

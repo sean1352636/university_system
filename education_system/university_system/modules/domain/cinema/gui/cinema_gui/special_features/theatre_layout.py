@@ -13,7 +13,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_theatre_layout_page(self):
     """Display theatre layout configuration page (per-screen)."""
@@ -76,10 +76,12 @@ def show_theatre_layout_page(self):
         """Load layout for selected screen."""
         screen_num = int(screen_var.get())
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM screen_layouts WHERE screen_number = ?", (screen_num,))
-        layout = cursor.fetchone()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM screen_layouts WHERE screen_number = ?", (screen_num,))
+            layout = cursor.fetchone()
+        finally:
+            conn.close()
 
         # Clear fields
         fields['name'].delete(0, tk.END)
@@ -112,14 +114,16 @@ def show_theatre_layout_page(self):
         wheelchair = fields['wheelchair'].get().strip()
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT OR REPLACE INTO screen_layouts
-            (screen_number, name, rows, seats_per_row, vip_rows, wheelchair_positions, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
-        """, (screen_num, name, rows, seats_per_row, vip_rows, wheelchair))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT OR REPLACE INTO screen_layouts
+                (screen_number, name, rows, seats_per_row, vip_rows, wheelchair_positions, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+            """, (screen_num, name, rows, seats_per_row, vip_rows, wheelchair))
+            conn.commit()
+        finally:
+            conn.close()
         messagebox.showinfo(_t("cinema.common.success"), f"Layout saved for Screen {screen_num}")
 
     screen_combo.bind('<<ComboboxSelected>>', lambda e: load_layout())

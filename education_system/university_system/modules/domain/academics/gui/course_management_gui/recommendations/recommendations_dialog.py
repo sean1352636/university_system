@@ -1,12 +1,12 @@
-from ._imports import (
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.recommendations._imports import (
     tk, ttk, messagebox, sqlite3, _, DEFAULT_DB_PATH, datetime,
 )
-from .validation import ValidationMixin
-from .prerequisites import PrerequisitesMixin
-from .scheduling import SchedulingMixin
-from .waitlists import WaitlistsMixin
-from .course_status import CourseStatusMixin
-from .wrappers import WrappersMixin
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.recommendations.validation import ValidationMixin
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.recommendations.prerequisites import PrerequisitesMixin
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.recommendations.scheduling import SchedulingMixin
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.recommendations.waitlists import WaitlistsMixin
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.recommendations.course_status import CourseStatusMixin
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.recommendations.wrappers import WrappersMixin
 
 
 class RecommendationsDialog(

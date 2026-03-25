@@ -40,7 +40,7 @@ class TestSystemBackup:
     def test_system_backup_database_only(self):
         """Test system backup with database only option"""
         with mock.patch('builtins.input', return_value='1'):
-            with mock.patch('university_system.modules.core.services.restaurant_misc.backup.backup_database') as mock_backup_db:
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.backup_database') as mock_backup_db:
                 with mock.patch('sys.stdout', new=StringIO()):
                     backup.system_backup()
 
@@ -49,7 +49,7 @@ class TestSystemBackup:
     def test_system_backup_full_system(self):
         """Test system backup with full system option"""
         with mock.patch('builtins.input', return_value='2'):
-            with mock.patch('university_system.modules.core.services.restaurant_misc.backup.backup_full_system') as mock_backup_full:
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.backup_full_system') as mock_backup_full:
                 with mock.patch('sys.stdout', new=StringIO()):
                     backup.system_backup()
 
@@ -68,7 +68,7 @@ class TestSystemBackup:
         """Test system backup when exception occurs"""
         with mock.patch('builtins.input', side_effect=Exception("Test error")):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
-                with mock.patch('university_system.modules.core.services.restaurant_misc.backup.logging.error') as mock_log:
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.logging.error') as mock_log:
                     backup.system_backup()
 
                     output = fake_out.getvalue()
@@ -81,11 +81,11 @@ class TestBackupDatabase:
 
     def test_backup_database_success(self, temp_db_file, mock_auth):
         """Test successful database backup"""
-        with mock.patch('university_system.modules.core.services.restaurant_misc.backup.DATABASE_FILE', temp_db_file):
-            with mock.patch('university_system.modules.core.services.restaurant_misc.backup.ctx') as mock_ctx:
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.DATABASE_FILE', temp_db_file):
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.ctx') as mock_ctx:
                 mock_ctx.auth = mock_auth
 
-                with mock.patch('university_system.modules.core.services.restaurant_misc.backup.log_audit_action') as mock_log:
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.log_audit_action') as mock_log:
                     with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                         backup.backup_database()
 
@@ -105,9 +105,9 @@ class TestBackupDatabase:
 
     def test_backup_database_file_not_found(self):
         """Test database backup when database file not found"""
-        with mock.patch('university_system.modules.core.services.restaurant_misc.backup.DATABASE_FILE', 'nonexistent.db'):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.DATABASE_FILE', 'nonexistent.db'):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
-                with mock.patch('university_system.modules.core.services.restaurant_misc.backup.logging.error') as mock_log:
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.logging.error') as mock_log:
                     backup.backup_database()
 
                     output = fake_out.getvalue()
@@ -116,11 +116,11 @@ class TestBackupDatabase:
 
     def test_backup_database_creates_unique_filename(self, temp_db_file, mock_auth):
         """Test that backup creates unique timestamped filename"""
-        with mock.patch('university_system.modules.core.services.restaurant_misc.backup.DATABASE_FILE', temp_db_file):
-            with mock.patch('university_system.modules.core.services.restaurant_misc.backup.ctx') as mock_ctx:
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.DATABASE_FILE', temp_db_file):
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.ctx') as mock_ctx:
                 mock_ctx.auth = mock_auth
 
-                with mock.patch('university_system.modules.core.services.restaurant_misc.backup.log_audit_action'):
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.log_audit_action'):
                     with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                         backup.backup_database()
 
@@ -140,7 +140,7 @@ class TestBackupFullSystem:
 
     def test_backup_full_system_no_auth(self):
         """Test full system backup when not logged in"""
-        with mock.patch('university_system.modules.core.services.restaurant_misc.backup.ctx') as mock_ctx:
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.ctx') as mock_ctx:
             mock_ctx.auth = None
 
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
@@ -153,7 +153,7 @@ class TestBackupFullSystem:
         """Test full system backup without permission"""
         mock_auth.check_permission.return_value = False
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.backup.ctx') as mock_ctx:
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.ctx') as mock_ctx:
             mock_ctx.auth = mock_auth
 
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
@@ -172,12 +172,12 @@ class TestBackupFullSystem:
             with open(log_file, 'w') as f:
                 f.write('test log content')
 
-            with mock.patch('university_system.modules.core.services.restaurant_misc.backup.DATABASE_FILE', temp_db_file):
-                with mock.patch('university_system.modules.core.services.restaurant_misc.backup.get_log_file', return_value=log_file):
-                    with mock.patch('university_system.modules.core.services.restaurant_misc.backup.ctx') as mock_ctx:
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.DATABASE_FILE', temp_db_file):
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.get_log_file', return_value=log_file):
+                    with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.ctx') as mock_ctx:
                         mock_ctx.auth = mock_auth
 
-                        with mock.patch('university_system.modules.core.services.restaurant_misc.backup.log_audit_action') as mock_log:
+                        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.log_audit_action') as mock_log:
                             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                                 backup.backup_full_system()
 
@@ -207,12 +207,12 @@ class TestBackupFullSystem:
             with open(log_file, 'w') as f:
                 f.write('test log')
 
-            with mock.patch('university_system.modules.core.services.restaurant_misc.backup.DATABASE_FILE', temp_db_file):
-                with mock.patch('university_system.modules.core.services.restaurant_misc.backup.get_log_file', return_value=log_file):
-                    with mock.patch('university_system.modules.core.services.restaurant_misc.backup.ctx') as mock_ctx:
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.DATABASE_FILE', temp_db_file):
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.get_log_file', return_value=log_file):
+                    with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.ctx') as mock_ctx:
                         mock_ctx.auth = mock_auth
 
-                        with mock.patch('university_system.modules.core.services.restaurant_misc.backup.log_audit_action'):
+                        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.log_audit_action'):
                             with mock.patch('sys.stdout', new=StringIO()):
                                 backup.backup_full_system()
 
@@ -241,12 +241,12 @@ class TestBackupFullSystem:
 
     def test_backup_full_system_exception(self, mock_auth):
         """Test full system backup when exception occurs"""
-        with mock.patch('university_system.modules.core.services.restaurant_misc.backup.ctx') as mock_ctx:
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.ctx') as mock_ctx:
             mock_ctx.auth = mock_auth
 
             with mock.patch('os.makedirs', side_effect=Exception("Test error")):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
-                    with mock.patch('university_system.modules.core.services.restaurant_misc.backup.logging.error') as mock_log:
+                    with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.logging.error') as mock_log:
                         backup.backup_full_system()
 
                         output = fake_out.getvalue()
@@ -262,12 +262,12 @@ class TestBackupFullSystem:
             with open(log_file, 'w') as f:
                 f.write('test log content' * 100)  # Write some content
 
-            with mock.patch('university_system.modules.core.services.restaurant_misc.backup.DATABASE_FILE', temp_db_file):
-                with mock.patch('university_system.modules.core.services.restaurant_misc.backup.get_log_file', return_value=log_file):
-                    with mock.patch('university_system.modules.core.services.restaurant_misc.backup.ctx') as mock_ctx:
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.DATABASE_FILE', temp_db_file):
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.get_log_file', return_value=log_file):
+                    with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.ctx') as mock_ctx:
                         mock_ctx.auth = mock_auth
 
-                        with mock.patch('university_system.modules.core.services.restaurant_misc.backup.log_audit_action'):
+                        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.backup.log_audit_action'):
                             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                                 backup.backup_full_system()
 

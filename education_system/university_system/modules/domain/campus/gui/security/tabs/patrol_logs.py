@@ -5,7 +5,7 @@ from tkinter import ttk, messagebox
 
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
-from ..dialogs.patrol_log import PatrolLogDialog
+from education_system.university_system.modules.domain.campus.gui.security.dialogs.patrol_log import PatrolLogDialog
 
 
 class PatrolLogsMixin:

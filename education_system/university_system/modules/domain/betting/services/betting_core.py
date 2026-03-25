@@ -172,23 +172,8 @@ def init_betting_db():
                 )
             ''')
 
-            # Account transactions
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS betting_transactions (
-                    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id TEXT NOT NULL,
-                    transaction_type TEXT NOT NULL,
-                    amount DECIMAL(10,2) NOT NULL,
-                    balance_before DECIMAL(10,2) NOT NULL,
-                    balance_after DECIMAL(10,2) NOT NULL,
-                    reference TEXT,
-                    description TEXT,
-                    payment_method TEXT,
-                    status TEXT DEFAULT 'completed',
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    processed_by TEXT
-                )
-            ''')
+            # NOTE: betting transactions now use the unified 'transactions' table
+            # with source_type = 'betting'
 
             # Create indexes
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_betting_accounts_user ON betting_accounts(user_id)')
@@ -291,10 +276,10 @@ class AccountManager:
 
                 # Record transaction
                 cursor.execute('''
-                    INSERT INTO betting_transactions
-                    (user_id, transaction_type, amount, balance_before, balance_after,
-                     reference, description, payment_method, processed_by)
-                    VALUES (?, 'deposit', ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO transactions
+                    (source_type, student_id, transaction_type, amount, balance_before, balance_after,
+                     reference_number, description, payment_method, processed_by)
+                    VALUES ('betting', ?, 'deposit', ?, ?, ?, ?, ?, ?, ?)
                 ''', (user_id, amount, balance_before, balance_after, reference,
                       f'Deposit via {payment_method}', payment_method, processed_by))
 
@@ -334,10 +319,10 @@ class AccountManager:
 
                 # Record transaction
                 cursor.execute('''
-                    INSERT INTO betting_transactions
-                    (user_id, transaction_type, amount, balance_before, balance_after,
-                     reference, description, payment_method, processed_by)
-                    VALUES (?, 'withdrawal', ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO transactions
+                    (source_type, student_id, transaction_type, amount, balance_before, balance_after,
+                     reference_number, description, payment_method, processed_by)
+                    VALUES ('betting', ?, 'withdrawal', ?, ?, ?, ?, ?, ?, ?)
                 ''', (user_id, amount, balance_before, balance_after, reference,
                       f'Withdrawal to {payment_method}', payment_method, processed_by))
 
@@ -401,8 +386,8 @@ class AccountManager:
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
                 cursor.execute('''
-                    SELECT * FROM betting_transactions
-                    WHERE user_id = ?
+                    SELECT * FROM transactions
+                    WHERE source_type = 'betting' AND student_id = ?
                     ORDER BY created_at DESC
                     LIMIT ?
                 ''', (user_id, limit))

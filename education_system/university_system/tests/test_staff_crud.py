@@ -4,12 +4,10 @@ Quick test script for Staff CRUD functionality
 Tests database schema and basic operations
 """
 
-from education_system.university_system.infrastructure.database.db import sqlite3
+from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 import hashlib
 import secrets
 from datetime import datetime
-
-DB_PATH = "data/db_files/student_records.db"
 
 def test_database_schema():
     """Test that required tables and columns exist"""
@@ -17,7 +15,7 @@ def test_database_schema():
     print("Testing Database Schema")
     print("=" * 60)
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_connection()
     cursor = conn.cursor()
 
     # Check users table
@@ -58,7 +56,7 @@ def test_create_staff():
     print("Testing Staff Creation")
     print("=" * 60)
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_connection()
     cursor = conn.cursor()
 
     # Generate test data
@@ -78,7 +76,7 @@ def test_create_staff():
             'sha256',
             test_password.encode(),
             salt.encode(),
-            1_000_000,
+            1_000,
             dklen=64
         )
         password_hash = key.hex()
@@ -148,7 +146,7 @@ def test_query_staff():
     print("Testing Staff Query")
     print("=" * 60)
 
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_connection()
     cursor = conn.cursor()
 
     try:

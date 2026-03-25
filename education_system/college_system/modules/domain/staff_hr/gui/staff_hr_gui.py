@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.college_system.modules.domain.staff_hr.services.staff_hr_service import StaffHRService
+from education_system.college_system.core.i18n import t
 
 
 class StaffHRFrame(tk.Frame):
@@ -19,7 +20,7 @@ class StaffHRFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Staff HR", font=("Helvetica", 14, "bold"),
+        tk.Label(header, text=t("staff_hr.management"), font=("Helvetica", 14, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=10)
 
         toolbar = tk.Frame(self)
@@ -29,8 +30,8 @@ class StaffHRFrame(tk.Frame):
         self._dept_cb = ttk.Combobox(toolbar, textvariable=self._dept_var,
                                       values=["All"], state="readonly", width=15)
         self._dept_cb.pack(side="left", padx=5)
-        ttk.Button(toolbar, text="Filter", command=self._load_records).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="New Record", command=self._new_record).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("common.filter"), command=self._load_records).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("staff_hr.add"), command=self._new_record).pack(side="right", padx=5)
 
         cols = ("id", "username", "employee_id", "department", "role", "contract", "fte", "status")
         self._tree = ttk.Treeview(self, columns=cols, show="headings", height=18)
@@ -41,8 +42,9 @@ class StaffHRFrame(tk.Frame):
 
         btn_frame = tk.Frame(self)
         btn_frame.pack(fill="x", padx=10, pady=5)
-        ttk.Button(btn_frame, text="Edit Record", command=self._edit_record).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="View Details", command=self._view_details).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text=t("common.edit"), command=self._edit_record).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text=t("common.view"), command=self._view_details).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="Export CSV", command=self._export_csv).pack(side="left", padx=5)
 
     def _load_records(self):
         for item in self._tree.get_children():
@@ -61,11 +63,11 @@ class StaffHRFrame(tk.Frame):
             depts = self._svc.list_departments()
             self._dept_cb["values"] = ["All"] + depts
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _new_record(self):
         win = tk.Toplevel(self)
-        win.title("New HR Record")
+        win.title(t("staff_hr.management"))
         win.geometry("400x400")
         fields = {}
         row = 0
@@ -100,26 +102,26 @@ class StaffHRFrame(tk.Frame):
                     fte=float(fte) if fte else 1.0,
                     emergency_contact=fields["emergency_contact"].get().strip() or None,
                     qualifications=fields["qualifications"].get().strip() or None)
-                messagebox.showinfo("Success", "HR record created")
+                messagebox.showinfo(t("common.success"), t("common.created_success"))
                 win.destroy()
                 self._load_records()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
-        ttk.Button(win, text="Save", command=save).grid(row=row, column=0, columnspan=2, pady=15)
+                messagebox.showerror(t("common.error"), str(e))
+        ttk.Button(win, text=t("common.save"), command=save).grid(row=row, column=0, columnspan=2, pady=15)
 
     def _edit_record(self):
         sel = self._tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a record")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return
         record_id = int(sel[0])
         try:
             rec = self._svc.get_record(record_id)
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
             return
         win = tk.Toplevel(self)
-        win.title("Edit HR Record")
+        win.title(t("staff_hr.management"))
         win.geometry("400x300")
         fields = {}
         row = 0
@@ -150,20 +152,24 @@ class StaffHRFrame(tk.Frame):
                 win.destroy()
                 self._load_records()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
-        ttk.Button(win, text="Save", command=save).grid(row=row, column=0, columnspan=2, pady=15)
+                messagebox.showerror(t("common.error"), str(e))
+        ttk.Button(win, text=t("common.save"), command=save).grid(row=row, column=0, columnspan=2, pady=15)
 
     def _view_details(self):
         sel = self._tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a record")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return
         try:
             rec = self._svc.get_record(int(sel[0]))
             details = "\n".join(f"{k}: {v}" for k, v in rec.items())
-            messagebox.showinfo("HR Record Details", details)
+            messagebox.showinfo(t("common.details"), details)
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._tree, "staff_hr_export.csv")
 
     def refresh(self):
         self._load_records()

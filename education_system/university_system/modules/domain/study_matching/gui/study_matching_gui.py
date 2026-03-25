@@ -33,11 +33,11 @@ DIFFICULTY_LEVELS = ["Easy", "Medium", "Hard"]
 class StudyMatchingGUI:
     """GUI interface for peer study matching system."""
 
-    def __init__(self, parent):
+    def __init__(self, parent, auth=None):
         """Initialize the GUI."""
         self.parent = parent
         self.service = StudyMatchingService()
-        self.auth = get_auth()
+        self.auth = auth or get_auth()
 
         self.window = tk.Toplevel(parent)
         self.window.title("Peer Study Matching & Collaboration")

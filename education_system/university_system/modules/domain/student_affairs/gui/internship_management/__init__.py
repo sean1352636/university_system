@@ -1,7 +1,7 @@
-from .internship_gui import InternshipGUI
-from .notifications import send_internship_notification, send_application_confirmation
+from education_system.university_system.modules.domain.student_affairs.gui.internship_management.internship_gui import InternshipGUI
+from education_system.university_system.modules.domain.student_affairs.gui.internship_management.notifications import send_internship_notification, send_application_confirmation
 
-from ._imports import (
+from education_system.university_system.modules.domain.student_affairs.gui.internship_management._imports import (
     setup_internship_permissions,
     init_internship_db,
     set_auth,

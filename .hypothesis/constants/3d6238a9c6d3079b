@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/database/operations/stats_ops.py
+# hypothesis_version: 6.151.9
+
+['%Y%m%d_%H%M%S', '%Y-%m', 'average_size', 'backup_type', 'backup_types', 'recent_activity', 'size', 'storage_usage', 'timestamp', 'total_backups', 'total_size', 'unknown']

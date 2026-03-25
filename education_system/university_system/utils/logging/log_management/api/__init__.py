@@ -86,7 +86,7 @@ except Exception:
             return {'user_id': tok}
     jwt = _JWTStub()
 
-from ..config import config
+from education_system.university_system.utils.logging.log_management.config import config
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -102,5 +102,5 @@ except ImportError:
     pass  # Security headers module not available
 
 # Import routes to register them with the app
-from . import auth  # noqa: F401, E402
-from . import routes  # noqa: F401, E402
+from education_system.university_system.utils.logging.log_management.api import auth  # noqa: F401, E402
+from education_system.university_system.utils.logging.log_management.api import routes  # noqa: F401, E402

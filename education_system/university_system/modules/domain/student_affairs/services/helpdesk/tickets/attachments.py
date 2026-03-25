@@ -1,3 +1,4 @@
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from datetime import datetime
 import os
@@ -106,7 +107,7 @@ def suggest_knowledge_base_articles(ticket_id, content):
 
         for keyword in keywords[:5]:  # Limit to top 5 keywords
             keyword_conditions.append("(title LIKE ? OR content LIKE ? OR search_keywords LIKE ?)")
-            params.extend([f"%{keyword}%", f"%{keyword}%", f"%{keyword}%"])
+            params.extend([f"%{escape_like(keyword)}%", f"%{escape_like(keyword)}%", f"%{escape_like(keyword)}%"])
 
         if keyword_conditions:
             query = f'''

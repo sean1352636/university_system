@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/database/data_backup/retention.py
+# hypothesis_version: 6.151.9
+
+[365, 1024, '%Y%m%d_%H%M%S', '%Y-%m-%d %H:%M:%S', '%Y-W%U', 'Unknown', 'backup_directory', 'backup_type', 'backups', 'daily_keep', 'date_formatted', 'filename', 'id', 'path', 'retention_policy', 'secure_deletion', 'size', 'size_formatted', 'timestamp', 'weekly_keep']

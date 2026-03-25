@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/services/financial_aid/scholarship_manager.py
+# hypothesis_version: 6.151.9
+
+['Credit Hours', 'Enrollment Status', 'GPA', 'actual', 'awarded', 'checks', 'denied', 'eligibility_criteria', 'eligible', 'essay', 'fixed', 'gpa', 'gpa_required', 'merit', 'met', 'pending', 'reason', 'required', 'requirement', 'requirements', 'resume_url', 'transcript_url', 'under_review']

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/security/kms_integration.py
+# hypothesis_version: 6.151.9
+
+['\nFor AWS KMS:', '  USE_KMS=true', '=', 'AES_256', 'AWS_KMS_KEY_ID', 'AWS_REGION', 'AZURE_KEY_NAME', 'AZURE_VAULT_URL', 'KMS Integration Test', 'KMS_PROVIDER', 'Plaintext', 'USE_KMS', 'VAULT_ADDR', 'VAULT_KEY_PATH', 'VAULT_TOKEN', '__main__', 'aws', 'azure', 'data', 'false', 'key', 'kms', 'true', 'us-east-1', 'vault']

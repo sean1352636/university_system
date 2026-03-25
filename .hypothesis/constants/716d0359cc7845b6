@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/module_scheduling/backup.py
+# hypothesis_version: 6.151.9
+
+[1024, '\nAvailable Backups:', '%Y%m%d_%H%M%S', '%Y-%m-%d %H:%M', '-', '=', 'No backups found.', 'Restore canceled.', 'pre_restore_backup', 'y']

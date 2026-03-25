@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/main/email/email_helpers_gui.py
+# hypothesis_version: 6.151.9
+
+[200, '1.0', '700x500', '900x700', 'Course', 'Date of Birth', 'First Name', 'Gender', 'Last Name', 'Middle Name', 'Title', 'TkDefaultFont', 'bold', 'both', 'common.close', 'common.error', 'course', 'disabled', 'dob', 'email_address', 'first_name', 'gender', 'last_name', 'middle_name', 'student_id', 'student_name', 'temp_password', 'title', 'updated_fields', 'w']

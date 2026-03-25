@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/webauthn_service.py
+# hypothesis_version: 6.151.9
+
+[255, 300, '...', '==', 'None', 'Security Key', 'University System', 'WEBAUTHN_AVAILABLE', 'WebAuthnService', 'aaguid', 'authentication', 'backup_eligible', 'backup_state', 'ble', 'challenge', 'challenge_type', 'created_at', 'credential_backed_up', 'credential_id', 'credential_type', 'device_name', 'discoverable', 'error', 'fmt', 'id', 'internal', 'last_used_at', 'localhost', 'multi_device', 'nfc', 'options', 'public_key', 'registration', 'session_id', 'sign_count', 'success', 'transports', 'unknown', 'usb', 'user_id', 'utf-8', 'webauthn_credential']

@@ -410,7 +410,7 @@ class GradeManager:
                 raise ConnectionError("Database connection is not available. Please restart the application.")
 
         try:
-            self.safe_commit()
+            self.conn.commit()
         except Exception as e:
             raise ConnectionError(f"Failed to commit database changes: {e}")
 
@@ -540,20 +540,82 @@ class GradeManager:
         }
         return grade_map.get(letter_grade, 0.0)
 
+    def _email_grade_notification(self, student_id, assessment_name, action, score=None,
+                                   letter_grade=None, percentage=None, feedback=None):
+        """Email a student about a grade change (added/updated/removed)."""
+        try:
+            from education_system.university_system.infrastructure.email.email_service import send_email
+
+            cursor = self.get_safe_cursor()
+            cursor.execute(
+                "SELECT first_name, last_name, email_address FROM students WHERE student_id = ?",
+                (student_id,)
+            )
+            row = cursor.fetchone()
+            if not row or not row[2]:
+                return
+
+            name = f"{row[0]} {row[1]}"
+            email = row[2]
+
+            if action == 'added':
+                subject = f"Grade Released: {assessment_name}"
+                body = (
+                    f"Dear {name},\n\n"
+                    f"A grade has been released for the following assessment:\n\n"
+                    f"Assessment: {assessment_name}\n"
+                    f"Score: {score} ({percentage:.1f}%)\n"
+                    f"Letter Grade: {letter_grade}\n"
+                )
+                if feedback:
+                    body += f"\nFeedback:\n{feedback}\n"
+                body += "\nPlease log in to view your full results.\n\nBest regards,\nAcademic Administration"
+
+            elif action == 'updated':
+                subject = f"Grade Updated: {assessment_name}"
+                body = (
+                    f"Dear {name},\n\n"
+                    f"Your grade has been updated for the following assessment:\n\n"
+                    f"Assessment: {assessment_name}\n"
+                    f"New Score: {score} ({percentage:.1f}%)\n"
+                    f"Letter Grade: {letter_grade}\n"
+                )
+                if feedback:
+                    body += f"\nFeedback:\n{feedback}\n"
+                body += "\nPlease log in to view your updated results.\n\nBest regards,\nAcademic Administration"
+
+            elif action == 'deleted':
+                subject = f"Grade Removed: {assessment_name}"
+                body = (
+                    f"Dear {name},\n\n"
+                    f"Your grade for the following assessment has been removed:\n\n"
+                    f"Assessment: {assessment_name}\n\n"
+                    f"If you believe this is an error, please contact your instructor.\n\n"
+                    f"Best regards,\nAcademic Administration"
+                )
+            else:
+                return
+
+            send_email(recipient_email=email, subject=subject, body=body)
+
+        except Exception as e:
+            print(f"Grade notification email failed: {e}")
+
     def add_grade_dialog(self):
-        """Open dialog to add a new grade"""
+        """Open dialog to add a new grade — shows student's submitted assignments"""
         dialog = tk.Toplevel(self.root)
         dialog.title("Add Grade")
-        dialog.geometry("500x600")
-
-        # Make dialog modal
+        dialog.geometry("550x650")
         dialog.transient(self.root)
         safe_grab_set(dialog)
+
+        # Shared state for assessment data lookup
+        assessments = []
 
         # Student selection
         ttk.Label(dialog, text="Student:").grid(row=0, column=0, padx=10, pady=10, sticky='w')
         student_var = tk.StringVar()
-        student_combo = ttk.Combobox(dialog, textvariable=student_var, width=35, state='readonly')
+        student_combo = ttk.Combobox(dialog, textvariable=student_var, width=40, state='readonly')
         student_combo.grid(row=0, column=1, padx=10, pady=10)
 
         # Load students
@@ -561,89 +623,122 @@ class GradeManager:
             cursor = self.get_safe_cursor()
             cursor.execute("SELECT student_id, first_name, last_name FROM students ORDER BY last_name")
             students = cursor.fetchall()
-            student_list = [f"{s[0]} - {s[1]} {s[2]}" for s in students]
-            student_combo['values'] = student_list
+            student_combo['values'] = [f"{s[0]} - {s[1]} {s[2]}" for s in students]
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading students: {e}")
+            messagebox.showerror("Database Error", f"Error loading students: {e}", parent=dialog)
             dialog.destroy()
             return
 
-        # Assessment selection
+        # Assessment selection (populated when student is selected)
         ttk.Label(dialog, text="Assessment:").grid(row=1, column=0, padx=10, pady=10, sticky='w')
         assessment_var = tk.StringVar()
-        assessment_combo = ttk.Combobox(dialog, textvariable=assessment_var, width=35, state='readonly')
+        assessment_combo = ttk.Combobox(dialog, textvariable=assessment_var, width=40, state='readonly')
         assessment_combo.grid(row=1, column=1, padx=10, pady=10)
 
-        # Load assessments (from both assessments and assignments tables)
-        try:
-            # Query assessments table
-            cursor.execute("""
-                SELECT a.assessment_id, a.assessment_name, a.max_points, m.module_name
-                FROM assessments a
-                JOIN modules m ON a.module_code = m.module_code
-                ORDER BY m.module_name, a.assessment_name
-            """)
-            assessments_from_assessments = cursor.fetchall()
+        # Status label to show what's loaded
+        status_var = tk.StringVar(value="Select a student to see their submissions")
+        ttk.Label(dialog, textvariable=status_var, foreground='#1565c0').grid(
+            row=2, column=0, columnspan=2, padx=10, sticky='w')
 
-            # Query assignments table (which might have been created via assignment GUI)
-            cursor.execute("""
-                SELECT
-                    'A' || a.id as assessment_id,
-                    a.title as assessment_name,
-                    COALESCE(a.max_marks, 100) as max_points,
-                    m.module_name
-                FROM assignments a
-                JOIN modules m ON a.module_code = m.module_code
-                ORDER BY m.module_name, a.title
-            """)
-            assessments_from_assignments = cursor.fetchall()
+        def on_student_selected(event=None):
+            """When a student is selected, load their submitted assignments"""
+            nonlocal assessments
+            assessments = []
+            assessment_combo.set('')
+            assessment_combo['values'] = []
+            max_points_var.set("Select an assessment")
 
-            # Combine both sources
-            all_assessments = list(assessments_from_assessments) + list(assessments_from_assignments)
-            assessments = all_assessments
-            assessment_list = [f"{a[0]} - {a[1]} ({a[3]}) - Max: {a[2]}" for a in assessments]
-            assessment_combo['values'] = assessment_list
-        except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading assessments: {e}")
-            dialog.destroy()
-            return
+            selected = student_var.get()
+            if not selected:
+                return
+
+            student_id = selected.split(' - ')[0]
+
+            try:
+                cursor = self.get_safe_cursor()
+
+                # Get assignments this student has submitted (from assignment_submissions)
+                cursor.execute("""
+                    SELECT
+                        'A' || a.id as assessment_id,
+                        a.title as name,
+                        COALESCE(a.max_marks, 100) as max_points,
+                        a.module_code,
+                        sub.submission_date,
+                        CASE WHEN sub.grade IS NOT NULL THEN 'Graded' ELSE 'Submitted' END as status
+                    FROM assignment_submissions sub
+                    JOIN assignments a ON sub.assignment_id = a.id
+                    WHERE sub.student_id = ?
+                    ORDER BY sub.submission_date DESC
+                """, (student_id,))
+                submitted_assignments = cursor.fetchall()
+
+                # Also get assessments from assessments table for this student's modules
+                cursor.execute("""
+                    SELECT a.assessment_id, a.assessment_name, a.max_points, a.module_code,
+                           a.due_date, 'Assessment' as status
+                    FROM assessments a
+                    JOIN student_modules sm ON a.module_code = sm.module_code
+                    WHERE sm.student_id = ?
+                    ORDER BY a.due_date DESC
+                """, (student_id,))
+                module_assessments = cursor.fetchall()
+
+                all_items = list(submitted_assignments) + list(module_assessments)
+                assessments = all_items
+
+                if not all_items:
+                    status_var.set(f"No submissions or assessments found for this student")
+                    return
+
+                # Format: "A438 - Assignment Title (CIS0001) [Submitted]"
+                display_list = []
+                for a in all_items:
+                    aid, name, max_pts, module, date_val, st = a
+                    display_list.append(f"{aid} - {name} ({module}) [{st}] - Max: {max_pts}")
+
+                assessment_combo['values'] = display_list
+                submitted_count = len(submitted_assignments)
+                assessment_count = len(module_assessments)
+                status_var.set(
+                    f"Found {submitted_count} submission(s), {assessment_count} assessment(s)")
+
+            except sqlite3.Error as e:
+                status_var.set(f"Error loading: {e}")
+
+        student_combo.bind('<<ComboboxSelected>>', on_student_selected)
 
         # Score entry
-        ttk.Label(dialog, text="Score:").grid(row=2, column=0, padx=10, pady=10, sticky='w')
+        ttk.Label(dialog, text="Score:").grid(row=3, column=0, padx=10, pady=10, sticky='w')
         score_var = tk.StringVar()
-        score_entry = ttk.Entry(dialog, textvariable=score_var, width=37)
-        score_entry.grid(row=2, column=1, padx=10, pady=10)
+        ttk.Entry(dialog, textvariable=score_var, width=42).grid(row=3, column=1, padx=10, pady=10)
 
         # Max points display
         max_points_var = tk.StringVar(value="Select an assessment")
-        ttk.Label(dialog, text="Max Points:").grid(row=3, column=0, padx=10, pady=10, sticky='w')
-        max_points_label = ttk.Label(dialog, textvariable=max_points_var)
-        max_points_label.grid(row=3, column=1, padx=10, pady=10, sticky='w')
+        ttk.Label(dialog, text="Max Points:").grid(row=4, column=0, padx=10, pady=10, sticky='w')
+        ttk.Label(dialog, textvariable=max_points_var).grid(row=4, column=1, padx=10, pady=10, sticky='w')
 
-        # Update max points when assessment selected
         def update_max_points(event=None):
             selected = assessment_var.get()
             if selected:
-                assessment_id = selected.split(' - ')[0]
+                aid = selected.split(' - ')[0]
                 for a in assessments:
-                    if str(a[0]) == assessment_id:
+                    if str(a[0]) == aid:
                         max_points_var.set(str(a[2]))
                         break
 
         assessment_combo.bind('<<ComboboxSelected>>', update_max_points)
 
-        # Submission date
-        ttk.Label(dialog, text="Submission Date:").grid(row=4, column=0, padx=10, pady=10, sticky='w')
+        # Date
+        ttk.Label(dialog, text="Date:").grid(row=5, column=0, padx=10, pady=10, sticky='w')
         date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
-        date_entry = ttk.Entry(dialog, textvariable=date_var, width=37)
-        date_entry.grid(row=4, column=1, padx=10, pady=10)
+        ttk.Entry(dialog, textvariable=date_var, width=42).grid(row=5, column=1, padx=10, pady=10)
 
         # Comments
-        ttk.Label(dialog, text="Comments:").grid(row=5, column=0, padx=10, pady=10, sticky='nw')
-        comments_text = tk.Text(dialog, width=35, height=8)
-        comments_text.grid(row=5, column=1, padx=10, pady=10)
+        ttk.Label(dialog, text="Comments:").grid(row=6, column=0, padx=10, pady=10, sticky='nw')
+        comments_text = tk.Text(dialog, width=40, height=8)
+        comments_text.grid(row=6, column=1, padx=10, pady=10)
 
-        # Save button
         def save_grade():
             student_id = student_var.get().split(' - ')[0] if student_var.get() else None
             assessment_id = assessment_var.get().split(' - ')[0] if assessment_var.get() else None
@@ -651,15 +746,14 @@ class GradeManager:
             date = date_var.get()
             comments = comments_text.get('1.0', 'end-1c')
 
-            # Validation
             if not student_id:
-                messagebox.showerror("Validation Error", "Please select a student")
+                messagebox.showerror("Validation Error", "Please select a student", parent=dialog)
                 return
             if not assessment_id:
-                messagebox.showerror("Validation Error", "Please select an assessment")
+                messagebox.showerror("Validation Error", "Please select an assessment", parent=dialog)
                 return
             if not score:
-                messagebox.showerror("Validation Error", "Please enter a score")
+                messagebox.showerror("Validation Error", "Please enter a score", parent=dialog)
                 return
 
             try:
@@ -667,37 +761,55 @@ class GradeManager:
                 max_points = float(max_points_var.get())
 
                 if score_float < 0:
-                    messagebox.showerror("Validation Error", "Score cannot be negative")
+                    messagebox.showerror("Validation Error", "Score cannot be negative", parent=dialog)
                     return
                 if score_float > max_points:
-                    messagebox.showerror("Validation Error", f"Score cannot exceed max points ({max_points})")
+                    messagebox.showerror("Validation Error",
+                                        f"Score cannot exceed max points ({max_points})", parent=dialog)
                     return
 
-                # Validate student exists
-                cursor = self.get_safe_cursor()
-                cursor.execute("SELECT student_id FROM students WHERE student_id = ?", (student_id,))
-                if not cursor.fetchone():
-                    messagebox.showerror("Validation Error", f"Student ID {student_id} does not exist")
-                    return
-
-                # Validate assessment exists
-                cursor.execute("SELECT assessment_id FROM assessments WHERE assessment_id = ?", (assessment_id,))
-                if not cursor.fetchone():
-                    messagebox.showerror("Validation Error", f"Assessment ID {assessment_id} does not exist")
-                    return
-
-                # Calculate percentage and letter grade
                 percentage = (score_float / max_points) * 100
                 letter_grade = self.percentage_to_letter(percentage)
 
-                # Insert grade
-                cursor.execute("""
-                    INSERT INTO grades (student_id, assessment_id, score, letter_grade, submission_date, comments)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """, (student_id, assessment_id, score_float, letter_grade, date, comments))
+                cursor = self.get_safe_cursor()
+                is_assignment = str(assessment_id).startswith('A')
+
+                if is_assignment:
+                    real_id = int(assessment_id[1:])
+
+                    # Check for existing submission
+                    cursor.execute(
+                        "SELECT id FROM assignment_submissions WHERE assignment_id = ? AND student_id = ?",
+                        (real_id, student_id))
+                    existing = cursor.fetchone()
+
+                    grader_id = None
+                    if hasattr(self.app, 'auth') and self.app.auth and self.app.auth.current_user:
+                        grader_id = self.app.auth.current_user.get('id')
+
+                    if existing:
+                        cursor.execute("""
+                            UPDATE assignment_submissions
+                            SET grade = ?, feedback = ?, graded_date = ?,
+                                graded_by = ?, status = 'graded'
+                            WHERE id = ?
+                        """, (percentage, comments, date, grader_id, existing[0]))
+                    else:
+                        cursor.execute("""
+                            INSERT INTO assignment_submissions
+                            (assignment_id, student_id, grade, feedback, graded_date, status,
+                             submission_date, file_name, file_path)
+                            VALUES (?, ?, ?, ?, ?, 'graded', ?, 'grade_entry', '')
+                        """, (real_id, student_id, percentage, comments, date, date))
+                else:
+                    cursor.execute("""
+                        INSERT INTO grades (student_id, assessment_id, score, letter_grade,
+                                           submission_date, comments)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    """, (student_id, assessment_id, score_float, letter_grade, date, comments))
+
                 self.safe_commit()
 
-                # Immutable audit log for grade creation (FERPA compliance)
                 if IMMUTABLE_AUDIT_AVAILABLE:
                     user_id, session_id = get_gui_context()
                     safe_log_security_event(
@@ -714,40 +826,68 @@ class GradeManager:
                         }
                     )
 
-                messagebox.showinfo("Success", "Grade added successfully!")
+                # Get assessment name for email
+                sel_text = assessment_var.get()
+                a_name = sel_text.split(' - ')[1].split(' (')[0] if ' - ' in sel_text else sel_text
+
+                messagebox.showinfo("Success", "Grade added successfully!", parent=dialog)
                 dialog.destroy()
                 self.refresh_grades()
 
-            except ValueError:
-                messagebox.showerror("Validation Error", "Score must be a valid number")
-            except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Error saving grade: {e}")
+                # Email student about released grade
+                self._email_grade_notification(
+                    student_id, a_name, 'added',
+                    score=score_float, letter_grade=letter_grade,
+                    percentage=percentage, feedback=comments
+                )
 
-        ttk.Button(dialog, text="Save", command=save_grade).grid(row=6, column=0, columnspan=2, pady=20)
+            except ValueError:
+                messagebox.showerror("Validation Error", "Score must be a valid number", parent=dialog)
+            except sqlite3.Error as e:
+                messagebox.showerror("Database Error", f"Error saving grade: {e}", parent=dialog)
+
+        ttk.Button(dialog, text="Save Grade", command=save_grade).grid(row=7, column=0, columnspan=2, pady=15)
 
     def edit_grade_dialog(self):
-        """Open dialog to edit selected grade"""
-        # Get selected grade
+        """Open dialog to edit selected grade (supports both grades and assignment_submissions)"""
         selection = self.grades_tree.selection()
         if not selection:
             messagebox.showwarning("No Selection", "Please select a grade to edit")
             return
 
         item = self.grades_tree.item(selection[0])
-        grade_id = item['values'][0]
+        grade_id = str(item['values'][0])
+        is_submission = grade_id.startswith('S')
 
-        # Fetch grade details
+        # Fetch grade details from the correct source
         try:
             cursor = self.get_safe_cursor()
-            cursor.execute("""
-                SELECT g.grade_id, g.student_id, g.assessment_id, g.score, g.submission_date, g.comments,
-                       s.first_name, s.last_name, a.assessment_name, a.max_points, m.module_name
-                FROM grades g
-                JOIN students s ON g.student_id = s.student_id
-                JOIN assessments a ON g.assessment_id = a.assessment_id
-                JOIN modules m ON a.module_code = m.module_code
-                WHERE g.grade_id = ?
-            """, (grade_id,))
+
+            if is_submission:
+                real_id = int(grade_id[1:])
+                cursor.execute("""
+                    SELECT sub.id, sub.student_id, a.id, sub.grade,
+                           sub.graded_date, sub.feedback,
+                           s.first_name, s.last_name, a.title,
+                           COALESCE(a.max_marks, 100), a.module_code
+                    FROM assignment_submissions sub
+                    JOIN students s ON sub.student_id = s.student_id
+                    JOIN assignments a ON sub.assignment_id = a.id
+                    WHERE sub.id = ?
+                """, (real_id,))
+            else:
+                cursor.execute("""
+                    SELECT g.grade_id, g.student_id, g.assessment_id, g.score,
+                           g.submission_date, g.comments,
+                           s.first_name, s.last_name, a.assessment_name,
+                           a.max_points, m.module_name
+                    FROM grades g
+                    JOIN students s ON g.student_id = s.student_id
+                    JOIN assessments a ON g.assessment_id = a.assessment_id
+                    JOIN modules m ON a.module_code = m.module_code
+                    WHERE g.grade_id = ?
+                """, (grade_id,))
+
             grade_data = cursor.fetchone()
 
             if not grade_data:
@@ -758,85 +898,84 @@ class GradeManager:
             messagebox.showerror("Database Error", f"Error loading grade: {e}")
             return
 
-        # Create dialog
+        # For submissions, grade_data[3] is a percentage; for grades, it's a raw score
+        if is_submission:
+            current_score = grade_data[3] if grade_data[3] is not None else 0
+            max_points = grade_data[9]
+            # Convert percentage back to score for display
+            display_score = round((current_score * max_points) / 100, 2) if current_score else 0
+        else:
+            display_score = grade_data[3]
+            max_points = grade_data[9]
+
         dialog = tk.Toplevel(self.root)
         dialog.title("Edit Grade")
         dialog.geometry("500x550")
-
-        # Make dialog modal
         dialog.transient(self.root)
         safe_grab_set(dialog)
 
-        # Display student info (read-only)
         ttk.Label(dialog, text="Student:").grid(row=0, column=0, padx=10, pady=10, sticky='w')
-        student_label = ttk.Label(dialog, text=f"{grade_data[1]} - {grade_data[6]} {grade_data[7]}")
-        student_label.grid(row=0, column=1, padx=10, pady=10, sticky='w')
+        ttk.Label(dialog, text=f"{grade_data[1]} - {grade_data[6]} {grade_data[7]}").grid(
+            row=0, column=1, padx=10, pady=10, sticky='w')
 
-        # Display assessment info (read-only)
         ttk.Label(dialog, text="Assessment:").grid(row=1, column=0, padx=10, pady=10, sticky='w')
-        assessment_label = ttk.Label(dialog, text=f"{grade_data[8]} ({grade_data[10]})")
-        assessment_label.grid(row=1, column=1, padx=10, pady=10, sticky='w')
+        ttk.Label(dialog, text=f"{grade_data[8]} ({grade_data[10]})").grid(
+            row=1, column=1, padx=10, pady=10, sticky='w')
 
-        # Max points display
         ttk.Label(dialog, text="Max Points:").grid(row=2, column=0, padx=10, pady=10, sticky='w')
-        max_points_label = ttk.Label(dialog, text=str(grade_data[9]))
-        max_points_label.grid(row=2, column=1, padx=10, pady=10, sticky='w')
+        ttk.Label(dialog, text=str(max_points)).grid(row=2, column=1, padx=10, pady=10, sticky='w')
 
-        # Score entry (editable)
         ttk.Label(dialog, text="Score:").grid(row=3, column=0, padx=10, pady=10, sticky='w')
-        score_var = tk.StringVar(value=str(grade_data[3]))
-        score_entry = ttk.Entry(dialog, textvariable=score_var, width=37)
-        score_entry.grid(row=3, column=1, padx=10, pady=10)
+        score_var = tk.StringVar(value=str(display_score))
+        ttk.Entry(dialog, textvariable=score_var, width=37).grid(row=3, column=1, padx=10, pady=10)
 
-        # Submission date
-        ttk.Label(dialog, text="Submission Date:").grid(row=4, column=0, padx=10, pady=10, sticky='w')
+        ttk.Label(dialog, text="Date:").grid(row=4, column=0, padx=10, pady=10, sticky='w')
         date_var = tk.StringVar(value=grade_data[4] if grade_data[4] else datetime.now().strftime('%Y-%m-%d'))
-        date_entry = ttk.Entry(dialog, textvariable=date_var, width=37)
-        date_entry.grid(row=4, column=1, padx=10, pady=10)
+        ttk.Entry(dialog, textvariable=date_var, width=37).grid(row=4, column=1, padx=10, pady=10)
 
-        # Comments
         ttk.Label(dialog, text="Comments:").grid(row=5, column=0, padx=10, pady=10, sticky='nw')
         comments_text = tk.Text(dialog, width=35, height=8)
         comments_text.grid(row=5, column=1, padx=10, pady=10)
         if grade_data[5]:
             comments_text.insert('1.0', grade_data[5])
 
-        # Save button
         def update_grade():
             score = score_var.get()
             date = date_var.get()
             comments = comments_text.get('1.0', 'end-1c')
 
-            # Validation
             if not score:
-                messagebox.showerror("Validation Error", "Please enter a score")
+                messagebox.showerror("Validation Error", "Please enter a score", parent=dialog)
                 return
 
             try:
                 score_float = float(score)
-                max_points = float(grade_data[9])
+                max_pts = float(max_points)
 
-                if score_float < 0:
-                    messagebox.showerror("Validation Error", "Score cannot be negative")
-                    return
-                if score_float > max_points:
-                    messagebox.showerror("Validation Error", f"Score cannot exceed max points ({max_points})")
+                if score_float < 0 or score_float > max_pts:
+                    messagebox.showerror("Validation Error",
+                                        f"Score must be between 0 and {max_pts}", parent=dialog)
                     return
 
-                # Calculate percentage and letter grade
-                percentage = (score_float / max_points) * 100
+                percentage = (score_float / max_pts) * 100
                 letter_grade = self.percentage_to_letter(percentage)
+                old_score = grade_data[3]
 
-                # Get old values for audit
-                old_score = grade_data[3] if grade_data else None
-
-                # Update grade
                 cursor = self.get_safe_cursor()
-                cursor.execute("""
-                    UPDATE grades
-                    SET score = ?, letter_grade = ?, submission_date = ?, comments = ?
-                    WHERE grade_id = ?
-                """, (score_float, letter_grade, date, comments, grade_id))
+
+                if is_submission:
+                    cursor.execute("""
+                        UPDATE assignment_submissions
+                        SET grade = ?, feedback = ?, graded_date = ?, status = 'graded'
+                        WHERE id = ?
+                    """, (percentage, comments, date, int(grade_id[1:])))
+                else:
+                    cursor.execute("""
+                        UPDATE grades
+                        SET score = ?, letter_grade = ?, submission_date = ?, comments = ?
+                        WHERE grade_id = ?
+                    """, (score_float, letter_grade, date, comments, grade_id))
+
                 self.safe_commit()
 
                 # Immutable audit log for grade update (FERPA compliance)
@@ -861,6 +1000,13 @@ class GradeManager:
                 dialog.destroy()
                 self.refresh_grades()
 
+                # Email student about updated grade
+                self._email_grade_notification(
+                    str(grade_data[1]), str(grade_data[8]), 'updated',
+                    score=score_float, letter_grade=letter_grade,
+                    percentage=percentage, feedback=comments
+                )
+
             except ValueError:
                 messagebox.showerror("Validation Error", "Score must be a valid number")
             except sqlite3.Error as e:
@@ -872,19 +1018,18 @@ class GradeManager:
         ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
 
     def delete_grade(self):
-        """Delete selected grade"""
-        # Get selected grade
+        """Delete selected grade (supports both grades and assignment_submissions)"""
         selection = self.grades_tree.selection()
         if not selection:
             messagebox.showwarning("No Selection", "Please select a grade to delete")
             return
 
         item = self.grades_tree.item(selection[0])
-        grade_id = item['values'][0]
+        raw_id = str(item['values'][0])
         student_name = item['values'][1]
         assessment_name = item['values'][2]
+        is_submission = raw_id.startswith('S')
 
-        # Confirm deletion
         if not messagebox.askyesno("Confirm Deletion",
                                    f"Are you sure you want to delete the grade for:\n\n"
                                    f"Student: {student_name}\n"
@@ -893,12 +1038,27 @@ class GradeManager:
             return
 
         try:
-            # Get grade details before deletion for audit
             cursor = self.get_safe_cursor()
-            cursor.execute("SELECT student_id, assessment_id, score FROM grades WHERE grade_id = ?", (grade_id,))
-            grade_details = cursor.fetchone()
+            student_id_for_email = None
 
-            cursor.execute("DELETE FROM grades WHERE grade_id = ?", (grade_id,))
+            if is_submission:
+                real_id = int(raw_id[1:])
+                cursor.execute("SELECT student_id FROM assignment_submissions WHERE id = ?", (real_id,))
+                row = cursor.fetchone()
+                student_id_for_email = row[0] if row else None
+                # Clear the grade but keep the submission record
+                cursor.execute("""
+                    UPDATE assignment_submissions
+                    SET grade = NULL, feedback = NULL, graded_date = NULL,
+                        graded_by = NULL, status = 'submitted'
+                    WHERE id = ?
+                """, (real_id,))
+            else:
+                cursor.execute("SELECT student_id FROM grades WHERE grade_id = ?", (raw_id,))
+                row = cursor.fetchone()
+                student_id_for_email = row[0] if row else None
+                cursor.execute("DELETE FROM grades WHERE grade_id = ?", (raw_id,))
+
             self.safe_commit()
 
             # Immutable audit log for grade deletion (FERPA compliance)
@@ -908,12 +1068,10 @@ class GradeManager:
                     action=AuditAction.RECORD_DELETE,
                     user_id=user_id,
                     resource_type='grade',
-                    resource_id=str(grade_id),
+                    resource_id=raw_id,
                     session_id=session_id,
                     details={
-                        'student_id': str(grade_details[0]) if grade_details else None,
-                        'assessment_id': str(grade_details[1]) if grade_details else None,
-                        'deleted_score': grade_details[2] if grade_details else None,
+                        'student_id': student_id_for_email,
                         'student_name': student_name,
                         'assessment_name': assessment_name
                     }
@@ -921,6 +1079,10 @@ class GradeManager:
 
             messagebox.showinfo("Success", "Grade deleted successfully!")
             self.refresh_grades()
+
+            # Email student about removed grade
+            if student_id_for_email:
+                self._email_grade_notification(student_id_for_email, assessment_name, 'deleted')
 
         except sqlite3.Error as e:
             messagebox.showerror("Database Error", f"Error deleting grade: {e}")
@@ -1404,18 +1566,58 @@ class GradeManager:
             messagebox.showerror("Database Error", f"Error calculating GPAs: {e}")
 
     def show_grade_statistics(self):
-        """Show comprehensive grade statistics"""
+        """Show comprehensive grade statistics from both grades and assignment_submissions"""
         try:
             cursor = self.get_safe_cursor()
 
+            # Combined view: grades table + assignment_submissions with grades
+            all_grades_cte = """
+                WITH all_grades AS (
+                    SELECT g.score as score,
+                           ROUND((g.score / a.max_points) * 100, 2) as percentage,
+                           g.letter_grade,
+                           s.student_id, s.first_name, s.last_name,
+                           a.assessment_name as assessment_name,
+                           a.max_points as max_points
+                    FROM grades g
+                    JOIN students s ON g.student_id = s.student_id
+                    JOIN assessments a ON g.assessment_id = a.assessment_id
+                    UNION ALL
+                    SELECT ROUND((sub.grade * COALESCE(a.max_marks, 100) / 100), 2) as score,
+                           ROUND(sub.grade, 2) as percentage,
+                           CASE
+                               WHEN sub.grade >= 93 THEN 'A+'
+                               WHEN sub.grade >= 90 THEN 'A'
+                               WHEN sub.grade >= 87 THEN 'A-'
+                               WHEN sub.grade >= 83 THEN 'B+'
+                               WHEN sub.grade >= 80 THEN 'B'
+                               WHEN sub.grade >= 77 THEN 'B-'
+                               WHEN sub.grade >= 73 THEN 'C+'
+                               WHEN sub.grade >= 70 THEN 'C'
+                               WHEN sub.grade >= 67 THEN 'C-'
+                               WHEN sub.grade >= 63 THEN 'D+'
+                               WHEN sub.grade >= 60 THEN 'D'
+                               WHEN sub.grade >= 57 THEN 'D-'
+                               ELSE 'F'
+                           END as letter_grade,
+                           s.student_id, s.first_name, s.last_name,
+                           a.title as assessment_name,
+                           COALESCE(a.max_marks, 100) as max_points
+                    FROM assignment_submissions sub
+                    JOIN students s ON sub.student_id = s.student_id
+                    JOIN assignments a ON sub.assignment_id = a.id
+                    WHERE sub.grade IS NOT NULL
+                )
+            """
+
             # Get overall statistics
-            cursor.execute("""
-                SELECT
-                    COUNT(*) as total_grades,
-                    AVG(g.score) as avg_score,
-                    MIN(g.score) as min_score,
-                    MAX(g.score) as max_score
-                FROM grades g
+            cursor.execute(f"""
+                {all_grades_cte}
+                SELECT COUNT(*) as total_grades,
+                       AVG(percentage) as avg_pct,
+                       MIN(percentage) as min_pct,
+                       MAX(percentage) as max_pct
+                FROM all_grades
             """)
             overall_stats = cursor.fetchone()
 
@@ -1428,7 +1630,6 @@ class GradeManager:
             stats_dialog.title("Grade Statistics")
             stats_dialog.geometry("800x700")
 
-            # Notebook for different stat views
             notebook = ttk.Notebook(stats_dialog)
             notebook.pack(fill='both', expand=True, padx=10, pady=10)
 
@@ -1441,14 +1642,15 @@ class GradeManager:
 
             stats_text.insert('end', "=== OVERALL GRADE STATISTICS ===\n\n")
             stats_text.insert('end', f"Total Grades: {overall_stats[0]}\n")
-            stats_text.insert('end', f"Average Score: {overall_stats[1]:.2f}\n")
-            stats_text.insert('end', f"Minimum Score: {overall_stats[2]:.2f}\n")
-            stats_text.insert('end', f"Maximum Score: {overall_stats[3]:.2f}\n\n")
+            stats_text.insert('end', f"Average Percentage: {overall_stats[1]:.2f}%\n")
+            stats_text.insert('end', f"Minimum Percentage: {overall_stats[2]:.2f}%\n")
+            stats_text.insert('end', f"Maximum Percentage: {overall_stats[3]:.2f}%\n\n")
 
             # Grade distribution
-            cursor.execute("""
+            cursor.execute(f"""
+                {all_grades_cte}
                 SELECT letter_grade, COUNT(*) as count
-                FROM grades
+                FROM all_grades
                 GROUP BY letter_grade
                 ORDER BY letter_grade
             """)
@@ -1456,8 +1658,9 @@ class GradeManager:
 
             stats_text.insert('end', "=== GRADE DISTRIBUTION ===\n\n")
             for grade, count in grade_dist:
-                percentage = (count / overall_stats[0]) * 100
-                stats_text.insert('end', f"{grade}: {count} ({percentage:.1f}%)\n")
+                pct = (count / overall_stats[0]) * 100
+                bar = '#' * int(pct / 2)
+                stats_text.insert('end', f"{grade:>3s}: {count:3d} ({pct:5.1f}%)  {bar}\n")
 
             # Per-Assessment Statistics Tab
             assessment_frame = ttk.Frame(notebook)
@@ -1466,33 +1669,28 @@ class GradeManager:
             assessment_text = scrolledtext.ScrolledText(assessment_frame, width=80, height=35)
             assessment_text.pack(fill='both', expand=True, padx=10, pady=10)
 
-            cursor.execute("""
-                SELECT
-                    a.assessment_name,
-                    m.module_name,
-                    COUNT(g.grade_id) as num_grades,
-                    AVG(g.score) as avg_score,
-                    MIN(g.score) as min_score,
-                    MAX(g.score) as max_score,
-                    a.max_points
-                FROM assessments a
-                JOIN modules m ON a.module_code = m.module_code
-                LEFT JOIN grades g ON a.assessment_id = g.assessment_id
-                GROUP BY a.assessment_id
-                HAVING num_grades > 0
-                ORDER BY m.module_name, a.assessment_name
+            cursor.execute(f"""
+                {all_grades_cte}
+                SELECT assessment_name, max_points,
+                       COUNT(*) as num_grades,
+                       AVG(score) as avg_score,
+                       MIN(score) as min_score,
+                       MAX(score) as max_score,
+                       AVG(percentage) as avg_pct
+                FROM all_grades
+                GROUP BY assessment_name
+                ORDER BY assessment_name
             """)
             assessment_stats = cursor.fetchall()
 
             assessment_text.insert('end', "=== STATISTICS BY ASSESSMENT ===\n\n")
             for stat in assessment_stats:
-                assessment_text.insert('end', f"Assessment: {stat[0]}\n")
-                assessment_text.insert('end', f"Module: {stat[1]}\n")
-                assessment_text.insert('end', f"Number of Grades: {stat[2]}\n")
-                assessment_text.insert('end', f"Average Score: {stat[3]:.2f} / {stat[6]}\n")
-                assessment_text.insert('end', f"Average Percentage: {(stat[3]/stat[6]*100):.2f}%\n")
-                assessment_text.insert('end', f"Min Score: {stat[4]:.2f}\n")
-                assessment_text.insert('end', f"Max Score: {stat[5]:.2f}\n")
+                name, max_pts, num, avg_s, min_s, max_s, avg_p = stat
+                assessment_text.insert('end', f"Assessment: {name}\n")
+                assessment_text.insert('end', f"Number of Grades: {num}\n")
+                assessment_text.insert('end', f"Average Score: {avg_s:.2f} / {max_pts}\n")
+                assessment_text.insert('end', f"Average Percentage: {avg_p:.2f}%\n")
+                assessment_text.insert('end', f"Score Range: {min_s:.2f} - {max_s:.2f}\n")
                 assessment_text.insert('end', f"{'-'*60}\n\n")
 
             # Per-Student Statistics Tab
@@ -1502,53 +1700,31 @@ class GradeManager:
             student_text = scrolledtext.ScrolledText(student_frame, width=80, height=35)
             student_text.pack(fill='both', expand=True, padx=10, pady=10)
 
-            cursor.execute("""
-                SELECT
-                    s.student_id,
-                    s.first_name,
-                    s.last_name,
-                    COUNT(g.grade_id) as num_grades,
-                    AVG(g.score) as avg_score,
-                    MIN(g.score) as min_score,
-                    MAX(g.score) as max_score
-                FROM students s
-                LEFT JOIN grades g ON s.student_id = g.student_id
-                GROUP BY s.student_id
-                HAVING num_grades > 0
-                ORDER BY s.last_name, s.first_name
+            cursor.execute(f"""
+                {all_grades_cte}
+                SELECT student_id, first_name, last_name,
+                       COUNT(*) as num_grades,
+                       AVG(percentage) as avg_pct,
+                       MIN(percentage) as min_pct,
+                       MAX(percentage) as max_pct
+                FROM all_grades
+                GROUP BY student_id
+                ORDER BY last_name, first_name
             """)
             student_stats = cursor.fetchall()
 
             student_text.insert('end', "=== STATISTICS BY STUDENT ===\n\n")
             for stat in student_stats:
-                student_text.insert('end', f"Student: {stat[1]} {stat[2]} ({stat[0]})\n")
-                student_text.insert('end', f"Number of Grades: {stat[3]}\n")
-                student_text.insert('end', f"Average Score: {stat[4]:.2f}\n")
-                student_text.insert('end', f"Min Score: {stat[5]:.2f}\n")
-                student_text.insert('end', f"Max Score: {stat[6]:.2f}\n")
+                sid, fname, lname, num, avg_p, min_p, max_p = stat
+                student_text.insert('end', f"Student: {fname} {lname} ({sid})\n")
+                student_text.insert('end', f"Number of Grades: {num}\n")
+                student_text.insert('end', f"Average: {avg_p:.2f}%\n")
+                student_text.insert('end', f"Range: {min_p:.2f}% - {max_p:.2f}%\n")
 
-                # Calculate GPA for student
-                cursor.execute("""
-                    SELECT g.letter_grade, m.credits
-                    FROM grades g
-                    JOIN assessments a ON g.assessment_id = a.assessment_id
-                    JOIN modules m ON a.module_code = m.module_code
-                    WHERE g.student_id = ?
-                """, (stat[0],))
-                grades = cursor.fetchall()
-
-                total_grade_points = 0
-                total_credits = 0
-                for grade in grades:
-                    gpa_value = self.letter_to_gpa(grade[0])
-                    credits = grade[1] if grade[1] else 1
-                    total_grade_points += gpa_value * credits
-                    total_credits += credits
-
-                if total_credits > 0:
-                    gpa = total_grade_points / total_credits
-                    student_text.insert('end', f"GPA: {gpa:.2f}\n")
-
+                # Letter grade for average
+                letter = self.percentage_to_letter(avg_p)
+                gpa = self.letter_to_gpa(letter)
+                student_text.insert('end', f"Overall Grade: {letter} (GPA: {gpa:.2f})\n")
                 student_text.insert('end', f"{'-'*60}\n\n")
 
             # Disable editing

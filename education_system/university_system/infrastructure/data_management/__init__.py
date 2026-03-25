@@ -25,7 +25,7 @@ except ImportError:
     validate_database = None
 
 try:
-    from education_system.university_system.infrastructure.data_management.data_exporter import (
+    from education_system.university_system.modules.shared.services.data_exporter import (
         DataExporter,
         ExportFormat,
         export_data,

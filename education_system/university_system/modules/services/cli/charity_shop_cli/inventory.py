@@ -2,7 +2,8 @@
 Core inventory management: CRUD, bulk import/export, stock adjustments.
 """
 
-from ._imports import (
+from education_system.university_system.core.sql_safety import escape_like
+from education_system.university_system.modules.services.cli.charity_shop_cli._imports import (
     sqlite3, csv, logger, datetime, timedelta,
     get_connection, List, Tuple, Optional,
     TABLE_NAME, DEFAULT_LOW_STOCK_THRESHOLD,
@@ -39,7 +40,7 @@ def search_stock(search_term: str, category: str = "All", show_sold: str = "all"
     cursor = conn.cursor()
 
     query = f"SELECT id, name, category, price, quantity, condition, date_added, sold, sold_date, sold_quantity FROM {TABLE_NAME} WHERE name LIKE ?"
-    params = [f"%{search_term}%"]
+    params = [f"%{escape_like(search_term)}%"]
 
     if category != "All":
         query += " AND category = ?"

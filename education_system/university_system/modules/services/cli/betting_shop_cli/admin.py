@@ -4,11 +4,11 @@ Betting Shop CLI - Admin functions.
 
 from datetime import datetime
 
-from .constants import (
+from education_system.university_system.modules.services.cli.betting_shop_cli.constants import (
     logger, get_connection, transaction,
     PREDICTION_CATEGORIES,
 )
-from .helpers import print_subheader, get_current_user, is_admin
+from education_system.university_system.modules.services.cli.betting_shop_cli.helpers import print_subheader, get_current_user, is_admin
 
 
 def create_sports_event():

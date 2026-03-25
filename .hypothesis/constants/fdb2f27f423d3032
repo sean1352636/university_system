@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/run.py
+# hypothesis_version: 6.151.9
+
+[0.0, '\n  Goodbye!', '  Select mode: ', '  Select system: ', '  [0] Back', '  [0] Exit', '--api', '--cli', '--college', '--color=yes', '--gui', '--primary', '--school', '--seed', '--tb=short', '--test', '--test-all', '--university', '-m', '-ra', '-v', '.env', '0', '1', '2', '3', '4', '5', '=', 'College system', 'Graphical interface', 'N', 'REST API server', 'Run test suite', 'University system', '__login__', '__main__', '__superadmin__', 'admin', 'api', 'cli', 'college', 'data', 'display_name', 'education_system', 'email', 'en', 'gui', 'id', 'permissions', 'primary', 'pytest', 'role', 'school', 'seed', 'shared', 'shared_auth_id', 'startup.starting_cli', 'startup.starting_gui', 'store_true', 'student', 'student_id', 'system_key', 'systems', 'test', 'test-all', 'two_fa_secret', 'university', 'university_system', 'user_id', 'username']

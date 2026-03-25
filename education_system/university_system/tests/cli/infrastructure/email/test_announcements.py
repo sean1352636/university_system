@@ -24,8 +24,8 @@ class TestSendBatchAnnouncement:
             ('S002', 'student2@test.com', 'Ms', 'Jane', None, 'Smith')
         ]
 
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation') as mock_db, \
-             patch('university_system.infrastructure.email.announcements.send_bulk') as mock_send_bulk:
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation') as mock_db, \
+             patch('education_system.university_system.infrastructure.email.announcements.send_bulk') as mock_send_bulk:
 
             mock_db.return_value = mock_students
             mock_send_bulk.return_value = {'success': 2, 'failure': 0, 'total': 2}
@@ -61,8 +61,8 @@ class TestSendBatchAnnouncement:
 
         filter_criteria = {'course': 'Computer Science'}
 
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation') as mock_db, \
-             patch('university_system.infrastructure.email.announcements.send_bulk') as mock_send_bulk:
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation') as mock_db, \
+             patch('education_system.university_system.infrastructure.email.announcements.send_bulk') as mock_send_bulk:
 
             mock_db.return_value = mock_students
             mock_send_bulk.return_value = {'success': 1, 'failure': 0, 'total': 1}
@@ -87,8 +87,8 @@ class TestSendBatchAnnouncement:
 
         filter_criteria = {'registration_year': 2023}
 
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation') as mock_db, \
-             patch('university_system.infrastructure.email.announcements.send_bulk') as mock_send_bulk:
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation') as mock_db, \
+             patch('education_system.university_system.infrastructure.email.announcements.send_bulk') as mock_send_bulk:
 
             mock_db.return_value = mock_students
             mock_send_bulk.return_value = {'success': 1, 'failure': 0, 'total': 1}
@@ -110,8 +110,8 @@ class TestSendBatchAnnouncement:
 
         filter_criteria = {'module_code': 'CS101'}
 
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation') as mock_db, \
-             patch('university_system.infrastructure.email.announcements.send_bulk') as mock_send_bulk:
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation') as mock_db, \
+             patch('education_system.university_system.infrastructure.email.announcements.send_bulk') as mock_send_bulk:
 
             mock_db.return_value = mock_students
             mock_send_bulk.return_value = {'success': 1, 'failure': 0, 'total': 1}
@@ -126,8 +126,8 @@ class TestSendBatchAnnouncement:
 
     def test_send_batch_announcement_no_students(self):
         """Test sending batch announcement when no students match criteria"""
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation') as mock_db, \
-             patch('university_system.infrastructure.email.announcements.send_bulk') as mock_send_bulk:
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation') as mock_db, \
+             patch('education_system.university_system.infrastructure.email.announcements.send_bulk') as mock_send_bulk:
 
             mock_db.return_value = []
             mock_send_bulk.return_value = {'success': 0, 'failure': 0, 'total': 0}
@@ -147,8 +147,8 @@ class TestSendBatchAnnouncement:
             ('S001', 'student1@test.com', 'Mr', 'John', None, 'Doe')
         ]
 
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation') as mock_db, \
-             patch('university_system.infrastructure.email.announcements.send_bulk') as mock_send_bulk:
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation') as mock_db, \
+             patch('education_system.university_system.infrastructure.email.announcements.send_bulk') as mock_send_bulk:
 
             mock_db.return_value = mock_students
             mock_send_bulk.return_value = {'success': 1, 'failure': 0, 'total': 1}
@@ -166,7 +166,7 @@ class TestSendBatchAnnouncement:
 
     def test_send_batch_announcement_database_error(self):
         """Test sending batch announcement handles database errors"""
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation') as mock_db:
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation') as mock_db:
             mock_db.side_effect = Exception("Database error")
 
             success, failure, total = announcements.send_batch_announcement(
@@ -187,8 +187,8 @@ class TestSendBatchAnnouncement:
             ('S002', 'student2@test.com', 'Ms', 'Jane', None, 'Smith')
         ]
 
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation') as mock_db, \
-             patch('university_system.infrastructure.email.announcements.send_bulk') as mock_send_bulk:
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation') as mock_db, \
+             patch('education_system.university_system.infrastructure.email.announcements.send_bulk') as mock_send_bulk:
 
             mock_db.return_value = mock_students
             mock_send_bulk.return_value = {'success': 1, 'failure': 1, 'total': 2}
@@ -397,7 +397,7 @@ class TestDisplayAnnouncementsMenu:
         mock_dashboard = Mock()
         mock_dashboard.auth.current_user = {'role': 'admin', 'username': 'admin', 'id': 1}
 
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation') as mock_db, \
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation') as mock_db, \
              patch('builtins.input', side_effect=['3', '4']), \
              patch('builtins.print') as mock_print:
 
@@ -417,7 +417,7 @@ class TestDisplayAnnouncementsMenu:
 
         mock_announcement = (1, 'Old Title', 'Content', 'all', 0, '2024-01-01 10:00:00', None, 1)
 
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation') as mock_db, \
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation') as mock_db, \
              patch('builtins.input', side_effect=[
                  '3',  # Update announcement
                  '1',  # Select announcement ID
@@ -469,7 +469,7 @@ class TestCreateAnnouncementSafe:
         }
         mock_dashboard._log_communication_action = Mock()
 
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation') as mock_db:
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation') as mock_db:
             mock_db.return_value = 123  # Announcement ID
 
             result = announcements.create_announcement_safe(
@@ -622,7 +622,7 @@ class TestCreateAnnouncementSafe:
         }
         mock_dashboard._log_communication_action = Mock()
 
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation') as mock_db:
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation') as mock_db:
             mock_db.return_value = 123
 
             result = announcements.create_announcement_safe(
@@ -646,7 +646,7 @@ class TestCreateAnnouncementSafe:
             'username': 'admin'
         }
 
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation') as mock_db:
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation') as mock_db:
             mock_db.side_effect = Exception("Database error")
 
             result = announcements.create_announcement_safe(
@@ -667,7 +667,7 @@ class TestMarkAnnouncementViewed:
         mock_dashboard = Mock()
         mock_dashboard.auth.current_user = {'id': 1}
 
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation') as mock_db:
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation') as mock_db:
             mock_db.return_value = True
 
             result = announcements.mark_announcement_viewed(mock_dashboard, 123)
@@ -695,7 +695,7 @@ class TestMarkAnnouncementViewed:
             mock_cursor.fetchone.return_value = (1,)  # Record exists
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation', side_effect=mock_operation):
             result = announcements.mark_announcement_viewed(mock_dashboard, 123)
 
             assert result is True
@@ -705,7 +705,7 @@ class TestMarkAnnouncementViewed:
         mock_dashboard = Mock()
         mock_dashboard.auth.current_user = {'id': 1}
 
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation') as mock_db:
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation') as mock_db:
             mock_db.side_effect = Exception("Database error")
 
             result = announcements.mark_announcement_viewed(mock_dashboard, 123)
@@ -741,7 +741,7 @@ class TestGetAnnouncementById:
             mock_cursor.fetchone.return_value = mock_row
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation', side_effect=mock_operation):
             result = announcements.get_announcement_by_id(mock_dashboard, 123)
 
             assert result is not None
@@ -761,7 +761,7 @@ class TestGetAnnouncementById:
             mock_cursor.fetchone.return_value = None
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation', side_effect=mock_operation):
             result = announcements.get_announcement_by_id(mock_dashboard, 999)
 
             assert result is None
@@ -780,7 +780,7 @@ class TestGetAnnouncementById:
         mock_dashboard = Mock()
         mock_dashboard.auth.current_user = {'id': 1}
 
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation') as mock_db:
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation') as mock_db:
             mock_db.side_effect = Exception("Database error")
 
             result = announcements.get_announcement_by_id(mock_dashboard, 123)
@@ -802,7 +802,7 @@ class TestDeactivateAnnouncement:
             mock_cursor.fetchone.return_value = (1,)  # creator_id = 1
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation', side_effect=mock_operation):
             result = announcements.deactivate_announcement(mock_dashboard, 123)
 
             assert result is True
@@ -818,7 +818,7 @@ class TestDeactivateAnnouncement:
             mock_cursor.fetchone.return_value = (1,)  # creator_id = 1 (different from current user)
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation', side_effect=mock_operation):
             result = announcements.deactivate_announcement(mock_dashboard, 123)
 
             assert result is True
@@ -833,7 +833,7 @@ class TestDeactivateAnnouncement:
             mock_cursor.fetchone.return_value = (1,)  # creator_id = 1
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation', side_effect=mock_operation):
             result = announcements.deactivate_announcement(mock_dashboard, 123)
 
             assert result is False
@@ -848,7 +848,7 @@ class TestDeactivateAnnouncement:
             mock_cursor.fetchone.return_value = None
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation', side_effect=mock_operation):
             result = announcements.deactivate_announcement(mock_dashboard, 999)
 
             assert result is False
@@ -867,7 +867,7 @@ class TestDeactivateAnnouncement:
         mock_dashboard = Mock()
         mock_dashboard.auth.current_user = {'id': 1, 'role': 'admin'}
 
-        with patch('university_system.infrastructure.email.announcements.execute_db_operation') as mock_db:
+        with patch('education_system.university_system.infrastructure.email.announcements.execute_db_operation') as mock_db:
             mock_db.side_effect = Exception("Database error")
 
             result = announcements.deactivate_announcement(mock_dashboard, 123)

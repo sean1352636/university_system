@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/student_analytics_gui/tabs.py
+# hypothesis_version: 6.151.9
+
+['<Configure>', 'Action.TButton', 'Advanced Filtering', 'Clear Filters', 'Clear Output', 'Cohort Analysis', 'Configuration', 'Copy to Clipboard', 'Correlation Analysis', 'Data Management', 'Data Quality Check', 'Engagement Scoring', 'Export Options', 'Export to CSV', 'Export to Excel', 'Export to JSON', 'Filters', 'Heading.TLabel', 'Help & About', 'No filters applied', 'Predictive Analytics', 'Report Generation', 'Save Output', 'Statistical Summary', 'Student Demographics', 'all', 'analytics.about_app', 'analytics.filters', 'analytics.help_about', 'analytics.tab_basic', 'analytics.tab_output', 'analytics.view_help', 'both', 'csv', 'excel', 'gray', 'json', 'left', 'nw', 'right', 'summary', 'vertical', 'word', 'x', 'y', '📈 Performance', '📊 Basic Analytics', '📋 Reports', '📝 Output', '🔧 Utilities', '🔬 Advanced']

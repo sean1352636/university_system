@@ -55,7 +55,7 @@ class TestPredictiveAnalyticsGUI:
         """Test initialization with authentication"""
         with patch.object(PredictiveAnalyticsGUI, '_init_database'):
             with patch.object(PredictiveAnalyticsGUI, '_create_widgets'):
-                with patch('university_system.modules.shared.services.analytics.predictive_analytics_gui.log_activity'):
+                with patch('education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui.log_activity'):
                     gui = PredictiveAnalyticsGUI(root_window, mock_auth)
 
                     assert gui.auth == mock_auth
@@ -63,7 +63,7 @@ class TestPredictiveAnalyticsGUI:
 
     def test_init_database(self, root_window, mock_auth):
         """Test database initialization"""
-        with patch('university_system.modules.shared.services.analytics.predictive_analytics_gui.init_analytics_dashboard_system_db') as mock_init:
+        with patch('education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui.init_analytics_dashboard_system_db') as mock_init:
             with patch.object(PredictiveAnalyticsGUI, '_create_widgets'):
                 gui = PredictiveAnalyticsGUI(root_window, mock_auth)
                 # Database init should be called
@@ -95,7 +95,7 @@ class TestPredictiveAnalyticsGUI:
         mock_conn.__exit__ = Mock(return_value=False)
 
         with patch.object(PredictiveAnalyticsGUI, '_init_database'):
-            with patch('university_system.modules.shared.services.analytics.predictive_analytics_gui.get_connection', return_value=mock_conn):
+            with patch('education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui.get_connection', return_value=mock_conn):
                 gui = PredictiveAnalyticsGUI(root_window, mock_auth)
                 gui._load_retention_predictions()
 
@@ -123,7 +123,7 @@ class TestPredictiveAnalyticsGUI:
         mock_conn.__exit__ = Mock(return_value=False)
 
         with patch.object(PredictiveAnalyticsGUI, '_init_database'):
-            with patch('university_system.modules.shared.services.analytics.predictive_analytics_gui.get_connection', return_value=mock_conn):
+            with patch('education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui.get_connection', return_value=mock_conn):
                 gui = PredictiveAnalyticsGUI(root_window, mock_auth)
                 gui._load_graduation_forecasts()
 
@@ -139,7 +139,7 @@ class TestPredictiveAnalyticsGUI:
         mock_conn.__exit__ = Mock(return_value=False)
 
         with patch.object(PredictiveAnalyticsGUI, '_init_database'):
-            with patch('university_system.modules.shared.services.analytics.predictive_analytics_gui.get_connection', return_value=mock_conn):
+            with patch('education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui.get_connection', return_value=mock_conn):
                 gui = PredictiveAnalyticsGUI(root_window, mock_auth)
                 gui._load_course_predictions()
                 # Should complete without error
@@ -154,7 +154,7 @@ class TestPredictiveAnalyticsGUI:
         mock_conn.__exit__ = Mock(return_value=False)
 
         with patch.object(PredictiveAnalyticsGUI, '_init_database'):
-            with patch('university_system.modules.shared.services.analytics.predictive_analytics_gui.get_connection', return_value=mock_conn):
+            with patch('education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui.get_connection', return_value=mock_conn):
                 gui = PredictiveAnalyticsGUI(root_window, mock_auth)
                 gui._load_enrollment_projections()
 
@@ -168,7 +168,7 @@ class TestPredictiveAnalyticsGUI:
         mock_conn.__exit__ = Mock(return_value=False)
 
         with patch.object(PredictiveAnalyticsGUI, '_init_database'):
-            with patch('university_system.modules.shared.services.analytics.predictive_analytics_gui.get_connection', return_value=mock_conn):
+            with patch('education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui.get_connection', return_value=mock_conn):
                 gui = PredictiveAnalyticsGUI(root_window, mock_auth)
                 gui._load_kpis()
 
@@ -182,7 +182,7 @@ class TestPredictiveAnalyticsGUI:
         mock_conn.__exit__ = Mock(return_value=False)
 
         with patch.object(PredictiveAnalyticsGUI, '_init_database'):
-            with patch('university_system.modules.shared.services.analytics.predictive_analytics_gui.get_connection', return_value=mock_conn):
+            with patch('education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui.get_connection', return_value=mock_conn):
                 gui = PredictiveAnalyticsGUI(root_window, mock_auth)
                 gui._load_dashboards()
 
@@ -222,9 +222,9 @@ class TestCreateRetentionPredictionDialog:
             dialog.recommendations_text = Mock()
             dialog.recommendations_text.get.return_value = 'Test recommendations'
 
-            with patch('university_system.modules.shared.services.analytics.predictive_analytics_gui.RetentionPredictionManager.create_prediction', return_value=1):
+            with patch('education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui.RetentionPredictionManager.create_prediction', return_value=1):
                 with patch('tkinter.messagebox.showinfo'):
-                    with patch('university_system.modules.shared.services.analytics.predictive_analytics_gui.log_activity'):
+                    with patch('education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui.log_activity'):
                         dialog._create()
 
                         callback.assert_called_once()
@@ -261,7 +261,7 @@ class TestViewAtRiskStudentsDialog:
     def test_load_students(self, root_window, mock_auth):
         """Test loading at-risk students"""
         with patch('tkinter.Toplevel'):
-            with patch('university_system.modules.shared.services.analytics.predictive_analytics_gui.RetentionPredictionManager.get_at_risk_students') as mock_get:
+            with patch('education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui.RetentionPredictionManager.get_at_risk_students') as mock_get:
                 mock_get.return_value = [
                     {
                         'student_id': 'S001',
@@ -301,9 +301,9 @@ class TestCreateGraduationForecastDialog:
             dialog.rate6_entry = Mock()
             dialog.rate6_entry.get.return_value = '0.75'
 
-            with patch('university_system.modules.shared.services.analytics.predictive_analytics_gui.GraduationForecastManager.create_forecast', return_value=1):
+            with patch('education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui.GraduationForecastManager.create_forecast', return_value=1):
                 with patch('tkinter.messagebox.showinfo'):
-                    with patch('university_system.modules.shared.services.analytics.predictive_analytics_gui.log_activity'):
+                    with patch('education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui.log_activity'):
                         dialog._create()
                         callback.assert_called_once()
 
@@ -330,9 +330,9 @@ class TestCreateCoursePredictionDialog:
             dialog.enrollment_entry = Mock()
             dialog.enrollment_entry.get.return_value = '150'
 
-            with patch('university_system.modules.shared.services.analytics.predictive_analytics_gui.CourseDemandPredictionManager.create_prediction', return_value=1):
+            with patch('education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui.CourseDemandPredictionManager.create_prediction', return_value=1):
                 with patch('tkinter.messagebox.showinfo'):
-                    with patch('university_system.modules.shared.services.analytics.predictive_analytics_gui.log_activity'):
+                    with patch('education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui.log_activity'):
                         dialog._create()
                         callback.assert_called_once()
 
@@ -359,9 +359,9 @@ class TestCreateEnrollmentProjectionDialog:
             dialog.scenario_combo = Mock()
             dialog.scenario_combo.get.return_value = 'baseline'
 
-            with patch('university_system.modules.shared.services.analytics.predictive_analytics_gui.EnrollmentProjectionManager.create_projection', return_value=1):
+            with patch('education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui.EnrollmentProjectionManager.create_projection', return_value=1):
                 with patch('tkinter.messagebox.showinfo'):
-                    with patch('university_system.modules.shared.services.analytics.predictive_analytics_gui.log_activity'):
+                    with patch('education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui.log_activity'):
                         dialog._create()
                         callback.assert_called_once()
 
@@ -390,9 +390,9 @@ class TestRecordKPIDialog:
             dialog.period_combo = Mock()
             dialog.period_combo.get.return_value = 'monthly'
 
-            with patch('university_system.modules.shared.services.analytics.predictive_analytics_gui.KPIManager.record_kpi', return_value=1):
+            with patch('education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui.KPIManager.record_kpi', return_value=1):
                 with patch('tkinter.messagebox.showinfo'):
-                    with patch('university_system.modules.shared.services.analytics.predictive_analytics_gui.log_activity'):
+                    with patch('education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui.log_activity'):
                         dialog._record()
                         callback.assert_called_once()
 
@@ -442,9 +442,9 @@ class TestCreateDashboardDialog:
             dialog.public_var = Mock()
             dialog.public_var.get.return_value = True
 
-            with patch('university_system.modules.shared.services.analytics.predictive_analytics_gui.DashboardManager.create_dashboard', return_value=1):
+            with patch('education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui.DashboardManager.create_dashboard', return_value=1):
                 with patch('tkinter.messagebox.showinfo'):
-                    with patch('university_system.modules.shared.services.analytics.predictive_analytics_gui.log_activity'):
+                    with patch('education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui.log_activity'):
                         dialog._create()
                         callback.assert_called_once()
 

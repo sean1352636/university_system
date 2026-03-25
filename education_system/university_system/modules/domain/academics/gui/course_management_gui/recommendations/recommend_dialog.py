@@ -1,4 +1,4 @@
-from ._imports import (
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.recommendations._imports import (
     tk, ttk, messagebox, ScrolledText, sqlite3, _, DEFAULT_DB_PATH,
 )
 
@@ -44,19 +44,19 @@ class RecommendCoursesDialog:
         self.prereq_course_combo = ttk.Combobox(self.prereq_frame, width=50)
         self.prereq_course_combo.pack(side=tk.LEFT, padx=5)
 
+        # Buttons — pack before results so they stay visible on resize
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=10, side=tk.BOTTOM)
+
+        ttk.Button(button_frame, text="Generate Recommendations", command=self.generate_recommendations).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+
         # Results display
         results_frame = ttk.LabelFrame(main_frame, text="Recommendations", padding=10)
         results_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
         self.results_text = ScrolledText(results_frame, wrap=tk.WORD)
         self.results_text.pack(fill=tk.BOTH, expand=True)
-
-        # Buttons
-        button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill=tk.X, pady=10)
-
-        ttk.Button(button_frame, text="Generate Recommendations", command=self.generate_recommendations).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
         # Bind radio button changes
         for widget in type_frame.winfo_children():

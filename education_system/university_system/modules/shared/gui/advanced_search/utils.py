@@ -881,7 +881,7 @@ def get_connection():
             print_error(f"Database connection error: {e}")
             return None
 
-from .base import AdvancedSearchGUI
+from education_system.university_system.modules.shared.gui.advanced_search.base import AdvancedSearchGUI
 
 def show_audit_trail(self):
     """Show search audit trail"""

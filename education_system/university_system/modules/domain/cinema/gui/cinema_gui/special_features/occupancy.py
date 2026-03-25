@@ -13,7 +13,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_occupancy_dashboard(self):
     """Display real-time screen occupancy dashboard."""

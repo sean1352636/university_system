@@ -1,5 +1,5 @@
-from . import _common
-from ._common import sqlite3, get_text, logging, time, traceback, DEFAULT_DB_PATH, datetime
+from education_system.university_system.modules.domain.mobility.services.trip_management import _common
+from education_system.university_system.modules.domain.mobility.services.trip_management._common import sqlite3, get_text, logging, time, traceback, DEFAULT_DB_PATH, datetime
 
 
 def get_db_connection(timeout=30.0, max_retries=3):

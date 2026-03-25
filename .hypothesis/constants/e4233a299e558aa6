@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/admin/policies/services/policy_service.py
+# hypothesis_version: 6.151.9
+
+[' AND category = ?', ' AND status = ?', ' ORDER BY title', '1.0', 'active', 'admissions', 'behaviour', 'cnt', 'complaints', 'curriculum', 'data_protection', 'general', 'health_safety', 'hr', 'safeguarding', 'send']

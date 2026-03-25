@@ -1,5 +1,5 @@
-from ._common import sqlite3, get_text, logging, datetime, timedelta
-from .database import safe_db_operation
+from education_system.university_system.modules.domain.mobility.services.trip_management._common import sqlite3, get_text, logging, datetime, timedelta
+from education_system.university_system.modules.domain.mobility.services.trip_management.database import safe_db_operation
 
 
 def create_trip_calendar_event(calendar_manager):

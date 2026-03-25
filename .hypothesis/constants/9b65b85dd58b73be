@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/communication/calendar/services/calendar_service.py
+# hypothesis_version: 6.151.9
+
+[' AND event_type = ?', ' ORDER BY date', 'assembly', 'exam_period', 'general', 'holiday', 'inset_day', 'open_day', 'parents_evening', 'sports_day', 'term_date', 'trip']

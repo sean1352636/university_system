@@ -20,8 +20,8 @@ try:
 except ImportError:
     ENHANCED_AVAILABLE = False
 
-from .core import ReportingSystemGUI, start_gui, start_enhanced_reporting_gui
-from .template_dialog import TemplateDialog
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import ReportingSystemGUI, start_gui, start_enhanced_reporting_gui
+from education_system.university_system.modules.shared.gui.enhanced_reporting.template_dialog import TemplateDialog
 
 __all__ = [
     "ReportingSystemGUI",

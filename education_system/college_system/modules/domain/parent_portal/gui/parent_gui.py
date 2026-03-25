@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.college_system.modules.domain.parent_portal.services.parent_service import ParentService
+from education_system.college_system.core.i18n import t
 
 
 class ParentFrame(tk.Frame):
@@ -23,9 +24,11 @@ class ParentFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Parent Portal",
+        tk.Label(header, text=t("parent_portal.title"),
                  font=("Helvetica", 15, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=10)
+        ttk.Button(header, text=t("common.export_csv", default="Export CSV"),
+                   command=self._export_csv).pack(side="right", padx=20, pady=10)
 
         # Notebook
         self._nb = ttk.Notebook(self)
@@ -33,11 +36,11 @@ class ParentFrame(tk.Frame):
 
         # --- Overview tab (parent) ---
         self._overview_tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(self._overview_tab, text="Overview")
+        self._nb.add(self._overview_tab, text=t("parent_portal.overview"))
 
         child_select = tk.Frame(self._overview_tab, bg="#ecf0f1")
         child_select.pack(fill="x", pady=(0, 10))
-        tk.Label(child_select, text="Select Child:", bg="#ecf0f1",
+        tk.Label(child_select, text=t("parent_portal.select_child_colon"), bg="#ecf0f1",
                  font=("Helvetica", 10, "bold")).pack(side="left")
         self._child_var = tk.StringVar()
         self._child_combo = ttk.Combobox(child_select, textvariable=self._child_var,
@@ -53,7 +56,7 @@ class ParentFrame(tk.Frame):
 
         # --- Grades tab (parent) ---
         self._grades_tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(self._grades_tab, text="Grades")
+        self._nb.add(self._grades_tab, text=t("parent_portal.grades"))
 
         grades_cols = ("course", "title", "grade", "score", "type")
         self._grades_tree = ttk.Treeview(self._grades_tab, columns=grades_cols,
@@ -69,7 +72,7 @@ class ParentFrame(tk.Frame):
 
         # --- Attendance tab (parent) ---
         self._attendance_tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(self._attendance_tab, text="Attendance")
+        self._nb.add(self._attendance_tab, text=t("parent_portal.attendance"))
 
         att_cols = ("course", "title", "total", "present", "absent", "late", "rate")
         self._att_tree = ttk.Treeview(self._attendance_tab, columns=att_cols,
@@ -86,7 +89,7 @@ class ParentFrame(tk.Frame):
 
         # --- Timetable tab (parent) ---
         self._timetable_tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(self._timetable_tab, text="Timetable")
+        self._nb.add(self._timetable_tab, text=t("parent_portal.timetable"))
 
         tt_cols = ("day", "time", "course", "room", "instructor")
         self._tt_tree = ttk.Treeview(self._timetable_tab, columns=tt_cols,
@@ -102,28 +105,28 @@ class ParentFrame(tk.Frame):
 
         # --- Manage Links tab (admin) ---
         self._manage_tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(self._manage_tab, text="Manage Links")
+        self._nb.add(self._manage_tab, text=t("parent_portal.manage_links"))
 
         link_form = tk.Frame(self._manage_tab, bg="#ecf0f1")
         link_form.pack(fill="x", pady=(0, 10))
 
-        tk.Label(link_form, text="Parent User ID:", bg="#ecf0f1").grid(
+        tk.Label(link_form, text=t("parent_portal.parent_user_id_colon"), bg="#ecf0f1").grid(
             row=0, column=0, sticky="w", padx=5, pady=3)
         self._link_parent_var = tk.StringVar()
         ttk.Entry(link_form, textvariable=self._link_parent_var,
                   width=10).grid(row=0, column=1, sticky="w", padx=5, pady=3)
 
-        tk.Label(link_form, text="Student ID (PK):", bg="#ecf0f1").grid(
+        tk.Label(link_form, text=t("parent_portal.student_id_pk_colon"), bg="#ecf0f1").grid(
             row=0, column=2, sticky="w", padx=5, pady=3)
         self._link_student_var = tk.StringVar()
         ttk.Entry(link_form, textvariable=self._link_student_var,
                   width=10).grid(row=0, column=3, sticky="w", padx=5, pady=3)
 
-        ttk.Button(link_form, text="Link",
+        ttk.Button(link_form, text=t("parent_portal.link"),
                    command=self._on_link).grid(row=0, column=4, padx=5)
-        ttk.Button(link_form, text="Unlink",
+        ttk.Button(link_form, text=t("parent_portal.unlink"),
                    command=self._on_unlink).grid(row=0, column=5, padx=5)
-        ttk.Button(link_form, text="Refresh Links",
+        ttk.Button(link_form, text=t("parent_portal.refresh_links"),
                    command=self._load_all_links).grid(row=0, column=6, padx=5)
 
         link_cols = ("parent_id", "parent_name", "student_id", "student_name", "relationship")
@@ -137,6 +140,18 @@ class ParentFrame(tk.Frame):
             self._link_tree.heading(col, text=heading)
             self._link_tree.column(col, width=w, anchor="center")
         self._link_tree.pack(fill="both", expand=True)
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        current = self._nb.select()
+        tree_map = {
+            str(self._grades_tab): (self._grades_tree, "parent_grades.csv"),
+            str(self._attendance_tab): (self._att_tree, "parent_attendance.csv"),
+            str(self._timetable_tab): (self._tt_tree, "parent_timetable.csv"),
+            str(self._manage_tab): (self._link_tree, "parent_links.csv"),
+        }
+        tree, name = tree_map.get(current, (self._grades_tree, "parent_portal.csv"))
+        export_treeview_to_csv(tree, name)
 
     def refresh(self):
         self._apply_permissions()
@@ -179,7 +194,7 @@ class ParentFrame(tk.Frame):
                 self._child_combo.current(0)
                 self._on_child_selected()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _get_selected_child_pk(self) -> int | None:
         idx = self._child_combo.current()
@@ -271,32 +286,32 @@ class ParentFrame(tk.Frame):
                     r.get("relationship") or "parent",
                 ))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _on_link(self):
         try:
             parent_id = int(self._link_parent_var.get().strip())
             student_id = int(self._link_student_var.get().strip())
         except ValueError:
-            messagebox.showwarning("Input", "Enter valid numeric IDs.")
+            messagebox.showwarning(t("common.input"), t("parent_portal.enter_valid_ids"))
             return
         try:
             self._svc.admin_link_parent(parent_id, student_id)
-            messagebox.showinfo("Success", "Parent linked to student.")
+            messagebox.showinfo(t("common.success"), t("parent_portal.parent_linked"))
             self._load_all_links()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _on_unlink(self):
         try:
             parent_id = int(self._link_parent_var.get().strip())
             student_id = int(self._link_student_var.get().strip())
         except ValueError:
-            messagebox.showwarning("Input", "Enter valid numeric IDs.")
+            messagebox.showwarning(t("common.input"), t("parent_portal.enter_valid_ids"))
             return
         try:
             self._svc.unlink_parent(parent_id, student_id)
-            messagebox.showinfo("Success", "Link removed.")
+            messagebox.showinfo(t("common.success"), t("parent_portal.link_removed"))
             self._load_all_links()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))

@@ -3,7 +3,7 @@ from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.modules.shared.utils.simple_activity_logger import log_read, log_create
 from education_system.university_system.modules.shared.utils.finance_integration import record_payment_to_finance
-from . import config
+from education_system.university_system.modules.domain.commerce.services.shop_management import config
 
 
 @log_read(module="shop", description="Browsing products")
@@ -37,16 +37,16 @@ def browse_products():
             # View all products
             query = '''
             SELECT p.*, i.quantity
-            FROM shop_products p
-            JOIN shop_inventory i ON p.product_id = i.product_id
-            WHERE p.is_active = 1
+            FROM products p
+            JOIN shop_inventory i ON p.source_product_id = i.product_id
+            WHERE p.source_type = 'shop' AND p.is_active = 1
             ORDER BY p.category, p.name
             '''
         elif filter_choice == '2':
             # Filter by category
             # First get available categories
             cursor.execute(
-                'SELECT DISTINCT category FROM shop_products WHERE is_active = 1 ORDER BY category'
+                'SELECT DISTINCT category FROM products WHERE source_type = \'shop\' AND is_active = 1 ORDER BY category'
             )
             categories = cursor.fetchall()
 
@@ -69,9 +69,9 @@ def browse_products():
                 selected_category = categories[cat_choice-1]['category']
                 query = '''
                 SELECT p.*, i.quantity
-                FROM shop_products p
-                JOIN shop_inventory i ON p.product_id = i.product_id
-                WHERE p.is_active = 1 AND p.category = ?
+                FROM products p
+                JOIN shop_inventory i ON p.source_product_id = i.product_id
+                WHERE p.source_type = 'shop' AND p.is_active = 1 AND p.category = ?
                 ORDER BY p.name
                 '''
                 query_params = [selected_category]
@@ -93,9 +93,9 @@ def browse_products():
 
                 query = '''
                 SELECT p.*, i.quantity
-                FROM shop_products p
-                JOIN shop_inventory i ON p.product_id = i.product_id
-                WHERE p.is_active = 1 AND p.price BETWEEN ? AND ?
+                FROM products p
+                JOIN shop_inventory i ON p.source_product_id = i.product_id
+                WHERE p.source_type = 'shop' AND p.is_active = 1 AND p.price BETWEEN ? AND ?
                 ORDER BY p.price
                 '''
                 query_params = [min_price, max_price]
@@ -114,9 +114,9 @@ def browse_products():
 
             query = '''
             SELECT p.*, i.quantity
-            FROM shop_products p
-            JOIN shop_inventory i ON p.product_id = i.product_id
-            WHERE p.is_active = 1 AND p.name LIKE ?
+            FROM products p
+            JOIN shop_inventory i ON p.source_product_id = i.product_id
+            WHERE p.source_type = 'shop' AND p.is_active = 1 AND p.name LIKE ?
             ORDER BY p.name
             '''
             query_params = [f'%{search_term}%']
@@ -125,9 +125,9 @@ def browse_products():
             print("Invalid choice. Showing all products.")
             query = '''
             SELECT p.*, i.quantity
-            FROM shop_products p
-            JOIN shop_inventory i ON p.product_id = i.product_id
-            WHERE p.is_active = 1
+            FROM products p
+            JOIN shop_inventory i ON p.source_product_id = i.product_id
+            WHERE p.source_type = 'shop' AND p.is_active = 1
             ORDER BY p.category, p.name
             '''
 
@@ -160,9 +160,9 @@ def browse_products():
                     cursor.execute(
                         '''
                         SELECT p.*, i.quantity
-                        FROM shop_products p
-                        JOIN shop_inventory i ON p.product_id = i.product_id
-                        WHERE p.product_id = ? AND p.is_active = 1
+                        FROM products p
+                        JOIN shop_inventory i ON p.source_product_id = i.product_id
+                        WHERE p.source_type = 'shop' AND p.source_product_id = ? AND p.is_active = 1
                         ''',
                         [product_id]
                     )
@@ -223,10 +223,10 @@ def add_to_shopping_cart(product_id, quantity):
         # Check if product exists and has sufficient inventory
         cursor.execute(
             '''
-            SELECT p.product_id, i.quantity
-            FROM shop_products p
-            JOIN shop_inventory i ON p.product_id = i.product_id
-            WHERE p.product_id = ? AND p.is_active = 1
+            SELECT p.source_product_id as product_id, i.quantity
+            FROM products p
+            JOIN shop_inventory i ON p.source_product_id = i.product_id
+            WHERE p.source_type = 'shop' AND p.source_product_id = ? AND p.is_active = 1
             ''',
             [product_id]
         )
@@ -245,8 +245,8 @@ def add_to_shopping_cart(product_id, quantity):
         # Check if product already in cart
         cursor.execute(
             '''
-            SELECT quantity FROM shop_cart
-            WHERE user_id = ? AND product_id = ?
+            SELECT quantity FROM cart
+            WHERE source_type = 'shop' AND user_id = ? AND product_id = ?
             ''',
             [config.auth.current_user['id'], product_id]
         )
@@ -259,9 +259,9 @@ def add_to_shopping_cart(product_id, quantity):
             new_quantity = cart_item[0] + quantity
             cursor.execute(
                 '''
-                UPDATE shop_cart
+                UPDATE cart
                 SET quantity = ?, added_at = ?
-                WHERE user_id = ? AND product_id = ?
+                WHERE source_type = 'shop' AND user_id = ? AND product_id = ?
                 ''',
                 [new_quantity, now, config.auth.current_user['id'], product_id]
             )
@@ -270,8 +270,8 @@ def add_to_shopping_cart(product_id, quantity):
             # Add new item to cart
             cursor.execute(
                 '''
-                INSERT INTO shop_cart (user_id, product_id, quantity, added_at)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO cart (source_type, user_id, product_id, quantity, added_at)
+                VALUES ('shop', ?, ?, ?, ?)
                 ''',
                 [config.auth.current_user['id'], product_id, quantity, now]
             )
@@ -314,9 +314,9 @@ def view_shopping_cart():
             '''
             SELECT c.cart_id, c.product_id, p.name, p.price, c.quantity,
                    p.price * c.quantity AS subtotal
-            FROM shop_cart c
-            JOIN shop_products p ON c.product_id = p.product_id
-            WHERE c.user_id = ?
+            FROM cart c
+            JOIN products p ON c.product_id = p.source_product_id AND p.source_type = 'shop'
+            WHERE c.source_type = 'shop' AND c.user_id = ?
             ORDER BY c.added_at DESC
             ''',
             [config.auth.current_user['id']]
@@ -361,7 +361,7 @@ def view_shopping_cart():
 
                 # Check if product in cart
                 cursor.execute(
-                    "SELECT cart_id FROM shop_cart WHERE user_id = ? AND product_id = ?",
+                    "SELECT cart_id FROM cart WHERE source_type = 'shop' AND user_id = ? AND product_id = ?",
                     [config.auth.current_user['id'], product_id]
                 )
 
@@ -389,9 +389,9 @@ def view_shopping_cart():
                     # Update quantity
                     cursor.execute(
                         '''
-                        UPDATE shop_cart
+                        UPDATE cart
                         SET quantity = ?, added_at = ?
-                        WHERE user_id = ? AND product_id = ?
+                        WHERE source_type = 'shop' AND user_id = ? AND product_id = ?
                         ''',
                         [new_quantity, datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                          config.auth.current_user['id'], product_id]
@@ -412,7 +412,7 @@ def view_shopping_cart():
                 product_id = input("Enter product ID to remove: ").strip().upper()
 
                 cursor.execute(
-                    "DELETE FROM shop_cart WHERE user_id = ? AND product_id = ?",
+                    "DELETE FROM cart WHERE source_type = 'shop' AND user_id = ? AND product_id = ?",
                     [config.auth.current_user['id'], product_id]
                 )
 
@@ -431,7 +431,7 @@ def view_shopping_cart():
                 confirm = input("Are you sure you want to empty your cart? (y/n): ").strip().lower()
                 if confirm == 'y':
                     cursor.execute(
-                        "DELETE FROM shop_cart WHERE user_id = ?",
+                        "DELETE FROM cart WHERE source_type = 'shop' AND user_id = ?",
                         [config.auth.current_user['id']]
                     )
                     conn.commit()
@@ -485,10 +485,11 @@ def checkout_process():
             SELECT c.cart_id, c.product_id, p.name, p.price, c.quantity,
                    p.price * c.quantity AS subtotal,
                    i.quantity AS available_stock
-            FROM shop_cart c
-            JOIN shop_products p ON c.product_id = p.product_id
-            JOIN shop_inventory i ON p.product_id = i.product_id
-            WHERE c.user_id = ?
+            FROM cart c
+            JOIN products p ON c.product_id = p.source_product_id AND p.source_type = 'shop'
+            JOIN shop_inventory i ON p.source_product_id = i.product_id
+            WHERE c.source_type = 'shop'
+            AND c.user_id = ?
             ''',
             [config.auth.current_user['id']]
         )
@@ -595,9 +596,9 @@ def checkout_process():
         # Create transaction record
         cursor.execute(
             '''
-            INSERT INTO shop_transactions
-            (transaction_id, user_id, student_id, total_amount, transaction_date, payment_method, status, notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO transactions
+            (source_transaction_id, customer_id, student_id, total_amount, created_at, payment_method, status, notes, source_type)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'shop')
             ''',
             [transaction_id, config.auth.current_user['id'], student_id, total,
              transaction_date, payment_method, "Completed", None]
@@ -634,7 +635,7 @@ def checkout_process():
 
         # Clear shopping cart
         cursor.execute(
-            "DELETE FROM shop_cart WHERE user_id = ?",
+            "DELETE FROM cart WHERE source_type = 'shop' AND user_id = ?",
             [config.auth.current_user['id']]
         )
 
@@ -695,9 +696,9 @@ def view_purchase_history():
         # Get transactions for the current user
         cursor.execute(
             '''
-            SELECT * FROM shop_transactions
-            WHERE user_id = ?
-            ORDER BY transaction_date DESC
+            SELECT * FROM transactions
+            WHERE source_type = 'shop' AND customer_id = ?
+            ORDER BY created_at DESC
             ''',
             [config.auth.current_user['id']]
         )
@@ -716,8 +717,8 @@ def view_purchase_history():
 
         for transaction in transactions:
             total_formatted = f"£{transaction['total_amount']:.2f}"
-            date_formatted = transaction['transaction_date']
-            print(f"{transaction['transaction_id']:<20} {date_formatted:<20} {total_formatted:<12} {transaction['payment_method']:<20} {transaction['status']}")
+            date_formatted = transaction['created_at']
+            print(f"{transaction['source_transaction_id']:<20} {date_formatted:<20} {total_formatted:<12} {transaction['payment_method']:<20} {transaction['status']}")
 
         # Option to view transaction details
         while True:
@@ -729,8 +730,8 @@ def view_purchase_history():
             # Check if transaction belongs to user
             cursor.execute(
                 '''
-                SELECT * FROM shop_transactions
-                WHERE transaction_id = ? AND user_id = ?
+                SELECT * FROM transactions
+                WHERE source_type = 'shop' AND source_transaction_id = ? AND customer_id = ?
                 ''',
                 [transaction_id, config.auth.current_user['id']]
             )
@@ -746,7 +747,7 @@ def view_purchase_history():
                 '''
                 SELECT i.*, p.name
                 FROM shop_transaction_items i
-                JOIN shop_products p ON i.product_id = p.product_id
+                JOIN products p ON i.product_id = p.source_product_id AND p.source_type = 'shop'
                 WHERE i.transaction_id = ?
                 ''',
                 [transaction_id]
@@ -756,7 +757,7 @@ def view_purchase_history():
 
             # Display transaction details
             print(f"\nTransaction Details - {transaction_id}")
-            print(f"Date: {transaction['transaction_date']}")
+            print(f"Date: {transaction['created_at']}")
             print(f"Status: {transaction['status']}")
             print(f"Payment Method: {transaction['payment_method']}")
 
@@ -813,13 +814,14 @@ def view_all_transactions():
         query_params = []
         base_query = '''
         SELECT t.*, u.username
-        FROM shop_transactions t
-        LEFT JOIN users u ON t.user_id = u.id
+        FROM transactions t
+        LEFT JOIN users u ON t.customer_id = u.id
+        WHERE t.source_type = 'shop'
         '''
 
         if filter_choice == '1':
             # All transactions
-            query = base_query + ' ORDER BY t.transaction_date DESC'
+            query = base_query + ' ORDER BY t.created_at DESC'
         elif filter_choice == '2':
             # By date range
             start_date = input("Enter start date (YYYY-MM-DD): ").strip()
@@ -834,11 +836,11 @@ def view_all_transactions():
                 start_date = start.strftime('%Y-%m-%d 00:00:00')
                 end_date = end.strftime('%Y-%m-%d 23:59:59')
 
-                query = base_query + ' WHERE t.transaction_date BETWEEN ? AND ? ORDER BY t.transaction_date DESC'
+                query = base_query + ' AND t.created_at BETWEEN ? AND ? ORDER BY t.created_at DESC'
                 query_params = [start_date, end_date]
             except ValueError:
                 print("Invalid date format. Using all transactions.")
-                query = base_query + ' ORDER BY t.transaction_date DESC'
+                query = base_query + ' ORDER BY t.created_at DESC'
 
         elif filter_choice == '3':
             # By payment method
@@ -857,11 +859,11 @@ def view_all_transactions():
                 payment_method = "PayPal"
             else:
                 print("Invalid choice. Using all transactions.")
-                query = base_query + ' ORDER BY t.transaction_date DESC'
+                query = base_query + ' ORDER BY t.created_at DESC'
                 payment_method = None
 
             if payment_method:
-                query = base_query + ' WHERE t.payment_method = ? ORDER BY t.transaction_date DESC'
+                query = base_query + ' AND t.payment_method = ? ORDER BY t.created_at DESC'
                 query_params = [payment_method]
 
         elif filter_choice == '4':
@@ -869,26 +871,26 @@ def view_all_transactions():
             student_id = input("Enter student ID: ").strip()
 
             if student_id:
-                query = base_query + ' WHERE t.student_id = ? ORDER BY t.transaction_date DESC'
+                query = base_query + ' AND t.student_id = ? ORDER BY t.created_at DESC'
                 query_params = [student_id]
             else:
                 print("Invalid student ID. Using all transactions.")
-                query = base_query + ' ORDER BY t.transaction_date DESC'
+                query = base_query + ' ORDER BY t.created_at DESC'
 
         elif filter_choice == '5':
             # By minimum amount
             try:
                 min_amount = float(input("Enter minimum amount: ").strip())
 
-                query = base_query + ' WHERE t.total_amount >= ? ORDER BY t.total_amount DESC'
+                query = base_query + ' AND t.total_amount >= ? ORDER BY t.total_amount DESC'
                 query_params = [min_amount]
             except ValueError:
                 print("Invalid amount. Using all transactions.")
-                query = base_query + ' ORDER BY t.transaction_date DESC'
+                query = base_query + ' ORDER BY t.created_at DESC'
 
         else:
             print("Invalid choice. Using all transactions.")
-            query = base_query + ' ORDER BY t.transaction_date DESC'
+            query = base_query + ' ORDER BY t.created_at DESC'
 
         # Execute the query
         cursor.execute(query, query_params)
@@ -906,11 +908,11 @@ def view_all_transactions():
 
         for transaction in transactions:
             amount_formatted = f"£{transaction['total_amount']:.2f}"
-            date_formatted = transaction['transaction_date']
+            date_formatted = transaction['created_at']
             username = transaction['username'] or 'Unknown'
             student_id = transaction['student_id'] or 'N/A'
 
-            print(f"{transaction['transaction_id']:<12} {username[:13]:<15} {student_id:<12} {date_formatted:<20} {amount_formatted:<10} {transaction['payment_method']:<20} {transaction['status']}")
+            print(f"{transaction['source_transaction_id']:<12} {username[:13]:<15} {student_id:<12} {date_formatted:<20} {amount_formatted:<10} {transaction['payment_method']:<20} {transaction['status']}")
 
         print(f"\nTotal Transactions: {len(transactions)}")
 
@@ -929,9 +931,9 @@ def view_all_transactions():
             cursor.execute(
                 '''
                 SELECT t.*, u.username, u.email
-                FROM shop_transactions t
-                LEFT JOIN users u ON t.user_id = u.id
-                WHERE t.transaction_id = ?
+                FROM transactions t
+                LEFT JOIN users u ON t.customer_id = u.id
+                WHERE t.source_type = 'shop' AND t.source_transaction_id = ?
                 ''',
                 [transaction_id]
             )
@@ -947,7 +949,7 @@ def view_all_transactions():
                 '''
                 SELECT i.*, p.name
                 FROM shop_transaction_items i
-                JOIN shop_products p ON i.product_id = p.product_id
+                JOIN products p ON i.product_id = p.source_product_id AND p.source_type = 'shop'
                 WHERE i.transaction_id = ?
                 ''',
                 [transaction_id]
@@ -957,11 +959,11 @@ def view_all_transactions():
 
             # Display transaction details
             print(f"\nTransaction Details - {transaction_id}")
-            print(f"User: {transaction['username']} (ID: {transaction['user_id']})")
+            print(f"User: {transaction['username']} (ID: {transaction['customer_id']})")
             print(f"Email: {transaction['email']}")
             if transaction['student_id']:
                 print(f"Student ID: {transaction['student_id']}")
-            print(f"Date: {transaction['transaction_date']}")
+            print(f"Date: {transaction['created_at']}")
             print(f"Status: {transaction['status']}")
             print(f"Payment Method: {transaction['payment_method']}")
 
@@ -1006,8 +1008,8 @@ def validate_inventory_before_checkout(cart_items):
                 '''
                 SELECT i.quantity, p.name, p.is_active
                 FROM shop_inventory i
-                JOIN shop_products p ON i.product_id = p.product_id
-                WHERE p.product_id = ?
+                JOIN products p ON i.product_id = p.source_product_id AND p.source_type = 'shop'
+                WHERE p.source_product_id = ?
                 ''',
                 [item['product_id']]
             )

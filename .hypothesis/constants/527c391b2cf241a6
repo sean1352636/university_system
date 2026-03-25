@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/main/admin/system_admin_gui.py
+# hypothesis_version: 6.151.9
+
+[-100, 150, 700, 1200, '#000000', '#FFFFFF', '%Y-%m-%d %H:%M:%S', '-', '/', '1.0', '10', '1400x900', '15', '20', '700x400', '900x600', '=', 'Arial', 'Login Time', 'Role', 'Status', 'Username', 'Wipe Database', 'admin', 'bold', 'error.log', 'headings', 'r', 'role', 'username']

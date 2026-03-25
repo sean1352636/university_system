@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from .config import CONFIG
+from education_system.university_system.modules.shared.services.analytics.student_analytics.config import CONFIG
 
 
 class ModulesMixin:

@@ -1,4 +1,4 @@
-from ._common import (
+from education_system.university_system.modules.shared.utils.document_manager._common import (
     os, shutil, datetime, sqlite3,
     get_connection, _t,
 )
@@ -52,7 +52,7 @@ class BulkOperationsMixin:
                     return
 
                 cursor.execute('''
-                SELECT COUNT(*) FROM student_documents
+                SELECT COUNT(*) FROM documents
                 WHERE type_id = ? AND is_current_version = 1
                 ''', (type_info[0],))
 
@@ -66,7 +66,7 @@ class BulkOperationsMixin:
 
                 if confirm == 'y':
                     cursor.execute('''
-                    UPDATE student_documents
+                    UPDATE documents
                     SET verification_status = ?,
                         verification_notes = ?,
                         verification_date = ?
@@ -83,7 +83,7 @@ class BulkOperationsMixin:
                 new_status = input("New status to change to: ").strip()
 
                 cursor.execute('''
-                SELECT COUNT(*) FROM student_documents
+                SELECT COUNT(*) FROM documents
                 WHERE verification_status = ? AND is_current_version = 1
                 ''', (current_status,))
 
@@ -94,7 +94,7 @@ class BulkOperationsMixin:
 
                 if confirm == 'y':
                     cursor.execute('''
-                    UPDATE student_documents
+                    UPDATE documents
                     SET verification_status = ?,
                         verification_date = ?
                     WHERE verification_status = ? AND is_current_version = 1
@@ -112,8 +112,8 @@ class BulkOperationsMixin:
                     return
 
                 cursor.execute('''
-                SELECT COUNT(*) FROM student_documents
-                WHERE student_id = ? AND is_current_version = 1
+                SELECT COUNT(*) FROM documents
+                WHERE owner_id = ? AND source_type = 'student' AND is_current_version = 1
                 ''', (student_id,))
 
                 count = cursor.fetchone()[0]
@@ -123,10 +123,10 @@ class BulkOperationsMixin:
 
                 if confirm == 'y':
                     cursor.execute('''
-                    UPDATE student_documents
+                    UPDATE documents
                     SET verification_status = ?,
                         verification_date = ?
-                    WHERE student_id = ? AND is_current_version = 1
+                    WHERE owner_id = ? AND source_type = 'student' AND is_current_version = 1
                     ''', (new_status, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), student_id))
 
                     conn.commit()
@@ -160,8 +160,8 @@ class BulkOperationsMixin:
                 if student_id:
                     cursor.execute('''
                     SELECT document_id, file_path, original_filename
-                    FROM student_documents
-                    WHERE student_id = ? AND is_current_version = 1
+                    FROM documents
+                    WHERE owner_id = ? AND source_type = 'student' AND is_current_version = 1
                     ''', (student_id,))
                     documents = cursor.fetchall()
 
@@ -170,7 +170,7 @@ class BulkOperationsMixin:
                 if type_info:
                     cursor.execute('''
                     SELECT document_id, file_path, original_filename
-                    FROM student_documents
+                    FROM documents
                     WHERE type_id = ? AND is_current_version = 1
                     ''', (type_info[0],))
                     documents = cursor.fetchall()
@@ -179,7 +179,7 @@ class BulkOperationsMixin:
                 status = input("Enter status (Pending/Verified/Rejected): ").strip()
                 cursor.execute('''
                 SELECT document_id, file_path, original_filename
-                FROM student_documents
+                FROM documents
                 WHERE verification_status = ? AND is_current_version = 1
                 ''', (status,))
                 documents = cursor.fetchall()
@@ -235,8 +235,8 @@ class BulkOperationsMixin:
             type_id = type_info[0]
 
             cursor.execute('''
-            SELECT document_id, student_id, original_filename, expiry_date
-            FROM student_documents
+            SELECT document_id, owner_id as student_id, original_filename, expiry_date
+            FROM documents
             WHERE type_id = ? AND is_current_version = 1
             ''', (type_id,))
 
@@ -255,7 +255,7 @@ class BulkOperationsMixin:
 
             if confirm == 'y':
                 cursor.execute('''
-                UPDATE student_documents
+                UPDATE documents
                 SET expiry_date = ?
                 WHERE type_id = ? AND is_current_version = 1
                 ''', (new_expiry, type_id))
@@ -294,8 +294,8 @@ class BulkOperationsMixin:
 
                 cursor.execute('''
                 SELECT document_id, original_filename
-                FROM student_documents
-                WHERE student_id = ? AND is_current_version = 1
+                FROM documents
+                WHERE owner_id = ? AND source_type = 'student' AND is_current_version = 1
                 ''', (student_id,))
 
             elif choice == '2':
@@ -306,7 +306,7 @@ class BulkOperationsMixin:
 
                 cursor.execute('''
                 SELECT document_id, original_filename
-                FROM student_documents
+                FROM documents
                 WHERE type_id = ? AND is_current_version = 1
                 ''', (type_info[0],))
 
@@ -314,7 +314,7 @@ class BulkOperationsMixin:
                 status = input("Enter status: ").strip()
                 cursor.execute('''
                 SELECT document_id, original_filename
-                FROM student_documents
+                FROM documents
                 WHERE verification_status = ? AND is_current_version = 1
                 ''', (status,))
 
@@ -343,7 +343,7 @@ class BulkOperationsMixin:
             if confirm == 'y':
                 for doc_id, _ in documents:
                     cursor.execute('''
-                    UPDATE student_documents
+                    UPDATE documents
                     SET tags = ?
                     WHERE document_id = ?
                     ''', (tags, doc_id))
@@ -388,7 +388,7 @@ class BulkOperationsMixin:
             if choice == '1':
                 new_status = input("New status (Pending/Verified/Rejected): ").strip()
                 cursor.execute(f'''
-                UPDATE student_documents
+                UPDATE documents
                 SET verification_status = ?
                 WHERE document_id IN ({','.join('?' * len(doc_ids))})
                 ''', [new_status] + doc_ids)
@@ -396,7 +396,7 @@ class BulkOperationsMixin:
             elif choice == '2':
                 tags = self.select_tags(cursor)
                 cursor.execute(f'''
-                UPDATE student_documents
+                UPDATE documents
                 SET tags = ?
                 WHERE document_id IN ({','.join('?' * len(doc_ids))})
                 ''', [tags] + doc_ids)
@@ -404,7 +404,7 @@ class BulkOperationsMixin:
             elif choice == '3':
                 new_expiry = self.get_expiry_date()
                 cursor.execute(f'''
-                UPDATE student_documents
+                UPDATE documents
                 SET expiry_date = ?
                 WHERE document_id IN ({','.join('?' * len(doc_ids))})
                 ''', [new_expiry] + doc_ids)
@@ -412,7 +412,7 @@ class BulkOperationsMixin:
             elif choice == '4':
                 priority = input("New priority (0-5): ").strip()
                 cursor.execute(f'''
-                UPDATE student_documents
+                UPDATE documents
                 SET priority = ?
                 WHERE document_id IN ({','.join('?' * len(doc_ids))})
                 ''', [priority] + doc_ids)

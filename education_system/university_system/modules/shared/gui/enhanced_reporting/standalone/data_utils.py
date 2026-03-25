@@ -1,6 +1,6 @@
 """Data utility functions for the enhanced reporting GUI."""
 
-from .constants import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.standalone.constants import (
     logging, os, json, pd, datetime, timedelta,
     paths, get_db_connection,
     ENHANCED_AVAILABLE, load_templates,

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/records/clinical/allergies.py
+# hypothesis_version: 6.151.9
+
+['\nSeverity Levels:', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', 'Allergen name: ', 'Deletion cancelled.', 'Enter student ID: ', 'Life-threatening', 'Mild', 'Moderate', 'Severe', 'add_allergy', 'allergy', 'delete_allergy', 'health_provider', 'id', 'n', 'role', 'update_allergy', 'y', 'yes']

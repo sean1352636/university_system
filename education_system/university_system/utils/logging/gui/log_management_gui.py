@@ -406,7 +406,7 @@ if __name__ == "__main__":
     # Test the GUI
     try:
         # Try to import the original module for full functionality
-        from education_system.university_system.infrastructure.logging.log_management import (
+        from education_system.university_system.utils.logging.log_management import (
             log_manager, LogSecurity, generate_api_key, generate_chart,
             get_alerts, get_log_manager, login, optimize_database, save_search,
             search_logs, show_api_docs, show_system_resources,

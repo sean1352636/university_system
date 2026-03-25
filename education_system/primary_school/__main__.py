@@ -19,7 +19,7 @@ def main():
         from education_system.primary_school.cli.cli_main import main as cli_main
         cli_main()
     elif mode == "--api":
-        from education_system.primary_school.api.api_server import run_server
+        from education_system.shared.api.primary.api_server import run_server
         run_server()
     else:
         print(f"Unknown mode: {mode}")

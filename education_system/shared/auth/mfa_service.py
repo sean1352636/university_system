@@ -4,6 +4,7 @@ import hashlib
 import secrets
 import string
 import logging
+import time
 
 import pyotp
 
@@ -11,6 +12,11 @@ from education_system.shared.auth.exceptions import MFAError
 from education_system.shared.auth.db import connect
 
 logger = logging.getLogger(__name__)
+
+# Rate limiting for recovery code verification
+_recovery_attempts: dict[int, list[float]] = {}
+_RECOVERY_MAX_ATTEMPTS = 5
+_RECOVERY_LOCKOUT_SECONDS = 15 * 60  # 15 minutes
 
 
 class MFAService:
@@ -73,7 +79,8 @@ class MFAService:
             }
         except Exception as e:
             conn.rollback()
-            raise MFAError(f"Failed to setup MFA: {e}") from e
+            logger.error("Failed to setup MFA for user_id=%d: %s", user_id, e)
+            raise MFAError("Failed to set up MFA. Please try again.") from e
         finally:
             conn.close()
 
@@ -130,7 +137,28 @@ class MFAService:
             conn.close()
 
     def verify_recovery_code(self, user_id: int, code: str) -> bool:
-        """Verify and consume a recovery code."""
+        """Verify and consume a recovery code.
+
+        Rate limited: after 5 failed attempts, locks out for 15 minutes.
+        """
+        now = time.time()
+
+        # Check rate limit
+        if user_id in _recovery_attempts:
+            # Prune attempts outside the lockout window
+            _recovery_attempts[user_id] = [
+                t for t in _recovery_attempts[user_id]
+                if now - t < _RECOVERY_LOCKOUT_SECONDS
+            ]
+            if len(_recovery_attempts[user_id]) >= _RECOVERY_MAX_ATTEMPTS:
+                logger.warning(
+                    "Recovery code verification locked out for user_id=%d", user_id
+                )
+                raise MFAError(
+                    "Too many failed recovery code attempts. "
+                    "Please try again in 15 minutes."
+                )
+
         code_hash = self._hash_code(code.strip().upper())
         conn = self._conn()
         try:
@@ -141,6 +169,8 @@ class MFAService:
             ).fetchone()
 
             if not row:
+                # Record failed attempt
+                _recovery_attempts.setdefault(user_id, []).append(now)
                 return False
 
             conn.execute(
@@ -148,6 +178,8 @@ class MFAService:
                 (row["id"],),
             )
             conn.commit()
+            # Clear failed attempts on success
+            _recovery_attempts.pop(user_id, None)
             logger.info("Recovery code used for user_id=%d", user_id)
             return True
         finally:

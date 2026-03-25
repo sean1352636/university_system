@@ -3,6 +3,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
+from education_system.college_system.core.i18n import t
 from education_system.college_system.modules.domain.dbs_checks.services.dbs_checks_service import DBSCheckService
 
 CHECK_TYPES = ["enhanced", "standard", "basic", "enhanced_barred"]
@@ -25,7 +26,7 @@ class DBSCheckFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="DBS Checks",
+        tk.Label(header, text=t("dbs_checks.management"),
                  font=("Helvetica", 15, "bold"), bg="#2c3e50", fg="white"
                  ).pack(side="left", padx=20, pady=10)
 
@@ -33,15 +34,15 @@ class DBSCheckFrame(tk.Frame):
         self._nb.pack(fill="both", expand=True, padx=10, pady=10)
 
         self._checks_tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(self._checks_tab, text="All Checks")
+        self._nb.add(self._checks_tab, text=t("dbs_checks.management"))
         self._build_checks_tab()
 
         self._expiring_tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(self._expiring_tab, text="Expiring Soon")
+        self._nb.add(self._expiring_tab, text=t("dbs_checks.expiry_date"))
         self._build_expiring_tab()
 
         self._stats_tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(self._stats_tab, text="Statistics")
+        self._nb.add(self._stats_tab, text=t("common.summary"))
         self._build_stats_tab()
 
     # ---- Checks Tab ----
@@ -50,42 +51,43 @@ class DBSCheckFrame(tk.Frame):
         toolbar = tk.Frame(self._checks_tab, bg="#ecf0f1")
         toolbar.pack(fill="x", padx=5, pady=5)
 
-        tk.Label(toolbar, text="Search:", bg="#ecf0f1").pack(side="left", padx=(5, 2))
+        tk.Label(toolbar, text=t("common.search_colon"), bg="#ecf0f1").pack(side="left", padx=(5, 2))
         self._search = tk.Entry(toolbar, width=14)
         self._search.pack(side="left", padx=2)
         self._search.bind("<Return>", lambda e: self._load_checks())
 
-        tk.Label(toolbar, text="Status:", bg="#ecf0f1").pack(side="left", padx=(8, 2))
+        tk.Label(toolbar, text=t("common.status") + ":", bg="#ecf0f1").pack(side="left", padx=(8, 2))
         self._filter_status = ttk.Combobox(toolbar, width=10, state="readonly",
                                             values=[""] + STATUSES)
         self._filter_status.set("")
         self._filter_status.pack(side="left", padx=2)
 
-        tk.Label(toolbar, text="Type:", bg="#ecf0f1").pack(side="left", padx=(8, 2))
+        tk.Label(toolbar, text=t("common.type") + ":", bg="#ecf0f1").pack(side="left", padx=(8, 2))
         self._filter_type = ttk.Combobox(toolbar, width=12, state="readonly",
                                           values=[""] + CHECK_TYPES)
         self._filter_type.set("")
         self._filter_type.pack(side="left", padx=2)
 
-        ttk.Button(toolbar, text="Search", command=self._load_checks).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("common.search"), command=self._load_checks).pack(side="left", padx=5)
 
         btn_frame = tk.Frame(self._checks_tab, bg="#ecf0f1")
         btn_frame.pack(fill="x", padx=5, pady=(0, 5))
-        ttk.Button(btn_frame, text="Refresh", command=self._load_checks).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="New Check", command=self._new_check).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="View", command=self._view_check).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="Edit", command=self._edit_check).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="Delete", command=self._delete_check).pack(side="right", padx=2)
+        ttk.Button(btn_frame, text=t("common.refresh"), command=self._load_checks).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text=t("dbs_checks.add_check"), command=self._new_check).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text=t("common.view"), command=self._view_check).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text=t("common.edit"), command=self._edit_check).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text=t("common.delete"), command=self._delete_check).pack(side="right", padx=2)
+        ttk.Button(btn_frame, text="Export CSV", command=self._export_csv).pack(side="left", padx=2)
 
         cols = ("id", "person", "type", "cert_no", "issue", "expiry",
                 "update_svc", "status")
         self._tree = ttk.Treeview(self._checks_tab, columns=cols,
                                    show="headings", height=16)
         for c, w, label in [
-            ("id", 40, "ID"), ("person", 160, "Person"),
-            ("type", 100, "Type"), ("cert_no", 120, "Certificate #"),
-            ("issue", 90, "Issue Date"), ("expiry", 90, "Expiry Date"),
-            ("update_svc", 70, "Update"), ("status", 70, "Status"),
+            ("id", 40, t("common.id")), ("person", 160, t("dbs_checks.staff_member")),
+            ("type", 100, t("dbs_checks.check_type")), ("cert_no", 120, t("dbs_checks.certificate_number")),
+            ("issue", 90, t("common.start_date")), ("expiry", 90, t("dbs_checks.expiry_date")),
+            ("update_svc", 70, t("common.update")), ("status", 70, t("common.status")),
         ]:
             self._tree.heading(c, text=label)
             self._tree.column(c, width=w,
@@ -106,7 +108,7 @@ class DBSCheckFrame(tk.Frame):
             return f"Staff #{r['staff_id']}"
         if r.get("governor_id"):
             return f"Governor #{r['governor_id']}"
-        return "Unknown"
+        return t("common.unknown")
 
     def _load_checks(self):
         for item in self._tree.get_children():
@@ -122,33 +124,33 @@ class DBSCheckFrame(tk.Frame):
                     r["id"], self._person_label(r),
                     r.get("check_type", ""), r.get("certificate_number", ""),
                     r.get("issue_date", ""), r.get("expiry_date", ""),
-                    "Yes" if r.get("update_service") else "No",
+                    t("common.yes") if r.get("update_service") else t("common.no"),
                     r.get("status", "")))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _selected_id(self):
         sel = self._tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select a check first.")
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"))
             return None
         return int(sel[0])
 
     def _new_check(self):
         win = tk.Toplevel(self)
-        win.title("New DBS Check")
+        win.title(t("dbs_checks.add_check"))
         win.geometry("460x500")
         win.resizable(False, False)
 
         fields = {}
         row = 0
         for label, key in [
-            ("Staff ID:", "staff_id"), ("Governor ID:", "governor_id"),
-            ("Volunteer Name:", "volunteer_name"),
-            ("Certificate Number:", "certificate_number"),
-            ("Issue Date (YYYY-MM-DD):", "issue_date"),
-            ("Expiry Date (YYYY-MM-DD):", "expiry_date"),
-            ("Update Service ID:", "update_service_id"),
+            (t("dbs_checks.staff_member") + ":", "staff_id"), (t("common.id") + ":", "governor_id"),
+            (t("common.name") + ":", "volunteer_name"),
+            (t("dbs_checks.certificate_number") + ":", "certificate_number"),
+            (t("common.start_date") + ":", "issue_date"),
+            (t("dbs_checks.expiry_date") + ":", "expiry_date"),
+            (t("common.id") + ":", "update_service_id"),
         ]:
             tk.Label(win, text=label).grid(row=row, column=0, padx=10,
                                             pady=4, sticky="e")
@@ -157,7 +159,7 @@ class DBSCheckFrame(tk.Frame):
             fields[key] = e
             row += 1
 
-        tk.Label(win, text="Check Type:").grid(row=row, column=0, padx=10,
+        tk.Label(win, text=t("dbs_checks.check_type") + ":").grid(row=row, column=0, padx=10,
                                                 pady=4, sticky="e")
         type_cb = ttk.Combobox(win, width=25, state="readonly",
                                 values=CHECK_TYPES)
@@ -166,24 +168,24 @@ class DBSCheckFrame(tk.Frame):
         row += 1
 
         update_var = tk.BooleanVar()
-        ttk.Checkbutton(win, text="On DBS Update Service",
+        ttk.Checkbutton(win, text=t("common.enabled"),
                          variable=update_var).grid(
             row=row, column=1, sticky="w", padx=10, pady=2)
         row += 1
 
         barred_var = tk.BooleanVar()
-        ttk.Checkbutton(win, text="Barred List Checked",
+        ttk.Checkbutton(win, text=t("common.yes"),
                          variable=barred_var).grid(
             row=row, column=1, sticky="w", padx=10, pady=2)
         row += 1
 
         children_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(win, text="Children's Workforce",
+        ttk.Checkbutton(win, text=t("common.yes"),
                          variable=children_var).grid(
             row=row, column=1, sticky="w", padx=10, pady=2)
         row += 1
 
-        tk.Label(win, text="Notes:").grid(row=row, column=0, padx=10,
+        tk.Label(win, text=t("common.notes") + ":").grid(row=row, column=0, padx=10,
                                            pady=4, sticky="ne")
         notes_txt = tk.Text(win, width=28, height=3)
         notes_txt.grid(row=row, column=1, padx=10, pady=4)
@@ -194,8 +196,8 @@ class DBSCheckFrame(tk.Frame):
             gid = fields["governor_id"].get().strip()
             vname = fields["volunteer_name"].get().strip()
             if not sid and not gid and not vname:
-                messagebox.showwarning("Validation",
-                                        "Specify staff ID, governor ID, or volunteer name.")
+                messagebox.showwarning(t("common.validation"),
+                                        t("common.field_required"))
                 return
             try:
                 self._svc.create_check(
@@ -211,13 +213,13 @@ class DBSCheckFrame(tk.Frame):
                     barred_list_checked=1 if barred_var.get() else 0,
                     children_workforce=1 if children_var.get() else 0,
                     notes=notes_txt.get("1.0", "end-1c").strip() or None)
-                messagebox.showinfo("Success", "DBS check recorded.")
+                messagebox.showinfo(t("common.success"), t("common.created_success"))
                 win.destroy()
                 self._load_checks()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(win, text="Save", command=save).grid(
+        ttk.Button(win, text=t("common.save"), command=save).grid(
             row=row, column=0, columnspan=2, pady=12)
 
     def _view_check(self):
@@ -226,29 +228,29 @@ class DBSCheckFrame(tk.Frame):
             return
         rec = self._svc.get_check(cid)
         if not rec:
-            messagebox.showwarning("Not Found", "Check not found.")
+            messagebox.showwarning(t("common.warning"), t("common.no_data"))
             return
 
         win = tk.Toplevel(self)
-        win.title(f"DBS Check #{cid}")
+        win.title(f"{t('dbs_checks.management')} #{cid}")
         win.geometry("420x420")
         win.resizable(False, False)
 
         display = [
-            ("ID", rec.get("id")),
-            ("Person", self._person_label(rec)),
-            ("Check Type", rec.get("check_type")),
-            ("Certificate #", rec.get("certificate_number")),
-            ("Issue Date", rec.get("issue_date")),
-            ("Expiry Date", rec.get("expiry_date")),
-            ("Update Service", "Yes" if rec.get("update_service") else "No"),
-            ("Update Service ID", rec.get("update_service_id")),
-            ("Barred List Checked", "Yes" if rec.get("barred_list_checked") else "No"),
-            ("Children's Workforce", "Yes" if rec.get("children_workforce") else "No"),
-            ("Status", rec.get("status")),
-            ("Notes", rec.get("notes")),
-            ("Created", rec.get("created_at")),
-            ("Updated", rec.get("updated_at")),
+            (t("common.id"), rec.get("id")),
+            (t("dbs_checks.staff_member"), self._person_label(rec)),
+            (t("dbs_checks.check_type"), rec.get("check_type")),
+            (t("dbs_checks.certificate_number"), rec.get("certificate_number")),
+            (t("common.start_date"), rec.get("issue_date")),
+            (t("dbs_checks.expiry_date"), rec.get("expiry_date")),
+            (t("common.enabled"), t("common.yes") if rec.get("update_service") else t("common.no")),
+            (t("common.id"), rec.get("update_service_id")),
+            (t("common.yes"), t("common.yes") if rec.get("barred_list_checked") else t("common.no")),
+            (t("common.yes"), t("common.yes") if rec.get("children_workforce") else t("common.no")),
+            (t("common.status"), rec.get("status")),
+            (t("common.notes"), rec.get("notes")),
+            (t("common.created_at"), rec.get("created_at")),
+            (t("common.updated_at"), rec.get("updated_at")),
         ]
 
         frame = tk.Frame(win, padx=15, pady=10)
@@ -266,22 +268,22 @@ class DBSCheckFrame(tk.Frame):
             return
         rec = self._svc.get_check(cid)
         if not rec:
-            messagebox.showwarning("Not Found", "Check not found.")
+            messagebox.showwarning(t("common.warning"), t("common.no_data"))
             return
 
         win = tk.Toplevel(self)
-        win.title(f"Edit DBS Check #{cid}")
+        win.title(f"{t('common.edit')} #{cid}")
         win.geometry("460x520")
         win.resizable(False, False)
 
         fields = {}
         row = 0
         for label, key in [
-            ("Staff ID:", "staff_id"), ("Governor ID:", "governor_id"),
-            ("Volunteer Name:", "volunteer_name"),
-            ("Certificate Number:", "certificate_number"),
-            ("Issue Date:", "issue_date"), ("Expiry Date:", "expiry_date"),
-            ("Update Service ID:", "update_service_id"),
+            (t("dbs_checks.staff_member") + ":", "staff_id"), (t("common.id") + ":", "governor_id"),
+            (t("common.name") + ":", "volunteer_name"),
+            (t("dbs_checks.certificate_number") + ":", "certificate_number"),
+            (t("common.start_date") + ":", "issue_date"), (t("dbs_checks.expiry_date") + ":", "expiry_date"),
+            (t("common.id") + ":", "update_service_id"),
         ]:
             tk.Label(win, text=label).grid(row=row, column=0, padx=10,
                                             pady=4, sticky="e")
@@ -291,7 +293,7 @@ class DBSCheckFrame(tk.Frame):
             fields[key] = e
             row += 1
 
-        tk.Label(win, text="Check Type:").grid(row=row, column=0, padx=10,
+        tk.Label(win, text=t("dbs_checks.check_type") + ":").grid(row=row, column=0, padx=10,
                                                 pady=4, sticky="e")
         type_cb = ttk.Combobox(win, width=25, state="readonly",
                                 values=CHECK_TYPES)
@@ -299,7 +301,7 @@ class DBSCheckFrame(tk.Frame):
         type_cb.grid(row=row, column=1, padx=10, pady=4)
         row += 1
 
-        tk.Label(win, text="Status:").grid(row=row, column=0, padx=10,
+        tk.Label(win, text=t("common.status") + ":").grid(row=row, column=0, padx=10,
                                             pady=4, sticky="e")
         status_cb = ttk.Combobox(win, width=25, state="readonly",
                                   values=STATUSES)
@@ -308,24 +310,24 @@ class DBSCheckFrame(tk.Frame):
         row += 1
 
         update_var = tk.BooleanVar(value=bool(rec.get("update_service")))
-        ttk.Checkbutton(win, text="On DBS Update Service",
+        ttk.Checkbutton(win, text=t("common.enabled"),
                          variable=update_var).grid(
             row=row, column=1, sticky="w", padx=10, pady=2)
         row += 1
 
         barred_var = tk.BooleanVar(value=bool(rec.get("barred_list_checked")))
-        ttk.Checkbutton(win, text="Barred List Checked",
+        ttk.Checkbutton(win, text=t("common.yes"),
                          variable=barred_var).grid(
             row=row, column=1, sticky="w", padx=10, pady=2)
         row += 1
 
         children_var = tk.BooleanVar(value=bool(rec.get("children_workforce")))
-        ttk.Checkbutton(win, text="Children's Workforce",
+        ttk.Checkbutton(win, text=t("common.yes"),
                          variable=children_var).grid(
             row=row, column=1, sticky="w", padx=10, pady=2)
         row += 1
 
-        tk.Label(win, text="Notes:").grid(row=row, column=0, padx=10,
+        tk.Label(win, text=t("common.notes") + ":").grid(row=row, column=0, padx=10,
                                            pady=4, sticky="ne")
         notes_txt = tk.Text(win, width=28, height=3)
         notes_txt.insert("1.0", rec.get("notes", "") or "")
@@ -351,27 +353,27 @@ class DBSCheckFrame(tk.Frame):
                     barred_list_checked=1 if barred_var.get() else 0,
                     children_workforce=1 if children_var.get() else 0,
                     notes=notes_txt.get("1.0", "end-1c").strip() or None)
-                messagebox.showinfo("Success", "DBS check updated.")
+                messagebox.showinfo(t("common.success"), t("common.updated_success"))
                 win.destroy()
                 self._load_checks()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(win, text="Save", command=save).grid(
+        ttk.Button(win, text=t("common.save"), command=save).grid(
             row=row, column=0, columnspan=2, pady=12)
 
     def _delete_check(self):
         cid = self._selected_id()
         if not cid:
             return
-        if not messagebox.askyesno("Confirm", f"Delete DBS check #{cid}?"):
+        if not messagebox.askyesno(t("common.confirm_delete"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_check(cid)
-            messagebox.showinfo("Deleted", "DBS check deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_checks()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ---- Expiring Tab ----
 
@@ -379,21 +381,21 @@ class DBSCheckFrame(tk.Frame):
         toolbar = tk.Frame(self._expiring_tab, bg="#ecf0f1")
         toolbar.pack(fill="x", padx=5, pady=5)
 
-        tk.Label(toolbar, text="Expiring within (days):",
+        tk.Label(toolbar, text=t("dbs_checks.expiry_date") + ":",
                  bg="#ecf0f1").pack(side="left", padx=(5, 2))
         self._exp_days = ttk.Spinbox(toolbar, from_=30, to=365, width=6)
         self._exp_days.set("90")
         self._exp_days.pack(side="left", padx=2)
-        ttk.Button(toolbar, text="Load",
+        ttk.Button(toolbar, text=t("common.refresh"),
                    command=self._load_expiring).pack(side="left", padx=5)
 
         cols = ("id", "person", "type", "cert_no", "expiry", "status")
         self._exp_tree = ttk.Treeview(self._expiring_tab, columns=cols,
                                        show="headings", height=18)
         for c, w, label in [
-            ("id", 40, "ID"), ("person", 180, "Person"),
-            ("type", 100, "Type"), ("cert_no", 130, "Certificate #"),
-            ("expiry", 100, "Expiry Date"), ("status", 80, "Status"),
+            ("id", 40, t("common.id")), ("person", 180, t("dbs_checks.staff_member")),
+            ("type", 100, t("dbs_checks.check_type")), ("cert_no", 130, t("dbs_checks.certificate_number")),
+            ("expiry", 100, t("dbs_checks.expiry_date")), ("status", 80, t("common.status")),
         ]:
             self._exp_tree.heading(c, text=label)
             self._exp_tree.column(c, width=w,
@@ -418,9 +420,9 @@ class DBSCheckFrame(tk.Frame):
                     r.get("check_type", ""), r.get("certificate_number", ""),
                     r.get("expiry_date", ""), r.get("status", "")))
             if not records:
-                messagebox.showinfo("Info", "No checks expiring in that period.")
+                messagebox.showinfo(t("common.info"), t("common.no_data"))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ---- Statistics Tab ----
 
@@ -429,17 +431,17 @@ class DBSCheckFrame(tk.Frame):
                                       padx=20, pady=20)
         self._stats_frame.pack(fill="both", expand=True)
 
-        ttk.Button(self._stats_frame, text="Refresh Statistics",
+        ttk.Button(self._stats_frame, text=t("common.refresh"),
                    command=self._load_stats).pack(anchor="w", pady=(0, 15))
 
         self._stats_labels = {}
         for key, label in [
-            ("total", "Total Checks"),
-            ("valid", "Valid"),
-            ("expired", "Expired"),
-            ("pending", "Pending"),
-            ("on_update_service", "On Update Service"),
-            ("expiring_90_days", "Expiring within 90 days"),
+            ("total", t("common.total")),
+            ("valid", t("common.active")),
+            ("expired", t("common.inactive")),
+            ("pending", t("common.pending")),
+            ("on_update_service", t("common.enabled")),
+            ("expiring_90_days", t("dbs_checks.expiry_date")),
         ]:
             row_frame = tk.Frame(self._stats_frame, bg="#ecf0f1")
             row_frame.pack(fill="x", pady=3)
@@ -451,7 +453,7 @@ class DBSCheckFrame(tk.Frame):
             lbl.pack(side="left", padx=(10, 0))
             self._stats_labels[key] = lbl
 
-        tk.Label(self._stats_frame, text="By Type:",
+        tk.Label(self._stats_frame, text=t("common.type") + ":",
                  font=("Helvetica", 11, "bold"), bg="#ecf0f1"
                  ).pack(anchor="w", pady=(15, 5))
         self._type_lbl = tk.Label(self._stats_frame, text="—",
@@ -469,9 +471,13 @@ class DBSCheckFrame(tk.Frame):
                 self._type_lbl.config(
                     text="\n".join(f"{k}: {v}" for k, v in by_type.items()))
             else:
-                self._type_lbl.config(text="No data")
+                self._type_lbl.config(text=t("common.no_data"))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._tree, "dbs_checks_export.csv")
 
     def refresh(self):
         self._load_checks()

@@ -17,7 +17,8 @@ class RecurringEventDialog:
         
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(_("academic_calendar.dialogs.recurring_events.title"))
-        self.dialog.geometry("550x600")
+        self.dialog.geometry("550x750")
+        self.dialog.minsize(500, 650)
         self.dialog.transient(parent)
         safe_grab_set(self.dialog, parent)
         

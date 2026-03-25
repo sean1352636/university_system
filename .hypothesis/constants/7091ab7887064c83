@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/email/email_gui/announcements_tab.py
+# hypothesis_version: 6.151.9
+
+[150, 300, '2024-01-01 12:00:00', '<Double-1>', 'Active Announcements', 'Announcements', 'Audience', 'Confirm Delete', 'Create Announcement', 'Creator', 'Date', 'Delete Announcement', 'Edit Announcement', 'Error', 'NO', 'Refresh', 'Sample Announcement', 'Success', 'System Admin', 'Title', 'Urgent', 'Warning', 'YES', 'admin', 'all', 'announcements', 'common.date', 'common.error', 'common.refresh', 'common.success', 'common.warning', 'content', 'created_at', 'creator', 'default', 'en', 'get_announcement', 'headings', 'id', 'instructor', 'is_active', 'is_urgent', 'role', 'staff', 'table_headers.title', 'tags', 'target_audience', 'this announcement', 'title', 'values']

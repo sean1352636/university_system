@@ -25,7 +25,7 @@ Usage:
     python run.py --gui
 
     # API Server
-    uvicorn university_system.api.app:app --reload
+    uvicorn shared.api.university.app:app --reload
 
     # Tests
     python -m pytest university_system/tests/

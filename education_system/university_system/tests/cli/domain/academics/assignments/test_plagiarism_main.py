@@ -129,7 +129,7 @@ class TestPlagiarismCheckerClass:
             assert 'checks_by_date' in stats
             assert 'checks_by_course' in stats
 
-    @patch('university_system.modules.domain.academics.services.assignments.plagiarism_main.logger')
+    @patch('education_system.university_system.modules.domain.academics.services.assignments.plagiarism_main.logger')
     def test_stub_implementation_logs_warning(self, mock_logger):
         """Test that stub implementation logs appropriate warnings"""
         # This test is relevant when real implementation is not available

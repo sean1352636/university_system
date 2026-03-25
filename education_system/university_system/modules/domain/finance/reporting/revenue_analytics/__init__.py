@@ -6,12 +6,12 @@ Existing imports like:
 continue to work unchanged.
 """
 
-from .app import (
+from education_system.university_system.modules.domain.finance.reporting.revenue_analytics.app import (
     auth, app, cipher_suite, logger,
     ENCRYPTION_KEY, SUPPORTED_CURRENCIES, PAYMENT_GATEWAYS, EXCHANGE_API_KEY,
 )
 
-from .reports import (
+from education_system.university_system.modules.domain.finance.reporting.revenue_analytics.reports import (
     generate_financial_reports,
     revenue_summary_report,
     generate_budget_variance_report,
@@ -20,7 +20,7 @@ from .reports import (
     generate_audit_report,
 )
 
-from .dashboard import (
+from education_system.university_system.modules.domain.finance.reporting.revenue_analytics.dashboard import (
     generate_financial_dashboard,
     student_account_summary_report,
     fee_type_analysis_report,
@@ -28,7 +28,7 @@ from .dashboard import (
     monthly_revenue_trend_report,
 )
 
-from .forecasting import (
+from education_system.university_system.modules.domain.finance.reporting.revenue_analytics.forecasting import (
     generate_predictive_analytics,
     generate_revenue_forecast,
     generate_forecast_values,
@@ -40,14 +40,14 @@ from .forecasting import (
     generate_comprehensive_forecast_report,
 )
 
-from .budget import (
+from education_system.university_system.modules.domain.finance.reporting.revenue_analytics.budget import (
     generate_budget_reports,
     budget_summary_report,
     variance_analysis_report,
     category_performance_report,
 )
 
-from .collections import (
+from education_system.university_system.modules.domain.finance.reporting.revenue_analytics.collections import (
     manage_collections,
     create_collection_case,
     send_collection_notice,
@@ -57,7 +57,7 @@ from .collections import (
     view_student_collection_detail,
 )
 
-from .agencies import (
+from education_system.university_system.modules.domain.finance.reporting.revenue_analytics.agencies import (
     manage_collection_agencies,
     view_collection_agencies,
     add_collection_agency,
@@ -66,7 +66,7 @@ from .agencies import (
     setup_collection_workflows,
 )
 
-from .collection_reports import (
+from education_system.university_system.modules.domain.finance.reporting.revenue_analytics.collection_reports import (
     generate_collection_reports,
     collection_performance_summary,
     agency_performance_report,
@@ -74,7 +74,7 @@ from .collection_reports import (
     collection_case_status_report,
 )
 
-from .scholarships import (
+from education_system.university_system.modules.domain.finance.reporting.revenue_analytics.scholarships import (
     scholarship_reports,
     student_scholarship_report,
     generate_aid_reports,

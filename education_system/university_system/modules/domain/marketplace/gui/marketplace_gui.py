@@ -27,17 +27,24 @@ from education_system.university_system.modules.shared.constants import paths
 class MarketplaceGUI:
     """Main GUI for Student Marketplace System"""
 
-    def __init__(self, parent):
+    def __init__(self, parent, auth=None):
         self.root = tk.Toplevel(parent)
         self.root.title("Student Marketplace")
         self.root.geometry("1400x900")
 
-        self.auth = get_auth()
+        self.auth = auth or get_auth()
         self.service = MarketplaceService()
 
         # Get current user
-        current_user = self.auth.get_current_user() if hasattr(self.auth, 'get_current_user') else None
-        self.user_id = str(current_user.get('id')) if current_user else None
+        current_user = None
+        if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
+            current_user = self.auth.current_user
+        elif self.auth and hasattr(self.auth, 'get_current_user'):
+            current_user = self.auth.get_current_user()
+        if isinstance(current_user, dict):
+            self.user_id = str(current_user.get('student_id') or current_user.get('id') or current_user.get('username', ''))
+        else:
+            self.user_id = None
 
         # Storage for current data
         self.current_listings = []

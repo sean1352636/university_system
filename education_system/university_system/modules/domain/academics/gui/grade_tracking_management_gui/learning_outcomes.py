@@ -4,7 +4,7 @@ import threading
 
 from education_system.university_system.modules.shared.utils.i18n import get_text as _
 
-from ._imports import (
+from education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui._imports import (
     LEARNING_OUTCOMES_AVAILABLE,
     manage_learning_outcomes,
     record_outcome_achievement,

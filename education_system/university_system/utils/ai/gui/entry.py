@@ -3,8 +3,8 @@ import logging
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH
 from education_system.university_system.utils.ai.university_chatbot import LIBRARIES_AVAILABLE
 
-from .manager import ChatbotManager
-from .compat import BackwardCompatibilityWrapper
+from education_system.university_system.utils.ai.gui.manager import ChatbotManager
+from education_system.university_system.utils.ai.gui.compat import BackwardCompatibilityWrapper
 
 logger = logging.getLogger(__name__)
 
@@ -142,7 +142,7 @@ def create_chatbot_with_gui(auth_system=None, db_path=str(DEFAULT_DB_PATH)):
 def test_gui_integration():
     """Test GUI integration with existing chatbot"""
     from education_system.university_system.utils.ai.university_chatbot import UniversityChatbot
-    from .chatbot_gui import ChatbotGUI
+    from education_system.university_system.utils.ai.gui.chatbot_gui import ChatbotGUI
 
     print("Testing GUI integration...")
 

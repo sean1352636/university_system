@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/gui/student_union_gui/finance/expenses.py
+# hypothesis_version: 6.151.9
+
+[120, '%Y-%m-%d %H:%M:%S', '1000x650', '600x600', 'Admin', 'Amount', 'Arial', 'Category', 'Date', 'Description', 'ID', 'Status', 'Submitted By', 'bold', 'both', 'end', 'left', 'nw', 'readonly', 'right', 'tree headings', 'username', 'values', 'vertical', 'w', 'x', 'y']

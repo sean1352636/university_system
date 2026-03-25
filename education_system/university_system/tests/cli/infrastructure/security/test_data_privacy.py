@@ -197,7 +197,7 @@ class TestEncryptionManagement:
         with tempfile.TemporaryDirectory() as temp_dir:
             key_file = os.path.join(temp_dir, 'health_encryption.key')
 
-            with patch('university_system.modules.domain.health.portal.data_privacy.os.path.exists', return_value=False):
+            with patch('education_system.university_system.modules.domain.health.portal.data_privacy.os.path.exists', return_value=False):
                 with patch('builtins.open', create=True) as mock_open:
                     get_or_create_encryption_key()
 
@@ -212,7 +212,7 @@ class TestEncryptionManagement:
             key_file = f.name
 
         try:
-            with patch('university_system.modules.domain.health.portal.data_privacy.os.path.exists', return_value=True):
+            with patch('education_system.university_system.modules.domain.health.portal.data_privacy.os.path.exists', return_value=True):
                 with patch('builtins.open', mock_open=Mock(return_value=open(key_file, 'rb'))):
                     key = get_or_create_encryption_key()
 
@@ -223,7 +223,7 @@ class TestEncryptionManagement:
 class TestAuditLogging:
     """Test audit logging functionality"""
 
-    @patch('university_system.modules.domain.health.portal.data_privacy.audit_logger')
+    @patch('education_system.university_system.modules.domain.health.portal.data_privacy.audit_logger')
     def test_log_audit_event(self, mock_logger):
         """Test audit event logging"""
         log_audit_event('user123', 'create', 'health_record', '456', 'Created new record')

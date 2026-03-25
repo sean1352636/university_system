@@ -3,8 +3,8 @@ from education_system.university_system.infrastructure.database.db import sqlite
 from education_system.university_system.infrastructure.email import send_event_invitation
 from education_system.university_system.infrastructure.email.email_service import send_email
 from education_system.university_system.infrastructure.email.template_utils import load_template, render_template
-from .core import get_db_connection, safe_execute, auth
-from .gamification import award_engagement_points
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.core import get_db_connection, safe_execute, auth
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.gamification import award_engagement_points
 
 
 def view_events():
@@ -40,12 +40,12 @@ def view_events():
            # Upcoming events
            try:
                safe_execute(cursor, '''
-                   SELECT event_id, event_name, event_date, event_location, event_description,
-                          registration_required, max_attendees, event_fee, payment_required,
+                   SELECT event_id, title, start_datetime, location, description,
+                          registration_required, max_capacity, event_fee, payment_required,
                           event_type, created_by, registration_deadline
-                   FROM alumni_events
-                   WHERE datetime(event_date) >= datetime('now')
-                   ORDER BY event_date ASC
+                   FROM unified_events
+                   WHERE source_type = 'alumni' AND datetime(start_datetime) >= datetime('now')
+                   ORDER BY start_datetime ASC
                ''')
                events_list = cursor.fetchall()
 
@@ -58,12 +58,12 @@ def view_events():
            # Past events
            try:
                safe_execute(cursor, '''
-                   SELECT event_id, event_name, event_date, event_location, event_description,
-                          registration_required, max_attendees, event_fee, payment_required,
+                   SELECT event_id, title, start_datetime, location, description,
+                          registration_required, max_capacity, event_fee, payment_required,
                           event_type, created_by, registration_deadline
-                   FROM alumni_events
-                   WHERE datetime(event_date) < datetime('now')
-                   ORDER BY event_date DESC
+                   FROM unified_events
+                   WHERE source_type = 'alumni' AND datetime(start_datetime) < datetime('now')
+                   ORDER BY start_datetime DESC
                    LIMIT 20
                ''')
                events_list = cursor.fetchall()
@@ -77,11 +77,12 @@ def view_events():
            # All events
            try:
                safe_execute(cursor, '''
-                   SELECT event_id, event_name, event_date, event_location, event_description,
-                          registration_required, max_attendees, event_fee, payment_required,
+                   SELECT event_id, title, start_datetime, location, description,
+                          registration_required, max_capacity, event_fee, payment_required,
                           event_type, created_by, registration_deadline
-                   FROM alumni_events
-                   ORDER BY event_date DESC
+                   FROM unified_events
+                   WHERE source_type = 'alumni'
+                   ORDER BY start_datetime DESC
                ''')
                events_list = cursor.fetchall()
 
@@ -182,10 +183,10 @@ def search_events(cursor):
                return
 
            safe_execute(cursor, '''
-               SELECT event_id, event_name, event_date, event_location, event_fee, event_type
-               FROM alumni_events
-               WHERE event_name LIKE ?
-               ORDER BY event_date DESC
+               SELECT event_id, title, start_datetime, location, event_fee, event_type
+               FROM unified_events
+               WHERE source_type = 'alumni' AND title LIKE ?
+               ORDER BY start_datetime DESC
            ''', (f'%{event_name}%',))
 
        elif choice == '2':
@@ -201,10 +202,10 @@ def search_events(cursor):
                return
 
            safe_execute(cursor, '''
-               SELECT event_id, event_name, event_date, event_location, event_fee, event_type
-               FROM alumni_events
-               WHERE date(event_date) BETWEEN ? AND ?
-               ORDER BY event_date ASC
+               SELECT event_id, title, start_datetime, location, event_fee, event_type
+               FROM unified_events
+               WHERE source_type = 'alumni' AND date(start_datetime) BETWEEN ? AND ?
+               ORDER BY start_datetime ASC
            ''', (start_date, end_date))
 
        elif choice == '3':
@@ -215,10 +216,10 @@ def search_events(cursor):
                return
 
            safe_execute(cursor, '''
-               SELECT event_id, event_name, event_date, event_location, event_fee, event_type
-               FROM alumni_events
-               WHERE event_location LIKE ?
-               ORDER BY event_date DESC
+               SELECT event_id, title, start_datetime, location, event_fee, event_type
+               FROM unified_events
+               WHERE source_type = 'alumni' AND location LIKE ?
+               ORDER BY start_datetime DESC
            ''', (f'%{location}%',))
 
        elif choice == '4':
@@ -233,10 +234,10 @@ def search_events(cursor):
                selected_type = event_types[int(type_choice) - 1]
 
                safe_execute(cursor, '''
-                   SELECT event_id, event_name, event_date, event_location, event_fee, event_type
-                   FROM alumni_events
-                   WHERE event_type = ?
-                   ORDER BY event_date DESC
+                   SELECT event_id, title, start_datetime, location, event_fee, event_type
+                   FROM unified_events
+                   WHERE source_type = 'alumni' AND event_type = ?
+                   ORDER BY start_datetime DESC
                ''', (selected_type,))
            else:
                print("Invalid choice.")
@@ -245,10 +246,10 @@ def search_events(cursor):
        elif choice == '5':
            # Search free events
            safe_execute(cursor, '''
-               SELECT event_id, event_name, event_date, event_location, event_fee, event_type
-               FROM alumni_events
-               WHERE event_fee = 0 OR event_fee IS NULL
-               ORDER BY event_date DESC
+               SELECT event_id, title, start_datetime, location, event_fee, event_type
+               FROM unified_events
+               WHERE source_type = 'alumni' AND (event_fee = 0 OR event_fee IS NULL)
+               ORDER BY start_datetime DESC
            ''')
 
        else:
@@ -284,7 +285,7 @@ def search_events(cursor):
 def view_event_details(event_id, cursor):
    """View detailed information for a specific event"""
    try:
-       safe_execute(cursor, 'SELECT * FROM alumni_events WHERE event_id = ?', (event_id,))
+       safe_execute(cursor, 'SELECT * FROM unified_events WHERE event_id = ? AND source_type = \'alumni\'', (event_id,))
        event_data = cursor.fetchone()
 
        if not event_data:
@@ -317,7 +318,7 @@ def view_event_details(event_id, cursor):
 
                # Get current registration count
                safe_execute(cursor, '''
-                   SELECT COUNT(*) FROM event_registrations
+                   SELECT COUNT(*) FROM unified_event_registrations
                    WHERE event_id = ? AND is_waitlisted = 0
                ''', (event_id,))
                current_registrations = cursor.fetchone()[0]
@@ -356,7 +357,7 @@ def view_event_details(event_id, cursor):
                user_alumni_id = result[0]
 
                safe_execute(cursor, '''
-                   SELECT * FROM event_registrations
+                   SELECT * FROM unified_event_registrations
                    WHERE event_id = ? AND alumni_id = ?
                ''', (event_id, user_alumni_id))
 
@@ -398,11 +399,11 @@ def view_my_event_registrations(cursor):
 
        # Get registrations
        safe_execute(cursor, '''
-           SELECT er.*, ae.event_name, ae.event_date, ae.event_location, ae.event_fee
-           FROM event_registrations er
-           JOIN alumni_events ae ON er.event_id = ae.event_id
-           WHERE er.alumni_id = ?
-           ORDER BY ae.event_date DESC
+           SELECT er.*, ae.title, ae.start_datetime, ae.location, ae.event_fee
+           FROM unified_event_registrations er
+           JOIN unified_events ae ON er.event_id = ae.event_id
+           WHERE er.alumni_id = ? AND ae.source_type = 'alumni'
+           ORDER BY ae.start_datetime DESC
        ''', (user_alumni_id,))
 
        registrations = cursor.fetchall()
@@ -457,7 +458,7 @@ def register_for_event():
         cursor = conn.cursor()
 
         # Check if event exists
-        cursor.execute('SELECT * FROM alumni_events WHERE event_id = ?', (event_id,))
+        cursor.execute('SELECT * FROM unified_events WHERE event_id = ? AND source_type = \'alumni\'', (event_id,))
         if not cursor.fetchone():
             print(f"Event {event_id} not found.")
             conn.close()
@@ -465,7 +466,7 @@ def register_for_event():
 
         # Register for event
         cursor.execute('''
-            INSERT INTO alumni_event_registrations (event_id, user_id, registration_date, status)
+            INSERT INTO unified_event_registrations (event_id, user_id, registration_date, status)
             VALUES (?, ?, ?, 'registered')
         ''', (event_id, auth.current_user['user_id'], datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
@@ -591,22 +592,24 @@ def create_enhanced_event():
 
     # Insert the event
     cursor.execute('''
-        INSERT INTO alumni_events
-        (event_name, event_date, event_location, event_description, registration_required,
-         max_attendees, event_fee, payment_required, event_type, virtual_link,
-         created_by, created_date, registration_deadline, waitlist_enabled)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (event_name, event_date_str, event_location, event_description, registration_required,
-          max_attendees, event_fee, payment_required, event_type, virtual_link,
+        INSERT INTO unified_events
+        (title, start_datetime, location, description, registration_required,
+         max_capacity, event_fee, payment_required, event_type, virtual_link,
+         created_by, created_at, registration_deadline, waitlist_enabled, source_type)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'alumni')
+    ''', (event_name, event_date_str, event_location, event_description,
+          1 if registration_required else 0,
+          max_attendees, event_fee, 1 if payment_required else 0,
+          event_type, virtual_link,
           auth.current_user['username'], datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-          registration_deadline, waitlist_enabled))
+          registration_deadline, 1 if waitlist_enabled else 0))
 
     event_id = cursor.lastrowid
 
     # Generate QR code for event check-in
     qr_code_path = generate_event_qr_code(event_id)
     if qr_code_path:
-        cursor.execute('UPDATE alumni_events SET qr_code_path = ? WHERE event_id = ?', (qr_code_path, event_id))
+        cursor.execute('UPDATE unified_events SET qr_code_path = ? WHERE event_id = ?', (qr_code_path, event_id))
 
     conn.commit()
 
@@ -680,7 +683,7 @@ def generate_event_qr_code(event_id):
 def send_enhanced_event_notifications(event_id, cursor):
     """Send enhanced event notifications"""
     # Get event details
-    cursor.execute('SELECT * FROM alumni_events WHERE event_id = ?', (event_id,))
+    cursor.execute('SELECT * FROM unified_events WHERE event_id = ? AND source_type = \'alumni\'', (event_id,))
     event = cursor.fetchone()
     if not event:
         return
@@ -823,10 +826,10 @@ def event_check_in_system():
     # Get today's events
     today = datetime.now().strftime('%Y-%m-%d')
     cursor.execute('''
-        SELECT event_id, event_name, event_date, event_location
-        FROM alumni_events
-        WHERE date(event_date) = ?
-        ORDER BY event_date
+        SELECT event_id, title, start_datetime, location
+        FROM unified_events
+        WHERE source_type = 'alumni' AND date(start_datetime) = ?
+        ORDER BY start_datetime
     ''', (today,))
 
     today_events = cursor.fetchall()
@@ -885,7 +888,7 @@ def event_check_in_system():
         # View attendance
         cursor.execute('''
             SELECT er.*, a.first_name, a.last_name
-            FROM event_registrations er
+            FROM unified_event_registrations er
             JOIN alumni a ON er.alumni_id = a.alumni_id
             WHERE er.event_id = ? AND er.attendance_confirmed = 1
             ORDER BY er.check_in_time
@@ -910,7 +913,7 @@ def process_event_checkin(event_id, alumni_id, cursor):
     """Process event check-in for an alumni"""
     # Check if alumni is registered
     cursor.execute('''
-        SELECT * FROM event_registrations
+        SELECT * FROM unified_event_registrations
         WHERE event_id = ? AND alumni_id = ?
     ''', (event_id, alumni_id))
 
@@ -932,7 +935,7 @@ def process_event_checkin(event_id, alumni_id, cursor):
     # Update check-in
     check_in_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute('''
-        UPDATE event_registrations
+        UPDATE unified_event_registrations
         SET attendance_confirmed = 1, check_in_time = ?
         WHERE event_id = ? AND alumni_id = ?
     ''', (check_in_time, event_id, alumni_id))

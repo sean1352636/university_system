@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/academic_calendar/calendar_view.py
+# hypothesis_version: 6.151.9
+
+[100, 120, 250, 300, '#0', '<Button-3>', 'Academic', 'Administrative', 'Date', 'Deadline', 'Description', 'End Date', 'Header.TLabel', 'Holiday', 'Social', 'Sports', 'Trip', 'Type', 'Unknown', 'calendar', 'date', 'date_end', 'date_start', 'description', 'end', 'event_name', 'event_type', 'gray', 'hidden', 'semester_name', 'semester_var', 'success', 'text', 'tree headings', 'values', 'warning', 'year_var', '⏰', '⚽', '🎉', '🎊', '🎒', '📅', '📋', '📚']

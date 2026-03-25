@@ -6,7 +6,7 @@ called on a GUI instance and are preserved here with the same
 signature for backward compatibility.
 """
 
-from .constants import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.standalone.constants import (
     tk, ttk, filedialog, messagebox,
     os, logging, paths,
     CONFIG, ENHANCED_AVAILABLE, SystemConfig,

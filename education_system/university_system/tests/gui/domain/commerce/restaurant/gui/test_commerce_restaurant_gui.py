@@ -3,6 +3,7 @@ Tests for the Commerce Restaurant Management GUI module.
 Tests GUI initialization, window creation, and key GUI functionality.
 """
 
+import os
 import pytest
 import tkinter as tk
 from unittest.mock import Mock, patch, MagicMock
@@ -45,7 +46,7 @@ def root_window():
 class TestRestaurantGUIInitialization:
     """Tests for Restaurant GUI initialization."""
 
-    @patch('university_system.modules.domain.commerce.gui.restaurant_management_gui.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.get_db_connection')
     def test_gui_imports_successfully(self, mock_db_conn):
         """Test that the restaurant GUI module can be imported."""
         try:
@@ -54,8 +55,8 @@ class TestRestaurantGUIInitialization:
         except ImportError as e:
             pytest.fail(f"Failed to import restaurant_management_gui: {e}")
 
-    @pytest.mark.skipif(True, reason="GUI tests require display - manual testing only")
-    @patch('university_system.modules.domain.commerce.gui.restaurant_management_gui.get_db_connection')
+    @pytest.mark.skipif(not os.environ.get('DISPLAY'), reason="GUI tests require display")
+    @patch('education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.get_db_connection')
     def test_restaurant_gui_class_exists(self, mock_db_conn, mock_auth):
         """Test that RestaurantManagementGUI class exists."""
         from education_system.university_system.modules.domain.commerce.gui import restaurant_management_gui
@@ -65,8 +66,8 @@ class TestRestaurantGUIInitialization:
                hasattr(restaurant_management_gui, 'RestaurantApp') or \
                hasattr(restaurant_management_gui, 'display_restaurant_management_gui')
 
-    @pytest.mark.skipif(True, reason="GUI tests require display - manual testing only")
-    @patch('university_system.modules.domain.commerce.gui.restaurant_management_gui.get_db_connection')
+    @pytest.mark.skipif(not os.environ.get('DISPLAY'), reason="GUI tests require display")
+    @patch('education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.get_db_connection')
     def test_restaurant_gui_initialization(self, mock_db_conn, mock_auth, root_window):
         """Test basic GUI initialization."""
         from education_system.university_system.modules.domain.commerce.gui import restaurant_management_gui
@@ -106,7 +107,7 @@ class TestGUIModuleFunctions:
         )
         assert has_display_func, "GUI module should have a display/main function"
 
-    @patch('university_system.modules.domain.commerce.gui.restaurant_management_gui.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.get_db_connection')
     def test_gui_module_structure(self, mock_db_conn):
         """Test that the GUI module has expected structure."""
         from education_system.university_system.modules.domain.commerce.gui import restaurant_management_gui
@@ -150,7 +151,7 @@ class TestGUIFunctionalityMocked:
     """Tests for GUI functionality using mocks (no display needed)."""
 
     @patch('tkinter.Tk')
-    @patch('university_system.modules.domain.commerce.gui.restaurant_management_gui.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.get_db_connection')
     def test_restaurant_gui_with_mocked_tk(self, mock_db_conn, mock_tk_root, mock_auth):
         """Test restaurant GUI with mocked Tkinter."""
         from education_system.university_system.modules.domain.commerce.gui import restaurant_management_gui
@@ -173,7 +174,7 @@ class TestGUIFunctionalityMocked:
 
         assert has_gui_elements or len(module_attrs) > 10, "Module should have GUI components"
 
-    @patch('university_system.modules.domain.commerce.gui.shop_management_gui.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.gui.shop_management_gui.get_db_connection')
     def test_shop_gui_has_expected_functions(self, mock_db_conn):
         """Test that shop GUI has expected functions."""
         from education_system.university_system.modules.domain.commerce.gui import shop_management_gui
@@ -214,7 +215,7 @@ class TestGUIIntegration:
 class TestGUIErrorHandling:
     """Tests for GUI error handling."""
 
-    @patch('university_system.modules.domain.commerce.gui.restaurant_management_gui.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.get_db_connection')
     def test_gui_handles_missing_auth_gracefully(self, mock_db_conn):
         """Test that GUI handles missing authentication gracefully."""
         from education_system.university_system.modules.domain.commerce.gui import restaurant_management_gui
@@ -227,7 +228,7 @@ class TestGUIErrorHandling:
         )
         assert has_auth_check, "GUI should have authentication handling"
 
-    @patch('university_system.modules.domain.commerce.gui.restaurant_management_gui.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.get_db_connection')
     def test_gui_has_database_connection_handling(self, mock_db_conn):
         """Test that GUI has database connection handling."""
         from education_system.university_system.modules.domain.commerce.gui import restaurant_management_gui

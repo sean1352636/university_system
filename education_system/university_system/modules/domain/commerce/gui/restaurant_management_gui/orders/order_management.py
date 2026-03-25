@@ -77,11 +77,11 @@ def view_orders_gui(self):
             
         cursor = conn.cursor()
         cursor.execute('''
-            SELECT o.order_id, COALESCE(c.name, 'Walk-in'), o.order_time, 
-                   o.total_price, o.status, o.payment_method
-            FROM restaurant_orders o
+            SELECT o.order_id, COALESCE(c.name, 'Walk-in'), o.order_date, 
+                   o.total_amount, o.order_status, o.payment_method
+            FROM orders o
             LEFT JOIN restaurant_customers c ON o.customer_id = c.customer_id
-            ORDER BY o.order_time DESC
+            ORDER BY o.order_date DESC
             LIMIT 50
         ''')
         orders = cursor.fetchall()
@@ -161,8 +161,8 @@ def generate_order_analytics(self):
         text += "=" * 50 + "\n\n"
         
         cursor.execute('''
-            SELECT COUNT(*) as total_orders, AVG(total_price) as avg_value
-            FROM restaurant_orders
+            SELECT COUNT(*) as total_orders, AVG(total_amount) as avg_value
+            FROM orders
             WHERE status = 'Completed'
         ''')
         
@@ -220,7 +220,7 @@ class OrderStatusDialog:
             conn = get_db_connection()
             if conn:
                 cursor = conn.cursor()
-                cursor.execute('UPDATE restaurant_orders SET status = ? WHERE order_id = ?',
+                cursor.execute('UPDATE orders SET order_status = ? WHERE order_id = ?',
                               (self.status_var.get(), self.order_id))
                 conn.commit()
                 conn.close()
@@ -265,8 +265,8 @@ class PaymentDialog:
 
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT total_price, status, payment_method
-                FROM restaurant_orders
+                SELECT total_amount, order_status, payment_method
+                FROM orders
                 WHERE order_id = ?
             ''', (self.order_id,))
 
@@ -312,7 +312,7 @@ class PaymentDialog:
         payment_methods = [
             ("Cash", "Cash"),
             ("Card", "Card"),
-            ("Student Account", "Student Account")
+            ("Finance Account", "Finance Account")
         ]
 
         for text, value in payment_methods:
@@ -380,7 +380,7 @@ class PaymentDialog:
 
         try:
             # Handle student account payment
-            if payment_method == "Student Account":
+            if payment_method == "Finance Account":
                 if not FINANCE_ACCOUNT_AVAILABLE:
                     messagebox.showerror("Error",
                                        "Student finance integration not available")
@@ -417,8 +417,8 @@ class PaymentDialog:
 
             cursor = conn.cursor()
             cursor.execute('''
-                UPDATE restaurant_orders
-                SET payment_method = ?, status = 'Paid'
+                UPDATE orders
+                SET payment_method = ?, order_status = 'Paid'
                 WHERE order_id = ?
             ''', (payment_method, self.order_id))
 

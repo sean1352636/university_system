@@ -350,7 +350,7 @@ class PhoneShopGUI:
         for o in orders:
             self.orders_tree.insert('', tk.END, values=(
                 o['order_id'], o['order_number'], o['customer_name'],
-                f"£{o['total_amount']:.2f}", o['status'], o['payment_status'],
+                f"£{o['total_amount']:.2f}", o.get('status') or o.get('order_status', ''), o.get('payment_status', ''),
                 o['created_at'][:16] if o['created_at'] else ''
             ))
 
@@ -806,8 +806,8 @@ Payment: {order['payment_status']}
         try:
             with get_db_connection() as conn:
                 cursor = conn.execute('''
-                    SELECT transaction_id FROM phoneshop_transactions
-                    WHERE order_id = ? AND transaction_type = 'payment'
+                    SELECT transaction_id FROM transactions
+                    WHERE source_type = 'phone_shop' AND reference_id = ? AND reference_type = 'order' AND transaction_type = 'payment'
                     ORDER BY created_at DESC LIMIT 1
                 ''', (order_id,))
                 trans_result = cursor.fetchone()
@@ -832,9 +832,9 @@ Payment: {order['payment_status']}
                 if transaction_id:
                     with get_db_connection() as conn:
                         conn.execute('''
-                            UPDATE phoneshop_transactions
+                            UPDATE transactions
                             SET status = 'refunded'
-                            WHERE transaction_id = ?
+                            WHERE transaction_id = ? AND source_type = 'phone_shop'
                         ''', (transaction_id,))
                         conn.commit()
 
@@ -1179,10 +1179,10 @@ Low Stock Items: {summary['low_stock_count']}
 
                 if search_term:
                     query = '''
-                        SELECT transaction_id, order_id, created_at, customer_id,
+                        SELECT transaction_id, reference_id as order_id, created_at, customer_id,
                                amount, payment_method, status
-                        FROM phoneshop_transactions
-                        WHERE transaction_id LIKE ? OR order_id LIKE ? OR customer_id LIKE ?
+                        FROM transactions
+                        WHERE source_type = 'phone_shop' AND (transaction_id LIKE ? OR reference_id LIKE ? OR customer_id LIKE ?)
                         ORDER BY created_at DESC
                         LIMIT 500
                     '''
@@ -1190,9 +1190,10 @@ Low Stock Items: {summary['low_stock_count']}
                     cursor = conn.execute(query, (search_pattern, search_pattern, search_pattern))
                 else:
                     query = '''
-                        SELECT transaction_id, order_id, created_at, customer_id,
+                        SELECT transaction_id, reference_id as order_id, created_at, customer_id,
                                amount, payment_method, status
-                        FROM phoneshop_transactions
+                        FROM transactions
+                        WHERE source_type = 'phone_shop'
                         ORDER BY created_at DESC
                         LIMIT 500
                     '''
@@ -1262,8 +1263,8 @@ Low Stock Items: {summary['low_stock_count']}
             with get_db_connection() as conn:
                 cursor = conn.execute('''
                     SELECT customer_id, payment_method
-                    FROM phoneshop_transactions
-                    WHERE transaction_id = ?
+                    FROM transactions
+                    WHERE transaction_id = ? AND source_type = 'phone_shop'
                 ''', (transaction_id,))
 
                 trans_data = cursor.fetchone()
@@ -1290,39 +1291,23 @@ Low Stock Items: {summary['low_stock_count']}
             with get_db_connection() as conn:
                 # Update transaction status to refunded
                 conn.execute('''
-                    UPDATE phoneshop_transactions
+                    UPDATE transactions
                     SET status = 'refunded'
-                    WHERE transaction_id = ?
+                    WHERE transaction_id = ? AND source_type = 'phone_shop'
                 ''', (transaction_id,))
 
                 # Generate refund reference
                 refund_ref = f"PHONE-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-                # Create refunds table if it doesn't exist
-                conn.execute('''
-                    CREATE TABLE IF NOT EXISTS phoneshop_refunds (
-                        refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        transaction_id INTEGER NOT NULL,
-                        order_id INTEGER,
-                        refund_date TEXT NOT NULL,
-                        refund_amount REAL NOT NULL,
-                        refund_method TEXT NOT NULL,
-                        refund_reference TEXT UNIQUE,
-                        customer_id TEXT,
-                        processed_by TEXT,
-                        notes TEXT,
-                        FOREIGN KEY (transaction_id) REFERENCES phoneshop_transactions (transaction_id)
-                    )
-                ''')
-
-                # Insert refund record
+                # Insert refund record into unified_refunds table
                 processed_by = self.current_user.get('username', 'System') if self.current_user else 'System'
                 conn.execute('''
-                    INSERT INTO phoneshop_refunds
-                    (transaction_id, order_id, refund_date, refund_amount, refund_method, refund_reference, customer_id, processed_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (transaction_id, order_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), amount, refund_method,
-                      refund_ref, customer_id, processed_by))
+                    INSERT INTO unified_refunds
+                    (source_type, reference_id, reference_type, refund_date, amount,
+                     refund_method, refund_reference, student_id, processed_by, notes)
+                    VALUES ('phone_shop', ?, 'order', ?, ?, ?, ?, ?, ?, ?)
+                ''', (str(order_id), datetime.now().strftime('%Y-%m-%d %H:%M:%S'), amount, refund_method,
+                      refund_ref, customer_id, processed_by, f'phoneshop_transaction_{transaction_id}'))
 
                 conn.commit()
 
@@ -1454,10 +1439,10 @@ Low Stock Items: {summary['low_stock_count']}
                 # Record transaction
                 processed_by = self.current_user.get('username', 'System') if self.current_user else 'System'
                 conn.execute('''
-                    INSERT INTO student_finance_transactions
-                    (account_id, student_id, transaction_type, amount, balance_before,
+                    INSERT INTO transactions
+                    (source_type, account_id, student_id, transaction_type, amount, balance_before,
                      balance_after, description, reference_id, processed_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES ('student_finance', ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (account_id, customer_id, 'credit', amount, balance_before, balance_after,
                       'Phone Shop Purchase Refund', refund_ref, processed_by))
 
@@ -1515,22 +1500,9 @@ Low Stock Items: {summary['low_stock_count']}
             logger.error(f"Error sending refund receipt: {e}")
 
     def notify_phoneshop_finance_gui(self, transaction_id, amount, method, refund_ref, customer_id):
-        """Notify finance GUI about the refund"""
+        """Notify finance GUI about the refund - already recorded in unified_refunds."""
         try:
-            with get_db_connection() as conn:
-                # Insert into finance_refunds table (table already exists)
-                processed_by = self.current_user.get('username', 'System') if self.current_user else 'System'
-                conn.execute('''
-                    INSERT INTO finance_refunds
-                    (transaction_id, refund_reference, department, amount, refund_method,
-                     refund_date, student_id, processed_by, notes)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (str(transaction_id), refund_ref, 'Phone Shop', amount, method,
-                      datetime.now().strftime('%Y-%m-%d %H:%M:%S'), customer_id, processed_by,
-                      'Phone Shop purchase refund'))
-
-                conn.commit()
-
+            logger.info(f"[Phone Shop] Refund {refund_ref} recorded in unified_refunds")
         except Exception as e:
             logger.error(f"Error notifying finance GUI: {e}")
 
@@ -1556,9 +1528,9 @@ Low Stock Items: {summary['low_stock_count']}
                 # Get transaction details
                 cursor = conn.execute('''
                     SELECT t.*, o.shipping_address, o.status as order_status
-                    FROM phoneshop_transactions t
-                    LEFT JOIN phoneshop_orders o ON t.order_id = o.order_id
-                    WHERE t.transaction_id = ?
+                    FROM transactions t
+                    LEFT JOIN orders o ON t.reference_id = o.id AND t.reference_type = 'order' AND o.source_type = 'phone_shop'
+                    WHERE t.source_type = 'phone_shop' AND t.transaction_id = ?
                 ''', (transaction_id,))
 
                 trans = cursor.fetchone()
@@ -1570,8 +1542,8 @@ Low Stock Items: {summary['low_stock_count']}
                 # Get order items
                 cursor = conn.execute('''
                     SELECT oi.product_id, p.name, p.brand, p.model, oi.quantity, oi.unit_price, oi.subtotal
-                    FROM phoneshop_order_items oi
-                    LEFT JOIN phoneshop_products p ON oi.product_id = p.product_id
+                    FROM order_items oi
+                    LEFT JOIN products p ON oi.product_id = p.id AND p.source_type = 'phone_shop'
                     WHERE oi.order_id = ?
                 ''', (order_id,))
 

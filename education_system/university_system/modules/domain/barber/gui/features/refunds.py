@@ -43,9 +43,9 @@ class RefundsMixin:
                         bt.payment_method,
                         bt.status,
                         bt.reference_number
-                    FROM barber_transactions bt
+                    FROM transactions bt
                     LEFT JOIN students s ON bt.customer_id = s.student_id
-                    WHERE bt.transaction_type = 'service'
+                    WHERE bt.source_type = 'barber' AND bt.transaction_type = 'service'
                     ORDER BY bt.created_at DESC
                 """
 
@@ -152,7 +152,7 @@ class RefundsMixin:
             # Get customer ID
             with get_db_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT customer_id FROM barber_transactions WHERE transaction_id = ?",
+                cursor.execute("SELECT customer_id FROM transactions WHERE transaction_id = ? AND source_type = 'barber'",
                              (transaction_id,))
                 result = cursor.fetchone()
                 if not result:
@@ -265,9 +265,9 @@ class RefundsMixin:
                 # Update transaction reference
                 logger.debug(f"Updating transaction {transaction_id} reference")
                 cursor.execute("""
-                    UPDATE barber_transactions
+                    UPDATE transactions
                     SET reference_number = ?
-                    WHERE transaction_id = ?
+                    WHERE transaction_id = ? AND source_type = 'barber'
                 """, (refund_ref, transaction_id))
 
                 if cursor.rowcount == 0:
@@ -366,9 +366,9 @@ class RefundsMixin:
 
                 # Update transaction reference
                 cursor.execute("""
-                    UPDATE barber_transactions
+                    UPDATE transactions
                     SET reference_number = ?
-                    WHERE transaction_id = ?
+                    WHERE transaction_id = ? AND source_type = 'barber'
                 """, (refund_ref, transaction_id))
 
                 # Get account_id and balance before update
@@ -394,12 +394,13 @@ class RefundsMixin:
                     WHERE student_id = ?
                 """, (amount, customer_id))
 
-                # Log transaction in student_finance_transactions with all required fields
-                cursor.execute("""
-                    INSERT INTO student_finance_transactions
+                # Log in student finance transactions table
+                sft_table = 'student_finance_transactions'
+                cursor.execute(f"""
+                    INSERT INTO {sft_table}
                     (account_id, student_id, transaction_type, amount, balance_before, balance_after, description, reference_id)
                     VALUES (?, ?, 'credit', ?, ?, ?, ?, ?)
-                """, (account_id, customer_id, amount, balance_before, balance_after, f'Barber shop refund', refund_ref))
+                """, (account_id, customer_id, amount, balance_before, balance_after, 'Barber shop refund', refund_ref))
 
                 # Use the calculated balance
                 new_balance = balance_after
@@ -531,81 +532,11 @@ class RefundsMixin:
             logger.error(f"Error sending barber refund receipt: {e}")
 
     def notify_barber_finance_gui(self, transaction_id, amount, refund_method, refund_ref, customer_id=None):
-        """Notify finance system about the refund - integrates with main finance GUI"""
+        """Notify finance system about the refund - refund already recorded in unified_refunds table"""
         try:
-            conn = get_db_connection()
-            if not conn:
-                logger.warning("Could not get database connection for finance notification")
-                return
-
-            cursor = conn.cursor()
-
-            try:
-                # Create finance_refunds table if not exists (matches other GUIs schema)
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS finance_refunds (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        refund_reference TEXT UNIQUE,
-                        department TEXT,
-                        amount REAL,
-                        refund_method TEXT,
-                        refund_date TEXT,
-                        refund_time TEXT,
-                        transaction_reference TEXT,
-                        processed_by TEXT,
-                        notes TEXT
-                    )
-                ''')
-
-                # Migrate finance_refunds table to ensure all columns exist
-                cursor.execute("PRAGMA table_info(finance_refunds)")
-                columns = [row[1] for row in cursor.fetchall()]
-
-                # Add missing columns if needed (for backward compatibility)
-                if 'transaction_reference' not in columns:
-                    cursor.execute('ALTER TABLE finance_refunds ADD COLUMN transaction_reference TEXT')
-                    logger.info("Migration: Added transaction_reference column to finance_refunds table")
-
-                if 'refund_time' not in columns:
-                    cursor.execute('ALTER TABLE finance_refunds ADD COLUMN refund_time TEXT')
-                    logger.info("Migration: Added refund_time column to finance_refunds table")
-
-                if 'notes' not in columns:
-                    cursor.execute('ALTER TABLE finance_refunds ADD COLUMN notes TEXT')
-                    logger.info("Migration: Added notes column to finance_refunds table")
-
-                # Get processed_by
-                processed_by = 'System'
-                try:
-                    user = self.current_user or {}
-                    processed_by = user.get('username', 'System')
-                except Exception as auth_err:
-                    logger.warning(f"Could not get authenticated user: {auth_err}")
-
-                # Build notes with customer info
-                notes = f'Barber Shop Service Refund - Transaction #{transaction_id}'
-                if customer_id:
-                    notes += f' - Customer: {customer_id}'
-
-                # Insert into finance_refunds table (main refunds table for finance GUI)
-                cursor.execute('''
-                    INSERT INTO finance_refunds
-                    (refund_reference, department, amount, refund_method,
-                     refund_date, refund_time, transaction_reference, processed_by, notes)
-                    VALUES (?, ?, ?, ?, date('now'), time('now'), ?, ?, ?)
-                ''', (refund_ref, 'Barber Shop', amount, refund_method,
-                      f'barber_transaction_{transaction_id}', processed_by, notes))
-
-                conn.commit()
-                logger.info(f"[Barber Shop] Refund recorded in finance system: {refund_ref}")
-
-            except Exception as e:
-                # Log error but don't fail the refund
-                logger.warning(f"Could not notify finance system: {e}")
-                # Don't raise - refund already processed
-
-            conn.close()
-
+            # Refund is already recorded in unified_refunds by RefundManager.issue_refund
+            logger.info(f"[Barber Shop] Refund {refund_ref} for transaction {transaction_id} "
+                       f"recorded in unified_refunds (amount: £{amount:.2f}, method: {refund_method})")
         except Exception as e:
             logger.error(f"Error notifying finance GUI: {e}")
 
@@ -644,14 +575,14 @@ class RefundsMixin:
                         bt.reference_number,
                         bt.created_at,
                         bt.processed_by,
-                        bt.appointment_id,
+                        bt.reference_id as appointment_id,
                         ba.appointment_date,
                         ba.appointment_time,
                         ba.status as appointment_status
-                    FROM barber_transactions bt
+                    FROM transactions bt
                     LEFT JOIN students s ON bt.customer_id = s.student_id
-                    LEFT JOIN barber_appointments ba ON bt.appointment_id = ba.appointment_id
-                    WHERE bt.transaction_id = ?
+                    LEFT JOIN barber_appointments ba ON bt.reference_id = ba.appointment_id AND bt.reference_type = 'appointment'
+                    WHERE bt.source_type = 'barber' AND bt.transaction_id = ?
                 """, (transaction_id,))
 
                 trans = cursor.fetchone()
@@ -797,9 +728,9 @@ Financial Details:
                         bt.payment_method,
                         bt.status,
                         bt.reference_number
-                    FROM barber_transactions bt
+                    FROM transactions bt
                     LEFT JOIN students s ON bt.customer_id = s.student_id
-                    WHERE bt.transaction_type = 'service'
+                    WHERE bt.source_type = 'barber' AND bt.transaction_type = 'service'
                     ORDER BY bt.created_at DESC
                 """)
 

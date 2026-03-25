@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance_reporting/archive_backup/backup.py
+# hypothesis_version: 6.151.9
+
+[0.3, 0.5, 1.0, 100, '%Y%m%d_%H%M%S', '10', '500x250', '700x500', 'Accent.TButton', 'Arial', 'Backup', 'Backup Complete', 'Backup Location', 'Backup Options', 'Backup Progress', 'Backup completed', 'Browse', 'Charts Backup', 'Close', 'Database (Complete)', 'Database Backup', 'Error', 'Generated Reports', 'Logs Backup', 'Ready to backup', 'Reports Backup', 'Schedule', 'Schedule Backup', 'Start Backup', 'System Logs', 'Title.TLabel', 'backup', 'backup_file', 'bold', 'database', 'determinate', 'size', 'value']

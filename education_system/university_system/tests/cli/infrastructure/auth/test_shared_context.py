@@ -214,7 +214,7 @@ class TestInitializeAuth:
 
     def test_initialize_auth_uses_default_path(self):
         """Test initialize_auth uses default path when not specified"""
-        with patch('university_system.infrastructure.shared_context.UserAuth') as MockUserAuth:
+        with patch('education_system.university_system.infrastructure.shared_context.UserAuth') as MockUserAuth:
             mock_instance = Mock()
             MockUserAuth.return_value = mock_instance
 
@@ -223,7 +223,7 @@ class TestInitializeAuth:
             context_module._auth_initialized = False
 
             # Call without path
-            with patch('university_system.modules.shared.constants.paths') as mock_paths:
+            with patch('education_system.university_system.modules.shared.constants.paths') as mock_paths:
                 mock_paths.DEFAULT_DB_PATH = "/default/path/db.sqlite"
                 auth = initialize_auth()
 

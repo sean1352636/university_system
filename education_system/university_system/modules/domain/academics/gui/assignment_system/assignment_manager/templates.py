@@ -19,57 +19,59 @@ class TemplatesMixin:
                 return
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            # Create assignment_drafts table if not exists
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS assignment_drafts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                draft_name TEXT NOT NULL,
-                draft_data TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-            ''')
+                # Create assignment_drafts table if not exists
+                cursor.execute('''
+                CREATE TABLE IF NOT EXISTS assignment_drafts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    draft_name TEXT NOT NULL,
+                    draft_data TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+                ''')
 
-            # Collect form data
-            draft_data = {
-                'module': self.module_var.get(),
-                'title': self.title_var.get(),
-                'description': self.description_text.get(1.0, tk.END).strip(),
-                'instructions': self.instructions_text.get(1.0, tk.END).strip(),
-                'due_date': self.due_date_var.get(),
-                'due_time': self.due_time_var.get(),
-                'max_marks': self.max_marks_var.get(),
-                'file_types': self.file_types_var.get(),
-                'max_size': self.max_size_var.get(),
-                'assignment_type': self.assignment_type_var.get(),
-                'group_min': self.group_min_var.get(),
-                'group_max': self.group_max_var.get(),
-                'allow_late': self.allow_late_var.get(),
-                'late_penalty': self.late_penalty_var.get(),
-                'auto_release': self.auto_release_var.get(),
-                'peer_review': self.peer_review_var.get(),
-            }
+                # Collect form data
+                draft_data = {
+                    'module': self.module_var.get(),
+                    'title': self.title_var.get(),
+                    'description': self.description_text.get(1.0, tk.END).strip(),
+                    'instructions': self.instructions_text.get(1.0, tk.END).strip(),
+                    'due_date': self.due_date_var.get(),
+                    'due_time': self.due_time_var.get(),
+                    'max_marks': self.max_marks_var.get(),
+                    'file_types': self.file_types_var.get(),
+                    'max_size': self.max_size_var.get(),
+                    'assignment_type': self.assignment_type_var.get(),
+                    'group_min': self.group_min_var.get(),
+                    'group_max': self.group_max_var.get(),
+                    'allow_late': self.allow_late_var.get(),
+                    'late_penalty': self.late_penalty_var.get(),
+                    'auto_release': self.auto_release_var.get(),
+                    'peer_review': self.peer_review_var.get(),
+                }
 
-            # Add new fields if they exist
-            if hasattr(self, 'assessment_type_var'):
-                draft_data['assessment_type'] = self.assessment_type_var.get()
-            if hasattr(self, 'grading_method_var'):
-                draft_data['grading_method'] = self.grading_method_var.get()
-            if hasattr(self, 'visibility_var'):
-                draft_data['visibility'] = self.visibility_var.get()
+                # Add new fields if they exist
+                if hasattr(self, 'assessment_type_var'):
+                    draft_data['assessment_type'] = self.assessment_type_var.get()
+                if hasattr(self, 'grading_method_var'):
+                    draft_data['grading_method'] = self.grading_method_var.get()
+                if hasattr(self, 'visibility_var'):
+                    draft_data['visibility'] = self.visibility_var.get()
 
-            draft_name = f"Draft - {self.title_var.get()[:30]} - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+                draft_name = f"Draft - {self.title_var.get()[:30]} - {datetime.now().strftime('%Y-%m-%d %H:%M')}"
 
-            cursor.execute('''
-            INSERT INTO assignment_drafts (user_id, draft_name, draft_data, updated_at)
-            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-            ''', (self.auth.current_user['id'], draft_name, json.dumps(draft_data)))
+                cursor.execute('''
+                INSERT INTO assignment_drafts (user_id, draft_name, draft_data, updated_at)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                ''', (self.auth.current_user['id'], draft_name, json.dumps(draft_data)))
 
-            conn.commit()
-            conn.close()
+                conn.commit()
+            finally:
+                conn.close()
 
             messagebox.showinfo("Success", f"Draft saved successfully as:\n{draft_name}")
 
@@ -197,48 +199,50 @@ class TemplatesMixin:
                 return
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS assignment_drafts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                draft_name TEXT NOT NULL,
-                draft_data TEXT NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-            ''')
+                cursor.execute('''
+                CREATE TABLE IF NOT EXISTS assignment_drafts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    draft_name TEXT NOT NULL,
+                    draft_data TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+                ''')
 
-            draft_data = {
-                'module': self.module_var.get(),
-                'title': self.title_var.get(),
-                'description': self.description_text.get(1.0, tk.END).strip(),
-                'instructions': self.instructions_text.get(1.0, tk.END).strip(),
-                'max_marks': self.max_marks_var.get(),
-                'file_types': self.file_types_var.get(),
-                'max_size': self.max_size_var.get(),
-                'assignment_type': self.assignment_type_var.get(),
-                'group_min': self.group_min_var.get(),
-                'group_max': self.group_max_var.get(),
-                'allow_late': self.allow_late_var.get(),
-                'late_penalty': self.late_penalty_var.get(),
-                'auto_release': self.auto_release_var.get(),
-                'peer_review': self.peer_review_var.get(),
-            }
+                draft_data = {
+                    'module': self.module_var.get(),
+                    'title': self.title_var.get(),
+                    'description': self.description_text.get(1.0, tk.END).strip(),
+                    'instructions': self.instructions_text.get(1.0, tk.END).strip(),
+                    'max_marks': self.max_marks_var.get(),
+                    'file_types': self.file_types_var.get(),
+                    'max_size': self.max_size_var.get(),
+                    'assignment_type': self.assignment_type_var.get(),
+                    'group_min': self.group_min_var.get(),
+                    'group_max': self.group_max_var.get(),
+                    'allow_late': self.allow_late_var.get(),
+                    'late_penalty': self.late_penalty_var.get(),
+                    'auto_release': self.auto_release_var.get(),
+                    'peer_review': self.peer_review_var.get(),
+                }
 
-            if hasattr(self, 'assessment_type_var'):
-                draft_data['assessment_type'] = self.assessment_type_var.get()
-            if hasattr(self, 'grading_method_var'):
-                draft_data['grading_method'] = self.grading_method_var.get()
+                if hasattr(self, 'assessment_type_var'):
+                    draft_data['assessment_type'] = self.assessment_type_var.get()
+                if hasattr(self, 'grading_method_var'):
+                    draft_data['grading_method'] = self.grading_method_var.get()
 
-            cursor.execute('''
-            INSERT INTO assignment_drafts (user_id, draft_name, draft_data, updated_at)
-            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-            ''', (self.auth.current_user['id'], template_name, json.dumps(draft_data)))
+                cursor.execute('''
+                INSERT INTO assignment_drafts (user_id, draft_name, draft_data, updated_at)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                ''', (self.auth.current_user['id'], template_name, json.dumps(draft_data)))
 
-            conn.commit()
-            conn.close()
+                conn.commit()
+            finally:
+                conn.close()
 
             messagebox.showinfo("Success", f"Template '{template_name}' saved successfully")
 

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/ai/gui/menu.py
+# hypothesis_version: 6.151.9
+
+[1.0, '400x300', '400x350', '600x500', 'About', 'Admin Panel', 'Arial', 'Backup System', 'Chat', 'Clear Chat', 'Close', 'Edit', 'Exit', 'Export Conversations', 'File', 'Help', 'Keyboard Shortcuts', 'Preferences', 'Restore System', 'Settings', 'System', 'University Chatbot', 'User Guide', 'View', 'admin', 'bold', 'chatbot.about_title', 'chatbot.system', 'common.close', 'default', 'en', 'role', 'staff', 'system']

@@ -16,7 +16,7 @@ sys.path.insert(
     0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 )
 
-from education_system.university_system.api.config import _deep_merge, load_config, _DEFAULTS
+from education_system.shared.api.university.config import _deep_merge, load_config, _DEFAULTS
 
 
 # ============================================================================
@@ -301,7 +301,7 @@ class TestLoadConfigDefaultPath:
         load_config(None)
 
         # os.path.exists should have been called with the default path
-        from education_system.university_system.api.config import _DEFAULT_CONFIG_PATH
+        from education_system.shared.api.university.config import _DEFAULT_CONFIG_PATH
 
         mock_exists.assert_called_once_with(_DEFAULT_CONFIG_PATH)
 
@@ -314,7 +314,7 @@ class TestLoadConfigDefaultPath:
         mock_validate.return_value = MagicMock(is_valid=True)
         load_config()
 
-        from education_system.university_system.api.config import _DEFAULT_CONFIG_PATH
+        from education_system.shared.api.university.config import _DEFAULT_CONFIG_PATH
 
         mock_exists.assert_called_once_with(_DEFAULT_CONFIG_PATH)
 

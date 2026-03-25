@@ -84,20 +84,7 @@ except ImportError:
                     )
                 ''')
 
-                conn.execute('''
-                    CREATE TABLE IF NOT EXISTS barber_transactions (
-                        transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        appointment_id INTEGER,
-                        customer_id TEXT NOT NULL,
-                        amount REAL NOT NULL,
-                        payment_method TEXT NOT NULL,
-                        tip_amount REAL DEFAULT 0,
-                        reference_number TEXT,
-                        status TEXT DEFAULT 'completed',
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (appointment_id) REFERENCES barber_appointments(appointment_id)
-                    )
-                ''')
+                # Barber transactions now use unified 'transactions' table with source_type='barber'
             return True
         except Exception as e:
             logging.error(f"Database initialization error: {e}")
@@ -610,7 +597,7 @@ def staff_performance_metrics():
                 FROM barber_staff s
                 LEFT JOIN barber_appointments a ON s.staff_id = a.staff_id
                     AND a.appointment_date BETWEEN ? AND ?
-                LEFT JOIN barber_transactions t ON a.appointment_id = t.appointment_id
+                LEFT JOIN transactions t ON a.appointment_id = t.reference_id AND t.reference_type = 'appointment' AND t.source_type = 'barber'
                 WHERE s.status = 'active'
                 GROUP BY s.staff_id, s.staff_name
                 ORDER BY revenue DESC
@@ -1389,10 +1376,10 @@ def complete_appointment():
                 with transaction() as conn_tx:
                     # Record transaction
                     conn_tx.execute('''
-                        INSERT INTO barber_transactions
-                        (appointment_id, customer_id, amount, payment_method, tip_amount,
+                        INSERT INTO transactions
+                        (source_type, reference_id, reference_type, customer_id, amount, payment_method, tip_amount,
                          reference_number, status, created_at)
-                        VALUES (?, ?, ?, ?, ?, ?, 'completed', ?)
+                        VALUES ('barber', ?, 'appointment', ?, ?, ?, ?, ?, 'completed', ?)
                     ''', (appt_id, customer_id, price, payment_method, tip_amount,
                           ref_number, datetime.now().isoformat()))
 
@@ -1621,8 +1608,8 @@ def revenue_report():
                     SUM(tip_amount) as tips,
                     SUM(amount + tip_amount) as total,
                     AVG(amount) as avg_transaction
-                FROM barber_transactions
-                WHERE DATE(created_at) BETWEEN ? AND ?
+                FROM transactions
+                WHERE source_type = 'barber' AND DATE(created_at) BETWEEN ? AND ?
                 AND status = 'completed'
             ''', (start_date, end_date))
             summary = cursor.fetchone()
@@ -1642,8 +1629,8 @@ def revenue_report():
                 # By payment method
                 cursor = conn.execute('''
                     SELECT payment_method, COUNT(*), SUM(amount + tip_amount)
-                    FROM barber_transactions
-                    WHERE DATE(created_at) BETWEEN ? AND ?
+                    FROM transactions
+                    WHERE source_type = 'barber' AND DATE(created_at) BETWEEN ? AND ?
                     AND status = 'completed'
                     GROUP BY payment_method
                 ''', (start_date, end_date))
@@ -1657,9 +1644,9 @@ def revenue_report():
                 # By service
                 cursor = conn.execute('''
                     SELECT a.service_name, COUNT(*), SUM(t.amount)
-                    FROM barber_transactions t
-                    JOIN barber_appointments a ON t.appointment_id = a.appointment_id
-                    WHERE DATE(t.created_at) BETWEEN ? AND ?
+                    FROM transactions t
+                    JOIN barber_appointments a ON t.reference_id = a.appointment_id AND t.reference_type = 'appointment'
+                    WHERE t.source_type = 'barber' AND DATE(t.created_at) BETWEEN ? AND ?
                     AND t.status = 'completed'
                     GROUP BY a.service_name
                     ORDER BY SUM(t.amount) DESC

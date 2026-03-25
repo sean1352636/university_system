@@ -45,19 +45,6 @@ CREATE TABLE IF NOT EXISTS church_donations (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS church_events (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT,
-    description TEXT,
-    date TEXT,
-    time TEXT,
-    location TEXT,
-    event_type TEXT,
-    capacity INTEGER,
-    registered INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 CREATE TABLE IF NOT EXISTS church_prayer_requests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     requester_name TEXT,
@@ -1984,8 +1971,17 @@ Grace Community Church Management System
                 cursor = conn.execute("SELECT * FROM church_donations ORDER BY date DESC")
                 self.donations = [dict(row) for row in cursor.fetchall()]
 
-                # Load events
-                cursor = conn.execute("SELECT * FROM church_events ORDER BY date DESC")
+                # Load events from unified_events
+                cursor = conn.execute("""
+                    SELECT id, title, description,
+                           DATE(start_datetime) as date,
+                           TIME(start_datetime) as time,
+                           location, event_type, max_capacity as capacity,
+                           created_at
+                    FROM unified_events
+                    WHERE source_type = 'church'
+                    ORDER BY start_datetime DESC
+                """)
                 self.events = [dict(row) for row in cursor.fetchall()]
 
                 # Load prayer requests
@@ -2085,24 +2081,34 @@ Grace Community Church Management System
             return False
 
     def _db_save_event(self, event):
-        """Save an event to the database."""
+        """Save an event to the unified_events table with source_type='church'."""
         try:
             from education_system.university_system.infrastructure.database.db import get_connection
+            # Combine date + time into start_datetime
+            date_part = event.get('date', '')
+            time_part = event.get('time', '')
+            if date_part and time_part:
+                start_datetime = f"{date_part} {time_part}"
+            elif date_part:
+                start_datetime = f"{date_part} 00:00"
+            else:
+                start_datetime = ''
+
             with get_connection() as conn:
                 if event.get('id'):
                     conn.execute("""
-                        UPDATE church_events SET title=?, description=?, date=?, time=?,
-                        location=?, event_type=?, capacity=?, registered=? WHERE id=?
-                    """, (event.get('title'), event.get('description'), event.get('date'),
-                          event.get('time'), event.get('location'), event.get('event_type'),
-                          event.get('capacity'), event.get('registered', 0), event['id']))
+                        UPDATE unified_events SET title=?, description=?, start_datetime=?,
+                        location=?, event_type=?, max_capacity=? WHERE id=? AND source_type='church'
+                    """, (event.get('title'), event.get('description'), start_datetime,
+                          event.get('location'), event.get('event_type'),
+                          event.get('capacity'), event['id']))
                 else:
                     cursor = conn.execute("""
-                        INSERT INTO church_events (title, description, date, time, location,
-                        event_type, capacity, registered) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    """, (event.get('title'), event.get('description'), event.get('date'),
-                          event.get('time'), event.get('location'), event.get('event_type'),
-                          event.get('capacity'), event.get('registered', 0)))
+                        INSERT INTO unified_events (title, description, start_datetime, location,
+                        event_type, max_capacity, source_type) VALUES (?, ?, ?, ?, ?, ?, 'church')
+                    """, (event.get('title'), event.get('description'), start_datetime,
+                          event.get('location'), event.get('event_type'),
+                          event.get('capacity')))
                     event['id'] = cursor.lastrowid
                 conn.commit()
             return True

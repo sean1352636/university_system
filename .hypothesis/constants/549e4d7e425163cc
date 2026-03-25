@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/logging/log_management/cli/search.py
+# hypothesis_version: 6.151.9
+
+[100, '\nDetailed Results:', '\nExport format:', '\nOptions:', '\n💾 SAVED SEARCHES', '%Y%m%d_%H%M%S', '%Y-%m-%d', ',', '-', '...', '1', '1. CSV', '1. Export results', '2', '2. JSON', '2. Save search', '3', '3. Excel', '3. View more details', '4. Return', '=', 'Action', 'Choose format: ', 'Choose option: ', 'Details', 'Invalid choice', 'Invalid date format', 'Module', 'Module: ', 'No results found', 'Search in details: ', 'Status', 'Time', 'User', 'User ID: ', 'action', 'date_from', 'date_to', 'details', 'exports', 'filters', 'grid', 'id', 'ip_address', 'module', 'results', 'search_params', 'search_text', 'status', 'timestamp', 'user_id', 'username', 'w']

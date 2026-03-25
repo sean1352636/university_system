@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/library/fines/reports.py
+# hypothesis_version: 6.151.9
+
+[1000, '*.*', '*.csv', '*.txt', '-', '.csv', '.txt', '1.0', '700x600', 'All files', 'Arial', 'Author', 'Book ID', 'Book Title', 'CSV files', 'Checkout Date', 'Courier', 'Due Date', 'Export to File', 'Fine Amount', 'Loan ID', 'No Data', 'Notes', 'RECOMMENDATIONS\n', 'Return Date', 'SUMMARY', 'Status', 'Text files', 'Total Amount:', 'User ID', 'bold', 'both', 'common.close', 'common.demo', 'common.error', 'common.success', 'disabled', 'fine_statistics', 'left', 'raised', 'right', 'utf-8', 'vertical', 'w', 'word', 'x', 'y']

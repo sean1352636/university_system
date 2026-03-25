@@ -21,13 +21,13 @@ from education_system.university_system.infrastructure.email.email_manager impor
 from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH, TICKET_TEMPLATES_DIR, UPLOAD_DIR
 from education_system.university_system.utils.logging.log_config import get_log_file
 
-from ..config import (
+from education_system.university_system.modules.domain.student_affairs.services.student_support.config import (
     SUPPORT_DB, TICKET_STATUSES, TICKET_PRIORITIES, SUPPORT_CATEGORIES,
     NotificationType, TicketSentiment, FileType, SupportConfig
 )
-from .. import auth as _auth_mod
-from ..auth import get_current_user_safe, require_auth, has_staff_permissions
-from .notifications import _get_recent_notifications
+from education_system.university_system.modules.domain.student_affairs.services.student_support import auth as _auth_mod
+from education_system.university_system.modules.domain.student_affairs.services.student_support.auth import get_current_user_safe, require_auth, has_staff_permissions
+from education_system.university_system.modules.domain.student_affairs.services.student_support.features.notifications import _get_recent_notifications
 
 logger = logging.getLogger(__name__)
 

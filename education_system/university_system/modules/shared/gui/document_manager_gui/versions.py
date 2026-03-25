@@ -46,7 +46,7 @@ class VersionManager:
             cursor.execute('''
             SELECT sd.document_id, sd.version_number, sd.upload_date, sd.verification_status,
                    sd.is_current_version, sd.original_filename, sd.uploaded_by
-            FROM student_documents sd
+            FROM documents sd
             WHERE sd.document_id = ? OR sd.parent_document_id = ?
             ORDER BY sd.version_number DESC
             ''', (doc_id, doc_id))
@@ -113,14 +113,14 @@ class VersionManager:
 
             # Get document and all its versions
             cursor.execute('''
-            SELECT sd.document_id, sd.student_id, s.first_name || ' ' || s.last_name as student_name,
+            SELECT sd.document_id, sd.owner_id as student_id, s.first_name || ' ' || s.last_name as student_name,
                    dt.type_name, sd.version_number, sd.upload_date,
                    sd.verification_status, sd.uploaded_by, sd.is_current_version,
                    sd.original_filename, sd.file_size, sd.verification_notes
-            FROM student_documents sd
-            JOIN students s ON sd.student_id = s.student_id
+            FROM documents sd
+            JOIN students s ON sd.owner_id = s.student_id
             JOIN document_types dt ON sd.document_type_id = dt.type_id
-            WHERE sd.document_id = ? OR sd.parent_document_id = ?
+            WHERE sd.source_type = 'student' AND (sd.document_id = ? OR sd.parent_document_id = ?)
             ORDER BY sd.version_number ASC
             ''', (doc_id, doc_id))
 
@@ -214,7 +214,7 @@ class VersionManager:
             SELECT sd.document_id, sd.version_number, sd.upload_date,
                    sd.verification_status, sd.file_size, sd.uploaded_by,
                    sd.original_filename, dt.type_name, sd.verification_notes
-            FROM student_documents sd
+            FROM documents sd
             JOIN document_types dt ON sd.document_type_id = dt.type_id
             WHERE sd.document_id IN (?, ?)
             ORDER BY sd.version_number
@@ -289,8 +289,8 @@ class VersionManager:
 
             # Get document info
             cursor.execute('''
-            SELECT student_id, document_type_id
-            FROM student_documents
+            SELECT owner_id, document_type_id
+            FROM documents
             WHERE document_id = ?
             ''', (doc_id,))
 
@@ -304,14 +304,14 @@ class VersionManager:
 
             # Mark all versions as non-current
             cursor.execute('''
-            UPDATE student_documents
+            UPDATE documents
             SET is_current_version = 0
-            WHERE student_id = ? AND document_type_id = ?
+            WHERE owner_id = ? AND source_type = 'student' AND document_type_id = ?
             ''', (student_id, type_id))
 
             # Mark selected version as current
             cursor.execute('''
-            UPDATE student_documents
+            UPDATE documents
             SET is_current_version = 1
             WHERE document_id = ?
             ''', (doc_id,))
@@ -351,17 +351,17 @@ class VersionManager:
                 cursor = conn.cursor()
 
                 # Total documents
-                cursor.execute('SELECT COUNT(DISTINCT document_id) FROM student_documents')
+                cursor.execute('SELECT COUNT(DISTINCT document_id) FROM documents')
                 total_docs = cursor.fetchone()[0]
 
                 # Total versions
-                cursor.execute('SELECT COUNT(*) FROM student_documents')
+                cursor.execute('SELECT COUNT(*) FROM documents')
                 total_versions = cursor.fetchone()[0]
 
                 # Documents with multiple versions
                 cursor.execute('''
                 SELECT COUNT(*) FROM (
-                    SELECT document_id FROM student_documents
+                    SELECT document_id FROM documents
                     GROUP BY document_id HAVING COUNT(*) > 1
                 )
                 ''')
@@ -415,9 +415,10 @@ class VersionManager:
                     COUNT(*) as version_count,
                     MAX(sd.version_number) as current_version,
                     MAX(sd.upload_date) as last_updated
-                FROM student_documents sd
-                JOIN students s ON sd.student_id = s.student_id
+                FROM documents sd
+                JOIN students s ON sd.owner_id = s.student_id
                 JOIN document_types dt ON sd.type_id = dt.type_id
+                WHERE sd.source_type = 'student'
                 GROUP BY sd.document_id
                 HAVING COUNT(*) > 1
                 ORDER BY version_count DESC, last_updated DESC
@@ -457,9 +458,10 @@ class VersionManager:
                             sd.version_number,
                             sd.upload_date,
                             sd.file_name
-                        FROM student_documents sd
-                        JOIN students s ON sd.student_id = s.student_id
+                        FROM documents sd
+                        JOIN students s ON sd.owner_id = s.student_id
                         JOIN document_types dt ON sd.type_id = dt.type_id
+                        WHERE sd.source_type = 'student'
                         ORDER BY sd.document_id, sd.version_number
                         ''')
                         versions = cursor.fetchall()
@@ -656,10 +658,10 @@ class VersionManager:
                         dt.type_name,
                         sd.version_number,
                         sd.upload_date
-                    FROM student_documents sd
-                    JOIN students s ON sd.student_id = s.student_id
+                    FROM documents sd
+                    JOIN students s ON sd.owner_id = s.student_id
                     JOIN document_types dt ON sd.type_id = dt.type_id
-                    WHERE sd.upload_date < ?
+                    WHERE sd.source_type = 'student' AND sd.upload_date < ?
                     '''
 
                     if keep_current.get():
@@ -716,13 +718,13 @@ class VersionManager:
 
                     # Add archived column if doesn't exist
                     try:
-                        cursor.execute('ALTER TABLE student_documents ADD COLUMN archived BOOLEAN DEFAULT 0')
+                        cursor.execute('ALTER TABLE documents ADD COLUMN archived BOOLEAN DEFAULT 0')
                     except Exception:
 
                         pass
 
                     # Mark documents as archived
-                    query = 'UPDATE student_documents SET archived = 1 WHERE upload_date < ?'
+                    query = 'UPDATE documents SET archived = 1 WHERE upload_date < ?'
                     params = [cutoff_date]
 
                     if keep_current.get():
@@ -849,7 +851,7 @@ class VersionManager:
             # Get both versions
             cursor.execute('''
             SELECT version_number, file_name, file_size, upload_date, uploaded_by, status
-            FROM student_documents
+            FROM documents
             WHERE document_id = ? AND version_number IN (?, ?)
             ORDER BY version_number
             ''', (document_id, version1, version2))
@@ -908,8 +910,8 @@ class VersionManager:
 
             # Get the version to restore
             cursor.execute('''
-            SELECT file_name, file_path, file_size, student_id, type_id
-            FROM student_documents
+            SELECT file_name, file_path, file_size, owner_id, type_id
+            FROM documents
             WHERE document_id = ? AND version_number = ?
             ''', (document_id, version_number))
 
@@ -923,14 +925,14 @@ class VersionManager:
 
             # Mark all versions as not current
             cursor.execute('''
-            UPDATE student_documents
+            UPDATE documents
             SET is_current_version = 0
             WHERE document_id = ?
             ''', (document_id,))
 
             # Get next version number
             cursor.execute('''
-            SELECT MAX(version_number) FROM student_documents WHERE document_id = ?
+            SELECT MAX(version_number) FROM documents WHERE document_id = ?
             ''', (document_id,))
 
             max_version = cursor.fetchone()[0]
@@ -940,10 +942,10 @@ class VersionManager:
             username = self.gui.current_user.get('username', 'Unknown') if self.gui.current_user else 'Unknown'
 
             cursor.execute('''
-            INSERT INTO student_documents
-            (document_id, student_id, type_id, file_name, file_path, file_size, upload_date,
+            INSERT INTO documents
+            (document_id, source_type, owner_id, type_id, file_name, file_path, file_size, upload_date,
              uploaded_by, status, version_number, is_current_version)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, 1)
+            VALUES (?, 'student', ?, ?, ?, ?, ?, ?, ?, 'pending', ?, 1)
             ''', (document_id, student_id, type_id, file_name, file_path, file_size,
                  datetime.now().isoformat(), username, new_version))
 

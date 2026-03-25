@@ -9,9 +9,9 @@ import jwt as pyjwt
 import pytest
 from flask import Flask
 
-from education_system.university_system.api.auth import _blacklisted_tokens
-from education_system.university_system.api.errors import register_error_handlers
-from education_system.university_system.api.routes.student_routes import student_bp, _student_to_dict
+from education_system.shared.api.university.auth import _blacklisted_tokens
+from education_system.shared.api.university.errors import register_error_handlers
+from education_system.shared.api.university.routes.student_routes import student_bp, _student_to_dict
 
 # ---------------------------------------------------------------------------
 # Token helpers
@@ -147,8 +147,8 @@ class TestStudentAuth:
 
 class TestListStudents:
 
-    @patch("university_system.api.routes.student_routes.log_activity")
-    @patch("university_system.api.routes.student_routes.get_student_repository")
+    @patch("shared.api.university.routes.student_routes.log_activity")
+    @patch("shared.api.university.routes.student_routes.get_student_repository")
     def test_list_paginated(self, mock_repo_fn, mock_log, client):
         repo = MagicMock()
         repo.get_all.return_value = [_FakeStudent()]
@@ -162,8 +162,8 @@ class TestListStudents:
         assert "pagination" in data
         assert data["pagination"]["total"] == 1
 
-    @patch("university_system.api.routes.student_routes.log_activity")
-    @patch("university_system.api.routes.student_routes.get_student_repository")
+    @patch("shared.api.university.routes.student_routes.log_activity")
+    @patch("shared.api.university.routes.student_routes.get_student_repository")
     def test_list_with_search(self, mock_repo_fn, mock_log, client):
         repo = MagicMock()
         repo.search.return_value = [_FakeStudent()]
@@ -175,8 +175,8 @@ class TestListStudents:
         assert data["total"] == 1
         repo.search.assert_called_once_with("Jane")
 
-    @patch("university_system.api.routes.student_routes.log_activity")
-    @patch("university_system.api.routes.student_routes.get_student_repository")
+    @patch("shared.api.university.routes.student_routes.log_activity")
+    @patch("shared.api.university.routes.student_routes.get_student_repository")
     def test_list_with_status_filter(self, mock_repo_fn, mock_log, client):
         repo = MagicMock()
         repo.find_by_status.return_value = []
@@ -186,8 +186,8 @@ class TestListStudents:
         assert resp.status_code == 200
         repo.find_by_status.assert_called_once_with("Inactive")
 
-    @patch("university_system.api.routes.student_routes.log_activity")
-    @patch("university_system.api.routes.student_routes.get_student_repository")
+    @patch("shared.api.university.routes.student_routes.log_activity")
+    @patch("shared.api.university.routes.student_routes.get_student_repository")
     def test_list_with_course_filter(self, mock_repo_fn, mock_log, client):
         repo = MagicMock()
         repo.find_by_course.return_value = [_FakeStudent(), _FakeStudent(student_id="STU002")]
@@ -199,8 +199,8 @@ class TestListStudents:
         assert data["total"] == 2
         repo.find_by_course.assert_called_once_with("CS101")
 
-    @patch("university_system.api.routes.student_routes.log_activity")
-    @patch("university_system.api.routes.student_routes.get_student_repository")
+    @patch("shared.api.university.routes.student_routes.log_activity")
+    @patch("shared.api.university.routes.student_routes.get_student_repository")
     def test_list_empty(self, mock_repo_fn, mock_log, client):
         repo = MagicMock()
         repo.get_all.return_value = []
@@ -212,8 +212,8 @@ class TestListStudents:
         data = resp.get_json()
         assert data["items"] == []
 
-    @patch("university_system.api.routes.student_routes.log_activity")
-    @patch("university_system.api.routes.student_routes.get_student_repository")
+    @patch("shared.api.university.routes.student_routes.log_activity")
+    @patch("shared.api.university.routes.student_routes.get_student_repository")
     def test_list_pagination_params(self, mock_repo_fn, mock_log, client):
         repo = MagicMock()
         repo.get_all.return_value = []
@@ -234,8 +234,8 @@ class TestListStudents:
 
 class TestGetStudent:
 
-    @patch("university_system.api.routes.student_routes.log_activity")
-    @patch("university_system.api.routes.student_routes.get_student_repository")
+    @patch("shared.api.university.routes.student_routes.log_activity")
+    @patch("shared.api.university.routes.student_routes.get_student_repository")
     def test_get_existing_student(self, mock_repo_fn, mock_log, client):
         repo = MagicMock()
         repo.get_by_id.return_value = _FakeStudent(student_id="STU001")
@@ -246,7 +246,7 @@ class TestGetStudent:
         data = resp.get_json()
         assert data["student_id"] == "STU001"
 
-    @patch("university_system.api.routes.student_routes.get_student_repository")
+    @patch("shared.api.university.routes.student_routes.get_student_repository")
     def test_get_nonexistent_student(self, mock_repo_fn, client):
         repo = MagicMock()
         repo.get_by_id.return_value = None
@@ -262,8 +262,8 @@ class TestGetStudent:
 
 class TestCreateStudent:
 
-    @patch("university_system.api.routes.student_routes.log_activity")
-    @patch("university_system.api.routes.student_routes.get_student_repository")
+    @patch("shared.api.university.routes.student_routes.log_activity")
+    @patch("shared.api.university.routes.student_routes.get_student_repository")
     def test_create_success(self, mock_repo_fn, mock_log, client):
         repo = MagicMock()
         saved = _FakeStudent(student_id="STU010", first_name="John", last_name="Smith")
@@ -311,8 +311,8 @@ class TestCreateStudent:
         )
         assert resp.status_code == 400
 
-    @patch("university_system.api.routes.student_routes.log_activity")
-    @patch("university_system.api.routes.student_routes.get_student_repository")
+    @patch("shared.api.university.routes.student_routes.log_activity")
+    @patch("shared.api.university.routes.student_routes.get_student_repository")
     def test_create_with_optional_fields(self, mock_repo_fn, mock_log, client):
         repo = MagicMock()
         repo.save.return_value = _FakeStudent(
@@ -358,8 +358,8 @@ class TestCreateStudent:
 
 class TestUpdateStudent:
 
-    @patch("university_system.api.routes.student_routes.log_activity")
-    @patch("university_system.api.routes.student_routes.get_student_repository")
+    @patch("shared.api.university.routes.student_routes.log_activity")
+    @patch("shared.api.university.routes.student_routes.get_student_repository")
     def test_update_success(self, mock_repo_fn, mock_log, client):
         existing = _FakeStudent(student_id="STU001")
         repo = MagicMock()
@@ -375,7 +375,7 @@ class TestUpdateStudent:
         assert resp.status_code == 200
         assert resp.get_json()["first_name"] == "Updated"
 
-    @patch("university_system.api.routes.student_routes.get_student_repository")
+    @patch("shared.api.university.routes.student_routes.get_student_repository")
     def test_update_nonexistent(self, mock_repo_fn, client):
         repo = MagicMock()
         repo.get_by_id.return_value = None
@@ -396,8 +396,8 @@ class TestUpdateStudent:
         )
         assert resp.status_code == 400
 
-    @patch("university_system.api.routes.student_routes.log_activity")
-    @patch("university_system.api.routes.student_routes.get_student_repository")
+    @patch("shared.api.university.routes.student_routes.log_activity")
+    @patch("shared.api.university.routes.student_routes.get_student_repository")
     def test_update_multiple_fields(self, mock_repo_fn, mock_log, client):
         existing = _FakeStudent(student_id="STU001")
         repo = MagicMock()
@@ -431,8 +431,8 @@ class TestUpdateStudent:
 
 class TestDeleteStudent:
 
-    @patch("university_system.api.routes.student_routes.log_activity")
-    @patch("university_system.api.routes.student_routes.get_student_repository")
+    @patch("shared.api.university.routes.student_routes.log_activity")
+    @patch("shared.api.university.routes.student_routes.get_student_repository")
     def test_delete_success(self, mock_repo_fn, mock_log, client):
         repo = MagicMock()
         repo.exists.return_value = True
@@ -443,7 +443,7 @@ class TestDeleteStudent:
         assert "deleted" in resp.get_json()["message"].lower()
         repo.delete.assert_called_once_with("STU001")
 
-    @patch("university_system.api.routes.student_routes.get_student_repository")
+    @patch("shared.api.university.routes.student_routes.get_student_repository")
     def test_delete_nonexistent(self, mock_repo_fn, client):
         repo = MagicMock()
         repo.exists.return_value = False

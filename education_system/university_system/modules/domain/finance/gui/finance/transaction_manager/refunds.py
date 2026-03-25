@@ -140,19 +140,24 @@ class RefundsMixin:
                 request_date = datetime.now().strftime('%Y-%m-%d')
 
                 cursor.execute('''
-                INSERT INTO refunds
-                (student_id, original_payment_id, refund_amount, refund_reason, refund_type,
-                 refund_method, status, requested_by, request_date, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (student_id, original_payment_id, refund_amount, reason, refund_type,
-                      refund_method, 'pending', username, request_date, now))
+                INSERT INTO unified_refunds
+                (student_id, reference_id, reference_type, amount, reason, refund_type,
+                 refund_method, status, requested_by, request_date, refund_date,
+                 source_type, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (student_id,
+                      str(original_payment_id) if original_payment_id else None,
+                      'payment' if original_payment_id else None,
+                      refund_amount, reason, refund_type,
+                      refund_method, 'pending', username, request_date, request_date,
+                      'general', now))
 
                 refund_id = cursor.lastrowid
 
                 # Auto-approve if user has permissions (simplified)
                 if has_approve_permission:
                     cursor.execute('''
-                    UPDATE refunds
+                    UPDATE unified_refunds
                     SET status = 'approved', approved_by = ?, approval_date = ?
                     WHERE refund_id = ?
                     ''', (username, request_date, refund_id))

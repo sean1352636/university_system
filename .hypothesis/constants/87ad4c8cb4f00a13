@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/gui/internship_management/internships.py
+# hypothesis_version: 6.151.9
+
+[150, ' - ', '#27ae60', '#2c3e50', '#34495e', '#3498db', '#6c757d', '#d1ecf1', '#e74c3c', '#e8f5e8', '#ecf0f1', '#f8d7da', '#f8f9fa', '#fff3cd', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '1.0', 'Apply Now', 'Arial', 'Back to List', 'Company', 'Database Error', 'Deadline', 'Description', 'Error', 'ID', 'Location', 'Paid', 'Requirements', 'Selection Error', 'Status', 'Success', 'Title', 'Unpaid', 'Validation Error', 'apply_for_internship', 'approved', 'bg', 'bold', 'both', 'bottom', 'common.cancel', 'common.error', 'common.refresh', 'disabled', 'end', 'end-1c', 'flat', 'headings', 'horizontal', 'id', 'internship.btn.apply', 'left', 'my_cv.pdf', 'pending', 'raised', 'readonly', 'rejected', 'right', 'role', 'student', 'values', 'w', 'white', 'word', 'x', 'y']

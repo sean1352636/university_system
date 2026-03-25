@@ -7,10 +7,10 @@ import os
 
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
-from ..config import GuiConfig
-from ..common import logger
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.config import GuiConfig
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.common import logger
 
-from ..common import NLTK_AVAILABLE
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.common import NLTK_AVAILABLE
 try:
     from nltk.tokenize import word_tokenize
 except ImportError:

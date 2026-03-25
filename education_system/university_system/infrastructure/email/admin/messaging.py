@@ -78,15 +78,16 @@ class _MessagingMixin:
             return False
 
         def _send_message_op(cursor):
-            # Validate recipient exists
+            # Validate recipient exists (check legacy users table, fall back to shared auth)
             cursor.execute('SELECT id, email, username FROM users WHERE id = ?', (recipient_id,))
             recipient_data = cursor.fetchone()
-            if not recipient_data:
-                log_event('error', f"Recipient with ID {recipient_id} not found")
-                return False
-
-            recipient_email = recipient_data[1]
-            recipient_username = recipient_data[2]
+            if recipient_data:
+                recipient_email = recipient_data[1]
+                recipient_username = recipient_data[2]
+            else:
+                # Recipient may only exist in shared auth DB
+                recipient_email = None
+                recipient_username = f"User {recipient_id}"
 
             # Create the message
             sender_id = self.auth.current_user['id']
@@ -188,12 +189,14 @@ class _MessagingMixin:
             """Single transaction for reading message and logging"""
             # Get the message and check if user is authorized to read it - FIXED for actual schema
             cursor.execute('''
-            SELECT m.id, m.sender_id, s.username as sender_username, m.recipient_id,
-                   r.username as recipient_username, m.subject, m.content,
+            SELECT m.id, m.sender_id, COALESCE(s.username, 'User ' || m.sender_id) as sender_username,
+                   m.recipient_id,
+                   COALESCE(r.username, 'User ' || m.recipient_id) as recipient_username,
+                   m.subject, m.content,
                    m.is_read, m.sent_at, m.assignment_id, m.reply_to
             FROM messages m
-            JOIN users s ON m.sender_id = s.id
-            JOIN users r ON m.recipient_id = r.id
+            LEFT JOIN users s ON m.sender_id = s.id
+            LEFT JOIN users r ON m.recipient_id = r.id
             WHERE m.id = ? AND (m.sender_id = ? OR m.recipient_id = ?)
             ''', (message_id, user_id, user_id))
 

@@ -1,4 +1,4 @@
-from ._common import datetime, sqlite3, get_connection
+from education_system.university_system.modules.shared.utils.document_manager._common import datetime, sqlite3, get_connection
 
 
 class WebInterfaceMixin:

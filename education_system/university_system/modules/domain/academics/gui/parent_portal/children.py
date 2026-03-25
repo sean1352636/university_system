@@ -1,3 +1,4 @@
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, scrolledtext, filedialog
@@ -41,7 +42,7 @@ except ImportError:
 
 
 
-from .base import ParentPortalGUI
+from education_system.university_system.modules.domain.academics.gui.parent_portal.base import ParentPortalGUI
 
 def show_children(self):
     """Show authorized students overview"""
@@ -243,7 +244,7 @@ def show_all_students(self):
                     ORDER BY last_name, first_name
                     LIMIT 500
                 """
-                pattern = f"%{filter_text}%"
+                pattern = f"%{escape_like(filter_text)}%"
                 cursor.execute(query, (pattern, pattern, pattern, pattern, pattern))
             else:
                 cursor.execute("""

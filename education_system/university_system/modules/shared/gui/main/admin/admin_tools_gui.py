@@ -1352,6 +1352,21 @@ def show_custom_report_builder(self):
 
         last_query_data = {'columns': [], 'rows': []}
 
+        def _get_valid_columns(table_name):
+            """Get the set of valid column names for a table."""
+            valid = set()
+            try:
+                conn = get_connection()
+                cursor = conn.execute(f"PRAGMA table_info([{table_name}])")
+                valid = {row['name'] if isinstance(row, dict) else row[1] for row in cursor.fetchall()}
+                conn.close()
+            except Exception:
+                pass
+            return valid
+
+        ALLOWED_OPS = {'=', '!=', '>', '<', '>=', '<=', 'LIKE', 'IN'}
+        ALLOWED_ORDERS = {'ASC', 'DESC'}
+
         def run_preview():
             table = table_var.get()
             if not table or table not in tables:
@@ -1362,25 +1377,36 @@ def show_custom_report_builder(self):
                 messagebox.showwarning(_t("admin_tools_v2.error"), _t("admin_tools_v2.report_builder.no_columns"))
                 return
 
-            col_str = ', '.join(selected_cols)
-            query = f"SELECT {col_str} FROM {table}"
+            # Validate column names against actual table schema
+            valid_columns = _get_valid_columns(table)
+            selected_cols = [c for c in selected_cols if c in valid_columns]
+            if not selected_cols:
+                messagebox.showwarning(_t("admin_tools_v2.error"), _t("admin_tools_v2.report_builder.no_columns"))
+                return
+
+            col_str = ', '.join(f'[{c}]' for c in selected_cols)
+            query = f"SELECT {col_str} FROM [{table}]"
             params = []
 
-            # Build WHERE
+            # Build WHERE — validate filter column names and operators
             wheres = []
             for col_e, op_var_f, val_e, _ in filter_rows:
                 col_name = col_e.get().strip()
                 op = op_var_f.get()
                 val = val_e.get().strip()
-                if col_name and val:
-                    wheres.append(f"{col_name} {op} ?")
+                if col_name and val and col_name in valid_columns and op in ALLOWED_OPS:
+                    wheres.append(f"[{col_name}] {op} ?")
                     params.append(val)
             if wheres:
                 query += " WHERE " + " AND ".join(wheres)
 
+            # Validate sort column against table schema
             sort = sort_var.get().strip()
-            if sort:
-                query += f" ORDER BY {sort} {order_var.get()}"
+            if sort and sort in valid_columns:
+                order = order_var.get().upper()
+                if order not in ALLOWED_ORDERS:
+                    order = 'ASC'
+                query += f" ORDER BY [{sort}] {order}"
 
             try:
                 lim = int(limit_var.get())

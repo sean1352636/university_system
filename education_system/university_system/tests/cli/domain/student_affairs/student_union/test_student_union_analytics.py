@@ -62,8 +62,8 @@ class TestGenerateAdvancedAnalytics:
 
     @patch('builtins.input', side_effect=['7'])
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.analytics.get_connection')
-    @patch('university_system.modules.core.services.student_union_misc.context')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.analytics.get_connection')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
     def test_analytics_menu_exit(self, mock_ctx, mock_get_conn, mock_print, mock_input):
         """Test analytics menu displays and exits."""
         mock_ctx.auth = Mock()
@@ -81,7 +81,7 @@ class TestGenerateAdvancedAnalytics:
         mock_conn.close.assert_called_once()
 
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.context')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
     def test_analytics_no_auth(self, mock_ctx, mock_print):
         """Test analytics without authentication."""
         mock_ctx.auth = None
@@ -92,7 +92,7 @@ class TestGenerateAdvancedAnalytics:
         assert any('must be logged in' in str(call).lower() for call in mock_print.call_args_list)
 
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.context')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
     def test_analytics_no_permission(self, mock_ctx, mock_print):
         """Test analytics without permission."""
         mock_ctx.auth = Mock()

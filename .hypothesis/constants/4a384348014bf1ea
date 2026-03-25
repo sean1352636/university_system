@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/layout/_fees.py
+# hypothesis_version: 6.151.9
+
+[0.0, 100, 120, ' - ', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '0.00', '1.0', '500x450', '550x520', ':', '<<ComboboxSelected>>', 'AUD', 'Arial', 'CAD', 'EUR', 'Fee', 'GBP', 'Please select a fee.', 'Record Fee Payment', 'USD', '_', 'amount', 'bank_transfer', 'bold', 'both', 'card', 'cash', 'cheque', 'common.error', 'common.success', 'currency', 'danger', 'due_date', 'end', 'ew', 'fee_id', 'fee_type', 'fees', 'headings', 'horizontal', 'info', 'is_logged_in', 'left', 'ns', 'nsew', 'nw', 'online', 'paid', 'partial', 'readonly', 'right', 'secondary', 'status', 'student_fee_id', 'student_id', 'success', 'system', 'unpaid', 'username', 'values', 'vertical', 'w', 'warning', 'white', 'x']

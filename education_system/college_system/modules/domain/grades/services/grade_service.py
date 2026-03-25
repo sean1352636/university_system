@@ -275,6 +275,26 @@ class GradeService:
         finally:
             conn.close()
 
+    def delete_grade(self, grade_id: int) -> bool:
+        """Delete a grade record by ID."""
+        conn = self._conn()
+        try:
+            result = conn.execute(
+                "DELETE FROM grades WHERE id = ?", (grade_id,)
+            )
+            conn.commit()
+            if result.rowcount == 0:
+                raise GradeError(f"Grade {grade_id} not found.")
+            logger.info("Grade deleted: id=%d", grade_id)
+            return True
+        except GradeError:
+            raise
+        except Exception as e:
+            conn.rollback()
+            raise GradeError(f"Failed to delete grade: {e}") from e
+        finally:
+            conn.close()
+
     def get_class_statistics(self, course_pk: int) -> dict:
         """Get grade statistics for a course."""
         conn = self._conn()

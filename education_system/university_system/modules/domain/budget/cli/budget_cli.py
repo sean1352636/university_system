@@ -395,7 +395,7 @@ class BudgetTrackerCLI:
             from education_system.university_system.infrastructure.database.db import transaction
             with transaction() as conn:
                 conn.execute('''
-                    INSERT INTO budget_categories (
+                    INSERT INTO student_budget_categories (
                         budget_id, category_name, category_type, allocated_amount
                     ) VALUES (?, ?, ?, ?)
                 ''', (budget_id, cat_name, cat_type, cat_amount))
@@ -462,7 +462,7 @@ class BudgetTrackerCLI:
                     # Show categories for selected budget
                     with get_connection() as conn:
                         categories = conn.execute('''
-                            SELECT * FROM budget_categories WHERE budget_id = ?
+                            SELECT * FROM student_budget_categories WHERE budget_id = ?
                         ''', (budget_id,)).fetchall()
 
                     if categories:

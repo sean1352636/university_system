@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/finance_integration.py
+# hypothesis_version: 6.151.9
+
+[20.0, '%Y-%m-%d %H:%M:%S', 'Cash', 'GBP', 'SELECT ', 'Student', 'System', '_', 'amount', 'average_transaction', 'column', 'completed', 'count', 'email', 'email_address', 'email_sent', 'end_date', 'first_name', 'full_name', 'last_name', 'max_transaction', 'message', 'min_transaction', 'net_paid', 'new_balance', 'payment', 'payments_by_source', 'processed', 'receipt_sent', 'source', 'start_date', 'student_email', 'student_id', 'success', 'total_paid', 'total_payments', 'total_refunded', 'total_refunds', 'total_revenue', 'transaction_count', 'transaction_id']

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/parent_portal/assignments.py
+# hypothesis_version: 6.151.9
+
+[150, '%Y-%m-%d', ')', ',', '-', '08:00-09:00', '09:00-10:00', '10:00-11:00', '11:00-12:00', '12:00-13:00', '13:00-14:00', '14:00-15:00', '15:00-16:00', ':', '?', 'Arial', 'Assignment', 'Assignment Details', 'Assignments', 'Completed', 'Due Date', 'Error', 'Friday', 'Grade/Priority', 'ID: ', 'In Progress', 'Load Assignments', 'Load Timetable', 'Module', 'Monday', 'N/A', 'Not Started', 'Overdue', 'Select Student:', 'Status', 'Student Timetables', 'Subject', 'Thursday', 'Time', 'Timetable', 'Title.TLabel', 'Tuesday', 'Upcoming', 'View Details', 'Wednesday', 'Weekly Timetable', 'bold', 'center', 'green', 'headings', 'nsew', 'orange', 'readonly', 'red', 'values', '← Back']

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/helpdesk/database.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d %H:%M:%S', 'Academic Affairs', 'Account Access', 'Critical', 'Financial Services', 'IT Support', 'Student Services', 'Technical Support', 'academic@school.edu', 'finance@school.edu', 'high', 'itsupport@school.edu', 'low', 'medium', 'students@school.edu', 'ticket_created', 'time_based']

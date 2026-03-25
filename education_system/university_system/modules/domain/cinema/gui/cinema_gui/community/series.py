@@ -11,7 +11,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_series_page(self):
     self.clear_content()
@@ -31,13 +31,15 @@ def show_series_page(self):
         self.series_tree.heading(col, text=col)
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("""SELECT s.id, s.name, s.description,
-                    (SELECT COUNT(*) FROM movie_series_link WHERE series_id = s.id) as movie_count,
-                    s.created_at FROM movie_series s ORDER BY s.name""")
-    for row in cursor.fetchall():
-        self.series_tree.insert("", "end", values=(row[0], row[1], row[2] or "-", row[3], row[4][:10] if row[4] else "-"))
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""SELECT s.id, s.name, s.description,
+                        (SELECT COUNT(*) FROM movie_series_link WHERE series_id = s.id) as movie_count,
+                        s.created_at FROM movie_series s ORDER BY s.name""")
+        for row in cursor.fetchall():
+            self.series_tree.insert("", "end", values=(row[0], row[1], row[2] or "-", row[3], row[4][:10] if row[4] else "-"))
+    finally:
+        conn.close()
 
     self.series_tree.pack(fill="both", expand=True, side="left")
     scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.series_tree.yview)
@@ -68,13 +70,15 @@ def on_series_select(self, event):
         self.series_movies_tree.delete(item)
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("""SELECT sl.order_in_series, m.title, m.release_year
-                    FROM movie_series_link sl JOIN movies m ON sl.movie_id = m.id
-                    WHERE sl.series_id = ? ORDER BY sl.order_in_series""", (series_id,))
-    for row in cursor.fetchall():
-        self.series_movies_tree.insert("", "end", values=(row[0], row[1], row[2] or "-"))
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""SELECT sl.order_in_series, m.title, m.release_year
+                        FROM movie_series_link sl JOIN movies m ON sl.movie_id = m.id
+                        WHERE sl.series_id = ? ORDER BY sl.order_in_series""", (series_id,))
+        for row in cursor.fetchall():
+            self.series_movies_tree.insert("", "end", values=(row[0], row[1], row[2] or "-"))
+    finally:
+        conn.close()
 
 def create_series(self):
     form = tk.Toplevel(self.root)
@@ -102,11 +106,13 @@ def create_series(self):
             messagebox.showwarning(_t("cinema.common.warning"), "Enter series name")
             return
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO movie_series (name, description, created_at) VALUES (?, ?, datetime('now'))",
-                      (name_e.get().strip(), desc_e.get().strip()))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO movie_series (name, description, created_at) VALUES (?, ?, datetime('now'))",
+                          (name_e.get().strip(), desc_e.get().strip()))
+            conn.commit()
+        finally:
+            conn.close()
         messagebox.showinfo(_t("cinema.common.success"), "Series created")
         form.destroy()
         self.show_series_page()
@@ -127,12 +133,14 @@ def link_movie_to_series(self):
     tk.Label(frame, text=_t("cinema.series.link_movie"), font=("Helvetica", 14, "bold"), bg="#ffffff", fg="#e74c3c").pack(pady=10)
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, name FROM movie_series ORDER BY name")
-    series_list = cursor.fetchall()
-    cursor.execute("SELECT id, title FROM movies ORDER BY title")
-    movies_list = cursor.fetchall()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, name FROM movie_series ORDER BY name")
+        series_list = cursor.fetchall()
+        cursor.execute("SELECT id, title FROM movies ORDER BY title")
+        movies_list = cursor.fetchall()
+    finally:
+        conn.close()
 
     tk.Label(frame, text=_t("cinema.labels.series"), bg="#ffffff", fg="#333333").pack(anchor="w")
     series_var = tk.StringVar()
@@ -160,11 +168,13 @@ def link_movie_to_series(self):
         order = int(order_e.get() or 1)
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("INSERT OR REPLACE INTO movie_series_link (series_id, movie_id, order_in_series) VALUES (?, ?, ?)",
-                      (series_id, movie_id, order))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("INSERT OR REPLACE INTO movie_series_link (series_id, movie_id, order_in_series) VALUES (?, ?, ?)",
+                          (series_id, movie_id, order))
+            conn.commit()
+        finally:
+            conn.close()
         messagebox.showinfo(_t("cinema.common.success"), "Movie linked to series")
         form.destroy()
         self.show_series_page()

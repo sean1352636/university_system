@@ -2,7 +2,7 @@
 Research & Grants Management Service Module
 """
 
-from .research_grants_core import (
+from education_system.university_system.modules.domain.research.services.research_grants_core import (
     ResearchProjectManager, GrantApplicationManager, PublicationManager,
     MilestoneManager, EquipmentManager, EthicsReviewManager
 )

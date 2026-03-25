@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/academic_calendar/dialogs_academic.py
+# hypothesis_version: 6.151.9
+
+['400x300', '400x350', 'Arial', 'Fall', 'Spring', 'Summer', 'Winter', 'bold', 'common.add', 'common.cancel', 'common.error', 'common.success', 'id', 'values']

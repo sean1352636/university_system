@@ -76,7 +76,7 @@ class TestHealthPortalManagementGUIInit:
 
     def test_init_without_theme_manager(self, root_window, mock_auth):
         """Test initialization when theme manager is not available"""
-        with patch('university_system.modules.domain.health.gui.health_portal_management_gui.get_theme_manager', side_effect=ImportError):
+        with patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.get_theme_manager', side_effect=ImportError):
             gui = HealthPortalManagementGUI(root_window, mock_auth)
 
             assert gui.theme_manager is None
@@ -85,7 +85,7 @@ class TestHealthPortalManagementGUIInit:
         """Test initialization with theme manager"""
         mock_theme_manager = Mock()
 
-        with patch('university_system.modules.domain.health.gui.health_portal_management_gui.get_theme_manager', return_value=mock_theme_manager):
+        with patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.get_theme_manager', return_value=mock_theme_manager):
             gui = HealthPortalManagementGUI(root_window, mock_auth)
 
             assert gui.theme_manager == mock_theme_manager
@@ -94,14 +94,14 @@ class TestHealthPortalManagementGUIInit:
 class TestOpenHealthPortalGUI:
     """Test opening the health portal GUI"""
 
-    @patch('university_system.modules.domain.health.gui.health_portal_management_gui.tk.Toplevel')
-    @patch('university_system.modules.domain.health.gui.health_portal_management_gui._HealthPortalGUI')
+    @patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui._HealthPortalGUI')
     def test_open_health_portal_gui_success(self, mock_health_portal_gui, mock_toplevel, root_window, mock_auth):
         """Test successfully opening health portal GUI"""
         mock_window = Mock()
         mock_toplevel.return_value = mock_window
 
-        with patch('university_system.modules.domain.health.gui.health_portal_management_gui.HEALTH_PORTAL_GUI_AVAILABLE', True):
+        with patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.HEALTH_PORTAL_GUI_AVAILABLE', True):
             gui = HealthPortalManagementGUI(root_window, mock_auth)
             gui.open_health_portal_gui()
 
@@ -113,11 +113,11 @@ class TestOpenHealthPortalGUI:
             # Verify HealthPortalGUI was instantiated
             mock_health_portal_gui.assert_called_once()
 
-    @patch('university_system.modules.domain.health.gui.health_portal_management_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.messagebox')
     def test_open_health_portal_gui_not_available(self, mock_messagebox, root_window, mock_auth):
         """Test opening when health portal GUI is not available"""
-        with patch('university_system.modules.domain.health.gui.health_portal_management_gui.HEALTH_PORTAL_GUI_AVAILABLE', False):
-            with patch('university_system.modules.domain.health.gui.health_portal_management_gui._HEALTH_PORTAL_GUI_IMPORT_ERROR', 'Module not found'):
+        with patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.HEALTH_PORTAL_GUI_AVAILABLE', False):
+            with patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui._HEALTH_PORTAL_GUI_IMPORT_ERROR', 'Module not found'):
                 gui = HealthPortalManagementGUI(root_window, mock_auth)
                 gui.open_health_portal_gui()
 
@@ -125,16 +125,16 @@ class TestOpenHealthPortalGUI:
                 mock_messagebox.showerror.assert_called_once()
                 assert 'Health Portal' in str(mock_messagebox.showerror.call_args)
 
-    @patch('university_system.modules.domain.health.gui.health_portal_management_gui.tk.Toplevel')
-    @patch('university_system.modules.domain.health.gui.health_portal_management_gui._HealthPortalGUI')
+    @patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui._HealthPortalGUI')
     def test_open_with_theme_manager(self, mock_health_portal_gui, mock_toplevel, root_window, mock_auth):
         """Test opening portal with theme manager applies theme"""
         mock_window = Mock()
         mock_toplevel.return_value = mock_window
         mock_theme_manager = Mock()
 
-        with patch('university_system.modules.domain.health.gui.health_portal_management_gui.HEALTH_PORTAL_GUI_AVAILABLE', True):
-            with patch('university_system.modules.domain.health.gui.health_portal_management_gui.get_theme_manager', return_value=mock_theme_manager):
+        with patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.HEALTH_PORTAL_GUI_AVAILABLE', True):
+            with patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.get_theme_manager', return_value=mock_theme_manager):
                 gui = HealthPortalManagementGUI(root_window, mock_auth)
                 gui.open_health_portal_gui()
 
@@ -177,7 +177,7 @@ class TestHealthChecks:
         """Test database check succeeds with valid database"""
         gui = HealthPortalManagementGUI(root_window, mock_auth)
 
-        with patch('university_system.modules.domain.health.gui.health_portal_management_gui.DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.DB_PATH', temp_db):
             result = gui._check_database()
 
             assert result is True
@@ -186,7 +186,7 @@ class TestHealthChecks:
         """Test database check fails with missing database"""
         gui = HealthPortalManagementGUI(root_window, mock_auth)
 
-        with patch('university_system.modules.domain.health.gui.health_portal_management_gui.DB_PATH', '/nonexistent/path.db'):
+        with patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.DB_PATH', '/nonexistent/path.db'):
             result = gui._check_database()
 
             assert result is False
@@ -195,7 +195,7 @@ class TestHealthChecks:
         """Test database check fails when DB_PATH is None"""
         gui = HealthPortalManagementGUI(root_window, mock_auth)
 
-        with patch('university_system.modules.domain.health.gui.health_portal_management_gui.DB_PATH', None):
+        with patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.DB_PATH', None):
             result = gui._check_database()
 
             assert result is False
@@ -229,7 +229,7 @@ class TestHealthChecks:
         """Test GUI components check when portal GUI is available"""
         gui = HealthPortalManagementGUI(root_window, mock_auth)
 
-        with patch('university_system.modules.domain.health.gui.health_portal_management_gui.HEALTH_PORTAL_GUI_AVAILABLE', True):
+        with patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.HEALTH_PORTAL_GUI_AVAILABLE', True):
             result = gui._check_gui_components()
 
             assert result is True
@@ -238,7 +238,7 @@ class TestHealthChecks:
         """Test GUI components check when portal GUI is not available"""
         gui = HealthPortalManagementGUI(root_window, mock_auth)
 
-        with patch('university_system.modules.domain.health.gui.health_portal_management_gui.HEALTH_PORTAL_GUI_AVAILABLE', False):
+        with patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.HEALTH_PORTAL_GUI_AVAILABLE', False):
             result = gui._check_gui_components()
 
             assert result is False
@@ -250,7 +250,7 @@ class TestThemeSupport:
         """Test theme change handler with theme manager"""
         mock_theme_manager = Mock()
 
-        with patch('university_system.modules.domain.health.gui.health_portal_management_gui.get_theme_manager', return_value=mock_theme_manager):
+        with patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.get_theme_manager', return_value=mock_theme_manager):
             gui = HealthPortalManagementGUI(root_window, mock_auth)
 
             # Call theme change handler
@@ -261,7 +261,7 @@ class TestThemeSupport:
 
     def test_on_theme_changed_without_theme_manager(self, root_window, mock_auth):
         """Test theme change handler without theme manager"""
-        with patch('university_system.modules.domain.health.gui.health_portal_management_gui.get_theme_manager', side_effect=Exception):
+        with patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.get_theme_manager', side_effect=Exception):
             gui = HealthPortalManagementGUI(root_window, mock_auth)
 
             # Call theme change handler
@@ -273,11 +273,11 @@ class TestThemeSupport:
 class TestErrorHandling:
     """Test error handling scenarios"""
 
-    @patch('university_system.modules.domain.health.gui.health_portal_management_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.messagebox')
     def test_open_health_portal_gui_exception(self, mock_messagebox, root_window, mock_auth):
         """Test error handling when opening portal fails"""
-        with patch('university_system.modules.domain.health.gui.health_portal_management_gui.HEALTH_PORTAL_GUI_AVAILABLE', True):
-            with patch('university_system.modules.domain.health.gui.health_portal_management_gui.tk.Toplevel', side_effect=Exception("Test error")):
+        with patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.HEALTH_PORTAL_GUI_AVAILABLE', True):
+            with patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.tk.Toplevel', side_effect=Exception("Test error")):
                 gui = HealthPortalManagementGUI(root_window, mock_auth)
                 gui.open_health_portal_gui()
 
@@ -288,7 +288,7 @@ class TestErrorHandling:
         """Test database check handles exceptions gracefully"""
         gui = HealthPortalManagementGUI(root_window, mock_auth)
 
-        with patch('university_system.modules.domain.health.gui.health_portal_management_gui.sqlite3.connect', side_effect=Exception("DB Error")):
+        with patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.sqlite3.connect', side_effect=Exception("DB Error")):
             result = gui._check_database()
 
             # Should return False on exception
@@ -297,17 +297,17 @@ class TestErrorHandling:
 class TestIntegration:
     """Integration tests for complete workflows"""
 
-    @patch('university_system.modules.domain.health.gui.health_portal_management_gui.tk.Toplevel')
-    @patch('university_system.modules.domain.health.gui.health_portal_management_gui._HealthPortalGUI')
+    @patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui._HealthPortalGUI')
     def test_complete_workflow_with_theme(self, mock_health_portal_gui, mock_toplevel, root_window, mock_auth, temp_db):
         """Test complete workflow with theme support and database"""
         mock_window = Mock()
         mock_toplevel.return_value = mock_window
         mock_theme_manager = Mock()
 
-        with patch('university_system.modules.domain.health.gui.health_portal_management_gui.HEALTH_PORTAL_GUI_AVAILABLE', True):
-            with patch('university_system.modules.domain.health.gui.health_portal_management_gui.get_theme_manager', return_value=mock_theme_manager):
-                with patch('university_system.modules.domain.health.gui.health_portal_management_gui.DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.HEALTH_PORTAL_GUI_AVAILABLE', True):
+            with patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.get_theme_manager', return_value=mock_theme_manager):
+                with patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.DB_PATH', temp_db):
                     # Create GUI
                     gui = HealthPortalManagementGUI(root_window, mock_auth)
 
@@ -326,8 +326,8 @@ class TestIntegration:
 
     def test_health_tab_with_all_checks(self, root_window, mock_auth, temp_db):
         """Test health tab creation with all checks"""
-        with patch('university_system.modules.domain.health.gui.health_portal_management_gui.DB_PATH', temp_db):
-            with patch('university_system.modules.domain.health.gui.health_portal_management_gui.HEALTH_PORTAL_GUI_AVAILABLE', True):
+        with patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.DB_PATH', temp_db):
+            with patch('education_system.university_system.modules.domain.health.gui.health_portal_management_gui.HEALTH_PORTAL_GUI_AVAILABLE', True):
                 gui = HealthPortalManagementGUI(root_window, mock_auth)
 
                 # Create parent frame

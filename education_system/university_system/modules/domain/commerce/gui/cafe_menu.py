@@ -9,7 +9,7 @@ from tkinter import ttk, messagebox
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
-from .cafe_system_gui import get_db_connection
+from education_system.university_system.modules.domain.commerce.gui.cafe_system_gui import get_db_connection
 
 
 class CafeMenuMixin:
@@ -76,8 +76,9 @@ class CafeMenuMixin:
 
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT item_id, name, category, price, stock_quantity, available
-                FROM cafe_menu_items
+                SELECT product_id, name, category, price, stock_quantity, is_available
+                FROM products
+                WHERE source_type = 'cafe'
                 ORDER BY category, name
             ''')
 
@@ -144,8 +145,8 @@ class CafeMenuMixin:
 
                 cursor = conn.cursor()
                 cursor.execute('''
-                    INSERT INTO cafe_menu_items (name, category, description, price, stock_quantity, available)
-                    VALUES (?, ?, ?, ?, ?, 1)
+                    INSERT INTO products (source_type, name, category, description, price, stock_quantity, is_available)
+                    VALUES ('cafe', ?, ?, ?, ?, ?, 1)
                 ''', (name, category, description, price, stock))
 
                 conn.commit()
@@ -225,9 +226,9 @@ class CafeMenuMixin:
 
                 cursor = conn.cursor()
                 cursor.execute('''
-                    UPDATE cafe_menu_items
-                    SET name = ?, category = ?, price = ?, stock_quantity = ?, available = ?
-                    WHERE item_id = ?
+                    UPDATE products
+                    SET name = ?, category = ?, price = ?, stock_quantity = ?, is_available = ?
+                    WHERE product_id = ? AND source_type = 'cafe'
                 ''', (name, category, price, stock, available, item_id))
 
                 conn.commit()
@@ -263,7 +264,7 @@ class CafeMenuMixin:
                 return
 
             cursor = conn.cursor()
-            cursor.execute('DELETE FROM cafe_menu_items WHERE item_id = ?', (item_id,))
+            cursor.execute("DELETE FROM products WHERE product_id = ? AND source_type = 'cafe'", (item_id,))
             conn.commit()
             conn.close()
 

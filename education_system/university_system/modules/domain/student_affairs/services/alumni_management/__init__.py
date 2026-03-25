@@ -6,7 +6,7 @@ All public functions are re-exported here for backward compatibility.
 """
 
 # Core infrastructure
-from .core import (
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.core import (
     get_db_connection,
     safe_execute,
     get_auth,
@@ -22,13 +22,13 @@ from .core import (
 from education_system.university_system.infrastructure.database.db import get_connection
 
 # Data model
-from .models import Alumni
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.models import Alumni
 
 # Database initialization
-from .database import init_alumni_db, init_default_enhanced_data
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.database import init_alumni_db, init_default_enhanced_data
 
 # Profile management
-from .profiles import (
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.profiles import (
     setup_alumni_directory,
     register_alumni,
     view_alumni,
@@ -37,7 +37,7 @@ from .profiles import (
 )
 
 # Events
-from .events import (
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.events import (
     view_events,
     search_events,
     view_event_details,
@@ -53,7 +53,7 @@ from .events import (
 )
 
 # Donations & Fundraising
-from .donations import (
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.donations import (
     record_donation,
     view_donations,
     create_fundraising_campaign,
@@ -66,7 +66,7 @@ from .donations import (
 )
 
 # Mentorship
-from .mentorship import (
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.mentorship import (
     setup_mentorship,
     view_mentorships,
     smart_mentorship_matching,
@@ -74,14 +74,14 @@ from .mentorship import (
 )
 
 # Stories
-from .stories import (
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.stories import (
     create_alumni_story,
     view_alumni_stories,
     read_full_story,
 )
 
 # Reunions
-from .reunions import (
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.reunions import (
     manage_existing_reunion,
     view_class_reunions,
     manage_class_reunions,
@@ -91,7 +91,7 @@ from .reunions import (
 )
 
 # Regional Chapters
-from .chapters import (
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.chapters import (
     view_my_chapters,
     admin_manage_chapters,
     manage_regional_chapters,
@@ -101,7 +101,7 @@ from .chapters import (
 )
 
 # Directory & Networking
-from .directory import (
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.directory import (
     search_alumni_directory,
     send_connection_request,
     view_connection_requests,
@@ -113,13 +113,13 @@ from .directory import (
 )
 
 # Communications
-from .communications import (
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.communications import (
     create_newsletter,
     send_newsletter_now,
 )
 
 # Forum
-from .forum import (
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.forum import (
     manage_alumni_forum,
     view_forum_posts,
     create_forum_post,
@@ -128,7 +128,7 @@ from .forum import (
 )
 
 # Jobs & Career Services
-from .jobs import (
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.jobs import (
     post_job_opportunity,
     view_job_board,
     view_job_details,
@@ -137,7 +137,7 @@ from .jobs import (
 )
 
 # Gamification & Engagement
-from .gamification import (
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.gamification import (
     award_engagement_points,
     get_activity_description,
     check_badge_achievements,
@@ -147,7 +147,7 @@ from .gamification import (
 )
 
 # Photos
-from .photos import (
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.photos import (
     manage_photo_gallery,
     view_photo_gallery,
     view_event_photos,
@@ -157,10 +157,10 @@ from .photos import (
 )
 
 # Reports
-from .reports import generate_alumni_report
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.reports import generate_alumni_report, get_engagement_dashboard
 
 # Menu & GUI
-from .menu import (
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.menu import (
     display_alumni_menu,
     display_alumni_relations_menu,
     launch_alumni_relations_gui,

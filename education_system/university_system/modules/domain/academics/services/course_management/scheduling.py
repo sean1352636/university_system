@@ -5,7 +5,7 @@ from education_system.university_system.modules.shared.utils.simple_activity_log
     log_read,
     log_update,
 )
-from .validation import validate_time_format, validate_days_of_week
+from education_system.university_system.modules.domain.academics.services.course_management.validation import validate_time_format, validate_days_of_week
 
 
 @log_create(module="course_management", description="Creating course schedule")

@@ -43,7 +43,7 @@ class TestProfitLossStatement:
             ('Utilities', 2000.0)
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', side_effect=['2025-01-01', '2025-01-31']):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                     financials.profit_loss_statement()
@@ -65,7 +65,7 @@ class TestProfitLossStatement:
         ]
         cursor.fetchall.return_value = [('Staff Wages', 20000.0)]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', side_effect=['2025-01-01', '2025-01-31']):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                     financials.profit_loss_statement()
@@ -83,10 +83,10 @@ class TestProfitLossStatement:
         conn, cursor = mock_db_connection
         cursor.fetchone.side_effect = Exception("Database error")
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', side_effect=['2025-01-01', '2025-01-31']):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
-                    with mock.patch('university_system.modules.core.services.restaurant_misc.financials.logging.error') as mock_log:
+                    with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.logging.error') as mock_log:
                         financials.profit_loss_statement()
 
                         output = fake_out.getvalue()
@@ -110,7 +110,7 @@ class TestExpenseTracking:
     def test_expense_tracking_add_expense(self):
         """Test choosing add expense option"""
         with mock.patch('builtins.input', side_effect=['1', '5']):
-            with mock.patch('university_system.modules.core.services.restaurant_misc.financials.add_expense') as mock_add:
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.add_expense') as mock_add:
                 with mock.patch('sys.stdout', new=StringIO()):
                     financials.expense_tracking()
                     # First iteration calls add_expense, second exits
@@ -132,12 +132,12 @@ class TestAddExpense:
         """Test successful expense addition"""
         conn, cursor = mock_db_connection
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
-            with mock.patch('university_system.modules.core.services.restaurant_misc.financials.ctx') as mock_ctx:
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.ctx') as mock_ctx:
                 mock_ctx.auth = mock_auth
 
-                with mock.patch('university_system.modules.core.services.restaurant_misc.financials.backup_before_operation'):
-                    with mock.patch('university_system.modules.core.services.restaurant_misc.financials.log_audit_action') as mock_log:
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.backup_before_operation'):
+                    with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.log_audit_action') as mock_log:
                         with mock.patch('builtins.input', side_effect=['1', 'Test expense', '100.50', '', '1', 'Test Vendor', '']):
                             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                                 financials.add_expense()
@@ -151,7 +151,7 @@ class TestAddExpense:
 
     def test_add_expense_no_auth(self):
         """Test add expense when not logged in"""
-        with mock.patch('university_system.modules.core.services.restaurant_misc.financials.ctx') as mock_ctx:
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.ctx') as mock_ctx:
             mock_ctx.auth = None
 
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
@@ -164,7 +164,7 @@ class TestAddExpense:
         """Test add expense without permission"""
         mock_auth.check_permission.return_value = False
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.financials.ctx') as mock_ctx:
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.ctx') as mock_ctx:
             mock_ctx.auth = mock_auth
 
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
@@ -177,11 +177,11 @@ class TestAddExpense:
         """Test add expense with invalid amount"""
         conn, cursor = mock_db_connection
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
-            with mock.patch('university_system.modules.core.services.restaurant_misc.financials.ctx') as mock_ctx:
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.ctx') as mock_ctx:
                 mock_ctx.auth = mock_auth
 
-                with mock.patch('university_system.modules.core.services.restaurant_misc.financials.backup_before_operation'):
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.backup_before_operation'):
                     with mock.patch('builtins.input', side_effect=['1', 'Test', 'invalid']):
                         with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                             financials.add_expense()
@@ -193,12 +193,12 @@ class TestAddExpense:
         """Test add expense with custom category"""
         conn, cursor = mock_db_connection
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
-            with mock.patch('university_system.modules.core.services.restaurant_misc.financials.ctx') as mock_ctx:
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.ctx') as mock_ctx:
                 mock_ctx.auth = mock_auth
 
-                with mock.patch('university_system.modules.core.services.restaurant_misc.financials.backup_before_operation'):
-                    with mock.patch('university_system.modules.core.services.restaurant_misc.financials.log_audit_action'):
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.backup_before_operation'):
+                    with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.log_audit_action'):
                         with mock.patch('builtins.input', side_effect=['9', 'Custom Category', 'Test', '50', '', '1', 'Vendor', '']):
                             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                                 financials.add_expense()
@@ -217,7 +217,7 @@ class TestViewExpenses:
             ('EXP001', 'Food & Beverages', 'Groceries', 150.00, '2025-01-15', 'Cash', 'Store A', None, None, 'Approved', None, None)
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', return_value='1'):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                     financials.view_expenses()
@@ -232,7 +232,7 @@ class TestViewExpenses:
         conn, cursor = mock_db_connection
         cursor.fetchall.return_value = []
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', side_effect=['2', 'Food & Beverages']):
                 with mock.patch('sys.stdout', new=StringIO()):
                     financials.view_expenses()
@@ -244,7 +244,7 @@ class TestViewExpenses:
         conn, cursor = mock_db_connection
         cursor.fetchall.return_value = []
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', return_value='1'):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                     financials.view_expenses()
@@ -276,7 +276,7 @@ class TestViewBudgets:
             ('BUD001', 'Food & Beverages', '2025-01-01', '2025-12-31', 50000.0, 25000.0, '2025-01-01', 'USER001', None)
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', return_value='1'):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                     financials.view_budgets()
@@ -293,7 +293,7 @@ class TestViewBudgets:
             ('BUD001', 'Utilities', '2025-01-01', '2025-12-31', 10000.0, 12000.0, '2025-01-01', 'USER001', None)
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', return_value='4'):
                 with mock.patch('sys.stdout', new=StringIO()):
                     financials.view_budgets()
@@ -307,12 +307,12 @@ class TestCreateBudget:
         """Test successful budget creation"""
         conn, cursor = mock_db_connection
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
-            with mock.patch('university_system.modules.core.services.restaurant_misc.financials.ctx') as mock_ctx:
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.ctx') as mock_ctx:
                 mock_ctx.auth = mock_auth
 
-                with mock.patch('university_system.modules.core.services.restaurant_misc.financials.backup_before_operation'):
-                    with mock.patch('university_system.modules.core.services.restaurant_misc.financials.log_audit_action') as mock_log:
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.backup_before_operation'):
+                    with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.log_audit_action') as mock_log:
                         with mock.patch('builtins.input', side_effect=['1', '2025-01-01', '2025-12-31', '50000', 'Test notes']):
                             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                                 financials.create_budget()
@@ -327,7 +327,7 @@ class TestCreateBudget:
         """Test create budget without permission"""
         mock_auth.check_permission.return_value = False
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.financials.ctx') as mock_ctx:
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.ctx') as mock_ctx:
             mock_ctx.auth = mock_auth
 
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
@@ -344,12 +344,12 @@ class TestUpdateBudget:
         conn, cursor = mock_db_connection
         cursor.fetchone.return_value = ('BUD001', 'Food', '2025-01-01', '2025-12-31', 50000.0, 25000.0, None, None, None)
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
-            with mock.patch('university_system.modules.core.services.restaurant_misc.financials.ctx') as mock_ctx:
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.ctx') as mock_ctx:
                 mock_ctx.auth = mock_auth
 
-                with mock.patch('university_system.modules.core.services.restaurant_misc.financials.backup_before_operation'):
-                    with mock.patch('university_system.modules.core.services.restaurant_misc.financials.log_audit_action'):
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.backup_before_operation'):
+                    with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.log_audit_action'):
                         with mock.patch('builtins.input', side_effect=['BUD001', '1', '60000']):
                             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                                 financials.update_budget()
@@ -362,11 +362,11 @@ class TestUpdateBudget:
         conn, cursor = mock_db_connection
         cursor.fetchone.return_value = None
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
-            with mock.patch('university_system.modules.core.services.restaurant_misc.financials.ctx') as mock_ctx:
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.ctx') as mock_ctx:
                 mock_ctx.auth = mock_auth
 
-                with mock.patch('university_system.modules.core.services.restaurant_misc.financials.backup_before_operation'):
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.backup_before_operation'):
                     with mock.patch('builtins.input', return_value='INVALID'):
                         with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                             financials.update_budget()
@@ -384,7 +384,7 @@ class TestBudgetVsActual:
             [('BUD001', 'Food', 50000.0, 35000.0, '2025-01-01', '2025-12-31')],  # current_budgets
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                 financials.budget_vs_actual()
 
@@ -401,7 +401,7 @@ class TestBudgetVsActual:
             [('BUD001', 'Food', 50000.0, 55000.0, '2025-01-01', '2025-12-31')],  # Over budget
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                 financials.budget_vs_actual()
 
@@ -418,7 +418,7 @@ class TestBudgetVsActual:
             []  # No recent budgets either
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.financials.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                 financials.budget_vs_actual()
 

@@ -1,6 +1,6 @@
-from . import _common
-from ._common import get_text, logging, datetime
-from .database import get_db_connection
+from education_system.university_system.modules.domain.mobility.services.trip_management import _common
+from education_system.university_system.modules.domain.mobility.services.trip_management._common import get_text, logging, datetime
+from education_system.university_system.modules.domain.mobility.services.trip_management.database import get_db_connection
 
 
 def setup_trip_permissions(auth=None):

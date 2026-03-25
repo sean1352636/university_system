@@ -553,11 +553,11 @@ class ConfigureVotingMethodsDialog:
         select_frame.pack(fill='x', pady=(0, 15))
 
         ttk.Label(select_frame, text="Election:").pack(side='left', padx=(0, 10))
-        election_combo = ttk.Combobox(select_frame, width=40, state='readonly')
-        election_combo['values'] = ('Student Union President 2025', 'VP Academic Affairs 2025',
+        self.election_combo = ttk.Combobox(select_frame, width=40, state='readonly')
+        self.election_combo['values'] = ('Student Union President 2025', 'VP Academic Affairs 2025',
                                      'Best Club Award 2025', 'Sports Team Captain Elections')
-        election_combo.pack(side='left', fill='x', expand=True)
-        election_combo.current(0)
+        self.election_combo.pack(side='left', fill='x', expand=True)
+        self.election_combo.current(0)
 
         # Create notebook for method configuration
         notebook = ttk.Notebook(main_frame)
@@ -573,14 +573,20 @@ class ConfigureVotingMethodsDialog:
         ttk.Label(standard_content, text="Standard Voting Configuration",
                  font=('Arial', 11, 'bold')).pack(anchor='w', pady=(0, 10))
 
-        ttk.Checkbutton(standard_content, text="Enable standard voting for this election").pack(anchor='w', pady=3)
-        ttk.Checkbutton(standard_content, text="Allow write-in candidates").pack(anchor='w', pady=3)
-        ttk.Checkbutton(standard_content, text="Show live results during voting").pack(anchor='w', pady=3)
-        ttk.Checkbutton(standard_content, text="Require confirmation before submitting").pack(anchor='w', pady=3)
+        self.enable_standard_var = tk.BooleanVar(value=True)
+        self.allow_writein_var = tk.BooleanVar()
+        self.show_live_results_var = tk.BooleanVar()
+        self.require_confirm_var = tk.BooleanVar(value=True)
+
+        ttk.Checkbutton(standard_content, text="Enable standard voting for this election", variable=self.enable_standard_var).pack(anchor='w', pady=3)
+        ttk.Checkbutton(standard_content, text="Allow write-in candidates", variable=self.allow_writein_var).pack(anchor='w', pady=3)
+        ttk.Checkbutton(standard_content, text="Show live results during voting", variable=self.show_live_results_var).pack(anchor='w', pady=3)
+        ttk.Checkbutton(standard_content, text="Require confirmation before submitting", variable=self.require_confirm_var).pack(anchor='w', pady=3)
 
         ttk.Label(standard_content, text="\nWinning Criterion:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
-        ttk.Radiobutton(standard_content, text="Simple Plurality (most votes wins)", value=1).pack(anchor='w', pady=2)
-        ttk.Radiobutton(standard_content, text="Absolute Majority (>50% required, runoff if needed)", value=2).pack(anchor='w', pady=2)
+        self.winning_criterion_var = tk.IntVar(value=1)
+        ttk.Radiobutton(standard_content, text="Simple Plurality (most votes wins)", variable=self.winning_criterion_var, value=1).pack(anchor='w', pady=2)
+        ttk.Radiobutton(standard_content, text="Absolute Majority (>50% required, runoff if needed)", variable=self.winning_criterion_var, value=2).pack(anchor='w', pady=2)
 
         # Ranked Choice tab
         rcv_frame = ttk.Frame(notebook)
@@ -592,23 +598,29 @@ class ConfigureVotingMethodsDialog:
         ttk.Label(rcv_content, text="Ranked Choice Voting Configuration",
                  font=('Arial', 11, 'bold')).pack(anchor='w', pady=(0, 10))
 
-        ttk.Checkbutton(rcv_content, text="Enable ranked choice voting for this election").pack(anchor='w', pady=3)
-        ttk.Checkbutton(rcv_content, text="Allow partial rankings (don't require ranking all)").pack(anchor='w', pady=3)
-        ttk.Checkbutton(rcv_content, text="Show instant runoff visualization").pack(anchor='w', pady=3)
+        self.enable_rcv_var = tk.BooleanVar()
+        self.allow_partial_var = tk.BooleanVar(value=True)
+        self.show_runoff_viz_var = tk.BooleanVar()
+
+        ttk.Checkbutton(rcv_content, text="Enable ranked choice voting for this election", variable=self.enable_rcv_var).pack(anchor='w', pady=3)
+        ttk.Checkbutton(rcv_content, text="Allow partial rankings (don't require ranking all)", variable=self.allow_partial_var).pack(anchor='w', pady=3)
+        ttk.Checkbutton(rcv_content, text="Show instant runoff visualization", variable=self.show_runoff_viz_var).pack(anchor='w', pady=3)
 
         ttk.Label(rcv_content, text="\nMaximum Rankings Allowed:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
-        rank_spin = ttk.Spinbox(rcv_content, from_=3, to=10, width=10)
-        rank_spin.pack(anchor='w')
-        rank_spin.set(5)
+        self.rank_spin = ttk.Spinbox(rcv_content, from_=3, to=10, width=10)
+        self.rank_spin.pack(anchor='w')
+        self.rank_spin.set(5)
 
         ttk.Label(rcv_content, text="\nElimination Method:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
-        ttk.Radiobutton(rcv_content, text="Eliminate one candidate per round", value=1).pack(anchor='w', pady=2)
-        ttk.Radiobutton(rcv_content, text="Batch elimination (all below threshold)", value=2).pack(anchor='w', pady=2)
+        self.elimination_var = tk.IntVar(value=1)
+        ttk.Radiobutton(rcv_content, text="Eliminate one candidate per round", variable=self.elimination_var, value=1).pack(anchor='w', pady=2)
+        ttk.Radiobutton(rcv_content, text="Batch elimination (all below threshold)", variable=self.elimination_var, value=2).pack(anchor='w', pady=2)
 
         ttk.Label(rcv_content, text="\nTie Breaking:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
-        ttk.Radiobutton(rcv_content, text="Random selection", value=1).pack(anchor='w', pady=2)
-        ttk.Radiobutton(rcv_content, text="Most 1st place votes", value=2).pack(anchor='w', pady=2)
-        ttk.Radiobutton(rcv_content, text="Manual review", value=3).pack(anchor='w', pady=2)
+        self.tiebreak_var = tk.IntVar(value=2)
+        ttk.Radiobutton(rcv_content, text="Random selection", variable=self.tiebreak_var, value=1).pack(anchor='w', pady=2)
+        ttk.Radiobutton(rcv_content, text="Most 1st place votes", variable=self.tiebreak_var, value=2).pack(anchor='w', pady=2)
+        ttk.Radiobutton(rcv_content, text="Manual review", variable=self.tiebreak_var, value=3).pack(anchor='w', pady=2)
 
         # Approval Voting tab
         approval_frame = ttk.Frame(notebook)
@@ -620,22 +632,28 @@ class ConfigureVotingMethodsDialog:
         ttk.Label(approval_content, text="Approval Voting Configuration",
                  font=('Arial', 11, 'bold')).pack(anchor='w', pady=(0, 10))
 
-        ttk.Checkbutton(approval_content, text="Enable approval voting for this election").pack(anchor='w', pady=3)
-        ttk.Checkbutton(approval_content, text="Show number of approvals for each candidate").pack(anchor='w', pady=3)
-        ttk.Checkbutton(approval_content, text="Allow abstaining (approve none)").pack(anchor='w', pady=3)
+        self.enable_approval_var = tk.BooleanVar()
+        self.show_approval_count_var = tk.BooleanVar(value=True)
+        self.allow_abstain_var = tk.BooleanVar(value=True)
+
+        ttk.Checkbutton(approval_content, text="Enable approval voting for this election", variable=self.enable_approval_var).pack(anchor='w', pady=3)
+        ttk.Checkbutton(approval_content, text="Show number of approvals for each candidate", variable=self.show_approval_count_var).pack(anchor='w', pady=3)
+        ttk.Checkbutton(approval_content, text="Allow abstaining (approve none)", variable=self.allow_abstain_var).pack(anchor='w', pady=3)
 
         ttk.Label(approval_content, text="\nApproval Limit:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
-        ttk.Radiobutton(approval_content, text="Unlimited (approve as many as you want)", value=1).pack(anchor='w', pady=2)
-        ttk.Radiobutton(approval_content, text="Limited to specific number:", value=2).pack(anchor='w', pady=2)
+        self.approval_limit_var = tk.IntVar(value=1)
+        ttk.Radiobutton(approval_content, text="Unlimited (approve as many as you want)", variable=self.approval_limit_var, value=1).pack(anchor='w', pady=2)
+        ttk.Radiobutton(approval_content, text="Limited to specific number:", variable=self.approval_limit_var, value=2).pack(anchor='w', pady=2)
 
-        limit_spin = ttk.Spinbox(approval_content, from_=1, to=10, width=10)
-        limit_spin.pack(anchor='w', padx=30)
-        limit_spin.set(3)
+        self.limit_spin = ttk.Spinbox(approval_content, from_=1, to=10, width=10)
+        self.limit_spin.pack(anchor='w', padx=30)
+        self.limit_spin.set(3)
 
         ttk.Label(approval_content, text="\nResults Display:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
-        ttk.Radiobutton(approval_content, text="Show approval count", value=1).pack(anchor='w', pady=2)
-        ttk.Radiobutton(approval_content, text="Show approval percentage", value=2).pack(anchor='w', pady=2)
-        ttk.Radiobutton(approval_content, text="Show both", value=3).pack(anchor='w', pady=2)
+        self.results_display_var = tk.IntVar(value=3)
+        ttk.Radiobutton(approval_content, text="Show approval count", variable=self.results_display_var, value=1).pack(anchor='w', pady=2)
+        ttk.Radiobutton(approval_content, text="Show approval percentage", variable=self.results_display_var, value=2).pack(anchor='w', pady=2)
+        ttk.Radiobutton(approval_content, text="Show both", variable=self.results_display_var, value=3).pack(anchor='w', pady=2)
 
         # Advanced tab
         advanced_frame = ttk.Frame(notebook)
@@ -652,20 +670,29 @@ class ConfigureVotingMethodsDialog:
         period_frame = ttk.Frame(advanced_content)
         period_frame.pack(anchor='w', pady=5)
         ttk.Label(period_frame, text="Start:").pack(side='left', padx=(0, 5))
-        ttk.Entry(period_frame, width=15).pack(side='left', padx=(0, 15))
+        self.start_date_entry = ttk.Entry(period_frame, width=15)
+        self.start_date_entry.pack(side='left', padx=(0, 15))
         ttk.Label(period_frame, text="End:").pack(side='left', padx=(0, 5))
-        ttk.Entry(period_frame, width=15).pack(side='left')
+        self.end_date_entry = ttk.Entry(period_frame, width=15)
+        self.end_date_entry.pack(side='left')
 
         ttk.Label(advanced_content, text="\nSecurity Options:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
-        ttk.Checkbutton(advanced_content, text="Require two-factor authentication for voting").pack(anchor='w', pady=2)
-        ttk.Checkbutton(advanced_content, text="Generate unique verification code for each voter").pack(anchor='w', pady=2)
-        ttk.Checkbutton(advanced_content, text="Enable vote verification (voters can check their vote was counted)").pack(anchor='w', pady=2)
-        ttk.Checkbutton(advanced_content, text="Allow vote change before deadline").pack(anchor='w', pady=2)
+        self.require_2fa_var = tk.BooleanVar()
+        self.unique_code_var = tk.BooleanVar()
+        self.vote_verify_var = tk.BooleanVar()
+        self.allow_change_var = tk.BooleanVar()
+        ttk.Checkbutton(advanced_content, text="Require two-factor authentication for voting", variable=self.require_2fa_var).pack(anchor='w', pady=2)
+        ttk.Checkbutton(advanced_content, text="Generate unique verification code for each voter", variable=self.unique_code_var).pack(anchor='w', pady=2)
+        ttk.Checkbutton(advanced_content, text="Enable vote verification (voters can check their vote was counted)", variable=self.vote_verify_var).pack(anchor='w', pady=2)
+        ttk.Checkbutton(advanced_content, text="Allow vote change before deadline", variable=self.allow_change_var).pack(anchor='w', pady=2)
 
         ttk.Label(advanced_content, text="\nAccessibility:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
-        ttk.Checkbutton(advanced_content, text="Enable screen reader support").pack(anchor='w', pady=2)
-        ttk.Checkbutton(advanced_content, text="Provide audio ballot option").pack(anchor='w', pady=2)
-        ttk.Checkbutton(advanced_content, text="Allow extended time for voting").pack(anchor='w', pady=2)
+        self.screen_reader_var = tk.BooleanVar()
+        self.audio_ballot_var = tk.BooleanVar()
+        self.extended_time_var = tk.BooleanVar()
+        ttk.Checkbutton(advanced_content, text="Enable screen reader support", variable=self.screen_reader_var).pack(anchor='w', pady=2)
+        ttk.Checkbutton(advanced_content, text="Provide audio ballot option", variable=self.audio_ballot_var).pack(anchor='w', pady=2)
+        ttk.Checkbutton(advanced_content, text="Allow extended time for voting", variable=self.extended_time_var).pack(anchor='w', pady=2)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
@@ -676,38 +703,336 @@ class ConfigureVotingMethodsDialog:
         ttk.Button(button_frame, text="Preview Ballot", command=self.preview_ballot).pack(side='left', padx=(0, 10))
         ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
 
+    def _determine_voting_method(self):
+        """Determine which voting method is currently configured."""
+        if self.enable_rcv_var.get():
+            return "Ranked Choice"
+        elif self.enable_approval_var.get():
+            return "Approval Voting"
+        else:
+            return "Simple Majority"
+
     def save_config(self):
-        messagebox.showinfo("Configuration Saved",
-                          "Voting method configuration saved!\n\n" +
-                          "Election: Student Union President 2025\n" +
-                          "Method: Ranked Choice Voting\n" +
-                          "Max Rankings: 5\n" +
-                          "Elimination: One per round\n" +
-                          "Tie Breaking: Most 1st place votes\n\n" +
-                          "Configuration active when voting opens.")
+        """Save the current voting method configuration to the database."""
+        election_name = self.election_combo.get()
+        if not election_name:
+            messagebox.showwarning("No Election", "Please select an election first.")
+            return
+
+        voting_method = self._determine_voting_method()
+        allow_abstain = self.allow_abstain_var.get()
+        require_ranked = self.enable_rcv_var.get() and not self.allow_partial_var.get()
+        max_choices = int(self.rank_spin.get()) if self.enable_rcv_var.get() else (
+            int(self.limit_spin.get()) if self.enable_approval_var.get() and self.approval_limit_var.get() == 2 else 0
+        )
+        created_by = ""
+        if self.auth and self.auth.current_user:
+            created_by = self.auth.current_user.get("username", "")
+
+        config_name = f"{election_name} - {voting_method}"
+
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS election_voting_config (
+                    config_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    config_name TEXT NOT NULL,
+                    voting_method TEXT NOT NULL,
+                    allow_abstain INTEGER DEFAULT 0,
+                    require_ranked INTEGER DEFAULT 0,
+                    max_choices INTEGER DEFAULT 0,
+                    created_by TEXT,
+                    created_at TEXT NOT NULL
+                )
+            ''')
+            cursor.execute('''
+                INSERT INTO election_voting_config
+                    (config_name, voting_method, allow_abstain, require_ranked, max_choices, created_by, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                config_name,
+                voting_method,
+                1 if allow_abstain else 0,
+                1 if require_ranked else 0,
+                max_choices,
+                created_by,
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            ))
+            conn.commit()
+
+            messagebox.showinfo(
+                "Configuration Saved",
+                f"Voting method configuration saved successfully.\n\n"
+                f"Election: {election_name}\n"
+                f"Method: {voting_method}\n"
+                f"Allow Abstain: {'Yes' if allow_abstain else 'No'}\n"
+                f"Require Full Ranking: {'Yes' if require_ranked else 'No'}\n"
+                f"Max Choices: {max_choices if max_choices else 'Unlimited'}\n\n"
+                f"Configuration will be active when voting opens."
+            )
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save configuration: {e}")
+        finally:
+            if conn:
+                conn.close()
 
     def load_template(self):
-        messagebox.showinfo("Load Template",
-                          "Available templates:\n\n" +
-                          "1. Standard SU Election (Standard voting)\n" +
-                          "2. Competitive Race (RCV, 5 rankings)\n" +
-                          "3. Awards Voting (Approval voting)\n" +
-                          "4. Custom\n\n" +
-                          "Select template to load configuration.")
+        """Show a dialog with predefined voting configuration templates."""
+        template_win = tk.Toplevel(self.dialog)
+        template_win.title("Load Voting Template")
+        template_win.geometry("500x420")
+        template_win.transient(self.dialog)
+        template_win.grab_set()
+
+        ttk.Label(template_win, text="Select a Voting Template",
+                  font=('Arial', 12, 'bold')).pack(pady=(15, 10))
+
+        templates = {
+            "Simple Majority": {
+                "description": "Traditional single-choice voting. Candidate with the most votes wins.",
+                "enable_standard": True, "enable_rcv": False, "enable_approval": False,
+                "allow_abstain": False, "allow_partial": False, "max_rankings": 3,
+                "approval_limit": 1, "approval_limit_mode": 1, "winning_criterion": 1,
+            },
+            "Ranked Choice": {
+                "description": "Voters rank candidates in order of preference. Eliminates lowest and redistributes until majority.",
+                "enable_standard": False, "enable_rcv": True, "enable_approval": False,
+                "allow_abstain": True, "allow_partial": True, "max_rankings": 5,
+                "approval_limit": 3, "approval_limit_mode": 1, "winning_criterion": 2,
+            },
+            "Approval Voting": {
+                "description": "Voters approve as many candidates as they like. Most approvals wins.",
+                "enable_standard": False, "enable_rcv": False, "enable_approval": True,
+                "allow_abstain": True, "allow_partial": False, "max_rankings": 3,
+                "approval_limit": 3, "approval_limit_mode": 1, "winning_criterion": 1,
+            },
+            "Two-Round System": {
+                "description": "Standard voting requiring absolute majority (>50%). If no majority, top two go to runoff.",
+                "enable_standard": True, "enable_rcv": False, "enable_approval": False,
+                "allow_abstain": True, "allow_partial": False, "max_rankings": 3,
+                "approval_limit": 3, "approval_limit_mode": 1, "winning_criterion": 2,
+            },
+        }
+
+        selected_var = tk.StringVar(value="")
+
+        list_frame = ttk.Frame(template_win)
+        list_frame.pack(fill='both', expand=True, padx=15, pady=5)
+
+        desc_label = ttk.Label(list_frame, text="", wraplength=440, justify='left',
+                               font=('Arial', 9))
+        desc_label.pack(side='bottom', fill='x', pady=(10, 0))
+
+        for name, info in templates.items():
+            ttk.Radiobutton(
+                list_frame, text=name, variable=selected_var, value=name,
+                command=lambda n=name: desc_label.config(text=templates[n]["description"])
+            ).pack(anchor='w', pady=4)
+
+        def apply_template():
+            chosen = selected_var.get()
+            if not chosen:
+                messagebox.showwarning("No Selection", "Please select a template.", parent=template_win)
+                return
+            t = templates[chosen]
+            self.enable_standard_var.set(t["enable_standard"])
+            self.enable_rcv_var.set(t["enable_rcv"])
+            self.enable_approval_var.set(t["enable_approval"])
+            self.allow_abstain_var.set(t["allow_abstain"])
+            self.allow_partial_var.set(t["allow_partial"])
+            self.rank_spin.set(t["max_rankings"])
+            self.limit_spin.set(t["approval_limit"])
+            self.approval_limit_var.set(t["approval_limit_mode"])
+            self.winning_criterion_var.set(t["winning_criterion"])
+            template_win.destroy()
+            messagebox.showinfo("Template Loaded",
+                                f"'{chosen}' template has been applied.\n\n"
+                                "Review the settings and click Save Configuration when ready.")
+
+        btn_frame = ttk.Frame(template_win)
+        btn_frame.pack(fill='x', padx=15, pady=(5, 15))
+        ttk.Button(btn_frame, text="Apply Template", command=apply_template).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text="Cancel", command=template_win.destroy).pack(side='right')
 
     def preview_ballot(self):
-        messagebox.showinfo("Ballot Preview",
-                          "Ballot preview:\n\n" +
-                          "┌─────────────────────────────┐\n" +
-                          "│ Student Union President 2025 │\n" +
-                          "│ Rank Choice Voting          │\n" +
-                          "├─────────────────────────────┤\n" +
-                          "│ □ Alice Johnson  [Rank: __] │\n" +
-                          "│ □ Bob Smith      [Rank: __] │\n" +
-                          "│ □ Carol Davis    [Rank: __] │\n" +
-                          "│ □ David Lee      [Rank: __] │\n" +
-                          "└─────────────────────────────┘\n\n" +
-                          "Preview in full ballot viewer")
+        """Show a Toplevel window that simulates the ballot appearance."""
+        election_name = self.election_combo.get() or "Election"
+        voting_method = self._determine_voting_method()
+
+        # Load candidates from the database
+        candidates = []
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            # Try to find the election and its candidates
+            cursor.execute(
+                "SELECT election_id FROM union_elections WHERE position = ? LIMIT 1",
+                (election_name,)
+            )
+            row = cursor.fetchone()
+            if row:
+                election_id = row[0]
+                cursor.execute('''
+                    SELECT c.id, s.first_name || ' ' || s.last_name, c.manifesto
+                    FROM election_candidates c
+                    LEFT JOIN students s ON c.student_id = s.student_id
+                    WHERE c.election_id = ?
+                ''', (election_id,))
+                for cand_row in cursor.fetchall():
+                    candidates.append({
+                        "id": cand_row[0],
+                        "name": cand_row[1] if cand_row[1] else f"Candidate {cand_row[0]}",
+                        "manifesto": cand_row[2] or "",
+                    })
+        except Exception:
+            pass
+        finally:
+            if conn:
+                conn.close()
+
+        # Fall back to sample candidates if none found in DB
+        if not candidates:
+            candidates = [
+                {"id": 1, "name": "Alice Johnson", "manifesto": "Improve campus facilities"},
+                {"id": 2, "name": "Bob Smith", "manifesto": "Better student services"},
+                {"id": 3, "name": "Carol Davis", "manifesto": "Increase club funding"},
+                {"id": 4, "name": "David Lee", "manifesto": "Transparent budgeting"},
+            ]
+
+        preview_win = tk.Toplevel(self.dialog)
+        preview_win.title("Ballot Preview")
+        preview_win.geometry("550x600")
+        preview_win.transient(self.dialog)
+        preview_win.grab_set()
+
+        # Outer ballot container
+        outer = ttk.Frame(preview_win)
+        outer.pack(fill='both', expand=True, padx=20, pady=15)
+
+        # Preview warning banner
+        warn_frame = tk.Frame(outer, bg="#fff3cd")
+        warn_frame.pack(fill='x', pady=(0, 10))
+        tk.Label(warn_frame, text="THIS IS A PREVIEW ONLY - No votes will be recorded",
+                 bg="#fff3cd", fg="#856404", font=('Arial', 10, 'bold'),
+                 pady=6).pack()
+
+        # Ballot header
+        header_frame = ttk.LabelFrame(outer, text="Official Ballot")
+        header_frame.pack(fill='x', pady=(0, 10))
+
+        ttk.Label(header_frame, text=election_name,
+                  font=('Arial', 13, 'bold')).pack(pady=(10, 2))
+        ttk.Label(header_frame, text=f"Voting Method: {voting_method}",
+                  font=('Arial', 10)).pack(pady=(0, 5))
+
+        # Instructions based on method
+        if voting_method == "Ranked Choice":
+            max_ranks = int(self.rank_spin.get())
+            instructions = (f"Rank up to {max_ranks} candidates in order of preference.\n"
+                            "1 = most preferred.")
+        elif voting_method == "Approval Voting":
+            if self.approval_limit_var.get() == 2:
+                limit = int(self.limit_spin.get())
+                instructions = f"Select up to {limit} candidates you approve of."
+            else:
+                instructions = "Select all candidates you approve of."
+        else:
+            instructions = "Select ONE candidate for this position."
+
+        ttk.Label(header_frame, text=instructions, wraplength=460,
+                  font=('Arial', 9, 'italic'), justify='center').pack(pady=(0, 10))
+
+        ttk.Separator(outer, orient='horizontal').pack(fill='x', pady=5)
+
+        # Candidate list
+        canvas = tk.Canvas(outer)
+        scrollbar = ttk.Scrollbar(outer, orient='vertical', command=canvas.yview)
+        cand_frame = ttk.Frame(canvas)
+
+        cand_frame.bind("<Configure>",
+                        lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=cand_frame, anchor='nw')
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        if voting_method == "Ranked Choice":
+            max_ranks = int(self.rank_spin.get())
+            rank_options = ["--"] + [str(i) for i in range(1, max_ranks + 1)]
+            for cand in candidates:
+                row_frame = ttk.Frame(cand_frame)
+                row_frame.pack(fill='x', padx=10, pady=6)
+
+                info_f = ttk.Frame(row_frame)
+                info_f.pack(side='left', fill='x', expand=True)
+                ttk.Label(info_f, text=cand["name"],
+                          font=('Arial', 10, 'bold')).pack(anchor='w')
+                if cand["manifesto"]:
+                    ttk.Label(info_f, text=cand["manifesto"],
+                              font=('Arial', 9)).pack(anchor='w')
+
+                combo = ttk.Combobox(row_frame, values=rank_options, width=5, state='readonly')
+                combo.current(0)
+                combo.pack(side='right', padx=5)
+                ttk.Label(row_frame, text="Rank:").pack(side='right')
+
+        elif voting_method == "Approval Voting":
+            for cand in candidates:
+                row_frame = ttk.Frame(cand_frame)
+                row_frame.pack(fill='x', padx=10, pady=6)
+
+                cb = ttk.Checkbutton(row_frame, text="")
+                cb.pack(side='left', padx=(0, 5))
+
+                info_f = ttk.Frame(row_frame)
+                info_f.pack(side='left', fill='x', expand=True)
+                ttk.Label(info_f, text=cand["name"],
+                          font=('Arial', 10, 'bold')).pack(anchor='w')
+                if cand["manifesto"]:
+                    ttk.Label(info_f, text=cand["manifesto"],
+                              font=('Arial', 9)).pack(anchor='w')
+
+        else:
+            # Simple Majority — radio buttons
+            preview_choice = tk.IntVar(value=0)
+            for cand in candidates:
+                row_frame = ttk.Frame(cand_frame)
+                row_frame.pack(fill='x', padx=10, pady=6)
+
+                rb = ttk.Radiobutton(row_frame, variable=preview_choice,
+                                     value=cand["id"], text="")
+                rb.pack(side='left', padx=(0, 5))
+
+                info_f = ttk.Frame(row_frame)
+                info_f.pack(side='left', fill='x', expand=True)
+                ttk.Label(info_f, text=cand["name"],
+                          font=('Arial', 10, 'bold')).pack(anchor='w')
+                if cand["manifesto"]:
+                    ttk.Label(info_f, text=cand["manifesto"],
+                              font=('Arial', 9)).pack(anchor='w')
+
+            if self.allow_abstain_var.get():
+                sep = ttk.Separator(cand_frame, orient='horizontal')
+                sep.pack(fill='x', padx=10, pady=6)
+                ttk.Radiobutton(cand_frame, variable=preview_choice,
+                                value=0, text="Abstain").pack(anchor='w', padx=10)
+
+        ttk.Separator(outer, orient='horizontal').pack(fill='x', pady=8)
+
+        # Disabled submit button (preview only)
+        ttk.Button(outer, text="Submit Ballot (disabled in preview)",
+                   state='disabled').pack(pady=(0, 5))
+
+        # Footer
+        ttk.Label(outer, text="This is a preview only. No votes are cast.",
+                  font=('Arial', 9, 'italic'), foreground='gray').pack(pady=(0, 5))
+
+        ttk.Button(outer, text="Close Preview",
+                   command=preview_win.destroy).pack(pady=(0, 5))
 
 
 

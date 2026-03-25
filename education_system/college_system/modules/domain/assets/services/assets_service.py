@@ -11,18 +11,18 @@ class AssetsService:
     def _conn(self):
         return connect(self._db_path)
 
-    def create_loan(self, asset_name: str, asset_tag: str, loaned_to: int,
+    def create_loan(self, description: str, asset_tag: str, student_id: int,
                      asset_type: str = "laptop", condition_out: str = "good",
-                     issued_by: int = None, notes: str = None) -> dict:
+                     recorded_by: int = None, notes: str = None) -> dict:
         conn = self._conn()
         try:
             conn.execute(
                 """INSERT INTO asset_loans
-                   (asset_name, asset_tag, asset_type, loaned_to,
-                    condition_out, issued_by, notes)
+                   (description, asset_tag, asset_type, student_id,
+                    condition_out, recorded_by, notes)
                    VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                (asset_name, asset_tag, asset_type, loaned_to,
-                 condition_out, issued_by, notes),
+                (description, asset_tag, asset_type, student_id,
+                 condition_out, recorded_by, notes),
             )
             conn.commit()
             row = conn.execute(
@@ -38,7 +38,7 @@ class AssetsService:
         conn = self._conn()
         try:
             query = """SELECT al.*, s.first_name, s.last_name FROM asset_loans al
-                       LEFT JOIN students s ON al.loaned_to = s.id WHERE 1=1"""
+                       LEFT JOIN students s ON al.student_id = s.id WHERE 1=1"""
             params = []
             if status:
                 query += " AND al.status = ?"
@@ -46,7 +46,7 @@ class AssetsService:
             if asset_type:
                 query += " AND al.asset_type = ?"
                 params.append(asset_type)
-            query += " ORDER BY al.loan_date DESC"
+            query += " ORDER BY al.loaned_date DESC"
             rows = conn.execute(query, params).fetchall()
             return [dict(r) for r in rows]
         finally:
@@ -57,7 +57,7 @@ class AssetsService:
         try:
             row = conn.execute(
                 """SELECT al.*, s.first_name, s.last_name FROM asset_loans al
-                   LEFT JOIN students s ON al.loaned_to = s.id WHERE al.id = ?""",
+                   LEFT JOIN students s ON al.student_id = s.id WHERE al.id = ?""",
                 (loan_id,),
             ).fetchone()
             if not row:
@@ -72,7 +72,7 @@ class AssetsService:
         try:
             conn.execute(
                 """UPDATE asset_loans
-                   SET status = 'returned', return_date = date('now'),
+                   SET status = 'returned', returned_date = date('now'),
                        condition_in = ?, notes = COALESCE(?, notes)
                    WHERE id = ?""",
                 (condition_in, notes, loan_id),
@@ -89,8 +89,8 @@ class AssetsService:
     def update_loan(self, loan_id: int, **kwargs) -> dict:
         conn = self._conn()
         try:
-            allowed = {"status", "return_date", "condition_in", "notes",
-                        "expected_return"}
+            allowed = {"status", "returned_date", "condition_in", "notes",
+                        "due_date"}
             parts, params = [], []
             for k, v in kwargs.items():
                 if k in allowed:
@@ -113,10 +113,29 @@ class AssetsService:
         conn = self._conn()
         try:
             rows = conn.execute(
-                "SELECT * FROM asset_loans WHERE loaned_to = ? ORDER BY loan_date DESC",
+                "SELECT * FROM asset_loans WHERE student_id = ? ORDER BY loaned_date DESC",
                 (student_id,),
             ).fetchall()
             return [dict(r) for r in rows]
+        finally:
+            conn.close()
+
+    def delete_asset(self, asset_id: int) -> bool:
+        """Delete an asset loan record by ID."""
+        conn = self._conn()
+        try:
+            result = conn.execute(
+                "DELETE FROM asset_loans WHERE id = ?", (asset_id,)
+            )
+            conn.commit()
+            if result.rowcount == 0:
+                raise AssetsError(f"Asset {asset_id} not found.")
+            return True
+        except AssetsError:
+            raise
+        except Exception as e:
+            conn.rollback()
+            raise AssetsError(f"Failed to delete asset: {e}")
         finally:
             conn.close()
 

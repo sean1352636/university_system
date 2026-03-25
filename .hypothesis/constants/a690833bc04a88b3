@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/secondary_school/core/defaults.py
+# hypothesis_version: 6.151.9
+
+['127.0.0.1', '5001', 'SCHOOL_API_HOST', 'SCHOOL_API_PORT', 'SEC', 'admin2', 'staff2', 'student2']

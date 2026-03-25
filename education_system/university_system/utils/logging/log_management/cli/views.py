@@ -9,11 +9,12 @@ def view_recent_logs(log_manager, auth):
     print("\n\U0001f4cb RECENT ACTIVITY LOGS")
     print("="*30)
 
-    hours_input = input("Show logs from last how many hours? (default: 24): ")
+    hours_input = input("Show logs from last how many hours? (default: 24): ").strip()
     try:
         hours = int(hours_input) if hours_input else 24
         hours = max(1, min(hours, 365 * 24))
     except ValueError:
+        print("Invalid input, using default of 24 hours.")
         hours = 24
 
     cutoff_time = datetime.now() - timedelta(hours=hours)
@@ -41,7 +42,7 @@ def view_recent_logs(log_manager, auth):
         status_symbol = "\u2705" if status == "success" else "\u274c"
         print(f"{timestamp} | {status_symbol} {user:15} | {action:15} | {module}")
 
-    input("\nPress Enter to continue...")
+    _ = input("\nPress Enter to continue...")
 
 
 def search_logs_basic(log_manager, auth):
@@ -89,7 +90,7 @@ def search_logs_basic(log_manager, auth):
     if len(logs) > 20:
         print(f"... and {len(logs) - 20} more results")
 
-    input("\nPress Enter to continue...")
+    _ = input("\nPress Enter to continue...")
 
 
 def generate_basic_report(log_manager, auth):
@@ -97,11 +98,12 @@ def generate_basic_report(log_manager, auth):
     print("\n\U0001f4ca ACTIVITY REPORT")
     print("="*25)
 
-    days_input = input("Generate report for last how many days? (default: 7): ")
+    days_input = input("Generate report for last how many days? (default: 7): ").strip()
     try:
         days = int(days_input) if days_input else 7
         days = max(1, min(days, 365))
     except ValueError:
+        print("Invalid input, using default of 7 days.")
         days = 7
 
     summary = log_manager.analytics.generate_activity_summary(days)
@@ -125,7 +127,7 @@ def generate_basic_report(log_manager, auth):
     for action, count in list(summary['activity_by_action'].items())[:5]:
         print(f"  {action}: {count}")
 
-    input("\nPress Enter to continue...")
+    _ = input("\nPress Enter to continue...")
 
 
 def basic_config_menu(log_manager, auth):
@@ -139,10 +141,14 @@ def basic_config_menu(log_manager, auth):
     print(f"3. Alerts Enabled: {log_manager.config.get('enable_alerts')}")
     print("4. Return")
 
-    choice = input("\nSelect setting to change (1-4): ")
+    choice = input("\nSelect setting to change (1-4): ").strip()
+
+    if choice not in ('1', '2', '3', '4'):
+        print("Invalid choice. Please select 1-4.")
+        return
 
     if choice == '1':
-        days_input = input("Enter new retention period (days): ")
+        days_input = input("Enter new retention period (days): ").strip()
         try:
             days = int(days_input)
             days = max(1, min(days, 365))
@@ -151,10 +157,16 @@ def basic_config_menu(log_manager, auth):
         except ValueError:
             print("Invalid number")
     elif choice == '2':
-        enable = input("Enable real-time monitoring? (y/n): ")
-        log_manager.config.set('enable_real_time', enable.lower() == 'y')
-        print(f"Real-time monitoring {'enabled' if enable.lower() == 'y' else 'disabled'}")
+        enable = input("Enable real-time monitoring? (y/n): ").strip().lower()
+        if enable not in ('y', 'n'):
+            print("Invalid input. Please enter y or n.")
+            return
+        log_manager.config.set('enable_real_time', enable == 'y')
+        print(f"Real-time monitoring {'enabled' if enable == 'y' else 'disabled'}")
     elif choice == '3':
-        enable = input("Enable alerts? (y/n): ")
-        log_manager.config.set('enable_alerts', enable.lower() == 'y')
-        print(f"Alerts {'enabled' if enable.lower() == 'y' else 'disabled'}")
+        enable = input("Enable alerts? (y/n): ").strip().lower()
+        if enable not in ('y', 'n'):
+            print("Invalid input. Please enter y or n.")
+            return
+        log_manager.config.set('enable_alerts', enable == 'y')
+        print(f"Alerts {'enabled' if enable == 'y' else 'disabled'}")

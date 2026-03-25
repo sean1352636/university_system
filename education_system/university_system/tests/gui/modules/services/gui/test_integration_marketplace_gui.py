@@ -163,8 +163,8 @@ class TestIntegrationMarketplaceGUIInitialization:
 
     def test_gui_requires_parent(self, root_window, mock_auth, temp_db):
         """Test GUI initialization with parent"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
-            with patch('university_system.infrastructure.database.schemas.init_integration_marketplace_system_db'):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+            with patch('education_system.university_system.infrastructure.database.schemas.init_integration_marketplace_system_db'):
                 try:
                     gui = integration_marketplace_gui.IntegrationMarketplaceGUI(root_window, mock_auth)
                     assert gui is not None
@@ -173,8 +173,8 @@ class TestIntegrationMarketplaceGUIInitialization:
 
     def test_gui_initializes_database(self, root_window, mock_auth, temp_db):
         """Test database initialization"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
-            with patch('university_system.infrastructure.database.schemas.init_integration_marketplace_system_db') as mock_init:
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+            with patch('education_system.university_system.infrastructure.database.schemas.init_integration_marketplace_system_db') as mock_init:
                 try:
                     gui = integration_marketplace_gui.IntegrationMarketplaceGUI(root_window, mock_auth)
                     mock_init.assert_called_once()
@@ -186,8 +186,8 @@ class TestCatalogTab:
 
     def test_load_catalog(self, root_window, mock_auth, temp_db):
         """Test loading catalog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
-            with patch('university_system.infrastructure.database.schemas.init_integration_marketplace_system_db'):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+            with patch('education_system.university_system.infrastructure.database.schemas.init_integration_marketplace_system_db'):
                 try:
                     gui = integration_marketplace_gui.IntegrationMarketplaceGUI(root_window, mock_auth)
                     gui.load_catalog()
@@ -199,7 +199,7 @@ class TestLauncherFunction:
 
     def test_launch_integration_marketplace_gui(self, root_window, mock_auth):
         """Test launcher function"""
-        with patch('university_system.infrastructure.database.schemas.init_integration_marketplace_system_db'):
+        with patch('education_system.university_system.infrastructure.database.schemas.init_integration_marketplace_system_db'):
             try:
                 integration_marketplace_gui.launch_integration_marketplace_gui(auth=mock_auth, parent=root_window)
             except (OSError, IOError):

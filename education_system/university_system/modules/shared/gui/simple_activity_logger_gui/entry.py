@@ -4,8 +4,8 @@ Entry points and utility functions for the Activity Logger GUI.
 
 import sys
 
-from ._imports import LOGGER_AVAILABLE, MATPLOTLIB_AVAILABLE
-from .main_gui import EnhancedActivityLoggerGUI
+from education_system.university_system.modules.shared.gui.simple_activity_logger_gui._imports import LOGGER_AVAILABLE, MATPLOTLIB_AVAILABLE
+from education_system.university_system.modules.shared.gui.simple_activity_logger_gui.main_gui import EnhancedActivityLoggerGUI
 
 
 def main(auth=None):

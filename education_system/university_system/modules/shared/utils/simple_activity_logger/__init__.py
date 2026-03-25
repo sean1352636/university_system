@@ -1,13 +1,13 @@
 # simple_activity_logger package
 # Re-exports everything for backward compatibility with the old single-file module.
 
-from .models import LogLevel, OutputFormat, SecurityLevel, LogEntry
-from .security import PIIDetector, SecurityMonitor
-from .storage import LogRotationManager, DatabaseManager, DatabaseLogger
-from .cloud import CloudIntegration
-from .analytics import AnalyticsEngine, _log_detail
-from .logger import EnhancedActivityLogger
-from .decorators import (
+from education_system.university_system.modules.shared.utils.simple_activity_logger.models import LogLevel, OutputFormat, SecurityLevel, LogEntry
+from education_system.university_system.modules.shared.utils.simple_activity_logger.security import PIIDetector, SecurityMonitor
+from education_system.university_system.modules.shared.utils.simple_activity_logger.storage import LogRotationManager, DatabaseManager, DatabaseLogger
+from education_system.university_system.modules.shared.utils.simple_activity_logger.cloud import CloudIntegration
+from education_system.university_system.modules.shared.utils.simple_activity_logger.analytics import AnalyticsEngine, _log_detail
+from education_system.university_system.modules.shared.utils.simple_activity_logger.logger import EnhancedActivityLogger
+from education_system.university_system.modules.shared.utils.simple_activity_logger.decorators import (
     enhanced_log_activity,
     log_create,
     log_read,
@@ -18,7 +18,7 @@ from .decorators import (
     log_admin_action,
     log_menu_navigation,
 )
-from .plugins import (
+from education_system.university_system.modules.shared.utils.simple_activity_logger.plugins import (
     LoggerPlugin,
     PluginManager,
     SlackNotificationPlugin,
@@ -26,7 +26,7 @@ from .plugins import (
     EmailNotificationPlugin,
     AuditTrailPlugin,
 )
-from .module_api import (
+from education_system.university_system.modules.shared.utils.simple_activity_logger.module_api import (
     logger,
     plugin_manager,
     log_activity,

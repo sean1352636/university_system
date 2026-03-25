@@ -432,6 +432,65 @@ class CourseRecommender:
         self.course_metadata[course_id] = metadata
         return metadata
 
+    def _check_prerequisites(
+        self,
+        course_id: str,
+        student_profile: Dict
+    ) -> bool:
+        """
+        Check whether a student has completed all required prerequisites.
+
+        Looks up the course_prerequisites table and verifies each required
+        prerequisite appears in the student's completed courses with at
+        least the minimum grade.
+        """
+        if not self.db:
+            return True  # Can't verify without DB, assume met
+
+        try:
+            from education_system.university_system.infrastructure.database.db import get_connection
+
+            with get_connection() as conn:
+                cursor = conn.execute("""
+                    SELECT prerequisite_course_id, minimum_grade, prerequisite_type
+                    FROM course_prerequisites
+                    WHERE course_id = ?
+                """, (course_id,))
+
+                prerequisites = cursor.fetchall()
+
+            if not prerequisites:
+                return True  # No prerequisites defined
+
+            completed = set(student_profile.get('completed_courses', []))
+            grades = student_profile.get('grades', {})
+
+            grade_order = ['A', 'B', 'C', 'D', 'F']
+
+            for row in prerequisites:
+                prereq_id = row[0]
+                min_grade = row[1] or 'D'
+                prereq_type = row[2] or 'Required'
+
+                if prereq_type != 'Required':
+                    continue  # Skip recommended/optional prerequisites
+
+                if prereq_id not in completed:
+                    return False
+
+                student_grade = grades.get(prereq_id)
+                if student_grade and min_grade:
+                    student_idx = grade_order.index(student_grade) if student_grade in grade_order else len(grade_order)
+                    min_idx = grade_order.index(min_grade) if min_grade in grade_order else len(grade_order)
+                    if student_idx > min_idx:
+                        return False  # Grade too low
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Error checking prerequisites for {course_id}: {e}")
+            return True  # Default to met on error
+
     def _create_recommendation(
         self,
         course_id: str,
@@ -454,8 +513,8 @@ class CourseRecommender:
         if component_scores['popularity'] > 0.7:
             reasoning.append("Highly rated by other students")
 
-        # Check prerequisites (simplified)
-        prerequisites_met = True  # TODO: Implement prerequisite checking
+        # Check prerequisites against student's completed courses
+        prerequisites_met = self._check_prerequisites(course_id, student_profile)
 
         # Estimate difficulty
         difficulty_map = {'easy': 0.3, 'medium': 0.5, 'hard': 0.8}

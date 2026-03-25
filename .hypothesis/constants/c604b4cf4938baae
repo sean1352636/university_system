@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/managers/sso_manager.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d %H:%M:%S', 'No fields to update.', 'SSOManager', 'cas', 'config', 'config = ?', 'created_at', 'disable', 'disabled', 'display_name', 'enable', 'enabled', 'id', 'ldap', 'manage_sso_providers', 'message', 'oauth2', 'oidc', 'permissions', 'provider', 'provider_id', 'provider_type', 'saml2', 'shibboleth', 'success', 'updated_at', 'updated_at = ?', 'username']

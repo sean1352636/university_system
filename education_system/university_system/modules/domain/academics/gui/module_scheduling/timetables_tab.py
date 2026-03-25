@@ -61,8 +61,8 @@ except ImportError:
     except Exception:
         class ModuleScheduler: pass
 
-from .main_gui import ModuleSchedulingGUI
-from .dialogs import GridViewWindow
+from education_system.university_system.modules.domain.academics.gui.module_scheduling.main_gui import ModuleSchedulingGUI
+from education_system.university_system.modules.domain.academics.gui.module_scheduling.dialogs import GridViewWindow
 
 def create_timetables_tab(self):
     """Create the timetables generation tab"""
@@ -187,7 +187,7 @@ def generate_student_timetable(self):
     """Generate timetable for a student"""
     student_id = self.student_id_var.get().strip()
     if not student_id:
-        messagebox.showwarning("Warning", "Please enter a student ID.")
+        messagebox.showwarning("Warning", "Please enter a student ID.", parent=self.root)
         return
 
     try:
@@ -199,7 +199,7 @@ def generate_student_timetable(self):
             student = cursor.fetchone()
 
         if not student:
-            messagebox.showerror("Error", f"Student ID {student_id} does not exist.")
+            messagebox.showerror("Error", f"Student ID {student_id} does not exist.", parent=self.root)
             return
 
         student_name = f"{student[0]} {student[1]}"
@@ -231,7 +231,7 @@ def generate_student_timetable(self):
         self.last_timetable_id = student_id
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate student timetable: {str(e)}")
+        messagebox.showerror("Error", f"Failed to generate student timetable: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.generate_student_timetable = generate_student_timetable
 
@@ -239,7 +239,7 @@ def generate_instructor_timetable(self):
     """Generate timetable for an instructor"""
     instructor_id_str = self.instructor_id_var.get().strip()
     if not instructor_id_str:
-        messagebox.showwarning("Warning", "Please enter an instructor ID.")
+        messagebox.showwarning("Warning", "Please enter an instructor ID.", parent=self.root)
         return
 
     try:
@@ -253,7 +253,7 @@ def generate_instructor_timetable(self):
             instructor = cursor.fetchone()
 
         if not instructor:
-            messagebox.showerror("Error", f"Instructor ID {instructor_id} does not exist.")
+            messagebox.showerror("Error", f"Instructor ID {instructor_id} does not exist.", parent=self.root)
             return
 
         first_name, last_name = instructor
@@ -279,9 +279,9 @@ def generate_instructor_timetable(self):
         self.last_timetable_id = instructor_id
 
     except ValueError:
-        messagebox.showerror("Error", "Invalid instructor ID. Please enter a number.")
+        messagebox.showerror("Error", "Invalid instructor ID. Please enter a number.", parent=self.root)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate instructor timetable: {str(e)}")
+        messagebox.showerror("Error", f"Failed to generate instructor timetable: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.generate_instructor_timetable = generate_instructor_timetable
 
@@ -289,7 +289,7 @@ def email_student_timetable(self):
     """Email timetable to a student"""
     student_id = self.student_id_var.get().strip()
     if not student_id:
-        messagebox.showwarning("Warning", "Please enter a student ID.")
+        messagebox.showwarning("Warning", "Please enter a student ID.", parent=self.root)
         return
 
     try:
@@ -300,21 +300,21 @@ def email_student_timetable(self):
             student = cursor.fetchone()
 
         if not student:
-            messagebox.showerror("Error", f"Student ID {student_id} not found.")
+            messagebox.showerror("Error", f"Student ID {student_id} not found.", parent=self.root)
             return
 
         first_name, last_name, email = student
         student_name = f"{first_name} {last_name}"
 
         if not email:
-            messagebox.showerror("Error", f"No email address found for student {student_name}.")
+            messagebox.showerror("Error", f"No email address found for student {student_name}.", parent=self.root)
             return
 
         # Get schedule data
         schedule_data = self.scheduler._get_student_schedule_data(student_id)
 
         if not schedule_data:
-            messagebox.showinfo("Info", f"No schedule found for student {student_id}.")
+            messagebox.showinfo("Info", f"No schedule found for student {student_id}.", parent=self.root)
             return
 
         # Format timetable as email body
@@ -327,13 +327,13 @@ def email_student_timetable(self):
         success = send_email(email, subject, body)
 
         if success:
-            messagebox.showinfo("Success", f"Timetable emailed to {email}")
+            messagebox.showinfo("Success", f"Timetable emailed to {email}", parent=self.root)
             self.update_activity_log(f"Emailed timetable to student {student_id} ({email})")
         else:
-            messagebox.showerror("Error", "Failed to send timetable email.")
+            messagebox.showerror("Error", "Failed to send timetable email.", parent=self.root)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to email timetable: {str(e)}")
+        messagebox.showerror("Error", f"Failed to email timetable: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.email_student_timetable = email_student_timetable
 
@@ -341,7 +341,7 @@ def email_instructor_timetable(self):
     """Email timetable to an instructor"""
     instructor_id_str = self.instructor_id_var.get().strip()
     if not instructor_id_str:
-        messagebox.showwarning("Warning", "Please enter an instructor ID.")
+        messagebox.showwarning("Warning", "Please enter an instructor ID.", parent=self.root)
         return
 
     try:
@@ -354,21 +354,21 @@ def email_instructor_timetable(self):
             instructor = cursor.fetchone()
 
         if not instructor:
-            messagebox.showerror("Error", f"Instructor ID {instructor_id} not found.")
+            messagebox.showerror("Error", f"Instructor ID {instructor_id} not found.", parent=self.root)
             return
 
         first_name, last_name, email = instructor
         instructor_name = f"{first_name} {last_name}"
 
         if not email:
-            messagebox.showerror("Error", f"No email address found for instructor {instructor_name}.")
+            messagebox.showerror("Error", f"No email address found for instructor {instructor_name}.", parent=self.root)
             return
 
         # Get schedule data
         schedule_data = self.scheduler._get_instructor_schedule_data(instructor_id)
 
         if not schedule_data:
-            messagebox.showinfo("Info", f"No schedule found for instructor {instructor_id}.")
+            messagebox.showinfo("Info", f"No schedule found for instructor {instructor_id}.", parent=self.root)
             return
 
         # Format timetable as email body
@@ -381,15 +381,15 @@ def email_instructor_timetable(self):
         success = send_email(email, subject, body)
 
         if success:
-            messagebox.showinfo("Success", f"Timetable emailed to {email}")
+            messagebox.showinfo("Success", f"Timetable emailed to {email}", parent=self.root)
             self.update_activity_log(f"Emailed timetable to instructor {instructor_id} ({email})")
         else:
-            messagebox.showerror("Error", "Failed to send timetable email.")
+            messagebox.showerror("Error", "Failed to send timetable email.", parent=self.root)
 
     except ValueError:
-        messagebox.showerror("Error", "Invalid instructor ID. Please enter a number.")
+        messagebox.showerror("Error", "Invalid instructor ID. Please enter a number.", parent=self.root)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to email timetable: {str(e)}")
+        messagebox.showerror("Error", f"Failed to email timetable: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.email_instructor_timetable = email_instructor_timetable
 
@@ -567,7 +567,7 @@ def check_student_conflicts(self):
     """Check for conflicts in student's schedule"""
     student_id = self.student_id_var.get().strip()
     if not student_id:
-        messagebox.showwarning("Warning", "Please enter a student ID.")
+        messagebox.showwarning("Warning", "Please enter a student ID.", parent=self.root)
         return
 
     try:
@@ -613,7 +613,7 @@ def check_student_conflicts(self):
         self.update_activity_log(f"Checked conflicts for student {student_id}")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to check student conflicts: {str(e)}")
+        messagebox.showerror("Error", f"Failed to check student conflicts: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.check_student_conflicts = check_student_conflicts
 
@@ -621,7 +621,7 @@ def export_last_timetable(self):
     """Export the last generated timetable"""
     # Check if we have timetable data stored
     if not hasattr(self, 'last_timetable_data') or not self.last_timetable_data:
-        messagebox.showwarning("Warning", "No timetable to export. Please generate a timetable first.")
+        messagebox.showwarning("Warning", "No timetable to export. Please generate a timetable first.", parent=self.root)
         return
 
     format_type = self.export_format_var.get()
@@ -637,7 +637,7 @@ def export_last_timetable(self):
             self._export_timetable_to_excel(self.last_timetable_data)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export timetable: {str(e)}")
+        messagebox.showerror("Error", f"Failed to export timetable: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.export_last_timetable = export_last_timetable
 
@@ -730,7 +730,7 @@ def _select_module_dialog(self):
         modules = cursor.fetchall()
 
     if not modules:
-        messagebox.showinfo("No Modules", "No modules found in the system.")
+        messagebox.showinfo("No Modules", "No modules found in the system.", parent=self.root)
         return None
 
     dialog = tk.Toplevel(self.root)
@@ -822,7 +822,7 @@ def view_calendar(self):
         calendar_text.config(state=tk.DISABLED)
         
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to view calendar: {str(e)}")
+        messagebox.showerror("Error", f"Failed to view calendar: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.view_calendar = view_calendar
 

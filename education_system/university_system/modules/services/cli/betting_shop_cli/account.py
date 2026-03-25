@@ -4,11 +4,11 @@ Betting Shop CLI - Account management functions.
 
 from datetime import datetime
 
-from .constants import (
+from education_system.university_system.modules.services.cli.betting_shop_cli.constants import (
     logger, get_connection, transaction,
     MIN_DEPOSIT, MAX_DEPOSIT,
 )
-from .helpers import print_subheader, get_current_user
+from education_system.university_system.modules.services.cli.betting_shop_cli.helpers import print_subheader, get_current_user
 
 
 def view_balance():
@@ -135,10 +135,10 @@ def deposit_funds():
 
             # Record transaction
             conn.execute('''
-                INSERT INTO betting_transactions
-                (user_id, transaction_type, amount, balance_before, balance_after,
+                INSERT INTO transactions
+                (source_type, student_id, transaction_type, amount, balance_before, balance_after,
                  description, payment_method, created_at)
-                VALUES (?, 'deposit', ?, ?, ?, ?, ?, ?)
+                VALUES ('betting', ?, 'deposit', ?, ?, ?, ?, ?, ?)
             ''', (user.get('username'), amount, balance_before, balance_after,
                   f'Deposit via {payment_method}', payment_method, datetime.now().isoformat()))
 
@@ -253,10 +253,10 @@ def withdraw_funds():
 
             # Record transaction
             conn.execute('''
-                INSERT INTO betting_transactions
-                (user_id, transaction_type, amount, balance_before, balance_after,
+                INSERT INTO transactions
+                (source_type, student_id, transaction_type, amount, balance_before, balance_after,
                  description, payment_method, created_at)
-                VALUES (?, 'withdrawal', ?, ?, ?, ?, ?, ?)
+                VALUES ('betting', ?, 'withdrawal', ?, ?, ?, ?, ?, ?)
             ''', (user.get('username'), amount, current_balance, balance_after,
                   f'Withdrawal to {withdrawal_method}', withdrawal_method,
                   datetime.now().isoformat()))
@@ -291,8 +291,8 @@ def view_transaction_history():
             cursor = conn.execute('''
                 SELECT transaction_type, amount, balance_before, balance_after,
                        payment_method, description, created_at
-                FROM betting_transactions
-                WHERE user_id = ?
+                FROM transactions
+                WHERE source_type = 'betting' AND student_id = ?
                 ORDER BY created_at DESC
                 LIMIT 50
             ''', (user.get('username'),))

@@ -3,6 +3,7 @@
 import logging
 from education_system.primary_school.infrastructure.database.db import connect
 from education_system.primary_school.core.exceptions import TripsError
+from education_system.primary_school.core.sql_safety import validate_identifier
 import traceback
 
 logger = logging.getLogger(__name__)
@@ -84,7 +85,7 @@ class TripService:
             updates = {k: v for k, v in kwargs.items() if k in allowed}
             if not updates:
                 return None
-            set_clause = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
             values = list(updates.values())
             values.append(trip_id)
             cursor.execute(
@@ -151,7 +152,7 @@ class TripService:
                 updates["medical_info"] = medical_info
             if not updates:
                 return None
-            set_clause = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
             values = list(updates.values())
             values.extend([trip_id, pupil_id])
             cursor.execute(

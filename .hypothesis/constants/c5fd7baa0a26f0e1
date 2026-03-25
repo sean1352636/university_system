@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/web_routes.py
+# hypothesis_version: 6.151.9
+
+['/portal', '/portal/', 'Content-Type', 'SAMEORIGIN', 'X-Frame-Options', 'index.html', 'static', 'web']

@@ -584,7 +584,7 @@ class TestMainExecution:
         """Test that schema module can be imported without errors."""
         # Simply verify that importing required modules works
 
-        from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+        from education_system.university_system.core.paths import DEFAULT_DB_PATH
         from education_system.university_system.modules.shared.services.communication.schema import create_communication_tables
 
         # Verify functions exist

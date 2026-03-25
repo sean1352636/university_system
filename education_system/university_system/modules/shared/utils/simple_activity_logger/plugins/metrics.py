@@ -3,8 +3,8 @@ import logging
 from datetime import datetime
 from typing import Dict, Any
 
-from ..models import LogEntry, SecurityLevel
-from .base import LoggerPlugin
+from education_system.university_system.modules.shared.utils.simple_activity_logger.models import LogEntry, SecurityLevel
+from education_system.university_system.modules.shared.utils.simple_activity_logger.plugins.base import LoggerPlugin
 
 _logger = logging.getLogger(__name__)
 

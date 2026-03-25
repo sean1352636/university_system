@@ -1,4 +1,4 @@
-from ._imports import (
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.core._imports import (
     _, csv, datetime, filedialog, messagebox, tk, ttk,
     sqlite3, ScrolledText, DEFAULT_DB_PATH,
 )
@@ -30,54 +30,56 @@ class DataIOMixin:
                     return
 
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-                cursor = conn.cursor()
-                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                try:
+                    cursor = conn.cursor()
+                    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-                for row_num, row in enumerate(reader, 1):
-                    try:
-                        course_code = row['course_code'].strip().upper()
-                        course_name = row['course_name'].strip()
-                        department = row['department'].strip()
+                    for row_num, row in enumerate(reader, 1):
+                        try:
+                            course_code = row['course_code'].strip().upper()
+                            course_name = row['course_name'].strip()
+                            department = row['department'].strip()
 
-                        if not course_code or not course_name:
+                            if not course_code or not course_name:
+                                error_count += 1
+                                continue
+
+                            # Check for duplicates
+                            cursor.execute("SELECT id FROM courses WHERE code = ?", (course_code,))
+                            if cursor.fetchone():
+                                error_count += 1
+                                continue
+
+                            # Prepare optional fields
+                            description = row.get('description', '').strip()
+                            level = row.get('level', '').strip()
+                            credit_hours = float(row.get('credit_hours', 3.0))
+                            max_enrollment = int(row.get('max_enrollment', 30))
+                            course_type = row.get('course_type', 'Core').strip()
+
+                            import uuid
+                            course_id = str(uuid.uuid4())
+
+                            # Insert course
+                            cursor.execute('''
+                            INSERT INTO courses (
+                                id, code, name, credits, date_added,
+                                course_code, course_name, description, level, department,
+                                credit_hours, max_enrollment, course_type, created_at, updated_at
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ''', (course_id, course_code, course_name, int(credit_hours), timestamp,
+                                  course_code, course_name, description, level, department,
+                                  credit_hours, max_enrollment, course_type, timestamp, timestamp))
+
+                            imported_count += 1
+
+                        except (ValueError, sqlite3.Error):
                             error_count += 1
                             continue
 
-                        # Check for duplicates
-                        cursor.execute("SELECT id FROM courses WHERE code = ?", (course_code,))
-                        if cursor.fetchone():
-                            error_count += 1
-                            continue
-
-                        # Prepare optional fields
-                        description = row.get('description', '').strip()
-                        level = row.get('level', '').strip()
-                        credit_hours = float(row.get('credit_hours', 3.0))
-                        max_enrollment = int(row.get('max_enrollment', 30))
-                        course_type = row.get('course_type', 'Core').strip()
-
-                        import uuid
-                        course_id = str(uuid.uuid4())
-
-                        # Insert course
-                        cursor.execute('''
-                        INSERT INTO courses (
-                            id, code, name, credits, date_added,
-                            course_code, course_name, description, level, department,
-                            credit_hours, max_enrollment, course_type, created_at, updated_at
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ''', (course_id, course_code, course_name, int(credit_hours), timestamp,
-                              course_code, course_name, description, level, department,
-                              credit_hours, max_enrollment, course_type, timestamp, timestamp))
-
-                        imported_count += 1
-
-                    except (ValueError, sqlite3.Error):
-                        error_count += 1
-                        continue
-
-                conn.commit()
-                conn.close()
+                    conn.commit()
+                finally:
+                    conn.close()
 
             self.refresh_course_list()
 
@@ -145,8 +147,10 @@ class DataIOMixin:
             else:
                 # Binary database copy
                 backup_conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-                conn.backup(backup_conn)
-                backup_conn.close()
+                try:
+                    conn.backup(backup_conn)
+                finally:
+                    backup_conn.close()
 
             conn.close()
 

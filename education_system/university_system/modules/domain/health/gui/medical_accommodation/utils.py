@@ -1,7 +1,7 @@
 # utils.py
 # Utility functions, helpers, and constants for the medical accommodation GUI.
 
-from ._common import (
+from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import (
     tk, messagebox, datetime, timedelta, json, logging, os, sqlite3,
     CLI_AVAILABLE, get_connection, get_current_user, logger,
 )
@@ -105,7 +105,7 @@ def validate_gui_input(value, input_type):
     """Validate GUI input based on type"""
     if input_type == 'student_id':
         if CLI_AVAILABLE:
-            from ._common import validate_student_id
+            from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import validate_student_id
             return value.strip() != '' and validate_student_id(value.strip())
         return value.strip() != ''
     elif input_type == 'date':

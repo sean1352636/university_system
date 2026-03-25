@@ -17,14 +17,14 @@ Available Services:
 - And many more...
 
 Usage:
-    from education_system.university_system.services.cli import health_portal
-    from education_system.university_system.services.cli import library
-    from education_system.university_system.services.cli import betting_shop_cli
+    from education_system.university_system.modules.services.cli import health_portal
+    from education_system.university_system.modules.services.cli import library
+    from education_system.university_system.modules.services.cli import betting_shop_cli
 """
 
 # Import all CLI services
 try:
-    from .health_portal import (
+    from education_system.university_system.modules.services.cli.health_portal import (
         display_health_portal_menu,
         view_health_records,
         schedule_appointment,
@@ -41,11 +41,11 @@ except ImportError:
 
 # Commerce and service CLI modules
 try:
-    from . import betting_shop_cli
-    from . import butcher_cli
-    from . import barber_cli
-    from . import nailbar_cli
-    from . import cinema_cli
+    from education_system.university_system.modules.services.cli import betting_shop_cli
+    from education_system.university_system.modules.services.cli import butcher_cli
+    from education_system.university_system.modules.services.cli import barber_cli
+    from education_system.university_system.modules.services.cli import nailbar_cli
+    from education_system.university_system.modules.services.cli import cinema_cli
 
     __all__.extend(['betting_shop_cli', 'butcher_cli', 'barber_cli', 'nailbar_cli', 'cinema_cli'])
 except ImportError:

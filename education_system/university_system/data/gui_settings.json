@@ -1,6 +1,6 @@
 {
-  "db_path": "/home/seancatchpole989/university_system/data/db_files/student_records.db",
-  "backup_dir": "/home/seancatchpole989/university_system/backups",
+  "db_path": "/home/seancatchpole989/education_system/university_system/data/db_files/student_records.db",
+  "backup_dir": "/home/seancatchpole989/education_system/university_system/backups/",
   "auto_backup": true,
   "duplicate_threshold": 0.7,
   "validate_on_import": true

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/student_id_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/student-id', '/cards', '/cards/<int:card_id>', '/replacements', 'GET', 'POST', 'card_number', 'create', 'expiry_date', 'fee', 'id_card_replacements', 'issue_date', 'items', 'payment_status', 'photo_url', 'reason', 'search', 'status', 'status = ?', 'student_id', 'student_id = ?', 'student_id_cards', 'student_name', 'sub', 'total', 'view']

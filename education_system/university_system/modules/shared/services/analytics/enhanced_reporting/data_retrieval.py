@@ -1,7 +1,7 @@
 """Enhanced data retrieval for all report sections."""
 
-from ._compat import pd
-from .config import get_reporting_db_connection
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting._compat import pd
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.config import get_reporting_db_connection
 
 
 def get_section_dataframe(section, start_date, end_date, filters=None):

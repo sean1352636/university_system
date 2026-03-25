@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/ai/ai_detector/detector/alerts_mixin.py
+# hypothesis_version: 6.151.9
+
+[0.3, 0.5, 0.7, 0.9, ' AND risk_level = ?', ',', '@', 'Alert ID is required', 'Alert not found', 'ai_score', 'alert_id', 'alerts', 'configured_at', 'count', 'created_at', 'critical', 'dismissed_at', 'dismissed_by', 'email', 'error', 'escalated_at', 'escalation_id', 'high', 'include_details', 'low', 'medium', 'other', 'pending', 'reason', 'risk_level', 'risk_levels', 'status', 'student_id', 'submission_id', 'submission_title', 'success', 'summary', 'thresholds', 'total', 'unknown', 'updated_at', 'username']

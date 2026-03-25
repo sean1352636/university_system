@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/student_analytics_gui/_imports.py
+# hypothesis_version: 6.151.9
+
+[300, 587, '#1f77b4', '#2ca02c', '#8c564b', '#9467bd', '#d62728', '#ff7f0e', 'Agg', 'TkAgg', 'colors', 'default', 'dpi', 'email_config', 'en', 'excel', 'export_formats', 'figure_size', 'pdf', 'png', 'sender_email', 'sender_password', 'smtp.gmail.com', 'smtp_port', 'smtp_server', 'svg']

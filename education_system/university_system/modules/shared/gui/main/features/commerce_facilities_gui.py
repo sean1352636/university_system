@@ -350,7 +350,7 @@ def show_transportation_parking_gui(self):
 
 def show_gym_gui(self):
     """Open the Gym/Fitness Center GUI in a child window."""
-    from ..imports.gui_imports import GYM_GUI_AVAILABLE, GymGUI
+    from education_system.university_system.modules.shared.gui.main.imports.gui_imports import GYM_GUI_AVAILABLE, GymGUI
     try:
         if not self.auth or not self.auth.current_user:
             messagebox.showerror(_t("commerce_facilities.titles.gym"), _t("commerce_facilities.errors.login_required_gym"))
@@ -379,7 +379,7 @@ def show_gym_gui(self):
 
 def show_dentist_gui(self):
     """Open the Dentist/Dental Clinic GUI in a child window."""
-    from ..imports.gui_imports import DENTIST_GUI_AVAILABLE, DentistGUI
+    from education_system.university_system.modules.shared.gui.main.imports.gui_imports import DENTIST_GUI_AVAILABLE, DentistGUI
     try:
         if not self.auth or not self.auth.current_user:
             messagebox.showerror(_t("commerce_facilities.titles.dentist"), _t("commerce_facilities.errors.login_required_dentist"))
@@ -408,7 +408,7 @@ def show_dentist_gui(self):
 
 def show_butcher_gui(self):
     """Open the Butcher Shop GUI in a child window."""
-    from ..imports.gui_imports import BUTCHER_GUI_AVAILABLE, ButcherGUI
+    from education_system.university_system.modules.shared.gui.main.imports.gui_imports import BUTCHER_GUI_AVAILABLE, ButcherGUI
     try:
         if not self.auth or not self.auth.current_user:
             messagebox.showerror(_t("commerce_facilities.titles.butcher"), _t("commerce_facilities.errors.login_required_butcher"))
@@ -437,7 +437,7 @@ def show_butcher_gui(self):
 
 def show_barber_gui(self):
     """Open the Barber Shop GUI in a child window."""
-    from ..imports.gui_imports import BARBER_GUI_AVAILABLE, BarberGUI
+    from education_system.university_system.modules.shared.gui.main.imports.gui_imports import BARBER_GUI_AVAILABLE, BarberGUI
     try:
         if not self.auth or not self.auth.current_user:
             messagebox.showerror(_t("commerce_facilities.titles.barber"), _t("commerce_facilities.errors.login_required_barber"))
@@ -466,7 +466,7 @@ def show_barber_gui(self):
 
 def show_nailbar_gui(self):
     """Open the Nail Bar/Salon GUI in a child window."""
-    from ..imports.gui_imports import NAILBAR_GUI_AVAILABLE, NailBarGUI
+    from education_system.university_system.modules.shared.gui.main.imports.gui_imports import NAILBAR_GUI_AVAILABLE, NailBarGUI
     try:
         if not self.auth or not self.auth.current_user:
             messagebox.showerror(_t("commerce_facilities.titles.nailbar"), _t("commerce_facilities.errors.login_required_nailbar"))
@@ -495,7 +495,7 @@ def show_nailbar_gui(self):
 
 def show_carrental_gui(self):
     """Open the Car Rental GUI in a child window."""
-    from ..imports.gui_imports import CARRENTAL_GUI_AVAILABLE, CarRentalGUI
+    from education_system.university_system.modules.shared.gui.main.imports.gui_imports import CARRENTAL_GUI_AVAILABLE, CarRentalGUI
     try:
         if not self.auth or not self.auth.current_user:
             messagebox.showerror(_t("commerce_facilities.titles.carrental"), _t("commerce_facilities.errors.login_required_carrental"))
@@ -524,7 +524,7 @@ def show_carrental_gui(self):
 
 def show_equipment_gui(self):
     """Open the Equipment Rental GUI in a child window."""
-    from ..imports.gui_imports import EQUIPMENT_GUI_AVAILABLE, EquipmentGUI
+    from education_system.university_system.modules.shared.gui.main.imports.gui_imports import EQUIPMENT_GUI_AVAILABLE, EquipmentGUI
     try:
         if not self.auth or not self.auth.current_user:
             messagebox.showerror(_t("commerce_facilities.titles.equipment"), _t("commerce_facilities.errors.login_required_equipment"))
@@ -553,7 +553,7 @@ def show_equipment_gui(self):
 
 def show_phoneshop_gui(self):
     """Open the Phone Shop GUI in a child window."""
-    from ..imports.gui_imports import PHONESHOP_GUI_AVAILABLE, PhoneShopGUI
+    from education_system.university_system.modules.shared.gui.main.imports.gui_imports import PHONESHOP_GUI_AVAILABLE, PhoneShopGUI
     try:
         if not self.auth or not self.auth.current_user:
             messagebox.showerror(_t("commerce_facilities.titles.phoneshop"), _t("commerce_facilities.errors.login_required_phoneshop"))
@@ -582,7 +582,7 @@ def show_phoneshop_gui(self):
 
 def show_musicshop_gui(self):
     """Open the Music Shop GUI in a child window."""
-    from ..imports.gui_imports import MUSICSHOP_GUI_AVAILABLE, MusicShopGUI
+    from education_system.university_system.modules.shared.gui.main.imports.gui_imports import MUSICSHOP_GUI_AVAILABLE, MusicShopGUI
     try:
         if not self.auth or not self.auth.current_user:
             messagebox.showerror(_t("commerce_facilities.titles.musicshop"), _t("commerce_facilities.errors.login_required_musicshop"))
@@ -611,7 +611,7 @@ def show_musicshop_gui(self):
 
 def show_taxi_booking_gui(self):
     """Open the Taxi Booking GUI in a child window."""
-    from ..imports.gui_imports import TAXI_BOOKING_GUI_AVAILABLE, TaxiBookingApp
+    from education_system.university_system.modules.shared.gui.main.imports.gui_imports import TAXI_BOOKING_GUI_AVAILABLE, TaxiBookingApp
     try:
         if not self.auth or not self.auth.current_user:
             messagebox.showerror(_t("commerce_facilities.taxi.title"), _t("commerce_facilities.taxi.login_required"))
@@ -640,7 +640,7 @@ def show_taxi_booking_gui(self):
 
 def show_train_station_gui(self):
     """Open the Train Station GUI in a child window."""
-    from ..imports.gui_imports import TRAIN_STATION_GUI_AVAILABLE, TrainStationApp
+    from education_system.university_system.modules.shared.gui.main.imports.gui_imports import TRAIN_STATION_GUI_AVAILABLE, TrainStationApp
     try:
         if not self.auth or not self.auth.current_user:
             messagebox.showerror(_t("commerce_facilities.train.title"), _t("commerce_facilities.train.login_required"))
@@ -669,7 +669,7 @@ def show_train_station_gui(self):
 
 def show_cinema_gui(self):
     """Open the Cinema Booking GUI in a child window."""
-    from ..imports.gui_imports import CINEMA_GUI_AVAILABLE, CinemaApp, init_cinema_database
+    from education_system.university_system.modules.shared.gui.main.imports.gui_imports import CINEMA_GUI_AVAILABLE, CinemaApp, init_cinema_database
     try:
         if not self.auth or not self.auth.current_user:
             messagebox.showerror(_t("commerce_facilities.cinema.title"), _t("commerce_facilities.cinema.login_required"))

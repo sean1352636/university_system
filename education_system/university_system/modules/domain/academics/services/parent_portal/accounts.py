@@ -217,7 +217,7 @@ class AccountsMixin:
             print("You must be logged in to create parent accounts.")
             return
 
-        if not (self.auth.check_permission('create_parent') or self.auth.current_user['role'] == 'admin'):
+        if not (self.auth.check_permission('create_parent') or self.auth.current_user.get('role', '') == 'admin'):
             print("You don't have permission to create parent accounts.")
             return
 
@@ -310,7 +310,7 @@ class AccountsMixin:
             print("You must be logged in to link students to parents.")
             return
 
-        if not (self.auth.check_permission('manage_parent_accounts') or self.auth.current_user['role'] == 'admin'):
+        if not (self.auth.check_permission('manage_parent_accounts') or self.auth.current_user.get('role', '') == 'admin'):
             print("You don't have permission to link students to parents.")
             return
 
@@ -413,7 +413,7 @@ class AccountsMixin:
             print("You must be logged in to view your children's records.")
             return []
 
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return []
 
@@ -453,7 +453,7 @@ class AccountsMixin:
             print("You must be logged in to update contact information.")
             return
 
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
 
@@ -577,7 +577,7 @@ class AccountsMixin:
             print("You must be logged in to update emergency contacts.")
             return
 
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
 
@@ -705,7 +705,7 @@ class AccountsMixin:
             print("You must be logged in to update profile photo.")
             return
 
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
 
@@ -752,7 +752,7 @@ class AccountsMixin:
             print("You must be logged in to enable two-factor authentication.")
             return
 
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
 

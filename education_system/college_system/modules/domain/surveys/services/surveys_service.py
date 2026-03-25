@@ -3,6 +3,7 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import SurveyError, ValidationError
 from education_system.college_system.infrastructure.database.db import connect
+from education_system.college_system.core.sql_safety import validate_identifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,10 +26,22 @@ class SurveyService:
             raise ValidationError("created_by is required.")
         conn = self._conn()
         try:
+            # Build INSERT with only non-None values so DB defaults apply
+            fields = {k: v for k, v in {
+                'title': kwargs.get('title'),
+                'created_by': kwargs.get('created_by'),
+                'survey_type': kwargs.get('survey_type'),
+                'is_anonymous': kwargs.get('is_anonymous'),
+                'target_role': kwargs.get('target_role'),
+                'open_date': kwargs.get('open_date'),
+                'close_date': kwargs.get('close_date'),
+                'status': kwargs.get('status'),
+            }.items() if v is not None}
+            cols = ", ".join(fields.keys())
+            placeholders = ", ".join("?" for _ in fields)
             conn.execute(
-                """INSERT INTO surveys (title, created_by, survey_type, is_anonymous, target_role, open_date, close_date, status)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                (kwargs.get('title'), kwargs.get('created_by'), kwargs.get('survey_type'), kwargs.get('is_anonymous'), kwargs.get('target_role'), kwargs.get('open_date'), kwargs.get('close_date'), kwargs.get('status'),),
+                f"INSERT INTO surveys ({cols}) VALUES ({placeholders})",
+                list(fields.values()),
             )
             conn.commit()
             row = conn.execute(
@@ -60,7 +73,7 @@ class SurveyService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -78,7 +91,7 @@ class SurveyService:
         if not updates:
             raise ValidationError("No valid fields to update.")
         updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [pk]
         conn = self._conn()
         try:
@@ -116,7 +129,7 @@ class SurveyService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         conn = self._conn()
         try:

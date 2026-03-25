@@ -7,8 +7,8 @@ from datetime import datetime
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 from education_system.university_system.infrastructure.email.template_utils import render_template
 
-from ..constants import CAMPUS_EMERGENCY_TYPES, CAMPUS_LOCATIONS
-from ..utils import get_admin_emails, send_notification_email
+from education_system.university_system.modules.domain.campus.gui.security.constants import CAMPUS_EMERGENCY_TYPES, CAMPUS_LOCATIONS
+from education_system.university_system.modules.domain.campus.gui.security.utils import get_admin_emails, send_notification_email
 
 
 class EmergencyAlertDialog(tk.Toplevel):

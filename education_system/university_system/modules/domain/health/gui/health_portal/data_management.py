@@ -213,7 +213,7 @@ class DataManagementMixin:
         backup_type_combo.grid(row=0, column=1, sticky=tk.W, pady=5, padx=(5, 0))
 
         ttk.Label(options_frame, text="Backup Location:").grid(row=1, column=0, sticky=tk.W, pady=5)
-        self.backup_location = tk.StringVar(value=str(paths.BACKUP_DIR / ""))
+        self.backup_location = tk.StringVar(value=str(paths.BACKUP_HEALTH_DIR / ""))
 
         location_frame = ttk.Frame(options_frame)
         location_frame.grid(row=1, column=1, sticky=(tk.W, tk.E), pady=5, padx=(5, 0))

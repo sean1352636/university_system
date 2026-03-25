@@ -3,6 +3,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
+from education_system.college_system.core.i18n import t
 from education_system.college_system.modules.domain.complaints.services.complaints_service import ComplaintService
 
 
@@ -38,7 +39,7 @@ class ComplaintFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Complaints Management",
+        tk.Label(header, text=t("complaints.management"),
                  font=("Helvetica", 15, "bold"), bg="#2c3e50", fg="white"
                  ).pack(side="left", padx=20, pady=10)
 
@@ -46,15 +47,15 @@ class ComplaintFrame(tk.Frame):
         self._nb.pack(fill="both", expand=True, padx=10, pady=10)
 
         self._comp_tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(self._comp_tab, text="Complaints")
+        self._nb.add(self._comp_tab, text=t("complaints.management"))
         self._build_complaints_tab()
 
         self._resp_tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(self._resp_tab, text="Responses")
+        self._nb.add(self._resp_tab, text=t("complaints.resolution"))
         self._build_responses_tab()
 
         self._stats_tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(self._stats_tab, text="Statistics")
+        self._nb.add(self._stats_tab, text=t("common.summary"))
         self._build_stats_tab()
 
     # ---- Complaints Tab ----
@@ -63,44 +64,45 @@ class ComplaintFrame(tk.Frame):
         toolbar = tk.Frame(self._comp_tab, bg="#ecf0f1")
         toolbar.pack(fill="x", padx=5, pady=5)
 
-        tk.Label(toolbar, text="Search:", bg="#ecf0f1").pack(side="left", padx=(5, 2))
+        tk.Label(toolbar, text=t("common.search_colon"), bg="#ecf0f1").pack(side="left", padx=(5, 2))
         self._comp_search = tk.Entry(toolbar, width=16)
         self._comp_search.pack(side="left", padx=2)
         self._comp_search.bind("<Return>", lambda e: self._load_complaints())
 
-        tk.Label(toolbar, text="Status:", bg="#ecf0f1").pack(side="left", padx=(8, 2))
+        tk.Label(toolbar, text=t("common.status") + ":", bg="#ecf0f1").pack(side="left", padx=(8, 2))
         self._comp_status = ttk.Combobox(toolbar, width=12, state="readonly",
                                           values=[""] + STATUSES)
         self._comp_status.set("")
         self._comp_status.pack(side="left", padx=2)
 
-        tk.Label(toolbar, text="Stage:", bg="#ecf0f1").pack(side="left", padx=(8, 2))
+        tk.Label(toolbar, text=t("common.category") + ":", bg="#ecf0f1").pack(side="left", padx=(8, 2))
         self._comp_stage = ttk.Combobox(toolbar, width=12, state="readonly",
                                          values=[""] + STAGES)
         self._comp_stage.set("")
         self._comp_stage.pack(side="left", padx=2)
 
-        ttk.Button(toolbar, text="Search", command=self._load_complaints).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("common.search"), command=self._load_complaints).pack(side="left", padx=5)
 
         btn_frame = tk.Frame(self._comp_tab, bg="#ecf0f1")
         btn_frame.pack(fill="x", padx=5, pady=(0, 5))
-        ttk.Button(btn_frame, text="Refresh", command=self._load_complaints).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="New Complaint", command=self._new_complaint).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="View", command=self._view_complaint).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="Edit", command=self._edit_complaint).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="Escalate", command=self._escalate_complaint).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="Resolve", command=self._resolve_complaint).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="Delete", command=self._delete_complaint).pack(side="right", padx=2)
+        ttk.Button(btn_frame, text=t("common.refresh"), command=self._load_complaints).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text=t("complaints.log_complaint"), command=self._new_complaint).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text=t("common.view"), command=self._view_complaint).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text=t("common.edit"), command=self._edit_complaint).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text=t("common.submit"), command=self._escalate_complaint).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text=t("complaints.resolution"), command=self._resolve_complaint).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text=t("common.delete"), command=self._delete_complaint).pack(side="right", padx=2)
+        ttk.Button(btn_frame, text="Export CSV", command=self._export_csv).pack(side="left", padx=2)
 
         cols = ("id", "date", "complainant", "type", "category",
                 "subject", "stage", "status")
         self._comp_tree = ttk.Treeview(self._comp_tab, columns=cols,
                                         show="headings", height=16)
         for c, w, label in [
-            ("id", 40, "ID"), ("date", 90, "Date"),
-            ("complainant", 140, "Complainant"), ("type", 75, "Type"),
-            ("category", 95, "Category"), ("subject", 220, "Subject"),
-            ("stage", 110, "Stage"), ("status", 90, "Status"),
+            ("id", 40, t("common.id")), ("date", 90, t("common.date")),
+            ("complainant", 140, t("complaints.complainant")), ("type", 75, t("common.type")),
+            ("category", 95, t("common.category")), ("subject", 220, t("common.title")),
+            ("stage", 110, t("common.status")), ("status", 90, t("common.status")),
         ]:
             self._comp_tree.heading(c, text=label)
             self._comp_tree.column(c, width=w,
@@ -131,19 +133,19 @@ class ComplaintFrame(tk.Frame):
                     r.get("category", ""), r.get("subject", ""),
                     r.get("stage", ""), r.get("status", "")))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _selected_complaint_id(self):
         sel = self._comp_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection",
-                                    "Please select a complaint first.")
+            messagebox.showwarning(t("common.selection_required"),
+                                    t("common.select_first"))
             return None
         return int(sel[0])
 
     def _new_complaint(self):
         win = tk.Toplevel(self)
-        win.title("New Complaint")
+        win.title(t("complaints.log_complaint"))
         win.geometry("500x520")
         win.resizable(False, False)
 
@@ -151,11 +153,11 @@ class ComplaintFrame(tk.Frame):
         row = 0
 
         for label, key in [
-            ("Complainant Name*:", "complainant_name"),
-            ("Email:", "complainant_email"),
-            ("Phone:", "complainant_phone"),
-            ("Subject*:", "subject"),
-            ("Date (YYYY-MM-DD):", "complaint_date"),
+            (t("complaints.complainant") + "*:", "complainant_name"),
+            (t("common.email") + ":", "complainant_email"),
+            (t("common.phone") + ":", "complainant_phone"),
+            (t("common.title") + "*:", "subject"),
+            (t("common.date") + ":", "complaint_date"),
         ]:
             tk.Label(win, text=label).grid(row=row, column=0, padx=10,
                                             pady=4, sticky="e")
@@ -164,7 +166,7 @@ class ComplaintFrame(tk.Frame):
             fields[key] = e
             row += 1
 
-        tk.Label(win, text="Complainant Type:").grid(row=row, column=0,
+        tk.Label(win, text=t("common.type") + ":").grid(row=row, column=0,
                                                       padx=10, pady=4, sticky="e")
         type_cb = ttk.Combobox(win, width=29, state="readonly",
                                 values=COMPLAINANT_TYPES)
@@ -172,7 +174,7 @@ class ComplaintFrame(tk.Frame):
         type_cb.grid(row=row, column=1, padx=10, pady=4)
         row += 1
 
-        tk.Label(win, text="Category:").grid(row=row, column=0, padx=10,
+        tk.Label(win, text=t("common.category") + ":").grid(row=row, column=0, padx=10,
                                               pady=4, sticky="e")
         cat_cb = ttk.Combobox(win, width=29, state="readonly",
                                values=CATEGORIES)
@@ -180,7 +182,7 @@ class ComplaintFrame(tk.Frame):
         cat_cb.grid(row=row, column=1, padx=10, pady=4)
         row += 1
 
-        tk.Label(win, text="Stage:").grid(row=row, column=0, padx=10,
+        tk.Label(win, text=t("common.status") + ":").grid(row=row, column=0, padx=10,
                                            pady=4, sticky="e")
         stage_cb = ttk.Combobox(win, width=29, state="readonly",
                                  values=STAGES)
@@ -188,7 +190,7 @@ class ComplaintFrame(tk.Frame):
         stage_cb.grid(row=row, column=1, padx=10, pady=4)
         row += 1
 
-        tk.Label(win, text="Description*:").grid(row=row, column=0,
+        tk.Label(win, text=t("common.description") + "*:").grid(row=row, column=0,
                                                   padx=10, pady=4, sticky="ne")
         desc_txt = tk.Text(win, width=32, height=6)
         desc_txt.grid(row=row, column=1, padx=10, pady=4)
@@ -199,8 +201,8 @@ class ComplaintFrame(tk.Frame):
             subj = fields["subject"].get().strip()
             desc = desc_txt.get("1.0", "end-1c").strip()
             if not name or not subj or not desc:
-                messagebox.showwarning("Validation",
-                                        "Name, subject, and description are required.")
+                messagebox.showwarning(t("common.validation"),
+                                        t("common.field_required"))
                 return
             try:
                 self._svc.create_complaint(
@@ -211,13 +213,13 @@ class ComplaintFrame(tk.Frame):
                     complaint_date=fields["complaint_date"].get().strip() or None,
                     category=cat_cb.get(),
                     stage=stage_cb.get())
-                messagebox.showinfo("Success", "Complaint logged.")
+                messagebox.showinfo(t("common.success"), t("common.created_success"))
                 win.destroy()
                 self._load_complaints()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(win, text="Save", command=save).grid(
+        ttk.Button(win, text=t("common.save"), command=save).grid(
             row=row, column=0, columnspan=2, pady=12)
 
     def _view_complaint(self):
@@ -226,11 +228,11 @@ class ComplaintFrame(tk.Frame):
             return
         rec = self._svc.get_complaint(cid)
         if not rec:
-            messagebox.showwarning("Not Found", "Complaint not found.")
+            messagebox.showwarning(t("common.warning"), t("common.no_data"))
             return
 
         win = tk.Toplevel(self)
-        win.title(f"Complaint #{cid}: {rec.get('subject', '')}")
+        win.title(f"{t('complaints.management')} #{cid}: {rec.get('subject', '')}")
         win.geometry("520x560")
         win.resizable(False, False)
 
@@ -245,24 +247,24 @@ class ComplaintFrame(tk.Frame):
         scroll.pack(side="right", fill="y")
 
         display = [
-            ("ID", rec.get("id")),
-            ("Subject", rec.get("subject")),
-            ("Complainant", rec.get("complainant_name")),
-            ("Type", rec.get("complainant_type")),
-            ("Email", rec.get("complainant_email")),
-            ("Phone", rec.get("complainant_phone")),
-            ("Date", rec.get("complaint_date")),
-            ("Category", rec.get("category")),
-            ("Stage", rec.get("stage")),
-            ("Status", rec.get("status")),
-            ("Description", rec.get("description")),
-            ("Investigation Notes", rec.get("investigation_notes")),
-            ("Outcome", rec.get("outcome")),
-            ("Resolution", rec.get("resolution")),
-            ("Resolved Date", rec.get("resolved_date")),
-            ("Appeal Lodged", "Yes" if rec.get("appeal_lodged") else "No"),
-            ("Created", rec.get("created_at")),
-            ("Updated", rec.get("updated_at")),
+            (t("common.id"), rec.get("id")),
+            (t("common.title"), rec.get("subject")),
+            (t("complaints.complainant"), rec.get("complainant_name")),
+            (t("common.type"), rec.get("complainant_type")),
+            (t("common.email"), rec.get("complainant_email")),
+            (t("common.phone"), rec.get("complainant_phone")),
+            (t("common.date"), rec.get("complaint_date")),
+            (t("common.category"), rec.get("category")),
+            (t("common.status"), rec.get("stage")),
+            (t("common.status"), rec.get("status")),
+            (t("common.description"), rec.get("description")),
+            (t("common.notes"), rec.get("investigation_notes")),
+            (t("common.summary"), rec.get("outcome")),
+            (t("complaints.resolution"), rec.get("resolution")),
+            (t("common.date"), rec.get("resolved_date")),
+            (t("common.yes"), t("common.yes") if rec.get("appeal_lodged") else t("common.no")),
+            (t("common.created_at"), rec.get("created_at")),
+            (t("common.updated_at"), rec.get("updated_at")),
         ]
 
         for i, (lbl, val) in enumerate(display):
@@ -276,7 +278,7 @@ class ComplaintFrame(tk.Frame):
         responses = self._svc.list_responses(cid)
         if responses:
             r_row = len(display)
-            tk.Label(frame, text="Responses:",
+            tk.Label(frame, text=t("complaints.resolution") + ":",
                      font=("Helvetica", 11, "bold")).grid(
                 row=r_row, column=0, columnspan=2, sticky="w", pady=(12, 4))
             for resp in responses:
@@ -297,11 +299,11 @@ class ComplaintFrame(tk.Frame):
             return
         rec = self._svc.get_complaint(cid)
         if not rec:
-            messagebox.showwarning("Not Found", "Complaint not found.")
+            messagebox.showwarning(t("common.warning"), t("common.no_data"))
             return
 
         win = tk.Toplevel(self)
-        win.title(f"Edit Complaint #{cid}")
+        win.title(f"{t('common.edit')} #{cid}")
         win.geometry("520x600")
         win.resizable(False, False)
 
@@ -309,10 +311,10 @@ class ComplaintFrame(tk.Frame):
         row = 0
 
         for label, key in [
-            ("Complainant Name*:", "complainant_name"),
-            ("Email:", "complainant_email"),
-            ("Phone:", "complainant_phone"),
-            ("Subject*:", "subject"),
+            (t("complaints.complainant") + "*:", "complainant_name"),
+            (t("common.email") + ":", "complainant_email"),
+            (t("common.phone") + ":", "complainant_phone"),
+            (t("common.title") + "*:", "subject"),
         ]:
             tk.Label(win, text=label).grid(row=row, column=0, padx=10,
                                             pady=4, sticky="e")
@@ -322,7 +324,7 @@ class ComplaintFrame(tk.Frame):
             fields[key] = e
             row += 1
 
-        tk.Label(win, text="Type:").grid(row=row, column=0, padx=10,
+        tk.Label(win, text=t("common.type") + ":").grid(row=row, column=0, padx=10,
                                           pady=4, sticky="e")
         type_cb = ttk.Combobox(win, width=29, state="readonly",
                                 values=COMPLAINANT_TYPES)
@@ -330,7 +332,7 @@ class ComplaintFrame(tk.Frame):
         type_cb.grid(row=row, column=1, padx=10, pady=4)
         row += 1
 
-        tk.Label(win, text="Category:").grid(row=row, column=0, padx=10,
+        tk.Label(win, text=t("common.category") + ":").grid(row=row, column=0, padx=10,
                                               pady=4, sticky="e")
         cat_cb = ttk.Combobox(win, width=29, state="readonly",
                                values=CATEGORIES)
@@ -338,7 +340,7 @@ class ComplaintFrame(tk.Frame):
         cat_cb.grid(row=row, column=1, padx=10, pady=4)
         row += 1
 
-        tk.Label(win, text="Stage:").grid(row=row, column=0, padx=10,
+        tk.Label(win, text=t("common.status") + ":").grid(row=row, column=0, padx=10,
                                            pady=4, sticky="e")
         stage_cb = ttk.Combobox(win, width=29, state="readonly",
                                  values=STAGES)
@@ -346,7 +348,7 @@ class ComplaintFrame(tk.Frame):
         stage_cb.grid(row=row, column=1, padx=10, pady=4)
         row += 1
 
-        tk.Label(win, text="Status:").grid(row=row, column=0, padx=10,
+        tk.Label(win, text=t("common.status") + ":").grid(row=row, column=0, padx=10,
                                             pady=4, sticky="e")
         status_cb = ttk.Combobox(win, width=29, state="readonly",
                                   values=STATUSES)
@@ -355,25 +357,25 @@ class ComplaintFrame(tk.Frame):
         row += 1
 
         appeal_var = tk.BooleanVar(value=bool(rec.get("appeal_lodged")))
-        ttk.Checkbutton(win, text="Appeal Lodged", variable=appeal_var).grid(
+        ttk.Checkbutton(win, text=t("common.yes"), variable=appeal_var).grid(
             row=row, column=1, sticky="w", padx=10, pady=2)
         row += 1
 
-        tk.Label(win, text="Description*:").grid(row=row, column=0,
+        tk.Label(win, text=t("common.description") + "*:").grid(row=row, column=0,
                                                   padx=10, pady=4, sticky="ne")
         desc_txt = tk.Text(win, width=32, height=4)
         desc_txt.insert("1.0", rec.get("description", "") or "")
         desc_txt.grid(row=row, column=1, padx=10, pady=4)
         row += 1
 
-        tk.Label(win, text="Investigation Notes:").grid(
+        tk.Label(win, text=t("common.notes") + ":").grid(
             row=row, column=0, padx=10, pady=4, sticky="ne")
         inv_txt = tk.Text(win, width=32, height=3)
         inv_txt.insert("1.0", rec.get("investigation_notes", "") or "")
         inv_txt.grid(row=row, column=1, padx=10, pady=4)
         row += 1
 
-        tk.Label(win, text="Outcome:").grid(row=row, column=0, padx=10,
+        tk.Label(win, text=t("common.summary") + ":").grid(row=row, column=0, padx=10,
                                              pady=4, sticky="ne")
         out_txt = tk.Text(win, width=32, height=2)
         out_txt.insert("1.0", rec.get("outcome", "") or "")
@@ -385,8 +387,8 @@ class ComplaintFrame(tk.Frame):
             subj = fields["subject"].get().strip()
             desc = desc_txt.get("1.0", "end-1c").strip()
             if not name or not subj or not desc:
-                messagebox.showwarning("Validation",
-                                        "Name, subject, and description are required.")
+                messagebox.showwarning(t("common.validation"),
+                                        t("common.field_required"))
                 return
             try:
                 self._svc.update_complaint(
@@ -400,13 +402,13 @@ class ComplaintFrame(tk.Frame):
                     appeal_lodged=1 if appeal_var.get() else 0,
                     investigation_notes=inv_txt.get("1.0", "end-1c").strip() or None,
                     outcome=out_txt.get("1.0", "end-1c").strip() or None)
-                messagebox.showinfo("Success", "Complaint updated.")
+                messagebox.showinfo(t("common.success"), t("common.updated_success"))
                 win.destroy()
                 self._load_complaints()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(win, text="Save", command=save).grid(
+        ttk.Button(win, text=t("common.save"), command=save).grid(
             row=row, column=0, columnspan=2, pady=12)
 
     def _escalate_complaint(self):
@@ -417,16 +419,16 @@ class ComplaintFrame(tk.Frame):
         if not rec:
             return
         if not messagebox.askyesno(
-                "Escalate",
-                f"Escalate complaint #{cid} from '{rec.get('stage')}'?"):
+                t("common.confirm"),
+                f"{t('common.confirm')} #{cid}?"):
             return
         try:
             updated = self._svc.escalate(cid)
-            messagebox.showinfo("Escalated",
-                                 f"Escalated to '{updated.get('stage')}'.")
+            messagebox.showinfo(t("common.success"),
+                                 f"{t('common.updated_success')}")
             self._load_complaints()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _resolve_complaint(self):
         cid = self._selected_complaint_id()
@@ -434,16 +436,16 @@ class ComplaintFrame(tk.Frame):
             return
 
         win = tk.Toplevel(self)
-        win.title(f"Resolve Complaint #{cid}")
+        win.title(f"{t('complaints.resolution')} #{cid}")
         win.geometry("420x250")
         win.resizable(False, False)
 
-        tk.Label(win, text="Outcome*:").grid(row=0, column=0, padx=10,
+        tk.Label(win, text=t("common.summary") + "*:").grid(row=0, column=0, padx=10,
                                               pady=8, sticky="ne")
         out_txt = tk.Text(win, width=30, height=3)
         out_txt.grid(row=0, column=1, padx=10, pady=8)
 
-        tk.Label(win, text="Resolution:").grid(row=1, column=0, padx=10,
+        tk.Label(win, text=t("complaints.resolution") + ":").grid(row=1, column=0, padx=10,
                                                 pady=8, sticky="ne")
         res_txt = tk.Text(win, width=30, height=3)
         res_txt.grid(row=1, column=1, padx=10, pady=8)
@@ -451,19 +453,19 @@ class ComplaintFrame(tk.Frame):
         def save():
             outcome = out_txt.get("1.0", "end-1c").strip()
             if not outcome:
-                messagebox.showwarning("Validation", "Outcome is required.")
+                messagebox.showwarning(t("common.validation"), t("common.field_required"))
                 return
             try:
                 self._svc.resolve(
                     cid, outcome,
                     resolution=res_txt.get("1.0", "end-1c").strip() or None)
-                messagebox.showinfo("Success", "Complaint resolved.")
+                messagebox.showinfo(t("common.success"), t("common.updated_success"))
                 win.destroy()
                 self._load_complaints()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(win, text="Resolve", command=save).grid(
+        ttk.Button(win, text=t("common.save"), command=save).grid(
             row=2, column=0, columnspan=2, pady=12)
 
     def _delete_complaint(self):
@@ -471,15 +473,15 @@ class ComplaintFrame(tk.Frame):
         if not cid:
             return
         if not messagebox.askyesno(
-                "Confirm",
-                f"Delete complaint #{cid} and all its responses?"):
+                t("common.confirm_delete"),
+                t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_complaint(cid)
-            messagebox.showinfo("Deleted", "Complaint deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_complaints()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ---- Responses Tab ----
 
@@ -487,25 +489,25 @@ class ComplaintFrame(tk.Frame):
         toolbar = tk.Frame(self._resp_tab, bg="#ecf0f1")
         toolbar.pack(fill="x", padx=5, pady=5)
 
-        tk.Label(toolbar, text="Complaint ID:", bg="#ecf0f1").pack(
+        tk.Label(toolbar, text=t("common.id") + ":", bg="#ecf0f1").pack(
             side="left", padx=(5, 2))
         self._resp_comp_id = tk.Entry(toolbar, width=8)
         self._resp_comp_id.pack(side="left", padx=2)
 
-        ttk.Button(toolbar, text="Load Responses",
+        ttk.Button(toolbar, text=t("common.refresh"),
                    command=self._load_responses).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="Add Response",
+        ttk.Button(toolbar, text=t("common.add"),
                    command=self._add_response).pack(side="right", padx=5)
-        ttk.Button(toolbar, text="Delete Response",
+        ttk.Button(toolbar, text=t("common.delete"),
                    command=self._delete_response).pack(side="right", padx=2)
 
         cols = ("id", "date", "responder", "type", "text")
         self._resp_tree = ttk.Treeview(self._resp_tab, columns=cols,
                                         show="headings", height=18)
         for c, w, label in [
-            ("id", 40, "ID"), ("date", 90, "Date"),
-            ("responder", 120, "Responder"), ("type", 110, "Type"),
-            ("text", 400, "Response"),
+            ("id", 40, t("common.id")), ("date", 90, t("common.date")),
+            ("responder", 120, t("common.name")), ("type", 110, t("common.type")),
+            ("text", 400, t("common.description")),
         ]:
             self._resp_tree.heading(c, text=label)
             self._resp_tree.column(c, width=w,
@@ -523,7 +525,7 @@ class ComplaintFrame(tk.Frame):
             self._resp_tree.delete(item)
         cid = self._resp_comp_id.get().strip()
         if not cid:
-            messagebox.showwarning("Input", "Enter a Complaint ID.")
+            messagebox.showwarning(t("common.input"), t("common.field_required"))
             return
         try:
             responses = self._svc.list_responses(int(cid))
@@ -534,26 +536,26 @@ class ComplaintFrame(tk.Frame):
                     r.get("response_type", ""),
                     (r.get("response_text", "") or "")[:120]))
             if not responses:
-                messagebox.showinfo("Info", "No responses for this complaint.")
+                messagebox.showinfo(t("common.info"), t("common.no_data"))
         except ValueError:
-            messagebox.showerror("Error", "Invalid Complaint ID.")
+            messagebox.showerror(t("common.error"), t("common.invalid_input"))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _add_response(self):
         cid = self._resp_comp_id.get().strip()
         if not cid:
-            messagebox.showwarning("Input",
-                                    "Enter a Complaint ID in the toolbar first.")
+            messagebox.showwarning(t("common.input"),
+                                    t("common.field_required"))
             return
 
         win = tk.Toplevel(self)
-        win.title(f"Add Response to Complaint #{cid}")
+        win.title(f"{t('common.add')} #{cid}")
         win.geometry("440x300")
         win.resizable(False, False)
 
         row = 0
-        tk.Label(win, text="Response Type:").grid(row=row, column=0,
+        tk.Label(win, text=t("common.type") + ":").grid(row=row, column=0,
                                                    padx=10, pady=5, sticky="e")
         type_cb = ttk.Combobox(win, width=28, state="readonly",
                                 values=RESPONSE_TYPES)
@@ -561,13 +563,13 @@ class ComplaintFrame(tk.Frame):
         type_cb.grid(row=row, column=1, padx=10, pady=5)
         row += 1
 
-        tk.Label(win, text="Date (YYYY-MM-DD):").grid(row=row, column=0,
+        tk.Label(win, text=t("common.date") + ":").grid(row=row, column=0,
                                                        padx=10, pady=5, sticky="e")
         date_entry = tk.Entry(win, width=30)
         date_entry.grid(row=row, column=1, padx=10, pady=5)
         row += 1
 
-        tk.Label(win, text="Response*:").grid(row=row, column=0, padx=10,
+        tk.Label(win, text=t("common.description") + "*:").grid(row=row, column=0, padx=10,
                                                pady=5, sticky="ne")
         resp_txt = tk.Text(win, width=30, height=6)
         resp_txt.grid(row=row, column=1, padx=10, pady=5)
@@ -576,38 +578,38 @@ class ComplaintFrame(tk.Frame):
         def save():
             text = resp_txt.get("1.0", "end-1c").strip()
             if not text:
-                messagebox.showwarning("Validation",
-                                        "Response text is required.")
+                messagebox.showwarning(t("common.validation"),
+                                        t("common.field_required"))
                 return
             try:
                 self._svc.add_response(
                     int(cid), text,
                     response_type=type_cb.get(),
                     response_date=date_entry.get().strip() or None)
-                messagebox.showinfo("Success", "Response added.")
+                messagebox.showinfo(t("common.success"), t("common.created_success"))
                 win.destroy()
                 self._load_responses()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(win, text="Save", command=save).grid(
+        ttk.Button(win, text=t("common.save"), command=save).grid(
             row=row, column=0, columnspan=2, pady=12)
 
     def _delete_response(self):
         sel = self._resp_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection",
-                                    "Please select a response first.")
+            messagebox.showwarning(t("common.selection_required"),
+                                    t("common.select_first"))
             return
         rid = int(sel[0])
-        if not messagebox.askyesno("Confirm", f"Delete response #{rid}?"):
+        if not messagebox.askyesno(t("common.confirm_delete"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_response(rid)
-            messagebox.showinfo("Deleted", "Response deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_responses()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ---- Statistics Tab ----
 
@@ -616,16 +618,16 @@ class ComplaintFrame(tk.Frame):
                                       padx=20, pady=20)
         self._stats_frame.pack(fill="both", expand=True)
 
-        ttk.Button(self._stats_frame, text="Refresh Statistics",
+        ttk.Button(self._stats_frame, text=t("common.refresh"),
                    command=self._load_stats).pack(anchor="w", pady=(0, 15))
 
         self._stats_labels = {}
         for key, label in [
-            ("total", "Total Complaints"),
-            ("open", "Open"),
-            ("investigating", "Investigating"),
-            ("resolved", "Resolved"),
-            ("appealed", "Appeals Lodged"),
+            ("total", t("common.total")),
+            ("open", t("common.active")),
+            ("investigating", t("common.in_progress")),
+            ("resolved", t("common.completed")),
+            ("appealed", t("common.status")),
         ]:
             row_frame = tk.Frame(self._stats_frame, bg="#ecf0f1")
             row_frame.pack(fill="x", pady=3)
@@ -638,7 +640,7 @@ class ComplaintFrame(tk.Frame):
             self._stats_labels[key] = lbl
 
         # Category breakdown
-        tk.Label(self._stats_frame, text="By Category:",
+        tk.Label(self._stats_frame, text=t("common.category") + ":",
                  font=("Helvetica", 11, "bold"), bg="#ecf0f1"
                  ).pack(anchor="w", pady=(15, 5))
         self._cat_lbl = tk.Label(self._stats_frame, text="—",
@@ -647,7 +649,7 @@ class ComplaintFrame(tk.Frame):
         self._cat_lbl.pack(anchor="w", padx=(20, 0))
 
         # Stage breakdown
-        tk.Label(self._stats_frame, text="By Stage:",
+        tk.Label(self._stats_frame, text=t("common.status") + ":",
                  font=("Helvetica", 11, "bold"), bg="#ecf0f1"
                  ).pack(anchor="w", pady=(10, 5))
         self._stage_lbl = tk.Label(self._stats_frame, text="—",
@@ -666,16 +668,20 @@ class ComplaintFrame(tk.Frame):
                 self._cat_lbl.config(
                     text="\n".join(f"{k}: {v}" for k, v in by_cat.items()))
             else:
-                self._cat_lbl.config(text="No data")
+                self._cat_lbl.config(text=t("common.no_data"))
 
             by_stage = stats.get("by_stage", {})
             if by_stage:
                 self._stage_lbl.config(
                     text="\n".join(f"{k}: {v}" for k, v in by_stage.items()))
             else:
-                self._stage_lbl.config(text="No data")
+                self._stage_lbl.config(text=t("common.no_data"))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._comp_tree, "complaints.csv")
 
     # ---- Refresh ----
 

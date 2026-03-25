@@ -86,7 +86,7 @@ class TestRegisterForEvent:
     """Test event registration functionality."""
 
     @patch('builtins.input', side_effect=['1', '1'])
-    @patch('university_system.modules.domain.student_affairs.student_union.events.event_management.send_confirmation_email')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.events.event_management.send_confirmation_email')
     def test_register_success(self, mock_email, mock_input, mock_cursor, mock_conn, mock_auth):
         """Test successfully registering for an event."""
         event_management.auth = mock_auth
@@ -365,7 +365,7 @@ class TestEventMenu:
     """Test event menu display."""
 
     @patch('builtins.input', side_effect=[str(i) for i in range(1, 10)])
-    @patch('university_system.modules.domain.student_affairs.student_union.events.event_management.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.events.event_management.get_connection')
     def test_display_event_menu(self, mock_get_conn, mock_input, mock_auth):
         """Test displaying event menu."""
         mock_conn = Mock()

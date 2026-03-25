@@ -168,22 +168,93 @@ class IntegrationMixin:
                 }
             }
 
-            # Note: Actual API integration would require real endpoints
-            # This is a placeholder implementation
+            import requests
+
+            # API endpoint mapping for supported plagiarism tools
+            tool_endpoints = {
+                'turnitin': 'https://api.turnitin.com/api/v1',
+                'copyleaks': 'https://api.copyleaks.com/v3',
+                'plagscan': 'https://api.plagscan.com/v3',
+                'unicheck': 'https://unicheck.com/api/v2',
+            }
+
+            base_url = tool_endpoints[tool]
+            headers = {
+                'Authorization': f'Bearer {api_key}',
+                'Content-Type': 'application/json',
+            }
+
             for submission in submissions:
                 try:
+                    submission_id = submission['id']
                     results['submissions_synced'] += 1
 
                     if sync_direction in ['push', 'bidirectional']:
-                        # Simulate push to plagiarism tool
-                        results['push_success'] += 1
+                        # Push AI detection results to the plagiarism tool
+                        try:
+                            push_payload = {
+                                'external_id': str(submission_id),
+                                'text': submission['text_content'][:50000],  # Limit payload size
+                                'metadata': {
+                                    'ai_score': submission.get('ai_score'),
+                                    'source': 'ai_detector',
+                                }
+                            }
+                            resp = requests.post(
+                                f'{base_url}/submissions',
+                                json=push_payload,
+                                headers=headers,
+                                timeout=30,
+                            )
+                            if resp.status_code in (200, 201, 202):
+                                results['push_success'] += 1
+                            else:
+                                logger.warning(
+                                    f"Push failed for submission {submission_id}: "
+                                    f"HTTP {resp.status_code}"
+                                )
+                                results['errors'] += 1
+                        except requests.RequestException as req_err:
+                            logger.error(f"Push request error for submission {submission_id}: {req_err}")
+                            results['errors'] += 1
 
                     if sync_direction in ['pull', 'bidirectional']:
-                        # Simulate pull from plagiarism tool
-                        results['pull_success'] += 1
+                        # Pull plagiarism results from the tool
+                        try:
+                            resp = requests.get(
+                                f'{base_url}/submissions/{submission_id}/results',
+                                headers=headers,
+                                timeout=30,
+                            )
+                            if resp.status_code == 200:
+                                plag_data = resp.json()
+                                results['pull_success'] += 1
+
+                                # Cross-reference AI detection with plagiarism scores
+                                plag_score = plag_data.get('similarity_score', 0)
+                                ai_score = submission.get('ai_score', 0)
+
+                                if ai_score and ai_score >= 0.7 and plag_score >= 0.5:
+                                    results['combined_results']['high_risk_both'] += 1
+                                elif ai_score and ai_score >= 0.7:
+                                    results['combined_results']['ai_only'] += 1
+                                elif plag_score >= 0.5:
+                                    results['combined_results']['plagiarism_only'] += 1
+                            elif resp.status_code == 404:
+                                # No results yet; not an error
+                                results['pull_success'] += 1
+                            else:
+                                logger.warning(
+                                    f"Pull failed for submission {submission_id}: "
+                                    f"HTTP {resp.status_code}"
+                                )
+                                results['errors'] += 1
+                        except requests.RequestException as req_err:
+                            logger.error(f"Pull request error for submission {submission_id}: {req_err}")
+                            results['errors'] += 1
 
                 except Exception as e:
-                    logger.error(f"Error syncing submission {submission['id']}: {e}")
+                    logger.error(f"Error syncing submission {submission.get('id', '?')}: {e}")
                     results['errors'] += 1
 
             logger.info(f"Plagiarism checker sync complete: {tool}")

@@ -8,6 +8,7 @@ from education_system.college_system.modules.domain.staff.services.staff_service
 from education_system.college_system.modules.domain.courses.services.course_service import CourseService
 from education_system.college_system.infrastructure.auth.core import UserAuth
 from education_system.college_system.core.exceptions import StaffError, ValidationError, AuthError
+from education_system.college_system.core.i18n import t
 
 
 _FORM_GROUPS = ["12A", "12B", "12C", "12D", "13A", "13B", "13C", "13D"]
@@ -158,9 +159,9 @@ class _StaffDialog(tk.Toplevel):
         # Buttons
         btn_frame = tk.Frame(container)
         btn_frame.grid(row=row_idx + 1, column=0, columnspan=2, pady=(15, 0))
-        ttk.Button(btn_frame, text="Save", command=self._on_save).pack(
+        ttk.Button(btn_frame, text=t("common.save"), command=self._on_save).pack(
             side="left", padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.destroy).pack(
+        ttk.Button(btn_frame, text=t("common.cancel"), command=self.destroy).pack(
             side="left", padx=5)
 
     def _on_save(self):
@@ -197,28 +198,30 @@ class StaffFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Staff Management", font=("Helvetica", 15, "bold"),
+        tk.Label(header, text=t("staff.management"), font=("Helvetica", 15, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=10)
 
         # Toolbar
         toolbar = tk.Frame(self, bg="#ecf0f1", pady=8)
         toolbar.pack(fill="x", padx=15)
 
-        ttk.Button(toolbar, text="Add Staff", command=self._on_add).pack(
+        ttk.Button(toolbar, text=t("staff.add"), command=self._on_add).pack(
             side="left", padx=4)
-        ttk.Button(toolbar, text="Edit Selected", command=self._on_edit).pack(
+        ttk.Button(toolbar, text=t("common.edit_selected"), command=self._on_edit).pack(
             side="left", padx=4)
-        ttk.Button(toolbar, text="Delete Selected", command=self._on_delete).pack(
+        ttk.Button(toolbar, text=t("common.delete_selected"), command=self._on_delete).pack(
             side="left", padx=4)
 
         # Search
-        tk.Label(toolbar, text="Search:", bg="#ecf0f1").pack(side="left", padx=(20, 4))
+        tk.Label(toolbar, text=t("common.search_colon"), bg="#ecf0f1").pack(side="left", padx=(20, 4))
         self._search_var = tk.StringVar()
         search_entry = ttk.Entry(toolbar, textvariable=self._search_var, width=24)
         search_entry.pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Go", command=self._on_search).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Clear", command=self._on_clear_search).pack(
+        ttk.Button(toolbar, text=t("common.go"), command=self._on_search).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.clear"), command=self._on_clear_search).pack(
             side="left", padx=4)
+        ttk.Button(toolbar, text="Export CSV", command=self._export_csv).pack(
+            side="right", padx=4)
         search_entry.bind("<Return>", lambda _e: self._on_search())
 
         # Treeview
@@ -249,7 +252,7 @@ class StaffFrame(tk.Frame):
         vsb.pack(side="right", fill="y")
 
         # Status bar
-        self._status_lbl_var = tk.StringVar(value="Ready")
+        self._status_lbl_var = tk.StringVar(value=t("common.ready"))
         tk.Label(self, textvariable=self._status_lbl_var, bg="#ecf0f1", anchor="w",
                  font=("Helvetica", 9), fg="#7f8c8d").pack(
             fill="x", padx=15, pady=(0, 8))
@@ -262,7 +265,7 @@ class StaffFrame(tk.Frame):
         try:
             staff_list = self._svc.list_staff(search=search, limit=500)
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load staff:\n{exc}")
+            messagebox.showerror(t("common.error"), f"Failed to load staff:\n{exc}")
             return
 
         for s in staff_list:
@@ -276,12 +279,12 @@ class StaffFrame(tk.Frame):
                 s.get("status", ""),
             ))
 
-        self._status_lbl_var.set(f"{len(staff_list)} staff member(s) loaded")
+        self._status_lbl_var.set(t("staff.count_loaded", count=len(staff_list)))
 
     def _selected_pk(self) -> int | None:
         sel = self._tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select a staff member first.")
+            messagebox.showwarning(t("common.selection_required"), t("staff.select_first"))
             return None
         return int(sel[0])
 
@@ -298,7 +301,7 @@ class StaffFrame(tk.Frame):
 
         data = dlg.result
         if not data.get("first_name") or not data.get("last_name"):
-            messagebox.showwarning("Validation", "First name and last name are required.")
+            messagebox.showwarning(t("common.validation"), "First name and last name are required.")
             return
 
         first_name = data["first_name"]
@@ -323,7 +326,7 @@ class StaffFrame(tk.Frame):
                 form_group=data.get("form_group") or None,
             )
         except (StaffError, ValidationError) as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
             return
 
         staff_id = staff["staff_id"]
@@ -344,7 +347,7 @@ class StaffFrame(tk.Frame):
             self._svc.update_staff(staff["id"], user_id=user_id)
         except (AuthError, Exception) as exc:
             messagebox.showwarning(
-                "Partial Success",
+                t("common.warning"),
                 f"Staff created ({staff_id}) but account creation failed:\n{exc}",
             )
             self._load_staff()
@@ -357,7 +360,7 @@ class StaffFrame(tk.Frame):
             try:
                 courses_assigned = self._svc.assign_courses(staff["id"], selected_ids)
             except StaffError as exc:
-                messagebox.showwarning("Warning", f"Course assignment failed: {exc}")
+                messagebox.showwarning(t("common.warning"), f"Course assignment failed: {exc}")
 
         # 4. Show credentials
         parts = [
@@ -372,7 +375,7 @@ class StaffFrame(tk.Frame):
         if courses_assigned:
             parts.append(f"\nCourses assigned: {courses_assigned}")
 
-        messagebox.showinfo("Staff Account Created", "\n".join(parts))
+        messagebox.showinfo(t("common.success"), "\n".join(parts))
         self._load_staff()
 
     def _on_edit(self):
@@ -382,7 +385,7 @@ class StaffFrame(tk.Frame):
 
         staff = self._svc.get_staff(pk)
         if not staff:
-            messagebox.showerror("Error", "Staff member not found.")
+            messagebox.showerror(t("common.error"), t("staff.not_found"))
             return
 
         try:
@@ -425,17 +428,17 @@ class StaffFrame(tk.Frame):
             if selected_ids:
                 self._svc.assign_courses(pk, selected_ids)
 
-            messagebox.showinfo("Success", "Staff member updated successfully.")
+            messagebox.showinfo(t("common.success"), "Staff member updated successfully.")
             self._load_staff()
         except (StaffError, ValidationError) as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_delete(self):
         pk = self._selected_pk()
         if pk is None:
             return
 
-        if not messagebox.askyesno("Confirm Delete",
+        if not messagebox.askyesno(t("common.confirm_delete"),
                                    "This will permanently delete the staff member, their user account, "
                                    "and remove them from any assigned courses.\n\n"
                                    "This cannot be undone. Continue?"):
@@ -443,14 +446,18 @@ class StaffFrame(tk.Frame):
 
         try:
             self._svc.delete_staff(pk)
-            messagebox.showinfo("Success", "Staff member deleted permanently.")
+            messagebox.showinfo(t("common.success"), "Staff member deleted permanently.")
             self._load_staff()
         except (StaffError, ValidationError) as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_search(self):
         term = self._search_var.get().strip()
         self._load_staff(search=term if term else None)
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._tree, default_filename="staff.csv")
 
     def _on_clear_search(self):
         self._search_var.set("")

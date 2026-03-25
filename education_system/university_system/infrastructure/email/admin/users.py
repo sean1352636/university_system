@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.email.admin._imports import (
     execute_db_operation,
     handle_exception,
@@ -17,7 +18,7 @@ def search_users(auth, search_term):
         return []
 
     def _search_users(cursor):
-        search_pattern = f"%{search_term}%"
+        search_pattern = f"%{escape_like(search_term)}%"
 
         # Use the auth users table structure
         cursor.execute('''

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/ai/ai_detector/analyzers/temporal_analyzer.py
+# hypothesis_version: 6.151.9
+
+[0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0, 23.5, 24.5, 100, 300, 3600, '[,;:()"]', '[.!?]+', 'aeiouy', 'anomaly', 'avg_hour', 'complexity_score', 'e', 'error', 'expected_wpm_range', 'hour_variance', 'insufficient_data', 'reason', 'submission_date', 'total_submissions', 'words_per_minute']

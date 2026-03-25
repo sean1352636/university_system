@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/course_management_gui/__init__.py
+# hypothesis_version: 6.151.9
+
+['AddToWaitlistDialog', 'AdvancedSearchDialog', 'BulkUpdateDialog', 'CourseCreateDialog', 'CourseEditDialog', 'CourseHistoryDialog', 'CourseManagementGUI', 'CreateScheduleDialog', 'ImportExportDialog', 'MaintenanceDialog', 'PrerequisitesWindow', 'UpdateScheduleDialog', 'ViewSchedulesDialog', 'ViewWaitlistsDialog', 'analytics_gui', 'cli_interface', 'create_course_gui', 'init_gui_mode', 'print_usage', 'run_gui_application', 'search_courses_gui', 'show_gui', 'view_courses_gui']

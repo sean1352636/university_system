@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/virtual_classroom/participant_manager.py
+# hypothesis_version: 6.151.9
+
+[' AND user_type = ?', 'absent', 'desktop', 'late', 'left_early', 'present', 'student']

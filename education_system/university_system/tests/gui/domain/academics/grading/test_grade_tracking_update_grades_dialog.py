@@ -115,7 +115,7 @@ class TestUpdateGradesDialog(unittest.TestCase):
 
         self.conn.commit()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.update_grades_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.update_grades_dialog.get_connection')
     def test_dialog_creation(self, mock_get_connection):
         """Test dialog creation"""
         mock_get_connection.return_value = self.conn
@@ -128,7 +128,7 @@ class TestUpdateGradesDialog(unittest.TestCase):
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.update_grades_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.update_grades_dialog.get_connection')
     def test_load_students(self, mock_get_connection):
         """Test loading students"""
         mock_get_connection.return_value = self.conn
@@ -146,7 +146,7 @@ class TestUpdateGradesDialog(unittest.TestCase):
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.update_grades_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.update_grades_dialog.get_connection')
     def test_select_student(self, mock_get_connection):
         """Test selecting a student"""
         mock_get_connection.return_value = self.conn
@@ -167,7 +167,7 @@ class TestUpdateGradesDialog(unittest.TestCase):
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.update_grades_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.update_grades_dialog.get_connection')
     def test_select_student_without_selection(self, mock_get_connection):
         """Test selecting without choosing a student"""
         mock_get_connection.return_value = self.conn
@@ -181,7 +181,7 @@ class TestUpdateGradesDialog(unittest.TestCase):
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.update_grades_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.update_grades_dialog.get_connection')
     def test_edit_grade_no_selection(self, mock_get_connection):
         """Test editing grade without selection"""
         mock_get_connection.return_value = self.conn
@@ -195,7 +195,7 @@ class TestUpdateGradesDialog(unittest.TestCase):
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.update_grades_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.update_grades_dialog.get_connection')
     def test_grades_tree_columns(self, mock_get_connection):
         """Test grades treeview has correct columns"""
         mock_get_connection.return_value = self.conn
@@ -209,7 +209,7 @@ class TestUpdateGradesDialog(unittest.TestCase):
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.update_grades_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.update_grades_dialog.get_connection')
     def test_dialog_geometry(self, mock_get_connection):
         """Test dialog size"""
         mock_get_connection.return_value = self.conn
@@ -221,7 +221,7 @@ class TestUpdateGradesDialog(unittest.TestCase):
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.update_grades_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.update_grades_dialog.get_connection')
     def test_load_students_database_error(self, mock_get_connection):
         """Test handling database error when loading students"""
         # Mock connection that raises error
@@ -238,7 +238,7 @@ class TestUpdateGradesDialog(unittest.TestCase):
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.update_grades_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.update_grades_dialog.get_connection')
     def test_refresh_student_grades(self, mock_get_connection):
         """Test refreshing student grades"""
         mock_get_connection.return_value = self.conn
@@ -257,7 +257,7 @@ class TestUpdateGradesDialog(unittest.TestCase):
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.update_grades_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.update_grades_dialog.get_connection')
     def test_double_click_binding(self, mock_get_connection):
         """Test double-click event binding on grades tree"""
         mock_get_connection.return_value = self.conn
@@ -382,7 +382,7 @@ class TestUpdateGradesDialogIntegration(unittest.TestCase):
 
         self.conn.commit()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.update_grades_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.update_grades_dialog.get_connection')
     def test_full_workflow_load_and_select(self, mock_get_connection):
         """Test full workflow: load students and select one"""
         mock_get_connection.return_value = self.conn

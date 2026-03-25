@@ -6,10 +6,10 @@ import time
 import threading
 from datetime import datetime, timedelta
 
-from ._compat import schedule
-from .config import CONFIG, logger
-from .cache import CacheManager
-from .data_quality import DataQualityMonitor
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting._compat import schedule
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.config import CONFIG, logger
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.cache import CacheManager
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.data_quality import DataQualityMonitor
 
 
 def run_system_maintenance():
@@ -63,7 +63,7 @@ def save_scheduled_reports(scheduled_reports):
 
 def start_scheduler():
     """Start the background scheduler for automatic reports"""
-    from .report_generation import generate_report
+    from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.report_generation import generate_report
 
     def run_scheduler():
         while True:

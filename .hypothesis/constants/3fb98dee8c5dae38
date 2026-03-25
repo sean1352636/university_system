@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance_reporting/payment_dialogs.py
+# hypothesis_version: 6.151.9
+
+['500x400', '600x500', 'TkAgg', 'common.assign', 'common.cancel', 'common.close', 'common.process', 'common.save', 'left']

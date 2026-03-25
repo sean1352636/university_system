@@ -24,7 +24,7 @@ from education_system.university_system.infrastructure.database.db import get_co
 from education_system.university_system.infrastructure.exceptions import DatabaseError, ValidationError
 from education_system.university_system.modules.shared.utils.activity_logger import log_activity
 from education_system.university_system.infrastructure.shared_context import get_auth
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier, escape_like
 
 class ScholarshipDatabase:
     """Manages scholarship database and discovery"""
@@ -351,7 +351,7 @@ class ScholarshipDatabase:
                     params.append(filters['academic_level'])
                 if 'major' in filters:
                     query += " AND (required_majors IS NULL OR required_majors LIKE ?)"
-                    params.append(f"%{filters['major']}%")
+                    params.append(f"%{escape_like(filters['major'])}%")
                 if 'merit_based' in filters:
                     query += " AND merit_based = ?"
                     params.append(filters['merit_based'])
@@ -360,7 +360,7 @@ class ScholarshipDatabase:
                     params.append(filters['deadline_after'])
                 if 'tags' in filters:
                     query += " AND tags LIKE ?"
-                    params.append(f"%{filters['tags']}%")
+                    params.append(f"%{escape_like(filters['tags'])}%")
 
             # Sort
             if sort_by == 'deadline':

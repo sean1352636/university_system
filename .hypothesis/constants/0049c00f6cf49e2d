@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/loyalty/profiles.py
+# hypothesis_version: 6.151.9
+
+[100, 150, '#27ae60', '#333333', '#7f8c8d', '#e74c3c', '#ecf0f1', '#ffffff', '%m', '.', '400x500', '500x400', '600x400', 'Birthday', 'Booked On', 'Booking History', 'Card.TFrame', 'Date', 'Edit Profile', 'Email', 'Favorite Seats', 'Helvetica', 'ID', 'Main.TFrame', 'Movie', 'Name', 'Phone', 'Preferences', 'Primary.TButton', 'Profile created', 'Profile updated', 'Ref', 'Seats', 'Select a profile', 'Subtitle.TLabel', 'Success.TButton', 'Total', 'Total Bookings', 'Unknown', '_', 'bold', 'both', 'end', 'headings', 'left', 'right', 'values', 'vertical', 'w', 'x', 'y']

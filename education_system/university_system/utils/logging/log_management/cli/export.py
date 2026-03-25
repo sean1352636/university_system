@@ -107,7 +107,7 @@ def bulk_operations_menu(log_manager, auth):
     elif choice == '3':
         bulk_export_by_criteria(log_manager, auth)
     elif choice == '4':
-        from .db_maintenance import optimize_database
+        from education_system.university_system.utils.logging.log_management.cli.db_maintenance import optimize_database
         optimize_database(log_manager, auth)
 
 

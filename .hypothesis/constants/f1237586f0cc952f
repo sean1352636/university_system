@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py
+# hypothesis_version: 6.151.9
+
+['__dict__', 'admin', 'create', 'current_user', 'delete', 'error_type', 'execution_time', 'export', 'failure', 'function_args_count', 'function_module', 'function_name', 'general', 'id', 'memory_usage', 'menu_navigation', 'navigation', 'read', 'role', 'search', 'stack_trace', 'success', 'system', 'update', 'username']

@@ -53,7 +53,7 @@ from education_system.university_system.infrastructure.repositories.base import 
     BatchRepository,
 )
 from education_system.university_system.core import paths
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import escape_like, validate_identifier
 
 logger = logging.getLogger(__name__)
 
@@ -628,7 +628,7 @@ class SQLiteStudentRepository(StudentRepository):
         Returns:
             List of matching students.
         """
-        search_pattern = f"%{query}%"
+        search_pattern = f"%{escape_like(query)}%"
 
         sql = """
             SELECT * FROM students

@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
-from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
+from education_system.university_system.core.sql_safety import escape_like, validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
@@ -873,7 +873,7 @@ def get_connection():
             print_error(f"Database connection error: {e}")
             return None
 
-from .base import AdvancedSearchGUI
+from education_system.university_system.modules.shared.gui.advanced_search.base import AdvancedSearchGUI
 
 def _collect_search_criteria(self) -> Dict[str, Any]:
     """Collect current search form criteria into a serialisable dictionary."""
@@ -1173,7 +1173,7 @@ def perform_database_search(self, criteria):
         for key, value in criteria.items():
             if key in ['student_id', 'first_name', 'last_name', 'email']:
                 query += f" AND LOWER({key}) LIKE LOWER(?)"
-                params.append(f"%{value}%")
+                params.append(f"%{escape_like(value)}%")
             elif key in ['gender', 'course']:
                 query += f" AND LOWER({key}) = LOWER(?)"
                 params.append(value)
@@ -1427,16 +1427,22 @@ def show_combined_search(self):
     combined_module_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     module_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
-    # Load modules
+    # Load modules — prefer the modules table (has NOT NULL names),
+    # fall back to student_modules if the modules table doesn't exist.
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT DISTINCT module_code, module_name FROM student_modules ORDER BY module_name")
-        available_modules = cursor.fetchall()
+        try:
+            cursor.execute("SELECT module_code, module_name FROM modules ORDER BY module_name")
+            available_modules = cursor.fetchall()
+        except Exception:
+            cursor.execute("SELECT DISTINCT module_code, module_name FROM student_modules ORDER BY module_code")
+            available_modules = cursor.fetchall()
         conn.close()
 
         for code, name in available_modules:
-            combined_module_listbox.insert(tk.END, f"{code} - {name}")
+            display = f"{code} - {name}" if name else code
+            combined_module_listbox.insert(tk.END, display)
     except Exception as e:
         print_error(f"Could not load modules: {e}")
         available_modules = []

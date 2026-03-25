@@ -14,7 +14,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_coming_soon_page(self):
     """Display coming soon movies page."""
@@ -42,20 +42,22 @@ def show_coming_soon_page(self):
         for item in self.coming_tree.get_children():
             self.coming_tree.delete(item)
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM coming_soon ORDER BY release_date")
-        for row in cursor.fetchall():
-            release = row[6] if row[6] else ""
-            if release:
-                try:
-                    days = (datetime.strptime(release, "%Y-%m-%d") - datetime.now()).days
-                    countdown = f"{days} days" if days > 0 else "Released!"
-                except (ValueError, TypeError):
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM coming_soon ORDER BY release_date")
+            for row in cursor.fetchall():
+                release = row[6] if row[6] else ""
+                if release:
+                    try:
+                        days = (datetime.strptime(release, "%Y-%m-%d") - datetime.now()).days
+                        countdown = f"{days} days" if days > 0 else "Released!"
+                    except (ValueError, TypeError):
+                        countdown = "TBA"
+                else:
                     countdown = "TBA"
-            else:
-                countdown = "TBA"
-            self.coming_tree.insert("", "end", values=(row[0], row[1], row[3] or "-", row[4] or "-", release, countdown, row[9], row[10].upper()))
-        conn.close()
+                self.coming_tree.insert("", "end", values=(row[0], row[1], row[3] or "-", row[4] or "-", release, countdown, row[9], row[10].upper()))
+        finally:
+            conn.close()
 
     self.coming_tree.pack(fill="both", expand=True, side="left")
     scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.coming_tree.yview)
@@ -97,11 +99,13 @@ def add_coming_soon(self):
             messagebox.showwarning(_t("cinema.common.warning"), "Title and release date required")
             return
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO coming_soon (title, description, genre, rating, director, release_date, trailer_url) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                      (entries['title'].get(), entries['desc'].get(), entries['genre'].get(), entries['rating'].get(), entries['director'].get(), entries['release'].get(), entries['trailer'].get()))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO coming_soon (title, description, genre, rating, director, release_date, trailer_url) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                          (entries['title'].get(), entries['desc'].get(), entries['genre'].get(), entries['rating'].get(), entries['director'].get(), entries['release'].get(), entries['trailer'].get()))
+            conn.commit()
+        finally:
+            conn.close()
         messagebox.showinfo(_t("cinema.common.success"), "Movie added!")
         form.destroy()
         self.show_coming_soon_page()
@@ -114,10 +118,12 @@ def watch_trailer(self):
         return
     movie_id = self.coming_tree.item(selected[0])['values'][0]
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT trailer_url FROM coming_soon WHERE id = ?", (movie_id,))
-    result = cursor.fetchone()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT trailer_url FROM coming_soon WHERE id = ?", (movie_id,))
+        result = cursor.fetchone()
+    finally:
+        conn.close()
     if result and result[0]:
         webbrowser.open(result[0])
     else:
@@ -130,10 +136,12 @@ def notify_me(self):
         return
     movie_id = self.coming_tree.item(selected[0])['values'][0]
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("UPDATE coming_soon SET notify_count = notify_count + 1 WHERE id = ?", (movie_id,))
-    conn.commit()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE coming_soon SET notify_count = notify_count + 1 WHERE id = ?", (movie_id,))
+        conn.commit()
+    finally:
+        conn.close()
     messagebox.showinfo(_t("cinema.common.success"), "You'll be notified!")
     self.show_coming_soon_page()
 
@@ -158,17 +166,19 @@ def activate_movie(self):
         return  # User cancelled
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM coming_soon WHERE id = ?", (movie_id,))
-    movie = cursor.fetchone()
-    if movie:
-        # Insert into movies table with duration
-        cursor.execute("INSERT INTO movies (title, duration, description, genre, rating, director, release_date, poster_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                      (movie[1], duration, movie[2], movie[3], movie[4], movie[5], movie[6], movie[8]))
-        cursor.execute("UPDATE coming_soon SET status = 'released' WHERE id = ?", (movie_id,))
-        conn.commit()
-        messagebox.showinfo(_t("cinema.common.success"), f"Movie activated with {duration} min duration!")
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM coming_soon WHERE id = ?", (movie_id,))
+        movie = cursor.fetchone()
+        if movie:
+            # Insert into movies table with duration
+            cursor.execute("INSERT INTO movies (title, duration, description, genre, rating, director, release_date, poster_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                          (movie[1], duration, movie[2], movie[3], movie[4], movie[5], movie[6], movie[8]))
+            cursor.execute("UPDATE coming_soon SET status = 'released' WHERE id = ?", (movie_id,))
+            conn.commit()
+            messagebox.showinfo(_t("cinema.common.success"), f"Movie activated with {duration} min duration!")
+    finally:
+        conn.close()
     self.show_coming_soon_page()
 
 def delete_coming(self):
@@ -180,8 +190,10 @@ def delete_coming(self):
         return
     movie_id = self.coming_tree.item(selected[0])['values'][0]
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM coming_soon WHERE id = ?", (movie_id,))
-    conn.commit()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM coming_soon WHERE id = ?", (movie_id,))
+        conn.commit()
+    finally:
+        conn.close()
     self.show_coming_soon_page()

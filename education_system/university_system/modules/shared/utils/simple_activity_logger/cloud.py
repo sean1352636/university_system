@@ -4,7 +4,7 @@ from typing import Dict, Any
 
 import requests
 
-from .models import LogEntry
+from education_system.university_system.modules.shared.utils.simple_activity_logger.models import LogEntry
 
 
 class CloudIntegration:

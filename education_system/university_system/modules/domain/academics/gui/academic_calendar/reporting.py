@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, Any, Optional, List
-from .database import DatabaseManager
-from .utils import convert_to_user_error
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.database import DatabaseManager
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.utils import convert_to_user_error
 
 gui_logger = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ class ReportingEngine:
                         ELSE 0
                     END as attendance_percentage
                 FROM calendar_events e
-                LEFT JOIN event_attendance a ON e.id = a.event_id
+                LEFT JOIN unified_event_registrations a ON e.id = a.event_id
                 WHERE e.date BETWEEN ? AND ?
             """
 

@@ -1,18 +1,18 @@
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
-from .constants import DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES
-from .analytics import AnalyticsMixin
-from .conflicts import ConflictsMixin
-from .optimization import OptimizationMixin
-from .import_export import ImportExportMixin
-from .templates import TemplatesMixin
-from .timetables import TimetablesMixin
-from .viewing import ViewingMixin
-from .visualization import VisualizationMixin
-from .notifications import NotificationsMixin
-from .holidays import HolidaysMixin
-from .backup import BackupMixin
-from .settings import SettingsMixin
+from education_system.university_system.modules.domain.academics.services.module_scheduling.constants import DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES
+from education_system.university_system.modules.domain.academics.services.module_scheduling.analytics import AnalyticsMixin
+from education_system.university_system.modules.domain.academics.services.module_scheduling.conflicts import ConflictsMixin
+from education_system.university_system.modules.domain.academics.services.module_scheduling.optimization import OptimizationMixin
+from education_system.university_system.modules.domain.academics.services.module_scheduling.import_export import ImportExportMixin
+from education_system.university_system.modules.domain.academics.services.module_scheduling.templates import TemplatesMixin
+from education_system.university_system.modules.domain.academics.services.module_scheduling.timetables import TimetablesMixin
+from education_system.university_system.modules.domain.academics.services.module_scheduling.viewing import ViewingMixin
+from education_system.university_system.modules.domain.academics.services.module_scheduling.visualization import VisualizationMixin
+from education_system.university_system.modules.domain.academics.services.module_scheduling.notifications import NotificationsMixin
+from education_system.university_system.modules.domain.academics.services.module_scheduling.holidays import HolidaysMixin
+from education_system.university_system.modules.domain.academics.services.module_scheduling.backup import BackupMixin
+from education_system.university_system.modules.domain.academics.services.module_scheduling.settings import SettingsMixin
 import os
 from datetime import datetime, timedelta
 

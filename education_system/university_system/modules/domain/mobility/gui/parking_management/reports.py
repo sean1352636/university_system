@@ -7,7 +7,7 @@ import logging
 import io
 import sys
 
-from . import get_connection, _t, PARKING_ZONES, TEMPLATE_AVAILABLE, render_template
+from education_system.university_system.modules.domain.mobility.gui.parking_management import get_connection, _t, PARKING_ZONES, TEMPLATE_AVAILABLE, render_template
 
 
 class ReportsMixin:

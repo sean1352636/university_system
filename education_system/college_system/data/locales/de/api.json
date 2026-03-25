@@ -1,0 +1,348 @@
+{
+  "api": {
+    "student": {
+      "not_found": "Studierender nicht gefunden.",
+      "created": "Studierender erstellt.",
+      "updated": "Studierender aktualisiert.",
+      "deleted": "Studierender deaktiviert."
+    },
+    "course": {
+      "not_found": "Kurs nicht gefunden.",
+      "created": "Kurs erstellt.",
+      "updated": "Kurs aktualisiert.",
+      "deleted": "Kurs deaktiviert.",
+      "prereq_added": "Voraussetzung hinzugefügt."
+    },
+    "enrollment": {
+      "enrolled": "Studierender eingeschrieben.",
+      "waitlisted": "Studierender auf Warteliste gesetzt.",
+      "dropped": "Studierender abgemeldet."
+    },
+    "grade": {
+      "recorded": "Note erfasst.",
+      "predicted_recorded": "Prognostizierte Note erfasst.",
+      "access_denied": "Zugriff verweigert",
+      "own_records_only": "Sie können nur Ihre eigenen Datensätze einsehen."
+    },
+    "attendance": {
+      "session_created": "Anwesenheitssitzung erstellt.",
+      "recorded": "Anwesenheit erfasst.",
+      "bulk_recorded": "Sammelanwesenheit für {count} Studierende erfasst.",
+      "not_found": "Anwesenheitsdatensatz nicht gefunden.",
+      "pre_populated": "Pre Populated",
+      "registers_generated": "Registers Generated"
+    },
+    "timetable": {
+      "slot_created": "Stundenplanplatz erstellt.",
+      "slot_updated": "Stundenplanplatz aktualisiert.",
+      "slot_deleted": "Stundenplanplatz gelöscht.",
+      "conflict": "Terminkonflikt erkannt."
+    },
+    "assignment": {
+      "created": "Aufgabe erstellt.",
+      "updated": "Aufgabe aktualisiert.",
+      "deleted": "Aufgabe gelöscht.",
+      "submitted": "Aufgabe eingereicht.",
+      "graded": "Abgabe bewertet."
+    },
+    "notification": {
+      "sent": "Benachrichtigung gesendet.",
+      "marked_read": "Benachrichtigung als gelesen markiert.",
+      "all_marked_read": "Alle Benachrichtigungen als gelesen markiert."
+    },
+    "auth": {
+      "login_success": "Anmeldung erfolgreich.",
+      "login_failed": "Ungültige Anmeldedaten.",
+      "token_missing": "Authentifizierungstoken fehlt.",
+      "token_invalid": "Ungültiges oder abgelaufenes Token.",
+      "access_denied": "Zugriff verweigert. Unzureichende Berechtigungen.",
+      "password_changed": "Passwort erfolgreich geändert.",
+      "mfa_required": "MFA-Verifizierung erforderlich.",
+      "mfa_verified": "MFA erfolgreich verifiziert.",
+      "mfa_invalid": "Ungültiger MFA-Code.",
+      "rate_limit_login": "Rate Limit Login",
+      "user_created": "User Created",
+      "mfa_setup_complete": "MFA Setup Complete",
+      "mfa_disabled": "MFA Disabled",
+      "rate_limit_register": "Rate Limit Register"
+    },
+    "common": {
+      "not_found": "Ressource nicht gefunden.",
+      "created": "Erfolgreich erstellt.",
+      "updated": "Erfolgreich aktualisiert.",
+      "deleted": "Erfolgreich gelöscht.",
+      "bad_request": "Ungültige Anfrage.",
+      "server_error": "Interner Serverfehler.",
+      "validation_error": "Validierungsfehler: {message}",
+      "missing_fields": "Pflichtfelder fehlen: {fields}"
+    },
+    "department": {
+      "not_found": "Abteilung nicht gefunden.",
+      "created": "Abteilung erstellt.",
+      "updated": "Abteilung aktualisiert.",
+      "deleted": "Abteilung gelöscht."
+    },
+    "group": {
+      "not_found": "Gruppe nicht gefunden.",
+      "created": "Gruppe erstellt.",
+      "updated": "Gruppe aktualisiert.",
+      "deleted": "Gruppe gelöscht.",
+      "member_added": "Mitglied zur Gruppe hinzugefügt.",
+      "member_removed": "Mitglied aus Gruppe entfernt."
+    },
+    "finance": {
+      "not_found": "Transaktion nicht gefunden.",
+      "created": "Transaktion erstellt.",
+      "updated": "Transaktion aktualisiert.",
+      "deleted": "Transaktion gelöscht."
+    },
+    "student_support": {
+      "not_found": "Überweisung nicht gefunden.",
+      "created": "Überweisung erstellt.",
+      "updated": "Überweisung aktualisiert.",
+      "deleted": "Überweisung gelöscht."
+    },
+    "funding": {
+      "not_found": "Förderdatensatz nicht gefunden.",
+      "created": "Förderdatensatz erstellt.",
+      "updated": "Förderdatensatz aktualisiert.",
+      "deleted": "Förderdatensatz gelöscht."
+    },
+    "destination": {
+      "not_found": "Verbleibsdatensatz nicht gefunden.",
+      "created": "Verbleibsdatensatz erstellt.",
+      "updated": "Verbleibsdatensatz aktualisiert.",
+      "deleted": "Verbleibsdatensatz gelöscht."
+    },
+    "room": {
+      "not_found": "Raum nicht gefunden.",
+      "created": "Raum erstellt.",
+      "updated": "Raum aktualisiert.",
+      "deleted": "Raum gelöscht."
+    },
+    "cpd": {
+      "not_found": "FBU-Datensatz nicht gefunden.",
+      "created": "FBU-Datensatz erstellt.",
+      "updated": "FBU-Datensatz aktualisiert.",
+      "deleted": "FBU-Datensatz gelöscht."
+    },
+    "observations": {
+      "not_found": "Unterrichtsbeobachtung nicht gefunden.",
+      "created": "Unterrichtsbeobachtung erstellt.",
+      "updated": "Unterrichtsbeobachtung aktualisiert.",
+      "deleted": "Unterrichtsbeobachtung gelöscht."
+    },
+    "appraisals": {
+      "not_found": "Mitarbeiterbeurteilung nicht gefunden.",
+      "created": "Mitarbeiterbeurteilung erstellt.",
+      "updated": "Mitarbeiterbeurteilung aktualisiert.",
+      "deleted": "Mitarbeiterbeurteilung gelöscht."
+    },
+    "resource_booking": {
+      "not_found": "Buchung nicht gefunden.",
+      "created": "Buchung erstellt.",
+      "updated": "Buchung aktualisiert.",
+      "deleted": "Buchung gelöscht.",
+      "conflict": "Buchungskonflikt erkannt."
+    },
+    "markbook": {
+      "not_found": "Notenbucheintrag nicht gefunden.",
+      "created": "Notenbucheintrag erstellt.",
+      "updated": "Notenbucheintrag aktualisiert.",
+      "deleted": "Notenbucheintrag gelöscht."
+    },
+    "staff_wellbeing": {
+      "not_found": "Datensatz nicht gefunden.",
+      "created": "Datensatz erstellt.",
+      "updated": "Datensatz aktualisiert.",
+      "deleted": "Datensatz gelöscht."
+    },
+    "lesson_plans": {
+      "not_found": "Unterrichtsplanung nicht gefunden.",
+      "created": "Unterrichtsplanung erstellt.",
+      "updated": "Unterrichtsplanung aktualisiert.",
+      "deleted": "Unterrichtsplanung gelöscht."
+    },
+    "data_dashboard": {
+      "stats_loaded": "Dashboard-Statistiken geladen."
+    },
+    "absence_requests": {
+      "not_found": "Anfrage nicht gefunden.",
+      "created": "Anfrage erstellt.",
+      "updated": "Anfrage aktualisiert.",
+      "approved": "Anfrage genehmigt.",
+      "rejected": "Anfrage abgelehnt."
+    },
+    "intervention_tracking": {
+      "not_found": "Intervention nicht gefunden.",
+      "created": "Intervention erstellt.",
+      "updated": "Intervention aktualisiert.",
+      "deleted": "Intervention gelöscht."
+    },
+    "visitors": {
+      "not_found": "Besucherdatensatz nicht gefunden.",
+      "signed_in": "Besucher angemeldet.",
+      "signed_out": "Besucher abgemeldet.",
+      "created": "Besucherdatensatz erstellt.",
+      "updated": "Besucherdatensatz aktualisiert."
+    },
+    "policies": {
+      "not_found": "Richtlinie nicht gefunden.",
+      "created": "Richtlinie erstellt.",
+      "updated": "Richtlinie aktualisiert.",
+      "deleted": "Richtlinie gelöscht."
+    },
+    "gdpr": {
+      "not_found": "Datensatz nicht gefunden.",
+      "created": "Datensatz erstellt.",
+      "updated": "Datensatz aktualisiert.",
+      "deleted": "Datensatz gelöscht.",
+      "request_submitted": "Datenanfrage eingereicht."
+    },
+    "quality_assurance": {
+      "not_found": "Überprüfung nicht gefunden.",
+      "created": "Überprüfung erstellt.",
+      "updated": "Überprüfung aktualisiert.",
+      "deleted": "Überprüfung gelöscht."
+    },
+    "bulk_operations": {
+      "import_success": "Import abgeschlossen: {count} Datensätze verarbeitet.",
+      "export_success": "Export abgeschlossen.",
+      "update_success": "Massenaktualisierung abgeschlossen: {count} Datensätze aktualisiert."
+    },
+    "emergency": {
+      "not_found": "Datensatz nicht gefunden.",
+      "created": "Notfalldatensatz erstellt.",
+      "updated": "Notfalldatensatz aktualisiert.",
+      "alert_sent": "Notfallwarnung gesendet."
+    },
+    "academic_year": {
+      "not_found": "Schuljahr nicht gefunden.",
+      "created": "Schuljahr erstellt.",
+      "updated": "Schuljahr aktualisiert.",
+      "deleted": "Schuljahr gelöscht."
+    },
+    "kpi_dashboard": {
+      "stats_loaded": "KPI-Statistiken geladen."
+    },
+    "audit_reports": {
+      "generated": "Prüfbericht erstellt.",
+      "not_found": "Bericht nicht gefunden."
+    },
+    "user_management": {
+      "not_found": "Benutzer nicht gefunden.",
+      "created": "Benutzer erstellt.",
+      "updated": "Benutzer aktualisiert.",
+      "deleted": "Benutzer gelöscht.",
+      "password_reset": "Passwort erfolgreich zurückgesetzt."
+    },
+    "portfolio": {
+      "not_found": "Portfolioeintrag nicht gefunden.",
+      "created": "Portfolioeintrag erstellt.",
+      "updated": "Portfolioeintrag aktualisiert.",
+      "deleted": "Portfolioeintrag gelöscht."
+    },
+    "study_planner": {
+      "not_found": "Lerneinheit nicht gefunden.",
+      "created": "Lerneinheit erstellt.",
+      "updated": "Lerneinheit aktualisiert.",
+      "deleted": "Lerneinheit gelöscht."
+    },
+    "enrichment": {
+      "not_found": "Aktivität nicht gefunden.",
+      "created": "Aktivität erstellt.",
+      "updated": "Aktivität aktualisiert.",
+      "deleted": "Aktivität gelöscht.",
+      "enrolled": "Für Aktivität eingeschrieben.",
+      "withdrawn": "Von Aktivität abgemeldet."
+    },
+    "peer_mentoring": {
+      "not_found": "Mentoring-Paar nicht gefunden.",
+      "created": "Mentoring-Paar erstellt.",
+      "updated": "Mentoring-Paar aktualisiert.",
+      "deleted": "Mentoring-Paar gelöscht."
+    },
+    "surveys": {
+      "not_found": "Umfrage nicht gefunden.",
+      "created": "Umfrage erstellt.",
+      "updated": "Umfrage aktualisiert.",
+      "deleted": "Umfrage gelöscht.",
+      "response_submitted": "Umfrageantwort eingereicht."
+    },
+    "skills_passport": {
+      "not_found": "Kompetenz nicht gefunden.",
+      "created": "Kompetenz erstellt.",
+      "updated": "Kompetenz aktualisiert.",
+      "deleted": "Kompetenz gelöscht."
+    },
+    "progress_dashboard": {
+      "stats_loaded": "Fortschrittsstatistiken geladen."
+    },
+    "meal_ordering": {
+      "not_found": "Bestellung nicht gefunden.",
+      "placed": "Bestellung aufgegeben.",
+      "cancelled": "Bestellung storniert.",
+      "updated": "Bestellung aktualisiert."
+    },
+    "print_credits": {
+      "not_found": "Datensatz nicht gefunden.",
+      "added": "Guthaben hinzugefügt.",
+      "deducted": "Guthaben abgezogen."
+    },
+    "work_journal": {
+      "not_found": "Eintrag nicht gefunden.",
+      "created": "Eintrag erstellt.",
+      "updated": "Eintrag aktualisiert.",
+      "deleted": "Eintrag gelöscht."
+    },
+    "announcements": {
+      "not_found": "Ankündigung nicht gefunden.",
+      "created": "Ankündigung erstellt.",
+      "updated": "Ankündigung aktualisiert.",
+      "deleted": "Ankündigung gelöscht.",
+      "published": "Ankündigung veröffentlicht."
+    },
+    "document_hub": {
+      "not_found": "Dokument nicht gefunden.",
+      "uploaded": "Dokument hochgeladen.",
+      "updated": "Dokument aktualisiert.",
+      "deleted": "Dokument gelöscht."
+    },
+    "advanced_search": {
+      "no_results": "Keine Ergebnisse gefunden."
+    },
+    "feedback": {
+      "not_found": "Feedback nicht gefunden.",
+      "submitted": "Feedback eingereicht.",
+      "updated": "Feedback aktualisiert.",
+      "deleted": "Feedback gelöscht."
+    },
+    "accessibility": {
+      "settings_saved": "Barrierefreiheitseinstellungen gespeichert."
+    },
+    "mobile_dashboard": {
+      "stats_loaded": "Dashboard geladen."
+    },
+    "attachments": {
+      "not_found": "Anhang nicht gefunden.",
+      "uploaded": "Anhang hochgeladen.",
+      "deleted": "Anhang gelöscht."
+    },
+    "activity_feed": {
+      "loaded": "Aktivitätsfeed geladen."
+    },
+    "sms_email": {
+      "sent": "Nachricht gesendet.",
+      "failed": "Nachrichtenzustellung fehlgeschlagen.",
+      "template_not_found": "Vorlage nicht gefunden."
+    },
+    "multi_language": {
+      "language_changed": "Sprache erfolgreich geändert.",
+      "not_supported": "Sprache wird nicht unterstützt."
+    },
+    "system": {
+      "health_ok": "System ist betriebsbereit.",
+      "version": "Version: {version}"
+    }
+  }
+}

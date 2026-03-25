@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/pagination.py
+# hypothesis_version: 6.151.9
+
+[100, 'has_next', 'has_prev', 'items', 'page', 'pagination', 'per_page', 'total', 'total_pages']

@@ -45,7 +45,7 @@ def mock_db():
 class TestLibraryGUIInitialization:
     """Test LibraryGUI initialization"""
 
-    @patch('university_system.modules.domain.academics.gui.library.base.init_library_db')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.init_library_db')
     def test_initialization_with_root(self, mock_init_db, mock_root, mock_auth):
         """Test initialization with provided root window"""
         from education_system.university_system.modules.domain.academics.gui.library import LibraryGUI
@@ -56,7 +56,7 @@ class TestLibraryGUIInitialization:
         assert gui.auth == mock_auth
         assert gui.owns_root is False
 
-    @patch('university_system.modules.domain.academics.gui.library.base.init_library_db')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.init_library_db')
     @patch('tkinter.Tk')
     def test_initialization_without_root(self, mock_tk, mock_init_db, mock_auth):
         """Test initialization without provided root window"""
@@ -70,7 +70,7 @@ class TestLibraryGUIInitialization:
         assert gui.owns_root is True
         mock_tk.assert_called_once()
 
-    @patch('university_system.modules.domain.academics.gui.library.base.init_library_db')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.init_library_db')
     def test_window_maximization_zoomed(self, mock_init_db, mock_root, mock_auth):
         """Test window maximization using zoomed state"""
         from education_system.university_system.modules.domain.academics.gui.library import LibraryGUI
@@ -80,7 +80,7 @@ class TestLibraryGUIInitialization:
         # Verify state was called (may fail gracefully on different OS)
         mock_root.state.assert_called()
 
-    @patch('university_system.modules.domain.academics.gui.library.base.init_library_db')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.init_library_db')
     def test_window_maximization_fallback(self, mock_init_db, mock_root, mock_auth):
         """Test window maximization fallback when zoomed fails"""
         from education_system.university_system.modules.domain.academics.gui.library import LibraryGUI
@@ -97,8 +97,8 @@ class TestLibraryGUIInitialization:
 class TestBookSearchFunctionality:
     """Test book search and catalog functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.library.base.init_library_db')
-    @patch('university_system.modules.domain.academics.gui.library.base.get_db_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.init_library_db')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.get_db_connection')
     def test_search_books_by_title(self, mock_get_conn, mock_init_db, mock_root, mock_auth, mock_db):
         """Test searching books by title"""
         from education_system.university_system.modules.domain.academics.gui.library import LibraryGUI
@@ -117,8 +117,8 @@ class TestBookSearchFunctionality:
         # This is a basic test to ensure GUI can be initialized
         assert gui is not None
 
-    @patch('university_system.modules.domain.academics.gui.library.base.init_library_db')
-    @patch('university_system.modules.domain.academics.gui.library.base.get_db_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.init_library_db')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.get_db_connection')
     def test_search_books_by_author(self, mock_get_conn, mock_init_db, mock_root, mock_auth, mock_db):
         """Test searching books by author"""
         from education_system.university_system.modules.domain.academics.gui.library import LibraryGUI
@@ -135,8 +135,8 @@ class TestBookSearchFunctionality:
 
         assert gui is not None
 
-    @patch('university_system.modules.domain.academics.gui.library.base.init_library_db')
-    @patch('university_system.modules.domain.academics.gui.library.base.get_db_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.init_library_db')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.get_db_connection')
     def test_search_books_by_isbn(self, mock_get_conn, mock_init_db, mock_root, mock_auth, mock_db):
         """Test searching books by ISBN"""
         from education_system.university_system.modules.domain.academics.gui.library import LibraryGUI
@@ -157,8 +157,8 @@ class TestBookSearchFunctionality:
 class TestCheckoutReturnFunctionality:
     """Test book checkout and return functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.library.base.init_library_db')
-    @patch('university_system.modules.domain.academics.gui.library.base.get_db_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.init_library_db')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.get_db_connection')
     def test_checkout_book_success(self, mock_get_conn, mock_init_db, mock_root, mock_auth, mock_db):
         """Test successful book checkout"""
         from education_system.university_system.modules.domain.academics.gui.library import LibraryGUI
@@ -172,8 +172,8 @@ class TestCheckoutReturnFunctionality:
 
         assert gui is not None
 
-    @patch('university_system.modules.domain.academics.gui.library.base.init_library_db')
-    @patch('university_system.modules.domain.academics.gui.library.base.get_db_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.init_library_db')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.get_db_connection')
     def test_checkout_book_unavailable(self, mock_get_conn, mock_init_db, mock_root, mock_auth, mock_db):
         """Test checkout when book is unavailable"""
         from education_system.university_system.modules.domain.academics.gui.library import LibraryGUI
@@ -187,8 +187,8 @@ class TestCheckoutReturnFunctionality:
 
         assert gui is not None
 
-    @patch('university_system.modules.domain.academics.gui.library.base.init_library_db')
-    @patch('university_system.modules.domain.academics.gui.library.base.get_db_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.init_library_db')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.get_db_connection')
     def test_return_book_success(self, mock_get_conn, mock_init_db, mock_root, mock_auth, mock_db):
         """Test successful book return"""
         from education_system.university_system.modules.domain.academics.gui.library import LibraryGUI
@@ -206,8 +206,8 @@ class TestCheckoutReturnFunctionality:
 class TestReservationManagement:
     """Test reservation management functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.library.base.init_library_db')
-    @patch('university_system.modules.domain.academics.gui.library.base.get_db_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.init_library_db')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.get_db_connection')
     def test_reserve_book_success(self, mock_get_conn, mock_init_db, mock_root, mock_auth, mock_db):
         """Test successful book reservation"""
         from education_system.university_system.modules.domain.academics.gui.library import LibraryGUI
@@ -222,8 +222,8 @@ class TestReservationManagement:
 
         assert gui is not None
 
-    @patch('university_system.modules.domain.academics.gui.library.base.init_library_db')
-    @patch('university_system.modules.domain.academics.gui.library.base.get_db_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.init_library_db')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.get_db_connection')
     def test_cancel_reservation(self, mock_get_conn, mock_init_db, mock_root, mock_auth, mock_db):
         """Test canceling a reservation"""
         from education_system.university_system.modules.domain.academics.gui.library import LibraryGUI
@@ -241,8 +241,8 @@ class TestReservationManagement:
 class TestFineManagement:
     """Test fine management functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.library.base.init_library_db')
-    @patch('university_system.modules.domain.academics.gui.library.base.get_db_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.init_library_db')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.get_db_connection')
     def test_calculate_fines(self, mock_get_conn, mock_init_db, mock_root, mock_auth, mock_db):
         """Test fine calculation for overdue books"""
         from education_system.university_system.modules.domain.academics.gui.library import LibraryGUI
@@ -259,8 +259,8 @@ class TestFineManagement:
 
         assert gui is not None
 
-    @patch('university_system.modules.domain.academics.gui.library.base.init_library_db')
-    @patch('university_system.modules.domain.academics.gui.library.base.get_db_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.init_library_db')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.get_db_connection')
     def test_view_student_fines(self, mock_get_conn, mock_init_db, mock_root, mock_auth, mock_db):
         """Test viewing fines for a student"""
         from education_system.university_system.modules.domain.academics.gui.library import LibraryGUI
@@ -280,9 +280,9 @@ class TestFineManagement:
 class TestReportGeneration:
     """Test report generation functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.library.base.init_library_db')
-    @patch('university_system.modules.domain.academics.gui.library.base.get_db_connection')
-    @patch('university_system.modules.domain.academics.gui.library.base.generate_circulation_report')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.init_library_db')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.get_db_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.generate_circulation_report')
     def test_generate_circulation_report(self, mock_gen_report, mock_get_conn, mock_init_db, mock_root, mock_auth, mock_db):
         """Test circulation report generation"""
         from education_system.university_system.modules.domain.academics.gui.library import LibraryGUI
@@ -293,9 +293,9 @@ class TestReportGeneration:
 
         assert gui is not None
 
-    @patch('university_system.modules.domain.academics.gui.library.base.init_library_db')
-    @patch('university_system.modules.domain.academics.gui.library.base.get_db_connection')
-    @patch('university_system.modules.domain.academics.gui.library.base.generate_user_activity_report')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.init_library_db')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.get_db_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.generate_user_activity_report')
     def test_generate_user_activity_report(self, mock_gen_report, mock_get_conn, mock_init_db, mock_root, mock_auth, mock_db):
         """Test user activity report generation"""
         from education_system.university_system.modules.domain.academics.gui.library import LibraryGUI
@@ -310,8 +310,8 @@ class TestReportGeneration:
 class TestBarcodeScanning:
     """Test barcode scanning functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.library.base.init_library_db')
-    @patch('university_system.modules.domain.academics.gui.library.base.process_scanned_barcode')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.init_library_db')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.process_scanned_barcode')
     def test_process_barcode_success(self, mock_process, mock_init_db, mock_root, mock_auth):
         """Test successful barcode processing"""
         from education_system.university_system.modules.domain.academics.gui.library import LibraryGUI
@@ -322,8 +322,8 @@ class TestBarcodeScanning:
 
         assert gui is not None
 
-    @patch('university_system.modules.domain.academics.gui.library.base.init_library_db')
-    @patch('university_system.modules.domain.academics.gui.library.base.generate_barcode')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.init_library_db')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.generate_barcode')
     def test_generate_barcode_for_book(self, mock_gen_barcode, mock_init_db, mock_root, mock_auth):
         """Test barcode generation for a book"""
         from education_system.university_system.modules.domain.academics.gui.library import LibraryGUI
@@ -338,8 +338,8 @@ class TestBarcodeScanning:
 class TestDatabaseBackup:
     """Test database backup functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.library.base.init_library_db')
-    @patch('university_system.modules.domain.academics.gui.library.base.restore_from_backup')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.init_library_db')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.restore_from_backup')
     def test_restore_from_backup(self, mock_restore, mock_init_db, mock_root, mock_auth):
         """Test restoring from backup"""
         from education_system.university_system.modules.domain.academics.gui.library import LibraryGUI
@@ -354,8 +354,8 @@ class TestDatabaseBackup:
 class TestSettingsManagement:
     """Test settings management functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.library.base.init_library_db')
-    @patch('university_system.modules.domain.academics.gui.library.base.get_library_settings')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.init_library_db')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.get_library_settings')
     def test_get_settings(self, mock_get_settings, mock_init_db, mock_root, mock_auth):
         """Test retrieving library settings"""
         from education_system.university_system.modules.domain.academics.gui.library import LibraryGUI
@@ -370,8 +370,8 @@ class TestSettingsManagement:
 
         assert gui is not None
 
-    @patch('university_system.modules.domain.academics.gui.library.base.init_library_db')
-    @patch('university_system.modules.domain.academics.gui.library.base.update_library_setting')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.init_library_db')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.update_library_setting')
     def test_update_settings(self, mock_update_setting, mock_init_db, mock_root, mock_auth):
         """Test updating library settings"""
         from education_system.university_system.modules.domain.academics.gui.library import LibraryGUI
@@ -386,8 +386,8 @@ class TestSettingsManagement:
 class TestAuditLogging:
     """Test audit logging functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.library.base.init_library_db')
-    @patch('university_system.modules.domain.academics.gui.library.base.log_audit_event')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.init_library_db')
+    @patch('education_system.university_system.modules.domain.academics.gui.library.base.log_audit_event')
     def test_log_audit_event(self, mock_log_event, mock_init_db, mock_root, mock_auth):
         """Test audit event logging"""
         from education_system.university_system.modules.domain.academics.gui.library import LibraryGUI

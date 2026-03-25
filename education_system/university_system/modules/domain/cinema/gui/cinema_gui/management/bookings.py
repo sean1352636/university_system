@@ -4,6 +4,7 @@ Cinema Booking System - Bookings Page
 
 import tkinter as tk
 from tkinter import ttk, messagebox
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import sqlite3
 try:
     from education_system.university_system.modules.shared.utils.i18n import get_text as _t
@@ -11,7 +12,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_bookings_page(self):
     """Display bookings search page."""
@@ -44,35 +45,37 @@ def show_bookings_page(self):
         query = search_entry.get().strip()
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        if query:
-            cursor.execute('''
-                SELECT b.booking_ref, b.customer_name, m.title, s.show_time,
-                       (SELECT COUNT(*) FROM booked_seats WHERE booking_id = b.id),
-                       b.total_amount, b.status
-                FROM bookings b
-                JOIN screenings s ON b.screening_id = s.id
-                JOIN movies m ON s.movie_id = m.id
-                WHERE b.booking_ref LIKE ? OR b.customer_email LIKE ?
-                ORDER BY b.booking_time DESC
-            ''', (f"%{query}%", f"%{query}%"))
-        else:
-            cursor.execute('''
-                SELECT b.booking_ref, b.customer_name, m.title, s.show_time,
-                       (SELECT COUNT(*) FROM booked_seats WHERE booking_id = b.id),
-                       b.total_amount, b.status
-                FROM bookings b
-                JOIN screenings s ON b.screening_id = s.id
-                JOIN movies m ON s.movie_id = m.id
-                ORDER BY b.booking_time DESC LIMIT 50
-            ''')
+            if query:
+                cursor.execute('''
+                    SELECT b.booking_ref, b.customer_name, m.title, s.show_time,
+                           (SELECT COUNT(*) FROM booked_seats WHERE booking_id = b.id),
+                           b.total_amount, b.status
+                    FROM bookings b
+                    JOIN screenings s ON b.screening_id = s.id
+                    JOIN movies m ON s.movie_id = m.id
+                    WHERE b.booking_ref LIKE ? OR b.customer_email LIKE ?
+                    ORDER BY b.booking_time DESC
+                ''', (f"%{escape_like(query)}%", f"%{escape_like(query)}%"))
+            else:
+                cursor.execute('''
+                    SELECT b.booking_ref, b.customer_name, m.title, s.show_time,
+                           (SELECT COUNT(*) FROM booked_seats WHERE booking_id = b.id),
+                           b.total_amount, b.status
+                    FROM bookings b
+                    JOIN screenings s ON b.screening_id = s.id
+                    JOIN movies m ON s.movie_id = m.id
+                    ORDER BY b.booking_time DESC LIMIT 50
+                ''')
 
-        for row in cursor.fetchall():
-            tree.insert("", "end", values=(
-                row[0], row[1], row[2][:20], row[3], row[4], f"\u00a3{row[5]:.2f}", row[6].upper()
-            ))
-        conn.close()
+            for row in cursor.fetchall():
+                tree.insert("", "end", values=(
+                    row[0], row[1], row[2][:20], row[3], row[4], f"\u00a3{row[5]:.2f}", row[6].upper()
+                ))
+        finally:
+            conn.close()
 
     ttk.Button(search_frame, text=_t("cinema.buttons.search"), style="Primary.TButton", command=search).pack(side="left", padx=5)
     ttk.Button(search_frame, text=_t("cinema.buttons.show_all"), style="Secondary.TButton",

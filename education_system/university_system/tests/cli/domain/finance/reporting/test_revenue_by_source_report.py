@@ -112,7 +112,7 @@ class TestRevenueBySource:
 
     def test_get_revenue_by_source_all_time(self, temp_db):
         """Test getting revenue by source for all time"""
-        with patch('university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
+        with patch('education_system.university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
             mock_paths.DEFAULT_DB_PATH = temp_db
 
             result = revenue_by_source_report.get_revenue_by_source()
@@ -136,7 +136,7 @@ class TestRevenueBySource:
 
     def test_get_revenue_by_source_with_date_filter(self, temp_db):
         """Test getting revenue by source with date filters"""
-        with patch('university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
+        with patch('education_system.university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
             mock_paths.DEFAULT_DB_PATH = temp_db
 
             today = datetime.now().strftime('%Y-%m-%d')
@@ -150,7 +150,7 @@ class TestRevenueBySource:
 
     def test_get_revenue_by_source_exclude_external(self, temp_db):
         """Test excluding external transactions"""
-        with patch('university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
+        with patch('education_system.university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
             mock_paths.DEFAULT_DB_PATH = temp_db
 
             result_with_external = revenue_by_source_report.get_revenue_by_source(include_external=True)
@@ -165,7 +165,7 @@ class TestRevenueBySource:
 
     def test_get_revenue_by_source_invalid_db(self):
         """Test handling of invalid database path"""
-        with patch('university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
+        with patch('education_system.university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
             mock_paths.DEFAULT_DB_PATH = '/nonexistent/path/to/db.db'
 
             result = revenue_by_source_report.get_revenue_by_source()
@@ -178,7 +178,7 @@ class TestRevenueBySourceReport:
 
     def test_print_revenue_by_source_report(self, temp_db, capsys):
         """Test printing revenue by source report"""
-        with patch('university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
+        with patch('education_system.university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
             mock_paths.DEFAULT_DB_PATH = temp_db
 
             revenue_by_source_report.print_revenue_by_source_report()
@@ -190,7 +190,7 @@ class TestRevenueBySourceReport:
 
     def test_print_revenue_by_source_report_with_dates(self, temp_db, capsys):
         """Test printing report with date range"""
-        with patch('university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
+        with patch('education_system.university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
             mock_paths.DEFAULT_DB_PATH = temp_db
 
             start_date = '2024-01-01'
@@ -205,7 +205,7 @@ class TestRevenueBySourceReport:
 
     def test_print_revenue_by_source_report_no_data(self, temp_db, capsys):
         """Test printing report with no data"""
-        with patch('university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
+        with patch('education_system.university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
             mock_paths.DEFAULT_DB_PATH = temp_db
 
             # Use future dates where no data exists
@@ -222,7 +222,7 @@ class TestSourceRevenueTrend:
 
     def test_get_source_revenue_trend(self, temp_db):
         """Test getting monthly revenue trend for a source"""
-        with patch('university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
+        with patch('education_system.university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
             mock_paths.DEFAULT_DB_PATH = temp_db
 
             result = revenue_by_source_report.get_source_revenue_trend('Library', months=12)
@@ -237,7 +237,7 @@ class TestSourceRevenueTrend:
 
     def test_get_source_revenue_trend_housing(self, temp_db):
         """Test trend for Housing source"""
-        with patch('university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
+        with patch('education_system.university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
             mock_paths.DEFAULT_DB_PATH = temp_db
 
             result = revenue_by_source_report.get_source_revenue_trend('Housing', months=6)
@@ -248,7 +248,7 @@ class TestSourceRevenueTrend:
 
     def test_get_source_revenue_trend_invalid_source(self, temp_db):
         """Test trend for non-existent source"""
-        with patch('university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
+        with patch('education_system.university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
             mock_paths.DEFAULT_DB_PATH = temp_db
 
             result = revenue_by_source_report.get_source_revenue_trend('NonExistentSource', months=12)
@@ -261,7 +261,7 @@ class TestPeriodComparison:
 
     def test_compare_source_revenue_periods(self, temp_db):
         """Test comparing revenue between two periods"""
-        with patch('university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
+        with patch('education_system.university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
             mock_paths.DEFAULT_DB_PATH = temp_db
 
             today = datetime.now()
@@ -305,7 +305,7 @@ class TestCSVExport:
 
     def test_export_revenue_by_source_csv(self, temp_db, tmp_path):
         """Test exporting revenue by source to CSV"""
-        with patch('university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
+        with patch('education_system.university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
             mock_paths.DEFAULT_DB_PATH = temp_db
 
             csv_file = tmp_path / "revenue_by_source.csv"
@@ -327,7 +327,7 @@ class TestCSVExport:
 
     def test_export_revenue_by_source_csv_with_dates(self, temp_db, tmp_path):
         """Test CSV export with date filters"""
-        with patch('university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
+        with patch('education_system.university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
             mock_paths.DEFAULT_DB_PATH = temp_db
 
             csv_file = tmp_path / "revenue_filtered.csv"
@@ -345,7 +345,7 @@ class TestCSVExport:
 
     def test_export_revenue_by_source_csv_invalid_path(self, temp_db):
         """Test CSV export with invalid path"""
-        with patch('university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
+        with patch('education_system.university_system.modules.domain.finance.reporting.revenue_by_source_report.paths') as mock_paths:
             mock_paths.DEFAULT_DB_PATH = temp_db
 
             result = revenue_by_source_report.export_revenue_by_source_csv('/invalid/path/file.csv')

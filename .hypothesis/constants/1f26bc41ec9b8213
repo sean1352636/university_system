@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/commerce/gui/restaurant_management_gui/menu/menu_management.py
+# hypothesis_version: 6.151.9
+
+[1.0, '-', '1.0', '20', '500x600', '800x600', '=', 'Beverage', 'Dessert', 'Main', 'No', 'Side', 'Yes', 'both', 'commerce.menu.name', 'commerce.menu.price', 'commerce.menu.vegan', 'common.cancel', 'common.error', 'common.no_selection', 'common.save', 'common.success', 'disabled', 'end', 'left', 'nw', 'values', 'w']

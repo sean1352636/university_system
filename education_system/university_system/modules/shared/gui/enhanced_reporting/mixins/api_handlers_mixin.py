@@ -1,6 +1,6 @@
 """API handler methods mixin for the enhanced reporting GUI."""
 
-from ..standalone.constants import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.standalone.constants import (
     tk, ttk, filedialog, messagebox, simpledialog,
     ScrolledText,
     threading, webbrowser, os, json, logging,
@@ -14,7 +14,7 @@ from ..standalone.constants import (
 )
 
 try:
-    from ..standalone.constants import (
+    from education_system.university_system.modules.shared.gui.enhanced_reporting.standalone.constants import (
         get_section_dataframe,
         get_correlation_data,
         start_scheduler,

@@ -11,6 +11,11 @@ from education_system.university_system.modules.shared.gui.database.shared_impor
     DEFAULT_DB_PATH, BACKUP_DIR, BACKUP_TEMPLATES_DIR, logger,
     get_db_connection,
 )
+# Use the database-specific backup subdirectory for db backups
+try:
+    from education_system.university_system.modules.shared.constants.paths import BACKUP_DATABASE_DIR
+except ImportError:
+    BACKUP_DATABASE_DIR = BACKUP_DIR / "database"
 from education_system.university_system.modules.shared.gui.database.config import (
     config, save_config, _backup_context_lock,
     _last_incremental_context, _last_differential_context,
@@ -174,11 +179,11 @@ def verify_backup_integrity(backup_path, expected_hash=None):
         return False
 
 def ensure_backup_directory():
-    """Ensure the backup directory exists using centralized BACKUP_DIR"""
+    """Ensure the backup directory exists using centralized BACKUP_DATABASE_DIR"""
     try:
-        BACKUP_DIR.mkdir(parents=True, exist_ok=True)
-        config["backup_directory"] = str(BACKUP_DIR)
-        return BACKUP_DIR
+        BACKUP_DATABASE_DIR.mkdir(parents=True, exist_ok=True)
+        config["backup_directory"] = str(BACKUP_DATABASE_DIR)
+        return BACKUP_DATABASE_DIR
     except Exception as e:
         logger.error(f"Error creating backup directory: {e}")
         return None

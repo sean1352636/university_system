@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/housing/services/housing_accommodation/menus.py
+# hypothesis_version: 6.151.9
+
+['\nBuilding Management', '\nPayment Management', '1', '1. View Applications', '1. View Assignments', '1. View Buildings', '10', '2', '2. Add New Building', '2. View Inspections', '3', '3. Update Building', '4', '4. Delete Building', '5', '6', '7', '8', '9', '=================', '==================', 'view_accommodations', 'view_own_record']

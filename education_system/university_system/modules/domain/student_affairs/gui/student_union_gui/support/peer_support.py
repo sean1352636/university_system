@@ -56,8 +56,8 @@ except (ImportError, ModuleNotFoundError):
     CLI_AVAILABLE = False
 
 # Import support dialog classes
-from .wellness import WellnessResourcesDialog, CrisisResourcesDialog
-from .support_groups import CreateSupportGroupDialog, MySupportGroupsDialog, BrowseSupportGroupsDialog
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.support.wellness import WellnessResourcesDialog, CrisisResourcesDialog
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.support.support_groups import CreateSupportGroupDialog, MySupportGroupsDialog, BrowseSupportGroupsDialog
 
 
 class PeerSupportWellnessDialog:
@@ -215,20 +215,23 @@ class AnonymousPeerMatchingDialog:
         issues = ['Stress & Anxiety', 'Academic Pressure', 'Loneliness/Social Connection',
                  'Family Issues', 'Relationship Concerns', 'Self-Esteem', 'Life Transitions']
 
+        self.issue_vars = {}
         for i, issue in enumerate(issues):
-            ttk.Checkbutton(pref_content, text=issue).grid(
+            var = tk.BooleanVar(value=False)
+            self.issue_vars[issue] = var
+            ttk.Checkbutton(pref_content, text=issue, variable=var).grid(
                 row=i+1, column=0, sticky='w', padx=(20, 0))
 
         # Match type
         ttk.Label(pref_content, text="\nPreferred Match Type:",
                  font=('Arial', 10, 'bold')).grid(row=len(issues)+1, column=0, sticky='w', pady=(10, 5))
 
-        match_type_var = tk.StringVar(value="One-on-one")
+        self.match_type_var = tk.StringVar(value="One-on-one")
         ttk.Radiobutton(pref_content, text="One-on-one peer matching",
-                       variable=match_type_var, value="One-on-one").grid(
+                       variable=self.match_type_var, value="One-on-one").grid(
                            row=len(issues)+2, column=0, sticky='w', padx=(20, 0))
         ttk.Radiobutton(pref_content, text="Small group (3-4 peers)",
-                       variable=match_type_var, value="Group").grid(
+                       variable=self.match_type_var, value="Group").grid(
                            row=len(issues)+3, column=0, sticky='w', padx=(20, 0))
 
         # Privacy notice
@@ -273,30 +276,293 @@ Match #2: Anonymous Friend (matched 1 week ago)
         ttk.Button(button_frame, text="Close",
                   command=self.dialog.destroy).pack(side='right')
 
+    def _ensure_peer_tables(self, cursor):
+        """Create peer_matches and peer_messages tables if they don't exist."""
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS peer_matches (
+            match_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            requester_id TEXT NOT NULL,
+            matched_id TEXT,
+            requester_anon_id TEXT NOT NULL,
+            matched_anon_id TEXT,
+            topic TEXT,
+            match_type TEXT DEFAULT 'One-on-one',
+            status TEXT DEFAULT 'pending',
+            matched_date TEXT,
+            created_date TEXT NOT NULL
+        )
+        ''')
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS peer_messages (
+            message_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            match_id INTEGER NOT NULL,
+            sender_anon_id TEXT NOT NULL,
+            message_text TEXT NOT NULL,
+            sent_date TEXT NOT NULL,
+            FOREIGN KEY (match_id) REFERENCES peer_matches (match_id)
+        )
+        ''')
+
     def find_match(self):
-        if messagebox.askyesno("Find Match",
-                              "Start searching for a peer match based on your preferences?"):
-            messagebox.showinfo("Matching",
-                               "Searching for compatible peer matches...\n\n"
-                               "You'll be notified when a match is found.\n"
-                               "This usually takes 1-2 days.")
+        """Create a peer match based on user's selected support areas."""
+        if not messagebox.askyesno("Find Match",
+                                   "Start searching for a peer match based on your preferences?"):
+            return
+
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            self._ensure_peer_tables(cursor)
+
+            user_id = str(self.auth.current_user['id'])
+            anon_id = hashlib.md5(f"{user_id}_peer_{datetime.now().isoformat()}".encode()).hexdigest()[:8]
+
+            # Collect selected support areas from the checkbuttons
+            selected_topics = [issue for issue, var in self.issue_vars.items() if var.get()]
+            topic = ", ".join(selected_topics) if selected_topics else "General Support"
+            match_type = self.match_type_var.get()
+
+            now = datetime.now().isoformat()
+
+            # Look for a compatible pending match from another user
+            cursor.execute('''
+                SELECT match_id, requester_id, requester_anon_id, topic
+                FROM peer_matches
+                WHERE status = 'pending'
+                  AND requester_id != ?
+                  AND match_type = ?
+                ORDER BY created_date ASC
+                LIMIT 1
+            ''', (user_id, match_type))
+            pending = cursor.fetchone()
+
+            if pending:
+                # Match found -- update the existing record
+                match_id, other_id, other_anon, other_topic = pending
+                cursor.execute('''
+                    UPDATE peer_matches
+                    SET matched_id = ?, matched_anon_id = ?, status = 'active',
+                        matched_date = ?, topic = ?
+                    WHERE match_id = ?
+                ''', (user_id, anon_id, now,
+                      f"{other_topic}; {topic}", match_id))
+                conn.commit()
+                messagebox.showinfo(
+                    "Match Found!",
+                    f"You have been matched with peer '{other_anon}'!\n\n"
+                    f"Match ID: {match_id}\n"
+                    f"Your anonymous ID: {anon_id}\n\n"
+                    "Use the Messaging button to start chatting.")
+            else:
+                # No compatible match yet -- create a pending request
+                cursor.execute('''
+                    INSERT INTO peer_matches
+                        (requester_id, requester_anon_id, topic, match_type, status, created_date)
+                    VALUES (?, ?, ?, ?, 'pending', ?)
+                ''', (user_id, anon_id, topic, match_type, now))
+                conn.commit()
+                messagebox.showinfo(
+                    "Request Submitted",
+                    f"Your match request has been submitted.\n\n"
+                    f"Your anonymous ID: {anon_id}\n"
+                    "You'll be matched when a compatible peer is found.")
+
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to find match: {e}")
+        finally:
+            if conn:
+                conn.close()
 
     def view_matches(self):
-        messagebox.showinfo("My Matches",
-                           "Match details:\n\n"
-                           "Match #1: Support Buddy\n"
-                           "  Status: Active\n"
-                           "  Compatibility: 85%\n\n"
-                           "Match #2: Anonymous Friend\n"
-                           "  Status: Active\n"
-                           "  Compatibility: 78%")
+        """Query peer_matches for the current user and display in a Toplevel with Treeview."""
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            self._ensure_peer_tables(cursor)
+
+            user_id = str(self.auth.current_user['id'])
+            cursor.execute('''
+                SELECT match_id, topic, status, COALESCE(matched_date, created_date),
+                       CASE WHEN requester_id = ? THEN matched_anon_id
+                            ELSE requester_anon_id END AS peer_anon_id
+                FROM peer_matches
+                WHERE requester_id = ? OR matched_id = ?
+                ORDER BY COALESCE(matched_date, created_date) DESC
+            ''', (user_id, user_id, user_id))
+            matches = cursor.fetchall()
+            conn.close()
+            conn = None
+
+            win = tk.Toplevel(self.dialog)
+            win.title("My Peer Matches")
+            win.geometry("700x400")
+            win.transient(self.dialog)
+            win.grab_set()
+
+            ttk.Label(win, text="My Peer Matches",
+                      font=('Arial', 12, 'bold')).pack(pady=(10, 5))
+
+            columns = ('Match ID', 'Topic', 'Status', 'Date', 'Peer')
+            tree = ttk.Treeview(win, columns=columns, show='headings', height=12)
+            for col in columns:
+                tree.heading(col, text=col)
+                tree.column(col, width=130)
+            tree.pack(fill='both', expand=True, padx=10, pady=5)
+
+            for m in matches:
+                peer_display = m[4] if m[4] else "(pending)"
+                tree.insert('', 'end', values=(m[0], m[1] or "", m[2], m[3] or "", peer_display))
+
+            if not matches:
+                ttk.Label(win, text="No matches found. Use 'Find New Match' to get started.").pack(pady=10)
+
+            ttk.Button(win, text="Close", command=win.destroy).pack(pady=10)
+
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to load matches: {e}")
+        finally:
+            if conn:
+                conn.close()
 
     def open_messaging(self):
-        messagebox.showinfo("Messaging",
-                           "Secure messaging system:\n\n"
-                           "• Send/receive anonymous messages\n"
-                           "• End-to-end encryption\n"
-                           "• Report concerns if needed")
+        """Open a messaging interface for a selected peer match."""
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            self._ensure_peer_tables(cursor)
+
+            user_id = str(self.auth.current_user['id'])
+            cursor.execute('''
+                SELECT match_id, topic,
+                       CASE WHEN requester_id = ? THEN requester_anon_id
+                            ELSE matched_anon_id END AS my_anon,
+                       CASE WHEN requester_id = ? THEN matched_anon_id
+                            ELSE requester_anon_id END AS peer_anon
+                FROM peer_matches
+                WHERE (requester_id = ? OR matched_id = ?) AND status = 'active'
+                ORDER BY matched_date DESC
+            ''', (user_id, user_id, user_id, user_id))
+            active_matches = cursor.fetchall()
+            conn.close()
+            conn = None
+
+            if not active_matches:
+                messagebox.showinfo("Messaging", "No active matches to message. Find a match first.")
+                return
+
+            # If multiple matches, let user pick one
+            match_id = active_matches[0][0]
+            my_anon = active_matches[0][2]
+            peer_anon = active_matches[0][3]
+            topic = active_matches[0][1]
+
+            if len(active_matches) > 1:
+                choices = [f"Match #{m[0]} - {m[1] or 'General'} (peer: {m[3]})" for m in active_matches]
+                choice = simpledialog.askstring(
+                    "Select Match",
+                    "Enter the match number to message:\n\n" +
+                    "\n".join(choices),
+                    parent=self.dialog)
+                if not choice:
+                    return
+                try:
+                    chosen_id = int(choice.strip())
+                    for m in active_matches:
+                        if m[0] == chosen_id:
+                            match_id, topic, my_anon, peer_anon = m
+                            break
+                except ValueError:
+                    messagebox.showwarning("Invalid", "Please enter a valid match number.")
+                    return
+
+            # Open messaging window
+            self._open_message_window(match_id, my_anon, peer_anon, topic)
+
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to open messaging: {e}")
+        finally:
+            if conn:
+                conn.close()
+
+    def _open_message_window(self, match_id, my_anon, peer_anon, topic):
+        """Display the messaging window for a given match."""
+        win = tk.Toplevel(self.dialog)
+        win.title(f"Messages - Match #{match_id}")
+        win.geometry("600x500")
+        win.transient(self.dialog)
+        win.grab_set()
+
+        ttk.Label(win, text=f"Chat with {peer_anon} | Topic: {topic or 'General'}",
+                  font=('Arial', 11, 'bold')).pack(pady=(10, 5))
+        ttk.Label(win, text=f"You are: {my_anon}",
+                  font=('Arial', 9)).pack(pady=(0, 5))
+
+        # Message history
+        msg_frame = ttk.Frame(win)
+        msg_frame.pack(fill='both', expand=True, padx=10, pady=5)
+
+        msg_text = scrolledtext.ScrolledText(msg_frame, wrap=tk.WORD, state='disabled',
+                                             font=('Arial', 10))
+        msg_text.pack(fill='both', expand=True)
+
+        def load_messages():
+            msg_text.config(state='normal')
+            msg_text.delete(1.0, tk.END)
+            try:
+                c = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cur = c.cursor()
+                cur.execute('''
+                    SELECT sender_anon_id, message_text, sent_date
+                    FROM peer_messages
+                    WHERE match_id = ?
+                    ORDER BY sent_date ASC
+                ''', (match_id,))
+                messages = cur.fetchall()
+                c.close()
+
+                for sender, text, dt in messages:
+                    label = "You" if sender == my_anon else sender
+                    msg_text.insert(tk.END, f"[{dt}] {label}: {text}\n\n")
+            except sqlite3.Error:
+                msg_text.insert(tk.END, "(Failed to load messages)\n")
+            msg_text.config(state='disabled')
+            msg_text.see(tk.END)
+
+        load_messages()
+
+        # Input area
+        input_frame = ttk.Frame(win)
+        input_frame.pack(fill='x', padx=10, pady=(0, 10))
+
+        entry_var = tk.StringVar()
+        entry = ttk.Entry(input_frame, textvariable=entry_var)
+        entry.pack(side='left', fill='x', expand=True, padx=(0, 5))
+
+        def send_message():
+            text = entry_var.get().strip()
+            if not text:
+                return
+            try:
+                c = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cur = c.cursor()
+                cur.execute('''
+                    INSERT INTO peer_messages (match_id, sender_anon_id, message_text, sent_date)
+                    VALUES (?, ?, ?, ?)
+                ''', (match_id, my_anon, text, datetime.now().isoformat()))
+                c.commit()
+                c.close()
+                entry_var.set("")
+                load_messages()
+            except sqlite3.Error as e:
+                messagebox.showerror("Error", f"Failed to send message: {e}")
+
+        ttk.Button(input_frame, text="Send", command=send_message).pack(side='right')
+        entry.bind('<Return>', lambda e: send_message())
+
+        ttk.Button(win, text="Close", command=win.destroy).pack(pady=(0, 10))
 
 
 
@@ -350,150 +616,426 @@ class ManagePeerSupportDialog:
         ttk.Label(frame, text="Groups You Moderate",
                  font=('Arial', 11, 'bold')).pack(pady=(0, 10))
 
-        columns = ('Group', 'Members', 'Status', 'Last Activity')
-        tree = ttk.Treeview(frame, columns=columns, show='tree headings', height=10)
+        columns = ('ID', 'Group', 'Members', 'Status', 'Created')
+        self.mod_tree = ttk.Treeview(frame, columns=columns, show='headings', height=10)
 
         for col in columns:
-            tree.heading(col, text=col)
+            self.mod_tree.heading(col, text=col)
+            if col == 'Group':
+                self.mod_tree.column(col, width=200)
+            else:
+                self.mod_tree.column(col, width=100)
 
-        tree.pack(fill='both', expand=True)
+        self.mod_tree.pack(fill='both', expand=True)
 
-        # Sample data
-        groups = [
-            ("Mindfulness Together", "6/10", "Active", "2 hours ago"),
-            ("Study Support Group", "12/15", "Active", "1 day ago")
-        ]
+        # Load real data from DB
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            user_id = str(self.auth.current_user['id'])
 
-        for group in groups:
-            tree.insert('', 'end', values=group)
+            # Get student_id for the current user
+            cursor.execute('SELECT student_id FROM users WHERE id = ?', (user_id,))
+            row = cursor.fetchone()
+            student_id = row[0] if row else user_id
+
+            cursor.execute('''
+                SELECT psg.group_id, psg.group_name,
+                       psg.current_members || '/' || psg.max_members,
+                       psg.status, psg.created_date
+                FROM peer_support_groups psg
+                WHERE psg.facilitator_id = ?
+                ORDER BY psg.created_date DESC
+            ''', (student_id,))
+            groups = cursor.fetchall()
+
+            for group in groups:
+                self.mod_tree.insert('', 'end', values=group)
+
+            conn.close()
+            conn = None
+        except sqlite3.Error:
+            pass
+        finally:
+            if conn:
+                conn.close()
 
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill='x', pady=(10, 0))
 
-        ttk.Button(btn_frame, text="Manage Members").pack(side='left', padx=(0, 10))
-        ttk.Button(btn_frame, text="Edit Group Settings").pack(side='left', padx=(0, 10))
-        ttk.Button(btn_frame, text="View Activity").pack(side='left')
+        def approve_group():
+            sel = self.mod_tree.selection()
+            if not sel:
+                messagebox.showwarning("Warning", "Select a group first.")
+                return
+            gid = self.mod_tree.item(sel[0])['values'][0]
+            try:
+                c = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cur = c.cursor()
+                cur.execute("UPDATE peer_support_groups SET status = 'active' WHERE group_id = ?", (gid,))
+                c.commit()
+                c.close()
+                self.mod_tree.item(sel[0], values=(*self.mod_tree.item(sel[0])['values'][:3], 'active',
+                                                    self.mod_tree.item(sel[0])['values'][4]))
+                messagebox.showinfo("Success", "Group approved.")
+            except sqlite3.Error as e:
+                messagebox.showerror("Error", f"Failed to approve: {e}")
+
+        def flag_group():
+            sel = self.mod_tree.selection()
+            if not sel:
+                messagebox.showwarning("Warning", "Select a group first.")
+                return
+            gid = self.mod_tree.item(sel[0])['values'][0]
+            try:
+                c = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cur = c.cursor()
+                cur.execute("UPDATE peer_support_groups SET status = 'flagged' WHERE group_id = ?", (gid,))
+                c.commit()
+                c.close()
+                self.mod_tree.item(sel[0], values=(*self.mod_tree.item(sel[0])['values'][:3], 'flagged',
+                                                    self.mod_tree.item(sel[0])['values'][4]))
+                messagebox.showinfo("Flagged", "Group has been flagged for review.")
+            except sqlite3.Error as e:
+                messagebox.showerror("Error", f"Failed to flag: {e}")
+
+        def dismiss_group():
+            sel = self.mod_tree.selection()
+            if not sel:
+                messagebox.showwarning("Warning", "Select a group first.")
+                return
+            gid = self.mod_tree.item(sel[0])['values'][0]
+            if not messagebox.askyesno("Confirm", "Dismiss (deactivate) this group?"):
+                return
+            try:
+                c = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cur = c.cursor()
+                cur.execute("UPDATE peer_support_groups SET status = 'inactive' WHERE group_id = ?", (gid,))
+                c.commit()
+                c.close()
+                self.mod_tree.delete(sel[0])
+                messagebox.showinfo("Dismissed", "Group has been deactivated.")
+            except sqlite3.Error as e:
+                messagebox.showerror("Error", f"Failed to dismiss: {e}")
+
+        ttk.Button(btn_frame, text="Approve", command=approve_group).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text="Flag", command=flag_group).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text="Dismiss", command=dismiss_group).pack(side='left')
+
+    def _ensure_support_requests_table(self, cursor):
+        """Create support_requests table if it doesn't exist."""
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS support_requests (
+            request_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT NOT NULL,
+            anonymous_id TEXT,
+            group_id INTEGER,
+            group_name TEXT,
+            reason TEXT,
+            status TEXT DEFAULT 'pending',
+            requested_date TEXT NOT NULL,
+            resolved_date TEXT,
+            resolved_by TEXT
+        )
+        ''')
 
     def create_requests_tab(self, parent):
         frame = ttk.Frame(parent)
         frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(frame, text="Pending Join Requests",
+        ttk.Label(frame, text="Pending Support Requests",
                  font=('Arial', 11, 'bold')).pack(pady=(0, 10))
 
-        columns = ('Student', 'Group', 'Requested', 'Reason')
-        tree = ttk.Treeview(frame, columns=columns, show='tree headings', height=8)
+        columns = ('ID', 'Student', 'Group', 'Requested', 'Reason')
+        self.req_tree = ttk.Treeview(frame, columns=columns, show='headings', height=8)
 
         for col in columns:
-            tree.heading(col, text=col)
+            self.req_tree.heading(col, text=col)
             if col == 'Reason':
-                tree.column(col, width=250)
+                self.req_tree.column(col, width=250)
+            elif col == 'ID':
+                self.req_tree.column(col, width=50)
+            else:
+                self.req_tree.column(col, width=130)
 
-        tree.pack(fill='both', expand=True)
+        self.req_tree.pack(fill='both', expand=True)
 
-        # Sample requests
-        requests = [
-            ("Anonymous User #123", "Mindfulness Together", "2 days ago",
-             "Interested in learning mindfulness techniques"),
-            ("Anonymous User #456", "Mindfulness Together", "1 day ago",
-             "Looking for support with stress management")
-        ]
-
-        for req in requests:
-            tree.insert('', 'end', values=req)
+        self._load_requests()
 
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill='x', pady=(10, 0))
 
         ttk.Button(btn_frame, text="Approve", command=self.approve_request).pack(side='left', padx=(0, 10))
-        ttk.Button(btn_frame, text="Deny", command=self.deny_request).pack(side='left')
+        ttk.Button(btn_frame, text="Deny", command=self.deny_request).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text="Refresh", command=self._load_requests).pack(side='left')
+
+    def _load_requests(self):
+        """Load pending support requests from the database."""
+        for item in self.req_tree.get_children():
+            self.req_tree.delete(item)
+
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            self._ensure_support_requests_table(cursor)
+
+            cursor.execute('''
+                SELECT request_id, COALESCE(anonymous_id, 'Anon#' || student_id),
+                       COALESCE(group_name, 'N/A'), requested_date, COALESCE(reason, '')
+                FROM support_requests
+                WHERE status = 'pending'
+                ORDER BY requested_date ASC
+            ''')
+            rows = cursor.fetchall()
+
+            for row in rows:
+                self.req_tree.insert('', 'end', values=row)
+
+            conn.close()
+            conn = None
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to load requests: {e}")
+        finally:
+            if conn:
+                conn.close()
 
     def create_reports_tab(self, parent):
         frame = ttk.Frame(parent)
         frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        text = scrolledtext.ScrolledText(frame, wrap=tk.WORD, font=('Courier', 9))
-        text.pack(fill='both', expand=True)
+        self.report_text = scrolledtext.ScrolledText(frame, wrap=tk.WORD, font=('Courier', 9))
+        self.report_text.pack(fill='both', expand=True)
 
-        content = """PEER SUPPORT SYSTEM ANALYTICS
-================================================================================
+        self._generate_report()
+
+        btn_frame = ttk.Frame(frame)
+        btn_frame.pack(fill='x', pady=(10, 0))
+
+        ttk.Button(btn_frame, text="Refresh", command=self._generate_report).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text="Save as TXT", command=self._save_report_txt).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text="Email to Admin", command=self._email_report_to_admin).pack(side='left')
+
+    def _generate_report(self):
+        """Generate real statistics from the database."""
+        self.report_text.config(state='normal')
+        self.report_text.delete(1.0, tk.END)
+
+        total_groups = 0
+        active_groups = 0
+        total_members = 0
+        active_matches = 0
+        pending_matches = 0
+        pending_requests = 0
+        total_messages = 0
+        group_topics = []
+
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Total and active groups
+            try:
+                cursor.execute('SELECT COUNT(*) FROM peer_support_groups')
+                total_groups = cursor.fetchone()[0]
+                cursor.execute("SELECT COUNT(*) FROM peer_support_groups WHERE status = 'active'")
+                active_groups = cursor.fetchone()[0]
+            except sqlite3.Error:
+                pass
+
+            # Total members
+            try:
+                cursor.execute("SELECT COUNT(*) FROM support_group_members WHERE status = 'active'")
+                total_members = cursor.fetchone()[0]
+            except sqlite3.Error:
+                pass
+
+            # Peer matches
+            try:
+                cursor.execute("SELECT COUNT(*) FROM peer_matches WHERE status = 'active'")
+                active_matches = cursor.fetchone()[0]
+                cursor.execute("SELECT COUNT(*) FROM peer_matches WHERE status = 'pending'")
+                pending_matches = cursor.fetchone()[0]
+            except sqlite3.Error:
+                pass
+
+            # Pending support requests
+            try:
+                self._ensure_support_requests_table(cursor)
+                cursor.execute("SELECT COUNT(*) FROM support_requests WHERE status = 'pending'")
+                pending_requests = cursor.fetchone()[0]
+            except sqlite3.Error:
+                pass
+
+            # Message count
+            try:
+                cursor.execute("SELECT COUNT(*) FROM peer_messages")
+                total_messages = cursor.fetchone()[0]
+            except sqlite3.Error:
+                pass
+
+            # Group topics breakdown
+            try:
+                cursor.execute('''
+                    SELECT support_type, COUNT(*), SUM(current_members)
+                    FROM peer_support_groups
+                    WHERE status = 'active'
+                    GROUP BY support_type
+                    ORDER BY COUNT(*) DESC
+                ''')
+                group_topics = cursor.fetchall()
+            except sqlite3.Error:
+                pass
+
+            conn.close()
+            conn = None
+        except sqlite3.Error:
+            pass
+        finally:
+            if conn:
+                conn.close()
+
+        avg_size = (total_members / active_groups) if active_groups > 0 else 0
+        now = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+        content = f"""PEER SUPPORT SYSTEM ANALYTICS
+Generated: {now}
+{'=' * 72}
 
 OVERALL STATISTICS:
 
-Total Support Groups: 24
-Active Members: 156 students
-Average Group Size: 8.5 members
-Groups Created (This Month): 3
-Total Peer Matches: 47 active connections
+  Total Support Groups:   {total_groups}
+  Active Support Groups:  {active_groups}
+  Total Active Members:   {total_members}
+  Average Group Size:     {avg_size:.1f} members
 
-ENGAGEMENT METRICS:
+PEER MATCHING:
 
-Weekly Active Users: 112 (72% of members)
-Average Meetings per Group: 3.2/month
-Message Activity: 847 messages (last 30 days)
-Resource Downloads: 234 (last 30 days)
+  Active Matches:         {active_matches}
+  Pending Matches:        {pending_matches}
+  Total Messages Sent:    {total_messages}
 
-TOP SUPPORT GROUP TOPICS:
+SUPPORT REQUESTS:
 
-1. Stress Management (6 groups, 52 members)
-2. Academic Pressure (4 groups, 34 members)
-3. Social Connection (4 groups, 29 members)
-4. Anxiety (3 groups, 21 members)
-5. Self-Care (3 groups, 18 members)
+  Pending Requests:       {pending_requests}
 
-PEER MATCHING STATISTICS:
-
-Active Matches: 47
-Match Success Rate: 82%
-Average Match Duration: 6.3 weeks
-Satisfaction Rating: 4.6/5.0
-
-WELLNESS RESOURCE USAGE:
-
-Most Viewed Resources:
-  • Stress management techniques (127 views)
-  • Anxiety coping strategies (98 views)
-  • Crisis hotline information (76 views)
-  • Self-care activities (65 views)
-
-CRISIS INTERVENTIONS:
-
-Crisis Resources Accessed: 12 (last month)
-Follow-up Completed: 12/12 (100%)
-Professional Referrals Made: 8
-
-MODERATOR ACTIVITY:
-
-Active Moderators: 18
-Average Groups per Moderator: 1.3
-Join Requests Processed: 32 (last week)
-Average Response Time: 1.8 days
-
-GROWTH TRENDS:
-
-  Month      | New Groups | New Members | Activity
-  -----------|------------|-------------|----------
-  January    | 2          | 23          | ↗
-  February   | 3          | 31          | ↗↗
-  March      | 3          | 28          | ↗
-  April (YTD)| 1          | 12          | →
-
-RECOMMENDATIONS:
-
-✓ Peer support engagement is strong
-✓ Consider creating groups for underserved topics
-✓ Moderator recruitment needed for growing demand
-✓ Continue promoting wellness resources
 """
-        text.insert(1.0, content)
-        text.config(state='disabled')
+        if group_topics:
+            content += "SUPPORT GROUP TOPICS:\n\n"
+            for i, (topic, count, members) in enumerate(group_topics, 1):
+                members_val = members or 0
+                content += f"  {i}. {topic or 'Unspecified'} ({count} groups, {members_val} members)\n"
+            content += "\n"
+
+        content += f"""{'=' * 72}
+End of Report
+"""
+        self.report_text.insert(1.0, content)
+        self.report_text.config(state='disabled')
+
+    def _save_report_txt(self):
+        """Save the current report to a text file."""
+        from tkinter import filedialog
+        filepath = filedialog.asksaveasfilename(
+            parent=self.dialog,
+            defaultextension=".txt",
+            filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+            initialfile=f"peer_support_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        )
+        if not filepath:
+            return
+        try:
+            self.report_text.config(state='normal')
+            content = self.report_text.get(1.0, tk.END)
+            self.report_text.config(state='disabled')
+            with open(filepath, 'w') as f:
+                f.write(content)
+            messagebox.showinfo("Saved", f"Report saved to:\n{filepath}")
+        except OSError as e:
+            messagebox.showerror("Error", f"Failed to save report: {e}")
+
+    def _email_report_to_admin(self):
+        """Email the current report content to the admin."""
+        try:
+            from education_system.university_system.infrastructure.email import send_email
+
+            self.report_text.config(state='normal')
+            content = self.report_text.get(1.0, tk.END)
+            self.report_text.config(state='disabled')
+
+            send_email(
+                "admin@university.edu",
+                "Peer Support System Analytics Report",
+                content
+            )
+            messagebox.showinfo("Sent", "Report emailed to admin successfully.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to email report: {e}")
 
     def approve_request(self):
-        messagebox.showinfo("Approved", "Join request approved.")
+        """Approve the selected support request in the database."""
+        sel = self.req_tree.selection()
+        if not sel:
+            messagebox.showwarning("Warning", "Please select a request to approve.")
+            return
+
+        request_id = self.req_tree.item(sel[0])['values'][0]
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            user_id = str(self.auth.current_user['id'])
+            cursor.execute('''
+                UPDATE support_requests
+                SET status = 'approved', resolved_date = ?, resolved_by = ?
+                WHERE request_id = ?
+            ''', (datetime.now().isoformat(), user_id, request_id))
+            conn.commit()
+            conn.close()
+            conn = None
+
+            self.req_tree.delete(sel[0])
+            messagebox.showinfo("Approved", f"Request #{request_id} has been approved.")
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to approve request: {e}")
+        finally:
+            if conn:
+                conn.close()
 
     def deny_request(self):
-        if messagebox.askyesno("Deny Request", "Deny this join request?"):
-            messagebox.showinfo("Denied", "Join request denied.")
+        """Deny the selected support request in the database."""
+        sel = self.req_tree.selection()
+        if not sel:
+            messagebox.showwarning("Warning", "Please select a request to deny.")
+            return
+
+        if not messagebox.askyesno("Deny Request", "Are you sure you want to deny this request?"):
+            return
+
+        request_id = self.req_tree.item(sel[0])['values'][0]
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            user_id = str(self.auth.current_user['id'])
+            cursor.execute('''
+                UPDATE support_requests
+                SET status = 'denied', resolved_date = ?, resolved_by = ?
+                WHERE request_id = ?
+            ''', (datetime.now().isoformat(), user_id, request_id))
+            conn.commit()
+            conn.close()
+            conn = None
+
+            self.req_tree.delete(sel[0])
+            messagebox.showinfo("Denied", f"Request #{request_id} has been denied.")
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to deny request: {e}")
+        finally:
+            if conn:
+                conn.close()
 
 
 # ============================================================================

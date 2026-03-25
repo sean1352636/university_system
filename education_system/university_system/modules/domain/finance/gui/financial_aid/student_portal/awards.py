@@ -4,7 +4,7 @@ Awards mixin - viewing awarded scholarships and financial aid.
 
 from typing import Any, Dict
 
-from ..common_imports import (
+from education_system.university_system.modules.domain.finance.gui.financial_aid.common_imports import (
     ttk,
     logging,
     get_connection,

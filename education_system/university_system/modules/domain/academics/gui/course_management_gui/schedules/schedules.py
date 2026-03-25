@@ -99,7 +99,6 @@ except ImportError:
 
 # Import academic system launchers
 try:
-    from education_system.university_system.modules.domain.academics.services.lms.lms_core import launch_lms_gui
     from education_system.university_system.modules.domain.academics.services.degree_audit.degree_audit_core import launch_degree_audit_gui
     from education_system.university_system.modules.domain.academics.services.evaluation.course_evaluation_core import launch_course_evaluation_gui
     ACADEMIC_SYSTEMS_AVAILABLE = True
@@ -283,45 +282,47 @@ def create_course_schedule_gui(self):
             instructor_id = int(instructor_var.get().split(" - ")[0])
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0)
-            conn.execute('PRAGMA journal_mode=WAL')  # Enable WAL mode for better concurrency
-            cursor = conn.cursor()
+            try:
+                conn.execute('PRAGMA journal_mode=WAL')  # Enable WAL mode for better concurrency
+                cursor = conn.cursor()
 
-            # Ensure course_schedule table exists with proper schema
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS course_schedule (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                course_code TEXT NOT NULL,
-                day_of_week TEXT NOT NULL,
-                start_time TEXT NOT NULL,
-                end_time TEXT NOT NULL,
-                room_id INTEGER,
-                instructor_id INTEGER,
-                session_type TEXT,
-                semester TEXT,
-                year INTEGER,
-                created_at TEXT NOT NULL,
-                updated_at TEXT,
-                FOREIGN KEY (room_id) REFERENCES rooms(id),
-                FOREIGN KEY (instructor_id) REFERENCES instructors(id)
-            )
-            ''')
+                # Ensure course_schedule table exists with proper schema
+                cursor.execute('''
+                CREATE TABLE IF NOT EXISTS course_schedule (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    course_code TEXT NOT NULL,
+                    day_of_week TEXT NOT NULL,
+                    start_time TEXT NOT NULL,
+                    end_time TEXT NOT NULL,
+                    room_id INTEGER,
+                    instructor_id INTEGER,
+                    session_type TEXT,
+                    semester TEXT,
+                    year INTEGER,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT,
+                    FOREIGN KEY (room_id) REFERENCES rooms(id),
+                    FOREIGN KEY (instructor_id) REFERENCES instructors(id)
+                )
+                ''')
 
-            # Get current semester and year
-            current_semester = "Fall"  # You can make this dynamic
-            current_year = datetime.now().year
+                # Get current semester and year
+                current_semester = "Fall"  # You can make this dynamic
+                current_year = datetime.now().year
 
-            # Check for schedule conflicts
-            cursor.execute("""
-                SELECT id FROM course_schedule
-                WHERE course_code = ? AND day_of_week = ? AND semester = ? AND year = ?
-                AND ((start_time <= ? AND end_time > ?) OR (start_time < ? AND end_time >= ?))
-            """, (module_code, day_var.get(), current_semester, current_year,
-                 start_time_var.get(), start_time_var.get(),
-                 end_time_var.get(), end_time_var.get()))
+                # Check for schedule conflicts
+                cursor.execute("""
+                    SELECT id FROM course_schedule
+                    WHERE course_code = ? AND day_of_week = ? AND semester = ? AND year = ?
+                    AND ((start_time <= ? AND end_time > ?) OR (start_time < ? AND end_time >= ?))
+                """, (module_code, day_var.get(), current_semester, current_year,
+                     start_time_var.get(), start_time_var.get(),
+                     end_time_var.get(), end_time_var.get()))
 
-            if cursor.fetchone():
-                messagebox.showerror("Schedule Conflict",
-                                   f"Schedule conflict detected for {module_code} on {day_var.get()}")
+                if cursor.fetchone():
+                    messagebox.showerror("Schedule Conflict",
+                                       f"Schedule conflict detected for {module_code} on {day_var.get()}")
+            finally:
                 conn.close()
                 return
 
@@ -1045,41 +1046,69 @@ class CreateScheduleDialog:
         self._ui()
 
     def _ui(self):
+        from datetime import datetime
         frm = ttk.Frame(self.dialog); frm.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Course
         course_frame = ttk.LabelFrame(frm, text="Course", padding=10); course_frame.pack(fill=tk.X, pady=5)
         ttk.Label(course_frame, text="Course:").grid(row=0, column=0, sticky=tk.W)
-        self.course_combo = ttk.Combobox(course_frame, width=50); self.course_combo.grid(row=0, column=1, sticky=tk.W, padx=6)
+        self.course_combo = ttk.Combobox(course_frame, width=50, state='readonly')
+        self.course_combo.grid(row=0, column=1, sticky=tk.W, padx=6)
         self._load_courses()
 
         # Instructor (optional)
         instr_frame = ttk.LabelFrame(frm, text="Instructor (optional)", padding=10); instr_frame.pack(fill=tk.X, pady=5)
         ttk.Label(instr_frame, text="Instructor:").grid(row=0, column=0, sticky=tk.W)
-        self.instructor_combo = ttk.Combobox(instr_frame, width=50); self.instructor_combo.grid(row=0, column=1, sticky=tk.W, padx=6)
+        self.instructor_combo = ttk.Combobox(instr_frame, width=50, state='readonly')
+        self.instructor_combo.grid(row=0, column=1, sticky=tk.W, padx=6)
         self._load_instructors()
 
         # Term
         term_frame = ttk.LabelFrame(frm, text="Term", padding=10); term_frame.pack(fill=tk.X, pady=5)
         ttk.Label(term_frame, text="Semester:").grid(row=0, column=0, sticky=tk.W)
         self.semester_var = tk.StringVar(value="Fall")
-        ttk.Combobox(term_frame, textvariable=self.semester_var, values=["Fall","Spring","Summer","Winter"], width=12)\
-           .grid(row=0, column=1, sticky=tk.W, padx=6)
-        ttk.Label(term_frame, text="Year:").grid(row=1, column=0, sticky=tk.W, pady=(6,0))
-        from datetime import datetime
-        self.year_var = tk.StringVar(value=str(datetime.now().year))
-        ttk.Entry(term_frame, textvariable=self.year_var, width=10).grid(row=1, column=1, sticky=tk.W, padx=6, pady=(6,0))
+        ttk.Combobox(term_frame, textvariable=self.semester_var,
+                     values=["Fall", "Spring", "Summer", "Winter"],
+                     state='readonly', width=12).grid(row=0, column=1, sticky=tk.W, padx=6)
+
+        ttk.Label(term_frame, text="Year:").grid(row=1, column=0, sticky=tk.W, pady=(6, 0))
+        current_year = datetime.now().year
+        self.year_var = tk.StringVar(value=str(current_year))
+        ttk.Combobox(term_frame, textvariable=self.year_var,
+                     values=[str(y) for y in range(current_year, current_year + 5)],
+                     state='readonly', width=10).grid(row=1, column=1, sticky=tk.W, padx=6, pady=(6, 0))
 
         # Meeting details (optional)
         mtg = ttk.LabelFrame(frm, text="Meeting Details (optional)", padding=10); mtg.pack(fill=tk.X, pady=5)
-        ttk.Label(mtg, text="Start Time (HH:MM):").grid(row=0, column=0, sticky=tk.W)
-        self.start_var = tk.StringVar(); ttk.Entry(mtg, textvariable=self.start_var, width=12).grid(row=0, column=1, sticky=tk.W, padx=6)
-        ttk.Label(mtg, text="End Time (HH:MM):").grid(row=1, column=0, sticky=tk.W, pady=(6,0))
-        self.end_var = tk.StringVar(); ttk.Entry(mtg, textvariable=self.end_var, width=12).grid(row=1, column=1, sticky=tk.W, padx=6, pady=(6,0))
-        ttk.Label(mtg, text="Days (e.g. Mon/Wed/Fri):").grid(row=2, column=0, sticky=tk.W, pady=(6,0))
-        self.days_var = tk.StringVar(); ttk.Entry(mtg, textvariable=self.days_var, width=30).grid(row=2, column=1, sticky=tk.W, padx=6, pady=(6,0))
-        ttk.Label(mtg, text="Classroom:").grid(row=3, column=0, sticky=tk.W, pady=(6,0))
-        self.room_var = tk.StringVar(); ttk.Entry(mtg, textvariable=self.room_var, width=20).grid(row=3, column=1, sticky=tk.W, padx=6, pady=(6,0))
+
+        # Time slots
+        hours = [f"{h:02d}:{m:02d}" for h in range(8, 21) for m in (0, 30)]
+        ttk.Label(mtg, text="Start Time:").grid(row=0, column=0, sticky=tk.W)
+        self.start_var = tk.StringVar(value="09:00")
+        ttk.Combobox(mtg, textvariable=self.start_var, values=hours,
+                     state='readonly', width=10).grid(row=0, column=1, sticky=tk.W, padx=6)
+
+        ttk.Label(mtg, text="End Time:").grid(row=1, column=0, sticky=tk.W, pady=(6, 0))
+        self.end_var = tk.StringVar(value="10:00")
+        ttk.Combobox(mtg, textvariable=self.end_var, values=hours,
+                     state='readonly', width=10).grid(row=1, column=1, sticky=tk.W, padx=6, pady=(6, 0))
+
+        # Days — checkbuttons
+        ttk.Label(mtg, text="Days:").grid(row=2, column=0, sticky=tk.W, pady=(6, 0))
+        days_frame = ttk.Frame(mtg)
+        days_frame.grid(row=2, column=1, sticky=tk.W, padx=6, pady=(6, 0))
+        self._day_vars = {}
+        for day in ["Mon", "Tue", "Wed", "Thu", "Fri"]:
+            var = tk.BooleanVar()
+            ttk.Checkbutton(days_frame, text=day, variable=var).pack(side=tk.LEFT, padx=2)
+            self._day_vars[day] = var
+
+        # Classroom — dropdown from rooms table
+        ttk.Label(mtg, text="Classroom:").grid(row=3, column=0, sticky=tk.W, pady=(6, 0))
+        self.room_var = tk.StringVar()
+        self.room_combo = ttk.Combobox(mtg, textvariable=self.room_var, width=40, state='readonly')
+        self.room_combo.grid(row=3, column=1, sticky=tk.W, padx=6, pady=(6, 0))
+        self._load_rooms()
 
         # Buttons
         btns = ttk.Frame(frm); btns.pack(fill=tk.X, pady=12)
@@ -1091,11 +1120,19 @@ class CreateScheduleDialog:
         self._course_id = {}
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH)); cur = conn.cursor()
-            cur.execute("SELECT id, course_code, course_name FROM courses ORDER BY course_code")
+            cur.execute(
+                "SELECT id, COALESCE(course_code, code), COALESCE(course_name, name) "
+                "FROM courses "
+                "WHERE COALESCE(course_type, '') = 'Degree Program' "
+                "AND LOWER(COALESCE(status, 'active')) = 'active' "
+                "ORDER BY COALESCE(course_code, code)"
+            )
             rows = cur.fetchall(); conn.close()
             vals = [f"{r[1]} - {r[2]}" for r in rows]
             self._course_id = {f"{r[1]} - {r[2]}": r[0] for r in rows}
             self.course_combo['values'] = vals
+            if vals:
+                self.course_combo.current(0)
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to load courses: {e}")
 
@@ -1107,6 +1144,7 @@ class CreateScheduleDialog:
             cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='instructors'")
             if not cur.fetchone():
                 self.instructor_combo['values'] = []
+                conn.close()
                 return
             cur.execute("SELECT id, first_name, last_name FROM instructors ORDER BY last_name, first_name")
             rows = cur.fetchall(); conn.close()
@@ -1116,60 +1154,81 @@ class CreateScheduleDialog:
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to load instructors: {e}")
 
+    def _load_rooms(self):
+        from education_system.university_system.infrastructure.database.db import sqlite3
+        self._room_map = {}
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH)); cur = conn.cursor()
+            cur.execute(
+                "SELECT id, room_number, building, capacity, room_type "
+                "FROM rooms WHERE is_active = 1 "
+                "ORDER BY building, room_number"
+            )
+            rows = cur.fetchall(); conn.close()
+            vals = []
+            for r in rows:
+                label = f"{r[1]} — {r[2]} ({r[4]}, capacity: {r[3]})"
+                vals.append(label)
+                self._room_map[label] = r[1]  # store room_number
+            self.room_combo['values'] = vals
+        except sqlite3.Error as e:
+            messagebox.showerror(_("common.database_error"), f"Failed to load rooms: {e}")
+
     def _create(self):
         from education_system.university_system.infrastructure.database.db import sqlite3
         # Validate
         course_key = self.course_combo.get().strip()
         if course_key not in self._course_id:
-            messagebox.showwarning(_("common.validation"), "Select a course."); return
-        try:
-            year = int(self.year_var.get().strip())
-        except ValueError:
-            messagebox.showwarning(_("common.validation"), "Year must be a number."); return
+            messagebox.showwarning(_("common.validation"), "Please select a course.")
+            return
+
+        semester = self.semester_var.get().strip()
+        if not semester:
+            messagebox.showwarning(_("common.validation"), "Please select a semester.")
+            return
+
+        year = int(self.year_var.get())
 
         course_id = self._course_id[course_key]
         instr_key = self.instructor_combo.get().strip()
         instructor_id = self._instr_id.get(instr_key) if instr_key else None
 
+        # Collect selected days
+        selected_days = [day for day, var in self._day_vars.items() if var.get()]
+        days_str = "/".join(selected_days) if selected_days else None
+
+        # Get classroom from dropdown
+        room_key = self.room_var.get().strip()
+        classroom = self._room_map.get(room_key) if room_key else None
+
+        conn = None
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH)); cur = conn.cursor()
-            # ensure table exists (matches your schema)
-            cur.execute("""
-            CREATE TABLE IF NOT EXISTS course_schedule (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                course_id INTEGER NOT NULL,
-                instructor_id INTEGER,
-                semester TEXT NOT NULL,
-                year INTEGER NOT NULL,
-                start_time TEXT,
-                end_time TEXT,
-                days_of_week TEXT,
-                classroom TEXT,
-                created_at TEXT DEFAULT (datetime('now')),
-                FOREIGN KEY(course_id) REFERENCES courses(id),
-                FOREIGN KEY(instructor_id) REFERENCES instructors(id),
-                UNIQUE(course_id, semester, year)
-            )
-            """)
+            from datetime import datetime as dt
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cur = conn.cursor()
 
             cur.execute("""
             INSERT INTO course_schedule
-            (course_id, instructor_id, semester, year, start_time, end_time, days_of_week, classroom)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            (course_id, instructor_id, semester, year, start_time, end_time, days_of_week, classroom, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
-                course_id, instructor_id, self.semester_var.get().strip(), year,
-                self.start_var.get().strip() or None,
-                self.end_var.get().strip() or None,
-                self.days_var.get().strip() or None,
-                self.room_var.get().strip() or None
+                course_id, instructor_id, semester, year,
+                self.start_var.get() or None,
+                self.end_var.get() or None,
+                days_str,
+                classroom,
+                dt.now().strftime('%Y-%m-%d %H:%M:%S')
             ))
-            conn.commit(); conn.close()
-            messagebox.showinfo(_("common.success"), "Schedule created.")
+            conn.commit()
+            messagebox.showinfo(_("common.success"), "Schedule created successfully.")
             self.dialog.destroy()
         except sqlite3.IntegrityError:
             messagebox.showerror("Duplicate", "A schedule for this course/term already exists.")
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to create schedule: {e}")
+        finally:
+            if conn:
+                conn.close()
 
 
 class ViewSchedulesDialog:

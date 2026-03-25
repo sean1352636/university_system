@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/email_service/core.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d %H:%M:%S', ', ', '@', 'EMAIL_INVALID_FORMAT', 'EMAIL_MISSING_BODY', 'University System', '[^\\w]', 'admin', 'current_user', 'database_only_mode', 'debug', 'display_name', 'email', 'error', 'failed', 'first_name', 'id', 'info', 'last_name', 'noreply', 'recipient', 'role', 'sender_email', 'sender_name', 'sent', 'stored', 'system', 'template_name', 'university', 'username', 'warning']

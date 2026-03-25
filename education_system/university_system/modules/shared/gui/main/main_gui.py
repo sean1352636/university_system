@@ -152,7 +152,7 @@ class UnifiedManagementGUI:
         except Exception as e:
             logger.error(f"Error running main loop: {e}")
 
-from .core.gui_setup import (
+from education_system.university_system.modules.shared.gui.main.core.gui_setup import (
     create_fallback_interface,
     init_gui_managers,
     create_themed_toplevel,
@@ -170,7 +170,7 @@ from .core.gui_setup import (
     restart_gui,
     _cancel_timers
 )
-from .auth_gui import (
+from education_system.university_system.modules.shared.gui.main.auth_gui import (
     logout_user,
     toggle_login_logout,
     update_login_logout_button,
@@ -179,13 +179,12 @@ from .auth_gui import (
     switch_to_cli,
     switch_system,
     shutdown_system,
-    show_language_selector,
     show_mfa_setup,
     _open_mfa_wizard,
     _reenable_mfa_with_confirmation,
     toggle_login_verification,
 )
-from .students.student_records_gui import (
+from education_system.university_system.modules.shared.gui.main.students.student_records_gui import (
     show_student_records,
     create_student_treeview,
     view_students,
@@ -196,7 +195,7 @@ from .students.student_records_gui import (
     search_students_dialog,
     _load_academic_data
 )
-from .students.student_crud_gui import (
+from education_system.university_system.modules.shared.gui.main.students.student_crud_gui import (
     create_student_dialog,
     update_student_dialog,
     delete_student_dialog,
@@ -206,7 +205,7 @@ from .students.student_crud_gui import (
     view_student_timetable,
     reassign_modules
 )
-from .students.student_export_gui import (
+from education_system.university_system.modules.shared.gui.main.students.student_export_gui import (
     export_student_data,
     export_individual_student_data,
     export_data_dialog,
@@ -219,14 +218,14 @@ from .students.student_export_gui import (
     _export_comprehensive_pdf,
     _export_comprehensive_txt
 )
-from .staff.staff_crud_gui import (
+from education_system.university_system.modules.shared.gui.main.staff.staff_crud_gui import (
     create_staff_dialog,
     update_staff_dialog,
     view_staff,
     delete_staff_dialog,
     search_staff_dialog
 )
-from .admin.user_management_gui import (
+from education_system.university_system.modules.shared.gui.main.admin.user_management_gui import (
     show_user_management,
     refresh_user_list,
     show_create_user,
@@ -237,7 +236,7 @@ from .admin.user_management_gui import (
     add_new_user,
     manage_permissions
 )
-from .admin.system_admin_gui import (
+from education_system.university_system.modules.shared.gui.main.admin.system_admin_gui import (
     show_system_admin,
     show_system_administration_gui,
     create_database_admin_tab,
@@ -248,7 +247,7 @@ from .admin.system_admin_gui import (
     view_system_logs,
     view_error_logs
 )
-from .admin.database_admin_gui import (
+from education_system.university_system.modules.shared.gui.main.admin.database_admin_gui import (
     show_backup,
     show_data_backup_gui,
     show_batch_operations_gui,
@@ -260,7 +259,7 @@ from .admin.database_admin_gui import (
     show_active_connections,
     wipe_database
 )
-from .admin.config_gui import (
+from education_system.university_system.modules.shared.gui.main.admin.config_gui import (
     edit_system_settings,
     configure_email,
     configure_backup,
@@ -270,7 +269,7 @@ from .admin.config_gui import (
     show_activity_logger,
     show_activity_log
 )
-from .admin.admin_tools_gui import (
+from education_system.university_system.modules.shared.gui.main.admin.admin_tools_gui import (
     show_system_monitoring_dashboard,
     show_configuration_editor,
     show_query_analyser,
@@ -286,7 +285,7 @@ from .admin.admin_tools_gui import (
     show_license_management,
     show_disaster_recovery_plan,
 )
-from .features.academic_launchers_gui import (
+from education_system.university_system.modules.shared.gui.main.features.academic_launchers_gui import (
     show_library_management,
     show_academic_calendar,
     show_course_management,
@@ -308,7 +307,7 @@ from .features.academic_launchers_gui import (
     show_student_registration_gui,
     show_student_dashboard_gui,
 )
-from .features.student_affairs_gui import (
+from education_system.university_system.modules.shared.gui.main.features.student_affairs_gui import (
     show_student_union_portal,
     open_student_union_portal_gui,
     open_parent_portal_gui,
@@ -327,7 +326,7 @@ from .features.student_affairs_gui import (
     show_mail_post_gui,
     show_staff_hr_gui
 )
-from .features.finance_gui import (
+from education_system.university_system.modules.shared.gui.main.features.finance_gui import (
     show_finance_management,
     show_finance_reporting_dashboard,
     show_student_finance_account,
@@ -337,7 +336,7 @@ from .features.finance_gui import (
     _create_record_payment_tab_finance,
     _create_payment_history_tab_finance
 )
-from .features.commerce_facilities_gui import (
+from education_system.university_system.modules.shared.gui.main.features.commerce_facilities_gui import (
     show_university_shop,
     show_charity_shop,
     show_restaurant_management,
@@ -364,7 +363,7 @@ from .features.commerce_facilities_gui import (
     show_train_station_gui,
     show_cinema_gui
 )
-from .features.extras_gui import (
+from education_system.university_system.modules.shared.gui.main.features.extras_gui import (
     show_document_manager,
     show_enhanced_reporting_dashboard,
     show_pdf_export_gui,
@@ -391,7 +390,16 @@ from .features.extras_gui import (
     show_exam_scheduler_gui,
     show_student_analytics_gui
 )
-from .features.student_success_gui import (
+from education_system.university_system.modules.shared.gui.main.features.new_features_gui import (
+    show_hesa_export_gui,
+    show_external_examiner_gui,
+    show_student_app_gui,
+    show_achievement_badge_gui,
+    show_study_recommendations_gui,
+    show_clearing_adjustment_gui,
+
+)
+from education_system.university_system.modules.shared.gui.main.features.student_success_gui import (
     show_academic_progress_gui,
     show_ai_study_gui,
     show_budget_tracker_gui,
@@ -416,7 +424,7 @@ from .features.student_success_gui import (
     show_printing_services_gui,
     show_textbook_store_gui,
 )
-from .email.email_helpers_gui import (
+from education_system.university_system.modules.shared.gui.main.email.email_helpers_gui import (
     compose_email,
     send_email_to_student,
     show_email_manager,
@@ -426,7 +434,7 @@ from .email.email_helpers_gui import (
     _send_student_update_email,
     _show_update_email_fallback
 )
-from .dashboard.dashboard_gui import (
+from education_system.university_system.modules.shared.gui.main.dashboard.dashboard_gui import (
     show_integrated_dashboard,
     create_overview_tab,
     create_stats_tab,
@@ -466,7 +474,6 @@ UnifiedManagementGUI.check_session_timer = check_session_timer
 UnifiedManagementGUI.switch_to_cli = switch_to_cli
 UnifiedManagementGUI.switch_system = switch_system
 UnifiedManagementGUI.shutdown_system = shutdown_system
-UnifiedManagementGUI.show_language_selector = show_language_selector
 UnifiedManagementGUI.show_student_records = show_student_records
 UnifiedManagementGUI.create_student_treeview = create_student_treeview
 UnifiedManagementGUI.view_students = view_students
@@ -685,4 +692,169 @@ UnifiedManagementGUI.show_student_id_gui = show_student_id_gui
 UnifiedManagementGUI.show_study_room_booking_gui = show_study_room_booking_gui
 UnifiedManagementGUI.show_printing_services_gui = show_printing_services_gui
 UnifiedManagementGUI.show_textbook_store_gui = show_textbook_store_gui
+
+
+def show_cross_system_notifications_gui(self):
+    """Launch the Cross-System Notifications frame in a top-level window."""
+    from education_system.shared.notifications.gui import CrossSystemNotificationsFrame
+    win = self.create_themed_toplevel(title="Cross-System Notifications", geometry="900x600")
+    frame = CrossSystemNotificationsFrame(win, db_path=None, auth=self.auth)
+    frame.pack(fill='both', expand=True)
+
+
+def show_student_journey_gui(self):
+    """Launch the Student Journey Dashboard in a top-level window."""
+    from education_system.shared.cross_system.journey_dashboard import JourneyDashboardFrame
+    win = self.create_themed_toplevel(title="Student Journey", geometry="900x600")
+    frame = JourneyDashboardFrame(win, db_path=None, auth=self.auth)
+    frame.pack(fill='both', expand=True)
+
+
+def show_analytics_dashboard_gui(self):
+    """Launch the Analytics Dashboard in a top-level window."""
+    from education_system.shared.analytics.analytics_gui import AnalyticsDashboardFrame
+    win = self.create_themed_toplevel(title="Analytics Dashboard", geometry="900x600")
+    frame = AnalyticsDashboardFrame(win, db_path=None, auth=self.auth)
+    frame.pack(fill='both', expand=True)
+
+
+def show_outcome_tracking_gui(self):
+    """Launch the Outcome Tracking frame in a top-level window."""
+    from education_system.shared.outcomes.outcomes_gui import OutcomeTrackingFrame
+    win = self.create_themed_toplevel(title="Outcome Tracking", geometry="900x600")
+    frame = OutcomeTrackingFrame(win, db_path=None, auth=self.auth)
+    frame.pack(fill='both', expand=True)
+
+
+def show_predictive_alerts_gui(self):
+    """Launch the Predictive Alerts frame in a top-level window."""
+    from education_system.shared.predictive.predictive_gui import PredictiveAlertsFrame
+    win = self.create_themed_toplevel(title="Predictive Alerts", geometry="900x600")
+    frame = PredictiveAlertsFrame(win, db_path=None, auth=self.auth)
+    frame.pack(fill='both', expand=True)
+
+
+def show_bulk_transfer_gui(self):
+    """Launch the Bulk Transfer frame in a top-level window."""
+    from education_system.shared.bulk_transfer.bulk_transfer_gui import BulkTransferFrame
+    win = self.create_themed_toplevel(title="Bulk Transfer", geometry="900x600")
+    frame = BulkTransferFrame(win, db_path=None, auth=self.auth)
+    frame.pack(fill='both', expand=True)
+
+
+def show_transfer_documents_gui(self):
+    """Launch the Transfer Documents frame in a top-level window."""
+    from education_system.shared.transfer_docs.transfer_docs_gui import TransferDocumentsFrame
+    win = self.create_themed_toplevel(title="Transfer Documents", geometry="900x600")
+    frame = TransferDocumentsFrame(win, db_path=None, auth=self.auth)
+    frame.pack(fill='both', expand=True)
+
+
+def show_reverse_lookup_gui(self):
+    """Launch the Reverse Lookup frame in a top-level window."""
+    from education_system.shared.reverse_lookup.reverse_lookup_gui import ReverseLookupFrame
+    win = self.create_themed_toplevel(title="Reverse Lookup", geometry="900x600")
+    frame = ReverseLookupFrame(win, db_path=None, auth=self.auth)
+    frame.pack(fill='both', expand=True)
+
+
+def show_parent_continuity_gui(self):
+    """Launch the Parent Continuity frame in a top-level window."""
+    from education_system.shared.parent_continuity.parent_gui import ParentContinuityFrame
+    win = self.create_themed_toplevel(title="Parent Continuity", geometry="900x600")
+    frame = ParentContinuityFrame(win, db_path=None, auth=self.auth)
+    frame.pack(fill='both', expand=True)
+
+
+def show_cross_system_calendar_gui(self):
+    """Launch the Cross-System Calendar frame in a top-level window."""
+    from education_system.shared.calendar.calendar_gui import CrossSystemCalendarFrame
+    win = self.create_themed_toplevel(title="Cross-System Calendar", geometry="900x600")
+    frame = CrossSystemCalendarFrame(win, db_path=None, auth=self.auth)
+    frame.pack(fill='both', expand=True)
+
+
+def show_inter_system_messaging_gui(self):
+    """Launch the Inter-System Messaging frame in a top-level window."""
+    from education_system.shared.messaging.messaging_gui import InterSystemMessagingFrame
+    win = self.create_themed_toplevel(title="Inter-System Messaging", geometry="900x600")
+    frame = InterSystemMessagingFrame(win, db_path=None, auth=self.auth)
+    frame.pack(fill='both', expand=True)
+
+
+def show_central_admin_gui(self):
+    """Launch the Central Admin Portal frame in a top-level window."""
+    from education_system.shared.admin_portal.admin_gui import CentralAdminFrame
+    win = self.create_themed_toplevel(title="Central Admin Portal", geometry="900x600")
+    frame = CentralAdminFrame(win, db_path=None, auth=self.auth)
+    frame.pack(fill='both', expand=True)
+
+
+def show_gdpr_compliance_gui(self):
+    """Launch the GDPR Compliance frame in a top-level window."""
+    from education_system.shared.gdpr.gdpr_gui import GDPRComplianceFrame
+    win = self.create_themed_toplevel(title="GDPR Compliance", geometry="900x600")
+    frame = GDPRComplianceFrame(win, db_path=None, auth=self.auth)
+    frame.pack(fill='both', expand=True)
+
+
+def show_shared_documents_gui(self):
+    """Launch the Shared Documents frame in a top-level window."""
+    from education_system.shared.documents.document_gui import SharedDocumentsFrame
+    win = self.create_themed_toplevel(title="Shared Documents", geometry="900x600")
+    frame = SharedDocumentsFrame(win, db_path=None, auth=self.auth)
+    frame.pack(fill='both', expand=True)
+
+
+def show_student_self_service_gui(self):
+    """Launch the Student Self-Service frame in a top-level window."""
+    from education_system.shared.student_portal.portal_gui import StudentSelfServiceFrame
+    win = self.create_themed_toplevel(title="Student Self-Service", geometry="900x600")
+    frame = StudentSelfServiceFrame(win, db_path=None, auth=self.auth)
+    frame.pack(fill='both', expand=True)
+
+
+def show_digital_transcript_gui(self):
+    """Launch the Digital Transcript frame in a top-level window."""
+    from education_system.shared.transcript.transcript_gui import DigitalTranscriptFrame
+    win = self.create_themed_toplevel(title="Digital Transcript", geometry="900x600")
+    frame = DigitalTranscriptFrame(win, db_path=None, auth=self.auth)
+    frame.pack(fill='both', expand=True)
+
+
+UnifiedManagementGUI.show_cross_system_notifications_gui = show_cross_system_notifications_gui
+UnifiedManagementGUI.show_student_journey_gui = show_student_journey_gui
+UnifiedManagementGUI.show_analytics_dashboard_gui = show_analytics_dashboard_gui
+UnifiedManagementGUI.show_outcome_tracking_gui = show_outcome_tracking_gui
+UnifiedManagementGUI.show_predictive_alerts_gui = show_predictive_alerts_gui
+UnifiedManagementGUI.show_bulk_transfer_gui = show_bulk_transfer_gui
+UnifiedManagementGUI.show_transfer_documents_gui = show_transfer_documents_gui
+UnifiedManagementGUI.show_reverse_lookup_gui = show_reverse_lookup_gui
+UnifiedManagementGUI.show_parent_continuity_gui = show_parent_continuity_gui
+UnifiedManagementGUI.show_cross_system_calendar_gui = show_cross_system_calendar_gui
+UnifiedManagementGUI.show_inter_system_messaging_gui = show_inter_system_messaging_gui
+UnifiedManagementGUI.show_central_admin_gui = show_central_admin_gui
+UnifiedManagementGUI.show_gdpr_compliance_gui = show_gdpr_compliance_gui
+UnifiedManagementGUI.show_shared_documents_gui = show_shared_documents_gui
+UnifiedManagementGUI.show_student_self_service_gui = show_student_self_service_gui
+UnifiedManagementGUI.show_digital_transcript_gui = show_digital_transcript_gui
+
+
+def show_certificates_gui(self):
+    """Launch the Certificates & Transcripts frame in a top-level window."""
+    from education_system.shared.certificates.certificates_gui import CertificatesGUI
+    win = self.create_themed_toplevel(title="Certificates & Transcripts", geometry="1000x650")
+    frame = CertificatesGUI(win, db_path=None, auth=self.auth)
+    frame.pack(fill='both', expand=True)
+
+
+UnifiedManagementGUI.show_certificates_gui = show_certificates_gui
+
+# New features (modules 21-30)
+UnifiedManagementGUI.show_hesa_export_gui = show_hesa_export_gui
+UnifiedManagementGUI.show_external_examiner_gui = show_external_examiner_gui
+UnifiedManagementGUI.show_student_app_gui = show_student_app_gui
+UnifiedManagementGUI.show_achievement_badge_gui = show_achievement_badge_gui
+UnifiedManagementGUI.show_study_recommendations_gui = show_study_recommendations_gui
+UnifiedManagementGUI.show_clearing_adjustment_gui = show_clearing_adjustment_gui
 

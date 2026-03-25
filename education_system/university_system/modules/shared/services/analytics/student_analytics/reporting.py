@@ -11,7 +11,7 @@ from datetime import datetime
 import openpyxl
 from openpyxl.styles import Font, Fill, PatternFill, Alignment
 
-from .config import CONFIG
+from education_system.university_system.modules.shared.services.analytics.student_analytics.config import CONFIG
 
 
 class ReportingMixin:

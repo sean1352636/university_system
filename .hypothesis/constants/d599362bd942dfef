@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/mentorship_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' = ?', ' AND ', ' WHERE ', ', ', '/api/mentorship', '/relationships', '/sessions', 'GET', 'POST', 'PUT', 'create', 'duration_minutes', 'end_date', 'items', 'mentee_feedback', 'mentee_id', 'mentee_id = ?', 'mentee_rating', 'mentor_feedback', 'mentor_id', 'mentor_id = ?', 'mentor_rating', 'mentorship', 'mentorship_session', 'mentorship_sessions', 'notes', 'progress_rating', 'relationship_id', 'session_date', 'skill_area', 'status', 'status = ?', 'sub', 'total', 'update', 'view']

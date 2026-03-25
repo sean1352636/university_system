@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/evaluation_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '/api/evaluations', '/course-evaluations', '/feedback', '/surveys', '/templates', 'GET', 'Normal', 'POST', 'academic_year', 'academic_year = ?', 'category_id', 'category_id = ?', 'course_evaluation', 'course_evaluations', 'create', 'description', 'end_date', 'evaluation_template', 'evaluation_templates', 'evaluations', 'feedback_submission', 'feedback_submissions', 'instructor_id', 'is_active', 'is_active = 1', 'is_anonymous', 'items', 'module_code', 'module_code = ?', 'priority', 'semester', 'start_date', 'status', 'status = ?', 'sub', 'survey_id', 'survey_id = ?', 'survey_responses', 'template_id', 'template_type', 'template_type = ?', 'title', 'total', 'type', 'type = ?', 'user_id', 'view']

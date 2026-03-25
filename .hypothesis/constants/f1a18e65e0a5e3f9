@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/enrollment_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d', '/<int:enrollment_id>', '/api/enrollments', 'DELETE', 'Enrolled', 'GET', 'POST', 'Standard', 'create', 'delete', 'enrollment', 'enrollments', 'items', 'message', 'module_code', 'module_code = ?', 'module_type', 'student_id', 'student_id = ?', 'sub', 'total', 'view']

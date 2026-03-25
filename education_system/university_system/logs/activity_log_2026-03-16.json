@@ -1,0 +1,81 @@
+{
+  "timestamp": "2026-03-16 11:59:05.687",
+  "user_id": 2,
+  "username": "S12345",
+  "role": "student",
+  "action": "request_document",
+  "module": "document_center",
+  "details": "Requested document: Enrollment Confirmation",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "1985078a-0b1e-4a9f-98d0-ec610d653070",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.0,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "LOW",
+  "trace_id": "93f27e88-0110-4594-9da7-cd8655e15552",
+  "stack_trace": null,
+  "metadata": null
+}
+{
+  "timestamp": "2026-03-16 14:34:11.875",
+  "user_id": "S12345",
+  "username": "S12345",
+  "role": "student",
+  "action": "update",
+  "module": "student_profile",
+  "details": "Profile updated for S12345",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "4157253a-6f7e-4f6e-ab69-a45bd9102a50",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.0,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "LOW",
+  "trace_id": "b5f84e2f-0d3c-42f1-9916-8a881990b6c3",
+  "stack_trace": null,
+  "metadata": null
+}
+{
+  "timestamp": "2026-03-16 16:07:59.786",
+  "user_id": "admin",
+  "username": "admin",
+  "role": "instructor",
+  "action": "calculate_ta_metrics",
+  "module": "ta_evaluation",
+  "details": "Calculated metrics for 1 TAs",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "5e08bbc7-2451-44d5-bbb1-99025232b62d",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.0,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "LOW",
+  "trace_id": "f3978019-6fa0-4fdf-9309-90d601fe36ff",
+  "stack_trace": null,
+  "metadata": null
+}

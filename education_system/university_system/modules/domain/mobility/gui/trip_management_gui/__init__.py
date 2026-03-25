@@ -1,5 +1,5 @@
-from .main_gui import TripManagementGUI
-from ._imports import safe_db_operation
+from education_system.university_system.modules.domain.mobility.gui.trip_management_gui.main_gui import TripManagementGUI
+from education_system.university_system.modules.domain.mobility.gui.trip_management_gui._imports import safe_db_operation
 
 import logging
 

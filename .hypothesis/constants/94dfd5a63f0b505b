@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/reporting/revenue_analytics/app.py
+# hypothesis_version: 6.151.9
+
+['AUD', 'CAD', 'EUR', 'EXCHANGE_API_KEY', 'GBP', 'USD', 'client_id', 'client_secret', 'environment', 'ignore', 'paypal', 'public_key', 'sandbox', 'secret_key', 'stripe', 'webhook_secret']

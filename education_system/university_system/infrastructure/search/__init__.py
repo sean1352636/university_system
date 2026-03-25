@@ -25,24 +25,24 @@ Usage:
     results = search.search("computer science", entity_type="students")
 """
 
-from .search_service import (
+from education_system.university_system.infrastructure.search.search_service import (
     SearchService,
     get_search_service,
     SearchResult,
     SearchQuery,
 )
 
-from .autocomplete import (
+from education_system.university_system.infrastructure.search.autocomplete import (
     AutocompleteService,
     get_autocomplete_service,
 )
 
-from .analytics import (
+from education_system.university_system.infrastructure.search.analytics import (
     SearchAnalytics,
     get_search_analytics,
 )
 
-from .indexer import (
+from education_system.university_system.infrastructure.search.indexer import (
     SearchIndexer,
     get_search_indexer,
 )

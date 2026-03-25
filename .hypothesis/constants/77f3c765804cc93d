@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/commerce/gui/restaurant_management_gui/orders/order_management.py
+# hypothesis_version: 6.151.9
+
+['1.0', '20', '300x200', '450x400', '800x600', '=', 'Already Paid', 'Arial', 'Cancel', 'Cancelled', 'Card', 'Cash', 'Completed', 'Confirm Payment', 'Connection failed', 'Error', 'Finance Account', 'N/A', 'Not Available', 'Paid', 'Payment Failed', 'Payment failed', 'Pending', 'Preparing', 'Process Payment', 'Ready', 'Restaurant', 'Student ID', 'Success', 'bold', 'both', 'common.cancel', 'common.error', 'common.na', 'common.success', 'common.update', 'common.warning', 'disabled', 'end', 'green', 'left', 'message', 'red', 'restaurant_system', 'success', 'values']

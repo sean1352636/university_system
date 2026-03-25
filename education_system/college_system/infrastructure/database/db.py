@@ -1,21 +1,22 @@
-"""Database connection management and utilities."""
+"""Database connection management and utilities for the College system."""
 
 import sqlite3
-import threading
-from contextlib import contextmanager
-from queue import Queue, Empty
 import logging
+from contextlib import contextmanager
 
 from education_system.college_system.core.paths import DB_FILE, ensure_directories
 from education_system.college_system.core.exceptions import DatabaseError
 from education_system.college_system.infrastructure.database.constants import (
     PRAGMAS, POOL_MIN_SIZE, POOL_MAX_SIZE, CONNECTION_TIMEOUT,
 )
+from education_system.shared.database.db import (
+    ConnectionPool as _SharedConnectionPool,
+    DatabaseManager as _SharedDatabaseManager,
+)
 
 logger = logging.getLogger(__name__)
 
 _db_path_override: str | None = None
-_lock = threading.Lock()
 
 
 def set_db_path(path: str):
@@ -66,6 +67,7 @@ def transaction(conn: sqlite3.Connection | None = None):
         yield conn
         conn.commit()
     except Exception:
+        logger.warning("Transaction rolled back due to exception", exc_info=True)
         conn.rollback()
         raise
     finally:
@@ -73,15 +75,19 @@ def transaction(conn: sqlite3.Connection | None = None):
             conn.close()
 
 
-class ConnectionPool:
-    """Simple SQLite connection pool."""
+class ConnectionPool(_SharedConnectionPool):
+    """College-specific connection pool using shared base."""
 
     def __init__(self, db_path: str | None = None, min_size: int = POOL_MIN_SIZE,
                  max_size: int = POOL_MAX_SIZE):
+        # Use college's connect() which applies system-specific settings
         self._db_path = db_path
-        self._max_size = max_size
-        self._pool: Queue = Queue(maxsize=max_size)
+        self._max = max_size
         self._size = 0
+
+        from queue import Queue
+        import threading
+        self._pool: Queue = Queue(maxsize=max_size)
         self._lock = threading.Lock()
 
         # Pre-create minimum connections
@@ -91,47 +97,29 @@ class ConnectionPool:
 
         logger.debug("Connection pool created (min=%d, max=%d)", min_size, max_size)
 
-    def get(self) -> sqlite3.Connection:
-        """Get a connection from the pool."""
+    def get_connection(self):
+        from queue import Empty
         try:
             return self._pool.get_nowait()
         except Empty:
             with self._lock:
-                if self._size < self._max_size:
+                if self._size < self._max:
                     self._size += 1
                     return connect(self._db_path)
-            # Wait for a connection to be returned
             return self._pool.get(timeout=CONNECTION_TIMEOUT)
 
-    def put(self, conn: sqlite3.Connection):
-        """Return a connection to the pool."""
+    def return_connection(self, conn):
         try:
             self._pool.put_nowait(conn)
         except Exception:
+            logger.warning("Connection pool full, closing excess connection", exc_info=True)
             conn.close()
             with self._lock:
                 self._size -= 1
 
-    def close_all(self):
-        """Close all connections in the pool."""
-        while not self._pool.empty():
-            try:
-                conn = self._pool.get_nowait()
-                conn.close()
-            except Empty:
-                break
-        with self._lock:
-            self._size = 0
-        logger.debug("Connection pool closed")
-
-    @contextmanager
-    def connection(self):
-        """Context manager that gets and returns a connection."""
-        conn = self.get()
-        try:
-            yield conn
-        finally:
-            self.put(conn)
+    # Keep backward-compatible aliases
+    get = get_connection
+    put = return_connection
 
 
 class DatabaseManager:
@@ -166,6 +154,7 @@ class DatabaseManager:
                 return cursor.lastrowid if cursor.lastrowid else cursor.rowcount
             except sqlite3.Error as e:
                 conn.rollback()
+                logger.error("Write query failed: %s", e)
                 raise DatabaseError(f"Write failed: {e}") from e
 
     @contextmanager
@@ -176,6 +165,7 @@ class DatabaseManager:
                 yield conn
                 conn.commit()
             except Exception:
+                logger.warning("DatabaseManager transaction rolled back due to exception", exc_info=True)
                 conn.rollback()
                 raise
 

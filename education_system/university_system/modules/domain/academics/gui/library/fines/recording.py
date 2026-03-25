@@ -4,7 +4,7 @@ Library Fines Management - Database persistence layer for payment recording.
 
 from datetime import datetime
 
-from .constants import (
+from education_system.university_system.modules.domain.academics.gui.library.fines.constants import (
     ORIGINAL_LIBRARY_AVAILABLE,
     DatabaseError,
     sqlite3,
@@ -18,7 +18,7 @@ except ImportError:
 
 
 def _record_fine_payment(self, conn, user_id, amount, payment_method, loans_paid=None):
-    """Record fine payment in library_fine_payments table for refund tracking.
+    """Record fine payment in payments table (source_type='library') for tracking.
 
     Args:
         conn: Database connection
@@ -30,6 +30,7 @@ def _record_fine_payment(self, conn, user_id, amount, payment_method, loans_paid
     try:
         cursor = conn.cursor()
         current_datetime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        current_date = datetime.now().strftime('%Y-%m-%d')
 
         # If specific loans weren't provided, try to find recently paid loans
         if not loans_paid:
@@ -53,18 +54,21 @@ def _record_fine_payment(self, conn, user_id, amount, payment_method, loans_paid
             # Use the total amount if individual amounts not specified
             payment_amt = amount_paid if amount_paid > 0 else amount
 
-            # Insert into library_fine_payments
+            # Insert into payments table with source_type='library'
             cursor.execute('''
-                INSERT INTO library_fine_payments
-                (loan_id, user_id, book_id, book_title, fine_amount, payment_amount,
-                 payment_method, payment_date, processed_by, transaction_ref, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO payments
+                (student_id, amount, currency, payment_method, payment_date, status,
+                 notes, created_by, created_at, source_type, reference_id, reference_type,
+                 payment_reference)
+                VALUES (?, ?, 'GBP', ?, ?, 'completed', ?, ?, ?, 'library', ?, 'loan', ?)
             ''', (
-                loan_id, user_id, book_id, book_title, payment_amt, payment_amt,
-                payment_method, current_datetime,
+                user_id, payment_amt,
+                payment_method, current_date,
+                f'Library fine payment - Book: {book_title} (book_id: {book_id})',
                 get_current_user_id() if ORIGINAL_LIBRARY_AVAILABLE else 'System',
-                f'PAY_{loan_id}_{datetime.now().strftime("%Y%m%d%H%M%S")}',
-                'completed'
+                current_datetime,
+                str(loan_id),
+                f'PAY_{loan_id}_{datetime.now().strftime("%Y%m%d%H%M%S")}'
             ))
 
         return True

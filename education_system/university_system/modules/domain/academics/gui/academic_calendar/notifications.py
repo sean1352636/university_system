@@ -2,9 +2,9 @@ import logging
 from datetime import datetime
 import re
 from typing import Any, Optional, List
-from .validators import sanitize_string
-from .exceptions import ValidationError, DatabaseError, SyncError
-from .database import DatabaseManager
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.validators import sanitize_string
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.exceptions import ValidationError, DatabaseError, SyncError
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.database import DatabaseManager
 
 gui_logger = logging.getLogger(__name__)
 

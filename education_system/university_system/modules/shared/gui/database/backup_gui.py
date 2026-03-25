@@ -1061,6 +1061,11 @@ class BackupGUI:
 
     def auto_refresh_backup_list(self):
         """Auto-refresh backup list every 30 seconds"""
+        try:
+            if not self.root.winfo_exists():
+                return
+        except Exception:
+            return
         self.refresh_backup_list()
         self.root.after(30000, self.auto_refresh_backup_list)
 

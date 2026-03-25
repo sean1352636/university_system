@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/gui/helpdesk/tickets_my.py
+# hypothesis_version: 6.151.9
+
+[100, 120, 200, ' AND status = ?', '%Y-%m-%d %H:%M:%S', '<<ComboboxSelected>>', '<Button-3>', '<Double-1>', 'Category', 'Created', 'Error', 'Filters', 'General', 'ID', 'Medium', 'My Tickets', 'N/A', 'New Ticket', 'No Subject', 'Open', 'Primary.TButton', 'Priority', 'Refresh', 'Reply', 'Status', 'Status:', 'Subject', 'Updated', 'View Details', 'WHERE user_id = ?', 'Warning', 'all', 'both', 'category', 'closed', 'create_ticket', 'created_at', 'default', 'en', 'end', 'ew', 'headings', 'horizontal', 'id', 'in progress', 'left', 'manage_tickets', 'medium', 'ns', 'nsew', 'open', 'priority', 'readonly', 'resolved', 'status', 'subject', 'text', 'ticket_id', 'updated_at', 'values', 'vertical', 'view_all_tickets', 'view_own_tickets', 'x']

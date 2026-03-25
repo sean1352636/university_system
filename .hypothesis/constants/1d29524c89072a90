@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/database/scheduling/scheduler.py
+# hypothesis_version: 6.151.9
+
+['%H:%M', 'auto_backup_enabled', 'backup_frequency', 'backup_type', 'cron_schedule', 'daily', 'full', 'monthly', 'scheduled backup', 'unknown', 'weekly']

@@ -2,8 +2,8 @@
 import logging
 
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from . import _globals
-from .export import export_single_student
+from education_system.university_system.modules.shared.services.analytics.advanced_search import _globals
+from education_system.university_system.modules.shared.services.analytics.advanced_search.export import export_single_student
 
 
 def display_search_results(results):
@@ -69,10 +69,10 @@ def display_search_results(results):
             except ValueError:
                 print("Invalid input.")
         elif choice == 'e':
-            from .bulk_ops import save_last_search_results
+            from education_system.university_system.modules.shared.services.analytics.advanced_search.bulk_ops import save_last_search_results
             save_last_search_results()
         elif choice == 's':
-            from .saved_searches import save_search_profile
+            from education_system.university_system.modules.shared.services.analytics.advanced_search.saved_searches import save_search_profile
             save_search_profile()
         elif choice == '' or choice == 'enter':
             break

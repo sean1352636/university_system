@@ -3,6 +3,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
+from education_system.college_system.core.i18n import t
 from education_system.college_system.modules.domain.equality_diversity.services.equality_diversity_service import EqualityDiversityService
 
 PERSON_TYPES = ["student", "staff", "governor", "visitor"]
@@ -26,7 +27,7 @@ class EqualityDiversityFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Equality & Diversity",
+        tk.Label(header, text=t("equality_diversity.management"),
                  font=("Helvetica", 15, "bold"), bg="#2c3e50", fg="white"
                  ).pack(side="left", padx=20, pady=10)
 
@@ -34,19 +35,19 @@ class EqualityDiversityFrame(tk.Frame):
         self._nb.pack(fill="both", expand=True, padx=10, pady=10)
 
         self._chars_tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(self._chars_tab, text="Protected Characteristics")
+        self._nb.add(self._chars_tab, text=t("equality_diversity.monitoring"))
         self._build_chars_tab()
 
         self._eia_tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(self._eia_tab, text="Impact Assessments")
+        self._nb.add(self._eia_tab, text=t("equality_diversity.impact_assessment"))
         self._build_eia_tab()
 
         self._obj_tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(self._obj_tab, text="Objectives")
+        self._nb.add(self._obj_tab, text=t("common.details"))
         self._build_obj_tab()
 
         self._stats_tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(self._stats_tab, text="Statistics")
+        self._nb.add(self._stats_tab, text=t("common.summary"))
         self._build_stats_tab()
 
     # ---- Protected Characteristics Tab ----
@@ -55,31 +56,32 @@ class EqualityDiversityFrame(tk.Frame):
         toolbar = tk.Frame(self._chars_tab, bg="#ecf0f1")
         toolbar.pack(fill="x", padx=5, pady=5)
 
-        tk.Label(toolbar, text="Person Type:", bg="#ecf0f1").pack(side="left", padx=(5, 2))
+        tk.Label(toolbar, text=t("common.type") + ":", bg="#ecf0f1").pack(side="left", padx=(5, 2))
         self._char_type = ttk.Combobox(toolbar, width=10, state="readonly",
                                         values=[""] + PERSON_TYPES)
         self._char_type.set("")
         self._char_type.pack(side="left", padx=2)
 
-        tk.Label(toolbar, text="Person ID:", bg="#ecf0f1").pack(side="left", padx=(8, 2))
+        tk.Label(toolbar, text=t("common.id") + ":", bg="#ecf0f1").pack(side="left", padx=(8, 2))
         self._char_pid = tk.Entry(toolbar, width=8)
         self._char_pid.pack(side="left", padx=2)
 
-        ttk.Button(toolbar, text="Search", command=self._load_chars).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="New Record", command=self._new_char).pack(side="right", padx=5)
-        ttk.Button(toolbar, text="Delete", command=self._delete_char).pack(side="right", padx=2)
-        ttk.Button(toolbar, text="Edit", command=self._edit_char).pack(side="right", padx=2)
-        ttk.Button(toolbar, text="View", command=self._view_char).pack(side="right", padx=2)
+        ttk.Button(toolbar, text=t("common.search"), command=self._load_chars).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("common.add"), command=self._new_char).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("common.delete"), command=self._delete_char).pack(side="right", padx=2)
+        ttk.Button(toolbar, text=t("common.edit"), command=self._edit_char).pack(side="right", padx=2)
+        ttk.Button(toolbar, text="Export CSV", command=self._export_csv).pack(side="right", padx=2)
+        ttk.Button(toolbar, text=t("common.view"), command=self._view_char).pack(side="right", padx=2)
 
         cols = ("id", "person_type", "person_id", "ethnicity", "religion",
                 "gender_identity", "disability", "pronouns")
         self._char_tree = ttk.Treeview(self._chars_tab, columns=cols,
                                         show="headings", height=15)
         for c, w, label in [
-            ("id", 40, "ID"), ("person_type", 80, "Type"),
-            ("person_id", 70, "Person ID"), ("ethnicity", 110, "Ethnicity"),
-            ("religion", 90, "Religion"), ("gender_identity", 100, "Gender"),
-            ("disability", 90, "Disability"), ("pronouns", 80, "Pronouns"),
+            ("id", 40, t("common.id")), ("person_type", 80, t("common.type")),
+            ("person_id", 70, t("common.id")), ("ethnicity", 110, t("common.category")),
+            ("religion", 90, t("common.category")), ("gender_identity", 100, t("common.category")),
+            ("disability", 90, t("common.status")), ("pronouns", 80, t("common.name")),
         ]:
             self._char_tree.heading(c, text=label)
             self._char_tree.column(c, width=w,
@@ -110,12 +112,12 @@ class EqualityDiversityFrame(tk.Frame):
                     r.get("disability_status", ""),
                     r.get("preferred_pronouns", "")))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _selected_char_id(self):
         sel = self._char_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select a record first.")
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"))
             return None
         return int(sel[0])
 
@@ -125,7 +127,7 @@ class EqualityDiversityFrame(tk.Frame):
         fields = {}
         row = 0
 
-        tk.Label(win, text="Person Type*:").grid(row=row, column=0, padx=10,
+        tk.Label(win, text=t("common.type") + "*:").grid(row=row, column=0, padx=10,
                                                   pady=4, sticky="e")
         ptype_cb = ttk.Combobox(win, width=25, state="readonly",
                                  values=PERSON_TYPES)
@@ -135,15 +137,15 @@ class EqualityDiversityFrame(tk.Frame):
         row += 1
 
         for label, key in [
-            ("Person ID*:", "person_id"),
-            ("Ethnicity:", "ethnicity"), ("Religion:", "religion"),
-            ("Sexual Orientation:", "sexual_orientation"),
-            ("Gender Identity:", "gender_identity"),
-            ("Disability Status:", "disability_status"),
-            ("Disability Details:", "disability_details"),
-            ("Marital Status:", "marital_status"),
-            ("Pregnancy/Maternity:", "pregnancy_maternity"),
-            ("Preferred Pronouns:", "preferred_pronouns"),
+            (t("common.id") + "*:", "person_id"),
+            (t("common.category") + ":", "ethnicity"), (t("common.category") + ":", "religion"),
+            (t("common.category") + ":", "sexual_orientation"),
+            (t("common.category") + ":", "gender_identity"),
+            (t("common.status") + ":", "disability_status"),
+            (t("common.details") + ":", "disability_details"),
+            (t("common.status") + ":", "marital_status"),
+            (t("common.status") + ":", "pregnancy_maternity"),
+            (t("common.name") + ":", "preferred_pronouns"),
         ]:
             tk.Label(win, text=label).grid(row=row, column=0, padx=10,
                                             pady=4, sticky="e")
@@ -154,7 +156,7 @@ class EqualityDiversityFrame(tk.Frame):
             row += 1
 
         consent_var = tk.BooleanVar(value=bool(rec.get("consent_given", 1)))
-        ttk.Checkbutton(win, text="Consent Given", variable=consent_var).grid(
+        ttk.Checkbutton(win, text=t("common.yes"), variable=consent_var).grid(
             row=row, column=1, sticky="w", padx=10, pady=2)
         fields["_consent_var"] = consent_var
         row += 1
@@ -163,7 +165,7 @@ class EqualityDiversityFrame(tk.Frame):
 
     def _new_char(self):
         win = tk.Toplevel(self)
-        win.title("New Protected Characteristics Record")
+        win.title(t("common.add"))
         win.geometry("480x500")
         win.resizable(False, False)
 
@@ -172,7 +174,7 @@ class EqualityDiversityFrame(tk.Frame):
         def save():
             pid = fields["person_id"].get().strip()
             if not pid:
-                messagebox.showwarning("Validation", "Person ID is required.")
+                messagebox.showwarning(t("common.validation"), t("common.field_required"))
                 return
             try:
                 self._svc.create_characteristic(
@@ -187,13 +189,13 @@ class EqualityDiversityFrame(tk.Frame):
                     pregnancy_maternity=fields["pregnancy_maternity"].get().strip() or None,
                     preferred_pronouns=fields["preferred_pronouns"].get().strip() or None,
                     consent_given=1 if fields["_consent_var"].get() else 0)
-                messagebox.showinfo("Success", "Record created.")
+                messagebox.showinfo(t("common.success"), t("common.created_success"))
                 win.destroy()
                 self._load_chars()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(win, text="Save", command=save).grid(
+        ttk.Button(win, text=t("common.save"), command=save).grid(
             row=row, column=0, columnspan=2, pady=12)
 
     def _view_char(self):
@@ -202,29 +204,29 @@ class EqualityDiversityFrame(tk.Frame):
             return
         rec = self._svc.get_characteristic(cid)
         if not rec:
-            messagebox.showwarning("Not Found", "Record not found.")
+            messagebox.showwarning(t("common.warning"), t("common.no_data"))
             return
 
         win = tk.Toplevel(self)
-        win.title(f"Characteristics #{cid}")
+        win.title(f"{t('equality_diversity.monitoring')} #{cid}")
         win.geometry("440x440")
         win.resizable(False, False)
 
         display = [
-            ("ID", rec.get("id")),
-            ("Person Type", rec.get("person_type")),
-            ("Person ID", rec.get("person_id")),
-            ("Ethnicity", rec.get("ethnicity")),
-            ("Religion", rec.get("religion")),
-            ("Sexual Orientation", rec.get("sexual_orientation")),
-            ("Gender Identity", rec.get("gender_identity")),
-            ("Disability Status", rec.get("disability_status")),
-            ("Disability Details", rec.get("disability_details")),
-            ("Marital Status", rec.get("marital_status")),
-            ("Pregnancy/Maternity", rec.get("pregnancy_maternity")),
-            ("Preferred Pronouns", rec.get("preferred_pronouns")),
-            ("Consent Given", "Yes" if rec.get("consent_given") else "No"),
-            ("Collected", rec.get("collection_date")),
+            (t("common.id"), rec.get("id")),
+            (t("common.type"), rec.get("person_type")),
+            (t("common.id"), rec.get("person_id")),
+            (t("common.category"), rec.get("ethnicity")),
+            (t("common.category"), rec.get("religion")),
+            (t("common.category"), rec.get("sexual_orientation")),
+            (t("common.category"), rec.get("gender_identity")),
+            (t("common.status"), rec.get("disability_status")),
+            (t("common.details"), rec.get("disability_details")),
+            (t("common.status"), rec.get("marital_status")),
+            (t("common.status"), rec.get("pregnancy_maternity")),
+            (t("common.name"), rec.get("preferred_pronouns")),
+            (t("common.yes"), t("common.yes") if rec.get("consent_given") else t("common.no")),
+            (t("common.date"), rec.get("collection_date")),
         ]
         frame = tk.Frame(win, padx=15, pady=10)
         frame.pack(fill="both", expand=True)
@@ -244,7 +246,7 @@ class EqualityDiversityFrame(tk.Frame):
             return
 
         win = tk.Toplevel(self)
-        win.title(f"Edit Characteristics #{cid}")
+        win.title(f"{t('common.edit')} #{cid}")
         win.geometry("480x500")
         win.resizable(False, False)
 
@@ -264,27 +266,27 @@ class EqualityDiversityFrame(tk.Frame):
                     pregnancy_maternity=fields["pregnancy_maternity"].get().strip() or None,
                     preferred_pronouns=fields["preferred_pronouns"].get().strip() or None,
                     consent_given=1 if fields["_consent_var"].get() else 0)
-                messagebox.showinfo("Success", "Record updated.")
+                messagebox.showinfo(t("common.success"), t("common.updated_success"))
                 win.destroy()
                 self._load_chars()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(win, text="Save", command=save).grid(
+        ttk.Button(win, text=t("common.save"), command=save).grid(
             row=row, column=0, columnspan=2, pady=12)
 
     def _delete_char(self):
         cid = self._selected_char_id()
         if not cid:
             return
-        if not messagebox.askyesno("Confirm", f"Delete record #{cid}?"):
+        if not messagebox.askyesno(t("common.confirm_delete"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_characteristic(cid)
-            messagebox.showinfo("Deleted", "Record deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_chars()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ---- Impact Assessments Tab ----
 
@@ -292,26 +294,27 @@ class EqualityDiversityFrame(tk.Frame):
         toolbar = tk.Frame(self._eia_tab, bg="#ecf0f1")
         toolbar.pack(fill="x", padx=5, pady=5)
 
-        tk.Label(toolbar, text="Impact:", bg="#ecf0f1").pack(side="left", padx=(5, 2))
+        tk.Label(toolbar, text=t("equality_diversity.impact_assessment") + ":", bg="#ecf0f1").pack(side="left", padx=(5, 2))
         self._eia_impact = ttk.Combobox(toolbar, width=10, state="readonly",
                                          values=[""] + IMPACT_TYPES)
         self._eia_impact.set("")
         self._eia_impact.pack(side="left", padx=2)
 
-        ttk.Button(toolbar, text="Refresh", command=self._load_eia).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="New Assessment", command=self._new_eia).pack(side="right", padx=5)
-        ttk.Button(toolbar, text="Delete", command=self._delete_eia).pack(side="right", padx=2)
-        ttk.Button(toolbar, text="Edit", command=self._edit_eia).pack(side="right", padx=2)
+        ttk.Button(toolbar, text=t("common.refresh"), command=self._load_eia).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("common.add"), command=self._new_eia).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("common.delete"), command=self._delete_eia).pack(side="right", padx=2)
+        ttk.Button(toolbar, text=t("common.edit"), command=self._edit_eia).pack(side="right", padx=2)
+        ttk.Button(toolbar, text="Export CSV", command=self._export_eia_csv).pack(side="right", padx=2)
 
         cols = ("id", "policy", "assessor", "date", "group",
                 "impact_type", "status")
         self._eia_tree = ttk.Treeview(self._eia_tab, columns=cols,
                                        show="headings", height=15)
         for c, w, label in [
-            ("id", 40, "ID"), ("policy", 200, "Policy/Practice"),
-            ("assessor", 110, "Assessor"), ("date", 90, "Date"),
-            ("group", 110, "Protected Group"),
-            ("impact_type", 80, "Impact"), ("status", 70, "Status"),
+            ("id", 40, t("common.id")), ("policy", 200, t("common.title")),
+            ("assessor", 110, t("apprenticeships.assessor")), ("date", 90, t("common.date")),
+            ("group", 110, t("common.category")),
+            ("impact_type", 80, t("equality_diversity.impact_assessment")), ("status", 70, t("common.status")),
         ]:
             self._eia_tree.heading(c, text=label)
             self._eia_tree.column(c, width=w,
@@ -337,22 +340,22 @@ class EqualityDiversityFrame(tk.Frame):
                     r.get("protected_group", ""),
                     r.get("impact_type", ""), r.get("status", "")))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _new_eia(self):
         win = tk.Toplevel(self)
-        win.title("New Equality Impact Assessment")
+        win.title(t("common.add"))
         win.geometry("480x420")
         win.resizable(False, False)
 
         fields = {}
         row = 0
         for label, key in [
-            ("Policy/Practice*:", "policy_or_practice"),
-            ("Assessor:", "assessor"),
-            ("Date (YYYY-MM-DD):", "assessment_date"),
-            ("Protected Group:", "protected_group"),
-            ("Review Date:", "review_date"),
+            (t("common.title") + "*:", "policy_or_practice"),
+            (t("apprenticeships.assessor") + ":", "assessor"),
+            (t("common.date") + ":", "assessment_date"),
+            (t("common.category") + ":", "protected_group"),
+            (t("common.date") + ":", "review_date"),
         ]:
             tk.Label(win, text=label).grid(row=row, column=0, padx=10,
                                             pady=4, sticky="e")
@@ -361,7 +364,7 @@ class EqualityDiversityFrame(tk.Frame):
             fields[key] = e
             row += 1
 
-        tk.Label(win, text="Impact Type:").grid(row=row, column=0, padx=10,
+        tk.Label(win, text=t("equality_diversity.impact_assessment") + ":").grid(row=row, column=0, padx=10,
                                                  pady=4, sticky="e")
         impact_cb = ttk.Combobox(win, width=27, state="readonly",
                                   values=IMPACT_TYPES)
@@ -369,13 +372,13 @@ class EqualityDiversityFrame(tk.Frame):
         impact_cb.grid(row=row, column=1, padx=10, pady=4)
         row += 1
 
-        tk.Label(win, text="Potential Impact:").grid(row=row, column=0,
+        tk.Label(win, text=t("common.description") + ":").grid(row=row, column=0,
                                                       padx=10, pady=4, sticky="ne")
         pi_txt = tk.Text(win, width=30, height=3)
         pi_txt.grid(row=row, column=1, padx=10, pady=4)
         row += 1
 
-        tk.Label(win, text="Mitigating Actions:").grid(row=row, column=0,
+        tk.Label(win, text=t("common.notes") + ":").grid(row=row, column=0,
                                                         padx=10, pady=4, sticky="ne")
         ma_txt = tk.Text(win, width=30, height=3)
         ma_txt.grid(row=row, column=1, padx=10, pady=4)
@@ -384,8 +387,8 @@ class EqualityDiversityFrame(tk.Frame):
         def save():
             policy = fields["policy_or_practice"].get().strip()
             if not policy:
-                messagebox.showwarning("Validation",
-                                        "Policy/Practice is required.")
+                messagebox.showwarning(t("common.validation"),
+                                        t("common.field_required"))
                 return
             try:
                 self._svc.create_assessment(
@@ -397,19 +400,19 @@ class EqualityDiversityFrame(tk.Frame):
                     potential_impact=pi_txt.get("1.0", "end-1c").strip() or None,
                     mitigating_actions=ma_txt.get("1.0", "end-1c").strip() or None,
                     review_date=fields["review_date"].get().strip() or None)
-                messagebox.showinfo("Success", "Assessment created.")
+                messagebox.showinfo(t("common.success"), t("common.created_success"))
                 win.destroy()
                 self._load_eia()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(win, text="Save", command=save).grid(
+        ttk.Button(win, text=t("common.save"), command=save).grid(
             row=row, column=0, columnspan=2, pady=12)
 
     def _edit_eia(self):
         sel = self._eia_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select an assessment.")
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"))
             return
         eid = int(sel[0])
         rec = self._svc.get_assessment(eid)
@@ -417,18 +420,18 @@ class EqualityDiversityFrame(tk.Frame):
             return
 
         win = tk.Toplevel(self)
-        win.title(f"Edit Assessment #{eid}")
+        win.title(f"{t('common.edit')} #{eid}")
         win.geometry("480x480")
         win.resizable(False, False)
 
         fields = {}
         row = 0
         for label, key in [
-            ("Policy/Practice*:", "policy_or_practice"),
-            ("Assessor:", "assessor"),
-            ("Date:", "assessment_date"),
-            ("Protected Group:", "protected_group"),
-            ("Review Date:", "review_date"),
+            (t("common.title") + "*:", "policy_or_practice"),
+            (t("apprenticeships.assessor") + ":", "assessor"),
+            (t("common.date") + ":", "assessment_date"),
+            (t("common.category") + ":", "protected_group"),
+            (t("common.date") + ":", "review_date"),
         ]:
             tk.Label(win, text=label).grid(row=row, column=0, padx=10,
                                             pady=4, sticky="e")
@@ -438,7 +441,7 @@ class EqualityDiversityFrame(tk.Frame):
             fields[key] = e
             row += 1
 
-        tk.Label(win, text="Impact Type:").grid(row=row, column=0, padx=10,
+        tk.Label(win, text=t("equality_diversity.impact_assessment") + ":").grid(row=row, column=0, padx=10,
                                                  pady=4, sticky="e")
         impact_cb = ttk.Combobox(win, width=27, state="readonly",
                                   values=IMPACT_TYPES)
@@ -446,7 +449,7 @@ class EqualityDiversityFrame(tk.Frame):
         impact_cb.grid(row=row, column=1, padx=10, pady=4)
         row += 1
 
-        tk.Label(win, text="Status:").grid(row=row, column=0, padx=10,
+        tk.Label(win, text=t("common.status") + ":").grid(row=row, column=0, padx=10,
                                             pady=4, sticky="e")
         status_cb = ttk.Combobox(win, width=27, state="readonly",
                                   values=["active", "archived", "under_review"])
@@ -454,14 +457,14 @@ class EqualityDiversityFrame(tk.Frame):
         status_cb.grid(row=row, column=1, padx=10, pady=4)
         row += 1
 
-        tk.Label(win, text="Potential Impact:").grid(row=row, column=0,
+        tk.Label(win, text=t("common.description") + ":").grid(row=row, column=0,
                                                       padx=10, pady=4, sticky="ne")
         pi_txt = tk.Text(win, width=30, height=3)
         pi_txt.insert("1.0", rec.get("potential_impact", "") or "")
         pi_txt.grid(row=row, column=1, padx=10, pady=4)
         row += 1
 
-        tk.Label(win, text="Mitigating Actions:").grid(row=row, column=0,
+        tk.Label(win, text=t("common.notes") + ":").grid(row=row, column=0,
                                                         padx=10, pady=4, sticky="ne")
         ma_txt = tk.Text(win, width=30, height=3)
         ma_txt.insert("1.0", rec.get("mitigating_actions", "") or "")
@@ -481,29 +484,29 @@ class EqualityDiversityFrame(tk.Frame):
                     potential_impact=pi_txt.get("1.0", "end-1c").strip() or None,
                     mitigating_actions=ma_txt.get("1.0", "end-1c").strip() or None,
                     review_date=fields["review_date"].get().strip() or None)
-                messagebox.showinfo("Success", "Assessment updated.")
+                messagebox.showinfo(t("common.success"), t("common.updated_success"))
                 win.destroy()
                 self._load_eia()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(win, text="Save", command=save).grid(
+        ttk.Button(win, text=t("common.save"), command=save).grid(
             row=row, column=0, columnspan=2, pady=12)
 
     def _delete_eia(self):
         sel = self._eia_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select an assessment.")
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"))
             return
         eid = int(sel[0])
-        if not messagebox.askyesno("Confirm", f"Delete assessment #{eid}?"):
+        if not messagebox.askyesno(t("common.confirm_delete"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_assessment(eid)
-            messagebox.showinfo("Deleted", "Assessment deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_eia()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ---- Objectives Tab ----
 
@@ -511,30 +514,31 @@ class EqualityDiversityFrame(tk.Frame):
         toolbar = tk.Frame(self._obj_tab, bg="#ecf0f1")
         toolbar.pack(fill="x", padx=5, pady=5)
 
-        tk.Label(toolbar, text="Status:", bg="#ecf0f1").pack(side="left", padx=(5, 2))
+        tk.Label(toolbar, text=t("common.status") + ":", bg="#ecf0f1").pack(side="left", padx=(5, 2))
         self._obj_status = ttk.Combobox(toolbar, width=10, state="readonly",
                                          values=[""] + OBJ_STATUSES)
         self._obj_status.set("")
         self._obj_status.pack(side="left", padx=2)
 
-        tk.Label(toolbar, text="Year:", bg="#ecf0f1").pack(side="left", padx=(8, 2))
+        tk.Label(toolbar, text=t("common.date") + ":", bg="#ecf0f1").pack(side="left", padx=(8, 2))
         self._obj_year = tk.Entry(toolbar, width=8)
         self._obj_year.pack(side="left", padx=2)
 
-        ttk.Button(toolbar, text="Refresh", command=self._load_obj).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="New Objective", command=self._new_obj).pack(side="right", padx=5)
-        ttk.Button(toolbar, text="Delete", command=self._delete_obj).pack(side="right", padx=2)
-        ttk.Button(toolbar, text="Edit", command=self._edit_obj).pack(side="right", padx=2)
+        ttk.Button(toolbar, text=t("common.refresh"), command=self._load_obj).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("common.add"), command=self._new_obj).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("common.delete"), command=self._delete_obj).pack(side="right", padx=2)
+        ttk.Button(toolbar, text=t("common.edit"), command=self._edit_obj).pack(side="right", padx=2)
+        ttk.Button(toolbar, text="Export CSV", command=self._export_obj_csv).pack(side="right", padx=2)
 
         cols = ("id", "objective", "group", "target", "progress",
                 "year", "status")
         self._obj_tree = ttk.Treeview(self._obj_tab, columns=cols,
                                        show="headings", height=15)
         for c, w, label in [
-            ("id", 40, "ID"), ("objective", 220, "Objective"),
-            ("group", 110, "Protected Group"), ("target", 110, "Target"),
-            ("progress", 110, "Progress"), ("year", 70, "Year"),
-            ("status", 70, "Status"),
+            ("id", 40, t("common.id")), ("objective", 220, t("common.description")),
+            ("group", 110, t("common.category")), ("target", 110, t("value_added.target")),
+            ("progress", 110, t("ilp.progress")), ("year", 70, t("common.date")),
+            ("status", 70, t("common.status")),
         ]:
             self._obj_tree.heading(c, text=label)
             self._obj_tree.column(c, width=w,
@@ -562,20 +566,20 @@ class EqualityDiversityFrame(tk.Frame):
                     r.get("progress", ""), r.get("academic_year", ""),
                     r.get("status", "")))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _new_obj(self):
         win = tk.Toplevel(self)
-        win.title("New Equality Objective")
+        win.title(t("common.add"))
         win.geometry("460x360")
         win.resizable(False, False)
 
         fields = {}
         row = 0
         for label, key in [
-            ("Protected Group:", "protected_group"),
-            ("Target:", "target"),
-            ("Academic Year:", "academic_year"),
+            (t("common.category") + ":", "protected_group"),
+            (t("value_added.target") + ":", "target"),
+            (t("common.date") + ":", "academic_year"),
         ]:
             tk.Label(win, text=label).grid(row=row, column=0, padx=10,
                                             pady=5, sticky="e")
@@ -584,13 +588,13 @@ class EqualityDiversityFrame(tk.Frame):
             fields[key] = e
             row += 1
 
-        tk.Label(win, text="Objective*:").grid(row=row, column=0, padx=10,
+        tk.Label(win, text=t("common.description") + "*:").grid(row=row, column=0, padx=10,
                                                 pady=5, sticky="ne")
         obj_txt = tk.Text(win, width=30, height=3)
         obj_txt.grid(row=row, column=1, padx=10, pady=5)
         row += 1
 
-        tk.Label(win, text="Progress:").grid(row=row, column=0, padx=10,
+        tk.Label(win, text=t("ilp.progress") + ":").grid(row=row, column=0, padx=10,
                                               pady=5, sticky="ne")
         prog_txt = tk.Text(win, width=30, height=3)
         prog_txt.grid(row=row, column=1, padx=10, pady=5)
@@ -599,7 +603,7 @@ class EqualityDiversityFrame(tk.Frame):
         def save():
             obj = obj_txt.get("1.0", "end-1c").strip()
             if not obj:
-                messagebox.showwarning("Validation", "Objective is required.")
+                messagebox.showwarning(t("common.validation"), t("common.field_required"))
                 return
             try:
                 self._svc.create_objective(
@@ -608,19 +612,19 @@ class EqualityDiversityFrame(tk.Frame):
                     target=fields["target"].get().strip() or None,
                     progress=prog_txt.get("1.0", "end-1c").strip() or None,
                     academic_year=fields["academic_year"].get().strip() or None)
-                messagebox.showinfo("Success", "Objective created.")
+                messagebox.showinfo(t("common.success"), t("common.created_success"))
                 win.destroy()
                 self._load_obj()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(win, text="Save", command=save).grid(
+        ttk.Button(win, text=t("common.save"), command=save).grid(
             row=row, column=0, columnspan=2, pady=12)
 
     def _edit_obj(self):
         sel = self._obj_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select an objective.")
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"))
             return
         oid = int(sel[0])
         rec = self._svc.get_objective(oid)
@@ -628,16 +632,16 @@ class EqualityDiversityFrame(tk.Frame):
             return
 
         win = tk.Toplevel(self)
-        win.title(f"Edit Objective #{oid}")
+        win.title(f"{t('common.edit')} #{oid}")
         win.geometry("460x420")
         win.resizable(False, False)
 
         fields = {}
         row = 0
         for label, key in [
-            ("Protected Group:", "protected_group"),
-            ("Target:", "target"),
-            ("Academic Year:", "academic_year"),
+            (t("common.category") + ":", "protected_group"),
+            (t("value_added.target") + ":", "target"),
+            (t("common.date") + ":", "academic_year"),
         ]:
             tk.Label(win, text=label).grid(row=row, column=0, padx=10,
                                             pady=5, sticky="e")
@@ -647,7 +651,7 @@ class EqualityDiversityFrame(tk.Frame):
             fields[key] = e
             row += 1
 
-        tk.Label(win, text="Status:").grid(row=row, column=0, padx=10,
+        tk.Label(win, text=t("common.status") + ":").grid(row=row, column=0, padx=10,
                                             pady=5, sticky="e")
         status_cb = ttk.Combobox(win, width=27, state="readonly",
                                   values=OBJ_STATUSES)
@@ -655,14 +659,14 @@ class EqualityDiversityFrame(tk.Frame):
         status_cb.grid(row=row, column=1, padx=10, pady=5)
         row += 1
 
-        tk.Label(win, text="Objective*:").grid(row=row, column=0, padx=10,
+        tk.Label(win, text=t("common.description") + "*:").grid(row=row, column=0, padx=10,
                                                 pady=5, sticky="ne")
         obj_txt = tk.Text(win, width=30, height=3)
         obj_txt.insert("1.0", rec.get("objective", "") or "")
         obj_txt.grid(row=row, column=1, padx=10, pady=5)
         row += 1
 
-        tk.Label(win, text="Progress:").grid(row=row, column=0, padx=10,
+        tk.Label(win, text=t("ilp.progress") + ":").grid(row=row, column=0, padx=10,
                                               pady=5, sticky="ne")
         prog_txt = tk.Text(win, width=30, height=3)
         prog_txt.insert("1.0", rec.get("progress", "") or "")
@@ -679,29 +683,29 @@ class EqualityDiversityFrame(tk.Frame):
                     progress=prog_txt.get("1.0", "end-1c").strip() or None,
                     academic_year=fields["academic_year"].get().strip() or None,
                     status=status_cb.get())
-                messagebox.showinfo("Success", "Objective updated.")
+                messagebox.showinfo(t("common.success"), t("common.updated_success"))
                 win.destroy()
                 self._load_obj()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(win, text="Save", command=save).grid(
+        ttk.Button(win, text=t("common.save"), command=save).grid(
             row=row, column=0, columnspan=2, pady=12)
 
     def _delete_obj(self):
         sel = self._obj_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select an objective.")
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"))
             return
         oid = int(sel[0])
-        if not messagebox.askyesno("Confirm", f"Delete objective #{oid}?"):
+        if not messagebox.askyesno(t("common.confirm_delete"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_objective(oid)
-            messagebox.showinfo("Deleted", "Objective deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_obj()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ---- Statistics Tab ----
 
@@ -710,19 +714,19 @@ class EqualityDiversityFrame(tk.Frame):
                                       padx=20, pady=20)
         self._stats_frame.pack(fill="both", expand=True)
 
-        ttk.Button(self._stats_frame, text="Refresh Statistics",
+        ttk.Button(self._stats_frame, text=t("common.refresh"),
                    command=self._load_stats).pack(anchor="w", pady=(0, 15))
 
         self._stats_labels = {}
         for key, label in [
-            ("total_records", "Total Characteristics Records"),
-            ("student_records", "Student Records"),
-            ("staff_records", "Staff Records"),
-            ("disability_declared", "Disability Declared"),
-            ("total_assessments", "Total Impact Assessments"),
-            ("active_assessments", "Active Assessments"),
-            ("total_objectives", "Total Objectives"),
-            ("active_objectives", "Active Objectives"),
+            ("total_records", t("common.total")),
+            ("student_records", t("common.student_name")),
+            ("staff_records", t("common.name")),
+            ("disability_declared", t("common.status")),
+            ("total_assessments", t("equality_diversity.impact_assessment")),
+            ("active_assessments", t("common.active")),
+            ("total_objectives", t("common.total")),
+            ("active_objectives", t("common.active")),
         ]:
             row_frame = tk.Frame(self._stats_frame, bg="#ecf0f1")
             row_frame.pack(fill="x", pady=3)
@@ -740,7 +744,19 @@ class EqualityDiversityFrame(tk.Frame):
             for key, lbl in self._stats_labels.items():
                 lbl.config(text=str(stats.get(key, 0)))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._char_tree, "equality_diversity_characteristics_export.csv")
+
+    def _export_eia_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._eia_tree, "equality_diversity_assessments_export.csv")
+
+    def _export_obj_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._obj_tree, "equality_diversity_objectives_export.csv")
 
     def refresh(self):
         self._load_chars()

@@ -3,6 +3,7 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import VisitorError, ValidationError
 from education_system.college_system.infrastructure.database.db import connect
+from education_system.college_system.core.sql_safety import validate_identifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -27,10 +28,26 @@ class VisitorService:
             raise ValidationError("purpose is required.")
         conn = self._conn()
         try:
+            # Build INSERT with only non-None values so DB defaults apply
+            fields = {k: v for k, v in {
+                'first_name': kwargs.get('first_name'),
+                'last_name': kwargs.get('last_name'),
+                'organization': kwargs.get('organization'),
+                'purpose': kwargs.get('purpose'),
+                'visiting_staff_id': kwargs.get('visiting_staff_id'),
+                'dbs_checked': kwargs.get('dbs_checked'),
+                'safeguarding_briefed': kwargs.get('safeguarding_briefed'),
+                'badge_number': kwargs.get('badge_number'),
+                'sign_in_time': kwargs.get('sign_in_time'),
+                'sign_out_time': kwargs.get('sign_out_time'),
+                'vehicle_reg': kwargs.get('vehicle_reg'),
+                'status': kwargs.get('status'),
+            }.items() if v is not None}
+            cols = ", ".join(fields.keys())
+            placeholders = ", ".join("?" for _ in fields)
             conn.execute(
-                """INSERT INTO visitors (first_name, last_name, organization, purpose, visiting_staff_id, dbs_checked, safeguarding_briefed, badge_number, sign_in_time, sign_out_time, vehicle_reg, status)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (kwargs.get('first_name'), kwargs.get('last_name'), kwargs.get('organization'), kwargs.get('purpose'), kwargs.get('visiting_staff_id'), kwargs.get('dbs_checked'), kwargs.get('safeguarding_briefed'), kwargs.get('badge_number'), kwargs.get('sign_in_time'), kwargs.get('sign_out_time'), kwargs.get('vehicle_reg'), kwargs.get('status'),),
+                f"INSERT INTO visitors ({cols}) VALUES ({placeholders})",
+                list(fields.values()),
             )
             conn.commit()
             row = conn.execute(
@@ -62,7 +79,7 @@ class VisitorService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -80,7 +97,7 @@ class VisitorService:
         if not updates:
             raise ValidationError("No valid fields to update.")
         updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [pk]
         conn = self._conn()
         try:
@@ -118,7 +135,7 @@ class VisitorService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         conn = self._conn()
         try:

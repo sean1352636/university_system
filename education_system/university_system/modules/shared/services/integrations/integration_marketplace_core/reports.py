@@ -1,6 +1,6 @@
 """Reports & Dashboard Manager and CLI functions"""
 
-from ._imports import datetime, timedelta, Any, Dict, List, get_connection
+from education_system.university_system.modules.shared.services.integrations.integration_marketplace_core._imports import datetime, timedelta, Any, Dict, List, get_connection
 
 
 class ReportsDashboardManager:

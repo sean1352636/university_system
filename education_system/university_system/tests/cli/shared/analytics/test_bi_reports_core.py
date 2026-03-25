@@ -31,7 +31,7 @@ class TestReportDefinitionManager:
         mock_conn.__enter__ = Mock(return_value=mock_conn)
         mock_conn.__exit__ = Mock(return_value=False)
 
-        with patch('university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
+        with patch('education_system.university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
             report_id = ReportDefinitionManager.create_report(
                 report_name="Test Report",
                 report_category="Academic",
@@ -53,7 +53,7 @@ class TestReportDefinitionManager:
         mock_conn.__enter__ = Mock(return_value=mock_conn)
         mock_conn.__exit__ = Mock(return_value=False)
 
-        with patch('university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
+        with patch('education_system.university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
             report_id = ReportDefinitionManager.create_report(
                 report_name="Minimal Report",
                 report_category="Financial"
@@ -68,7 +68,7 @@ class TestReportDefinitionManager:
         mock_conn.__enter__ = Mock(return_value=mock_conn)
         mock_conn.__exit__ = Mock(return_value=False)
 
-        with patch('university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
+        with patch('education_system.university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
             with pytest.raises(Exception) as exc_info:
                 ReportDefinitionManager.create_report(
                     report_name="Error Report",
@@ -86,7 +86,7 @@ class TestReportDefinitionManager:
         mock_conn.__enter__ = Mock(return_value=mock_conn)
         mock_conn.__exit__ = Mock(return_value=False)
 
-        with patch('university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
+        with patch('education_system.university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
             report_id = ReportDefinitionManager.create_report(
                 report_name="SQL Report",
                 report_category="Custom",
@@ -111,7 +111,7 @@ class TestReportExportManager:
         mock_conn.__enter__ = Mock(return_value=mock_conn)
         mock_conn.__exit__ = Mock(return_value=False)
 
-        with patch('university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
+        with patch('education_system.university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
             export_id = ReportExportManager.export_report(
                 report_id=1,
                 export_format="CSV",
@@ -134,7 +134,7 @@ class TestReportExportManager:
             mock_conn.__enter__ = Mock(return_value=mock_conn)
             mock_conn.__exit__ = Mock(return_value=False)
 
-            with patch('university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
+            with patch('education_system.university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
                 export_id = ReportExportManager.export_report(
                     report_id=1,
                     export_format=fmt,
@@ -151,7 +151,7 @@ class TestReportExportManager:
         mock_conn.__enter__ = Mock(return_value=mock_conn)
         mock_conn.__exit__ = Mock(return_value=False)
 
-        with patch('university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
+        with patch('education_system.university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
             with pytest.raises(Exception) as exc_info:
                 ReportExportManager.export_report(
                     report_id=1,
@@ -175,7 +175,7 @@ class TestReportScheduleManager:
         mock_conn.__enter__ = Mock(return_value=mock_conn)
         mock_conn.__exit__ = Mock(return_value=False)
 
-        with patch('university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
+        with patch('education_system.university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
             schedule_id = ReportScheduleManager.create_schedule(
                 report_id=1,
                 schedule_name="Weekly Report",
@@ -196,7 +196,7 @@ class TestReportScheduleManager:
         mock_conn.__enter__ = Mock(return_value=mock_conn)
         mock_conn.__exit__ = Mock(return_value=False)
 
-        with patch('university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
+        with patch('education_system.university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
             schedule_id = ReportScheduleManager.create_schedule(
                 report_id=2,
                 schedule_name="Daily Summary",
@@ -217,7 +217,7 @@ class TestReportScheduleManager:
         mock_conn.__enter__ = Mock(return_value=mock_conn)
         mock_conn.__exit__ = Mock(return_value=False)
 
-        with patch('university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
+        with patch('education_system.university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
             schedule_id = ReportScheduleManager.create_schedule(
                 report_id=3,
                 schedule_name="Monthly Analytics",
@@ -236,7 +236,7 @@ class TestReportScheduleManager:
         mock_conn.__enter__ = Mock(return_value=mock_conn)
         mock_conn.__exit__ = Mock(return_value=False)
 
-        with patch('university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
+        with patch('education_system.university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
             with pytest.raises(Exception) as exc_info:
                 ReportScheduleManager.create_schedule(
                     report_id=1,
@@ -262,7 +262,7 @@ class TestVisualizationManager:
         mock_conn.__enter__ = Mock(return_value=mock_conn)
         mock_conn.__exit__ = Mock(return_value=False)
 
-        with patch('university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
+        with patch('education_system.university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
             viz_id = VisualizationManager.create_visualization(
                 visualization_name="Enrollment Trend",
                 chart_type="line",
@@ -283,7 +283,7 @@ class TestVisualizationManager:
         mock_conn.__enter__ = Mock(return_value=mock_conn)
         mock_conn.__exit__ = Mock(return_value=False)
 
-        with patch('university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
+        with patch('education_system.university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
             viz_id = VisualizationManager.create_visualization(
                 visualization_name="Course Distribution",
                 chart_type="bar",
@@ -301,7 +301,7 @@ class TestVisualizationManager:
         mock_conn.__enter__ = Mock(return_value=mock_conn)
         mock_conn.__exit__ = Mock(return_value=False)
 
-        with patch('university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
+        with patch('education_system.university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
             viz_id = VisualizationManager.create_visualization(
                 visualization_name="Gender Breakdown",
                 chart_type="pie",
@@ -318,7 +318,7 @@ class TestVisualizationManager:
         mock_conn.__enter__ = Mock(return_value=mock_conn)
         mock_conn.__exit__ = Mock(return_value=False)
 
-        with patch('university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
+        with patch('education_system.university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
             with pytest.raises(Exception) as exc_info:
                 VisualizationManager.create_visualization(
                     visualization_name="Error Viz",
@@ -341,7 +341,7 @@ class TestCustomMetricManager:
         mock_conn.__enter__ = Mock(return_value=mock_conn)
         mock_conn.__exit__ = Mock(return_value=False)
 
-        with patch('university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
+        with patch('education_system.university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
             metric_id = CustomMetricManager.define_metric(
                 metric_name="Student Success Rate",
                 metric_category="Academic",
@@ -362,7 +362,7 @@ class TestCustomMetricManager:
         mock_conn.__enter__ = Mock(return_value=mock_conn)
         mock_conn.__exit__ = Mock(return_value=False)
 
-        with patch('university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
+        with patch('education_system.university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
             metric_id = CustomMetricManager.define_metric(
                 metric_name="Revenue per Student",
                 metric_category="Financial",
@@ -381,7 +381,7 @@ class TestCustomMetricManager:
         mock_conn.__enter__ = Mock(return_value=mock_conn)
         mock_conn.__exit__ = Mock(return_value=False)
 
-        with patch('university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
+        with patch('education_system.university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
             metric_id = CustomMetricManager.define_metric(
                 metric_name="Weighted GPA Average",
                 metric_category="Academic",
@@ -401,7 +401,7 @@ class TestCustomMetricManager:
         mock_conn.__enter__ = Mock(return_value=mock_conn)
         mock_conn.__exit__ = Mock(return_value=False)
 
-        with patch('university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
+        with patch('education_system.university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
             metric_id = CustomMetricManager.define_metric(
                 metric_name="Enrollment Trend",
                 metric_category="Enrollment",
@@ -417,7 +417,7 @@ class TestCustomMetricManager:
         mock_conn.__enter__ = Mock(return_value=mock_conn)
         mock_conn.__exit__ = Mock(return_value=False)
 
-        with patch('university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
+        with patch('education_system.university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
             with pytest.raises(Exception) as exc_info:
                 CustomMetricManager.define_metric(
                     metric_name="Error Metric",
@@ -518,7 +518,7 @@ class TestIntegration:
         mock_conn.__enter__ = Mock(return_value=mock_conn)
         mock_conn.__exit__ = Mock(return_value=False)
 
-        with patch('university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
+        with patch('education_system.university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
             # Create report
             report_id = ReportDefinitionManager.create_report(
                 report_name="Integration Test Report",
@@ -558,7 +558,7 @@ class TestIntegration:
         mock_conn.__enter__ = Mock(return_value=mock_conn)
         mock_conn.__exit__ = Mock(return_value=False)
 
-        with patch('university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
+        with patch('education_system.university_system.modules.shared.services.business_intelligence.bi_reports_core.transaction', return_value=mock_conn):
             # Define custom metric
             metric_id = CustomMetricManager.define_metric(
                 metric_name="Test Metric",

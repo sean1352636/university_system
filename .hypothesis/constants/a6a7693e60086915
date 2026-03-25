@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/database/data_backup/security.py
+# hypothesis_version: 6.151.9
+
+[b'backup_salt_12345', 4096, 100000, '.encrypted', 'r+b', 'rb', 'secure_deletion', 'wb']

@@ -1,3 +1,4 @@
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection, transaction  # injected
 from education_system.university_system.infrastructure.exceptions import (
     CourseNotFoundError,
@@ -61,7 +62,7 @@ except ImportError:
     except Exception:
         class ModuleScheduler: pass
 
-from .main_gui import ModuleSchedulingGUI
+from education_system.university_system.modules.domain.academics.gui.module_scheduling.main_gui import ModuleSchedulingGUI
 
 def suggest_optimal_time_slot(self, module_code, session_type, duration_minutes=60):
     """Suggest optimal time slots for a new schedule"""
@@ -71,7 +72,7 @@ def suggest_optimal_time_slot(self, module_code, session_type, duration_minutes=
         # Get module information
         cursor.execute('SELECT module_code FROM modules WHERE module_code = ?', (module_code,))
         if not cursor.fetchone():
-            messagebox.showerror("Error", f"Module {module_code} does not exist.")
+            messagebox.showerror("Error", f"Module {module_code} does not exist.", parent=self.root)
             return []
 
         suggestions = []
@@ -322,7 +323,7 @@ def schedule_module_interactively(self):
 
         module_text = selected_module.get()
         if not module_text:
-            messagebox.showwarning("Warning", "Please select a module first.")
+            messagebox.showwarning("Warning", "Please select a module first.", parent=self.root)
             return
 
         module_code = module_text.split(' - ')[0]
@@ -390,7 +391,7 @@ def schedule_module_interactively(self):
         """Schedule the module with selected time slot"""
         selection = suggestions_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a suggested time slot.")
+            messagebox.showwarning("Warning", "Please select a suggested time slot.", parent=self.root)
             return
 
         item = suggestions_tree.item(selection[0])
@@ -409,7 +410,7 @@ def schedule_module_interactively(self):
         instructor_idx = instructor_combo.current()
 
         if room_idx < 0 or instructor_idx < 0:
-            messagebox.showwarning("Warning", "Please select both room and instructor.")
+            messagebox.showwarning("Warning", "Please select both room and instructor.", parent=self.root)
             return
 
         room_id = rooms[room_idx][0]
@@ -421,11 +422,11 @@ def schedule_module_interactively(self):
                 module_code, day, start_time, end_time,
                 room_id, instructor_id, session_type
             )
-            messagebox.showinfo("Success", "Module scheduled successfully!")
+            messagebox.showinfo("Success", "Module scheduled successfully!", parent=self.root)
             self.refresh_all_data()
             dialog.destroy()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to schedule module: {str(e)}")
+            messagebox.showerror("Error", f"Failed to schedule module: {str(e)}", parent=self.root)
 
     # Bottom buttons
     button_frame = ttk.Frame(step4_frame)
@@ -466,7 +467,7 @@ def advanced_schedule_search(self, filters=None):
         # Add filters
         if 'module_code' in filters and filters['module_code']:
             base_query += " AND ms.module_code LIKE ?"
-            params.append(f"%{filters['module_code']}%")
+            params.append(f"%{escape_like(filters['module_code'])}%")
 
         if 'day' in filters and filters['day']:
             base_query += " AND ms.day_of_week = ?"
@@ -486,11 +487,11 @@ def advanced_schedule_search(self, filters=None):
 
         if 'instructor' in filters and filters['instructor']:
             base_query += " AND (i.first_name LIKE ? OR i.last_name LIKE ?)"
-            params.extend([f"%{filters['instructor']}%", f"%{filters['instructor']}%"])
+            params.extend([f"%{escape_like(filters['instructor'])}%", f"%{escape_like(filters['instructor'])}%"])
 
         if 'building' in filters and filters['building']:
             base_query += " AND r.building LIKE ?"
-            params.append(f"%{filters['building']}%")
+            params.append(f"%{escape_like(filters['building'])}%")
 
         if 'room_type' in filters and filters['room_type']:
             base_query += " AND r.room_type = ?"
@@ -638,9 +639,9 @@ def validate_data_consistency(self):
 
     if issues:
         message = "Data Consistency Issues Found:\n\n" + "\n".join(f"{i}. {issue}" for i, issue in enumerate(issues, 1))
-        messagebox.showwarning("Data Validation", message)
+        messagebox.showwarning("Data Validation", message, parent=self.root)
     else:
-        messagebox.showinfo("Data Validation", "No data consistency issues found.")
+        messagebox.showinfo("Data Validation", "No data consistency issues found.", parent=self.root)
 
     return issues
 
@@ -652,7 +653,7 @@ def clean_orphaned_records(self):
         "Confirm Cleanup",
         "This will remove schedules with invalid room or instructor references.\n\n"
         "Are you sure you want to continue?"
-    )
+    , parent=self.root)
 
     if not confirm:
         return
@@ -679,11 +680,11 @@ def clean_orphaned_records(self):
                  f"• Removed {removed_room_refs} schedules with invalid room references\n" \
                  f"• Removed {removed_instructor_refs} schedules with invalid instructor references"
 
-        messagebox.showinfo("Cleanup Complete", message)
+        messagebox.showinfo("Cleanup Complete", message, parent=self.root)
         self.refresh_all_data()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Error during cleanup: {str(e)}")
+        messagebox.showerror("Error", f"Error during cleanup: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.clean_orphaned_records = clean_orphaned_records
 

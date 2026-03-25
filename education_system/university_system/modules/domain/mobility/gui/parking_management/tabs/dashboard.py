@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from tkinter.scrolledtext import ScrolledText
 
-from .. import get_connection, _t
+from education_system.university_system.modules.domain.mobility.gui.parking_management import get_connection, _t
 
 
 class DashboardMixin:

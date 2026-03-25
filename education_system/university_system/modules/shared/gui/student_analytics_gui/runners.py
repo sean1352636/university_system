@@ -1,5 +1,5 @@
 """Run/dispatch mixin for the Student Analytics GUI."""
-from ._imports import tk, ttk, messagebox, _t
+from education_system.university_system.modules.shared.gui.student_analytics_gui._imports import tk, ttk, messagebox, _t
 
 
 class RunnersMixin:

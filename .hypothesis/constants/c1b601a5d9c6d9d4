@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/managers/account_security.py
+# hypothesis_version: 6.151.9
+
+['failed_attempts', 'invalid_password', 'locked_at', 'message', 'minutes_remaining', 'reason', 'security', 'success', 'unknown', 'unlocked', 'unlocked_count', 'username', 'usernames']

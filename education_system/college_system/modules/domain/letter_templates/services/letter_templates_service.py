@@ -5,6 +5,7 @@ from datetime import datetime
 from education_system.college_system.core.exceptions import LetterTemplateError
 from education_system.college_system.infrastructure.database.db import connect
 
+from education_system.college_system.core.sql_safety import escape_like
 import logging
 
 logger = logging.getLogger(__name__)
@@ -86,7 +87,8 @@ class LetterTemplateService:
             if search:
                 conditions.append(
                     "(template_name LIKE ? OR subject_line LIKE ?)")
-                params.extend([f"%{search}%", f"%{search}%"])
+                escaped = escape_like(search)
+                params.extend([f"%{escaped}%", f"%{escaped}%"])
 
             sql = "SELECT * FROM letter_templates"
             if conditions:

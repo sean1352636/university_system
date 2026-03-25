@@ -5,7 +5,7 @@ from tkinter import ttk, messagebox
 from tkinter.scrolledtext import ScrolledText
 from datetime import datetime, timedelta
 
-from .constants import logger
+from education_system.university_system.modules.domain.finance.gui.finance.budget_manager.constants import logger
 
 
 class PersonalBudgetMixin:
@@ -123,6 +123,9 @@ class PersonalBudgetMixin:
         btn_frame.pack(fill=tk.X, pady=5)
         ttk.Button(btn_frame, text="View Details", command=self.view_budget_details).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Refresh", command=self.refresh_my_budgets).pack(side=tk.LEFT, padx=5)
+
+        # Initial load
+        self.root.after(100, self.refresh_my_budgets)
 
     def open_expense_tracker(self):
         """Switch to expenses tab"""

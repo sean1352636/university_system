@@ -5,7 +5,7 @@ Fallback model classes for backwards compatibility including
 ImportResult, ProgressTracker, and OriginalBatchOperationManager.
 """
 
-from .constants import (
+from education_system.university_system.modules.shared.gui.batch_operations.constants import (
     dataclass, datetime, time, os, List, Dict,
     DEFAULT_BATCH_DB,
 )

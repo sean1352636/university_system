@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/student_analytics_gui/gui_utils.py
+# hypothesis_version: 6.151.9
+
+[100, 400, '#1f77b4', '#21918c', '#2ca02c', '#31688e', '#35b779', '#377eb8', '#440154', '#4daf4a', '#8c564b', '#90d743', '#9467bd', '#984ea3', '#98df8a', '#aec7e8', '#c49c94', '#c5b0d5', '#d62728', '#e41a1c', '#fde724', '#ff7f00', '#ff7f0e', '#ff9896', '#ffbb78', '#ffff33', '*.*', '*.txt', '.txt', '1.0', '10', '10x8', '150', '15x10', '20x15', '300', '500x400', '500x450', '600', '600x500', 'Arial', 'Bold', 'Default', 'Excel', 'PDF', 'PNG', 'Pastel', 'SVG', 'Viridis', 'all', 'analytics.labels.dpi', 'analytics_', 'bold', 'both', 'colors', 'common.all_files', 'common.apply', 'common.cancel', 'common.success', 'disabled', 'dpi', 'end', 'export_formats', 'figure_size', 'w', 'word', 'x']

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/barber/gui/helpers.py
+# hypothesis_version: 6.151.9
+
+['1.0', '30', 'Active', 'Any', 'Inactive', 'N/A', 'No', 'Yes', 'appointment_number', 'appointment_time', 'barber.window_title', 'current_user', 'customer_id', 'customer_name', 'email', 'employee_id', 'is_active', 'is_favorite', 'last_visit', 'name', 'payment_status', 'phone', 'service_id', 'service_name', 'service_type', 'specialties', 'staff_id', 'staff_name', 'status', 'values', 'visit_count']

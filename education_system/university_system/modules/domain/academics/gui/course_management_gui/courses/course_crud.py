@@ -99,7 +99,6 @@ except ImportError:
 
 # Import academic system launchers
 try:
-    from education_system.university_system.modules.domain.academics.services.lms.lms_core import launch_lms_gui
     from education_system.university_system.modules.domain.academics.services.degree_audit.degree_audit_core import launch_degree_audit_gui
     from education_system.university_system.modules.domain.academics.services.evaluation.course_evaluation_core import launch_course_evaluation_gui
     ACADEMIC_SYSTEMS_AVAILABLE = True
@@ -398,22 +397,26 @@ class CourseCreateDialog:
         ttk.Label(basic_frame, text="Course Code:").grid(row=0, column=0, sticky=tk.W)
         self.code_var = tk.StringVar()
         ttk.Entry(basic_frame, textvariable=self.code_var, width=15).grid(row=0, column=1, sticky=tk.W, padx=5)
-        
+        ttk.Label(basic_frame, text="(e.g. CS, DS, ENG)", font=('Arial', 8)).grid(row=0, column=2, sticky=tk.W, padx=5)
+
         ttk.Label(basic_frame, text="Course Name:").grid(row=1, column=0, sticky=tk.W)
         self.name_var = tk.StringVar()
         ttk.Entry(basic_frame, textvariable=self.name_var, width=40).grid(row=1, column=1, sticky=tk.W, padx=5)
-        
+
         ttk.Label(basic_frame, text="Description:").grid(row=2, column=0, sticky=tk.NW)
         self.desc_text = tk.Text(basic_frame, width=40, height=3)
         self.desc_text.grid(row=2, column=1, sticky=tk.W, padx=5)
-        
+
         ttk.Label(basic_frame, text="Department:").grid(row=3, column=0, sticky=tk.W)
         self.dept_var = tk.StringVar()
-        ttk.Entry(basic_frame, textvariable=self.dept_var, width=20).grid(row=3, column=1, sticky=tk.W, padx=5)
-        
+        dept_combo = ttk.Combobox(basic_frame, textvariable=self.dept_var, width=25,
+                                  values=["Computer Science", "Data Science", "Engineering",
+                                          "Mathematics", "Business", "Arts", "Science", "Other"])
+        dept_combo.grid(row=3, column=1, sticky=tk.W, padx=5)
+
         ttk.Label(basic_frame, text="Level:").grid(row=4, column=0, sticky=tk.W)
-        self.level_var = tk.StringVar()
-        level_combo = ttk.Combobox(basic_frame, textvariable=self.level_var, 
+        self.level_var = tk.StringVar(value="Undergraduate")
+        level_combo = ttk.Combobox(basic_frame, textvariable=self.level_var, state='readonly',
                                   values=["Undergraduate", "Postgraduate", "PhD", "Certificate", "Diploma"])
         level_combo.grid(row=4, column=1, sticky=tk.W, padx=5)
         
@@ -430,9 +433,9 @@ class CourseCreateDialog:
         ttk.Entry(academic_frame, textvariable=self.max_enroll_var, width=10).grid(row=1, column=1, sticky=tk.W, padx=5)
         
         ttk.Label(academic_frame, text="Course Type:").grid(row=2, column=0, sticky=tk.W)
-        self.type_var = tk.StringVar(value="Core")
-        type_combo = ttk.Combobox(academic_frame, textvariable=self.type_var,
-                                 values=["Core", "Elective", "Major-specific", "General Education"])
+        self.type_var = tk.StringVar(value="Degree Program")
+        type_combo = ttk.Combobox(academic_frame, textvariable=self.type_var, state='readonly',
+                                 values=["Degree Program", "Certificate", "Diploma", "Short Course"])
         type_combo.grid(row=2, column=1, sticky=tk.W, padx=5)
         
         ttk.Label(academic_frame, text="Course Fee:").grid(row=3, column=0, sticky=tk.W)
@@ -461,20 +464,21 @@ class CourseCreateDialog:
             # Validate inputs
             course_code = self.code_var.get().strip().upper()
             course_name = self.name_var.get().strip()
-            
+
             if not course_code or not course_name:
                 messagebox.showerror(_("common.validation_error"), "Course code and name are required.")
                 return
-            
-            # Validate course code format
-            if not re.match(r'^[A-Z]{2,4}\d{2,3}$', course_code):
-                messagebox.showerror(_("common.validation_error"), "Invalid course code format. Use 2-4 letters followed by 2-3 numbers.")
+
+            # Validate course code format — 2-4 uppercase letters, optionally followed by digits
+            if not re.match(r'^[A-Z]{2,4}\d{0,4}$', course_code):
+                messagebox.showerror(_("common.validation_error"),
+                                     "Invalid course code format. Use 2-4 letters optionally followed by digits (e.g. CS, ENG, BUS101).")
                 return
-            
+
             description = self.desc_text.get(1.0, tk.END).strip()
             department = self.dept_var.get().strip()
             level = self.level_var.get().strip()
-            
+
             try:
                 credit_hours = float(self.credits_var.get())
                 max_enrollment = int(self.max_enroll_var.get())
@@ -482,45 +486,51 @@ class CourseCreateDialog:
             except ValueError:
                 messagebox.showerror(_("common.validation_error"), "Please enter valid numbers for credits, enrollment, and fee.")
                 return
-            
+
             course_type = self.type_var.get()
             lab_required = self.lab_required.get()
             online_available = self.online_available.get()
-            
-            # Insert into database
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0)
-            conn.execute("PRAGMA journal_mode=WAL")
-            cursor = conn.cursor()
 
-            # Check for duplicate code
-            cursor.execute("SELECT code FROM courses WHERE code = ?", (course_code,))
-            if cursor.fetchone():
-                messagebox.showerror(_("common.duplicate_error"), f"Course code '{course_code}' already exists.")
-                conn.close()
-                return
-            
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             import uuid
-            course_id = str(uuid.uuid4())
+            conn = None
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0)
+                cursor = conn.cursor()
 
-            cursor.execute('''
-            INSERT INTO courses (
-                id, code, name, credits, date_added,
-                course_code, course_name, description, level, department,
-                credit_hours, max_enrollment, course_type, course_fee,
-                lab_required, online_available, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (course_id, course_code, course_name, int(credit_hours), timestamp,
-                  course_code, course_name, description, level, department,
-                  credit_hours, max_enrollment, course_type, course_fee,
-                  lab_required, online_available, timestamp, timestamp))
-            
-            conn.commit()
-            conn.close()
-            
-            self.result = f"{course_code} - {course_name}"
-            self.dialog.destroy()
-            
+                # Check for duplicate code
+                cursor.execute(
+                    "SELECT COALESCE(course_code, code) FROM courses WHERE UPPER(COALESCE(course_code, code)) = ?",
+                    (course_code,)
+                )
+                if cursor.fetchone():
+                    messagebox.showerror(_("common.duplicate_error"), f"Course code '{course_code}' already exists.")
+                    return
+
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                course_id = str(uuid.uuid4())
+
+                cursor.execute('''
+                INSERT INTO courses (
+                    id, code, name, credits, date_added,
+                    course_code, course_name, description, level, department,
+                    credit_hours, max_enrollment, course_type, course_fee,
+                    lab_required, online_available, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (course_id, course_code, course_name, int(credit_hours), timestamp,
+                      course_code, course_name, description, level, department,
+                      credit_hours, max_enrollment, course_type, course_fee,
+                      lab_required, online_available, timestamp, timestamp))
+
+                conn.commit()
+
+                messagebox.showinfo(_("common.success"), f"Course '{course_code} - {course_name}' created successfully.")
+                self.result = f"{course_code} - {course_name}"
+                self.dialog.destroy()
+
+            finally:
+                if conn:
+                    conn.close()
+
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to create course: {e}")
 
@@ -603,18 +613,20 @@ class CourseEditDialog:
             
             # Update database
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-            cursor = conn.cursor()
-            
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            
-            cursor.execute('''
-            UPDATE courses
-            SET course_code = ?, course_name = ?, description = ?
-            WHERE id = ?
-            ''', (course_code, course_name, description, self.course_id))
-            
-            conn.commit()
-            conn.close()
+            try:
+                cursor = conn.cursor()
+
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                cursor.execute('''
+                UPDATE courses
+                SET course_code = ?, course_name = ?, description = ?
+                WHERE id = ?
+                ''', (course_code, course_name, description, self.course_id))
+
+                conn.commit()
+            finally:
+                conn.close()
             
             self.result = True
             self.dialog.destroy()

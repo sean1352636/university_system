@@ -5,6 +5,7 @@ Provides interactive campus maps, accessible route planning, and location findin
 """
 
 from education_system.university_system.infrastructure.database.db import sqlite3
+from education_system.university_system.core.sql_safety import escape_like
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Tuple
 import json
@@ -276,8 +277,8 @@ class NavigationService:
                    OR building_type LIKE ?
                    OR description LIKE ?
                 ORDER BY building_name
-            """, (f"%{search_term}%", f"%{search_term}%",
-                  f"%{search_term}%", f"%{search_term}%")).fetchall()
+            """, (f"%{escape_like(search_term)}%", f"%{escape_like(search_term)}%",
+                  f"%{escape_like(search_term)}%", f"%{escape_like(search_term)}%")).fetchall()
 
             return [dict(b) for b in buildings]
 
@@ -315,12 +316,12 @@ class NavigationService:
                    OR poi.poi_type LIKE ?
                    OR poi.description LIKE ?
             """
-            params = [f"%{search_term}%", f"%{search_term}%", f"%{search_term}%"]
+            params = [f"%{escape_like(search_term)}%", f"%{escape_like(search_term)}%", f"%{escape_like(search_term)}%"]
 
             if tags:
                 for tag in tags:
                     query += " OR poi.tags LIKE ?"
-                    params.append(f"%{tag}%")
+                    params.append(f"%{escape_like(tag)}%")
 
             query += " ORDER BY poi.poi_name"
 
@@ -347,7 +348,7 @@ class NavigationService:
                 SELECT *, 'building' as result_type
                 FROM campus_buildings
                 WHERE building_type LIKE ?
-            """, (f"%{location_type}%",)).fetchall()
+            """, (f"%{escape_like(location_type)}%",)).fetchall()
 
             # Search POIs
             pois = conn.execute("""
@@ -356,7 +357,7 @@ class NavigationService:
                 FROM points_of_interest poi
                 LEFT JOIN campus_buildings b ON poi.building_id = b.building_id
                 WHERE poi.poi_type LIKE ?
-            """, (f"%{location_type}%",)).fetchall()
+            """, (f"%{escape_like(location_type)}%",)).fetchall()
 
             # Calculate distances
             results = []

@@ -11,6 +11,7 @@ import hashlib
 import json
 from datetime import datetime, timedelta, date
 from typing import Any, Dict, List, Optional, Tuple
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.modules.shared.feature_gui_factory import create_gui_launcher
 
@@ -328,7 +329,7 @@ class ResourceManager:
         cursor = conn.cursor()
 
         try:
-            search_pattern = f"%{search_term}%"
+            search_pattern = f"%{escape_like(search_term)}%"
             cursor.execute('''
                 SELECT * FROM mental_health_resources
                 WHERE (title LIKE ? OR description LIKE ? OR tags LIKE ?)

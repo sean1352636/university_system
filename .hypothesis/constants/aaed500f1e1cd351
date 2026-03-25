@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/charity_shop_cli/inventory.py
+# hypothesis_version: 6.151.9
+
+[' AND category = ?', ' AND sold = 0', ' AND sold = 1', ' ORDER BY name', '%Y-%m-%d', 'All', 'Good', 'Other', 'Unknown', 'adjust_stock', 'all', 'available', 'bulk_export', 'bulk_import', 'category', 'charity_shop_item', 'charity_shop_items', 'condition', 'date_added', 'id', 'merge_items', 'name', 'price', 'quantity', 'r', 'sell', 'sold', 'sold_date', 'sold_quantity', 'utf-8', 'w']

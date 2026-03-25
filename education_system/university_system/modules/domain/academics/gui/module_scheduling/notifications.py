@@ -61,7 +61,7 @@ except ImportError:
     except Exception:
         class ModuleScheduler: pass
 
-from .main_gui import ModuleSchedulingGUI
+from education_system.university_system.modules.domain.academics.gui.module_scheduling.main_gui import ModuleSchedulingGUI
 
 def _send_room_change_notifications(self, module_code, day, start_time, end_time, old_room, new_room):
     """Send email notifications to students and lecturers about room change"""
@@ -218,9 +218,9 @@ def send_schedule_change_notifications(self, schedule_id, change_description):
                 self.create_notification('student', student[0], message, 'schedule_change')
 
     try:
-        messagebox.showinfo(_t("scheduling.notifications.notifications_sent_title"), _t("scheduling.notifications.notifications_sent_message", description=change_description))
+        messagebox.showinfo(_t("scheduling.notifications.notifications_sent_title"), _t("scheduling.notifications.notifications_sent_message", description=change_description), parent=self.root)
     except Exception:
-        messagebox.showinfo("Notifications Sent", f"Notifications sent for schedule change: {change_description}")
+        messagebox.showinfo("Notifications Sent", f"Notifications sent for schedule change: {change_description}", parent=self.root)
 
 ModuleSchedulingGUI.send_schedule_change_notifications = send_schedule_change_notifications
 

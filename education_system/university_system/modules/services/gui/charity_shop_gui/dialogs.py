@@ -1,6 +1,6 @@
 """Charity Shop - Dialog windows (ItemDialog, SellDialog, CheckoutDialog)."""
 
-from ._imports import (
+from education_system.university_system.modules.services.gui.charity_shop_gui._imports import (
     tk, ttk, messagebox,
     FINANCE_INTEGRATION_AVAILABLE,
     get_student_finance_account_balance, get_student_email,

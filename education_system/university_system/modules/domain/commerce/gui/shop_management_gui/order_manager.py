@@ -140,10 +140,10 @@ def load_order_history(self):
             cursor = conn.cursor()
             
             cursor.execute("""
-                SELECT transaction_id, transaction_date, total_amount, payment_method, status
-                FROM shop_transactions
-                WHERE user_id = ?
-                ORDER BY transaction_date DESC
+                SELECT source_transaction_id as transaction_id, created_at as transaction_date, total_amount, payment_method, status
+                FROM transactions
+                WHERE source_type = 'shop' AND customer_id = ?
+                ORDER BY created_at DESC
             """, [self.current_user.get('id', 1)])
             
             orders = cursor.fetchall()
@@ -207,8 +207,8 @@ def view_order_details(self, event=None):
         order_data = self.get_order_details(transaction_id)
         
         if order_data:
-            ttk.Label(info_frame, text=f"Transaction ID: {order_data['transaction']['transaction_id']}").grid(row=0, column=0, sticky=tk.W)
-            ttk.Label(info_frame, text=f"Date: {order_data['transaction']['transaction_date']}").grid(row=1, column=0, sticky=tk.W)
+            ttk.Label(info_frame, text=f"Transaction ID: {order_data['transaction']['source_transaction_id']}").grid(row=0, column=0, sticky=tk.W)
+            ttk.Label(info_frame, text=f"Date: {order_data['transaction']['created_at']}").grid(row=1, column=0, sticky=tk.W)
             ttk.Label(info_frame, text=f"Total: £{order_data['transaction']['total_amount']:.2f}").grid(row=2, column=0, sticky=tk.W)
             ttk.Label(info_frame, text=f"Payment: {order_data['transaction']['payment_method']}").grid(row=3, column=0, sticky=tk.W)
             ttk.Label(info_frame, text=f"Status: {order_data['transaction']['status']}").grid(row=4, column=0, sticky=tk.W)
@@ -265,8 +265,8 @@ def get_order_details(self, transaction_id):
             
             # Get transaction
             cursor.execute("""
-                SELECT * FROM shop_transactions
-                WHERE transaction_id = ?
+                SELECT * FROM transactions
+                WHERE source_type = 'shop' AND source_transaction_id = ?
             """, [transaction_id])
             
             transaction = cursor.fetchone()
@@ -278,7 +278,7 @@ def get_order_details(self, transaction_id):
             cursor.execute("""
                 SELECT ti.*, p.name
                 FROM shop_transaction_items ti
-                JOIN shop_products p ON ti.product_id = p.product_id
+                JOIN products p ON ti.product_id = p.source_product_id AND p.source_type = 'shop'
                 WHERE ti.transaction_id = ?
             """, [transaction_id])
             
@@ -390,12 +390,12 @@ def load_transactions(self):
             cursor = conn.cursor()
             
             cursor.execute("""
-                SELECT t.transaction_id, t.transaction_date, u.username, t.total_amount, 
+                SELECT t.source_transaction_id as transaction_id, t.created_at as transaction_date, u.username, t.total_amount,
                        t.payment_method, t.status
-                FROM shop_transactions t
-                LEFT JOIN users u ON t.user_id = u.id
-                WHERE DATE(t.transaction_date) BETWEEN ? AND ?
-                ORDER BY t.transaction_date DESC
+                FROM transactions t
+                LEFT JOIN users u ON t.customer_id = u.id
+                WHERE t.source_type = 'shop' AND DATE(t.created_at) BETWEEN ? AND ?
+                ORDER BY t.created_at DESC
             """, [start_date, end_date])
             
             transactions = cursor.fetchall()
@@ -465,8 +465,8 @@ def view_order_details_by_id(self, transaction_id):
         info_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
         
         transaction = order_data['transaction']
-        ttk.Label(info_frame, text=f"Transaction ID: {transaction['transaction_id']}").grid(row=0, column=0, sticky=tk.W)
-        ttk.Label(info_frame, text=f"Date: {transaction['transaction_date']}").grid(row=1, column=0, sticky=tk.W)
+        ttk.Label(info_frame, text=f"Transaction ID: {transaction['source_transaction_id']}").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(info_frame, text=f"Date: {transaction['created_at']}").grid(row=1, column=0, sticky=tk.W)
         ttk.Label(info_frame, text=f"Total: £{transaction['total_amount']:.2f}").grid(row=2, column=0, sticky=tk.W)
         ttk.Label(info_frame, text=f"Payment: {transaction['payment_method']}").grid(row=3, column=0, sticky=tk.W)
         ttk.Label(info_frame, text=f"Status: {transaction['status']}").grid(row=4, column=0, sticky=tk.W)
@@ -534,12 +534,12 @@ def export_transactions(self):
         cursor = conn.cursor()
         
         cursor.execute("""
-            SELECT t.transaction_id, t.transaction_date, u.username, u.email,
+            SELECT t.source_transaction_id as transaction_id, t.created_at as transaction_date, u.username, u.email,
                    t.total_amount, t.payment_method, t.status, t.notes
-            FROM shop_transactions t
-            LEFT JOIN users u ON t.user_id = u.id
-            WHERE DATE(t.transaction_date) BETWEEN ? AND ?
-            ORDER BY t.transaction_date DESC
+            FROM transactions t
+            LEFT JOIN users u ON t.customer_id = u.id
+            WHERE t.source_type = 'shop' AND DATE(t.created_at) BETWEEN ? AND ?
+            ORDER BY t.created_at DESC
         """, [start_date, end_date])
         
         transactions = cursor.fetchall()

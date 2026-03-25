@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/analytics/models.py
+# hypothesis_version: 6.151.9
+
+['annually', 'category', 'csv', 'daily', 'excel', 'generated_at', 'html', 'json', 'metrics', 'monthly', 'name', 'on_demand', 'pdf', 'period_end', 'period_start', 'quarterly', 'sections', 'system_key', 'timestamp', 'title', 'value', 'weekly']

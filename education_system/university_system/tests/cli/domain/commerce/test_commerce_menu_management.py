@@ -94,9 +94,9 @@ def mock_db_connection(tmp_path):
 class TestMenuItemCreation:
     """Tests for menu item creation functionality."""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.log_audit_action')
     @patch('builtins.input')
     def test_create_menu_item_success(self, mock_input, mock_audit, mock_backup,
                                       mock_get_conn, mock_db_connection, mock_auth):
@@ -140,8 +140,8 @@ class TestMenuItemCreation:
         assert item[8] == 1  # available
         mock_audit.assert_called_once()
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.backup_before_operation')
     @patch('builtins.input')
     def test_create_menu_item_invalid_price(self, mock_input, mock_backup,
                                            mock_get_conn, mock_db_connection,
@@ -166,8 +166,8 @@ class TestMenuItemCreation:
         captured = capsys.readouterr()
         assert "Invalid price" in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.backup_before_operation')
     @patch('builtins.input')
     def test_create_menu_item_empty_name(self, mock_input, mock_backup,
                                         mock_get_conn, mock_db_connection,
@@ -193,7 +193,7 @@ class TestMenuItemCreation:
 class TestMenuItemViewing:
     """Tests for viewing menu items."""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
     @patch('builtins.input')
     def test_view_all_menu_items(self, mock_input, mock_get_conn,
                                  mock_db_connection, capsys):
@@ -236,7 +236,7 @@ class TestMenuItemViewing:
         assert "Salad" in captured.out
         assert "Total items: 3" in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
     @patch('builtins.input')
     def test_view_menu_items_by_category(self, mock_input, mock_get_conn,
                                          mock_db_connection, capsys):
@@ -270,9 +270,9 @@ class TestMenuItemViewing:
 class TestMenuItemUpdates:
     """Tests for updating menu items."""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.log_audit_action')
     @patch('builtins.input')
     def test_update_menu_item_price(self, mock_input, mock_audit, mock_backup,
                                     mock_get_conn, mock_db_connection, mock_auth):
@@ -310,9 +310,9 @@ class TestMenuItemUpdates:
         assert price == 12.99
         mock_audit.assert_called_once()
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.log_audit_action')
     @patch('builtins.input')
     def test_update_menu_item_availability(self, mock_input, mock_audit, mock_backup,
                                            mock_get_conn, mock_db_connection, mock_auth):
@@ -353,9 +353,9 @@ class TestMenuItemUpdates:
 class TestMenuItemDeletion:
     """Tests for deleting menu items."""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.log_audit_action')
     @patch('builtins.input')
     def test_delete_menu_item(self, mock_input, mock_audit, mock_backup,
                              mock_get_conn, mock_db_connection, mock_auth):
@@ -395,7 +395,7 @@ class TestMenuItemDeletion:
 class TestMenuAnalytics:
     """Tests for menu analytics functionality."""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
     def test_menu_analytics(self, mock_get_conn, mock_db_connection, capsys):
         """Test menu analytics display."""
         # Setup
@@ -446,7 +446,7 @@ class TestMenuAnalytics:
 class TestImportExport:
     """Tests for menu import/export functionality."""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
     def test_export_menu_csv(self, mock_get_conn, mock_db_connection, tmp_path):
         """Test exporting menu to CSV."""
         # Setup
@@ -471,7 +471,7 @@ class TestImportExport:
         # Verify CSV file exists and contains data
         # (In real test, would check file contents)
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
     def test_export_menu_json(self, mock_get_conn, mock_db_connection):
         """Test exporting menu to JSON."""
         # Setup
@@ -498,7 +498,7 @@ class TestImportExport:
 class TestOrderAnalytics:
     """Tests for order analytics."""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
     @patch('builtins.input')
     def test_order_analytics_daily_summary(self, mock_input, mock_get_conn,
                                           mock_db_connection, capsys):
@@ -528,7 +528,7 @@ class TestOrderAnalytics:
         captured = capsys.readouterr()
         assert "ORDER ANALYTICS" in captured.out or "Date" in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.get_db_connection')
     @patch('builtins.input')
     def test_feedback_analytics(self, mock_input, mock_get_conn,
                                 mock_db_connection, capsys):
@@ -577,7 +577,7 @@ class TestOrderAnalytics:
         mock_db_connection.commit()
 
         # Execute
-        with patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.feedback_analytics') as mock_feedback:
+        with patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.feedback_analytics') as mock_feedback:
             mock_feedback.return_value = {
                 'summary': {'total': 5, 'avg_rating': 4.0, 'r5': 3, 'r4': 2, 'r3': 0, 'r2': 0, 'r1': 0},
                 'top_items': [('Burger', 5, 4.0)]

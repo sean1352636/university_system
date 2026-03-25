@@ -19,5 +19,26 @@
     "order": "ASC",
     "limit": "100",
     "saved_at": "2026-02-26T20:27:38.325665"
+  },
+  {
+    "name": "test",
+    "table": "academic_calendar_events",
+    "columns": [
+      "id",
+      "name",
+      "date",
+      "date_start",
+      "date_end",
+      "description",
+      "event_type",
+      "date_added",
+      "last_modified",
+      "created_by"
+    ],
+    "filters": [],
+    "sort": "",
+    "order": "ASC",
+    "limit": "100",
+    "saved_at": "2026-03-14T20:03:31.891096"
   }
 ]

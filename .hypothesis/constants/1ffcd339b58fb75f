@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance_reporting/__init__.py
+# hypothesis_version: 6.151.9
+
+['AidApplicationDialog', 'AnomalyDetector', 'AssignFeeDialog', 'BudgetPlanDialog', 'CashFlowForecaster', 'CollectionCaseDialog', 'ComparativeAnalyzer', 'FeeTypeDialog', 'FinancialAlertSystem', 'PaymentDetailsDialog', 'PaymentDialog', 'PaymentPredictionML', 'RefundDialog', 'StudentDialog', 'backup_database', 'calculate_late_fees', 'clean_database', 'detect_payment_fraud', 'display_finance_menu', 'financial_dashboard', 'initialize_database', 'launch_financial_gui', 'set_auth', 'show_database_stats', 'test_email_service']

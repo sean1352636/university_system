@@ -8,7 +8,7 @@ from datetime import datetime
 from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.modules.shared.constants import paths
 
-from .config import CONFIG, GUI_AVAILABLE
+from education_system.university_system.modules.shared.services.analytics.student_analytics.config import CONFIG, GUI_AVAILABLE
 
 
 class StudentAnalyticsBase:

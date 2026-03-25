@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.college_system.modules.domain.careers.services.careers_service import CareersService
+from education_system.college_system.core.i18n import t
 
 
 class CareersFrame(tk.Frame):
@@ -19,29 +20,30 @@ class CareersFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Careers & Progression", font=("Helvetica", 14, "bold"),
+        tk.Label(header, text=t("careers.title"), font=("Helvetica", 14, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=10)
 
         self._nb = ttk.Notebook(self)
         self._nb.pack(fill="both", expand=True, padx=10, pady=10)
 
         self._act_tab = tk.Frame(self._nb)
-        self._nb.add(self._act_tab, text="Careers Activities")
+        self._nb.add(self._act_tab, text=t("careers.activities_tab"))
         self._build_activities_tab()
 
         self._ucas_tab = tk.Frame(self._nb)
-        self._nb.add(self._ucas_tab, text="UCAS")
+        self._nb.add(self._ucas_tab, text=t("careers.ucas_tab"))
         self._build_ucas_tab()
 
         self._we_tab = tk.Frame(self._nb)
-        self._nb.add(self._we_tab, text="Work Experience")
+        self._nb.add(self._we_tab, text=t("careers.work_experience_tab"))
         self._build_we_tab()
 
     def _build_activities_tab(self):
         toolbar = tk.Frame(self._act_tab)
         toolbar.pack(fill="x", padx=5, pady=5)
-        ttk.Button(toolbar, text="Refresh", command=self._load_activities).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="New Activity", command=self._new_activity).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("common.refresh"), command=self._load_activities).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("careers.new_activity"), command=self._new_activity).pack(side="right", padx=5)
+        ttk.Button(toolbar, text="Export CSV", command=self._export_csv).pack(side="left", padx=5)
 
         cols = ("id", "student", "type", "title", "date", "gatsby")
         self._act_tree = ttk.Treeview(self._act_tab, columns=cols, show="headings", height=15)
@@ -53,8 +55,8 @@ class CareersFrame(tk.Frame):
     def _build_ucas_tab(self):
         toolbar = tk.Frame(self._ucas_tab)
         toolbar.pack(fill="x", padx=5, pady=5)
-        ttk.Button(toolbar, text="Refresh", command=self._load_ucas).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="New UCAS Record", command=self._new_ucas).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("common.refresh"), command=self._load_ucas).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("careers.new_ucas_record"), command=self._new_ucas).pack(side="right", padx=5)
 
         cols = ("id", "student", "ucas_id", "ps_status", "ref_status", "app_status")
         self._ucas_tree = ttk.Treeview(self._ucas_tab, columns=cols, show="headings", height=15)
@@ -66,8 +68,8 @@ class CareersFrame(tk.Frame):
     def _build_we_tab(self):
         toolbar = tk.Frame(self._we_tab)
         toolbar.pack(fill="x", padx=5, pady=5)
-        ttk.Button(toolbar, text="Refresh", command=self._load_we).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="New Placement", command=self._new_we).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("common.refresh"), command=self._load_we).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("careers.new_placement"), command=self._new_we).pack(side="right", padx=5)
 
         cols = ("id", "student", "employer", "role", "start", "end", "status")
         self._we_tree = ttk.Treeview(self._we_tab, columns=cols, show="headings", height=15)
@@ -87,7 +89,7 @@ class CareersFrame(tk.Frame):
                     a["id"], name, a.get("activity_type", ""), a.get("title", ""),
                     a.get("activity_date", ""), a.get("gatsby_benchmark", "")))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _load_ucas(self):
         for item in self._ucas_tree.get_children():
@@ -101,7 +103,7 @@ class CareersFrame(tk.Frame):
                     r.get("personal_statement_status", ""),
                     r.get("reference_status", ""), r.get("application_status", "")))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _load_we(self):
         for item in self._we_tree.get_children():
@@ -114,11 +116,11 @@ class CareersFrame(tk.Frame):
                     r["id"], name, r.get("employer", ""), r.get("role", ""),
                     r.get("start_date", ""), r.get("end_date", ""), r.get("status", "")))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _new_activity(self):
         win = tk.Toplevel(self)
-        win.title("New Careers Activity")
+        win.title(t("careers.new_activity"))
         win.geometry("400x300")
         fields = {}
         row = 0
@@ -141,16 +143,16 @@ class CareersFrame(tk.Frame):
                     activity_date=fields["activity_date"].get().strip() or None,
                     gatsby_benchmark=int(gb) if gb else None,
                     provider=fields["provider"].get().strip() or None)
-                messagebox.showinfo("Success", "Activity created")
+                messagebox.showinfo(t("common.success"), t("careers.activity_created"))
                 win.destroy()
                 self._load_activities()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
-        ttk.Button(win, text="Save", command=save).grid(row=row, column=0, columnspan=2, pady=15)
+                messagebox.showerror(t("common.error"), str(e))
+        ttk.Button(win, text=t("common.save"), command=save).grid(row=row, column=0, columnspan=2, pady=15)
 
     def _new_ucas(self):
         win = tk.Toplevel(self)
-        win.title("New UCAS Record")
+        win.title(t("careers.new_ucas_record"))
         win.geometry("400x250")
         fields = {}
         row = 0
@@ -169,16 +171,16 @@ class CareersFrame(tk.Frame):
                     ucas_id=fields["ucas_id"].get().strip() or None,
                     predicted_grades=fields["predicted_grades"].get().strip() or None,
                     choices=fields["choices"].get().strip() or None)
-                messagebox.showinfo("Success", "UCAS record created")
+                messagebox.showinfo(t("common.success"), t("careers.ucas_record_created"))
                 win.destroy()
                 self._load_ucas()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
-        ttk.Button(win, text="Save", command=save).grid(row=row, column=0, columnspan=2, pady=15)
+                messagebox.showerror(t("common.error"), str(e))
+        ttk.Button(win, text=t("common.save"), command=save).grid(row=row, column=0, columnspan=2, pady=15)
 
     def _new_we(self):
         win = tk.Toplevel(self)
-        win.title("New Work Experience")
+        win.title(t("careers.new_placement"))
         win.geometry("400x350")
         fields = {}
         row = 0
@@ -207,12 +209,16 @@ class CareersFrame(tk.Frame):
                     supervisor=fields["supervisor"].get().strip() or None,
                     contact_details=fields["contact_details"].get().strip() or None,
                     risk_assessment_completed=1 if ra_var.get() else 0)
-                messagebox.showinfo("Success", "Work experience created")
+                messagebox.showinfo(t("common.success"), t("careers.work_experience_created"))
                 win.destroy()
                 self._load_we()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
-        ttk.Button(win, text="Save", command=save).grid(row=row, column=0, columnspan=2, pady=15)
+                messagebox.showerror(t("common.error"), str(e))
+        ttk.Button(win, text=t("common.save"), command=save).grid(row=row, column=0, columnspan=2, pady=15)
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._act_tree, "careers_activities.csv")
 
     def refresh(self):
         self._load_activities()

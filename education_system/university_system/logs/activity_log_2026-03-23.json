@@ -1,0 +1,2868 @@
+{
+  "timestamp": "2026-03-23 07:48:50.110",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in create_building: create_building() got an unexpected keyword argument 'total_rooms'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "39e40085-eadb-49c1-913c-9eb2723d30c9",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 4.076957702636719e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "6f0eb23f-8f64-4d6e-ae23-357fbee31d4f",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_building",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.buildings",
+    "function_args_count": 6,
+    "execution_time": 4.076957702636719e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: create_building() got an unexpected keyword argument 'total_rooms'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 07:48:50.236",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "update_error",
+  "module": "housing",
+  "details": "Error in update_building: update_building() got an unexpected keyword argument 'building_name'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "12598f71-6a43-4e4a-a778-c0fcef009ea2",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 4.76837158203125e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "861a087e-f964-4ca7-96e8-be63198c7c8a",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "update_building",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.buildings",
+    "function_args_count": 2,
+    "execution_time": 4.76837158203125e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: update_building() got an unexpected keyword argument 'building_name'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 07:48:50.309",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "delete_error",
+  "module": "housing",
+  "details": "Error in delete_building: delete_building() takes 0 positional arguments but 1 was given",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "35012aa0-8e89-45df-92d5-771e7b0faa31",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 7.271766662597656e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "1c822131-a90f-4512-946b-3910ed83a880",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "delete_building",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.buildings",
+    "function_args_count": 1,
+    "execution_time": 7.271766662597656e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: delete_building() takes 0 positional arguments but 1 was given\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 07:48:50.371",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in create_rooms_for_building: create_rooms_for_building() got an unexpected keyword argument 'floors'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "3e4abb37-fa02-4be1-89b8-b195fd91e749",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.00021648406982421875,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "0830c81a-c474-4175-a5bd-93a89d9bdd2f",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_rooms_for_building",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.buildings",
+    "function_args_count": 5,
+    "execution_time": 0.00021648406982421875,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: create_rooms_for_building() got an unexpected keyword argument 'floors'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 07:48:50.435",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "read_error",
+  "module": "housing",
+  "details": "Error in check_room_availability: check_room_availability() got an unexpected keyword argument 'building_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "f430b154-b80f-4114-8cf4-3ab9ba5f0776",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 3.218650817871094e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "8034d363-8b99-4475-8e49-8681c1698058",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "check_room_availability",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.reports",
+    "function_args_count": 2,
+    "execution_time": 3.218650817871094e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: check_room_availability() got an unexpected keyword argument 'building_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 07:48:50.497",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in create_application: create_application() got an unexpected keyword argument 'student_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "11713f7d-03da-40ce-a427-5a0f4bfa0b1a",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 3.337860107421875e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "a61af28e-8764-4689-9927-0437a5f05174",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_application",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.applications",
+    "function_args_count": 5,
+    "execution_time": 3.337860107421875e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: create_application() got an unexpected keyword argument 'student_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 07:48:50.554",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "update_error",
+  "module": "housing",
+  "details": "Error in process_application: process_application() takes from 0 to 1 positional arguments but 4 were given",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "286d10d9-5170-40c9-9f22-30e5be2eaee4",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 4.363059997558594e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "c7ebda3e-0d6d-46b1-b1b3-2dc3dccb596c",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "process_application",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.applications",
+    "function_args_count": 4,
+    "execution_time": 4.363059997558594e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: process_application() takes from 0 to 1 positional arguments but 4 were given\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 07:48:50.713",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "update_error",
+  "module": "housing",
+  "details": "Error in update_assignment_status: update_assignment_status() takes from 0 to 1 positional arguments but 2 were given",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "4816e2b9-991f-4435-bb66-8fc9a06381c1",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 7.963180541992188e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "fd81996c-614a-44d3-a7da-a9b7a63416c4",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "update_assignment_status",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.assignments",
+    "function_args_count": 2,
+    "execution_time": 7.963180541992188e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: update_assignment_status() takes from 0 to 1 positional arguments but 2 were given\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 07:48:50.774",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in create_maintenance_request: create_maintenance_request() got an unexpected keyword argument 'room_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "27c8fcb2-f62e-4ce6-99a3-9ec315ef7676",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 3.62396240234375e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "b2d4f8d2-a380-4b6a-94b0-b9a093ce6892",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_maintenance_request",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.maintenance",
+    "function_args_count": 5,
+    "execution_time": 3.62396240234375e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: create_maintenance_request() got an unexpected keyword argument 'room_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 07:48:50.876",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "update_error",
+  "module": "housing",
+  "details": "Error in update_maintenance_request: update_maintenance_request() got an unexpected keyword argument 'status'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "e4424ea1-9a92-4677-a112-8bcdd245cede",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 2.765655517578125e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "a84e1450-69d7-49c3-8e32-9aa49f84d5aa",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "update_maintenance_request",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.maintenance",
+    "function_args_count": 2,
+    "execution_time": 2.765655517578125e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: update_maintenance_request() got an unexpected keyword argument 'status'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 07:48:50.936",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in record_payment: record_payment() got an unexpected keyword argument 'assignment_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "f6d52e73-a347-42a6-8977-37e4d41f94b2",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 2.1219253540039062e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "0ee3b5bf-a8e6-44ef-9e6e-3749226570c1",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "record_payment",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.payments",
+    "function_args_count": 5,
+    "execution_time": 2.1219253540039062e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: record_payment() got an unexpected keyword argument 'assignment_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 07:48:50.994",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "read_error",
+  "module": "housing",
+  "details": "Error in view_payment_history: view_payment_history() got an unexpected keyword argument 'student_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "5ee8ad5e-0d2e-407c-839d-ca468294f536",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 2.6464462280273438e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "3aed231b-c88d-4ba3-b910-8f2488965a12",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "view_payment_history",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.payments",
+    "function_args_count": 1,
+    "execution_time": 2.6464462280273438e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: view_payment_history() got an unexpected keyword argument 'student_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 07:48:51.053",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in create_inspection: create_inspection() got an unexpected keyword argument 'room_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "2c072dd8-767e-43ab-b641-9d004a41a37b",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 2.6941299438476562e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "ad1ac2d2-b7c3-4e6d-96a3-ddd85f5e5d72",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_inspection",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.inspections",
+    "function_args_count": 4,
+    "execution_time": 2.6941299438476562e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: create_inspection() got an unexpected keyword argument 'room_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 07:48:51.201",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "read_error",
+  "module": "housing",
+  "details": "Error in generate_financial_report: generate_financial_report() takes 0 positional arguments but 2 were given",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "25f95ed6-54ab-4ecd-abd1-3add48a74fb9",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 4.0531158447265625e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "90138139-d41e-4330-8fcd-34e940811ee5",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "generate_financial_report",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.reports",
+    "function_args_count": 2,
+    "execution_time": 4.0531158447265625e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: generate_financial_report() takes 0 positional arguments but 2 were given\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 07:48:51.317",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "export",
+  "module": "housing",
+  "details": "Exporting housing data",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "18f1abb0-4e1a-4869-bcc2-870ccef2ccef",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.00485992431640625,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "HIGH",
+  "trace_id": "9128154c-0a16-4144-93a8-f4a96dd82893",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "export_housing_data",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.reports",
+    "function_args_count": 0,
+    "execution_time": 0.00485992431640625,
+    "memory_usage": 619929600
+  }
+}
+{
+  "timestamp": "2026-03-23 07:48:51.338",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "read_error",
+  "module": "housing",
+  "details": "Error in search_housing_records: search_housing_records() got an unexpected keyword argument 'student_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "cc296838-e65c-42e6-944c-924bc0b2cb0e",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 2.5510787963867188e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "2c175936-4cac-4bf3-9543-d8c9a5b42b4a",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "search_housing_records",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.reports",
+    "function_args_count": 1,
+    "execution_time": 2.5510787963867188e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: search_housing_records() got an unexpected keyword argument 'student_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 07:49:04.101",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "update",
+  "module": "trips",
+  "details": "Managing trip participants",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "748ef042-89a6-4189-bd55-c08e4dc9d23f",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.0847468376159668,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "9009239b-8709-4784-af0c-f3b485be3690",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "manage_trip_participants",
+    "function_module": "education_system.university_system.modules.domain.mobility.services.trip_management.registrations",
+    "function_args_count": 0,
+    "execution_time": 0.0847468376159668,
+    "memory_usage": 621064192
+  }
+}
+{
+  "timestamp": "2026-03-23 07:49:12.493",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create",
+  "module": "trips",
+  "details": "Creating new trip",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "7e1260ef-89df-475e-a63f-7833718800fa",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 5.2928924560546875e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "579c320c-d2e4-464b-b20e-97f342fb23ed",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_trip",
+    "function_module": "education_system.university_system.modules.domain.mobility.services.trip_management.trips",
+    "function_args_count": 0,
+    "execution_time": 5.2928924560546875e-05,
+    "memory_usage": 621137920
+  }
+}
+{
+  "timestamp": "2026-03-23 07:57:11.429",
+  "user_id": "user123",
+  "username": "testuser",
+  "role": "admin",
+  "action": "login",
+  "module": "auth",
+  "details": "User logged in",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "72d2708d-e8f0-4f62-bf60-6265c5e4428f",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.0,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "LOW",
+  "trace_id": "b17e6ea2-c1cf-4a25-9618-b2d5bf56bdd9",
+  "stack_trace": null,
+  "metadata": null
+}
+{
+  "timestamp": "2026-03-23 07:57:11.457",
+  "user_id": "user123",
+  "username": "testuser",
+  "role": "admin",
+  "action": "login",
+  "module": "authentication",
+  "details": "No additional details",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "5b4350fd-3675-43cf-ab27-cfb5c44a1952",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.0,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "LOW",
+  "trace_id": "5a232fc7-38d6-47b6-b542-386688fc2759",
+  "stack_trace": null,
+  "metadata": null
+}
+{
+  "timestamp": "2026-03-23 07:57:11.629",
+  "user_id": "user123",
+  "username": "testuser",
+  "role": "admin",
+  "action": "logout",
+  "module": "authentication",
+  "details": "No additional details",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "1f02c77c-49de-45cd-9241-b7966dcfa52b",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.0,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "LOW",
+  "trace_id": "f5e6bb59-6a74-4919-b3d4-0dd092d6537d",
+  "stack_trace": null,
+  "metadata": null
+}
+{
+  "timestamp": "2026-03-23 07:57:11.803",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "test_action",
+  "module": "test_module",
+  "details": "Test details",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "66657146-4050-4440-8b4b-6e81dfdcda4d",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.0,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "LOW",
+  "trace_id": "ca76fae2-2aa9-4419-8967-de76fb853ede",
+  "stack_trace": null,
+  "metadata": null
+}
+{
+  "timestamp": "2026-03-23 08:11:00.036",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in create_building: create_building() got an unexpected keyword argument 'total_rooms'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "3cce2893-fe6c-4c1d-9e1b-ba0d9f278c94",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 8.893013000488281e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "c3795a36-167e-4d26-b19a-368a65ae9bca",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_building",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.buildings",
+    "function_args_count": 6,
+    "execution_time": 8.893013000488281e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: create_building() got an unexpected keyword argument 'total_rooms'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 08:11:00.177",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "update_error",
+  "module": "housing",
+  "details": "Error in update_building: update_building() got an unexpected keyword argument 'building_name'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "6a49c0a8-9856-4f82-a6d7-16975e4793d9",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 3.075599670410156e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "9c428640-c1dd-4450-9e10-7f6312bbd8af",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "update_building",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.buildings",
+    "function_args_count": 2,
+    "execution_time": 3.075599670410156e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: update_building() got an unexpected keyword argument 'building_name'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 08:11:00.237",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "delete_error",
+  "module": "housing",
+  "details": "Error in delete_building: delete_building() takes 0 positional arguments but 1 was given",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "c0264ad3-c330-47d7-aa4d-edd44caba028",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 4.172325134277344e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "2338c80b-8afd-45b8-89c2-109ba9e03ff3",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "delete_building",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.buildings",
+    "function_args_count": 1,
+    "execution_time": 4.172325134277344e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: delete_building() takes 0 positional arguments but 1 was given\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 08:11:00.293",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in create_rooms_for_building: create_rooms_for_building() got an unexpected keyword argument 'floors'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "cf1fa268-ef04-459f-8a34-c0e00621212e",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 3.409385681152344e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "3befd2da-a3a4-44a7-a1b5-14945a6d92f9",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_rooms_for_building",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.buildings",
+    "function_args_count": 5,
+    "execution_time": 3.409385681152344e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: create_rooms_for_building() got an unexpected keyword argument 'floors'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 08:11:00.356",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "read_error",
+  "module": "housing",
+  "details": "Error in check_room_availability: check_room_availability() got an unexpected keyword argument 'building_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "127acdfd-3c24-4014-86c1-60758b7e8d4f",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 5.650520324707031e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "f94db3bb-9699-4ef8-a7aa-fb490bc10267",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "check_room_availability",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.reports",
+    "function_args_count": 2,
+    "execution_time": 5.650520324707031e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: check_room_availability() got an unexpected keyword argument 'building_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 08:11:00.413",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in create_application: create_application() got an unexpected keyword argument 'student_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "6f224ba5-1116-4592-a4aa-3528d69e2663",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 2.5033950805664062e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "e90ef577-c3df-4005-9020-e2d745c7668d",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_application",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.applications",
+    "function_args_count": 5,
+    "execution_time": 2.5033950805664062e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: create_application() got an unexpected keyword argument 'student_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 08:11:00.480",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "update_error",
+  "module": "housing",
+  "details": "Error in process_application: process_application() takes from 0 to 1 positional arguments but 4 were given",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "3c6fddd1-eb94-4951-9ee7-4ed54b670d78",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 4.363059997558594e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "30f0ec9d-e46f-4e6b-855d-29fea88b8a04",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "process_application",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.applications",
+    "function_args_count": 4,
+    "execution_time": 4.363059997558594e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: process_application() takes from 0 to 1 positional arguments but 4 were given\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 08:11:00.649",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "update_error",
+  "module": "housing",
+  "details": "Error in update_assignment_status: update_assignment_status() takes from 0 to 1 positional arguments but 2 were given",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "9681b109-dc76-4daa-b0d7-4b275b7c374d",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 4.029273986816406e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "afdd9b44-c3b8-4ead-bb57-6bd7b0fdc972",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "update_assignment_status",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.assignments",
+    "function_args_count": 2,
+    "execution_time": 4.029273986816406e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: update_assignment_status() takes from 0 to 1 positional arguments but 2 were given\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 08:11:00.708",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in create_maintenance_request: create_maintenance_request() got an unexpected keyword argument 'room_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "aa1d7a64-dacb-43f7-a3ba-bc1b20b50611",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 2.193450927734375e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "169a7a44-7b2b-457d-ae5d-e2d16c610063",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_maintenance_request",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.maintenance",
+    "function_args_count": 5,
+    "execution_time": 2.193450927734375e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: create_maintenance_request() got an unexpected keyword argument 'room_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 08:11:00.804",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "update_error",
+  "module": "housing",
+  "details": "Error in update_maintenance_request: update_maintenance_request() got an unexpected keyword argument 'status'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "eed6c45d-e5ad-4596-aaf6-fe4b5580f630",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 3.0279159545898438e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "5a785546-6236-407f-b2a6-ca6445b9c417",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "update_maintenance_request",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.maintenance",
+    "function_args_count": 2,
+    "execution_time": 3.0279159545898438e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: update_maintenance_request() got an unexpected keyword argument 'status'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 08:11:00.863",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in record_payment: record_payment() got an unexpected keyword argument 'assignment_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "b534fd62-e01a-4176-aaf8-383944d4f75a",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 2.3365020751953125e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "2e819d81-05f4-44a1-bb88-85a7b4671b46",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "record_payment",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.payments",
+    "function_args_count": 5,
+    "execution_time": 2.3365020751953125e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: record_payment() got an unexpected keyword argument 'assignment_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 08:11:00.917",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "read_error",
+  "module": "housing",
+  "details": "Error in view_payment_history: view_payment_history() got an unexpected keyword argument 'student_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "a9f42dc3-4d59-42f7-b51d-2ccc5d585f25",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 3.4809112548828125e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "b0072149-7051-4837-b820-1bfad28654fd",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "view_payment_history",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.payments",
+    "function_args_count": 1,
+    "execution_time": 3.4809112548828125e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: view_payment_history() got an unexpected keyword argument 'student_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 08:11:00.974",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in create_inspection: create_inspection() got an unexpected keyword argument 'room_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "9fbb29cd-3709-4b1c-b7cf-cd50e0c46b8b",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 2.0742416381835938e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "1ff353df-c96f-4233-9054-db345f1f5e63",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_inspection",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.inspections",
+    "function_args_count": 4,
+    "execution_time": 2.0742416381835938e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: create_inspection() got an unexpected keyword argument 'room_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 08:11:01.113",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "read_error",
+  "module": "housing",
+  "details": "Error in generate_financial_report: generate_financial_report() takes 0 positional arguments but 2 were given",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "0e7c1c81-830f-44a9-947e-ca2c4f940aca",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 4.935264587402344e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "8ad2bf0d-a898-4a58-b516-6550100816a6",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "generate_financial_report",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.reports",
+    "function_args_count": 2,
+    "execution_time": 4.935264587402344e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: generate_financial_report() takes 0 positional arguments but 2 were given\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 08:11:01.226",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "export",
+  "module": "housing",
+  "details": "Exporting housing data",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "4ef8eff8-50da-41ce-8bc1-06a3225e5006",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.004349470138549805,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "HIGH",
+  "trace_id": "36426602-2e03-443d-b12e-166cd73458f9",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "export_housing_data",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.reports",
+    "function_args_count": 0,
+    "execution_time": 0.004349470138549805,
+    "memory_usage": 619958272
+  }
+}
+{
+  "timestamp": "2026-03-23 08:11:01.243",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "read_error",
+  "module": "housing",
+  "details": "Error in search_housing_records: search_housing_records() got an unexpected keyword argument 'student_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "bb61f654-21fe-4f0d-96a5-62b9670b1de0",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 4.124641418457031e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "203a95dd-4932-4c33-9d2e-5386c047811a",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "search_housing_records",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.reports",
+    "function_args_count": 1,
+    "execution_time": 4.124641418457031e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: search_housing_records() got an unexpected keyword argument 'student_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 08:11:16.201",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "update",
+  "module": "trips",
+  "details": "Managing trip participants",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "be1cf238-d243-4ad5-baba-5eb77e347ed7",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.06516718864440918,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "d406ad5e-4a2a-49c8-809e-9e639630feaa",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "manage_trip_participants",
+    "function_module": "education_system.university_system.modules.domain.mobility.services.trip_management.registrations",
+    "function_args_count": 0,
+    "execution_time": 0.06516718864440918,
+    "memory_usage": 621080576
+  }
+}
+{
+  "timestamp": "2026-03-23 08:11:25.165",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create",
+  "module": "trips",
+  "details": "Creating new trip",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "a016f093-fe60-4a84-9f4b-e44ca19aea45",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.0001068115234375,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "44b6ff32-be7e-4dac-a2e2-fdef9f3c7513",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_trip",
+    "function_module": "education_system.university_system.modules.domain.mobility.services.trip_management.trips",
+    "function_args_count": 0,
+    "execution_time": 0.0001068115234375,
+    "memory_usage": 620933120
+  }
+}
+{
+  "timestamp": "2026-03-23 08:19:31.871",
+  "user_id": "user123",
+  "username": "testuser",
+  "role": "admin",
+  "action": "login",
+  "module": "auth",
+  "details": "User logged in",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "f42cbbdd-885f-418d-afc9-3c91809bd047",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.0,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "LOW",
+  "trace_id": "a3e91636-bdb0-4764-85f5-a230c4fa7849",
+  "stack_trace": null,
+  "metadata": null
+}
+{
+  "timestamp": "2026-03-23 08:19:31.954",
+  "user_id": "user123",
+  "username": "testuser",
+  "role": "admin",
+  "action": "login",
+  "module": "authentication",
+  "details": "No additional details",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "ad5961c6-08c1-41db-9791-ae77dedaa792",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.0,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "LOW",
+  "trace_id": "d0a61fb8-1a8f-4d44-9a8f-02427520d8e6",
+  "stack_trace": null,
+  "metadata": null
+}
+{
+  "timestamp": "2026-03-23 08:19:32.124",
+  "user_id": "user123",
+  "username": "testuser",
+  "role": "admin",
+  "action": "logout",
+  "module": "authentication",
+  "details": "No additional details",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "d5a4c50d-8249-4fbb-9239-6d5b56d5a4ff",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.0,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "LOW",
+  "trace_id": "51d7c752-8fac-48d8-9009-9a8dcfd71dc7",
+  "stack_trace": null,
+  "metadata": null
+}
+{
+  "timestamp": "2026-03-23 08:19:32.284",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "test_action",
+  "module": "test_module",
+  "details": "Test details",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "ed07b620-75b1-433a-9a64-1a8160a974d4",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.0,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "LOW",
+  "trace_id": "9829027b-2d83-4200-948f-2874ecf7e1ac",
+  "stack_trace": null,
+  "metadata": null
+}
+{
+  "timestamp": "2026-03-23 12:01:17.184",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in create_building: create_building() got an unexpected keyword argument 'total_rooms'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "fed00b67-e29c-4f31-8b75-e9572875a430",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 3.0517578125e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "f98e9717-c688-48eb-a639-9f2fe19a180a",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_building",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.buildings",
+    "function_args_count": 6,
+    "execution_time": 3.0517578125e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: create_building() got an unexpected keyword argument 'total_rooms'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:01:17.316",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "update_error",
+  "module": "housing",
+  "details": "Error in update_building: update_building() got an unexpected keyword argument 'building_name'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "bf277909-3b56-4c9f-82b0-000d8065a4aa",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 3.910064697265625e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "e0ec0f22-da33-4bb9-9b28-73a50ba3c0ff",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "update_building",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.buildings",
+    "function_args_count": 2,
+    "execution_time": 3.910064697265625e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: update_building() got an unexpected keyword argument 'building_name'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:01:17.375",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "delete_error",
+  "module": "housing",
+  "details": "Error in delete_building: delete_building() takes 0 positional arguments but 1 was given",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "37aa5032-535c-4dc2-b354-824ba62ff532",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 3.8623809814453125e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "d87ff21b-855a-4cac-a362-115a4f94e5be",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "delete_building",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.buildings",
+    "function_args_count": 1,
+    "execution_time": 3.8623809814453125e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: delete_building() takes 0 positional arguments but 1 was given\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:01:17.446",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in create_rooms_for_building: create_rooms_for_building() got an unexpected keyword argument 'floors'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "d1979536-5527-46a8-9b99-469224163522",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 3.8623809814453125e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "7c30e551-4ede-44b1-a6a5-a76086b44fea",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_rooms_for_building",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.buildings",
+    "function_args_count": 5,
+    "execution_time": 3.8623809814453125e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: create_rooms_for_building() got an unexpected keyword argument 'floors'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:01:17.513",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "read_error",
+  "module": "housing",
+  "details": "Error in check_room_availability: check_room_availability() got an unexpected keyword argument 'building_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "2a9c91c3-644d-49f9-aa7f-a8af8f78e5b7",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 2.47955322265625e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "ba2db9b3-b1c0-42c1-b627-b8c6cbd4ceb4",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "check_room_availability",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.reports",
+    "function_args_count": 2,
+    "execution_time": 2.47955322265625e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: check_room_availability() got an unexpected keyword argument 'building_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:01:17.570",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in create_application: create_application() got an unexpected keyword argument 'student_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "306f3b09-04bd-4612-98a2-9d414342ecbe",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 2.4557113647460938e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "4539fc62-c4bf-4d6c-94c1-d01cf1815a1f",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_application",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.applications",
+    "function_args_count": 5,
+    "execution_time": 2.4557113647460938e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: create_application() got an unexpected keyword argument 'student_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:01:17.630",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "update_error",
+  "module": "housing",
+  "details": "Error in process_application: process_application() takes from 0 to 1 positional arguments but 4 were given",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "51ea01f5-9c9c-4e4a-8e82-f56cdd756c6f",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 6.771087646484375e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "309d06df-0bea-44cc-9387-446577ab1248",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "process_application",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.applications",
+    "function_args_count": 4,
+    "execution_time": 6.771087646484375e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: process_application() takes from 0 to 1 positional arguments but 4 were given\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:01:17.791",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "update_error",
+  "module": "housing",
+  "details": "Error in update_assignment_status: update_assignment_status() takes from 0 to 1 positional arguments but 2 were given",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "0e7b4a8c-2270-4a3f-bf9e-02431d7462cb",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 4.076957702636719e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "93f1c9f0-804a-472a-8fe1-fb5cd1e015df",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "update_assignment_status",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.assignments",
+    "function_args_count": 2,
+    "execution_time": 4.076957702636719e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: update_assignment_status() takes from 0 to 1 positional arguments but 2 were given\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:01:17.853",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in create_maintenance_request: create_maintenance_request() got an unexpected keyword argument 'room_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "f55a28db-a6d9-4db5-b721-2fbc507321e0",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 3.337860107421875e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "f405c0d5-a717-43ef-a3c4-af61461ba4a8",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_maintenance_request",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.maintenance",
+    "function_args_count": 5,
+    "execution_time": 3.337860107421875e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: create_maintenance_request() got an unexpected keyword argument 'room_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:01:17.954",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "update_error",
+  "module": "housing",
+  "details": "Error in update_maintenance_request: update_maintenance_request() got an unexpected keyword argument 'status'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "e5771bdf-0dfe-450d-989e-51d4dda0a73c",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 2.7894973754882812e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "4f3ae541-5c4f-4adc-8528-a62421f2feef",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "update_maintenance_request",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.maintenance",
+    "function_args_count": 2,
+    "execution_time": 2.7894973754882812e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: update_maintenance_request() got an unexpected keyword argument 'status'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:01:18.012",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in record_payment: record_payment() got an unexpected keyword argument 'assignment_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "61ea07b7-b245-4170-9bc5-ffb95d1148a4",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 2.4080276489257812e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "d3c5f8b7-b9bc-4f24-9e06-a237a6fb158d",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "record_payment",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.payments",
+    "function_args_count": 5,
+    "execution_time": 2.4080276489257812e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: record_payment() got an unexpected keyword argument 'assignment_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:01:18.073",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "read_error",
+  "module": "housing",
+  "details": "Error in view_payment_history: view_payment_history() got an unexpected keyword argument 'student_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "18a00b01-837f-48c5-a777-77356563a8aa",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 3.0040740966796875e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "00b2e018-9cad-40f6-ac98-327a89b51126",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "view_payment_history",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.payments",
+    "function_args_count": 1,
+    "execution_time": 3.0040740966796875e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: view_payment_history() got an unexpected keyword argument 'student_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:01:18.128",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in create_inspection: create_inspection() got an unexpected keyword argument 'room_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "84ed20ac-8c4b-4d52-9755-08d4542108c5",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 2.4318695068359375e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "dcc2420e-d5c1-453e-a214-bd438217fbfa",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_inspection",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.inspections",
+    "function_args_count": 4,
+    "execution_time": 2.4318695068359375e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: create_inspection() got an unexpected keyword argument 'room_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:01:18.279",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "read_error",
+  "module": "housing",
+  "details": "Error in generate_financial_report: generate_financial_report() takes 0 positional arguments but 2 were given",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "cc0fa7a6-46b2-4eab-bd51-22d7db9b6f18",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 6.413459777832031e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "421e008f-b429-4d1f-897f-3b0986787bf2",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "generate_financial_report",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.reports",
+    "function_args_count": 2,
+    "execution_time": 6.413459777832031e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: generate_financial_report() takes 0 positional arguments but 2 were given\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:01:18.416",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "export",
+  "module": "housing",
+  "details": "Exporting housing data",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "5da4ec03-b60a-4a46-866e-341b5d2e90cc",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.004949331283569336,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "HIGH",
+  "trace_id": "06f3cc7c-7b4b-4d86-b6d4-9202cd2ae34f",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "export_housing_data",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.reports",
+    "function_args_count": 0,
+    "execution_time": 0.004949331283569336,
+    "memory_usage": 546603008
+  }
+}
+{
+  "timestamp": "2026-03-23 12:01:18.441",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "read_error",
+  "module": "housing",
+  "details": "Error in search_housing_records: search_housing_records() got an unexpected keyword argument 'student_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "d7d6723a-c4f9-4d81-9cad-6635bafbbd67",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 3.600120544433594e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "f2bfc72c-a696-4677-b666-f55f37547529",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "search_housing_records",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.reports",
+    "function_args_count": 1,
+    "execution_time": 3.600120544433594e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: search_housing_records() got an unexpected keyword argument 'student_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:01:40.551",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "update",
+  "module": "trips",
+  "details": "Managing trip participants",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "20502cd8-84b4-440e-9a8d-ae44a7d1dbce",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.14090228080749512,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "2fa87dff-d935-4d2a-94bb-591cdf3d56b2",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "manage_trip_participants",
+    "function_module": "education_system.university_system.modules.domain.mobility.services.trip_management.registrations",
+    "function_args_count": 0,
+    "execution_time": 0.14090228080749512,
+    "memory_usage": 544337920
+  }
+}
+{
+  "timestamp": "2026-03-23 12:01:52.419",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create",
+  "module": "trips",
+  "details": "Creating new trip",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "026c253c-24a4-44cb-83fc-155a07917c08",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.00018525123596191406,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "c6de4f38-c163-4685-8508-81251591a682",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_trip",
+    "function_module": "education_system.university_system.modules.domain.mobility.services.trip_management.trips",
+    "function_args_count": 0,
+    "execution_time": 0.00018525123596191406,
+    "memory_usage": 544174080
+  }
+}
+{
+  "timestamp": "2026-03-23 12:12:17.656",
+  "user_id": "user123",
+  "username": "testuser",
+  "role": "admin",
+  "action": "login",
+  "module": "auth",
+  "details": "User logged in",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "8dcb894c-b37e-43b1-b652-46d03c494ab8",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.0,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "LOW",
+  "trace_id": "8c0b4c5e-4aa2-4899-b31c-2c2e4ff1244b",
+  "stack_trace": null,
+  "metadata": null
+}
+{
+  "timestamp": "2026-03-23 12:12:17.747",
+  "user_id": "user123",
+  "username": "testuser",
+  "role": "admin",
+  "action": "login",
+  "module": "authentication",
+  "details": "No additional details",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "de45f5a9-498e-4db1-a822-2d8c69c73a98",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.0,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "LOW",
+  "trace_id": "06704a6b-7caf-4e54-bdfe-89b417434da0",
+  "stack_trace": null,
+  "metadata": null
+}
+{
+  "timestamp": "2026-03-23 12:12:18.023",
+  "user_id": "user123",
+  "username": "testuser",
+  "role": "admin",
+  "action": "logout",
+  "module": "authentication",
+  "details": "No additional details",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "6a666fb0-5f40-4ea1-bcd4-549cfe2228af",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.0,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "LOW",
+  "trace_id": "92d1417c-9c3f-4f28-a6b8-c3c65f5e6a08",
+  "stack_trace": null,
+  "metadata": null
+}
+{
+  "timestamp": "2026-03-23 12:12:18.295",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "test_action",
+  "module": "test_module",
+  "details": "Test details",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "3ba9b74a-2dd4-451a-801e-76762d55d501",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.0,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "LOW",
+  "trace_id": "3c9f2585-24f2-4f7e-95b2-a7669a0d51bd",
+  "stack_trace": null,
+  "metadata": null
+}
+{
+  "timestamp": "2026-03-23 12:44:23.496",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in create_building: create_building() got an unexpected keyword argument 'total_rooms'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "c6bb4427-b47e-4d52-b867-ceb949d065f5",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 3.266334533691406e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "b0c77aa3-3ab8-4ee1-add4-aa5b5ffaeb6a",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_building",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.buildings",
+    "function_args_count": 6,
+    "execution_time": 3.266334533691406e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: create_building() got an unexpected keyword argument 'total_rooms'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:44:23.614",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "update_error",
+  "module": "housing",
+  "details": "Error in update_building: update_building() got an unexpected keyword argument 'building_name'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "84faa44f-7dc2-4946-b180-d7ff2b0bbc29",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 3.719329833984375e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "4c5b2107-bf55-4eac-a92c-0e9b0ae65181",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "update_building",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.buildings",
+    "function_args_count": 2,
+    "execution_time": 3.719329833984375e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: update_building() got an unexpected keyword argument 'building_name'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:44:23.687",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "delete_error",
+  "module": "housing",
+  "details": "Error in delete_building: delete_building() takes 0 positional arguments but 1 was given",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "275dd123-f4d5-4118-9b04-64131fe8ca6c",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 4.9114227294921875e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "cb147964-62b7-4289-8ed3-39c8a274a239",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "delete_building",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.buildings",
+    "function_args_count": 1,
+    "execution_time": 4.9114227294921875e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: delete_building() takes 0 positional arguments but 1 was given\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:44:23.750",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in create_rooms_for_building: create_rooms_for_building() got an unexpected keyword argument 'floors'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "0f2cf3c9-2338-4261-913f-d099f02c32a9",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 3.266334533691406e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "39f1ad35-6987-4d2e-9dcf-ccb2d9612be9",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_rooms_for_building",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.buildings",
+    "function_args_count": 5,
+    "execution_time": 3.266334533691406e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: create_rooms_for_building() got an unexpected keyword argument 'floors'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:44:23.816",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "read_error",
+  "module": "housing",
+  "details": "Error in check_room_availability: check_room_availability() got an unexpected keyword argument 'building_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "d5e3cfa8-1cf2-44f1-95c1-369509fb7f6c",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 4.029273986816406e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "e3ba6552-afba-4b25-b5f3-18aa76031100",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "check_room_availability",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.reports",
+    "function_args_count": 2,
+    "execution_time": 4.029273986816406e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: check_room_availability() got an unexpected keyword argument 'building_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:44:23.883",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in create_application: create_application() got an unexpected keyword argument 'student_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "09084d04-d8a4-4596-b471-ed92126ceab0",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 4.291534423828125e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "3f870de8-8e49-49b0-9b8e-48a5f35da34f",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_application",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.applications",
+    "function_args_count": 5,
+    "execution_time": 4.291534423828125e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: create_application() got an unexpected keyword argument 'student_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:44:23.940",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "update_error",
+  "module": "housing",
+  "details": "Error in process_application: process_application() takes from 0 to 1 positional arguments but 4 were given",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "500c166d-423c-47b4-abbb-8ecdf3fa0fc6",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 5.5789947509765625e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "9723360a-832f-4d41-804d-415d8721b974",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "process_application",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.applications",
+    "function_args_count": 4,
+    "execution_time": 5.5789947509765625e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: process_application() takes from 0 to 1 positional arguments but 4 were given\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:44:24.098",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "update_error",
+  "module": "housing",
+  "details": "Error in update_assignment_status: update_assignment_status() takes from 0 to 1 positional arguments but 2 were given",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "3a8767bc-d012-4fba-9e00-18d9e41bf852",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 5.1975250244140625e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "4c3f4114-f183-4d4a-89d4-9579f3a32f7e",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "update_assignment_status",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.assignments",
+    "function_args_count": 2,
+    "execution_time": 5.1975250244140625e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: update_assignment_status() takes from 0 to 1 positional arguments but 2 were given\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:44:24.160",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in create_maintenance_request: create_maintenance_request() got an unexpected keyword argument 'room_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "6ceb57cf-34e3-4dcd-9d2a-a30a3f8d8424",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 2.9087066650390625e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "359f4db3-d8f3-4387-909f-0d362d240c01",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_maintenance_request",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.maintenance",
+    "function_args_count": 5,
+    "execution_time": 2.9087066650390625e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: create_maintenance_request() got an unexpected keyword argument 'room_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:44:24.272",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "update_error",
+  "module": "housing",
+  "details": "Error in update_maintenance_request: update_maintenance_request() got an unexpected keyword argument 'status'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "7b3b6e92-5fd2-4b69-9a4c-6fabc433338c",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 3.24249267578125e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "d743f08f-f39e-4c4e-99ea-1d82b03a556f",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "update_maintenance_request",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.maintenance",
+    "function_args_count": 2,
+    "execution_time": 3.24249267578125e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: update_maintenance_request() got an unexpected keyword argument 'status'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:44:24.328",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in record_payment: record_payment() got an unexpected keyword argument 'assignment_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "6c125039-d69a-4cb1-a4c8-5ea04f787c6e",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 3.075599670410156e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "530878e4-c8c8-48cb-b40d-1ea129593d35",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "record_payment",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.payments",
+    "function_args_count": 5,
+    "execution_time": 3.075599670410156e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: record_payment() got an unexpected keyword argument 'assignment_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:44:24.384",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "read_error",
+  "module": "housing",
+  "details": "Error in view_payment_history: view_payment_history() got an unexpected keyword argument 'student_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "af7b336e-8cc8-480b-b53f-73e310f6bcdd",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 2.7418136596679688e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "20d4691d-313c-4e54-8de3-db0d17eb1eca",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "view_payment_history",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.payments",
+    "function_args_count": 1,
+    "execution_time": 2.7418136596679688e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: view_payment_history() got an unexpected keyword argument 'student_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:44:24.444",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create_error",
+  "module": "housing",
+  "details": "Error in create_inspection: create_inspection() got an unexpected keyword argument 'room_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "0b04d244-edfe-4f7c-8d25-9b567b15ff41",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 2.4318695068359375e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "9c78dadd-7f1c-448a-9493-c7aed46736b9",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_inspection",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.inspections",
+    "function_args_count": 4,
+    "execution_time": 2.4318695068359375e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: create_inspection() got an unexpected keyword argument 'room_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:44:24.592",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "read_error",
+  "module": "housing",
+  "details": "Error in generate_financial_report: generate_financial_report() takes 0 positional arguments but 2 were given",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "a11cee29-01ec-47d7-b029-69eccd340369",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 8.511543273925781e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "264c9b93-2d2f-47b1-bb83-e49a7907244d",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "generate_financial_report",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.reports",
+    "function_args_count": 2,
+    "execution_time": 8.511543273925781e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: generate_financial_report() takes 0 positional arguments but 2 were given\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:44:24.726",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "export",
+  "module": "housing",
+  "details": "Exporting housing data",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "807a480e-b186-4f67-bad2-0172645e846b",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.004333019256591797,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "HIGH",
+  "trace_id": "ef8d0a5e-87e9-4b68-bba3-a818a17c6060",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "export_housing_data",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.reports",
+    "function_args_count": 0,
+    "execution_time": 0.004333019256591797,
+    "memory_usage": 626716672
+  }
+}
+{
+  "timestamp": "2026-03-23 12:44:24.751",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "read_error",
+  "module": "housing",
+  "details": "Error in search_housing_records: search_housing_records() got an unexpected keyword argument 'student_id'",
+  "status": "failure",
+  "log_level": "ERROR",
+  "session_id": "ef21c95d-2e95-410c-a0fe-552af07c27ef",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 4.792213439941406e-05,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "ab24b754-444a-43e4-b1a0-22a6dc61eb11",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "search_housing_records",
+    "function_module": "education_system.university_system.modules.domain.housing.services.housing_accommodation.reports",
+    "function_args_count": 1,
+    "execution_time": 4.792213439941406e-05,
+    "error_type": "TypeError",
+    "stack_trace": "Traceback (most recent call last):\n  File \"/home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/decorators.py\", line 61, in wrapper\n    result = func(*args, **kwargs)\n             ^^^^^^^^^^^^^^^^^^^^^\nTypeError: search_housing_records() got an unexpected keyword argument 'student_id'\n"
+  }
+}
+{
+  "timestamp": "2026-03-23 12:44:38.138",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "update",
+  "module": "trips",
+  "details": "Managing trip participants",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "8de248c9-55e6-43c7-8597-2243d0ffe38d",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.0763692855834961,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "e2657490-edc5-43cb-a934-870955468d2c",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "manage_trip_participants",
+    "function_module": "education_system.university_system.modules.domain.mobility.services.trip_management.registrations",
+    "function_args_count": 0,
+    "execution_time": 0.0763692855834961,
+    "memory_usage": 628334592
+  }
+}
+{
+  "timestamp": "2026-03-23 12:44:46.607",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "create",
+  "module": "trips",
+  "details": "Creating new trip",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "ba636034-346d-4fa6-a1e0-d09667651e59",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.00015807151794433594,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "MEDIUM",
+  "trace_id": "037cf983-6874-4160-9a32-63436135a852",
+  "stack_trace": null,
+  "metadata": {
+    "function_name": "create_trip",
+    "function_module": "education_system.university_system.modules.domain.mobility.services.trip_management.trips",
+    "function_args_count": 0,
+    "execution_time": 0.00015807151794433594,
+    "memory_usage": 628404224
+  }
+}
+{
+  "timestamp": "2026-03-23 12:52:52.898",
+  "user_id": "user123",
+  "username": "testuser",
+  "role": "admin",
+  "action": "login",
+  "module": "auth",
+  "details": "User logged in",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "d440852b-3db4-4ccf-af36-d756ae99e06b",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.0,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "LOW",
+  "trace_id": "47a51940-56c7-4019-850c-52332fe48dde",
+  "stack_trace": null,
+  "metadata": null
+}
+{
+  "timestamp": "2026-03-23 12:52:52.936",
+  "user_id": "user123",
+  "username": "testuser",
+  "role": "admin",
+  "action": "login",
+  "module": "authentication",
+  "details": "No additional details",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "6a485d9f-e941-45e5-a6a0-171cd7f4b6cc",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.0,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "LOW",
+  "trace_id": "f132233f-d3e3-4991-a1b4-21fb1457d70a",
+  "stack_trace": null,
+  "metadata": null
+}
+{
+  "timestamp": "2026-03-23 12:52:54.680",
+  "user_id": "user123",
+  "username": "testuser",
+  "role": "admin",
+  "action": "logout",
+  "module": "authentication",
+  "details": "No additional details",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "5f0ee72c-33ea-4eb2-bd14-7fb987eab329",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.0,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "LOW",
+  "trace_id": "c45c16d9-5b73-48a3-9357-28aa5c5a0fb2",
+  "stack_trace": null,
+  "metadata": null
+}
+{
+  "timestamp": "2026-03-23 12:52:54.842",
+  "user_id": "system",
+  "username": "system",
+  "role": "system",
+  "action": "test_action",
+  "module": "test_module",
+  "details": "Test details",
+  "status": "success",
+  "log_level": "INFO",
+  "session_id": "2c81333c-e405-4316-a2a1-609eb13d778f",
+  "ip_address": "127.0.1.1",
+  "user_agent": "ActivityLogger/1.0",
+  "request_size": 0,
+  "response_size": 0,
+  "processing_time": 0.0,
+  "geolocation": {
+    "country": "Local",
+    "region": "Local",
+    "city": "Local",
+    "timezone": "Local"
+  },
+  "security_level": "LOW",
+  "trace_id": "ac6b2e96-cf60-4b33-ad90-1c5dfeca80c5",
+  "stack_trace": null,
+  "metadata": null
+}

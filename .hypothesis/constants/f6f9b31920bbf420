@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/services/allergies.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d', '-', '1', '2', '3', '4', '5', '6', 'H', 'Life-threatening', 'Severe', 'amoxicillin', 'ampicillin', 'aspirin', 'health.allergies.no', 'health.allergies.yes', 'ibuprofen', 'latex', 'naproxen', 'penicillin', 'sulfa', 'sulfamethoxazole', 'trimethoprim', 'y']

@@ -55,9 +55,9 @@ def mock_auth():
 @pytest.fixture
 def doc_manager(temp_db, mock_auth):
     """Create DocumentManager instance with mocked dependencies"""
-    with patch('university_system.modules.shared.utils.document_manager.get_connection') as mock_conn, \
-         patch('university_system.modules.shared.utils.document_manager.get_current_user') as mock_user, \
-         patch('university_system.modules.shared.utils.document_manager.set_auth_instance'):
+    with patch('education_system.university_system.modules.shared.utils.document_manager.get_connection') as mock_conn, \
+         patch('education_system.university_system.modules.shared.utils.document_manager.get_current_user') as mock_user, \
+         patch('education_system.university_system.modules.shared.utils.document_manager.set_auth_instance'):
 
         # Mock database connection
         mock_conn.return_value = sqlite3.connect(temp_db)
@@ -84,7 +84,7 @@ class TestDocumentManagerInitialization:
 
     def test_init_enhanced_db_creates_tables(self, temp_db, mock_auth):
         """Test that all required tables are created"""
-        with patch('university_system.modules.shared.utils.document_manager.get_connection') as mock_conn:
+        with patch('education_system.university_system.modules.shared.utils.document_manager.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
             from education_system.university_system.modules.shared.utils.document_manager import DocumentManager
@@ -122,7 +122,7 @@ class TestDocumentManagerInitialization:
         conn.close()
 
         # Initialize DocumentManager (should trigger migration)
-        with patch('university_system.modules.shared.utils.document_manager.get_connection') as mock_conn:
+        with patch('education_system.university_system.modules.shared.utils.document_manager.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
             from education_system.university_system.modules.shared.utils.document_manager import DocumentManager

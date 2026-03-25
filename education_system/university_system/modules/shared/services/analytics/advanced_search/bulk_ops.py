@@ -2,8 +2,8 @@
 import json
 from datetime import datetime
 
-from . import _globals
-from .export import export_to_csv, export_to_json, export_to_excel, custom_format_export
+from education_system.university_system.modules.shared.services.analytics.advanced_search import _globals
+from education_system.university_system.modules.shared.services.analytics.advanced_search.export import export_to_csv, export_to_json, export_to_excel, custom_format_export
 
 
 def bulk_operations_menu():

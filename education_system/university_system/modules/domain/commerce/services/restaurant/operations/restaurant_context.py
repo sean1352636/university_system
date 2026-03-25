@@ -72,7 +72,7 @@ except Exception:
 # Helper functions for cross-module dependencies
 def init_db():
     """Initialize the database."""
-    from . import connection
+    from education_system.university_system.modules.domain.commerce.services.restaurant.operations import connection
     return connection.init_db()
 
 def set_auth(auth_instance):
@@ -83,65 +83,65 @@ def set_auth(auth_instance):
 
 def display_main_menu(auth_obj):
     """Display the main menu."""
-    from . import connection
+    from education_system.university_system.modules.domain.commerce.services.restaurant.operations import connection
     return connection.display_main_menu(auth_obj)
 
 def expense_analytics():
     """Show expense analytics."""
-    from . import exports
+    from education_system.university_system.modules.domain.commerce.services.restaurant.operations import exports
     return exports.expense_analytics()
 
 def export_expense_report():
     """Export expense report."""
-    from . import exports
+    from education_system.university_system.modules.domain.commerce.services.restaurant.operations import exports
     return exports.export_expense_report()
 
 def analyze_query_performance():
     """Analyze query performance."""
-    from . import maintenance
+    from education_system.university_system.modules.domain.commerce.services.restaurant.operations import maintenance
     return maintenance.analyze_query_performance()
 
 def optimize_table_structure():
     """Optimize table structure."""
-    from . import maintenance
+    from education_system.university_system.modules.domain.commerce.services.restaurant.operations import maintenance
     return maintenance.optimize_table_structure()
 
 def export_payroll_report():
     """Export payroll report."""
-    from . import exports
+    from education_system.university_system.modules.domain.commerce.services.restaurant.operations import exports
     return exports.export_payroll_report()
 
 def user_management():
     """Manage users."""
-    from . import users
+    from education_system.university_system.modules.domain.commerce.services.restaurant.operations import users
     return users.user_management()
 
 def system_maintenance():
     """System maintenance."""
-    from . import maintenance
+    from education_system.university_system.modules.domain.commerce.services.restaurant.operations import maintenance
     return maintenance.system_maintenance()
 
 def view_audit_logs():
     """View audit logs."""
-    from . import audit
+    from education_system.university_system.modules.domain.commerce.services.restaurant.operations import audit
     return audit.view_audit_logs()
 
 def manage_notifications():
     """Manage notifications."""
-    from . import notifications
+    from education_system.university_system.modules.domain.commerce.services.restaurant.operations import notifications
     return notifications.manage_notifications()
 
 def system_backup():
     """System backup."""
-    from . import backup
+    from education_system.university_system.modules.domain.commerce.services.restaurant.operations import backup
     return backup.system_backup()
 
 def database_optimization():
     """Database optimization."""
-    from . import maintenance
+    from education_system.university_system.modules.domain.commerce.services.restaurant.operations import maintenance
     return maintenance.database_optimization()
 
 def view_user_activity_logs():
     """View user activity logs."""
-    from . import audit
+    from education_system.university_system.modules.domain.commerce.services.restaurant.operations import audit
     return audit.view_user_activity_logs()

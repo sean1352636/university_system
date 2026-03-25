@@ -61,7 +61,7 @@ except ImportError:
     except Exception:
         class ModuleScheduler: pass
 
-from .main_gui import ModuleSchedulingGUI
+from education_system.university_system.modules.domain.academics.gui.module_scheduling.main_gui import ModuleSchedulingGUI
 
 def create_conflicts_tab(self):
     """Create the conflicts management tab"""
@@ -120,7 +120,7 @@ def refresh_conflicts(self):
             ))
             
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to refresh conflicts: {str(e)}")
+        messagebox.showerror("Error", f"Failed to refresh conflicts: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.refresh_conflicts = refresh_conflicts
 
@@ -153,14 +153,15 @@ def detect_all_conflicts(self):
     total = len(conflicts)
 
     if total == 0:
-        messagebox.showinfo("Conflict Detection", "No scheduling conflicts detected.")
+        messagebox.showinfo("Conflict Detection", "No scheduling conflicts detected.", parent=self.root)
     else:
         messagebox.showwarning(
             "Conflict Detection",
             f"Detected {total} conflict(s):\n\n"
             f"  Room conflicts: {room_count}\n"
             f"  Instructor conflicts: {instr_count}\n"
-            f"  Student conflicts: {student_count}"
+            f"  Student conflicts: {student_count}",
+            parent=self.root
         )
 
     return conflicts
@@ -171,7 +172,7 @@ def resolve_selected_conflict(self):
     """Resolve the selected conflict"""
     selected = self.conflicts_tree.selection()
     if not selected:
-        messagebox.showwarning("Warning", "Please select a conflict to resolve.")
+        messagebox.showwarning("Warning", "Please select a conflict to resolve.", parent=self.root)
         return
     
     conflict_data = self.conflicts_tree.item(selected[0])['values']
@@ -188,10 +189,10 @@ def resolve_selected_conflict(self):
             self.refresh_conflicts()
             self.refresh_dashboard()
             self.update_activity_log(f"Resolved conflict {conflict_id}")
-            messagebox.showinfo("Success", "Conflict resolved successfully.")
+            messagebox.showinfo("Success", "Conflict resolved successfully.", parent=self.root)
             
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to resolve conflict: {str(e)}")
+            messagebox.showerror("Error", f"Failed to resolve conflict: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.resolve_selected_conflict = resolve_selected_conflict
 
@@ -312,9 +313,9 @@ def resolve_conflict(self, conflict_id, resolution_notes=""):
             WHERE id = ?
             ''', (resolution_notes, conflict_id))
 
-            messagebox.showinfo("Success", f"Conflict {conflict_id} marked as resolved.")
+            messagebox.showinfo("Success", f"Conflict {conflict_id} marked as resolved.", parent=self.root)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to resolve conflict: {str(e)}")
+        messagebox.showerror("Error", f"Failed to resolve conflict: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.resolve_conflict = resolve_conflict
 
@@ -528,7 +529,7 @@ def display_student_conflicts(self, student_id=None):
     conflicts = self._get_student_conflicts(student_id)
 
     if not conflicts:
-        messagebox.showinfo("No Conflicts", f"No scheduling conflicts found for student {student_id}")
+        messagebox.showinfo("No Conflicts", f"No scheduling conflicts found for student {student_id}", parent=self.root)
         return
 
     # Create dialog to show conflicts

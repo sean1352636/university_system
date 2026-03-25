@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/analytics/enhanced_reporting/data_retrieval.py
+# hypothesis_version: 6.151.9
+
+['age_distribution', 'attendance_rate', 'attendance_records', 'attendance_summary', 'correlation_analysis', 'count', 'course_distribution', 'gender_distribution', 'grade', 'grade_distribution', 'module_code', 'module_name', 'module_popularity', 'present_count', 'registration_trends', 'status', 'student_count', 'student_list', 'student_overview', 'trend_analysis']

@@ -20,18 +20,18 @@ class TestPathConstants:
 
     def test_project_root_is_path_object(self):
         """Verify PROJECT_ROOT is a Path object"""
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         assert isinstance(paths.PROJECT_ROOT, Path)
         assert paths.PROJECT_ROOT.exists()
 
     def test_repo_root_equals_project_root(self):
         """Verify REPO_ROOT equals PROJECT_ROOT"""
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
         assert paths.REPO_ROOT == paths.PROJECT_ROOT
 
     def test_all_path_constants_are_path_objects(self):
         """Verify all path constants are Path objects"""
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
 
         path_constants = [
             'PROJECT_ROOT', 'REPO_ROOT', 'SRC_DIR', 'DATA_DIR', 'DB_DIR',
@@ -54,7 +54,7 @@ class TestPathConstants:
 
     def test_path_hierarchy_relationships(self):
         """Verify path hierarchy is correct"""
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
 
         # DATA_DIR should be under PROJECT_ROOT
         assert paths.PROJECT_ROOT in paths.DATA_DIR.parents
@@ -73,7 +73,7 @@ class TestPathConstants:
 
     def test_file_paths_have_correct_parents(self):
         """Verify file paths (not directories) have correct parent directories"""
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
 
         # DEFAULT_DB_PATH should be in DB_DIR
         assert paths.DEFAULT_DB_PATH.parent == paths.DB_DIR
@@ -90,7 +90,7 @@ class TestEnsureDirectories:
 
     def test_ensure_directories_creates_all_directories(self):
         """Verify ensure_directories() creates all required directories"""
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
 
         # Get all directory paths (exclude file paths)
         directory_paths = [
@@ -112,9 +112,9 @@ class TestEnsureDirectories:
             temp_path = Path(temp_dir)
 
             # Mock the paths to use temp directory
-            with patch('university_system.modules.shared.constants.paths.DATA_DIR', temp_path / 'data'), \
-                 patch('university_system.modules.shared.constants.paths.DB_DIR', temp_path / 'data' / 'db_files'), \
-                 patch('university_system.modules.shared.constants.paths._ensure') as mock_ensure:
+            with patch('education_system.university_system.modules.shared.constants.paths.DATA_DIR', temp_path / 'data'), \
+                 patch('education_system.university_system.modules.shared.constants.paths.DB_DIR', temp_path / 'data' / 'db_files'), \
+                 patch('education_system.university_system.modules.shared.constants.paths._ensure') as mock_ensure:
 
                 # Call ensure_directories()
                 paths.ensure_directories()
@@ -124,7 +124,7 @@ class TestEnsureDirectories:
 
     def test_ensure_helper_creates_directory(self):
         """Verify _ensure() helper creates directories"""
-        from education_system.university_system.modules.shared.constants.paths import _ensure
+        from education_system.university_system.core.paths import _ensure
 
         with tempfile.TemporaryDirectory() as temp_dir:
             test_path = Path(temp_dir) / 'test_dir' / 'nested' / 'path'
@@ -142,7 +142,7 @@ class TestEnsureDirectories:
 
     def test_ensure_helper_handles_existing_directory(self):
         """Verify _ensure() handles existing directories gracefully"""
-        from education_system.university_system.modules.shared.constants.paths import _ensure
+        from education_system.university_system.core.paths import _ensure
 
         with tempfile.TemporaryDirectory() as temp_dir:
             test_path = Path(temp_dir) / 'existing_dir'
@@ -164,14 +164,14 @@ class TestModuleExports:
 
     def test_all_exports_are_defined(self):
         """Verify all items in __all__ are actually defined"""
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
 
         for export_name in paths.__all__:
             assert hasattr(paths, export_name), f"{export_name} in __all__ but not defined"
 
     def test_all_major_paths_are_exported(self):
         """Verify major path constants are in __all__"""
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
 
         required_exports = [
             'PROJECT_ROOT', 'DATA_DIR', 'DB_DIR', 'DEFAULT_DB_PATH',
@@ -183,7 +183,7 @@ class TestModuleExports:
 
     def test_ensure_directories_is_callable(self):
         """Verify ensure_directories is a callable function"""
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
 
         assert callable(paths.ensure_directories)
         assert 'ensure_directories' in paths.__all__
@@ -194,7 +194,7 @@ class TestPathIntegrity:
 
     def test_no_absolute_hardcoded_paths(self):
         """Verify paths are relative to PROJECT_ROOT, not hardcoded"""
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
 
         # All paths except PROJECT_ROOT should contain PROJECT_ROOT in their path
         path_constants = [
@@ -208,7 +208,7 @@ class TestPathIntegrity:
 
     def test_project_root_calculation(self):
         """Verify PROJECT_ROOT is calculated correctly from this file"""
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
 
         # PROJECT_ROOT should point to university_system directory
         assert paths.PROJECT_ROOT.name == 'university_system'
@@ -216,7 +216,7 @@ class TestPathIntegrity:
 
     def test_src_dir_points_to_modules(self):
         """Verify SRC_DIR points to modules directory"""
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
 
         assert paths.SRC_DIR.name == 'modules'
         assert paths.SRC_DIR.parent == paths.PROJECT_ROOT
@@ -227,28 +227,28 @@ class TestSpecialPaths:
 
     def test_default_db_path_has_correct_name(self):
         """Verify DEFAULT_DB_PATH has expected database filename"""
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
 
         assert paths.DEFAULT_DB_PATH.name == 'student_records.db'
         assert paths.DEFAULT_DB_PATH.suffix == '.db'
 
     def test_email_config_path_has_correct_name(self):
         """Verify EMAIL_CONFIG_PATH has expected filename"""
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
 
         assert paths.EMAIL_CONFIG_PATH.name == 'email_config.json'
         assert paths.EMAIL_CONFIG_PATH.suffix == '.json'
 
     def test_chatbot_config_path_has_correct_name(self):
         """Verify CHATBOT_CONFIG_PATH has expected filename"""
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
 
         assert paths.CHATBOT_CONFIG_PATH.name == 'chatbot_config.json'
         assert paths.CHATBOT_CONFIG_PATH.suffix == '.json'
 
     def test_analytics_subdirectories_exist(self):
         """Verify analytics has proper subdirectories"""
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
 
         # ANALYTICS_PLOTS_DIR should be under ANALYTICS_DIR
         assert paths.ANALYTICS_DIR in paths.ANALYTICS_PLOTS_DIR.parents
@@ -258,7 +258,7 @@ class TestSpecialPaths:
 
     def test_template_subdirectories_exist(self):
         """Verify templates has proper subdirectories"""
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
 
         # All template subdirectories should be under TEMPLATES_DIR
         template_subdirs = [

@@ -2,13 +2,13 @@
 
 import logging
 
-from .db import init_cinema_db
-from .utils import print_header, get_current_user, is_staff_or_admin
-from .movies import view_movies, search_movies, view_movie_details
-from .screenings import view_screenings
-from .booking import book_tickets, view_my_bookings
-from .membership import membership_menu, get_user_membership
-from .admin import admin_panel
+from education_system.university_system.modules.services.cli.cinema_cli.db import init_cinema_db
+from education_system.university_system.modules.services.cli.cinema_cli.utils import print_header, get_current_user, is_staff_or_admin
+from education_system.university_system.modules.services.cli.cinema_cli.movies import view_movies, search_movies, view_movie_details
+from education_system.university_system.modules.services.cli.cinema_cli.screenings import view_screenings
+from education_system.university_system.modules.services.cli.cinema_cli.booking import book_tickets, view_my_bookings
+from education_system.university_system.modules.services.cli.cinema_cli.membership import membership_menu, get_user_membership
+from education_system.university_system.modules.services.cli.cinema_cli.admin import admin_panel
 
 logger = logging.getLogger(__name__)
 

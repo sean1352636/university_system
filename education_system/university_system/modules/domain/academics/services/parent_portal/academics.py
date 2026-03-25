@@ -10,7 +10,7 @@ class AcademicsMixin:
             print("You must be logged in to view your child's grades.")
             return
 
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
 
@@ -99,7 +99,7 @@ class AcademicsMixin:
             print("You must be logged in to view your child's attendance.")
             return
 
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
 
@@ -207,7 +207,7 @@ class AcademicsMixin:
             print("You must be logged in to view teacher reports.")
             return
 
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
 
@@ -316,7 +316,7 @@ class AcademicsMixin:
             print("You must be logged in to view your child's timetable.")
             return
 
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
 
@@ -407,7 +407,7 @@ class AcademicsMixin:
             print("You must be logged in to view your child's assignments.")
             return
 
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
 
@@ -759,11 +759,11 @@ class AcademicsMixin:
             print("You must be logged in to view the dashboard.")
             return
 
-        if self.auth.current_user['role'] != 'parent' and self.auth.current_user['role'] != 'admin':
+        if self.auth.current_user.get('role', '') != 'parent' and self.auth.current_user.get('role', '') != 'admin':
             print("This function is only available for parent accounts and administrators.")
             return
 
-        if self.auth.current_user['role'] == 'parent' and not self.auth.check_permission('access_parent_dashboard'):
+        if self.auth.current_user.get('role', '') == 'parent' and not self.auth.check_permission('access_parent_dashboard'):
             print("You don't have permission to access the dashboard.")
             return
 
@@ -773,7 +773,7 @@ class AcademicsMixin:
             conn.execute("PRAGMA busy_timeout = 30000")
             cursor = conn.cursor()
 
-            if self.auth.current_user['role'] == 'parent':
+            if self.auth.current_user.get('role', '') == 'parent':
                 parent_id = self.get_parent_id_from_user(self.auth.current_user['id'])
                 if not parent_id:
                     print("Error retrieving parent ID.")

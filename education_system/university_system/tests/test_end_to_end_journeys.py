@@ -27,7 +27,7 @@ class TestStudentJourneys:
         """
 
         # Step 1: Create student
-        with transaction() as conn:
+        with transaction(db_path=temp_db) as conn:
             cursor = conn.execute("""
                 INSERT INTO students (
                     student_id, first_name, last_name, email, status
@@ -43,7 +43,7 @@ class TestStudentJourneys:
         ]
 
         course_pks = []
-        with transaction() as conn:
+        with transaction(db_path=temp_db) as conn:
             for code, name in courses:
                 cursor = conn.execute("""
                     INSERT INTO courses (course_code, course_name, credits, status)
@@ -52,7 +52,7 @@ class TestStudentJourneys:
                 course_pks.append(cursor.lastrowid)
 
         # Step 3: Register for courses
-        with transaction() as conn:
+        with transaction(db_path=temp_db) as conn:
             for course_pk in course_pks:
                 conn.execute("""
                     INSERT INTO enrollments (
@@ -61,7 +61,7 @@ class TestStudentJourneys:
                 """, (student_pk, course_pk, datetime.now().date().isoformat(), "enrolled"))
 
         # Verify journey
-        with get_connection() as conn:
+        with get_connection(db_path=temp_db) as conn:
             enrollment_count = conn.execute("""
                 SELECT COUNT(*) FROM enrollments WHERE student_id = ?
             """, (student_pk,)).fetchone()[0]
@@ -76,7 +76,7 @@ class TestStudentJourneys:
         """
 
         # Setup student and course
-        with transaction() as conn:
+        with transaction(db_path=temp_db) as conn:
             cursor = conn.execute("""
                 INSERT INTO students (student_id, first_name, last_name, status)
                 VALUES (?, ?, ?, ?)
@@ -97,7 +97,7 @@ class TestStudentJourneys:
             """, (student_pk, course_pk, datetime.now().date().isoformat(), "enrolled"))
 
         # Submit assignments
-        with transaction() as conn:
+        with transaction(db_path=temp_db) as conn:
             for i in range(3):
                 conn.execute("""
                     INSERT INTO grades (
@@ -108,27 +108,30 @@ class TestStudentJourneys:
                       85 + i, 100, datetime.now().date().isoformat()))
 
         # Record final grade
-        with transaction() as conn:
+        with transaction(db_path=temp_db) as conn:
             conn.execute("""
                 UPDATE enrollments
                 SET grade = 'A', status = 'completed'
                 WHERE student_id = ? AND course_id = ?
             """, (student_pk, course_pk))
 
-        # Verify completion
-        with get_connection() as conn:
+        # Verify completion — query enrollment and assignment count separately
+        # to avoid GROUP BY ambiguity with fetchone()
+        with get_connection(db_path=temp_db) as conn:
             conn.row_factory = sqlite3.Row
-            result = conn.execute("""
-                SELECT e.grade, e.status, COUNT(g.id) as assignments
-                FROM enrollments e
-                LEFT JOIN grades g ON e.student_id = g.student_id AND e.course_id = g.course_id
-                WHERE e.student_id = ? AND e.course_id = ?
-                GROUP BY e.grade, e.status
+            enrollment = conn.execute("""
+                SELECT grade, status FROM enrollments
+                WHERE student_id = ? AND course_id = ?
             """, (student_pk, course_pk)).fetchone()
 
-            assert result['grade'] == 'A'
-            assert result['status'] == 'completed'
-            assert result['assignments'] == 3
+            assignment_count = conn.execute("""
+                SELECT COUNT(*) as cnt FROM grades
+                WHERE student_id = ? AND course_id = ?
+            """, (student_pk, course_pk)).fetchone()['cnt']
+
+            assert enrollment['grade'] == 'A'
+            assert enrollment['status'] == 'completed'
+            assert assignment_count == 3
 
 @pytest.mark.integration
 @pytest.mark.slow
@@ -144,7 +147,7 @@ class TestInstructorJourneys:
         """
 
         # Create instructor and course
-        with transaction() as conn:
+        with transaction(db_path=temp_db) as conn:
             cursor = conn.execute("""
                 INSERT INTO courses (course_code, course_name, credits, status)
                 VALUES (?, ?, ?, ?)
@@ -153,7 +156,7 @@ class TestInstructorJourneys:
 
         # Enroll students
         student_pks = []
-        with transaction() as conn:
+        with transaction(db_path=temp_db) as conn:
             for i in range(3):
                 cursor = conn.execute("""
                     INSERT INTO students (
@@ -171,7 +174,7 @@ class TestInstructorJourneys:
 
         # Record grades for all students
         grades = ['A', 'B', 'A']
-        with transaction() as conn:
+        with transaction(db_path=temp_db) as conn:
             for i, student_pk in enumerate(student_pks):
                 conn.execute("""
                     INSERT INTO grades (
@@ -188,7 +191,7 @@ class TestInstructorJourneys:
                 """, (grades[i], student_pk, course_pk))
 
         # Verify all grades submitted
-        with get_connection() as conn:
+        with get_connection(db_path=temp_db) as conn:
             completed_count = conn.execute("""
                 SELECT COUNT(*) FROM enrollments
                 WHERE course_id = ? AND status = 'completed'

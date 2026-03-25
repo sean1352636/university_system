@@ -3,6 +3,7 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import ObservationError, ValidationError
 from education_system.college_system.infrastructure.database.db import connect
+from education_system.college_system.core.sql_safety import validate_identifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,10 +26,24 @@ class ObservationService:
             raise ValidationError("observation_type is required.")
         conn = self._conn()
         try:
+            # Build INSERT with only non-None values so DB defaults apply
+            fields = {k: v for k, v in {
+                'teacher_id': kwargs.get('teacher_id'),
+                'observer_id': kwargs.get('observer_id'),
+                'scheduled_date': kwargs.get('scheduled_date'),
+                'course_id': kwargs.get('course_id'),
+                'observation_type': kwargs.get('observation_type'),
+                'grade': kwargs.get('grade'),
+                'strengths': kwargs.get('strengths'),
+                'areas_for_development': kwargs.get('areas_for_development'),
+                'action_points': kwargs.get('action_points'),
+                'status': kwargs.get('status'),
+            }.items() if v is not None}
+            cols = ", ".join(fields.keys())
+            placeholders = ", ".join("?" for _ in fields)
             conn.execute(
-                """INSERT INTO teaching_observations (teacher_id, observer_id, scheduled_date, course_id, observation_type, grade, strengths, areas_for_development, action_points, status)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (kwargs.get('teacher_id'), kwargs.get('observer_id'), kwargs.get('scheduled_date'), kwargs.get('course_id'), kwargs.get('observation_type'), kwargs.get('grade'), kwargs.get('strengths'), kwargs.get('areas_for_development'), kwargs.get('action_points'), kwargs.get('status'),),
+                f"INSERT INTO teaching_observations ({cols}) VALUES ({placeholders})",
+                list(fields.values()),
             )
             conn.commit()
             row = conn.execute(
@@ -60,7 +75,7 @@ class ObservationService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -78,7 +93,7 @@ class ObservationService:
         if not updates:
             raise ValidationError("No valid fields to update.")
         updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [pk]
         conn = self._conn()
         try:
@@ -116,7 +131,7 @@ class ObservationService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         conn = self._conn()
         try:

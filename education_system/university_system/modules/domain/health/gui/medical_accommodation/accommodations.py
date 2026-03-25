@@ -1,21 +1,21 @@
 # accommodations.py
 # Accommodation CRUD mixin for AccommodationGUI.
 
-from ._common import (
+from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import (
     tk, messagebox, simpledialog,
     datetime, sqlite3,
     CLI_AVAILABLE, get_connection,
 )
 
 if CLI_AVAILABLE:
-    from ._common import (
+    from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import (
         validate_student_id, log_action,
-        notify_student as cli_notify_student,
+        cli_notify_student,
     )
 
-from .utils import check_conflict
-from .dialogs.accommodation_dialog import AccommodationDialog
-from .dialogs.details_dialog import DetailsDialog
+from education_system.university_system.modules.domain.health.gui.medical_accommodation.utils import check_conflict
+from education_system.university_system.modules.domain.health.gui.medical_accommodation.dialogs.accommodation_dialog import AccommodationDialog
+from education_system.university_system.modules.domain.health.gui.medical_accommodation.dialogs.details_dialog import DetailsDialog
 
 
 class AccommodationCRUDMixin:
@@ -197,7 +197,15 @@ class AccommodationCRUDMixin:
             else:  # Permanent deletion
                 with get_connection() as conn:
                     cursor = conn.cursor()
-                    cursor.execute('DELETE FROM accommodation_documents WHERE accommodation_id = ?', (accommodation_id,))
+                    cursor.execute(
+                        "DELETE FROM documents WHERE source_type = 'accommodation'"
+                        " AND reference_id = ? AND reference_type = 'accommodation'",
+                        (str(accommodation_id),))
+                    # Delete from accommodation_renewals to avoid FK mismatch
+                    try:
+                        cursor.execute('DELETE FROM accommodation_renewals WHERE accommodation_id = ?', (accommodation_id,))
+                    except sqlite3.OperationalError:
+                        pass  # Table may not exist
                     cursor.execute('DELETE FROM accommodations WHERE id = ?', (accommodation_id,))
                     conn.commit()
 
@@ -243,9 +251,13 @@ class AccommodationCRUDMixin:
                 accommodation = dict(accommodation)
 
                 cursor.execute('''
-                    SELECT * FROM accommodation_documents
-                    WHERE accommodation_id = ?
-                ''', (accommodation_id,))
+                    SELECT document_id as id, reference_id as accommodation_id,
+                           document_name, file_path as document_path,
+                           uploaded_by, upload_date as uploaded_at
+                    FROM documents
+                    WHERE source_type = 'accommodation' AND reference_id = ?
+                      AND reference_type = 'accommodation'
+                ''', (str(accommodation_id),))
 
                 documents = [dict(doc) for doc in cursor.fetchall()]
 

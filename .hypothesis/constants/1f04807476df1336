@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/repositories/base.py
+# hypothesis_version: 6.151.9
+
+['AndSpecification', 'AndSpecification[T]', 'BatchRepository', 'Entity', 'ID', 'NotSpecification', 'NotSpecification[T]', 'OrSpecification', 'OrSpecification[T]', 'QueryableRepository', 'Repository', 'SpecificationPattern', 'T']

@@ -9,6 +9,10 @@ from datetime import datetime
 from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.modules.shared.utils.simple_activity_logger import log_activity
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.infrastructure.email.template_utils import render_template
+from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.export_manager import export_data_gui
+from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.scheduled_reports import show_scheduled_reports_manager
 
 def show_reports(self):
         """Show reports and analytics interface"""
@@ -26,14 +30,14 @@ def show_reports(self):
         buttons_frame.pack(side='left', fill='y', padx=(0, 20))
         
         report_buttons = [
-            ("Occupancy Report", self.show_occupancy_report),
-            ("Financial Summary", self.show_financial_summary),
-            ("Maintenance Summary", self.show_maintenance_summary_gui),
-            ("Room Availability", self.show_room_availability),
-            ("Export Data", self.show_export_options),
+            ("Occupancy Report", lambda: show_occupancy_report(self)),
+            ("Financial Summary", lambda: show_financial_summary(self)),
+            ("Maintenance Summary", lambda: show_maintenance_summary_gui(self)),
+            ("Room Availability", lambda: show_room_availability(self)),
+            ("Export Data", lambda: show_export_options(self)),
             ("─" * 20, None),  # Separator
-            ("Schedule Reports", self.show_scheduled_reports_manager),
-            ("Template Settings", self.show_report_template_settings)
+            ("Schedule Reports", lambda: show_scheduled_reports_manager(self)),
+            ("Template Settings", lambda: show_report_template_settings(self))
         ]
         
         for text, command in report_buttons:
@@ -83,20 +87,20 @@ def open_report_window(self, title, report_content, report_type='text'):
         ttk.Label(button_frame, text="Export as:", font=('Arial', 10, 'bold')).pack(side='left', padx=(0, 10))
 
         ttk.Button(button_frame, text="TXT", width=10,
-                  command=lambda: self.export_report_as_txt(title, report_content, report_window)).pack(side='left', padx=5)
+                  command=lambda: export_report_as_txt(self, title, report_content, report_window)).pack(side='left', padx=5)
 
         ttk.Button(button_frame, text="CSV", width=10,
-                  command=lambda: self.export_report_as_csv(title, report_content, report_window)).pack(side='left', padx=5)
+                  command=lambda: export_report_as_csv(self, title, report_content, report_window)).pack(side='left', padx=5)
 
         ttk.Button(button_frame, text="PDF", width=10,
-                  command=lambda: self.export_report_as_pdf(title, report_content, report_window)).pack(side='left', padx=5)
+                  command=lambda: export_report_as_pdf(self, title, report_content, report_window)).pack(side='left', padx=5)
 
         # Separator
         ttk.Separator(button_frame, orient='vertical').pack(side='left', fill='y', padx=15)
 
         # Send to admin button
         ttk.Button(button_frame, text="Send to Admin", width=15,
-                  command=lambda: self.send_report_to_admin(title, report_content, report_window)).pack(side='left', padx=5)
+                  command=lambda: send_report_to_admin(self, title, report_content, report_window)).pack(side='left', padx=5)
 
         # Close button
         ttk.Button(button_frame, text="Close", width=10,
@@ -371,7 +375,7 @@ def show_occupancy_report(self):
             conn.close()
 
             # Open report in new window
-            self.open_report_window("Housing Occupancy Report", report_content)
+            open_report_window(self,"Housing Occupancy Report", report_content)
 
         except Exception as e:
             messagebox.showerror("Error", f"Error generating report: {str(e)}")
@@ -402,8 +406,8 @@ def show_financial_summary(self):
 
             cursor.execute('''
             SELECT COUNT(*) as payment_count, SUM(amount) as total_amount
-            FROM housing_payments
-            WHERE strftime('%Y', payment_date) = ?
+            FROM payments
+            WHERE source_type = 'housing' AND strftime('%Y', payment_date) = ?
             ''', (str(current_year),))
 
             year_stats = cursor.fetchone()
@@ -440,7 +444,7 @@ def show_financial_summary(self):
             conn.close()
 
             # Open report in new window
-            self.open_report_window("Housing Financial Summary", report_content)
+            open_report_window(self,"Housing Financial Summary", report_content)
 
         except Exception as e:
             messagebox.showerror("Error", f"Error generating report: {str(e)}")
@@ -536,7 +540,7 @@ def show_maintenance_summary_gui(self):
             conn.close()
 
             # Open report in new window
-            self.open_report_window("Maintenance Requests Summary", report_content)
+            open_report_window(self,"Maintenance Requests Summary", report_content)
 
         except Exception as e:
             messagebox.showerror("Error", f"Error generating report: {str(e)}")
@@ -590,7 +594,7 @@ def show_room_availability(self):
             conn.close()
 
             # Open report in new window
-            self.open_report_window("Room Availability Report", report_content)
+            open_report_window(self,"Room Availability Report", report_content)
 
         except Exception as e:
             messagebox.showerror("Error", f"Error generating report: {str(e)}")
@@ -604,12 +608,12 @@ def show_export_options(self):
                  font=('Arial', 14, 'bold')).pack(pady=20)
         
         export_buttons = [
-            ("Export Building Data", lambda: self.export_data_gui('buildings')),
-            ("Export Room Data", lambda: self.export_data_gui('rooms')),
-            ("Export Assignment Data", lambda: self.export_data_gui('assignments')),
-            ("Export Application Data", lambda: self.export_data_gui('applications')),
-            ("Export Payment Data", lambda: self.export_data_gui('payments')),
-            ("Export Maintenance Requests", lambda: self.export_data_gui('maintenance'))
+            ("Export Building Data", lambda: export_data_gui(self,'buildings')),
+            ("Export Room Data", lambda: export_data_gui(self,'rooms')),
+            ("Export Assignment Data", lambda: export_data_gui(self,'assignments')),
+            ("Export Application Data", lambda: export_data_gui(self,'applications')),
+            ("Export Payment Data", lambda: export_data_gui(self,'payments')),
+            ("Export Maintenance Requests", lambda: export_data_gui(self,'maintenance'))
         ]
         
         for text, command in export_buttons:

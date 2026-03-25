@@ -37,7 +37,7 @@ class ValidationMixin:
         # Only validate fields that are present and not empty
         if not is_update:
             # For new records, check required fields
-            required_fields = ['first_name', 'last_name', 'gender', 'dob', 'course']
+            required_fields = ['first_name', 'last_name', 'course']
             for field in required_fields:
                 if field not in student_data or not student_data[field]:
                     errors.append(f"Required field '{field}' is missing or empty")
@@ -164,7 +164,7 @@ class ValidationMixin:
             issues = []
             fixed_count = 0
 
-            from .models import ProgressTracker
+            from education_system.university_system.modules.shared.utils.batch_operations.models import ProgressTracker
             progress = ProgressTracker(len(students), "Validating data")
 
             for student in students:

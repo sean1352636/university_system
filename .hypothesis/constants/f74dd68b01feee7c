@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/attendance/backup.py
+# hypothesis_version: 6.151.9
+
+['%Y%m%d_%H%M%S', '*.db', '.json', 'System', 'True', 'attendance', 'auto_backup_enabled', 'backup_type', 'backups', 'created_by', 'file_size', 'full', 'pre_restore', 'scheduled', 'timestamp', 'w']

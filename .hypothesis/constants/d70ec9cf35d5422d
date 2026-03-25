@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/records/referrals/referrals.py
+# hypothesis_version: 6.151.9
+
+['\nFilter options:', '\nSpecialties:', '\nStatus Options:', '\nUrgency Levels:', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', '1', '1. All referrals', '2', '2. By student ID', '2. View Referrals', '3', '3. By status', '4', '4. By specialty', '5', '6', '6. Referral Reports', '7', 'Additional notes: ', 'Cardiology', 'Dermatology', 'Endocrinology', 'Enter specialty: ', 'Enter student ID: ', 'Gastroenterology', 'Invalid choice.', 'Neurology', 'No referrals found.', 'Orthopedics', 'Other', 'Psychiatry', 'Pulmonology', 'Routine', 'STAT', 'Urgent', 'Urology', 'cancelled', 'completed', 'create_referral', 'id', 'no_show', 'pending', 'referral', 'scheduled', '⚠️ URGENT', '🚨 STAT REFERRAL', '🟡 Follow-up needed']

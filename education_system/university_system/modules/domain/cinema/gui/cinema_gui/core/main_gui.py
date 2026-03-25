@@ -32,8 +32,8 @@ try:
 except ImportError:
     MATPLOTLIB_AVAILABLE = False
 
-from ..database import DB_FILE, init_database
-from ..constants import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE, init_database
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.constants import (
     TICKET_TYPES, SNACKS_MENU, MEMBERSHIP_TIERS, DYNAMIC_PRICING,
     GROUP_DISCOUNTS, EARLY_BIRD_DISCOUNTS, SEASON_PASSES, SEAT_TYPES,
     SNACK_DIETARY, SNACK_COMBOS, AGE_RESTRICTED_RATINGS, STAFF_ROLES,
@@ -381,7 +381,7 @@ University Cinema
 # Import functions from submodules and attach to CinemaApp class
 
 # --- Helpers ---
-from ..helpers import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.helpers import (
     calculate_dynamic_price,
     calculate_group_discount,
     calculate_early_bird_discount,
@@ -395,11 +395,11 @@ CinemaApp.get_member_discount = get_member_discount
 CinemaApp.verify_age = verify_age
 
 # --- Reports: Dashboard ---
-from ..reports.dashboard import show_dashboard
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.reports.dashboard import show_dashboard
 CinemaApp.show_dashboard = show_dashboard
 
 # --- Booking: Movie Browser ---
-from ..booking.movie_browser import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.booking.movie_browser import (
     show_movies_page,
     create_movie_card,
     show_screenings,
@@ -409,7 +409,7 @@ CinemaApp.create_movie_card = create_movie_card
 CinemaApp.show_screenings = show_screenings
 
 # --- Booking: Seat Selection ---
-from ..booking.seat_selection import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.booking.seat_selection import (
     show_seat_selection,
     toggle_seat,
 )
@@ -417,7 +417,7 @@ CinemaApp.show_seat_selection = show_seat_selection
 CinemaApp.toggle_seat = toggle_seat
 
 # --- Booking: Snacks ---
-from ..booking.snacks import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.booking.snacks import (
     show_snacks_page,
     update_snacks_total,
     show_snacks_only_page,
@@ -429,7 +429,7 @@ CinemaApp.show_snacks_only_page = show_snacks_only_page
 CinemaApp.create_snack_order = create_snack_order
 
 # --- Booking: Payment ---
-from ..booking.payment import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.booking.payment import (
     show_payment_page,
     print_ticket,
 )
@@ -437,7 +437,7 @@ CinemaApp.show_payment_page = show_payment_page
 CinemaApp.print_ticket = print_ticket
 
 # --- Management: Screening Management ---
-from ..management.screening_management import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.management.screening_management import (
     show_screening_management,
     show_add_screening_form,
     edit_selected_screening,
@@ -449,7 +449,7 @@ CinemaApp.edit_selected_screening = edit_selected_screening
 CinemaApp.cancel_selected_screening = cancel_selected_screening
 
 # --- Management: Movie Management ---
-from ..management.movie_management import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.management.movie_management import (
     show_movie_management,
     refresh_movie_list,
     show_add_movie_form,
@@ -465,7 +465,7 @@ CinemaApp.edit_selected_movie = edit_selected_movie
 CinemaApp.delete_selected_movie = delete_selected_movie
 
 # --- Management: Ticket Management ---
-from ..management.ticket_management import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.management.ticket_management import (
     show_ticket_management,
     print_selected_ticket,
     edit_selected_ticket,
@@ -481,7 +481,7 @@ CinemaApp.delete_selected_ticket = delete_selected_ticket
 CinemaApp.reactivate_selected_ticket = reactivate_selected_ticket
 
 # --- Management: Promo Management ---
-from ..management.promo_management import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.management.promo_management import (
     show_promo_management,
     refresh_promo_list,
     show_add_promo_form,
@@ -495,11 +495,11 @@ CinemaApp.edit_selected_promo = edit_selected_promo
 CinemaApp.deactivate_selected_promo = deactivate_selected_promo
 
 # --- Management: Bookings ---
-from ..management.bookings import show_bookings_page
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.management.bookings import show_bookings_page
 CinemaApp.show_bookings_page = show_bookings_page
 
 # --- Loyalty: Members ---
-from ..loyalty.members import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.loyalty.members import (
     show_members_page,
     show_add_member_form,
     show_member_lookup,
@@ -517,7 +517,7 @@ CinemaApp.add_member_points = add_member_points
 CinemaApp.deactivate_member = deactivate_member
 
 # --- Loyalty: Gift Cards ---
-from ..loyalty.gift_cards import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.loyalty.gift_cards import (
     show_gift_cards_page,
     refresh_gift_cards,
     create_gift_card,
@@ -533,7 +533,7 @@ CinemaApp.view_gift_card_details = view_gift_card_details
 CinemaApp.deactivate_gift_card = deactivate_gift_card
 
 # --- Loyalty: Profiles ---
-from ..loyalty.profiles import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.loyalty.profiles import (
     show_profiles_page,
     create_profile,
     edit_profile,
@@ -549,7 +549,7 @@ CinemaApp.set_favorite_seats = set_favorite_seats
 CinemaApp.show_birthday_rewards = show_birthday_rewards
 
 # --- Loyalty: Referrals ---
-from ..loyalty.referrals import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.loyalty.referrals import (
     show_referrals_page,
     create_referral,
     use_referral,
@@ -561,7 +561,7 @@ CinemaApp.use_referral = use_referral
 CinemaApp.give_referral_reward = give_referral_reward
 
 # --- Loyalty: Season Passes ---
-from ..loyalty.season_passes import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.loyalty.season_passes import (
     show_season_passes_page,
     sell_pass,
     verify_pass,
@@ -571,7 +571,7 @@ CinemaApp.sell_pass = sell_pass
 CinemaApp.verify_pass = verify_pass
 
 # --- Community: Waitlist ---
-from ..community.waitlist import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.community.waitlist import (
     show_waitlist_page,
     notify_waitlist_customer,
     mark_waitlist_fulfilled,
@@ -583,7 +583,7 @@ CinemaApp.mark_waitlist_fulfilled = mark_waitlist_fulfilled
 CinemaApp.remove_waitlist_entry = remove_waitlist_entry
 
 # --- Community: Reviews ---
-from ..community.reviews import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.community.reviews import (
     show_reviews_page,
     add_review,
     view_full_review,
@@ -595,7 +595,7 @@ CinemaApp.view_full_review = view_full_review
 CinemaApp.update_review_status = update_review_status
 
 # --- Community: Coming Soon ---
-from ..community.coming_soon import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.community.coming_soon import (
     show_coming_soon_page,
     add_coming_soon,
     watch_trailer,
@@ -611,7 +611,7 @@ CinemaApp.activate_movie = activate_movie
 CinemaApp.delete_coming = delete_coming
 
 # --- Community: Series ---
-from ..community.series import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.community.series import (
     show_series_page,
     on_series_select,
     create_series,
@@ -623,7 +623,7 @@ CinemaApp.create_series = create_series
 CinemaApp.link_movie_to_series = link_movie_to_series
 
 # --- Community: Polls ---
-from ..community.polls import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.community.polls import (
     show_polls_page,
     create_poll,
     view_results,
@@ -635,7 +635,7 @@ CinemaApp.view_results = view_results
 CinemaApp.cast_vote = cast_vote
 
 # --- Operations: Staff Management ---
-from ..operations.staff_management import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.operations.staff_management import (
     show_staff_page,
     _hash_staff_password,
     _send_staff_welcome_email,
@@ -647,7 +647,7 @@ CinemaApp._send_staff_welcome_email = _send_staff_welcome_email
 CinemaApp.add_staff = add_staff
 
 # --- Operations: Inventory ---
-from ..operations.inventory import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.operations.inventory import (
     show_inventory_page,
     add_inv_item,
     restock_inv,
@@ -657,7 +657,7 @@ CinemaApp.add_inv_item = add_inv_item
 CinemaApp.restock_inv = restock_inv
 
 # --- Operations: Maintenance ---
-from ..operations.maintenance import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.operations.maintenance import (
     show_maintenance_page,
     schedule_maint,
     complete_maint,
@@ -667,7 +667,7 @@ CinemaApp.schedule_maint = schedule_maint
 CinemaApp.complete_maint = complete_maint
 
 # --- Operations: Equipment ---
-from ..operations.equipment import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.operations.equipment import (
     show_equipment_page,
     add_equipment,
     log_equipment_maintenance,
@@ -687,7 +687,7 @@ CinemaApp.mark_equipment_out_of_service = mark_equipment_out_of_service
 CinemaApp.show_maintenance_schedule = show_maintenance_schedule
 
 # --- Operations: Rentals ---
-from ..operations.rentals import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.operations.rentals import (
     show_rentals_page,
     create_rental,
     confirm_rental,
@@ -699,7 +699,7 @@ CinemaApp.confirm_rental = confirm_rental
 CinemaApp.cancel_rental = cancel_rental
 
 # --- Operations: Shift Scheduling ---
-from ..operations.shift_scheduling import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.operations.shift_scheduling import (
     show_shift_scheduling_page,
     add_shift,
     edit_shift,
@@ -717,7 +717,7 @@ CinemaApp.show_swap_requests = show_swap_requests
 CinemaApp.auto_schedule_shifts = auto_schedule_shifts
 
 # --- Operations: Events ---
-from ..operations.events import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.operations.events import (
     show_events_page,
     create_event,
 )
@@ -725,7 +725,7 @@ CinemaApp.show_events_page = show_events_page
 CinemaApp.create_event = create_event
 
 # --- Operations: Corporate ---
-from ..operations.corporate import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.operations.corporate import (
     show_corporate_page,
     add_corporate,
 )
@@ -733,7 +733,7 @@ CinemaApp.show_corporate_page = show_corporate_page
 CinemaApp.add_corporate = add_corporate
 
 # --- Operations: Lost & Found ---
-from ..operations.lost_found import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.operations.lost_found import (
     show_lost_found_page,
     set_lf_filter,
     log_found_item,
@@ -751,7 +751,7 @@ CinemaApp.view_lf_details = view_lf_details
 CinemaApp.dispose_lf_item = dispose_lf_item
 
 # --- Reports: Sales Reports ---
-from ..reports.sales_reports import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.reports.sales_reports import (
     show_reports_page,
     generate_sales_summary,
     generate_revenue_by_movie,
@@ -783,11 +783,11 @@ CinemaApp.email_report_to_admin = email_report_to_admin
 CinemaApp.open_report_in_window = open_report_in_window
 
 # --- Reports: Analytics ---
-from ..reports.analytics import show_analytics_page
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.reports.analytics import show_analytics_page
 CinemaApp.show_analytics_page = show_analytics_page
 
 # --- Reports: Audit Log ---
-from ..reports.audit_log import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.reports.audit_log import (
     load_audit_from_logs,
     show_audit_log_page,
     export_audit,
@@ -797,7 +797,7 @@ CinemaApp.show_audit_log_page = show_audit_log_page
 CinemaApp.export_audit = export_audit
 
 # --- Reports: Incidents ---
-from ..reports.incidents import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.reports.incidents import (
     show_incidents_page,
     set_incident_filter,
     report_incident,
@@ -815,7 +815,7 @@ CinemaApp.show_incident_stats = show_incident_stats
 CinemaApp.export_incident_report = export_incident_report
 
 # --- Reports: Refunds ---
-from ..reports.refunds import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.reports.refunds import (
     show_refunds_page,
     refresh_cinema_refunds_list,
     process_cinema_refund,
@@ -839,7 +839,7 @@ CinemaApp.view_cinema_booking_details = view_cinema_booking_details
 CinemaApp.export_cinema_refunds_to_csv = export_cinema_refunds_to_csv
 
 # --- Special Features: Accessibility ---
-from ..special_features.accessibility import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.special_features.accessibility import (
     show_accessible_page,
     configure_accessible_seats,
     view_accessible_bookings,
@@ -849,15 +849,15 @@ CinemaApp.configure_accessible_seats = configure_accessible_seats
 CinemaApp.view_accessible_bookings = view_accessible_bookings
 
 # --- Special Features: Heatmap ---
-from ..special_features.heatmap import show_heatmap_page
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.special_features.heatmap import show_heatmap_page
 CinemaApp.show_heatmap_page = show_heatmap_page
 
 # --- Special Features: Theatre Layout ---
-from ..special_features.theatre_layout import show_theatre_layout_page
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.special_features.theatre_layout import show_theatre_layout_page
 CinemaApp.show_theatre_layout_page = show_theatre_layout_page
 
 # --- Special Features: Occupancy ---
-from ..special_features.occupancy import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.special_features.occupancy import (
     show_occupancy_dashboard,
     toggle_occupancy_refresh,
     schedule_occupancy_refresh,

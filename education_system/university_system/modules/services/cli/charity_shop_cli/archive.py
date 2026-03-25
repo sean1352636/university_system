@@ -2,7 +2,7 @@
 Stock archival, restoration, and location transfer operations.
 """
 
-from ._imports import (
+from education_system.university_system.modules.services.cli.charity_shop_cli._imports import (
     sqlite3, logger, datetime, timedelta,
     get_connection, List, Tuple, Optional, Dict,
     TABLE_NAME, ARCHIVED_TABLE, LOCATIONS_TABLE,

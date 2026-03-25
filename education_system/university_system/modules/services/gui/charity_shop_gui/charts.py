@@ -1,11 +1,11 @@
 """Charity Shop - Charts and analytics window."""
 
-from ._imports import (
+from education_system.university_system.modules.services.gui.charity_shop_gui._imports import (
     tk, ttk,
     MATPLOTLIB_AVAILABLE, plt, FigureCanvasTkAgg, Figure,
     logging,
 )
-from .database import Database
+from education_system.university_system.modules.services.gui.charity_shop_gui.database import Database
 
 logger = logging.getLogger(__name__)
 

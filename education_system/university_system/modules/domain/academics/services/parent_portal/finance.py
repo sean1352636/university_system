@@ -10,7 +10,7 @@ class FinanceMixin:
             print("You must be logged in to view fees.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         
@@ -106,7 +106,7 @@ class FinanceMixin:
             print("You must be logged in to manage meal accounts.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         
@@ -160,10 +160,10 @@ class FinanceMixin:
                 
                 # Get recent transactions
                 cursor.execute('''
-                SELECT transaction_type, amount, description, transaction_date, balance_after
-                FROM meal_transactions
-                WHERE student_id = ?
-                ORDER BY transaction_date DESC
+                SELECT transaction_type, amount, description, created_at, balance_after
+                FROM transactions
+                WHERE source_type = 'meal' AND student_id = ?
+                ORDER BY created_at DESC
                 LIMIT 10
                 ''', (student_id,))
                 
@@ -197,9 +197,9 @@ class FinanceMixin:
                         cursor.execute('UPDATE meal_accounts SET balance = ?, last_updated = ? WHERE student_id = ?',
                                      (new_balance, current_time, student_id))
                         
-                        cursor.execute('''INSERT INTO meal_transactions 
-                                       (student_id, transaction_type, amount, description, transaction_date, balance_after)
-                                       VALUES (?, ?, ?, ?, ?, ?)''',
+                        cursor.execute('''INSERT INTO transactions
+                                       (source_type, student_id, transaction_type, amount, description, created_at, balance_after)
+                                       VALUES ('meal', ?, ?, ?, ?, ?, ?)''',
                                      (student_id, 'credit', amount, 'Parent top-up', current_time, new_balance))
                         
                         conn.commit()
@@ -245,7 +245,7 @@ class FinanceMixin:
             print("You must be logged in to view fundraising campaigns.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         
@@ -314,7 +314,7 @@ class FinanceMixin:
             print("You must be logged in to make donations.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         
@@ -434,10 +434,10 @@ class FinanceMixin:
             
             # Get all transactions
             cursor.execute('''
-            SELECT transaction_type, amount, description, transaction_date, balance_after
-            FROM meal_transactions
-            WHERE student_id = ?
-            ORDER BY transaction_date DESC
+            SELECT transaction_type, amount, description, created_at, balance_after
+            FROM transactions
+            WHERE source_type = 'meal' AND student_id = ?
+            ORDER BY created_at DESC
             ''', (student_id,))
             
             transactions = cursor.fetchall()

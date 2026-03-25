@@ -1,4 +1,4 @@
-from .crud import AssignmentCrudMixin
-from .submissions import SubmissionsMixin
+from education_system.university_system.modules.domain.academics.services.assignments.assignments.crud import AssignmentCrudMixin
+from education_system.university_system.modules.domain.academics.services.assignments.assignments.submissions import SubmissionsMixin
 
 __all__ = ['AssignmentCrudMixin', 'SubmissionsMixin']

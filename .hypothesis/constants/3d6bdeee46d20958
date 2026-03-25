@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/email/config.py
+# hypothesis_version: 6.151.9
+
+[587, 'Education System', 'SMTP_PASSWORD', 'api_key', 'config', 'data', 'database_only_mode', 'email_config.json', 'password', 'r', 'secret', 'sender_email', 'sender_name', 'smtp_password', 'smtp_port', 'smtp_server', 'smtp_username', 'university_system', 'use_tls', 'utf-8', 'w']

@@ -10,7 +10,7 @@ class QuickActionsMixin:
             print("You must be logged in to use quick actions.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         
@@ -220,7 +220,7 @@ class QuickActionsMixin:
             print("You must be logged in to report an issue.")
             return
 
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("Only parents can report issues.")
             return
 
@@ -291,7 +291,7 @@ class QuickActionsMixin:
             print("You must be logged in to view activity log.")
             return
 
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("Only parents can view activity logs.")
             return
 
@@ -345,7 +345,7 @@ class QuickActionsMixin:
             print("You must be logged in to access calendar integration.")
             return
 
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         

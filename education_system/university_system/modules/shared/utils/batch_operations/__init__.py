@@ -17,8 +17,8 @@ Split from a single batch_operations.py into focused submodules:
 - manager: BatchOperationManager class composing all mixins
 """
 
-from .models import ImportResult, ProgressTracker
-from .manager import BatchOperationManager
+from education_system.university_system.modules.shared.utils.batch_operations.models import ImportResult, ProgressTracker
+from education_system.university_system.modules.shared.utils.batch_operations.manager import BatchOperationManager
 
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 

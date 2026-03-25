@@ -395,15 +395,20 @@ def execute_advanced_search(criteria: Dict, sort_by: str, sort_order: str) -> Li
     conn = get_db_connection()
     if not conn:
         return []
-    
+
     cursor = conn.cursor()
-    
+
+    # Allowlists for SQL identifiers to prevent injection
+    ALLOWED_SORT_COLUMNS = {'title', 'author', 'year_published', 'category', 'added_date', 'book_id', 'status', 'reading_level'}
+    ALLOWED_FILTER_COLUMNS = {'title', 'author', 'category', 'location', 'tags', 'isbn', 'reading_level', 'status', 'year_from', 'year_to'}
+    ALLOWED_SORT_ORDERS = {'ASC', 'DESC'}
+
     # Build dynamic query
     query = "SELECT book_id, title, author, category, status, reading_level FROM books WHERE 1=1"
     params = []
-    
+
     for field, value in criteria.items():
-        if value:
+        if value and field in ALLOWED_FILTER_COLUMNS:
             if field in ['year_from']:
                 query += " AND year_published >= ?"
                 params.append(int(value))
@@ -419,7 +424,12 @@ def execute_advanced_search(criteria: Dict, sort_by: str, sort_order: str) -> Li
             else:
                 query += f" AND {field} = ?"
                 params.append(value)
-    
+
+    # Validate sort parameters against allowlist
+    if sort_by not in ALLOWED_SORT_COLUMNS:
+        sort_by = 'title'
+    if sort_order.upper() not in ALLOWED_SORT_ORDERS:
+        sort_order = 'ASC'
     query += f" ORDER BY {sort_by} {sort_order}"
     
     try:

@@ -2,7 +2,7 @@ from education_system.university_system.infrastructure.database.db import sqlite
 from datetime import datetime
 import json
 
-from .app import auth
+from education_system.university_system.modules.domain.finance.reporting.revenue_analytics.app import auth
 
 
 def manage_collections():
@@ -44,13 +44,13 @@ def manage_collections():
         elif choice == '5':
             create_payment_arrangement()
         elif choice == '6':
-            from .collection_reports import generate_collection_reports
+            from education_system.university_system.modules.domain.finance.reporting.revenue_analytics.collection_reports import generate_collection_reports
             generate_collection_reports()
         elif choice == '7':
-            from .agencies import manage_collection_agencies
+            from education_system.university_system.modules.domain.finance.reporting.revenue_analytics.agencies import manage_collection_agencies
             manage_collection_agencies()
         elif choice == '8':
-            from .agencies import setup_collection_workflows
+            from education_system.university_system.modules.domain.finance.reporting.revenue_analytics.agencies import setup_collection_workflows
             setup_collection_workflows()
         elif choice == '9':
             return

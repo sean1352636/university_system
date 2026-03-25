@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/main/features/academic_launchers_gui.py
+# hypothesis_version: 6.151.9
+
+[600, 800, 1000, 1200, '-c', '1000x700', '1100x700', '1200x800', '1300x900', '1400x900', 'ADMIN_TEST', 'Dashboard', 'Error', 'Grades', 'Learning Outcomes', 'Module Registration', 'ModuleSchedulingGUI', 'My Grades & GPA', 'My Timetable', 'Office Hours', 'Registration', 'S', 'Student Dashboard', 'TA Management', 'Timetable', 'admin', 'auth', 'both', 'checkout_books', 'export_data', 'id', 'manage_books', 'manage_courses', 'manage_loans', 'manage_modules', 'manage_schedules', 'role', 'set_auth', 'student_id', 'username', 'view_books', 'view_courses', 'view_own_timetable']

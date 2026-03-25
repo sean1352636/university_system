@@ -38,7 +38,7 @@ from education_system.university_system.infrastructure.shared_context import get
 try:
     from education_system.university_system.infrastructure.email.email_service import send_email
     from education_system.university_system.infrastructure.database.db import get_connection
-    from education_system.university_system.infrastructure.logging.log_config import configure_logging, get_log_file
+    from education_system.university_system.utils.logging.log_config import configure_logging, get_log_file
 except ImportError:
     # Fallback for backward compatibility (non-security critical)
     def send_email(*args, **kwargs):
@@ -67,7 +67,7 @@ except ImportError:
         return str(paths.LOG_DIR / name)
 
 try:
-    from education_system.university_system.modules.finance.core.financial_core import (
+    from education_system.university_system.modules.domain.finance.core.financial_core import (
         assign_to_collection_agency, track_collection_progress,
         update_collection_case_status, create_payment_arrangement,
         send_arrangement_confirmation, setup_collection_workflows,
@@ -104,7 +104,7 @@ except ImportError:
 
 # Add these import stubs for the missing functions if they don't exist
 try:
-    from education_system.university_system.modules.finance.core.financial_core import (
+    from education_system.university_system.modules.domain.finance.core.financial_core import (
         modify_payment_plan, view_student_credits, add_student_credit,
         manage_financial_aid, create_budget_plan, view_overdue_accounts,
         create_collection_case, aging_analysis_report, collection_case_status_report,
@@ -184,14 +184,14 @@ cipher_suite = Fernet(ENCRYPTION_KEY)
 # Payment gateway configurations (from original file)
 PAYMENT_GATEWAYS = {
     'stripe': {
-        'public_key': 'pk_test_...',
-        'secret_key': 'sk_test_...',
-        'webhook_secret': 'whsec_...'
+        'public_key': os.getenv('STRIPE_PUBLIC_KEY', ''),
+        'secret_key': os.getenv('STRIPE_SECRET_KEY', ''),
+        'webhook_secret': os.getenv('STRIPE_WEBHOOK_SECRET', '')
     },
     'paypal': {
-        'client_id': 'your_paypal_client_id',
-        'client_secret': 'your_paypal_client_secret',
-        'environment': 'sandbox'
+        'client_id': os.getenv('PAYPAL_CLIENT_ID', ''),
+        'client_secret': os.getenv('PAYPAL_CLIENT_SECRET', ''),
+        'environment': os.getenv('PAYPAL_ENVIRONMENT', 'sandbox')
     }
 }
 

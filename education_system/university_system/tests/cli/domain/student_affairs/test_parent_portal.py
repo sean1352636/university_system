@@ -32,7 +32,7 @@ class TestParentPortalInitialization:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
+    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
     def test_initialize_parent_portal(self, mock_db_path, temp_db):
         """Test initializing parent portal database"""
         mock_db_path.__str__ = Mock(return_value=temp_db)
@@ -75,7 +75,7 @@ class TestParentPortalDatabaseSchema:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
+    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
     def test_parent_accounts_table_structure(self, mock_db_path, temp_db):
         """Test parent_accounts table has correct structure"""
         mock_db_path.__str__ = Mock(return_value=temp_db)
@@ -99,7 +99,7 @@ class TestParentPortalDatabaseSchema:
             assert expected_columns.issubset(columns)
             conn.close()
 
-    @patch('university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
+    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
     def test_parent_student_relationships_table_structure(self, mock_db_path, temp_db):
         """Test parent_student_relationships table structure"""
         mock_db_path.__str__ = Mock(return_value=temp_db)
@@ -122,7 +122,7 @@ class TestParentPortalDatabaseSchema:
             assert expected_columns.issubset(columns)
             conn.close()
 
-    @patch('university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
+    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
     def test_parent_preferences_table_structure(self, mock_db_path, temp_db):
         """Test parent_preferences table structure"""
         mock_db_path.__str__ = Mock(return_value=temp_db)
@@ -145,7 +145,7 @@ class TestParentPortalDatabaseSchema:
             assert expected_columns.issubset(columns)
             conn.close()
 
-    @patch('university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
+    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
     def test_student_fees_table_structure(self, mock_db_path, temp_db):
         """Test student_fees table structure"""
         mock_db_path.__str__ = Mock(return_value=temp_db)
@@ -240,7 +240,7 @@ class TestParentPortalAccountManagement:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
+    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
     def test_create_parent_user(self, mock_db_path, temp_db, mock_auth):
         """Test creating a parent user"""
         mock_db_path.__str__ = Mock(return_value=temp_db)
@@ -287,7 +287,7 @@ class TestParentPortalAccountManagement:
         conn.commit()
         conn.close()
 
-        with patch('university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH', temp_db):
             with patch('sqlite3.connect') as mock_connect:
                 conn = sqlite3.connect(temp_db)
                 mock_connect.return_value = conn
@@ -352,7 +352,7 @@ class TestParentPortalStudentLinking:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
+    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
     def test_link_student_to_parent_database_structure(self, mock_db_path, temp_db, mock_auth):
         """Test linking student to parent creates proper database record"""
         mock_db_path.__str__ = Mock(return_value=temp_db)
@@ -383,7 +383,7 @@ class TestParentPortalNotifications:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
+    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
     def test_parent_notifications_table(self, mock_db_path, temp_db):
         """Test parent_notifications table structure"""
         mock_db_path.__str__ = Mock(return_value=temp_db)
@@ -418,7 +418,7 @@ class TestParentPortalMessages:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
+    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
     def test_parent_messages_table(self, mock_db_path, temp_db):
         """Test parent_messages table structure"""
         mock_db_path.__str__ = Mock(return_value=temp_db)
@@ -453,7 +453,7 @@ class TestParentPortalFinancial:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
+    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
     def test_meal_accounts_table(self, mock_db_path, temp_db):
         """Test meal_accounts table structure"""
         mock_db_path.__str__ = Mock(return_value=temp_db)
@@ -476,7 +476,7 @@ class TestParentPortalFinancial:
             assert expected_columns.issubset(columns)
             conn.close()
 
-    @patch('university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
+    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
     def test_fundraising_campaigns_table(self, mock_db_path, temp_db):
         """Test fundraising_campaigns table structure"""
         mock_db_path.__str__ = Mock(return_value=temp_db)
@@ -511,7 +511,7 @@ class TestParentPortalAcademicFeatures:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
+    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
     def test_homework_assignments_table(self, mock_db_path, temp_db):
         """Test homework_assignments table structure"""
         mock_db_path.__str__ = Mock(return_value=temp_db)
@@ -534,7 +534,7 @@ class TestParentPortalAcademicFeatures:
             assert expected_columns.issubset(columns)
             conn.close()
 
-    @patch('university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
+    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
     def test_academic_goals_table(self, mock_db_path, temp_db):
         """Test academic_goals table structure"""
         mock_db_path.__str__ = Mock(return_value=temp_db)
@@ -569,7 +569,7 @@ class TestParentPortalCommunication:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
+    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
     def test_school_announcements_table(self, mock_db_path, temp_db):
         """Test school_announcements table structure"""
         mock_db_path.__str__ = Mock(return_value=temp_db)
@@ -592,7 +592,7 @@ class TestParentPortalCommunication:
             assert expected_columns.issubset(columns)
             conn.close()
 
-    @patch('university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
+    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
     def test_emergency_alerts_table(self, mock_db_path, temp_db):
         """Test emergency_alerts table structure"""
         mock_db_path.__str__ = Mock(return_value=temp_db)

@@ -12,7 +12,7 @@ import tempfile
 
 # Import the module to test
 from education_system.university_system.modules.domain.commerce.services.restaurant.operations import inventory_management
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 @pytest.fixture
 def test_db():
@@ -188,7 +188,7 @@ def mock_auth():
 class TestSupplierManagement:
     """Test supplier management functions"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.inventory_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.inventory_management.get_db_connection')
     def test_view_all_suppliers(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test viewing all suppliers"""
         inventory_management.set_auth(mock_auth)
@@ -222,7 +222,7 @@ class TestWasteTracking:
         assert hasattr(inventory_management, 'record_waste')
         assert callable(inventory_management.record_waste)
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.inventory_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.inventory_management.get_db_connection')
     def test_view_waste_reports_daily_summary(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test viewing daily waste summary"""
         inventory_management.set_auth(mock_auth)
@@ -241,7 +241,7 @@ class TestWasteTracking:
 class TestInventoryReports:
     """Test inventory reporting functions"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.inventory_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.inventory_management.get_db_connection')
     def test_inventory_valuation_report(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test inventory valuation report"""
         inventory_management.set_auth(mock_auth)
@@ -255,7 +255,7 @@ class TestInventoryReports:
         assert 'INVENTORY VALUATION REPORT' in captured.out
         assert 'Total Value' in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.inventory_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.inventory_management.get_db_connection')
     def test_stock_movement_report(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test stock movement report"""
         inventory_management.set_auth(mock_auth)
@@ -271,7 +271,7 @@ class TestInventoryReports:
         captured = capsys.readouterr()
         assert 'STOCK MOVEMENT REPORT' in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.inventory_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.inventory_management.get_db_connection')
     def test_low_stock_report(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test low stock alert report"""
         inventory_management.set_auth(mock_auth)
@@ -284,7 +284,7 @@ class TestInventoryReports:
         captured = capsys.readouterr()
         assert 'LOW STOCK REPORT' in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.inventory_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.inventory_management.get_db_connection')
     def test_expiry_report(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test expiry report showing expiring items"""
         inventory_management.set_auth(mock_auth)
@@ -297,7 +297,7 @@ class TestInventoryReports:
         captured = capsys.readouterr()
         assert 'EXPIRY REPORT' in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.inventory_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.inventory_management.get_db_connection')
     def test_abc_analysis(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test ABC analysis of inventory"""
         inventory_management.set_auth(mock_auth)
@@ -313,7 +313,7 @@ class TestInventoryReports:
 class TestInventoryOperations:
     """Test inventory CRUD operations"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.inventory_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.inventory_management.get_db_connection')
     def test_view_inventory_all_items(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test viewing all inventory items"""
         inventory_management.set_auth(mock_auth)
@@ -338,7 +338,7 @@ class TestInventoryOperations:
         assert hasattr(inventory_management, 'update_stock_levels')
         assert callable(inventory_management.update_stock_levels)
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.inventory_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.inventory_management.get_db_connection')
     def test_low_stock_alerts(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test viewing low stock alerts"""
         inventory_management.set_auth(mock_auth)
@@ -351,7 +351,7 @@ class TestInventoryOperations:
         captured = capsys.readouterr()
         assert 'LOW STOCK ALERTS' in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.inventory_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.inventory_management.get_db_connection')
     def test_inventory_transactions(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test viewing inventory transactions"""
         inventory_management.set_auth(mock_auth)

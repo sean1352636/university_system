@@ -42,12 +42,12 @@ class TestAuthAPI:
         response = api_client.post("/api/auth/login", json={"username": "admin2"})
         assert response.status_code == 400
 
-    def test_register(self, api_client):
+    def test_register(self, api_client, auth_headers):
         response = api_client.post("/api/auth/register", json={
             "username": "newteacher",
-            "password": "Teacher@456",
-            "role": "teacher",
-        })
+            "password": "Teacher@45678",
+            "systems": [{"system_key": "school", "role": "teacher"}],
+        }, headers=auth_headers)
         assert response.status_code == 201
 
 

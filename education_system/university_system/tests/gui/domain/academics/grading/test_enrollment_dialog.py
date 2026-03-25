@@ -78,7 +78,7 @@ class TestModuleEnrollmentDialog:
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.enrollment_dialog.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.enrollment_dialog.messagebox')
     def test_refresh_enrollments_database_error(self, mock_msgbox, root, mock_connection):
         """Test handling of database errors during refresh"""
         mock_conn, mock_cursor = mock_connection
@@ -94,7 +94,7 @@ class TestModuleEnrollmentDialog:
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.enrollment_dialog.safe_grab_set')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.enrollment_dialog.safe_grab_set')
     def test_enroll_student_dialog_opens(self, mock_grab, root, mock_connection):
         """Test opening enroll student dialog"""
         mock_conn, mock_cursor = mock_connection
@@ -115,7 +115,7 @@ class TestModuleEnrollmentDialog:
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.enrollment_dialog.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.enrollment_dialog.messagebox')
     def test_enroll_student_success(self, mock_msgbox, root, mock_connection):
         """Test successful student enrollment"""
         mock_conn, mock_cursor = mock_connection
@@ -138,7 +138,7 @@ class TestModuleEnrollmentDialog:
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.enrollment_dialog.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.enrollment_dialog.messagebox')
     def test_remove_enrollment_no_selection(self, mock_msgbox, root, mock_connection):
         """Test remove enrollment with no selection"""
         mock_conn, mock_cursor = mock_connection
@@ -155,7 +155,7 @@ class TestModuleEnrollmentDialog:
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.enrollment_dialog.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.enrollment_dialog.messagebox')
     def test_remove_enrollment_with_confirmation(self, mock_msgbox, root, mock_connection):
         """Test remove enrollment with user confirmation"""
         mock_conn, mock_cursor = mock_connection
@@ -195,7 +195,7 @@ class TestModuleEnrollmentDialog:
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.enrollment_dialog.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.enrollment_dialog.messagebox')
     def test_remove_enrollment_cancelled(self, mock_msgbox, root, mock_connection):
         """Test remove enrollment when user cancels"""
         mock_conn, mock_cursor = mock_connection
@@ -228,7 +228,7 @@ class TestModuleEnrollmentDialog:
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.enrollment_dialog.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.enrollment_dialog.messagebox')
     def test_remove_enrollment_database_error(self, mock_msgbox, root, mock_connection):
         """Test handling of database errors during removal"""
         mock_conn, mock_cursor = mock_connection

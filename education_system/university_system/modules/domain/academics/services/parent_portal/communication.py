@@ -11,7 +11,7 @@ class CommunicationMixin:
             print("You must be logged in to send messages.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         
@@ -165,7 +165,7 @@ class CommunicationMixin:
             print("You must be logged in to view messages.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         
@@ -280,7 +280,7 @@ class CommunicationMixin:
             print("You must be logged in to send group messages.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         

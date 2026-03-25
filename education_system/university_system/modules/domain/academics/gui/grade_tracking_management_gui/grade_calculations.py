@@ -1,4 +1,4 @@
-from ._imports import (
+from education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui._imports import (
     GRADE_CALCULATION_AVAILABLE,
     percentage_to_letter,
     letter_to_percentage,

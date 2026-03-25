@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.college_system.modules.domain.messaging.services.message_service import MessageService
+from education_system.college_system.core.i18n import t
 
 
 class _ComposeDialog(tk.Toplevel):
@@ -11,7 +12,7 @@ class _ComposeDialog(tk.Toplevel):
 
     def __init__(self, parent, users: list[dict], **kwargs):
         super().__init__(parent, **kwargs)
-        self.title("Compose Message")
+        self.title(t("messaging.compose_message"))
         self.geometry("500x400")
         self.resizable(False, False)
         self.transient(parent)
@@ -28,7 +29,7 @@ class _ComposeDialog(tk.Toplevel):
         pad = {"padx": 15, "pady": 5}
 
         # Recipient
-        tk.Label(self, text="To:").grid(row=0, column=0, sticky="w", **pad)
+        tk.Label(self, text=t("messaging.to_colon")).grid(row=0, column=0, sticky="w", **pad)
         self._recipient_var = tk.StringVar()
         combo = ttk.Combobox(self, textvariable=self._recipient_var,
                              width=45, state="readonly")
@@ -42,22 +43,22 @@ class _ComposeDialog(tk.Toplevel):
         combo.grid(row=0, column=1, sticky="ew", **pad)
 
         # Subject
-        tk.Label(self, text="Subject:").grid(row=1, column=0, sticky="w", **pad)
+        tk.Label(self, text=t("messaging.subject_colon")).grid(row=1, column=0, sticky="w", **pad)
         self._subject_var = tk.StringVar()
         ttk.Entry(self, textvariable=self._subject_var, width=47).grid(
             row=1, column=1, sticky="ew", **pad)
 
         # Body
-        tk.Label(self, text="Message:").grid(row=2, column=0, sticky="nw", **pad)
+        tk.Label(self, text=t("messaging.message_colon")).grid(row=2, column=0, sticky="nw", **pad)
         self._body_text = tk.Text(self, width=45, height=12, wrap="word")
         self._body_text.grid(row=2, column=1, sticky="nsew", **pad)
 
         # Buttons
         btn_frame = tk.Frame(self)
         btn_frame.grid(row=3, column=0, columnspan=2, pady=10)
-        ttk.Button(btn_frame, text="Send", command=self._send).pack(
+        ttk.Button(btn_frame, text=t("messaging.send"), command=self._send).pack(
             side="left", padx=10)
-        ttk.Button(btn_frame, text="Cancel", command=self.destroy).pack(
+        ttk.Button(btn_frame, text=t("common.cancel"), command=self.destroy).pack(
             side="left", padx=10)
 
         self.grid_columnconfigure(1, weight=1)
@@ -66,12 +67,12 @@ class _ComposeDialog(tk.Toplevel):
     def _send(self):
         recipient_label = self._recipient_var.get()
         if not recipient_label:
-            messagebox.showwarning("Warning", "Please select a recipient.",
+            messagebox.showwarning(t("common.warning"), t("messaging.select_recipient"),
                                    parent=self)
             return
         subject = self._subject_var.get().strip()
         if not subject:
-            messagebox.showwarning("Warning", "Subject is required.",
+            messagebox.showwarning(t("common.warning"), t("messaging.subject_required"),
                                    parent=self)
             return
 
@@ -106,7 +107,7 @@ class MessageFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Messages",
+        tk.Label(header, text=t("messaging.title"),
                  font=("Helvetica", 15, "bold"), bg="#2c3e50", fg="white"
                  ).pack(side="left", padx=20, pady=10)
 
@@ -119,20 +120,22 @@ class MessageFrame(tk.Frame):
         toolbar = tk.Frame(self, bg="#ecf0f1")
         toolbar.pack(fill="x", padx=20, pady=(10, 0))
 
-        ttk.Button(toolbar, text="Compose", command=self._compose).pack(
+        ttk.Button(toolbar, text=t("messaging.compose"), command=self._compose).pack(
             side="left", padx=(0, 10))
 
-        self._inbox_btn = ttk.Button(toolbar, text="Inbox",
+        self._inbox_btn = ttk.Button(toolbar, text=t("messaging.inbox"),
                                      command=self._show_inbox)
         self._inbox_btn.pack(side="left", padx=2)
 
-        self._sent_btn = ttk.Button(toolbar, text="Sent",
+        self._sent_btn = ttk.Button(toolbar, text=t("messaging.sent"),
                                     command=self._show_sent)
         self._sent_btn.pack(side="left", padx=2)
 
-        ttk.Button(toolbar, text="Delete", command=self._delete).pack(
+        ttk.Button(toolbar, text=t("common.delete"), command=self._delete).pack(
             side="left", padx=10)
-        ttk.Button(toolbar, text="Refresh",
+        ttk.Button(toolbar, text=t("common.export_csv", default="Export CSV"),
+                   command=self._export_csv).pack(side="right", padx=(0, 10))
+        ttk.Button(toolbar, text=t("common.refresh"),
                    command=self._load_messages).pack(side="right")
 
         # Treeview
@@ -163,7 +166,7 @@ class MessageFrame(tk.Frame):
         self._tree.bind("<<TreeviewSelect>>", self._on_select)
 
         # Detail pane
-        detail_frame = tk.LabelFrame(self, text="Message", bg="#ecf0f1",
+        detail_frame = tk.LabelFrame(self, text=t("messaging.message_label"), bg="#ecf0f1",
                                      padx=10, pady=5)
         detail_frame.pack(fill="x", padx=20, pady=(0, 10))
 
@@ -192,11 +195,40 @@ class MessageFrame(tk.Frame):
     def refresh(self):
         self._load_messages()
 
+    def _get_user_id(self):
+        """Get the LOCAL college user ID for the current logged-in user.
+
+        Shared auth returns a shared-auth user ID which doesn't match the
+        college local ``users`` table.  We resolve via username lookup.
+        """
+        if not self._auth:
+            return None
+        cu = self._auth.current_user if hasattr(self._auth, 'current_user') else None
+        if not cu:
+            return None
+        username = cu.get("username")
+        if username:
+            try:
+                from education_system.college_system.infrastructure.database.db import connect
+                conn = connect(self._db_path)
+                row = conn.execute(
+                    "SELECT id FROM users WHERE username = ?", (username,)
+                ).fetchone()
+                conn.close()
+                if row:
+                    return row["id"]
+            except Exception:
+                pass
+        # Fallback to shared auth ID (may not match local DB)
+        return cu.get("user_id")
+
     def _load_messages(self):
         self._tree.delete(*self._tree.get_children())
         self._detail_var.set("Select a message to view.")
         try:
-            user_id = self._auth.current_user["user_id"]
+            user_id = self._get_user_id()
+            if not user_id:
+                return
             unread = self._svc.count_unread(user_id)
             self._unread_label.set(f"Unread: {unread}")
 
@@ -220,7 +252,7 @@ class MessageFrame(tk.Frame):
                     m["created_at"][:19],
                 ))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ------------------------------------------------------------------
     # Actions
@@ -232,7 +264,9 @@ class MessageFrame(tk.Frame):
             return
         mid = int(sel[0])
         try:
-            user_id = self._auth.current_user["user_id"]
+            user_id = self._get_user_id()
+            if not user_id:
+                return
             msg = self._svc.get_message(mid, user_id)
             if msg:
                 body = msg.get("body") or "(no body)"
@@ -247,11 +281,14 @@ class MessageFrame(tk.Frame):
                     if self._tree.exists(str(mid)):
                         self._tree.selection_set(str(mid))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _compose(self):
         try:
-            user_id = self._auth.current_user["user_id"]
+            user_id = self._get_user_id()
+            if not user_id:
+                messagebox.showwarning(t("common.warning"), "Not logged in.")
+                return
             users = [u for u in self._svc.get_all_users() if u["id"] != user_id]
             dlg = _ComposeDialog(self, users)
             if dlg.result:
@@ -261,22 +298,28 @@ class MessageFrame(tk.Frame):
                     subject=dlg.result["subject"],
                     body=dlg.result["body"],
                 )
-                messagebox.showinfo("Success", "Message sent.")
+                messagebox.showinfo(t("common.success"), t("messaging.message_sent"))
                 self._load_messages()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._tree, "messages.csv")
 
     def _delete(self):
         sel = self._tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a message first.")
+            messagebox.showwarning(t("common.warning"), t("messaging.select_message_first"))
             return
-        if not messagebox.askyesno("Confirm", "Delete this message?"):
+        if not messagebox.askyesno(t("common.confirm_delete"), t("messaging.confirm_delete_message")):
             return
         try:
             mid = int(sel[0])
-            user_id = self._auth.current_user["user_id"]
+            user_id = self._get_user_id()
+            if not user_id:
+                return
             self._svc.delete_message(mid, user_id)
             self._load_messages()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))

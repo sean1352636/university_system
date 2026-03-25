@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/gui/charity_shop_gui/_imports.py
+# hypothesis_version: 6.151.9
+
+['body', 'email', 'message', 'r', 'subject', 'success', 'templates', 'utf-8']

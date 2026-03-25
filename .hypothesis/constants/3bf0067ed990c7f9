@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/email_service/notifications/parking.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d %H:%M:%S', 'Active', 'Permit Holder', 'end_date', 'error', 'failed', 'info', 'permit_id', 'permit_type', 'sent', 'start_date', 'status', 'student_name', 'updates', 'vehicle_info', 'zone', 'zone_description']

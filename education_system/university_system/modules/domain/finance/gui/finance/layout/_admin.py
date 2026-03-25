@@ -191,6 +191,7 @@ class AdminMixin:
         tk.Checkbutton(form_frame, text=_("finance_gui.admin_tab.is_recurring_label"), variable=is_recurring_var).grid(row=3, column=1, sticky='w', pady=5)
 
         def save_fee_type():
+            conn = None
             try:
                 name = name_entry.get()
                 description = description_entry.get()
@@ -208,10 +209,13 @@ class AdminMixin:
 
                 conn.commit()
                 conn.close()
+                conn = None
 
                 messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.admin_tab.fee_type_created"))
                 dialog.destroy()
             except Exception as e:
+                if conn:
+                    conn.close()
                 messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.admin_tab.fee_type_failed", error=str(e)))
 
         btn_frame = tk.Frame(dialog)
@@ -285,10 +289,15 @@ class AdminMixin:
 
         def save_aid_type():
             try:
-                name = name_entry.get()
-                description = description_entry.get()
-                max_amount = float(max_amount_entry.get())
+                name = name_entry.get().strip()
+                description = description_entry.get().strip()
+                max_amount_str = max_amount_entry.get().strip()
+                max_amount = float(max_amount_str) if max_amount_str else 0.0
                 category = category_var.get()
+
+                if not name:
+                    messagebox.showwarning(_("finance_gui.messages.warning"), "Aid type name is required.")
+                    return
 
                 conn = get_connection()
                 cursor = conn.cursor()

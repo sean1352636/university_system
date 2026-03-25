@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/gui/charity_shop_gui/charts.py
+# hypothesis_version: 6.151.9
+
+[0.0, 0.02, 0.3, 0.5, 0.98, 100, 111, 121, 122, '#27ae60', '#2ecc71', '#3498db', '#e67e22', '#e74c3c', '#f1c40f', '%1.1f%%', '10', '14', '30', '60', '7', '90', '900x700', '<<ComboboxSelected>>', 'Category Analysis', 'Condition', 'Current Stock Items:', 'Current Stock Qty:', 'Date', 'Helvetica', 'In Stock', 'Items Sold', 'Items Sold:', 'No data available', 'No sales data', 'No stock data', 'Number of Items', 'Quantity', 'Quantity per Item', 'Revenue (£)', 'Revenue Overview', 'Revenue Summary', 'Revenue by Category', 'Sales Timeline', 'Show last:', 'Stock Status', 'Stock Value:', 'Total Revenue:', 'available', 'bold', 'center', 'days', 'e', 'o', 'readonly', 'right', 'top', 'w', 'white']

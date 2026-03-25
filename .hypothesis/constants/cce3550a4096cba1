@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/academic_calendar/reporting.py
+# hypothesis_version: 6.151.9
+
+[100, ' AND r.type = ?', '%Y-%m', '%Y-%m-%d', 'Unassigned', 'academic_year', 'attendees', 'average_attendance', 'avg_booking_duration', 'avg_duration', 'course_name', 'course_statistics', 'date', 'error', 'event_statistics', 'event_type', 'events', 'generated_at', 'monthly_distribution', 'resource_name', 'resource_type', 'resources', 'semesters', 'success', 'total_attendance', 'total_bookings', 'total_events', 'total_hours', 'total_resources', 'view_reports']

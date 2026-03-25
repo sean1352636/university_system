@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/enhanced_auth.py
+# hypothesis_version: 6.151.9
+
+['EnhancedAuth', 'Invalid credentials', 'Unknown', 'create_enhanced_auth', 'created_at', 'device', 'email', 'error', 'first_name', 'id', 'ip', 'ip_address', 'last_activity', 'last_name', 'rate_limited', 'remember_me', 'remember_token', 'requires_2fa', 'role', 'session', 'session_warnings', 'student', 'student_id', 'success', 'type', 'user', 'user_agent', 'username', 'warnings']

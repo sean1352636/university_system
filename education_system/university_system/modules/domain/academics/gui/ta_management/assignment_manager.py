@@ -262,6 +262,9 @@ class AssignmentManager:
                 messagebox.showinfo("Success", f"TA assigned successfully.\nAssignment ID: {ta_id}", parent=dialog)
                 dialog.destroy()
                 self._refresh_tas()
+
+                # Email student about TA assignment
+                self._send_ta_email(student_id, module_code, role_type, hours_per_week, 'assigned')
             except ValueError as e:
                 messagebox.showerror("Validation Error", str(e), parent=dialog)
             except Exception as e:
@@ -310,6 +313,9 @@ class AssignmentManager:
             if success:
                 messagebox.showinfo("Success", f"TA assignment {ta_id} has been deactivated.")
                 self._refresh_tas()
+
+                # Email student about TA removal
+                self._send_ta_email(student_id, module_code, '', 0, 'removed')
             else:
                 messagebox.showwarning(
                     "Not Found",
@@ -401,3 +407,61 @@ class AssignmentManager:
             scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=(10, 0))
+
+    def _send_ta_email(self, student_id, module_code, role_type, hours_per_week, action):
+        """Email student about TA assignment or removal."""
+        try:
+            from education_system.university_system.infrastructure.email.email_service import send_email
+
+            conn = get_connection()
+            cursor = conn.cursor()
+
+            # Get student email
+            cursor.execute(
+                "SELECT first_name, last_name, email_address FROM students WHERE student_id = ?",
+                (student_id,)
+            )
+            row = cursor.fetchone()
+            if not row:
+                cursor.execute(
+                    "SELECT first_name, last_name, email FROM users WHERE username = ? OR id = ?",
+                    (student_id, student_id)
+                )
+                row = cursor.fetchone()
+            conn.close()
+
+            if not row or not row[2]:
+                return
+
+            name = f"{row[0]} {row[1]}"
+            email = row[2]
+
+            if action == 'assigned':
+                subject = f"TA Assignment: {module_code}"
+                body = (
+                    f"Dear {name},\n\n"
+                    f"You have been assigned as a Teaching Assistant:\n\n"
+                    f"Module: {module_code}\n"
+                    f"Role: {role_type}\n"
+                    f"Hours per Week: {hours_per_week}\n\n"
+                    f"Please contact the module instructor for further details "
+                    f"about your responsibilities and schedule.\n\n"
+                    f"Best regards,\nAcademic Administration"
+                )
+            elif action == 'removed':
+                subject = f"TA Assignment Removed: {module_code}"
+                body = (
+                    f"Dear {name},\n\n"
+                    f"Your Teaching Assistant assignment has been removed:\n\n"
+                    f"Module: {module_code}\n\n"
+                    f"If you believe this is an error, please contact the "
+                    f"module instructor or academic administration.\n\n"
+                    f"Best regards,\nAcademic Administration"
+                )
+            else:
+                return
+
+            send_email(recipient_email=email, subject=subject, body=body)
+
+        except Exception as e:
+            logger.warning(f"Failed to send TA email: {e}")

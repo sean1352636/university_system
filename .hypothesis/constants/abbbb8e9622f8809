@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/barber_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/barber', '/appointments', '/services', '/staff', 'GET', 'POST', 'appointment_date', 'appointment_time', 'barber', 'barber_appointments', 'barber_services', 'barber_staff', 'create', 'customer_email', 'customer_id', 'customer_id = ?', 'customer_name', 'customer_phone', 'description', 'duration_minutes', 'email', 'hire_date', 'is_active', 'is_active = ?', 'is_available', 'is_available = ?', 'items', 'name', 'notes', 'phone', 'price', 'search', 'service_id', 'service_type', 'service_type = ?', 'specialization', 'status', 'status = ?', 'sub', 'total', 'view']

@@ -1,9 +1,8 @@
-"""Database connection management and utilities."""
+"""Database connection management and utilities for the Secondary School system."""
 
 import sqlite3
-import threading
-from contextlib import contextmanager
 import logging
+from contextlib import contextmanager
 
 from education_system.secondary_school.core.paths import DB_FILE, ensure_directories
 from education_system.secondary_school.core.exceptions import DatabaseError
@@ -14,7 +13,6 @@ from education_system.secondary_school.infrastructure.database.constants import 
 logger = logging.getLogger(__name__)
 
 _db_path_override: str | None = None
-_lock = threading.Lock()
 
 
 def set_db_path(path: str):

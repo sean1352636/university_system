@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/module_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' = ?', '%Y-%m-%d %H:%M:%S', ', ', '/<module_code>', '/api/modules', 'DELETE', 'GET', 'POST', 'PUT', 'UPDATE modules SET ', 'create', 'credits', 'delete', 'department', 'description', 'instructor', 'is_active', 'items', 'message', 'module', 'module_code', 'module_name', 'module_type', 'modules', 'prerequisites', 'search', 'semester', 'sub', 'total', 'update', 'updated_at = ?', 'view', 'year']

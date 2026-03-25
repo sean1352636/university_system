@@ -99,7 +99,6 @@ except ImportError:
 
 # Import academic system launchers
 try:
-    from education_system.university_system.modules.domain.academics.services.lms.lms_core import launch_lms_gui
     from education_system.university_system.modules.domain.academics.services.degree_audit.degree_audit_core import launch_degree_audit_gui
     from education_system.university_system.modules.domain.academics.services.evaluation.course_evaluation_core import launch_course_evaluation_gui
     ACADEMIC_SYSTEMS_AVAILABLE = True
@@ -459,9 +458,12 @@ class ManageCourseStatusDialog:
             cursor = conn.cursor()
             
             cursor.execute("""
-            SELECT id, course_code, course_name, status,
+            SELECT id, COALESCE(course_code, code) as course_code,
+                   COALESCE(course_name, name) as course_name, status,
                    COALESCE(current_enrollment, 0) || '/' || COALESCE(max_enrollment, 0) as enrollment
             FROM courses
+            WHERE COALESCE(course_code, code) IS NOT NULL
+            AND COALESCE(course_name, name) IS NOT NULL
             ORDER BY course_code
             """)
             courses = cursor.fetchall()

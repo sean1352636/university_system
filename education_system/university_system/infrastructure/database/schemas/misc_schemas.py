@@ -8,45 +8,77 @@ from education_system.university_system.core.sql_safety import validate_identifi
 init_i18n()
 
 # Import all schema functions needed by initialize_all_schemas
-from .core_schemas import init_grade_system_db, init_academics_tables, init_courses_tables
-from .finance_schemas import init_finance_system_db, init_finance_tables
-from .student_union_schemas import init_student_union_db, init_student_affairs_tables, init_social_tables
-from .communication_schemas import init_email_system_db, init_communication_tables
-from .health_wellness_schemas import (
+from education_system.university_system.infrastructure.database.schemas.core_schemas import init_grade_system_db, init_academics_tables, init_courses_tables
+from education_system.university_system.infrastructure.database.schemas.finance_schemas import init_finance_system_db, init_finance_tables
+from education_system.university_system.infrastructure.database.schemas.student_union_schemas import init_student_union_db, init_student_affairs_tables, init_social_tables
+from education_system.university_system.infrastructure.database.schemas.communication_schemas import init_email_system_db, init_communication_tables
+from education_system.university_system.infrastructure.database.schemas.health_wellness_schemas import (
     init_health_system_db, init_mental_health_system_db,
     init_health_tables, init_wellness_tables
 )
-from .lms_schemas import init_lms_system_db
-from .attendance_warning_schemas import (
+from education_system.university_system.infrastructure.database.schemas.lms_schemas import init_lms_system_db
+from education_system.university_system.infrastructure.database.schemas.attendance_warning_schemas import (
     init_attendance_system_db, init_early_warning_system_db,
     init_peer_support_tables
 )
-from .degree_audit_schemas import init_degree_audit_system_db
-from .career_alumni_schemas import (
+from education_system.university_system.infrastructure.database.schemas.degree_audit_schemas import init_degree_audit_system_db
+from education_system.university_system.infrastructure.database.schemas.career_alumni_schemas import (
     init_career_services_system_db, init_alumni_relations_system_db,
     init_career_tables, init_alumni_tables
 )
-from .admissions_schemas import init_admissions_crm_system_db
-from .analytics_bi_schemas import (
+from education_system.university_system.infrastructure.database.schemas.admissions_schemas import init_admissions_crm_system_db
+from education_system.university_system.infrastructure.database.schemas.analytics_bi_schemas import (
     init_analytics_dashboard_system_db, init_business_intelligence_system_db,
     init_analytics_tables
 )
-from .campus_events_schemas import init_campus_events_system_db, init_smart_timetable_system_db
-from .facilities_housing_schemas import (
+from education_system.university_system.infrastructure.database.schemas.campus_events_schemas import init_campus_events_system_db, init_smart_timetable_system_db
+from education_system.university_system.infrastructure.database.schemas.facilities_housing_schemas import (
     init_facilities_management_system_db, init_housing_tables,
     init_parking_tables, init_travel_tables
 )
-from .research_integration_schemas import (
+from education_system.university_system.infrastructure.database.schemas.research_integration_schemas import (
     init_research_grants_system_db, init_integration_marketplace_system_db,
     init_integration_tables
 )
-from .ai_features_schemas import init_ai_features_system_db, init_ai_tables
-from .admin_support_schemas import (
+from education_system.university_system.infrastructure.database.schemas.ai_features_schemas import init_ai_features_system_db, init_ai_tables
+from education_system.university_system.infrastructure.database.schemas.admin_support_schemas import (
     init_course_evaluation_system_db, init_auth_tables, init_audit_tables,
     init_documents_tables, init_support_tables, init_parent_tables,
     init_library_tables, init_commerce_tables, init_other_tables
 )
-from .aggregators import init_additional_missing_tables
+from education_system.university_system.infrastructure.database.schemas.aggregators import init_additional_missing_tables
+
+def init_academic_transfer_history():
+    """Create academic_transfer_history table and add previous_system columns to students."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS academic_transfer_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT NOT NULL,
+            source_system TEXT NOT NULL,
+            source_student_id TEXT NOT NULL,
+            transfer_date TEXT NOT NULL DEFAULT (datetime('now')),
+            data_json TEXT NOT NULL
+        )
+        ''')
+
+        # Migration: add previous_system columns to students if missing
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(students)").fetchall()}
+        if "previous_system" not in cols:
+            conn.execute("ALTER TABLE students ADD COLUMN previous_system TEXT")
+        if "previous_system_id" not in cols:
+            conn.execute("ALTER TABLE students ADD COLUMN previous_system_id TEXT")
+
+        conn.commit()
+        conn.close()
+    except sqlite3.Error as e:
+        print(f"Error initializing academic_transfer_history: {e}")
+        if 'conn' in locals():
+            conn.close()
+
 
 def create_performance_indexes():
     """
@@ -254,6 +286,14 @@ def initialize_all_schemas():
 
     # Phase 1: HIGH Priority Features
     init_lms_system_db()
+    # Shared LMS tables (cross-system foundation)
+    try:
+        from education_system.shared.lms.schema import create_lms_tables
+        conn = get_connection()
+        create_lms_tables(conn)
+        conn.close()
+    except Exception as e:
+        print(f"Warning: shared LMS tables init: {e}")
     init_attendance_system_db()
     init_mental_health_system_db()
     init_early_warning_system_db()
@@ -310,6 +350,9 @@ def initialize_all_schemas():
     print(_t("schemas.init_additional_tables_header"))
     print("=" * 60)
     init_additional_missing_tables()
+
+    # Phase 5.5: Academic transfer history table and migrations
+    init_academic_transfer_history()
 
     # Phase 6: Create performance indexes after all tables exist
     print("\n" + "=" * 60)

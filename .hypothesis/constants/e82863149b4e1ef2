@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/betting_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/accounts', '/api/betting', '/bets', '/bets/<int:bet_id>', '/markets', 'GET', 'POST', 'account_id', 'account_id = ?', 'account_status', 'account_status = ?', 'bet_amount', 'betting', 'betting_accounts', 'category', 'category = ?', 'create', 'creator_id', 'description', 'email', 'end_date', 'event_id', 'event_name', 'items', 'odds_type', 'odds_value', 'options_json', 'potential_payout', 'prediction_markets', 'search', 'sports_bets', 'start_date', 'status', 'status = ?', 'sub', 'title', 'total', 'user_id', 'username', 'view']

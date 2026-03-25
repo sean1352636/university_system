@@ -1,4 +1,4 @@
-from ._imports import (
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.recommendations._imports import (
     tk, ttk, messagebox, sqlite3, _, DEFAULT_DB_PATH, datetime,
 )
 

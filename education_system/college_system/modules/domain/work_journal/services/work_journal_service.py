@@ -3,6 +3,7 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import WorkJournalError, ValidationError
 from education_system.college_system.infrastructure.database.db import connect
+from education_system.college_system.core.sql_safety import validate_identifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -27,10 +28,23 @@ class WorkJournalService:
             raise ValidationError("start_date is required.")
         conn = self._conn()
         try:
+            # Build INSERT with only non-None values so DB defaults apply
+            fields = {k: v for k, v in {
+                'student_id': kwargs.get('student_id'),
+                'employer_name': kwargs.get('employer_name'),
+                'role_title': kwargs.get('role_title'),
+                'start_date': kwargs.get('start_date'),
+                'end_date': kwargs.get('end_date'),
+                'supervisor_name': kwargs.get('supervisor_name'),
+                'dbs_confirmed': kwargs.get('dbs_confirmed'),
+                'risk_assessment': kwargs.get('risk_assessment'),
+                'status': kwargs.get('status'),
+            }.items() if v is not None}
+            cols = ", ".join(fields.keys())
+            placeholders = ", ".join("?" for _ in fields)
             conn.execute(
-                """INSERT INTO work_placements (student_id, employer_name, role_title, start_date, end_date, supervisor_name, dbs_confirmed, risk_assessment, status)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (kwargs.get('student_id'), kwargs.get('employer_name'), kwargs.get('role_title'), kwargs.get('start_date'), kwargs.get('end_date'), kwargs.get('supervisor_name'), kwargs.get('dbs_confirmed'), kwargs.get('risk_assessment'), kwargs.get('status'),),
+                f"INSERT INTO work_placements ({cols}) VALUES ({placeholders})",
+                list(fields.values()),
             )
             conn.commit()
             row = conn.execute(
@@ -62,7 +76,7 @@ class WorkJournalService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -80,7 +94,7 @@ class WorkJournalService:
         if not updates:
             raise ValidationError("No valid fields to update.")
         updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [pk]
         conn = self._conn()
         try:
@@ -118,7 +132,7 @@ class WorkJournalService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         conn = self._conn()
         try:

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/plagiarism/cli/checking.py
+# hypothesis_version: 6.151.9
+
+[0.1, 0.3, 0.9, 100, '\nDocuments:', '==========', 'EXACT_MATCH', 'HIGH RISK', 'HIGH_SIMILARITY', 'Invalid selection.', 'LOW RISK', 'MEDIUM RISK', 'MODERATE_SIMILARITY', 'Not checked yet', 'check_plagiarism', 'id', 'latest_check', 'result_id', 'similarity_score', 'status', 'y']

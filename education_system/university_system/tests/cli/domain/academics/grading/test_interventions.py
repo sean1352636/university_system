@@ -159,7 +159,7 @@ class TestInterventionRecommendations:
 
     def test_intervention_recommendations_database_error(self, capsys):
         """Test database error handling"""
-        with mock.patch('university_system.modules.domain.academics.grade_misc.interventions.get_connection') as mock_conn:
+        with mock.patch('education_system.university_system.modules.domain.academics.grade_misc.interventions.get_connection') as mock_conn:
             mock_conn.side_effect = sqlite3.Error("Database error")
 
             intervention_recommendations()

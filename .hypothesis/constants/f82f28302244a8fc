@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/community/polls.py
+# hypothesis_version: 6.151.9
+
+[100, '#0f3460', '#333333', '#7f8c8d', '#e74c3c', '#ecf0f1', '#ffffff', '%Y-%m-%d', '.', '1.0', '350x300', '400x300', '450x400', 'Card.TFrame', 'Cast Vote', 'Create Poll', 'End', 'Helvetica', 'ID', 'Main.TFrame', 'Poll created!', 'Primary.TButton', 'Select a poll', 'Select an option', 'Start', 'Status', 'Subtitle.TLabel', 'Success.TButton', 'Title', 'Vote recorded!', 'Votes', '_', 'bold', 'both', 'cinema.btn.cast_vote', 'cinema.btn.create', 'cinema.btn.submit', 'cinema.polls.create', 'cinema.polls.title', 'end', 'headings', 'left', 'right', 'values', 'vertical', 'w', 'x', 'y']

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/library/notifications.py
+# hypothesis_version: 6.151.9
+
+[0.0, 100, 120, 180, 600, '#e8f5e9', '#ffebee', '%Y-%m-%d %H:%M:%S', '1.0', '700x500', '700x600', '900x500', 'Arial', 'Author', 'Book ID', 'Book Return Calendar', 'Book Return Dates', 'Checked Out', 'Close', 'Due Date', 'Due Date Reminders', 'Email Details', 'Loan ID', 'No Notifications', 'No Overdue', 'No Reminders', 'Payment Confirmation', 'Reservation Alerts', 'Return Confirmation', 'Returned', 'Status', 'Title', 'TkDefaultFont', 'User', 'amount', 'author', 'bold', 'book_id', 'book_title', 'both', 'common.close', 'common.error', 'common.success', 'control_frame', 'disabled', 'due_date', 'end', 'fine_amount', 'headings', 'library_book_return', 'library_fine_payment', 'notifications', 'overdue', 'payment_date', 'returned', 'student_id', 'student_name', 'w']

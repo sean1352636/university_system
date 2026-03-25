@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/primary_school/modules/domain/academics/progress/services/progress_service.py
+# hypothesis_version: 6.151.9
+
+[' AND pupil_id = ?', ' AND term = ?', ', ', 'Pupil ID is required', 'Term is required', 'assessed_by', 'baseline_level', 'comments', 'current_level', 'intervention_needed', 'on_track', 'progress_id', 'pupil_id', 'subject_code', 'target_level', 'term', 'year_group']

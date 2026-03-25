@@ -61,7 +61,7 @@ except ImportError:
     except Exception:
         class ModuleScheduler: pass
 
-from .main_gui import ModuleSchedulingGUI
+from education_system.university_system.modules.domain.academics.gui.module_scheduling.main_gui import ModuleSchedulingGUI
 
 def _export_text_to_pdf(self, content):
     """Export text content to PDF"""
@@ -85,12 +85,12 @@ def _export_text_to_pdf(self, content):
                 story.append(Paragraph(line or ' ', styles['Normal']))
             
             doc.build(story)
-            messagebox.showinfo("Success", f"PDF exported to {filename}")
+            messagebox.showinfo("Success", f"PDF exported to {filename}", parent=self.root)
             
     except ImportError:
-        messagebox.showerror("Error", "ReportLab library not available for PDF export.")
+        messagebox.showerror("Error", "ReportLab library not available for PDF export.", parent=self.root)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export PDF: {str(e)}")
+        messagebox.showerror("Error", f"Failed to export PDF: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI._export_text_to_pdf = _export_text_to_pdf
 
@@ -112,10 +112,10 @@ def _export_text_to_csv(self, content):
                     if line.strip():
                         writer.writerow([line])
             
-            messagebox.showinfo("Success", f"CSV exported to {filename}")
+            messagebox.showinfo("Success", f"CSV exported to {filename}", parent=self.root)
             
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export CSV: {str(e)}")
+        messagebox.showerror("Error", f"Failed to export CSV: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI._export_text_to_csv = _export_text_to_csv
 
@@ -135,12 +135,12 @@ def _export_text_to_excel(self, content):
             df = pd.DataFrame(lines, columns=['Content'])
             df.to_excel(filename, index=False)
 
-            messagebox.showinfo("Success", f"Excel file exported to {filename}")
+            messagebox.showinfo("Success", f"Excel file exported to {filename}", parent=self.root)
 
     except ImportError:
-        messagebox.showerror("Error", "Pandas library not available for Excel export.")
+        messagebox.showerror("Error", "Pandas library not available for Excel export.", parent=self.root)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export Excel: {str(e)}")
+        messagebox.showerror("Error", f"Failed to export Excel: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI._export_text_to_excel = _export_text_to_excel
 
@@ -238,10 +238,10 @@ def _export_timetable_to_ical(self, timetable_data):
         with open(filename, 'w', encoding='utf-8') as f:
             f.write('\r\n'.join(ical_lines))
 
-        messagebox.showinfo("Success", f"iCalendar file exported to {filename}\n\nYou can import this into Google Calendar, Outlook, Apple Calendar, or any calendar application.")
+        messagebox.showinfo("Success", f"iCalendar file exported to {filename}\n\nYou can import this into Google Calendar, Outlook, Apple Calendar, or any calendar application.", parent=self.root)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export iCalendar: {str(e)}")
+        messagebox.showerror("Error", f"Failed to export iCalendar: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI._export_timetable_to_ical = _export_timetable_to_ical
 
@@ -299,12 +299,12 @@ def _export_timetable_to_pdf(self, timetable_data):
         elements.append(table)
         doc.build(elements)
 
-        messagebox.showinfo("Success", f"PDF exported to {filename}")
+        messagebox.showinfo("Success", f"PDF exported to {filename}", parent=self.root)
 
     except ImportError:
-        messagebox.showerror("Error", "ReportLab library not available for PDF export.")
+        messagebox.showerror("Error", "ReportLab library not available for PDF export.", parent=self.root)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export PDF: {str(e)}")
+        messagebox.showerror("Error", f"Failed to export PDF: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI._export_timetable_to_pdf = _export_timetable_to_pdf
 
@@ -336,10 +336,10 @@ def _export_timetable_to_csv(self, timetable_data):
 
                 writer.writerow([day, start_time, end_time, module, session_type, room])
 
-        messagebox.showinfo("Success", f"CSV exported to {filename}")
+        messagebox.showinfo("Success", f"CSV exported to {filename}", parent=self.root)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export CSV: {str(e)}")
+        messagebox.showerror("Error", f"Failed to export CSV: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI._export_timetable_to_csv = _export_timetable_to_csv
 
@@ -372,12 +372,12 @@ def _export_timetable_to_excel(self, timetable_data):
         df = pd.DataFrame(data)
         df.to_excel(filename, index=False, engine='openpyxl')
 
-        messagebox.showinfo("Success", f"Excel file exported to {filename}")
+        messagebox.showinfo("Success", f"Excel file exported to {filename}", parent=self.root)
 
     except ImportError:
-        messagebox.showerror("Error", "Pandas library not available for Excel export.")
+        messagebox.showerror("Error", "Pandas library not available for Excel export.", parent=self.root)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export Excel: {str(e)}")
+        messagebox.showerror("Error", f"Failed to export Excel: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI._export_timetable_to_excel = _export_timetable_to_excel
 
@@ -386,7 +386,7 @@ def export_to_ical(self, entity_type, entity_id, filename=None):
     try:
         from icalendar import Calendar, Event
     except ImportError:
-        messagebox.showerror("Error", "icalendar library not installed. Run: pip install icalendar")
+        messagebox.showerror("Error", "icalendar library not installed. Run: pip install icalendar", parent=self.root)
         return None
 
     cal = Calendar()
@@ -401,7 +401,7 @@ def export_to_ical(self, entity_type, entity_id, filename=None):
         schedules = self._get_instructor_schedule_data(entity_id)
         cal.add('x-wr-calname', f'Instructor {entity_id} Schedule')
     else:
-        messagebox.showerror("Error", "Invalid entity type")
+        messagebox.showerror("Error", "Invalid entity type", parent=self.root)
         return None
 
     # Add events
@@ -449,7 +449,7 @@ def export_to_ical(self, entity_type, entity_id, filename=None):
         with open(filename, 'wb') as f:
             f.write(cal.to_ical())
 
-        messagebox.showinfo("Success", f"iCal file exported: {filename}")
+        messagebox.showinfo("Success", f"iCal file exported: {filename}", parent=self.root)
         return filename
 
     return None
@@ -477,11 +477,11 @@ def _export_analytics_csv(self, data, filename_prefix):
                 writer.writeheader()
                 writer.writerows(data)
 
-        messagebox.showinfo("Export Complete", f"Analytics exported to:\n{filename}")
+        messagebox.showinfo("Export Complete", f"Analytics exported to:\n{filename}", parent=self.root)
         return filename
 
     except Exception as e:
-        messagebox.showerror("Export Error", f"Failed to export analytics: {str(e)}")
+        messagebox.showerror("Export Error", f"Failed to export analytics: {str(e)}", parent=self.root)
         return None
 
 ModuleSchedulingGUI._export_analytics_csv = _export_analytics_csv
@@ -535,14 +535,14 @@ def _generate_analytics_pdf(self, data, title):
 
         doc.build(elements)
 
-        messagebox.showinfo("PDF Generated", f"PDF report generated:\n{filename}")
+        messagebox.showinfo("PDF Generated", f"PDF report generated:\n{filename}", parent=self.root)
         return filename
 
     except ImportError:
-        messagebox.showerror("Error", "reportlab library not installed.\nRun: pip install reportlab")
+        messagebox.showerror("Error", "reportlab library not installed.\nRun: pip install reportlab", parent=self.root)
         return None
     except Exception as e:
-        messagebox.showerror("PDF Error", f"Failed to generate PDF: {str(e)}")
+        messagebox.showerror("PDF Error", f"Failed to generate PDF: {str(e)}", parent=self.root)
         return None
 
 ModuleSchedulingGUI._generate_analytics_pdf = _generate_analytics_pdf

@@ -2,7 +2,7 @@
 Report generation mixin for AdminPortal.
 """
 
-from ._imports import (
+from education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal._imports import (
     tk, ttk, scrolledtext, logging, datetime,
     get_connection,
     clear_frame, create_scrollable_frame,

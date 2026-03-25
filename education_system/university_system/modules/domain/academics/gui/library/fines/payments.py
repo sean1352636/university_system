@@ -7,7 +7,7 @@ from tkinter import ttk, messagebox, simpledialog
 from datetime import datetime
 from education_system.university_system.modules.shared.utils.i18n import get_text as _
 
-from .constants import (
+from education_system.university_system.modules.domain.academics.gui.library.fines.constants import (
     ORIGINAL_LIBRARY_AVAILABLE,
     FINANCE_ACCOUNT_AVAILABLE,
     DatabaseError,
@@ -123,7 +123,7 @@ def process_fine_payment(self):
                     ''', (new_fine_amount, loan_id))
                     remaining_payment = 0
 
-            # Record payment in library_fine_payments table for refund tracking
+            # Record payment in payments table for refund tracking
             self._record_fine_payment(
                 conn=conn,
                 user_id=user_id,
@@ -327,7 +327,7 @@ def pay_fine_from_finance_account(self):
                     ''', (new_fine_amount, loan_id))
                     remaining_payment = 0
 
-            # Record payment in library_fine_payments table for refund tracking
+            # Record payment in payments table for refund tracking
             self._record_fine_payment(
                 conn=conn,
                 user_id=user_id,
@@ -579,12 +579,18 @@ def process_fine_payment_gui(self):
                 conn = get_db_connection()
                 cursor = conn.cursor()
 
-                # Record payment in fine_payments table
+                # Record payment in payments table with source_type='library_fine'
                 cursor.execute('''
-                INSERT INTO fine_payments (
-                    loan_id, amount, payment_method, payment_date, processed_by
-                ) VALUES (?, ?, ?, ?, ?)
-                ''', (loan_id, fine_amount, payment_method, payment_date, get_current_user_id()))
+                INSERT INTO payments (
+                    student_id, amount, currency, payment_method, payment_date, status,
+                    notes, created_by, created_at, source_type, reference_id, reference_type,
+                    payment_reference
+                ) VALUES (?, ?, 'GBP', ?, ?, 'completed', ?, ?, ?, 'library_fine', ?, 'loan', ?)
+                ''', (user_id_for_payment, fine_amount, payment_method, payment_date,
+                      f'Library fine payment (Loan {loan_id})',
+                      get_current_user_id(), payment_date,
+                      str(loan_id),
+                      f'FINE_{loan_id}_{datetime.now().strftime("%Y%m%d%H%M%S")}'))
 
                 # Update loan - mark fine as paid
                 cursor.execute('''
@@ -598,7 +604,7 @@ def process_fine_payment_gui(self):
 
                 log_audit_event(get_current_user_id(),
                               f"Processed fine payment: ${fine_amount:.2f} for loan {loan_id} via {payment_method}",
-                              "fine_payments")
+                              "payments")
 
                 # Generate receipt
                 self.generate_fine_receipt_gui(loan_id, fine_amount, payment_method, payment_date)

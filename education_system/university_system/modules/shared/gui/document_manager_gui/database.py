@@ -95,32 +95,41 @@ class DocumentDatabaseManager:
             except Exception as e:
                 logger.warning(f"Error adding missing columns to document_types: {e}")
 
-            # Enhanced student_documents table with versioning
+            # Enhanced documents table with versioning
             cursor.execute('''
-            CREATE TABLE IF NOT EXISTS student_documents (
+            CREATE TABLE IF NOT EXISTS documents (
                 document_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                student_id TEXT,
-                type_id INTEGER,
+                source_type TEXT NOT NULL DEFAULT 'general',
+                source_document_id INTEGER,
+                owner_id TEXT,
+                owner_type TEXT,
+                reference_type TEXT,
+                reference_id TEXT,
+                document_type TEXT,
+                document_name TEXT,
                 file_path TEXT,
+                file_content TEXT,
+                file_size INTEGER,
+                file_hash TEXT,
                 original_filename TEXT,
                 upload_date TEXT,
                 expiry_date TEXT,
+                issue_date TEXT,
+                status TEXT DEFAULT 'active',
                 verification_status TEXT,
                 verification_date TEXT,
                 verification_notes TEXT,
+                verified_by TEXT,
                 version_number INTEGER DEFAULT 1,
                 parent_document_id INTEGER,
-                uploaded_by TEXT,
-                file_size INTEGER,
-                file_hash TEXT,
+                is_current_version INTEGER DEFAULT 1,
+                workflow_status TEXT,
+                priority INTEGER,
                 tags TEXT,
-                is_current_version BOOLEAN DEFAULT 1,
-                workflow_status TEXT DEFAULT 'pending',
-                priority INTEGER DEFAULT 0,
-                FOREIGN KEY (student_id) REFERENCES students (student_id),
-                FOREIGN KEY (type_id) REFERENCES document_types (type_id),
-                FOREIGN KEY (parent_document_id) REFERENCES student_documents (document_id),
-                FOREIGN KEY (uploaded_by) REFERENCES users (username)
+                notes TEXT,
+                uploaded_by TEXT,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT
             )
             ''')
 
@@ -138,22 +147,7 @@ class DocumentDatabaseManager:
             )
             ''')
 
-            # Documents table (used by search, dashboard, upload, bulk ops, etc.)
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS documents (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                student_id TEXT,
-                document_type TEXT,
-                file_name TEXT,
-                file_path TEXT,
-                file_size INTEGER,
-                status TEXT DEFAULT 'Pending',
-                upload_date TEXT,
-                expiry_date TEXT,
-                tags TEXT,
-                notes TEXT
-            )
-            ''')
+            # NOTE: The 'documents' table is created above with the enhanced schema.
 
             # Document workflow table
             cursor.execute('''
@@ -167,7 +161,7 @@ class DocumentDatabaseManager:
                 comments TEXT,
                 completed_date TEXT,
                 completed_by TEXT,
-                FOREIGN KEY (document_id) REFERENCES student_documents (document_id)
+                FOREIGN KEY (document_id) REFERENCES documents (document_id)
             )
             ''')
 
@@ -185,7 +179,7 @@ class DocumentDatabaseManager:
                 is_sent BOOLEAN DEFAULT 0,
                 priority TEXT DEFAULT 'normal',
                 related_document_id INTEGER,
-                FOREIGN KEY (related_document_id) REFERENCES student_documents (document_id)
+                FOREIGN KEY (related_document_id) REFERENCES documents (document_id)
             )
             ''')
 
@@ -354,7 +348,7 @@ class DocumentDatabaseManager:
 
             # Define available migrations
             available_migrations = [
-                ("Add archived column to documents", "ALTER TABLE student_documents ADD COLUMN archived BOOLEAN DEFAULT 0"),
+                ("Add archived column to documents", "ALTER TABLE documents ADD COLUMN archived BOOLEAN DEFAULT 0"),
                 ("Add priority to notifications", "ALTER TABLE notifications ADD COLUMN priority TEXT DEFAULT 'normal'"),
                 ("Add created_by to workflows", "ALTER TABLE document_workflow ADD COLUMN created_by TEXT"),
                 ("Add is_active to document types", "ALTER TABLE document_types ADD COLUMN is_active BOOLEAN DEFAULT 1"),

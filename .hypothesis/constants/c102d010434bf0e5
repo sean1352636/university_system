@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/database/query_monitor.py
+# hypothesis_version: 6.151.9
+
+[0.0, 95.0, 100.0, -100, 100, 200, 1000, 10000, '"[^"]*"', "'[^']*'", '...', '?', 'QueryMetrics', 'QueryMonitor', 'QueryMonitor reset', 'QueryStats', 'QueryTimer', '\\?+', '\\b\\d+\\b', 'avg_time_ms', 'get_query_monitor', 'history_size', 'inf', 'query_performance', 'slow_percentage', 'slow_queries', 'slow_threshold_ms', 'time_query', 'total_queries', 'total_time_ms']

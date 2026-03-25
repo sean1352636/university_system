@@ -2,7 +2,7 @@
 Database initialization and permission setup for the charity shop.
 """
 
-from ._imports import (
+from education_system.university_system.modules.services.cli.charity_shop_cli._imports import (
     sqlite3, logger, get_connection, safe_alter_table_add_column, get_auth,
     TABLE_NAME, CUSTOMERS_TABLE, DONATIONS_TABLE, DONORS_TABLE, STAFF_TABLE,
     GIFT_CARDS_TABLE, PRICE_HISTORY_TABLE, SALES_TABLE, BUNDLES_TABLE,

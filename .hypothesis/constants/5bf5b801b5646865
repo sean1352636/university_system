@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/transaction_manager/payment_recording.py
+# hypothesis_version: 6.151.9
+
+[0.0, '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '1.0', '580x600', ':', '<<ComboboxSelected>>', 'Academic Transcript', 'Arial', 'Bank Transfer', 'Bar - Beverages', 'Barber - Haircut', 'Cafe - Coffee/Snacks', 'Card', 'Cash', 'Certificate Fee', 'Cheque', 'Club/Society Fee', 'Course Materials', 'Exam Fees', 'General Fee Payment', 'Grocery - Shopping', 'Gym - Membership', 'Lab Fees', 'Library Fines', 'N/A', 'Online', 'Other', 'Payment For:', 'Printing Services', 'Record Payment', 'Restaurant - Meal', 'Tuition Fees', 'blue', 'bold', 'both', 'current_user', 'end', 'is_logged_in', 'left', 'nw', 'paid', 'partial', 'readonly', 'refresh_dashboard', 'refresh_payments', 'student_id', 'system', 'user_id', 'username', 'values', 'w', 'write']

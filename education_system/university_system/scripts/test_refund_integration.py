@@ -6,10 +6,11 @@ This script tests that refunds from all three systems are properly recorded
 in the finance_refunds table and will be visible in the main finance GUI.
 """
 
+import sys
+from datetime import datetime
+
 from education_system.university_system.infrastructure.database.db import transaction, get_connection
 from education_system.university_system.modules.shared.utils.finance_integration import record_refund_to_finance
-from datetime import datetime
-import sys
 
 def test_library_refund():
     """Test library refund using finance_integration function."""

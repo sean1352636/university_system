@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/charity_shop_cli/db.py
+# hypothesis_version: 6.151.9
+
+['INTEGER', 'INTEGER DEFAULT 0', 'INTEGER DEFAULT 5', 'REAL DEFAULT 0', 'TEXT', 'admin', 'barcode', 'delete', 'discount_percent', 'donation_cost', 'id', 'instructor', 'location_id', 'low_stock_threshold', 'manage_charity_shop', 'sold', 'sold_date', 'sold_quantity', 'staff', 'student']

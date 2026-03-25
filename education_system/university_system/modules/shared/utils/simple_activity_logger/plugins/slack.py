@@ -3,8 +3,8 @@ from typing import Dict, Any
 
 import requests
 
-from ..models import LogEntry, SecurityLevel, LogLevel
-from .base import LoggerPlugin
+from education_system.university_system.modules.shared.utils.simple_activity_logger.models import LogEntry, SecurityLevel, LogLevel
+from education_system.university_system.modules.shared.utils.simple_activity_logger.plugins.base import LoggerPlugin
 
 
 class SlackNotificationPlugin(LoggerPlugin):

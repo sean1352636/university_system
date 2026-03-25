@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/ai/ai_detector/detector/database_mixin.py
+# hypothesis_version: 6.151.9
+
+[0.0, 0.7, 200, '...', 'BLOB', 'Database unavailable', 'FERPA', 'GDPR', 'INTEGER', 'REAL', 'TEXT', 'Untitled', 'ai_score', 'analysis_date', 'assignment_id', 'average_ai_score', 'basic_mode', 'behavioral_analysis', 'character_count', 'compliance_manager', 'confidence', 'course_code', 'database_status', 'detection_methods', 'detection_threshold', 'error', 'generated_at', 'id', 'institution_id', 'is_ai_generated', 'limit', 'message', 'pattern_matching', 'privacy_manager', 'statistical_analysis', 'status', 'student_filter', 'student_id', 'style_profiles', 'submission_date', 'submission_text', 'submission_title', 'submissions', 'temporal_analysis', 'text_preview', 'title', 'total_count', 'total_submissions', 'unique_students', 'word_count']

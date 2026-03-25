@@ -1,4 +1,4 @@
-from ._imports import (
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.recommendations._imports import (
     tk, ttk, messagebox, sqlite3, _, DEFAULT_DB_PATH, datetime,
 )
 
@@ -81,12 +81,14 @@ class PrerequisitesMixin:
                     return
 
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-                cursor = conn.cursor()
+                try:
+                    cursor = conn.cursor()
 
-                # Check for circular dependency
-                if self.check_circular_prerequisite_db(cursor, course_id, prereq_id):
-                    messagebox.showerror("Circular Dependency",
-                                       "Adding this prerequisite would create a circular dependency!")
+                    # Check for circular dependency
+                    if self.check_circular_prerequisite_db(cursor, course_id, prereq_id):
+                        messagebox.showerror("Circular Dependency",
+                                           "Adding this prerequisite would create a circular dependency!")
+                finally:
                     conn.close()
                     return
 

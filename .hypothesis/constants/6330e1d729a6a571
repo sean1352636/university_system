@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/study_rooms_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/study-rooms', '/bookings', '/rooms', '/rooms/<int:room_id>', 'GET', 'POST', 'amenities', 'booking_date', 'capacity', 'create', 'end_time', 'is_bookable', 'is_bookable = ?', 'items', 'location', 'notes', 'room_id', 'room_id = ?', 'room_name', 'search', 'start_time', 'status', 'status = ?', 'student_id', 'student_id = ?', 'study_room_bookings', 'study_rooms', 'sub', 'total', 'view']

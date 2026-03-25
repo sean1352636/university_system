@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/analytics/student_analytics/data_access.py
+# hypothesis_version: 6.151.9
+
+[0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.6, 1.0, 2.0, 3.0, 4.0, 85.0, 100, ' AND ', ' WHERE ', ',', '?', 'A', 'Active', 'B', 'Bachelor', 'Birmingham', 'Bristol', 'C', 'Completed', 'D', 'Dropped', 'F', 'Failed', 'High School', 'In Progress', 'Leeds', 'Liverpool', 'London', 'Manchester', 'Master', 'On Hold', 'PhD', 'Professional', 'Standard', 'age', 'age BETWEEN ? AND ?', 'age_range', 'attendance_rate', 'completion_status', 'course', 'date_range', 'department', 'difficulty_rating', 'engagement_score', 'gender', 'gpa', 'location', 'module_completion', 'module_grade', 'module_name', 'module_type', 'overall_grade', 'previous_education', 'status']

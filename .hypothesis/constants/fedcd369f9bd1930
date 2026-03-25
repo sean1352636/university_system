@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/commerce/services/shop_management/utils.py
+# hypothesis_version: 6.151.9
+
+['%Y%m%d_%H%M%S', 'cart', 'conn', 'currency_symbol', 'id', 'item_count', 'items', 'products', 'quantity', 'shop', 'shop_discounts', 'shop_inventory', 'total_quantity', 'transaction', 'transactions']

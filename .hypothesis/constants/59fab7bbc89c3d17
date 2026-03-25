@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/auth/core.py
+# hypothesis_version: 6.151.9
+
+[587, ', ', '?', 'From', 'Invalid MFA code.', 'Subject', 'To', 'UNIQUE', "User '%s' logged in", 'User logged out: %s', 'User not found.', 'display_name', 'email', 'id', 'is_active', 'legacy_salt', 'locked_until', 'mfa_required', 'password_changed_at', 'password_hash', 'role', 'sender_email', 'smtp_password', 'smtp_port', 'smtp_server', 'smtp_username', 'system_key', 'systems', 'unknown', 'use_tls', 'user_id', 'username']

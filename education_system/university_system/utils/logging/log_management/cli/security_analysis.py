@@ -15,7 +15,11 @@ def security_analysis_menu(log_manager, auth):
     print("4. User Behavior Analysis")
     print("5. Return")
 
-    choice = input("Choose analysis: ")
+    choice = input("Choose analysis: ").strip()
+
+    if choice not in ('1', '2', '3', '4', '5'):
+        print("Invalid choice. Please select 1-5.")
+        return
 
     if choice == '1':
         analyze_failed_logins(log_manager)
@@ -65,7 +69,7 @@ def analyze_failed_logins(log_manager):
         for user in suspicious_users:
             print(f"  {user}: {user_failures[user]} failures")
 
-    input("\nPress Enter to continue...")
+    _ = input("\nPress Enter to continue...")
 
 
 def detect_unusual_activity(log_manager):
@@ -114,7 +118,7 @@ def detect_unusual_activity(log_manager):
             action = activity['action']
             print(f"  {timestamp} - {user}: {action}")
 
-    input("\nPress Enter to continue...")
+    _ = input("\nPress Enter to continue...")
 
 
 def audit_admin_actions(log_manager):
@@ -179,7 +183,7 @@ def audit_admin_actions(log_manager):
             module = action['module']
             print(f"  {timestamp} - {user}: {action_type} on {module}")
 
-    input("\nPress Enter to continue...")
+    _ = input("\nPress Enter to continue...")
 
 
 def analyze_user_behavior(log_manager):
@@ -261,4 +265,4 @@ def analyze_user_behavior(log_manager):
         for user, stats in high_activity_users:
             print(f"  {user}: {stats['total_actions']} actions")
 
-    input("\nPress Enter to continue...")
+    _ = input("\nPress Enter to continue...")

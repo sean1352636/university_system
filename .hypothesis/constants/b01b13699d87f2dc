@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/helpdesk/admin/organizations.py
+# hypothesis_version: 6.151.9
+
+['\nEnter your choice: ', '\nOrganizations:', ' WHERE org_id = ?', '%Y-%m-%d %H:%M:%S', ', ', '1', '2', '3', '3. Edit organization', '=', 'Address (optional): ', 'Contact email: ', 'Domain (optional): ', 'Name is required.', 'No', 'No changes made.', 'Organization name: ', 'Phone (optional): ', 'Yes', 'contact_email = ?', 'name = ?']

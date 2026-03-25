@@ -33,8 +33,8 @@ def root_window():
 class TestHousingGUIInitialization:
     """Test HousingGUI initialization"""
 
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.main_gui.init_housing_db')
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.main_gui.get_auth')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.main_gui.init_housing_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.main_gui.get_auth')
     def test_housing_gui_initialization(self, mock_get_auth, mock_init_db, root_window):
         """Test HousingGUI initializes correctly"""
         from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.main_gui import HousingGUI
@@ -46,8 +46,8 @@ class TestHousingGUIInitialization:
         assert gui.root == root_window
         assert mock_init_db.called
 
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.main_gui.init_housing_db')
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.main_gui.get_auth')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.main_gui.init_housing_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.main_gui.get_auth')
     def test_housing_gui_with_auth(self, mock_get_auth, mock_init_db, root_window):
         """Test HousingGUI with authentication"""
         from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.main_gui import HousingGUI
@@ -64,9 +64,9 @@ class TestHousingGUIInitialization:
 class TestEmailNotifications:
     """Test email notification functions"""
 
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications.get_connection')
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications.send_email')
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications.render_template')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications.get_connection')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications.send_email')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications.render_template')
     def test_send_housing_email_success(self, mock_render, mock_send, mock_conn):
         """Test send_housing_email sends email successfully"""
         from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications import send_housing_email
@@ -100,12 +100,12 @@ class TestEmailNotifications:
         """Test send_housing_email when email service unavailable"""
         from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications import send_housing_email
 
-        with patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications.EMAIL_SERVICE_AVAILABLE', False):
+        with patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications.EMAIL_SERVICE_AVAILABLE', False):
             result = send_housing_email('receipt', 'S001', {})
 
             assert result is False
 
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications.get_connection')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications.get_connection')
     def test_send_housing_email_no_student_email(self, mock_conn):
         """Test send_housing_email with missing student email"""
         from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications import send_housing_email
@@ -121,9 +121,9 @@ class TestEmailNotifications:
 
         assert result is False
 
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications.get_connection')
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications.send_email')
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications.render_template')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications.get_connection')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications.send_email')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications.render_template')
     def test_send_maintenance_email(self, mock_render, mock_send, mock_conn):
         """Test send_maintenance_email sends maintenance notifications"""
         from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications import send_maintenance_email
@@ -225,7 +225,7 @@ class TestDatabaseConnection:
 class TestErrorHandling:
     """Test error handling in email functions"""
 
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.get_connection')
     def test_send_housing_email_handles_db_error(self, mock_conn):
         """Test send_housing_email handles database errors"""
         from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications import send_housing_email
@@ -237,8 +237,8 @@ class TestErrorHandling:
 
         assert result is False
 
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.get_connection')
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.send_email')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.send_email')
     def test_send_housing_email_handles_email_error(self, mock_send, mock_conn):
         """Test send_housing_email handles email sending errors"""
         from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications import send_housing_email
@@ -262,9 +262,9 @@ class TestErrorHandling:
 class TestTemplateVariables:
     """Test template variable construction"""
 
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.get_connection')
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.render_template')
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.send_email')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.render_template')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.send_email')
     def test_send_housing_email_template_variables(self, mock_send, mock_render, mock_conn):
         """Test correct template variables are passed"""
         from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications import send_housing_email
@@ -304,9 +304,9 @@ class TestTemplateVariables:
 class TestEmailTypes:
     """Test different email types"""
 
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.get_connection')
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.render_template')
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.send_email')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.render_template')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.send_email')
     def test_send_receipt_email(self, mock_send, mock_render, mock_conn):
         """Test sending receipt email"""
         from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications import send_housing_email
@@ -327,9 +327,9 @@ class TestEmailTypes:
         # Verify correct template was requested
         assert 'receipt' in mock_render.call_args[0][0] or 'accommodation_application_receipt' in mock_render.call_args[0][0]
 
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.get_connection')
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.render_template')
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.send_email')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.render_template')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.send_email')
     def test_send_approved_email(self, mock_send, mock_render, mock_conn):
         """Test sending approved email"""
         from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications import send_housing_email
@@ -347,9 +347,9 @@ class TestEmailTypes:
 
         assert result is True
 
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.get_connection')
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.render_template')
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.send_email')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.render_template')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.send_email')
     def test_send_rejected_email(self, mock_send, mock_render, mock_conn):
         """Test sending rejected email"""
         from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications import send_housing_email
@@ -371,7 +371,7 @@ class TestEmailTypes:
         """Test send_housing_email with unknown email type"""
         from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications import send_housing_email
 
-        with patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.get_connection') as mock_conn:
+        with patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.get_connection') as mock_conn:
             mock_connection = MagicMock()
             mock_cursor = MagicMock()
             mock_cursor.fetchone.return_value = ('test@example.com', 'Test', 'User')
@@ -386,9 +386,9 @@ class TestEmailTypes:
 class TestDateCalculation:
     """Test date calculation in email functions"""
 
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.get_connection')
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.render_template')
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.send_email')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.render_template')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.send_email')
     def test_end_date_calculation(self, mock_send, mock_render, mock_conn):
         """Test end date calculation from duration"""
         from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.email_notifications import send_housing_email
@@ -420,8 +420,8 @@ class TestDateCalculation:
 class TestAuthIntegration:
     """Test authentication integration"""
 
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.main_gui.init_housing_db')
-    @patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.main_gui.get_auth')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.main_gui.init_housing_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.main_gui.get_auth')
     def test_set_auth_in_service_layer(self, mock_get_auth, mock_init_db, root_window):
         """Test auth is set in service layer"""
         from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.main_gui import HousingGUI
@@ -429,7 +429,7 @@ class TestAuthIntegration:
         mock_auth = Mock()
         mock_get_auth.return_value = mock_auth
 
-        with patch('university_system.modules.domain.housing.gui.housing_accommodation_gui.main_gui.set_auth') as mock_set_auth:
+        with patch('education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.main_gui.set_auth') as mock_set_auth:
             gui = HousingGUI(root_window)
 
             # set_auth should be called if auth available

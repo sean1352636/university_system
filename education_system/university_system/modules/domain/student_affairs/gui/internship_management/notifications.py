@@ -1,4 +1,4 @@
-from ._imports import datetime, messagebox, get_connection
+from education_system.university_system.modules.domain.student_affairs.gui.internship_management._imports import datetime, messagebox, get_connection
 
 
 def send_internship_notification(*args, **kwargs):

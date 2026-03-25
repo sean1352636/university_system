@@ -4,11 +4,11 @@ Export manager for CLI system.
 Handles data export to various formats (CSV, Excel, PDF, TXT).
 """
 
-from .imports import (
+from education_system.university_system.modules.shared.cli.imports import (
     logging, sqlite3, csv, datetime, os, DB_PATH, logger, _t,
     log_export, pd, HAS_PANDAS, HAS_REPORTLAB, get_auth, paths
 )
-from .student_operations import fetch_student_data
+from education_system.university_system.modules.shared.cli.student_operations import fetch_student_data
 
 if HAS_REPORTLAB:
     from reportlab.lib.pagesizes import letter
@@ -29,8 +29,10 @@ def get_file_path(file_format, default_filename):
         location_choice = input(f"Where would you like to save the {file_format} file?\n1. Current directory\n2. Custom path\nEnter your choice (1-2): ")
         
         if location_choice == '1':
-            # Use current directory
-            return os.path.join(os.getcwd(), default_filename)
+            # Use default exports directory
+            default_dir = str(paths.EXPORTS_DIR)
+            os.makedirs(default_dir, exist_ok=True)
+            return os.path.join(default_dir, default_filename)
         elif location_choice == '2':
             # Custom directory
             while True:

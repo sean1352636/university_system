@@ -622,7 +622,7 @@ class EventAttendanceDialog:
 
             cursor.execute('''
                 SELECT u.user_id, u.username, u.email, er.status, er.registration_date
-                FROM event_registrations er
+                FROM unified_event_registrations er
                 JOIN users u ON er.user_id = u.user_id
                 WHERE er.event_id = ?
                 ORDER BY u.username

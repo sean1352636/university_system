@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/simple_activity_logger_gui/__init__.py
+# hypothesis_version: 6.151.9
+
+['AnalyticsTab', 'ConfigurationTab', 'LogViewerTab', 'LoggerGUITheme', 'PluginTab', 'QueryTab', 'SecurityTab', 'StatusBar', 'check_dependencies', 'check_installation', 'create_gui_instance', 'get_gui_version', 'launch_logger_gui', 'main', 'print_startup_banner', 'run_demo_mode']

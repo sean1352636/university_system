@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/academics/attendance/services/attendance_service.py
+# hypothesis_version: 6.151.9
+
+[0.0, 90.0, 100, ' AND ar.date = ?', ' AND date <= ?', ' AND date >= ?', ' ORDER BY date', '%Y-%m-%d', 'AM', 'absent', 'attended', 'cnt', 'csv_import', 'date', 'errors', 'id', 'imported', 'late', 'late_pct', 'note', 'on_time', 'on_time_pct', 'percentage', 'period', 'present', 'status', 'student_id', 'total']

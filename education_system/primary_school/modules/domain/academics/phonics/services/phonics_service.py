@@ -3,6 +3,7 @@
 import logging
 from education_system.primary_school.infrastructure.database.db import connect
 from education_system.primary_school.core.exceptions import PhonicsError
+from education_system.primary_school.core.sql_safety import validate_identifier
 import traceback
 
 logger = logging.getLogger(__name__)
@@ -96,7 +97,7 @@ class PhonicsService:
                     new_threshold = updates.get("threshold", current["threshold"])
                     updates["passed"] = 1 if new_score >= new_threshold else 0
 
-            set_clause = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
             values = list(updates.values())
             values.append(result_id)
             cursor.execute(

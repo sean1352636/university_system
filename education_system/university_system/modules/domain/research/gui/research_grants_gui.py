@@ -9,6 +9,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
 from typing import Optional
+import random
+import string
 
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 from education_system.university_system.infrastructure.shared_context import get_auth
@@ -610,53 +612,130 @@ class ResearchGrantsGUI:
             messagebox.showerror(_("common.error"), _("research_grants.errors.load_irb_failed").format(error=e))
 
     # Action methods (simplified dialogs for space)
+    def _generate_pi_id(self):
+        """Generate a random Principal Investigator ID."""
+        digits = ''.join(random.choices(string.digits, k=6))
+        return f"PI-{digits}"
+
+    def _load_departments_list(self):
+        """Load departments from DB for dropdown."""
+        departments = []
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            # Try departments table first
+            cursor.execute("SELECT name FROM departments WHERE is_active = 1 ORDER BY name")
+            departments = [row[0] for row in cursor.fetchall()]
+            # If empty, try distinct departments from existing projects
+            if not departments:
+                cursor.execute("SELECT DISTINCT department FROM research_projects WHERE department IS NOT NULL ORDER BY department")
+                departments = [row[0] for row in cursor.fetchall()]
+            conn.close()
+        except Exception:
+            pass
+        # Always include common university departments as fallback
+        defaults = [
+            'Computer Science', 'Engineering', 'Mathematics', 'Physics', 'Chemistry',
+            'Biology', 'Medicine', 'Psychology', 'Business', 'Economics',
+            'Law', 'Education', 'Arts & Humanities', 'Social Sciences',
+            'Environmental Science', 'Nursing', 'Architecture', 'Music',
+            'Philosophy', 'History', 'Languages', 'Pharmacy'
+        ]
+        for d in defaults:
+            if d not in departments:
+                departments.append(d)
+        departments.sort()
+        return departments
+
     def _create_project(self):
         """Create a new research project"""
-        # Simplified inline dialog
         dialog = tk.Toplevel(self.window)
         dialog.title(_("research_grants.dialogs.create_project.title"))
-        dialog.geometry("500x500")
+        dialog.geometry("550x520")
         dialog.transient(self.window)
         dialog.grab_set()
 
         main_frame = ttk.Frame(dialog, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text=_("research_grants.dialogs.create_project.header"), font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+        ttk.Label(main_frame, text=_("research_grants.dialogs.create_project.header"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         form_frame = ttk.Frame(main_frame)
         form_frame.pack(fill=tk.BOTH, expand=True)
 
-        entries = {}
-        fields = [
-            (_("research_grants.fields.project_title"), "title"),
-            (_("research_grants.fields.pi_id"), "pi"),
-            (_("research_grants.fields.department"), "dept"),
-            (_("research_grants.fields.project_type"), "type"),
-            (_("research_grants.fields.start_date"), "start"),
-            (_("research_grants.fields.budget"), "budget"),
+        row = 0
+
+        # Project Title
+        ttk.Label(form_frame, text=_("research_grants.fields.project_title")).grid(row=row, column=0, sticky=tk.W, pady=5)
+        title_entry = ttk.Entry(form_frame, width=35)
+        title_entry.grid(row=row, column=1, pady=5, padx=(10, 0))
+        row += 1
+
+        # PI ID — auto-generated
+        ttk.Label(form_frame, text=_("research_grants.fields.pi_id")).grid(row=row, column=0, sticky=tk.W, pady=5)
+        pi_frame = ttk.Frame(form_frame)
+        pi_frame.grid(row=row, column=1, pady=5, padx=(10, 0), sticky=tk.W)
+        pi_var = tk.StringVar(value=self._generate_pi_id())
+        pi_entry = ttk.Entry(pi_frame, textvariable=pi_var, width=20)
+        pi_entry.pack(side=tk.LEFT)
+        ttk.Button(pi_frame, text="Generate",
+                  command=lambda: pi_var.set(self._generate_pi_id())).pack(side=tk.LEFT, padx=5)
+        row += 1
+
+        # Department — dropdown
+        ttk.Label(form_frame, text=_("research_grants.fields.department")).grid(row=row, column=0, sticky=tk.W, pady=5)
+        departments = self._load_departments_list()
+        dept_var = tk.StringVar()
+        dept_combo = ttk.Combobox(form_frame, textvariable=dept_var, values=departments, width=33)
+        dept_combo.grid(row=row, column=1, pady=5, padx=(10, 0))
+        if departments:
+            dept_combo.current(0)
+        row += 1
+
+        # Project Type — dropdown
+        ttk.Label(form_frame, text=_("research_grants.fields.project_type")).grid(row=row, column=0, sticky=tk.W, pady=5)
+        project_types = [
+            'Basic Research', 'Applied Research', 'Clinical Trial',
+            'Experimental Development', 'Action Research', 'Case Study',
+            'Longitudinal Study', 'Cross-Sectional Study', 'Systematic Review',
+            'Meta-Analysis', 'Collaborative Research', 'Interdisciplinary',
+            'Industry Partnership', 'Community-Based', 'Other'
         ]
+        type_var = tk.StringVar()
+        type_combo = ttk.Combobox(form_frame, textvariable=type_var, values=project_types,
+                                  state='readonly', width=33)
+        type_combo.grid(row=row, column=1, pady=5, padx=(10, 0))
+        type_combo.current(0)
+        row += 1
 
-        for i, (label, field) in enumerate(fields):
-            ttk.Label(form_frame, text=label).grid(row=i, column=0, sticky=tk.W, pady=5)
-            entry = ttk.Entry(form_frame, width=35)
-            entry.grid(row=i, column=1, pady=5, padx=(10, 0))
-            entries[field] = entry
+        # Start Date
+        ttk.Label(form_frame, text=_("research_grants.fields.start_date")).grid(row=row, column=0, sticky=tk.W, pady=5)
+        start_entry = ttk.Entry(form_frame, width=35)
+        start_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
+        start_entry.grid(row=row, column=1, pady=5, padx=(10, 0))
+        row += 1
 
-        ttk.Label(form_frame, text=_("research_grants.fields.description")).grid(row=len(fields), column=0, sticky=tk.NW, pady=5)
-        desc_text = scrolledtext.ScrolledText(form_frame, width=33, height=6)
-        desc_text.grid(row=len(fields), column=1, pady=5, padx=(10, 0))
+        # Budget
+        ttk.Label(form_frame, text=_("research_grants.fields.budget")).grid(row=row, column=0, sticky=tk.W, pady=5)
+        budget_entry = ttk.Entry(form_frame, width=35)
+        budget_entry.grid(row=row, column=1, pady=5, padx=(10, 0))
+        row += 1
+
+        # Description
+        ttk.Label(form_frame, text=_("research_grants.fields.description")).grid(row=row, column=0, sticky=tk.NW, pady=5)
+        desc_text = scrolledtext.ScrolledText(form_frame, width=33, height=5)
+        desc_text.grid(row=row, column=1, pady=5, padx=(10, 0))
 
         def create():
             try:
                 project_id = ResearchProjectManager.create_project(
-                    project_title=entries['title'].get(),
-                    principal_investigator_id=entries['pi'].get(),
-                    department=entries['dept'].get(),
-                    project_type=entries['type'].get(),
-                    start_date=entries['start'].get(),
+                    project_title=title_entry.get(),
+                    principal_investigator_id=pi_var.get(),
+                    department=dept_var.get(),
+                    project_type=type_var.get(),
+                    start_date=start_entry.get(),
                     description=desc_text.get('1.0', tk.END).strip(),
-                    total_budget=float(entries['budget'].get() or 0)
+                    total_budget=float(budget_entry.get() or 0)
                 )
 
                 log_activity('create', 'research_project', project_id=project_id,
@@ -669,9 +748,32 @@ class ResearchGrantsGUI:
                 messagebox.showerror(_("common.error"), _("research_grants.errors.create_project_failed").format(error=e))
 
         btn_frame = ttk.Frame(main_frame)
-        btn_frame.pack(pady=(20, 0))
+        btn_frame.pack(pady=(15, 0))
         ttk.Button(btn_frame, text=_("common.create"), command=create).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=_("common.cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def _load_staff_list(self):
+        """Load staff/admin/instructor users from DB for dropdown."""
+        staff = []
+        staff_id_map = {}
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, username, first_name, last_name, role
+                FROM users
+                WHERE role IN ('staff', 'admin', 'instructor')
+                ORDER BY last_name, first_name
+            ''')
+            for row in cursor.fetchall():
+                uid, uname, first, last, role = row
+                display = f"{uname} - {first} {last} ({role})"
+                staff.append(display)
+                staff_id_map[display] = str(uname)
+            conn.close()
+        except Exception:
+            pass
+        return staff, staff_id_map
 
     def _add_team_member(self):
         """Add team member to project"""
@@ -683,10 +785,9 @@ class ResearchGrantsGUI:
         item = self.projects_tree.item(selection[0])
         project_id = item['values'][0]
 
-        # Simple dialog
         dialog = tk.Toplevel(self.window)
         dialog.title(_("research_grants.dialogs.add_team_member.title"))
-        dialog.geometry("400x250")
+        dialog.geometry("500x300")
         dialog.transient(self.window)
         dialog.grab_set()
 
@@ -694,22 +795,52 @@ class ResearchGrantsGUI:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         ttk.Label(main_frame, text=_("research_grants.dialogs.add_team_member.header").format(project_id=project_id),
-                 font=('Arial', 12, 'bold')).pack(pady=(0, 20))
+                 font=('Arial', 12, 'bold')).pack(pady=(0, 15))
 
-        ttk.Label(main_frame, text=_("research_grants.fields.staff_id")).pack(pady=5)
-        staff_entry = ttk.Entry(main_frame, width=30)
-        staff_entry.pack(pady=5)
+        form_frame = ttk.Frame(main_frame)
+        form_frame.pack(fill=tk.X)
 
-        ttk.Label(main_frame, text=_("research_grants.fields.role")).pack(pady=5)
-        role_entry = ttk.Entry(main_frame, width=30)
-        role_entry.pack(pady=5)
+        # Staff member dropdown
+        ttk.Label(form_frame, text=_("research_grants.fields.staff_id")).grid(row=0, column=0, sticky=tk.W, pady=8)
+        staff_list, staff_id_map = self._load_staff_list()
+        staff_var = tk.StringVar()
+        staff_combo = ttk.Combobox(form_frame, textvariable=staff_var, values=staff_list,
+                                   state='readonly', width=38)
+        staff_combo.grid(row=0, column=1, pady=8, padx=(10, 0))
+        if staff_list:
+            staff_combo.current(0)
+
+        # Role dropdown
+        ttk.Label(form_frame, text=_("research_grants.fields.role")).grid(row=1, column=0, sticky=tk.W, pady=8)
+        team_roles = [
+            'Principal Investigator', 'Co-Investigator', 'Research Associate',
+            'Research Assistant', 'Post-Doctoral Researcher', 'PhD Student',
+            'Lab Technician', 'Data Analyst', 'Project Manager',
+            'Statistician', 'Clinical Coordinator', 'Consultant', 'Other'
+        ]
+        role_var = tk.StringVar()
+        role_combo = ttk.Combobox(form_frame, textvariable=role_var, values=team_roles,
+                                  state='readonly', width=38)
+        role_combo.grid(row=1, column=1, pady=8, padx=(10, 0))
+        role_combo.current(0)
 
         def add():
+            selected_staff = staff_var.get()
+            selected_role = role_var.get()
+            if not selected_staff:
+                messagebox.showwarning(_("common.warning"), "Please select a staff member.")
+                return
+            if not selected_role:
+                messagebox.showwarning(_("common.warning"), "Please select a role.")
+                return
+
+            staff_id = staff_id_map.get(selected_staff, selected_staff)
+
             try:
                 member_id = ResearchProjectManager.add_team_member(
                     project_id=project_id,
-                    staff_id=staff_entry.get(),
-                    role=role_entry.get()
+                    staff_id=staff_id,
+                    role=selected_role
                 )
 
                 log_activity('create', 'team_member', member_id=member_id,
@@ -721,77 +852,198 @@ class ResearchGrantsGUI:
                 messagebox.showerror(_("common.error"), _("research_grants.errors.add_member_failed").format(error=e))
 
         btn_frame = ttk.Frame(main_frame)
-        btn_frame.pack(pady=20)
+        btn_frame.pack(pady=15)
         ttk.Button(btn_frame, text=_("common.add"), command=add).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=_("common.cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def _load_available_grants(self):
+        """Load existing grant names for dropdown."""
+        grants = []
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT application_id, grant_name, funding_agency
+                FROM grant_applications
+                ORDER BY grant_name
+            ''')
+            for row in cursor.fetchall():
+                grants.append(f"#{row[0]} - {row[1]} ({row[2]})")
+            conn.close()
+        except Exception:
+            pass
+        return grants
+
+    def _load_projects_list(self):
+        """Load research projects for dropdown."""
+        projects = []
+        project_id_map = {}
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT project_id, project_title, department
+                FROM research_projects
+                WHERE status = 'active'
+                ORDER BY project_title
+            ''')
+            for row in cursor.fetchall():
+                display = f"#{row[0]} - {row[1]} ({row[2]})"
+                projects.append(display)
+                project_id_map[display] = row[0]
+            conn.close()
+        except Exception:
+            pass
+        return projects, project_id_map
 
     def _submit_grant(self):
         """Submit grant application"""
         dialog = tk.Toplevel(self.window)
         dialog.title(_("research_grants.dialogs.submit_grant.title"))
-        dialog.geometry("600x650")
+        dialog.geometry("620x680")
         dialog.transient(self.window)
         dialog.grab_set()
 
-        main_frame = ttk.Frame(dialog, padding="20")
+        main_frame = ttk.Frame(dialog, padding="15")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         ttk.Label(main_frame, text=_("research_grants.dialogs.submit_grant.header"),
-                 font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
         form_frame = ttk.Frame(main_frame)
         form_frame.pack(fill=tk.BOTH, expand=True)
 
-        entries = {}
-        fields = [
-            (_("research_grants.fields.grant_name"), "grant_name"),
-            (_("research_grants.fields.funding_agency"), "agency"),
-            (_("research_grants.fields.pi_id"), "pi_id"),
-            (_("research_grants.fields.co_investigators"), "co_inv"),
-            (_("research_grants.fields.requested_amount"), "amount"),
-            (_("research_grants.fields.application_deadline"), "deadline"),
-            (_("research_grants.fields.project_id_optional"), "project_id"),
+        row = 0
+
+        # Grant Name — dropdown of existing grants + free text for new
+        ttk.Label(form_frame, text=_("research_grants.fields.grant_name")).grid(row=row, column=0, sticky=tk.W, pady=5)
+        existing_grants = self._load_available_grants()
+        grant_name_var = tk.StringVar()
+        grant_name_combo = ttk.Combobox(form_frame, textvariable=grant_name_var, width=40)
+        # Allow free text for new grant names, but show existing ones
+        common_grants = [
+            'UKRI Future Leaders Fellowship', 'EPSRC Standard Grant',
+            'AHRC Research Grant', 'BBSRC Responsive Mode', 'MRC Programme Grant',
+            'NERC Standard Grant', 'ESRC Research Grant', 'Innovate UK Smart Grant',
+            'Wellcome Trust Investigator Award', 'Leverhulme Trust Research Grant',
+            'Royal Society University Research Fellowship', 'EU Horizon Europe',
+            'NIH R01 Research Grant', 'NSF Standard Grant',
         ]
+        grant_name_combo['values'] = common_grants
+        grant_name_combo.grid(row=row, column=1, pady=5, padx=(10, 0))
+        row += 1
 
-        for i, (label, field) in enumerate(fields):
-            ttk.Label(form_frame, text=label).grid(row=i, column=0, sticky=tk.W, pady=5)
-            entry = ttk.Entry(form_frame, width=40)
-            entry.grid(row=i, column=1, pady=5, padx=(10, 0))
-            entries[field] = entry
+        # Funding Agency — dropdown
+        ttk.Label(form_frame, text=_("research_grants.fields.funding_agency")).grid(row=row, column=0, sticky=tk.W, pady=5)
+        funding_agencies = [
+            'UKRI', 'EPSRC', 'AHRC', 'BBSRC', 'MRC', 'NERC', 'ESRC', 'STFC',
+            'Innovate UK', 'Wellcome Trust', 'Leverhulme Trust', 'Royal Society',
+            'British Academy', 'Nuffield Foundation', 'European Commission',
+            'NIH', 'NSF', 'Gates Foundation', 'Cancer Research UK',
+            'British Heart Foundation', 'Alzheimer\'s Research UK',
+            'Industry Partner', 'Internal University Fund', 'Other'
+        ]
+        agency_var = tk.StringVar()
+        agency_combo = ttk.Combobox(form_frame, textvariable=agency_var,
+                                    values=funding_agencies, width=40)
+        agency_combo.grid(row=row, column=1, pady=5, padx=(10, 0))
+        row += 1
 
-        # Application documents field
+        # PI — dropdown of staff
+        ttk.Label(form_frame, text=_("research_grants.fields.pi_id")).grid(row=row, column=0, sticky=tk.W, pady=5)
+        staff_list, staff_id_map = self._load_staff_list()
+        pi_var = tk.StringVar()
+        pi_combo = ttk.Combobox(form_frame, textvariable=pi_var, values=staff_list,
+                                state='readonly', width=40)
+        pi_combo.grid(row=row, column=1, pady=5, padx=(10, 0))
+        if staff_list:
+            pi_combo.current(0)
+        row += 1
+
+        # Co-Investigators — dropdown of staff (multi-select via repeated add)
+        ttk.Label(form_frame, text=_("research_grants.fields.co_investigators")).grid(row=row, column=0, sticky=tk.W, pady=5)
+        co_inv_frame = ttk.Frame(form_frame)
+        co_inv_frame.grid(row=row, column=1, pady=5, padx=(10, 0), sticky=tk.W)
+        co_inv_var = tk.StringVar()
+        co_inv_combo = ttk.Combobox(co_inv_frame, textvariable=co_inv_var,
+                                     values=staff_list, state='readonly', width=30)
+        co_inv_combo.pack(side=tk.LEFT)
+        co_inv_list_var = tk.StringVar(value="")
+
+        def add_co_inv():
+            selected = co_inv_var.get()
+            if selected:
+                sid = staff_id_map.get(selected, selected)
+                current = co_inv_list_var.get()
+                if sid not in current:
+                    co_inv_list_var.set(f"{current}, {sid}" if current else sid)
+
+        ttk.Button(co_inv_frame, text="Add", command=add_co_inv, width=5).pack(side=tk.LEFT, padx=3)
+        row += 1
+
+        # Show selected co-investigators
+        ttk.Label(form_frame, text="Selected:").grid(row=row, column=0, sticky=tk.W, pady=2)
+        co_inv_display = ttk.Label(form_frame, textvariable=co_inv_list_var, wraplength=350,
+                                   font=('Arial', 8))
+        co_inv_display.grid(row=row, column=1, sticky=tk.W, padx=(10, 0), pady=2)
+        row += 1
+
+        # Requested Amount
+        ttk.Label(form_frame, text=_("research_grants.fields.requested_amount")).grid(row=row, column=0, sticky=tk.W, pady=5)
+        amount_entry = ttk.Entry(form_frame, width=42)
+        amount_entry.grid(row=row, column=1, pady=5, padx=(10, 0))
+        row += 1
+
+        # Application Deadline
+        ttk.Label(form_frame, text=_("research_grants.fields.application_deadline")).grid(row=row, column=0, sticky=tk.W, pady=5)
+        deadline_entry = ttk.Entry(form_frame, width=42)
+        deadline_entry.grid(row=row, column=1, pady=5, padx=(10, 0))
+        row += 1
+
+        # Project — dropdown of available projects
+        ttk.Label(form_frame, text=_("research_grants.fields.project_id_optional")).grid(row=row, column=0, sticky=tk.W, pady=5)
+        projects_list, project_id_map = self._load_projects_list()
+        project_var = tk.StringVar()
+        project_combo = ttk.Combobox(form_frame, textvariable=project_var,
+                                     values=['(None)'] + projects_list,
+                                     state='readonly', width=40)
+        project_combo.grid(row=row, column=1, pady=5, padx=(10, 0))
+        project_combo.current(0)
+        row += 1
+
+        # Application Documents
         ttk.Label(form_frame, text=_("research_grants.fields.application_documents")).grid(
-            row=len(fields), column=0, sticky=tk.NW, pady=5)
-        docs_text = scrolledtext.ScrolledText(form_frame, width=37, height=5)
-        docs_text.grid(row=len(fields), column=1, pady=5, padx=(10, 0))
+            row=row, column=0, sticky=tk.NW, pady=5)
+        docs_text = scrolledtext.ScrolledText(form_frame, width=38, height=4)
+        docs_text.grid(row=row, column=1, pady=5, padx=(10, 0))
 
         def submit():
             try:
-                # Validate required fields
-                if not entries['grant_name'].get() or not entries['agency'].get() or \
-                   not entries['pi_id'].get() or not entries['amount'].get() or \
-                   not entries['deadline'].get():
+                grant_name = grant_name_var.get().strip()
+                agency = agency_var.get().strip()
+                pi_selected = pi_var.get()
+                pi_id = staff_id_map.get(pi_selected, pi_selected)
+                amount_str = amount_entry.get().strip()
+                deadline = deadline_entry.get().strip()
+
+                if not grant_name or not agency or not pi_id or not amount_str or not deadline:
                     messagebox.showerror(_("common.error"),
                                        _("research_grants.errors.required_fields"))
                     return
 
                 # Parse project_id (optional)
                 project_id = None
-                if entries['project_id'].get().strip():
-                    try:
-                        project_id = int(entries['project_id'].get().strip())
-                    except ValueError:
-                        messagebox.showerror(_("common.error"),
-                                           _("research_grants.errors.invalid_project_id"))
-                        return
+                selected_project = project_var.get()
+                if selected_project and selected_project != '(None)':
+                    project_id = project_id_map.get(selected_project)
 
                 # Submit the grant application
                 application_id = GrantApplicationManager.submit_application(
-                    grant_name=entries['grant_name'].get(),
-                    funding_agency=entries['agency'].get(),
-                    principal_investigator_id=entries['pi_id'].get(),
-                    requested_amount=float(entries['amount'].get()),
-                    application_deadline=entries['deadline'].get(),
+                    grant_name=grant_name,
+                    funding_agency=agency,
+                    principal_investigator_id=pi_id,
+                    requested_amount=float(amount_str),
+                    application_deadline=deadline,
                     project_id=project_id
                 )
 
@@ -802,7 +1054,7 @@ class ResearchGrantsGUI:
                         SET co_investigators = ?, submission_date = ?,
                             application_documents = ?
                         WHERE application_id = ?
-                    ''', (entries['co_inv'].get(),
+                    ''', (co_inv_list_var.get(),
                           datetime.now().date().isoformat(),
                           docs_text.get('1.0', tk.END).strip(),
                           application_id))
@@ -822,7 +1074,7 @@ class ResearchGrantsGUI:
                                    _("research_grants.errors.submit_grant_failed").format(error=e))
 
         btn_frame = ttk.Frame(main_frame)
-        btn_frame.pack(pady=(20, 0))
+        btn_frame.pack(pady=(10, 0))
         ttk.Button(btn_frame, text=_("common.submit"), command=submit).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=_("common.cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 

@@ -224,6 +224,22 @@ class ForecastingMixin:
             conn = get_connection()
             cursor = conn.cursor()
 
+            # Ensure purchase_orders table exists
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS purchase_orders (
+                    order_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    order_date TEXT,
+                    total_amount REAL,
+                    status TEXT DEFAULT 'pending',
+                    vendor TEXT,
+                    description TEXT,
+                    department TEXT,
+                    approved_by TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            conn.commit()
+
             # Get historical expense data (last 12 months)
             cursor.execute('''
                 SELECT strftime('%Y-%m', order_date) as month,

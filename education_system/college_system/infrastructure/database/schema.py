@@ -3900,6 +3900,641 @@ TABLES = {
             created_at TEXT NOT NULL DEFAULT (datetime('now'))
         )
     """,
+    "academic_transfer_history": """
+        CREATE TABLE IF NOT EXISTS academic_transfer_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id INTEGER NOT NULL,
+            source_system TEXT NOT NULL,
+            source_student_id TEXT NOT NULL,
+            transfer_date TEXT NOT NULL DEFAULT (datetime('now')),
+            data_json TEXT NOT NULL,
+            FOREIGN KEY (student_id) REFERENCES students(id)
+        )
+    """,
+    "certificates": """
+        CREATE TABLE IF NOT EXISTS certificates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT NOT NULL,
+            certificate_number TEXT UNIQUE NOT NULL,
+            certificate_type TEXT NOT NULL,
+            course_name TEXT NOT NULL,
+            award_date TEXT NOT NULL,
+            grade TEXT,
+            additional_info TEXT,
+            status TEXT NOT NULL DEFAULT 'active',
+            issued_by TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """,
+    "transcript_requests": """
+        CREATE TABLE IF NOT EXISTS transcript_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT NOT NULL,
+            requested_by TEXT,
+            academic_year TEXT,
+            status TEXT NOT NULL DEFAULT 'pending',
+            generated_at TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """,
+    # ================================================================
+    # FEATURES 31-40
+    # ================================================================
+    # ---- 31. Census / ILR ----
+    "census_returns": """
+        CREATE TABLE IF NOT EXISTS census_returns (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            return_type TEXT NOT NULL DEFAULT 'census'
+                CHECK(return_type IN ('census','ilr','hesa')),
+            academic_year TEXT,
+            term TEXT,
+            collection_period TEXT,
+            submission_deadline TEXT,
+            status TEXT NOT NULL DEFAULT 'draft'
+                CHECK(status IN ('draft','validated','submitted','accepted','rejected')),
+            validation_errors TEXT,
+            record_count INTEGER NOT NULL DEFAULT 0,
+            submitted_by INTEGER,
+            submitted_at TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (submitted_by) REFERENCES users(id)
+        )
+    """,
+    "census_student_records": """
+        CREATE TABLE IF NOT EXISTS census_student_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            census_id INTEGER NOT NULL,
+            student_id INTEGER NOT NULL,
+            uln TEXT,
+            upn TEXT,
+            ethnicity TEXT,
+            fsm_eligible INTEGER NOT NULL DEFAULT 0,
+            send_provision TEXT,
+            ehcp INTEGER NOT NULL DEFAULT 0,
+            hours_at_provider REAL,
+            hours_at_employer REAL,
+            planned_hours REAL,
+            funding_model TEXT,
+            programme_type TEXT,
+            valid INTEGER NOT NULL DEFAULT 1,
+            validation_notes TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (census_id) REFERENCES census_returns(id),
+            FOREIGN KEY (student_id) REFERENCES students(id)
+        )
+    """,
+    "ilr_learning_aims": """
+        CREATE TABLE IF NOT EXISTS ilr_learning_aims (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            census_id INTEGER NOT NULL,
+            student_id INTEGER NOT NULL,
+            learning_aim_ref TEXT NOT NULL,
+            aim_type TEXT,
+            start_date TEXT,
+            planned_end_date TEXT,
+            actual_end_date TEXT,
+            completion_status TEXT,
+            outcome TEXT,
+            funding_model TEXT,
+            delivery_location TEXT,
+            partner_ukprn TEXT,
+            valid INTEGER NOT NULL DEFAULT 1,
+            validation_notes TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (census_id) REFERENCES census_returns(id),
+            FOREIGN KEY (student_id) REFERENCES students(id)
+        )
+    """,
+    # ---- 32. UCAS Export ----
+    "ucas_export_batches": """
+        CREATE TABLE IF NOT EXISTS ucas_export_batches (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            academic_year TEXT,
+            export_type TEXT NOT NULL DEFAULT 'applications'
+                CHECK(export_type IN ('applications','references','predictions')),
+            record_count INTEGER NOT NULL DEFAULT 0,
+            exported_by INTEGER,
+            status TEXT NOT NULL DEFAULT 'draft'
+                CHECK(status IN ('draft','generated','exported','sent')),
+            xml_data TEXT,
+            export_date TEXT,
+            notes TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (exported_by) REFERENCES users(id)
+        )
+    """,
+    "ucas_export_records": """
+        CREATE TABLE IF NOT EXISTS ucas_export_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            batch_id INTEGER NOT NULL,
+            student_id INTEGER NOT NULL,
+            ucas_id TEXT,
+            personal_id TEXT,
+            course_choices TEXT,
+            predicted_grades TEXT,
+            reference_text TEXT,
+            personal_statement_hash TEXT,
+            export_status TEXT NOT NULL DEFAULT 'pending'
+                CHECK(export_status IN ('pending','included','excluded','error')),
+            error_notes TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (batch_id) REFERENCES ucas_export_batches(id),
+            FOREIGN KEY (student_id) REFERENCES students(id)
+        )
+    """,
+    # ---- 33. Destination Outcomes ----
+    "destination_outcomes": """
+        CREATE TABLE IF NOT EXISTS destination_outcomes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id INTEGER NOT NULL,
+            academic_year TEXT,
+            leaving_date TEXT,
+            outcome_type TEXT DEFAULT 'unknown'
+                CHECK(outcome_type IN ('university','apprenticeship','employment',
+                      'further_education','gap_year','neet','unknown','volunteering')),
+            institution_name TEXT,
+            course_title TEXT,
+            employer_name TEXT,
+            job_title TEXT,
+            sustained_at_3m INTEGER NOT NULL DEFAULT 0,
+            sustained_at_6m INTEGER NOT NULL DEFAULT 0,
+            contact_date TEXT,
+            contact_method TEXT,
+            verified INTEGER NOT NULL DEFAULT 0,
+            verified_by INTEGER,
+            notes TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (student_id) REFERENCES students(id),
+            FOREIGN KEY (verified_by) REFERENCES users(id)
+        )
+    """,
+    "outcome_surveys": """
+        CREATE TABLE IF NOT EXISTS outcome_surveys (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id INTEGER,
+            academic_year TEXT,
+            survey_type TEXT DEFAULT '3_month'
+                CHECK(survey_type IN ('3_month','6_month','12_month')),
+            sent_date TEXT,
+            response_date TEXT,
+            current_status TEXT,
+            satisfaction_rating INTEGER,
+            would_recommend INTEGER NOT NULL DEFAULT 1,
+            comments TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (student_id) REFERENCES students(id)
+        )
+    """,
+    # ---- 34. IQR Manager ----
+    "iqr_cycles": """
+        CREATE TABLE IF NOT EXISTS iqr_cycles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            academic_year TEXT,
+            cycle_name TEXT NOT NULL,
+            start_date TEXT,
+            end_date TEXT,
+            focus_areas TEXT,
+            status TEXT NOT NULL DEFAULT 'planned'
+                CHECK(status IN ('planned','active','completed')),
+            created_by INTEGER,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (created_by) REFERENCES users(id)
+        )
+    """,
+    "iqr_visits": """
+        CREATE TABLE IF NOT EXISTS iqr_visits (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cycle_id INTEGER NOT NULL,
+            department TEXT,
+            course_id INTEGER,
+            visit_date TEXT,
+            reviewer_id INTEGER,
+            visit_type TEXT NOT NULL DEFAULT 'learning_walk'
+                CHECK(visit_type IN ('learning_walk','deep_dive','work_scrutiny',
+                      'student_voice','staff_interview')),
+            duration_minutes INTEGER NOT NULL DEFAULT 60,
+            findings TEXT,
+            strengths TEXT,
+            areas_for_improvement TEXT,
+            overall_judgement TEXT
+                CHECK(overall_judgement IN ('outstanding','good',
+                      'requires_improvement','inadequate') OR overall_judgement IS NULL),
+            status TEXT NOT NULL DEFAULT 'scheduled'
+                CHECK(status IN ('scheduled','completed','cancelled')),
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (cycle_id) REFERENCES iqr_cycles(id),
+            FOREIGN KEY (course_id) REFERENCES courses(id),
+            FOREIGN KEY (reviewer_id) REFERENCES users(id)
+        )
+    """,
+    "iqr_action_plans": """
+        CREATE TABLE IF NOT EXISTS iqr_action_plans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            visit_id INTEGER NOT NULL,
+            action_description TEXT NOT NULL,
+            responsible_person TEXT,
+            target_date TEXT,
+            success_criteria TEXT,
+            progress TEXT,
+            evidence TEXT,
+            status TEXT NOT NULL DEFAULT 'not_started'
+                CHECK(status IN ('not_started','in_progress','completed','overdue')),
+            reviewed_date TEXT,
+            reviewed_by INTEGER,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (visit_id) REFERENCES iqr_visits(id),
+            FOREIGN KEY (reviewed_by) REFERENCES users(id)
+        )
+    """,
+    # ---- 35. SEF Builder ----
+    "sef_documents": """
+        CREATE TABLE IF NOT EXISTS sef_documents (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            academic_year TEXT,
+            title TEXT NOT NULL,
+            version TEXT NOT NULL DEFAULT '1.0',
+            overall_effectiveness TEXT,
+            status TEXT NOT NULL DEFAULT 'draft'
+                CHECK(status IN ('draft','review','approved','archived')),
+            created_by INTEGER,
+            approved_by INTEGER,
+            approved_date TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (created_by) REFERENCES users(id),
+            FOREIGN KEY (approved_by) REFERENCES users(id)
+        )
+    """,
+    "sef_judgement_areas": """
+        CREATE TABLE IF NOT EXISTS sef_judgement_areas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sef_id INTEGER NOT NULL,
+            area_name TEXT NOT NULL,
+            area_number TEXT,
+            self_grade TEXT
+                CHECK(self_grade IN ('outstanding','good',
+                      'requires_improvement','inadequate') OR self_grade IS NULL),
+            narrative TEXT,
+            strengths TEXT,
+            areas_for_improvement TEXT,
+            key_actions TEXT,
+            display_order INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (sef_id) REFERENCES sef_documents(id)
+        )
+    """,
+    "sef_evidence_links": """
+        CREATE TABLE IF NOT EXISTS sef_evidence_links (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            judgement_area_id INTEGER NOT NULL,
+            evidence_type TEXT NOT NULL DEFAULT 'data'
+                CHECK(evidence_type IN ('data','document','observation',
+                      'survey','outcome','external')),
+            evidence_description TEXT NOT NULL,
+            data_source TEXT,
+            data_query TEXT,
+            data_value TEXT,
+            document_path TEXT,
+            linked_at TEXT NOT NULL DEFAULT (datetime('now')),
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (judgement_area_id) REFERENCES sef_judgement_areas(id)
+        )
+    """,
+    # ---- 36. Question-Level Analysis ----
+    "assessment_papers": """
+        CREATE TABLE IF NOT EXISTS assessment_papers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            course_id INTEGER,
+            title TEXT NOT NULL,
+            exam_board TEXT,
+            paper_code TEXT,
+            total_marks INTEGER NOT NULL,
+            assessment_date TEXT,
+            academic_year TEXT,
+            created_by INTEGER,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (course_id) REFERENCES courses(id),
+            FOREIGN KEY (created_by) REFERENCES users(id)
+        )
+    """,
+    "paper_questions": """
+        CREATE TABLE IF NOT EXISTS paper_questions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            paper_id INTEGER NOT NULL,
+            question_number TEXT NOT NULL,
+            topic TEXT,
+            subtopic TEXT,
+            max_marks INTEGER NOT NULL,
+            skill_type TEXT
+                CHECK(skill_type IN ('knowledge','application','analysis','evaluation')
+                      OR skill_type IS NULL),
+            difficulty TEXT
+                CHECK(difficulty IN ('easy','medium','hard') OR difficulty IS NULL),
+            specification_ref TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (paper_id) REFERENCES assessment_papers(id)
+        )
+    """,
+    "student_question_scores": """
+        CREATE TABLE IF NOT EXISTS student_question_scores (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            question_id INTEGER NOT NULL,
+            student_id INTEGER NOT NULL,
+            marks_awarded INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (question_id) REFERENCES paper_questions(id),
+            FOREIGN KEY (student_id) REFERENCES students(id)
+        )
+    """,
+    # ---- 37. Target Setting ----
+    "prior_attainment": """
+        CREATE TABLE IF NOT EXISTS prior_attainment (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id INTEGER NOT NULL,
+            qualification_type TEXT DEFAULT 'gcse'
+                CHECK(qualification_type IN ('gcse','btec','other')),
+            subject TEXT,
+            grade TEXT,
+            points REAL,
+            academic_year TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (student_id) REFERENCES students(id)
+        )
+    """,
+    "target_grades": """
+        CREATE TABLE IF NOT EXISTS target_grades (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id INTEGER NOT NULL,
+            course_id INTEGER NOT NULL,
+            prior_average_points REAL,
+            meg_grade TEXT,
+            target_grade TEXT,
+            aspirational_grade TEXT,
+            current_grade TEXT,
+            alps_score REAL,
+            value_added REAL,
+            setting_method TEXT NOT NULL DEFAULT 'alps'
+                CHECK(setting_method IN ('alps','fft','internal','manual')),
+            academic_year TEXT,
+            generated_at TEXT,
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (student_id) REFERENCES students(id),
+            FOREIGN KEY (course_id) REFERENCES courses(id)
+        )
+    """,
+    "alps_benchmarks": """
+        CREATE TABLE IF NOT EXISTS alps_benchmarks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            qualification_type TEXT NOT NULL,
+            prior_points_min REAL,
+            prior_points_max REAL,
+            subject_group TEXT,
+            meg_grade TEXT,
+            target_grade TEXT,
+            aspirational_grade TEXT,
+            academic_year TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """,
+    # ---- 38. Cover Agency ----
+    "cover_agencies": """
+        CREATE TABLE IF NOT EXISTS cover_agencies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            agency_name TEXT NOT NULL,
+            contact_name TEXT,
+            contact_email TEXT,
+            contact_phone TEXT,
+            address TEXT,
+            specialisms TEXT,
+            day_rate REAL NOT NULL DEFAULT 0,
+            preferred_rank INTEGER NOT NULL DEFAULT 0,
+            is_active INTEGER NOT NULL DEFAULT 1,
+            contract_start TEXT,
+            contract_end TEXT,
+            notes TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """,
+    "agency_cover_requests": """
+        CREATE TABLE IF NOT EXISTS agency_cover_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cover_arrangement_id INTEGER,
+            agency_id INTEGER NOT NULL,
+            subject_area TEXT,
+            date_required TEXT NOT NULL,
+            start_time TEXT,
+            end_time TEXT,
+            year_group TEXT,
+            special_requirements TEXT,
+            request_sent_at TEXT,
+            agency_response TEXT NOT NULL DEFAULT 'pending'
+                CHECK(agency_response IN ('pending','accepted','declined','no_response')),
+            teacher_name TEXT,
+            teacher_confirmed INTEGER NOT NULL DEFAULT 0,
+            day_rate REAL,
+            status TEXT NOT NULL DEFAULT 'draft'
+                CHECK(status IN ('draft','sent','confirmed','cancelled')),
+            notes TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (cover_arrangement_id) REFERENCES cover_arrangements(id),
+            FOREIGN KEY (agency_id) REFERENCES cover_agencies(id)
+        )
+    """,
+    "agency_invoices": """
+        CREATE TABLE IF NOT EXISTS agency_invoices (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            agency_id INTEGER NOT NULL,
+            invoice_number TEXT,
+            invoice_date TEXT,
+            period_start TEXT,
+            period_end TEXT,
+            days_covered INTEGER NOT NULL DEFAULT 0,
+            total_amount REAL NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'received'
+                CHECK(status IN ('received','approved','paid','disputed')),
+            approved_by INTEGER,
+            paid_date TEXT,
+            notes TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (agency_id) REFERENCES cover_agencies(id),
+            FOREIGN KEY (approved_by) REFERENCES users(id)
+        )
+    """,
+    # ---- 39. Lettings Portal ----
+    "lettings_hirers": """
+        CREATE TABLE IF NOT EXISTS lettings_hirers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            organisation_name TEXT NOT NULL,
+            contact_name TEXT NOT NULL,
+            contact_email TEXT,
+            contact_phone TEXT,
+            address TEXT,
+            account_type TEXT NOT NULL DEFAULT 'occasional'
+                CHECK(account_type IN ('regular','occasional','community','commercial')),
+            discount_rate REAL NOT NULL DEFAULT 0,
+            credit_limit REAL NOT NULL DEFAULT 0,
+            dbs_on_file INTEGER NOT NULL DEFAULT 0,
+            insurance_verified INTEGER NOT NULL DEFAULT 0,
+            insurance_expiry TEXT,
+            terms_agreed INTEGER NOT NULL DEFAULT 0,
+            notes TEXT,
+            is_active INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """,
+    "lettings_invoices": """
+        CREATE TABLE IF NOT EXISTS lettings_invoices (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            booking_id INTEGER,
+            hirer_id INTEGER NOT NULL,
+            invoice_number TEXT UNIQUE,
+            invoice_date TEXT,
+            subtotal REAL NOT NULL DEFAULT 0,
+            vat_amount REAL NOT NULL DEFAULT 0,
+            discount_amount REAL NOT NULL DEFAULT 0,
+            total_amount REAL NOT NULL DEFAULT 0,
+            due_date TEXT,
+            payment_terms TEXT NOT NULL DEFAULT '30 days',
+            status TEXT NOT NULL DEFAULT 'draft'
+                CHECK(status IN ('draft','sent','paid','overdue','cancelled','credit_note')),
+            paid_amount REAL NOT NULL DEFAULT 0,
+            paid_date TEXT,
+            notes TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (booking_id) REFERENCES lettings_bookings(id),
+            FOREIGN KEY (hirer_id) REFERENCES lettings_hirers(id)
+        )
+    """,
+    "lettings_facilities": """
+        CREATE TABLE IF NOT EXISTS lettings_facilities (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            facility_name TEXT NOT NULL,
+            facility_type TEXT DEFAULT 'classroom'
+                CHECK(facility_type IN ('hall','sports_hall','classroom','field',
+                      'studio','meeting_room','other')),
+            capacity INTEGER,
+            hourly_rate REAL NOT NULL DEFAULT 0,
+            half_day_rate REAL NOT NULL DEFAULT 0,
+            full_day_rate REAL NOT NULL DEFAULT 0,
+            community_rate REAL NOT NULL DEFAULT 0,
+            available_days TEXT NOT NULL DEFAULT 'Mon,Tue,Wed,Thu,Fri',
+            available_from TEXT NOT NULL DEFAULT '17:00',
+            available_until TEXT NOT NULL DEFAULT '22:00',
+            weekend_available INTEGER NOT NULL DEFAULT 1,
+            equipment_included TEXT,
+            special_conditions TEXT,
+            is_active INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """,
+    "lettings_availability": """
+        CREATE TABLE IF NOT EXISTS lettings_availability (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            facility_id INTEGER NOT NULL,
+            date TEXT NOT NULL,
+            start_time TEXT NOT NULL,
+            end_time TEXT NOT NULL,
+            is_blocked INTEGER NOT NULL DEFAULT 0,
+            block_reason TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (facility_id) REFERENCES lettings_facilities(id)
+        )
+    """,
+    # ---- 40. Employer Portal ----
+    "employer_accounts": """
+        CREATE TABLE IF NOT EXISTS employer_accounts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            company_name TEXT NOT NULL,
+            contact_name TEXT NOT NULL,
+            contact_email TEXT,
+            contact_phone TEXT,
+            address TEXT,
+            sector TEXT,
+            company_size TEXT DEFAULT 'small'
+                CHECK(company_size IN ('small','medium','large')),
+            levy_payer INTEGER NOT NULL DEFAULT 0,
+            is_active INTEGER NOT NULL DEFAULT 1,
+            portal_access_enabled INTEGER NOT NULL DEFAULT 0,
+            last_login TEXT,
+            notes TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """,
+    "employer_learner_links": """
+        CREATE TABLE IF NOT EXISTS employer_learner_links (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            employer_id INTEGER NOT NULL,
+            student_id INTEGER NOT NULL,
+            apprenticeship_standard TEXT,
+            start_date TEXT,
+            expected_end_date TEXT,
+            actual_end_date TEXT,
+            mentor_name TEXT,
+            mentor_email TEXT,
+            training_plan TEXT,
+            status TEXT NOT NULL DEFAULT 'active'
+                CHECK(status IN ('active','completed','withdrawn','break_in_learning')),
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (employer_id) REFERENCES employer_accounts(id),
+            FOREIGN KEY (student_id) REFERENCES students(id)
+        )
+    """,
+    "progress_reviews": """
+        CREATE TABLE IF NOT EXISTS progress_reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            learner_link_id INTEGER NOT NULL,
+            review_date TEXT NOT NULL,
+            review_type TEXT NOT NULL DEFAULT 'monthly'
+                CHECK(review_type IN ('monthly','tripartite','gateway','epa_readiness')),
+            reviewer_name TEXT,
+            on_track INTEGER NOT NULL DEFAULT 1,
+            ksbm_progress TEXT,
+            off_the_job_hours REAL NOT NULL DEFAULT 0,
+            off_the_job_target REAL NOT NULL DEFAULT 0,
+            employer_feedback TEXT,
+            learner_feedback TEXT,
+            assessor_feedback TEXT,
+            actions TEXT,
+            employer_signed INTEGER NOT NULL DEFAULT 0,
+            learner_signed INTEGER NOT NULL DEFAULT 0,
+            assessor_signed INTEGER NOT NULL DEFAULT 0,
+            next_review_date TEXT,
+            status TEXT NOT NULL DEFAULT 'scheduled'
+                CHECK(status IN ('scheduled','completed','missed')),
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (learner_link_id) REFERENCES employer_learner_links(id)
+        )
+    """,
+    "employer_sign_offs": """
+        CREATE TABLE IF NOT EXISTS employer_sign_offs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            review_id INTEGER NOT NULL,
+            signer_type TEXT NOT NULL
+                CHECK(signer_type IN ('employer','learner','assessor')),
+            signer_name TEXT,
+            signed_at TEXT,
+            comments TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (review_id) REFERENCES progress_reviews(id)
+        )
+    """,
 }
 
 
@@ -3917,6 +4552,17 @@ def init_db(db_path: str | None = None):
             conn.execute(
                 "ALTER TABLE attendance_sessions ADD COLUMN timetable_slot_id INTEGER"
             )
+
+        # Migration: add previous_system columns to students if missing
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(students)").fetchall()}
+        if "previous_system" not in cols:
+            conn.execute("ALTER TABLE students ADD COLUMN previous_system TEXT")
+        if "previous_system_id" not in cols:
+            conn.execute("ALTER TABLE students ADD COLUMN previous_system_id TEXT")
+
+        # Shared LMS tables
+        from education_system.shared.lms.schema import create_lms_tables
+        create_lms_tables(conn)
 
         conn.commit()
         logger.info("Database initialized successfully")
@@ -4087,6 +4733,28 @@ def seed_default_data(db_path: str | None = None):
                    (course_code, title, credits, capacity, qualification_type, subject_area, teacher, term)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                 (code, title, glh, cap, qual, area, tch, trm),
+            )
+
+        # Seed default staff records
+        staff_records = [
+            ("STF0001", None, "Mrs", "Linda", "Patel", "l.patel@sixthform.ac.uk",
+             "A-Level Sciences", None, "active"),
+            ("STF0002", None, "Dr", "Simon", "Whitaker", "s.whitaker@sixthform.ac.uk",
+             "A-Level Mathematics", None, "active"),
+            ("STF0003", None, "Mr", "Andrew", "Mensah", "a.mensah@sixthform.ac.uk",
+             "BTEC Business", None, "active"),
+            ("STF0004", None, "Ms", "Fiona", "Campbell", "f.campbell@sixthform.ac.uk",
+             "Student Services", None, "active"),
+            ("STF0005", None, "Mrs", "Janet", "Riley", "j.riley@sixthform.ac.uk",
+             "Careers", None, "active"),
+        ]
+        for sid, uid, title, fn, ln, email, subj, fg, status in staff_records:
+            conn.execute(
+                """INSERT OR IGNORE INTO staff
+                   (staff_id, user_id, title, first_name, last_name, email,
+                    subject_area, form_group, status)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (sid, uid, title, fn, ln, email, subj, fg, status),
             )
 
         conn.commit()

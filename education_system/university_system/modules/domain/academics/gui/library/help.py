@@ -9,7 +9,7 @@ from tkinter.scrolledtext import ScrolledText
 from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
 init_i18n()
 
-from .base import LibraryGUI
+from education_system.university_system.modules.domain.academics.gui.library.base import LibraryGUI
 
 
 def show_help(self):

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/course_management/waitlist.py
+# hypothesis_version: 6.151.9
+
+['\nEnter course ID: ', '%Y-%m-%d %H:%M:%S', '-', 'Enter student ID: ', 'Invalid course ID.', 'conn', 'course_management', 'manage_courses']

@@ -99,7 +99,6 @@ except ImportError:
 
 # Import academic system launchers
 try:
-    from education_system.university_system.modules.domain.academics.services.lms.lms_core import launch_lms_gui
     from education_system.university_system.modules.domain.academics.services.degree_audit.degree_audit_core import launch_degree_audit_gui
     from education_system.university_system.modules.domain.academics.services.evaluation.course_evaluation_core import launch_course_evaluation_gui
     ACADEMIC_SYSTEMS_AVAILABLE = True
@@ -150,54 +149,56 @@ def import_csv(self):
                 return
             
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-            cursor = conn.cursor()
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            
-            for row_num, row in enumerate(reader, 1):
-                try:
-                    course_code = row['course_code'].strip().upper()
-                    course_name = row['course_name'].strip()
-                    department = row['department'].strip()
-                    
-                    if not course_code or not course_name:
+            try:
+                cursor = conn.cursor()
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                for row_num, row in enumerate(reader, 1):
+                    try:
+                        course_code = row['course_code'].strip().upper()
+                        course_name = row['course_name'].strip()
+                        department = row['department'].strip()
+
+                        if not course_code or not course_name:
+                            error_count += 1
+                            continue
+
+                        # Check for duplicates
+                        cursor.execute("SELECT id FROM courses WHERE code = ?", (course_code,))
+                        if cursor.fetchone():
+                            error_count += 1
+                            continue
+
+                        # Prepare optional fields
+                        description = row.get('description', '').strip()
+                        level = row.get('level', '').strip()
+                        credit_hours = float(row.get('credit_hours', 3.0))
+                        max_enrollment = int(row.get('max_enrollment', 30))
+                        course_type = row.get('course_type', 'Core').strip()
+
+                        import uuid
+                        course_id = str(uuid.uuid4())
+
+                        # Insert course
+                        cursor.execute('''
+                        INSERT INTO courses (
+                            id, code, name, credits, date_added,
+                            course_code, course_name, description, level, department,
+                            credit_hours, max_enrollment, course_type, created_at, updated_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ''', (course_id, course_code, course_name, int(credit_hours), timestamp,
+                              course_code, course_name, description, level, department,
+                              credit_hours, max_enrollment, course_type, timestamp, timestamp))
+
+                        imported_count += 1
+
+                    except (ValueError, sqlite3.Error):
                         error_count += 1
                         continue
-                    
-                    # Check for duplicates
-                    cursor.execute("SELECT id FROM courses WHERE code = ?", (course_code,))
-                    if cursor.fetchone():
-                        error_count += 1
-                        continue
 
-                    # Prepare optional fields
-                    description = row.get('description', '').strip()
-                    level = row.get('level', '').strip()
-                    credit_hours = float(row.get('credit_hours', 3.0))
-                    max_enrollment = int(row.get('max_enrollment', 30))
-                    course_type = row.get('course_type', 'Core').strip()
-
-                    import uuid
-                    course_id = str(uuid.uuid4())
-
-                    # Insert course
-                    cursor.execute('''
-                    INSERT INTO courses (
-                        id, code, name, credits, date_added,
-                        course_code, course_name, description, level, department,
-                        credit_hours, max_enrollment, course_type, created_at, updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ''', (course_id, course_code, course_name, int(credit_hours), timestamp,
-                          course_code, course_name, description, level, department,
-                          credit_hours, max_enrollment, course_type, timestamp, timestamp))
-
-                    imported_count += 1
-                    
-                except (ValueError, sqlite3.Error):
-                    error_count += 1
-                    continue
-            
-            conn.commit()
-            conn.close()
+                conn.commit()
+            finally:
+                conn.close()
         
         self.refresh_course_list()
         
@@ -267,8 +268,10 @@ def backup_database(self):
         else:
             # Binary database copy
             backup_conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-            conn.backup(backup_conn)
-            backup_conn.close()
+            try:
+                conn.backup(backup_conn)
+            finally:
+                backup_conn.close()
         
         conn.close()
         
@@ -440,62 +443,64 @@ class ImportExportDialog:
                     return
                 
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-                cursor = conn.cursor()
-                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                
-                for row_num, row in enumerate(reader, 1):
-                    try:
-                        course_code = row['course_code'].strip().upper()
-                        course_name = row['course_name'].strip()
-                        department = row['department'].strip()
-                        
-                        if not course_code or not course_name:
-                            self.progress_text.insert(tk.END, f"Row {row_num}: Missing required fields\n")
-                            error_count += 1
-                            continue
-                        
-                        if self.validate_codes.get() and not re.match(r'^[A-Z]{2,4}\d{2,3}$', course_code):
-                            self.progress_text.insert(tk.END, f"Row {row_num}: Invalid course code format: {course_code}\n")
-                            error_count += 1
-                            continue
-                        
-                        if self.skip_duplicates.get():
-                            cursor.execute("SELECT id FROM courses WHERE code = ?", (course_code,))
-                            if cursor.fetchone():
-                                self.progress_text.insert(tk.END, f"Row {row_num}: Skipping duplicate course code {course_code}\n")
+                try:
+                    cursor = conn.cursor()
+                    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                    for row_num, row in enumerate(reader, 1):
+                        try:
+                            course_code = row['course_code'].strip().upper()
+                            course_name = row['course_name'].strip()
+                            department = row['department'].strip()
+
+                            if not course_code or not course_name:
+                                self.progress_text.insert(tk.END, f"Row {row_num}: Missing required fields\n")
                                 error_count += 1
                                 continue
 
-                        # Insert course
-                        description = row.get('description', '').strip()
-                        level = row.get('level', '').strip()
-                        credit_hours = float(row.get('credit_hours', 3.0))
-                        max_enrollment = int(row.get('max_enrollment', 30))
-                        course_type = row.get('course_type', 'Core').strip()
+                            if self.validate_codes.get() and not re.match(r'^[A-Z]{2,4}\d{2,3}$', course_code):
+                                self.progress_text.insert(tk.END, f"Row {row_num}: Invalid course code format: {course_code}\n")
+                                error_count += 1
+                                continue
 
-                        import uuid
-                        course_id = str(uuid.uuid4())
+                            if self.skip_duplicates.get():
+                                cursor.execute("SELECT id FROM courses WHERE code = ?", (course_code,))
+                                if cursor.fetchone():
+                                    self.progress_text.insert(tk.END, f"Row {row_num}: Skipping duplicate course code {course_code}\n")
+                                    error_count += 1
+                                    continue
 
-                        cursor.execute('''
-                        INSERT INTO courses (
-                            id, code, name, credits, date_added,
-                            course_code, course_name, description, level, department,
-                            credit_hours, max_enrollment, course_type, created_at, updated_at
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ''', (course_id, course_code, course_name, int(credit_hours), timestamp,
-                              course_code, course_name, description, level, department,
-                              credit_hours, max_enrollment, course_type, timestamp, timestamp))
+                            # Insert course
+                            description = row.get('description', '').strip()
+                            level = row.get('level', '').strip()
+                            credit_hours = float(row.get('credit_hours', 3.0))
+                            max_enrollment = int(row.get('max_enrollment', 30))
+                            course_type = row.get('course_type', 'Core').strip()
 
-                        self.progress_text.insert(tk.END, f"Row {row_num}: Imported {course_code} - {course_name}\n")
-                        imported_count += 1
-                        
-                    except (ValueError, sqlite3.Error) as e:
-                        self.progress_text.insert(tk.END, f"Row {row_num}: Error - {e}\n")
-                        error_count += 1
-                        continue
-                
-                conn.commit()
-                conn.close()
+                            import uuid
+                            course_id = str(uuid.uuid4())
+
+                            cursor.execute('''
+                            INSERT INTO courses (
+                                id, code, name, credits, date_added,
+                                course_code, course_name, description, level, department,
+                                credit_hours, max_enrollment, course_type, created_at, updated_at
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ''', (course_id, course_code, course_name, int(credit_hours), timestamp,
+                                  course_code, course_name, description, level, department,
+                                  credit_hours, max_enrollment, course_type, timestamp, timestamp))
+
+                            self.progress_text.insert(tk.END, f"Row {row_num}: Imported {course_code} - {course_name}\n")
+                            imported_count += 1
+
+                        except (ValueError, sqlite3.Error) as e:
+                            self.progress_text.insert(tk.END, f"Row {row_num}: Error - {e}\n")
+                            error_count += 1
+                            continue
+
+                    conn.commit()
+                finally:
+                    conn.close()
             
             self.progress_text.insert(tk.END, f"\nImport completed!\n")
             self.progress_text.insert(tk.END, f"Successfully imported: {imported_count} courses\n")
@@ -519,34 +524,36 @@ class ImportExportDialog:
             self.progress_text.insert(tk.END, f"Starting export to {file_path}...\n")
             
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-            cursor = conn.cursor()
-            
-            # Build query with filters
-            conditions = []
-            params = []
-            
-            if self.dept_var.get():
-                conditions.append("department = ?")
-                params.append(self.dept_var.get())
-            
-            if self.level_var.get():
-                conditions.append("level = ?")
-                params.append(self.level_var.get())
-            
-            if self.status_var.get():
-                conditions.append("status = ?")
-                params.append(self.status_var.get())
-            
-            query = "SELECT * FROM courses"
-            if conditions:
-                query += " WHERE " + " AND ".join(conditions)
-            query += " ORDER BY course_code"
-            
-            cursor.execute(query, params)
-            courses = cursor.fetchall()
-            
-            if not courses:
-                self.progress_text.insert(tk.END, "No courses found to export.\n")
+            try:
+                cursor = conn.cursor()
+
+                # Build query with filters
+                conditions = []
+                params = []
+
+                if self.dept_var.get():
+                    conditions.append("department = ?")
+                    params.append(self.dept_var.get())
+
+                if self.level_var.get():
+                    conditions.append("level = ?")
+                    params.append(self.level_var.get())
+
+                if self.status_var.get():
+                    conditions.append("status = ?")
+                    params.append(self.status_var.get())
+
+                query = "SELECT * FROM courses"
+                if conditions:
+                    query += " WHERE " + " AND ".join(conditions)
+                query += " ORDER BY course_code"
+
+                cursor.execute(query, params)
+                courses = cursor.fetchall()
+
+                if not courses:
+                    self.progress_text.insert(tk.END, "No courses found to export.\n")
+            finally:
                 conn.close()
                 return
             

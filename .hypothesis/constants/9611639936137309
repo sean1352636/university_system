@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/budget_manager/meal_plan.py
+# hypothesis_version: 6.151.9
+
+[100, 150, '%H:%M', '%Y-%m-%d', '0.00', '1', '10', 'Arial', 'Date', 'Days Remaining', 'Dollars', 'Dollars Remaining', 'Dollars Used:', 'Error', 'Invalid values.', 'Location', 'Location:', 'Log Meal Transaction', 'Log Transaction', 'Meal Plan', 'Meal Type:', 'Meals', 'Meals Remaining', 'Meals Used:', 'N/A', 'Plan Name', 'Refresh Status', 'Success', 'Time', 'Type', 'Usage %', 'bold', 'breakfast', 'columns', 'days_remaining', 'dinner', 'end', 'guest', 'headings', 'location', 'lunch', 'meal_type', 'meals_used', 'plan_name', 'plan_type', 'readonly', 'remaining_meals', 'snack', 'tracking_id', 'transaction_date', 'transaction_time', 'username']

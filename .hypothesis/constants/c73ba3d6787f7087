@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/email_service/notifications/academic.py
+# hypothesis_version: 6.151.9
+
+['Student', 'assignment_title', 'course', 'due_date', 'email', 'email_address', 'error', 'extension_days', 'feedback', 'first_name', 'grade', 'info', 'last_name', 'middle_name', 'module_code', 'modules_list', 'new_due_date', 'password_reset', 'password_reset_email', 'recipient_masked', 'reset_code', 'student_id', 'student_name', 'title', 'update_confirmation', 'updated_fields']

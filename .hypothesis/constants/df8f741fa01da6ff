@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/smtp.py
+# hypothesis_version: 6.151.9
+
+[465, 587, ',', 'Bcc', 'Cc', 'Content-Disposition', 'From', 'SMTP send failed: %s', 'Subject', 'To', 'error', 'failed', 'password', 'plain', 'rb', 'sender_email', 'sender_name', 'sent', 'smtp_port', 'smtp_server', 'use_authentication', 'use_tls', 'username']

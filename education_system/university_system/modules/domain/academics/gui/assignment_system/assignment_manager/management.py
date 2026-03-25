@@ -1,5 +1,6 @@
 """Faculty assignment management - CRUD, editing, status toggling"""
 
+from education_system.university_system.core.sql_safety import escape_like
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -70,6 +71,9 @@ class ManagementMixin:
         assignments_frame.grid_rowconfigure(0, weight=1)
         assignments_frame.grid_columnconfigure(0, weight=1)
 
+        # Bind selection event
+        self.manage_assignments_tree.bind('<<TreeviewSelect>>', self.on_manage_assignment_select)
+
         # Action buttons - Row 1
         action_frame = ttk.Frame(self.gui.layout.content_area)
         action_frame.pack(fill='x', pady=(10, 0))
@@ -112,7 +116,7 @@ class ManagementMixin:
 
         # Assignment details frame
         self.assignment_details_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Assignment Details", padding=10)
-        self.assignment_details_frame.pack(fill='x', pady=(10, 0))
+        self.assignment_details_frame.pack(fill='both', expand=True, pady=(10, 0))
 
         # Load assignments
         self.load_managed_assignments()
@@ -166,7 +170,7 @@ class ManagementMixin:
             search_term = self.manage_search_var.get().strip()
             if search_term:
                 conditions.append("(a.title LIKE ? OR a.description LIKE ?)")
-                params.extend([f"%{search_term}%", f"%{search_term}%"])
+                params.extend([f"%{escape_like(search_term)}%", f"%{escape_like(search_term)}%"])
 
             if conditions:
                 query += " WHERE " + " AND ".join(conditions)
@@ -418,6 +422,11 @@ class ManagementMixin:
                 conn.close()
                 return
 
+            # Helper to safely get column values with defaults
+            cols = original.keys()
+            def col(name, default=None):
+                return original[name] if name in cols else default
+
             # Create duplicate
             new_title = f"{original['title']} (Copy)"
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -432,13 +441,13 @@ class ManagementMixin:
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 original['module_code'], new_title, original['description'],
-                original.get('instructions', ''), original['due_date'],
-                original['max_marks'], original.get('file_types_allowed', ''),
-                original.get('max_file_size_mb', 10), original.get('assignment_type', 'individual'),
-                original.get('group_size_min', 1), original.get('group_size_max', 1),
-                original.get('allow_late_submission', 1), original.get('late_penalty_per_day', 0),
-                original.get('auto_release_grades', 0), original.get('peer_review_enabled', 0),
-                original.get('rubric_id'), 1, self.auth.current_user['id'],
+                col('instructions', ''), original['due_date'],
+                original['max_marks'], col('file_types_allowed', ''),
+                col('max_file_size_mb', 10), col('assignment_type', 'individual'),
+                col('group_size_min', 1), col('group_size_max', 1),
+                col('allow_late_submission', 1), col('late_penalty_per_day', 0),
+                col('auto_release_grades', 0), col('peer_review_enabled', 0),
+                col('rubric_id'), 1, self.auth.current_user['id'],
                 timestamp, timestamp
             ))
 

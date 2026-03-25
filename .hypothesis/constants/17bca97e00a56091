@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/security/flask_security_headers.py
+# hypothesis_version: 6.151.9
+
+[31536000, '1; mode=block', '; ', 'APP_ENV', 'Authorization', 'Cache-Control', 'DENY', 'Lax', 'Permissions-Policy', 'Pragma', 'Referrer-Policy', 'X-Frame-Options', 'X-XSS-Protection', '_custom_csp', 'dev', 'development', 'includeSubDomains', 'local', 'no-cache', 'nosniff', 'preload', 'production', 'security_headers', 'test']

@@ -120,11 +120,9 @@ def set_auth_all(auth_obj):
 
     # Best-effort propagation to submodules that expose set_auth
     try:
-        # Only import modules that actually exist
-        from education_system.university_system.modules.core.services import student_union_misc as su_misc
+        from education_system.university_system.modules.domain.student_affairs.student_union.administration import miscellaneous as su_misc
         if hasattr(su_misc, 'set_auth'):
             su_misc.set_auth(auth_obj)
-
     except Exception as e:
         print(f"(warning) Failed to propagate auth to all student union modules: {e}")
 
@@ -167,35 +165,67 @@ def init_student_union_db():
         )
         ''')
         
-        # Create events table
+        # Create unified events table
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS union_events (
+        CREATE TABLE IF NOT EXISTS unified_events (
             event_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            event_name TEXT,
+            source_type TEXT,
+            source_event_id TEXT,
+            title TEXT,
             description TEXT,
-            event_date TEXT,
-            start_time TEXT,
-            end_time TEXT,
+            event_type TEXT,
+            event_category TEXT,
+            start_datetime TEXT,
+            end_datetime TEXT,
             location TEXT,
-            organizer_id INTEGER,
-            category TEXT,
-            max_attendees INTEGER,
-            current_attendees INTEGER DEFAULT 0,
+            building TEXT,
+            room TEXT,
+            room_id TEXT,
+            organizer_id TEXT,
+            organizer_name TEXT,
+            organizer_type TEXT,
+            max_capacity INTEGER,
+            registration_required BOOLEAN,
+            registration_deadline TEXT,
+            is_public BOOLEAN,
+            is_featured BOOLEAN,
             status TEXT DEFAULT 'upcoming',
-            FOREIGN KEY (organizer_id) REFERENCES student_clubs (club_id)
+            tags TEXT,
+            image_url TEXT,
+            virtual_link TEXT,
+            event_fee REAL DEFAULT 0.0,
+            payment_required BOOLEAN DEFAULT 0,
+            waitlist_enabled BOOLEAN DEFAULT 1,
+            qr_code_path TEXT,
+            club_id TEXT,
+            created_by TEXT,
+            created_at TEXT,
+            updated_at TEXT,
+            notes TEXT
         )
         ''')
         
-        # Create event registrations table
+        # Create unified event registrations table
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS event_registrations (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+        CREATE TABLE IF NOT EXISTS unified_event_registrations (
+            registration_id INTEGER PRIMARY KEY AUTOINCREMENT,
             event_id INTEGER,
-            student_id TEXT,
+            user_id TEXT,
+            user_type TEXT DEFAULT 'student',
             registration_date TEXT,
             attendance_status TEXT DEFAULT 'registered',
-            FOREIGN KEY (event_id) REFERENCES union_events (event_id),
-            FOREIGN KEY (student_id) REFERENCES students (student_id)
+            checked_in_at TEXT,
+            check_out_time TEXT,
+            payment_status TEXT,
+            payment_amount REAL DEFAULT 0.0,
+            payment_method TEXT,
+            is_waitlisted BOOLEAN DEFAULT 0,
+            num_guests INTEGER DEFAULT 0,
+            feedback_rating REAL,
+            feedback_comment TEXT,
+            qr_code TEXT,
+            cpd_credits REAL DEFAULT 0.0,
+            FOREIGN KEY (event_id) REFERENCES unified_events (event_id)
         )
         ''')
         
@@ -333,7 +363,7 @@ def init_student_union_db():
             date_recorded TEXT,
             receipt_path TEXT,
             revenue_type TEXT,
-            FOREIGN KEY (event_id) REFERENCES union_events (event_id)
+            FOREIGN KEY (event_id) REFERENCES unified_events (event_id)
         )
         ''')
         
@@ -348,24 +378,32 @@ def init_student_union_db():
             student_id TEXT,
             purchase_date TEXT,
             payment_status TEXT DEFAULT 'pending',
-            FOREIGN KEY (event_id) REFERENCES union_events (event_id),
+            FOREIGN KEY (event_id) REFERENCES unified_events (event_id),
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
         
-        # Event Attendance System
+        # Event Attendance System (now uses unified_event_registrations)
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS event_attendance (
-            attendance_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        CREATE TABLE IF NOT EXISTS unified_event_registrations (
+            registration_id INTEGER PRIMARY KEY AUTOINCREMENT,
             event_id INTEGER,
-            student_id TEXT,
-            check_in_time TEXT,
+            user_id TEXT,
+            user_type TEXT DEFAULT 'student',
+            registration_date TEXT,
+            attendance_status TEXT,
+            checked_in_at TEXT,
             check_out_time TEXT,
+            payment_status TEXT,
+            payment_amount REAL DEFAULT 0.0,
+            payment_method TEXT,
+            is_waitlisted BOOLEAN DEFAULT 0,
+            num_guests INTEGER DEFAULT 0,
+            feedback_rating REAL,
+            feedback_comment TEXT,
             qr_code TEXT,
             cpd_credits REAL DEFAULT 0.0,
-            attendance_verified BOOLEAN DEFAULT 0,
-            FOREIGN KEY (event_id) REFERENCES union_events (event_id),
-            FOREIGN KEY (student_id) REFERENCES students (student_id)
+            FOREIGN KEY (event_id) REFERENCES unified_events (event_id)
         )
         ''')
         
@@ -381,7 +419,7 @@ def init_student_union_db():
             max_occurrences INTEGER,
             current_occurrences INTEGER DEFAULT 0,
             status TEXT DEFAULT 'active',
-            FOREIGN KEY (parent_event_id) REFERENCES union_events (event_id)
+            FOREIGN KEY (parent_event_id) REFERENCES unified_events (event_id)
         )
         ''')
         
@@ -414,7 +452,7 @@ def init_student_union_db():
             upload_date TEXT,
             FOREIGN KEY (club_id) REFERENCES student_clubs (club_id),
             FOREIGN KEY (uploader_id) REFERENCES students (student_id),
-            FOREIGN KEY (event_id) REFERENCES union_events (event_id)
+            FOREIGN KEY (event_id) REFERENCES unified_events (event_id)
         )
         ''')
         
@@ -634,7 +672,7 @@ def init_student_union_db():
             sustainability_score REAL,
             notes TEXT,
             recorded_date TEXT,
-            FOREIGN KEY (event_id) REFERENCES union_events (event_id),
+            FOREIGN KEY (event_id) REFERENCES unified_events (event_id),
             FOREIGN KEY (club_id) REFERENCES student_clubs (club_id)
         )
         ''')
@@ -1419,22 +1457,49 @@ def view_events():
         cursor = conn.cursor()
 
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS student_union_events (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
+            CREATE TABLE IF NOT EXISTS unified_events (
+                event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source_type TEXT,
+                source_event_id TEXT,
+                title TEXT,
                 description TEXT,
-                event_date TEXT,
+                event_type TEXT,
+                event_category TEXT,
+                start_datetime TEXT,
+                end_datetime TEXT,
                 location TEXT,
-                capacity INTEGER,
-                status TEXT DEFAULT 'upcoming'
+                building TEXT,
+                room TEXT,
+                room_id TEXT,
+                organizer_id TEXT,
+                organizer_name TEXT,
+                organizer_type TEXT,
+                max_capacity INTEGER,
+                registration_required BOOLEAN,
+                registration_deadline TEXT,
+                is_public BOOLEAN,
+                is_featured BOOLEAN,
+                status TEXT,
+                tags TEXT,
+                image_url TEXT,
+                virtual_link TEXT,
+                event_fee REAL DEFAULT 0.0,
+                payment_required BOOLEAN DEFAULT 0,
+                waitlist_enabled BOOLEAN DEFAULT 1,
+                qr_code_path TEXT,
+                club_id TEXT,
+                created_by TEXT,
+                created_at TEXT,
+                updated_at TEXT,
+                notes TEXT
             )
         ''')
 
         cursor.execute('''
-            SELECT id, name, description, event_date, location, capacity
-            FROM student_union_events
+            SELECT event_id, title, description, start_datetime, location, max_capacity
+            FROM unified_events
             WHERE status = 'upcoming'
-            ORDER BY event_date
+            ORDER BY start_datetime
         ''')
 
         events = cursor.fetchall()
@@ -1466,16 +1531,30 @@ def register_for_event():
         cursor = conn.cursor()
 
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS event_registrations (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+            CREATE TABLE IF NOT EXISTS unified_event_registrations (
+                registration_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 event_id INTEGER,
-                student_id TEXT,
-                registration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                user_id TEXT,
+                user_type TEXT DEFAULT 'student',
+                registration_date TEXT,
+                attendance_status TEXT,
+                checked_in_at TEXT,
+                check_out_time TEXT,
+                payment_status TEXT,
+                payment_amount REAL DEFAULT 0.0,
+                payment_method TEXT,
+                is_waitlisted BOOLEAN DEFAULT 0,
+                num_guests INTEGER DEFAULT 0,
+                feedback_rating REAL,
+                feedback_comment TEXT,
+                qr_code TEXT,
+                cpd_credits REAL DEFAULT 0.0,
+                FOREIGN KEY (event_id) REFERENCES unified_events (event_id)
             )
         ''')
 
-        cursor.execute('INSERT INTO event_registrations (event_id, student_id) VALUES (?, ?)',
-                      (event_id, student_id))
+        cursor.execute('INSERT INTO unified_event_registrations (event_id, user_id, user_type, registration_date) VALUES (?, ?, ?, CURRENT_TIMESTAMP)',
+                      (event_id, student_id, 'student'))
         conn.commit()
         print("✓ Successfully registered for event!")
 
@@ -1495,11 +1574,11 @@ def view_my_events():
         cursor = conn.cursor()
 
         cursor.execute('''
-            SELECT e.name, e.event_date, e.location
-            FROM event_registrations r
-            JOIN student_union_events e ON r.event_id = e.id
-            WHERE r.student_id = ?
-            ORDER BY e.event_date
+            SELECT e.title, e.start_datetime, e.location
+            FROM unified_event_registrations r
+            JOIN unified_events e ON r.event_id = e.event_id
+            WHERE r.user_id = ? AND r.user_type = 'student'
+            ORDER BY e.start_datetime
         ''', (student_id,))
 
         events = cursor.fetchall()

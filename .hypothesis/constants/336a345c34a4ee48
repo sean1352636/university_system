@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/ai/ai_detector/features/bias_detector.py
+# hypothesis_version: 6.151.9
+
+[0.1, 1.0, 'avg_ai_score', 'bias_variance', 'flagged_rate', 'flagged_submissions', 'needs_calibration', 'total_submissions']

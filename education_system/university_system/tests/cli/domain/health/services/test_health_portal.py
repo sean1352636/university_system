@@ -289,7 +289,7 @@ class TestExportHealthRecords:
 
     @patch('builtins.input', side_effect=['1'])
     @patch('builtins.print')
-    @patch('university_system.modules.domain.health.services.health_portal.paths')
+    @patch('education_system.university_system.modules.domain.health.services.health_portal.paths')
     def test_export_health_records_csv(self, mock_paths, mock_print, mock_input, mock_auth, setup_portal_db, temp_dir):
         """Test exporting health records to CSV."""
         mock_paths.DATA_DIR = Path(temp_dir)
@@ -302,7 +302,7 @@ class TestExportHealthRecords:
 
     @patch('builtins.input', side_effect=['2'])
     @patch('builtins.print')
-    @patch('university_system.modules.domain.health.services.health_portal.paths')
+    @patch('education_system.university_system.modules.domain.health.services.health_portal.paths')
     def test_export_health_records_json(self, mock_paths, mock_print, mock_input, mock_auth, setup_portal_db, temp_dir):
         """Test exporting health records to JSON."""
         mock_paths.DATA_DIR = Path(temp_dir)
@@ -318,8 +318,8 @@ class TestBackupManagement:
     """Tests for backup management functions."""
 
     @patch('builtins.print')
-    @patch('university_system.modules.domain.health.services.health_portal.paths')
-    @patch('university_system.modules.domain.health.services.health_portal.DEFAULT_DB_PATH')
+    @patch('education_system.university_system.modules.domain.health.services.health_portal.paths')
+    @patch('education_system.university_system.modules.domain.health.services.health_portal.DEFAULT_DB_PATH')
     def test_create_manual_backup(self, mock_db_path, mock_paths, mock_print, mock_auth, temp_dir):
         """Test creating a manual backup."""
         mock_paths.DATA_DIR = Path(temp_dir)

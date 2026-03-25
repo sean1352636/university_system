@@ -351,7 +351,7 @@ class GroceryGUI:
                 price_display,
                 stock_display,
                 discount_display
-            ), tags=(p['product_id'],))
+            ), tags=(p['source_product_id'],))
 
     def filter_by_category(self):
         """Filter products by selected category"""
@@ -803,13 +803,13 @@ class GroceryManagementGUI(GroceryGUI):
                 status = "LOW"
 
             self.inventory_tree.insert('', tk.END, values=(
-                p['product_id'],
+                p['source_product_id'],
                 p['name'],
                 p['category_name'],
                 p['stock_quantity'],
                 p['min_stock_level'],
                 status
-            ), tags=(p['product_id'],))
+            ), tags=(p['source_product_id'],))
 
     def restock_selected(self):
         """Restock the selected product"""
@@ -966,38 +966,39 @@ class GroceryManagementGUI(GroceryGUI):
                 cursor.execute('''
                     SELECT
                         gt.transaction_id,
-                        gt.transaction_date,
+                        gt.created_at,
                         COALESCE(gt.receipt_number, 'N/A') as receipt_number,
                         COALESCE(u.first_name || ' ' || u.last_name, u.username, gt.student_id, 'Guest') as customer_name,
                         COALESCE(gt.student_id, 'N/A') as student_id,
                         gt.total_amount,
                         COALESCE(gt.payment_method, 'Cash') as payment_method,
-                        COALESCE(gt.payment_status, 'completed') as payment_status
-                    FROM grocery_transactions gt
-                    LEFT JOIN users u ON gt.user_id = u.id OR gt.student_id = u.username OR gt.student_id = u.student_id
-                    WHERE gt.transaction_id LIKE ?
+                        COALESCE(gt.status, 'completed') as payment_status
+                    FROM transactions gt
+                    LEFT JOIN users u ON gt.customer_id = u.id OR gt.student_id = u.username OR gt.student_id = u.student_id
+                    WHERE gt.source_type = 'grocery' AND (gt.source_transaction_id LIKE ?
                        OR gt.student_id LIKE ?
                        OR gt.receipt_number LIKE ?
                        OR u.first_name LIKE ?
                        OR u.last_name LIKE ?
-                       OR u.username LIKE ?
-                    ORDER BY gt.transaction_date DESC
+                       OR u.username LIKE ?)
+                    ORDER BY gt.created_at DESC
                 ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%',
                       f'%{search_term}%', f'%{search_term}%', f'%{search_term}%'))
             else:
                 cursor.execute('''
                     SELECT
                         gt.transaction_id,
-                        gt.transaction_date,
+                        gt.created_at,
                         COALESCE(gt.receipt_number, 'N/A') as receipt_number,
                         COALESCE(u.first_name || ' ' || u.last_name, u.username, gt.student_id, 'Guest') as customer_name,
                         COALESCE(gt.student_id, 'N/A') as student_id,
                         gt.total_amount,
                         COALESCE(gt.payment_method, 'Cash') as payment_method,
-                        COALESCE(gt.payment_status, 'completed') as payment_status
-                    FROM grocery_transactions gt
-                    LEFT JOIN users u ON gt.user_id = u.id OR gt.student_id = u.username OR gt.student_id = u.student_id
-                    ORDER BY gt.transaction_date DESC
+                        COALESCE(gt.status, 'completed') as payment_status
+                    FROM transactions gt
+                    LEFT JOIN users u ON gt.customer_id = u.id OR gt.student_id = u.username OR gt.student_id = u.student_id
+                    WHERE gt.source_type = 'grocery'
+                    ORDER BY gt.created_at DESC
                     LIMIT 200
                 ''')
 
@@ -1153,8 +1154,8 @@ Status: {values[7]}
 
                     # Get user_id from transaction
                     cursor.execute('''
-                        SELECT user_id, student_id FROM grocery_transactions
-                        WHERE transaction_id = ?
+                        SELECT customer_id, student_id FROM transactions
+                        WHERE source_type = 'grocery' AND source_transaction_id = ?
                     ''', (trans_id,))
                     trans_row = cursor.fetchone()
 
@@ -1199,33 +1200,20 @@ Status: {values[7]}
                 cursor = conn.cursor()
 
                 cursor.execute('''
-                    UPDATE grocery_transactions
-                    SET payment_status = 'refunded'
-                    WHERE transaction_id = ?
+                    UPDATE transactions
+                    SET status = 'refunded'
+                    WHERE source_type = 'grocery' AND source_transaction_id = ?
                 ''', (trans_id,))
 
                 # Generate refund reference
                 import uuid
                 refund_ref = f"GROC-REFUND-{uuid.uuid4().hex[:12].upper()}"
 
-                # Record refund in grocery_refunds table
+                # Record refund in unified_refunds table
                 cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS grocery_refunds (
-                        refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        transaction_id TEXT,
-                        refund_amount REAL,
-                        refund_method TEXT,
-                        refund_reference TEXT,
-                        student_id TEXT,
-                        refund_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (transaction_id) REFERENCES grocery_transactions(transaction_id)
-                    )
-                ''')
-
-                cursor.execute('''
-                    INSERT INTO grocery_refunds
-                    (transaction_id, refund_amount, refund_method, refund_reference, student_id)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO unified_refunds
+                    (source_type, reference_id, reference_type, amount, refund_method, refund_reference, student_id, refund_date)
+                    VALUES ('grocery', ?, 'transaction', ?, ?, ?, ?, CURRENT_TIMESTAMP)
                 ''', (trans_id, amount, refund_method, refund_ref, student_id))
 
                 conn.commit()
@@ -1348,10 +1336,10 @@ Status: {values[7]}
 
             # Record transaction
             cursor.execute('''
-                INSERT INTO student_finance_transactions
-                (account_id, student_id, transaction_type, amount, balance_before,
+                INSERT INTO transactions
+                (source_type, account_id, student_id, transaction_type, amount, balance_before,
                  balance_after, description, reference_id, processed_by)
-                VALUES (?, ?, 'credit', ?, ?, ?, ?, ?, ?)
+                VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, ?, ?)
             ''', (account_id, student_id, amount, balance_before, balance_after,
                   f'Grocery Shop Refund - Transaction: {trans_id}',
                   f'GROCERY-REFUND-{trans_id}',
@@ -1413,51 +1401,8 @@ Status: {values[7]}
 
     def notify_grocery_finance_gui(self, trans_id: str, amount: float, method: str,
                                    refund_ref: str, student_id=None):
-        """Record refund in finance system for integration."""
+        """Notify finance GUI of grocery refund - already recorded in unified_refunds."""
         try:
-            conn = get_connection()
-            cursor = conn.cursor()
-
-            # Ensure finance_refunds table exists with correct schema
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS finance_refunds (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    refund_reference TEXT UNIQUE,
-                    department TEXT,
-                    amount REAL,
-                    refund_method TEXT,
-                    refund_date TEXT,
-                    refund_time TEXT,
-                    transaction_reference TEXT,
-                    processed_by TEXT,
-                    notes TEXT
-                )
-            ''')
-
-            # Check for missing columns and add them
-            cursor.execute("PRAGMA table_info(finance_refunds)")
-            columns = [row[1] for row in cursor.fetchall()]
-
-            if 'transaction_reference' not in columns:
-                cursor.execute('ALTER TABLE finance_refunds ADD COLUMN transaction_reference TEXT')
-            if 'refund_time' not in columns:
-                cursor.execute('ALTER TABLE finance_refunds ADD COLUMN refund_time TEXT')
-            if 'notes' not in columns:
-                cursor.execute('ALTER TABLE finance_refunds ADD COLUMN notes TEXT')
-
-            # Insert refund record
-            cursor.execute('''
-                INSERT INTO finance_refunds
-                (refund_reference, department, amount, refund_method,
-                 refund_date, refund_time, transaction_reference, processed_by, notes)
-                VALUES (?, ?, ?, ?, date('now'), time('now'), ?, ?, ?)
-            ''', (refund_ref, 'Grocery Shop', amount, method,
-                  f'transaction_{trans_id}',
-                  self.current_user.get('username', 'system') if self.current_user else 'system',
-                  f'Grocery Shop Transaction {trans_id} Refund - Student: {student_id or "N/A"}'))
-
-            conn.commit()
-            conn.close()
             print(f"[Grocery] Refund recorded in finance system: {refund_ref}")
         except Exception as e:
             print(f"Error notifying finance system: {e}")

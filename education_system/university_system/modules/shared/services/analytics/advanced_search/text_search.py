@@ -1,14 +1,15 @@
 """Advanced text search: regex, wildcard, full-text, and phonetic search."""
 import re
 
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.modules.shared.utils.sql_safety import (
     validate_field_for_query,
     SQLIdentifierError,
 )
-from .display import display_search_results
-from .system import log_search
-from .admin import audit_log
+from education_system.university_system.modules.shared.services.analytics.advanced_search.display import display_search_results
+from education_system.university_system.modules.shared.services.analytics.advanced_search.system import log_search
+from education_system.university_system.modules.shared.services.analytics.advanced_search.admin import audit_log
 
 
 @audit_log
@@ -119,7 +120,7 @@ def search_all_fields():
         last_name LIKE ?
         '''
 
-        search_pattern = f"%{search_term}%"
+        search_pattern = f"%{escape_like(search_term)}%"
         params = [search_pattern] * 5
 
         cursor.execute(query, params)

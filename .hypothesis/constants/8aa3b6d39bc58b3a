@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/academics/subjects/services/subject_service.py
+# hypothesis_version: 6.151.9
+
+[100, ' AND department = ?', ' AND key_stage = ?', ' AND status = ?', ', ', 'KS3', 'Subject code', 'Subject not found.', 'Title', 'capacity', 'department', 'description', 'is_core', 'key_stage', 'room', 'status', 'subject_code', 'teacher', 'title', 'updated_at']

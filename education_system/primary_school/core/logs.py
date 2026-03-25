@@ -1,19 +1,16 @@
 """Logging configuration for the Primary School Management System."""
 
 import logging
-from .paths import LOGS_DIR
+
+from education_system.primary_school.core.paths import LOGS_DIR
+from education_system.shared.core.logging import setup_logging as _setup
 
 
 def setup_logging(level=logging.INFO):
     """Configure application logging."""
-    log_file = LOGS_DIR / "primary_school.log"
-    fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    logging.basicConfig(
+    _setup(
+        logger_name="education_system.primary_school",
+        log_dir=LOGS_DIR,
+        log_filename="primary_school.log",
         level=level,
-        format=fmt,
-        handlers=[
-            logging.FileHandler(log_file, encoding="utf-8"),
-            logging.StreamHandler(),
-        ],
     )
-    logging.getLogger("primary_school").setLevel(level)

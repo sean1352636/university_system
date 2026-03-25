@@ -4,7 +4,7 @@ Dashboard mixin - main dashboard view and student statistics.
 
 from typing import Any, Dict
 
-from ..common_imports import (
+from education_system.university_system.modules.domain.finance.gui.financial_aid.common_imports import (
     ttk,
     logging,
     get_connection,

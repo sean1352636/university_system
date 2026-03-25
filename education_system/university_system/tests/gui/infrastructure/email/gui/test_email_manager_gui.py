@@ -289,7 +289,7 @@ class TestEmailManagerGUIInitialization:
 
     def test_gui_initialization(self, mock_root, mock_auth, temp_db):
         """Test GUI initializes without errors"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 gui = EmailManagerGUI(mock_root, auth=mock_auth)
                 assert gui is not None
@@ -299,7 +299,7 @@ class TestEmailManagerGUIInitialization:
 
     def test_gui_with_no_auth(self, mock_root, temp_db):
         """Test GUI initialization without authentication"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 gui = EmailManagerGUI(mock_root, auth=None)
                 # Should still initialize
@@ -309,7 +309,7 @@ class TestEmailManagerGUIInitialization:
 
     def test_gui_sets_up_components(self, mock_root, mock_auth, temp_db):
         """Test that GUI sets up necessary components"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 gui = EmailManagerGUI(mock_root, auth=mock_auth)
                 # Check that GUI has expected attributes
@@ -321,7 +321,7 @@ class TestComposeEmailDialog:
 
     def test_compose_dialog_initialization(self, mock_root, temp_db):
         """Test compose email dialog initialization"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = ComposeEmailDialog(mock_root)
                 assert dialog is not None
@@ -330,7 +330,7 @@ class TestComposeEmailDialog:
 
     def test_compose_dialog_with_recipient(self, mock_root, temp_db):
         """Test compose dialog with pre-filled recipient"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = ComposeEmailDialog(
                     mock_root,
@@ -345,7 +345,7 @@ class TestTemplateManagerDialog:
 
     def test_template_manager_initialization(self, mock_root, temp_db):
         """Test template manager dialog initialization"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = TemplateManagerDialog(mock_root)
                 assert dialog is not None
@@ -354,7 +354,7 @@ class TestTemplateManagerDialog:
 
     def test_template_manager_loads_templates(self, mock_root, temp_db):
         """Test that template manager loads existing templates"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = TemplateManagerDialog(mock_root)
                 # Should load templates from database
@@ -366,7 +366,7 @@ class TestBulkEmailDialog:
 
     def test_bulk_email_initialization(self, mock_root, temp_db):
         """Test bulk email dialog initialization"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = BulkEmailDialog(mock_root)
                 assert dialog is not None
@@ -375,7 +375,7 @@ class TestBulkEmailDialog:
 
     def test_bulk_email_with_recipients(self, mock_root, temp_db):
         """Test bulk email with recipient list"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 recipients = ['user1@example.com', 'user2@example.com']
                 dialog = BulkEmailDialog(
@@ -390,7 +390,7 @@ class TestScheduleEmailDialog:
 
     def test_schedule_dialog_initialization(self, mock_root, temp_db):
         """Test schedule email dialog initialization"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = ScheduleEmailDialog(mock_root)
                 assert dialog is not None
@@ -399,7 +399,7 @@ class TestScheduleEmailDialog:
 
     def test_schedule_dialog_date_selector(self, mock_root, temp_db):
         """Test schedule dialog has date/time selection"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = ScheduleEmailDialog(mock_root)
                 # Should have date/time selection widgets
@@ -411,7 +411,7 @@ class TestEmailConfigDialog:
 
     def test_config_dialog_initialization(self, mock_root, temp_db):
         """Test email config dialog initialization"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = EmailConfigDialog(mock_root)
                 assert dialog is not None
@@ -420,7 +420,7 @@ class TestEmailConfigDialog:
 
     def test_config_dialog_loads_settings(self, mock_root, temp_db):
         """Test config dialog loads current settings"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = EmailConfigDialog(mock_root)
                 # Should load current email configuration
@@ -432,7 +432,7 @@ class TestEmailDetailsDialog:
 
     def test_details_dialog_initialization(self, mock_root, temp_db):
         """Test email details dialog initialization"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 email_data = {
                     'id': 1,
@@ -453,7 +453,7 @@ class TestNotificationDialogs:
 
     def test_registration_confirmation_dialog(self, mock_root, temp_db):
         """Test registration confirmation dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = RegistrationConfirmationDialog(
                     mock_root,
@@ -464,7 +464,7 @@ class TestNotificationDialogs:
 
     def test_assignment_notification_dialog(self, mock_root, temp_db):
         """Test assignment notification dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = AssignmentNotificationDialog(mock_root)
             except Exception:
@@ -472,7 +472,7 @@ class TestNotificationDialogs:
 
     def test_grade_notification_dialog(self, mock_root, temp_db):
         """Test grade notification dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = ModuleGradeNotificationDialog(mock_root)
             except Exception:
@@ -480,7 +480,7 @@ class TestNotificationDialogs:
 
     def test_password_reset_dialog(self, mock_root, temp_db):
         """Test password reset dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = PasswordResetDialog(mock_root)
             except Exception:
@@ -491,7 +491,7 @@ class TestHealthNotificationDialogs:
 
     def test_appointment_confirmation_dialog(self, mock_root, temp_db):
         """Test appointment confirmation dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = AppointmentConfirmationDialog(mock_root)
             except Exception:
@@ -499,7 +499,7 @@ class TestHealthNotificationDialogs:
 
     def test_health_notification_dialog(self, mock_root, temp_db):
         """Test health notification dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = HealthNotificationDialog(mock_root)
             except Exception:
@@ -510,7 +510,7 @@ class TestLibraryNotificationDialogs:
 
     def test_book_checkout_dialog(self, mock_root, temp_db):
         """Test book checkout confirmation dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = BookCheckoutConfirmationDialog(mock_root)
             except Exception:
@@ -518,7 +518,7 @@ class TestLibraryNotificationDialogs:
 
     def test_book_return_reminder_dialog(self, mock_root, temp_db):
         """Test book return reminder dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = BookReturnReminderDialog(mock_root)
             except Exception:
@@ -526,7 +526,7 @@ class TestLibraryNotificationDialogs:
 
     def test_overdue_notification_dialog(self, mock_root, temp_db):
         """Test overdue notification dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = OverdueNotificationDialog(mock_root)
             except Exception:
@@ -537,7 +537,7 @@ class TestTicketDialogs:
 
     def test_ticket_notification_dialog(self, mock_root, temp_db):
         """Test ticket notification dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = TicketNotificationDialog(mock_root)
             except Exception:
@@ -545,7 +545,7 @@ class TestTicketDialogs:
 
     def test_reply_notification_dialog(self, mock_root, temp_db):
         """Test reply notification dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = ReplyNotificationDialog(mock_root)
             except Exception:
@@ -553,7 +553,7 @@ class TestTicketDialogs:
 
     def test_sla_alert_dialog(self, mock_root, temp_db):
         """Test SLA alert dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = SLAAlertDialog(mock_root)
             except Exception:
@@ -564,7 +564,7 @@ class TestUtilityDialogs:
 
     def test_advanced_search_dialog(self, mock_root, temp_db):
         """Test advanced search dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = AdvancedSearchDialog(mock_root)
             except Exception:
@@ -572,7 +572,7 @@ class TestUtilityDialogs:
 
     def test_email_reports_dialog(self, mock_root, temp_db):
         """Test email reports dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = EmailReportsDialog(mock_root)
             except Exception:
@@ -580,7 +580,7 @@ class TestUtilityDialogs:
 
     def test_export_data_dialog(self, mock_root, temp_db):
         """Test export data dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = ExportDataDialog(mock_root)
             except Exception:
@@ -588,7 +588,7 @@ class TestUtilityDialogs:
 
     def test_help_dialog(self, mock_root, temp_db):
         """Test help dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = HelpDialog(mock_root)
             except Exception:
@@ -596,7 +596,7 @@ class TestUtilityDialogs:
 
     def test_about_dialog(self, mock_root, temp_db):
         """Test about dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = AboutDialog(mock_root)
             except Exception:
@@ -607,7 +607,7 @@ class TestSystemDialogs:
 
     def test_system_health_dialog(self, mock_root, temp_db):
         """Test system health dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = SystemHealthDialog(mock_root)
             except Exception:
@@ -615,7 +615,7 @@ class TestSystemDialogs:
 
     def test_database_cleanup_dialog(self, mock_root, temp_db):
         """Test database cleanup dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = DatabaseCleanupDialog(mock_root)
             except Exception:
@@ -626,7 +626,7 @@ class TestChatRoomComponents:
 
     def test_chat_room_window(self, mock_root, temp_db):
         """Test chat room window"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 window = ChatRoomWindow(
                     mock_root,
@@ -639,7 +639,7 @@ class TestChatRoomComponents:
 
     def test_create_chat_room_dialog(self, mock_root, temp_db):
         """Test create chat room dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = CreateChatRoomDialog(mock_root)
             except Exception:
@@ -647,7 +647,7 @@ class TestChatRoomComponents:
 
     def test_chat_invitations_dialog(self, mock_root, temp_db):
         """Test chat invitations dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = ChatInvitationsDialog(
                     mock_root,
@@ -661,7 +661,7 @@ class TestAnnouncementComponents:
 
     def test_create_announcement_dialog(self, mock_root, temp_db):
         """Test create announcement dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 dialog = CreateAnnouncementDialog(mock_root)
             except Exception:
@@ -669,7 +669,7 @@ class TestAnnouncementComponents:
 
     def test_edit_announcement_dialog(self, mock_root, temp_db):
         """Test edit announcement dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 announcement_data = {
                     'id': 1,
@@ -685,7 +685,7 @@ class TestAnnouncementComponents:
 
     def test_announcement_details_dialog(self, mock_root, temp_db):
         """Test announcement details dialog"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 announcement_data = {
                     'id': 1,
@@ -705,7 +705,7 @@ class TestHelperFunctions:
 
     def test_main_function(self, temp_db):
         """Test main entry point function"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 # Main function should create GUI
                 # We patch Tk to avoid actually creating window
@@ -715,7 +715,7 @@ class TestHelperFunctions:
 
     def test_run_gui_mode(self, temp_db):
         """Test run_gui_mode function"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 mock_auth = Mock()
                 run_gui_mode(auth=mock_auth)
@@ -757,7 +757,7 @@ class TestIntegration:
 
     def test_full_gui_workflow(self, mock_root, mock_auth, temp_db):
         """Test complete GUI workflow"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             try:
                 # Initialize GUI
                 gui = EmailManagerGUI(mock_root, auth=mock_auth)

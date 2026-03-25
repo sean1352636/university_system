@@ -4,8 +4,8 @@ import numpy as np
 
 from education_system.university_system.infrastructure.database.db import get_connection
 
-from . import _common
-from ._common import get_current_academic_year
+from education_system.university_system.modules.domain.finance.reporting.financial_reports import _common
+from education_system.university_system.modules.domain.finance.reporting.financial_reports._common import get_current_academic_year
 
 
 def scenario_planning_tools():

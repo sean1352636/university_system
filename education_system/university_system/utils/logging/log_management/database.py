@@ -1,9 +1,10 @@
 """SQLite database for enhanced log storage and querying."""
 
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH as _DB_PATH
 from education_system.university_system.infrastructure.database.db import sqlite3, ensure_parent_dir
 
-from .security import LogSecurity
+from education_system.university_system.utils.logging.log_management.security import LogSecurity
 
 
 class LogDatabase:
@@ -17,61 +18,63 @@ class LogDatabase:
     def init_database(self):
         """Initialize the database with required tables"""
         conn = sqlite3.connect(str(_DB_PATH))
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        # Main logs table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS logs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                timestamp TEXT NOT NULL,
-                user_id TEXT NOT NULL,
-                username TEXT NOT NULL,
-                role TEXT NOT NULL,
-                action TEXT NOT NULL,
-                module TEXT NOT NULL,
-                details TEXT,
-                status TEXT NOT NULL,
-                ip_address TEXT,
-                user_agent TEXT,
-                session_id TEXT,
-                hash TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
+            # Main logs table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    username TEXT NOT NULL,
+                    role TEXT NOT NULL,
+                    action TEXT NOT NULL,
+                    module TEXT NOT NULL,
+                    details TEXT,
+                    status TEXT NOT NULL,
+                    ip_address TEXT,
+                    user_agent TEXT,
+                    session_id TEXT,
+                    hash TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
 
-        # Alerts table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS alerts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                alert_type TEXT NOT NULL,
-                message TEXT NOT NULL,
-                severity TEXT NOT NULL,
-                triggered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                resolved BOOLEAN DEFAULT FALSE,
-                resolved_at DATETIME,
-                resolved_by TEXT
-            )
-        ''')
+            # Alerts table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS alerts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    alert_type TEXT NOT NULL,
+                    message TEXT NOT NULL,
+                    severity TEXT NOT NULL,
+                    triggered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    resolved BOOLEAN DEFAULT FALSE,
+                    resolved_at DATETIME,
+                    resolved_by TEXT
+                )
+            ''')
 
-        # Saved searches table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS saved_searches (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                user_id TEXT NOT NULL,
-                search_params TEXT NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
+            # Saved searches table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS saved_searches (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    search_params TEXT NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
 
-        # Create indexes for better performance
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_logs_timestamp ON logs(timestamp)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_logs_user_id ON logs(user_id)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_logs_action ON logs(action)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_logs_module ON logs(module)')
+            # Create indexes for better performance
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_logs_timestamp ON logs(timestamp)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_logs_user_id ON logs(user_id)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_logs_action ON logs(action)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_logs_module ON logs(module)')
 
-        conn.commit()
-        conn.close()
+            conn.commit()
+        finally:
+            conn.close()
 
     def insert_log(self, log_data):
         """Insert a log entry into the database"""
@@ -136,7 +139,7 @@ class LogDatabase:
 
             if filters.get('username'):
                 query += " AND username LIKE ?"
-                params.append(f"%{filters['username']}%")
+                params.append(f"%{escape_like(filters['username'])}%")
 
             if filters.get('action'):
                 query += " AND action = ?"
@@ -152,7 +155,7 @@ class LogDatabase:
 
             if filters.get('search_text'):
                 query += " AND (details LIKE ? OR module LIKE ?)"
-                search_term = f"%{filters['search_text']}%"
+                search_term = f"%{escape_like(filters['search_text'])}%"
                 params.extend([search_term, search_term])
 
             query += " ORDER BY timestamp DESC LIMIT ?"

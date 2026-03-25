@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/email/email_gui/reports_tab.py
+# hypothesis_version: 6.151.9
+
+[1.0, 200, 1000, 1024, '\nBy Status:\n', '*.*', '*.csv', '*.vcf', '-', '.csv', '700x500', '=', 'Advanced Search', 'All files', 'CSV files', 'Cancel', 'Communication Stats', 'Direct', 'EMAIL SYSTEM REPORT\n', 'Email', 'Email Reports', 'Error', 'Export Data', 'Group', 'Import', 'Import Complete', 'Import Contacts', 'Import Error', 'Imported', 'Info', 'Name', 'Report Results', 'Report generated', 'Reports', 'Success', 'System Health', 'TkDefaultFont', 'Unknown', 'VCard files', 'blue', 'bold', 'both', 'created_date', 'default', 'email.report_results', 'email.tabs.reports', 'emails', 'en', 'end', 'get_stored_emails', 'headings', 'id', 'left', 'r', 'recipient_email', 'subject', 'template_name', 'utf-8', 'w']

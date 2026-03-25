@@ -1,0 +1,348 @@
+{
+    "api": {
+        "student": {
+            "not_found": "Aluno não encontrado.",
+            "created": "Aluno criado.",
+            "updated": "Aluno atualizado.",
+            "deleted": "Aluno desativado."
+        },
+        "course": {
+            "not_found": "Curso não encontrado.",
+            "created": "Curso criado.",
+            "updated": "Curso atualizado.",
+            "deleted": "Curso desativado.",
+            "prereq_added": "Pré-requisito adicionado."
+        },
+        "enrollment": {
+            "enrolled": "Aluno matriculado.",
+            "waitlisted": "Aluno adicionado à lista de espera.",
+            "dropped": "Matrícula do aluno cancelada."
+        },
+        "grade": {
+            "recorded": "Nota registrada.",
+            "predicted_recorded": "Nota prevista registrada.",
+            "access_denied": "Acesso negado",
+            "own_records_only": "Você só pode visualizar seus próprios registros."
+        },
+        "attendance": {
+            "session_created": "Sessão de frequência criada.",
+            "recorded": "Frequência registrada.",
+            "bulk_recorded": "Frequência em massa registrada para {count} alunos.",
+            "not_found": "Registro de frequência não encontrado.",
+            "pre_populated": "Pré-preenchido",
+            "registers_generated": "Registros Gerados"
+        },
+        "timetable": {
+            "slot_created": "Horário criado.",
+            "slot_updated": "Horário atualizado.",
+            "slot_deleted": "Horário excluído.",
+            "conflict": "Conflito de agendamento detectado."
+        },
+        "assignment": {
+            "created": "Tarefa criada.",
+            "updated": "Tarefa atualizada.",
+            "deleted": "Tarefa excluída.",
+            "submitted": "Tarefa enviada.",
+            "graded": "Entrega avaliada."
+        },
+        "notification": {
+            "sent": "Notificação enviada.",
+            "marked_read": "Notificação marcada como lida.",
+            "all_marked_read": "Todas as notificações marcadas como lidas."
+        },
+        "auth": {
+            "login_success": "Login realizado com sucesso.",
+            "login_failed": "Credenciais inválidas.",
+            "token_missing": "Token de autenticação ausente.",
+            "token_invalid": "Token inválido ou expirado.",
+            "access_denied": "Acesso negado. Permissões insuficientes.",
+            "password_changed": "Senha alterada com sucesso.",
+            "mfa_required": "Verificação de autenticação multifator necessária.",
+            "mfa_verified": "Autenticação multifator verificada com sucesso.",
+            "mfa_invalid": "Código MFA inválido.",
+            "mfa_disabled": "MFA Desabilitado",
+            "mfa_setup_complete": "Configuração de MFA Concluída",
+            "rate_limit_login": "Limite de Taxa de Login",
+            "rate_limit_register": "Limite de Taxa de Registro",
+            "user_created": "Usuário Criado"
+        },
+        "common": {
+            "not_found": "Recurso não encontrado.",
+            "created": "Criado com sucesso.",
+            "updated": "Atualizado com sucesso.",
+            "deleted": "Excluído com sucesso.",
+            "bad_request": "Requisição inválida.",
+            "server_error": "Erro interno do servidor.",
+            "validation_error": "Erro de validação: {message}",
+            "missing_fields": "Campos obrigatórios ausentes: {fields}"
+        },
+        "department": {
+            "not_found": "Departamento não encontrado.",
+            "created": "Departamento criado.",
+            "updated": "Departamento atualizado.",
+            "deleted": "Departamento excluído."
+        },
+        "group": {
+            "not_found": "Grupo não encontrado.",
+            "created": "Grupo criado.",
+            "updated": "Grupo atualizado.",
+            "deleted": "Grupo excluído.",
+            "member_added": "Membro adicionado ao grupo.",
+            "member_removed": "Membro removido do grupo."
+        },
+        "finance": {
+            "not_found": "Transação não encontrada.",
+            "created": "Transação criada.",
+            "updated": "Transação atualizada.",
+            "deleted": "Transação excluída."
+        },
+        "student_support": {
+            "not_found": "Encaminhamento não encontrado.",
+            "created": "Encaminhamento criado.",
+            "updated": "Encaminhamento atualizado.",
+            "deleted": "Encaminhamento excluído."
+        },
+        "funding": {
+            "not_found": "Registro de financiamento não encontrado.",
+            "created": "Registro de financiamento criado.",
+            "updated": "Registro de financiamento atualizado.",
+            "deleted": "Registro de financiamento excluído."
+        },
+        "destination": {
+            "not_found": "Registro de destino não encontrado.",
+            "created": "Registro de destino criado.",
+            "updated": "Registro de destino atualizado.",
+            "deleted": "Registro de destino excluído."
+        },
+        "room": {
+            "not_found": "Sala não encontrada.",
+            "created": "Sala criada.",
+            "updated": "Sala atualizada.",
+            "deleted": "Sala excluída."
+        },
+        "cpd": {
+            "not_found": "Registro de DPC não encontrado.",
+            "created": "Registro de DPC criado.",
+            "updated": "Registro de DPC atualizado.",
+            "deleted": "Registro de DPC excluído."
+        },
+        "observations": {
+            "not_found": "Observação não encontrada.",
+            "created": "Observação criada.",
+            "updated": "Observação atualizada.",
+            "deleted": "Observação excluída."
+        },
+        "appraisals": {
+            "not_found": "Avaliação não encontrada.",
+            "created": "Avaliação criada.",
+            "updated": "Avaliação atualizada.",
+            "deleted": "Avaliação excluída."
+        },
+        "resource_booking": {
+            "not_found": "Reserva não encontrada.",
+            "created": "Reserva criada.",
+            "updated": "Reserva atualizada.",
+            "deleted": "Reserva excluída.",
+            "conflict": "Conflito de reserva detectado."
+        },
+        "markbook": {
+            "not_found": "Entrada do livro de notas não encontrada.",
+            "created": "Entrada do livro de notas criada.",
+            "updated": "Entrada do livro de notas atualizada.",
+            "deleted": "Entrada do livro de notas excluída."
+        },
+        "staff_wellbeing": {
+            "not_found": "Registro não encontrado.",
+            "created": "Registro criado.",
+            "updated": "Registro atualizado.",
+            "deleted": "Registro excluído."
+        },
+        "lesson_plans": {
+            "not_found": "Plano de aula não encontrado.",
+            "created": "Plano de aula criado.",
+            "updated": "Plano de aula atualizado.",
+            "deleted": "Plano de aula excluído."
+        },
+        "data_dashboard": {
+            "stats_loaded": "Estatísticas do painel carregadas."
+        },
+        "absence_requests": {
+            "not_found": "Solicitação não encontrada.",
+            "created": "Solicitação criada.",
+            "updated": "Solicitação atualizada.",
+            "approved": "Solicitação aprovada.",
+            "rejected": "Solicitação rejeitada."
+        },
+        "intervention_tracking": {
+            "not_found": "Intervenção não encontrada.",
+            "created": "Intervenção criada.",
+            "updated": "Intervenção atualizada.",
+            "deleted": "Intervenção excluída."
+        },
+        "visitors": {
+            "not_found": "Registro de visitante não encontrado.",
+            "signed_in": "Visitante registrou entrada.",
+            "signed_out": "Visitante registrou saída.",
+            "created": "Registro de visitante criado.",
+            "updated": "Registro de visitante atualizado."
+        },
+        "policies": {
+            "not_found": "Política não encontrada.",
+            "created": "Política criada.",
+            "updated": "Política atualizada.",
+            "deleted": "Política excluída."
+        },
+        "gdpr": {
+            "not_found": "Registro não encontrado.",
+            "created": "Registro criado.",
+            "updated": "Registro atualizado.",
+            "deleted": "Registro excluído.",
+            "request_submitted": "Solicitação de dados enviada."
+        },
+        "quality_assurance": {
+            "not_found": "Revisão não encontrada.",
+            "created": "Revisão criada.",
+            "updated": "Revisão atualizada.",
+            "deleted": "Revisão excluída."
+        },
+        "bulk_operations": {
+            "import_success": "Importação concluída: {count} registros processados.",
+            "export_success": "Exportação concluída.",
+            "update_success": "Atualização em massa concluída: {count} registros atualizados."
+        },
+        "emergency": {
+            "not_found": "Registro não encontrado.",
+            "created": "Registro de emergência criado.",
+            "updated": "Registro de emergência atualizado.",
+            "alert_sent": "Alerta de emergência enviado."
+        },
+        "academic_year": {
+            "not_found": "Ano letivo não encontrado.",
+            "created": "Ano letivo criado.",
+            "updated": "Ano letivo atualizado.",
+            "deleted": "Ano letivo excluído."
+        },
+        "kpi_dashboard": {
+            "stats_loaded": "Estatísticas de KPI carregadas."
+        },
+        "audit_reports": {
+            "generated": "Relatório de auditoria gerado.",
+            "not_found": "Relatório não encontrado."
+        },
+        "user_management": {
+            "not_found": "Usuário não encontrado.",
+            "created": "Usuário criado.",
+            "updated": "Usuário atualizado.",
+            "deleted": "Usuário excluído.",
+            "password_reset": "Senha redefinida com sucesso."
+        },
+        "portfolio": {
+            "not_found": "Item do portfólio não encontrado.",
+            "created": "Item do portfólio criado.",
+            "updated": "Item do portfólio atualizado.",
+            "deleted": "Item do portfólio excluído."
+        },
+        "study_planner": {
+            "not_found": "Sessão não encontrada.",
+            "created": "Sessão de estudo criada.",
+            "updated": "Sessão de estudo atualizada.",
+            "deleted": "Sessão de estudo excluída."
+        },
+        "enrichment": {
+            "not_found": "Atividade não encontrada.",
+            "created": "Atividade criada.",
+            "updated": "Atividade atualizada.",
+            "deleted": "Atividade excluída.",
+            "enrolled": "Inscrito na atividade.",
+            "withdrawn": "Retirado da atividade."
+        },
+        "peer_mentoring": {
+            "not_found": "Par não encontrado.",
+            "created": "Par de mentoria criado.",
+            "updated": "Par de mentoria atualizado.",
+            "deleted": "Par de mentoria excluído."
+        },
+        "surveys": {
+            "not_found": "Pesquisa não encontrada.",
+            "created": "Pesquisa criada.",
+            "updated": "Pesquisa atualizada.",
+            "deleted": "Pesquisa excluída.",
+            "response_submitted": "Resposta da pesquisa enviada."
+        },
+        "skills_passport": {
+            "not_found": "Habilidade não encontrada.",
+            "created": "Habilidade criada.",
+            "updated": "Habilidade atualizada.",
+            "deleted": "Habilidade excluída."
+        },
+        "progress_dashboard": {
+            "stats_loaded": "Estatísticas de progresso carregadas."
+        },
+        "meal_ordering": {
+            "not_found": "Pedido não encontrado.",
+            "placed": "Pedido realizado.",
+            "cancelled": "Pedido cancelado.",
+            "updated": "Pedido atualizado."
+        },
+        "print_credits": {
+            "not_found": "Registro não encontrado.",
+            "added": "Créditos adicionados.",
+            "deducted": "Créditos deduzidos."
+        },
+        "work_journal": {
+            "not_found": "Entrada não encontrada.",
+            "created": "Entrada criada.",
+            "updated": "Entrada atualizada.",
+            "deleted": "Entrada excluída."
+        },
+        "announcements": {
+            "not_found": "Comunicado não encontrado.",
+            "created": "Comunicado criado.",
+            "updated": "Comunicado atualizado.",
+            "deleted": "Comunicado excluído.",
+            "published": "Comunicado publicado."
+        },
+        "document_hub": {
+            "not_found": "Documento não encontrado.",
+            "uploaded": "Documento enviado.",
+            "updated": "Documento atualizado.",
+            "deleted": "Documento excluído."
+        },
+        "advanced_search": {
+            "no_results": "Nenhum resultado encontrado."
+        },
+        "feedback": {
+            "not_found": "Feedback não encontrado.",
+            "submitted": "Feedback enviado.",
+            "updated": "Feedback atualizado.",
+            "deleted": "Feedback excluído."
+        },
+        "accessibility": {
+            "settings_saved": "Configurações de acessibilidade salvas."
+        },
+        "mobile_dashboard": {
+            "stats_loaded": "Painel carregado."
+        },
+        "attachments": {
+            "not_found": "Anexo não encontrado.",
+            "uploaded": "Anexo enviado.",
+            "deleted": "Anexo excluído."
+        },
+        "activity_feed": {
+            "loaded": "Feed de atividades carregado."
+        },
+        "sms_email": {
+            "sent": "Mensagem enviada.",
+            "failed": "Falha na entrega da mensagem.",
+            "template_not_found": "Modelo não encontrado."
+        },
+        "multi_language": {
+            "language_changed": "Idioma alterado com sucesso.",
+            "not_supported": "Idioma não suportado."
+        },
+        "system": {
+            "health_ok": "Sistema funcionando normalmente.",
+            "version": "Versão: {version}"
+        }
+    }
+}

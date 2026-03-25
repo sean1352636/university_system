@@ -1,13 +1,13 @@
 """Assembly file: composes GUIStudentAnalytics from mixin classes."""
-from ._imports import (
+from education_system.university_system.modules.shared.gui.student_analytics_gui._imports import (
     tk, ttk, plt, queue, _t, StudentAnalytics,
 )
-from .data import AnalyticsDataMixin
-from .analyses import AnalysesMixin
-from .tabs import TabsMixin
-from .runners import RunnersMixin
-from .results import ResultsMixin
-from .gui_utils import GUIUtilsMixin
+from education_system.university_system.modules.shared.gui.student_analytics_gui.data import AnalyticsDataMixin
+from education_system.university_system.modules.shared.gui.student_analytics_gui.analyses import AnalysesMixin
+from education_system.university_system.modules.shared.gui.student_analytics_gui.tabs import TabsMixin
+from education_system.university_system.modules.shared.gui.student_analytics_gui.runners import RunnersMixin
+from education_system.university_system.modules.shared.gui.student_analytics_gui.results import ResultsMixin
+from education_system.university_system.modules.shared.gui.student_analytics_gui.gui_utils import GUIUtilsMixin
 
 
 class GUIStudentAnalytics(

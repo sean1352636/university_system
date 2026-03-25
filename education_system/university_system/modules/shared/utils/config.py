@@ -305,7 +305,7 @@ def configure_email_settings():
 @handle_exception
 def test_email_configuration(test_recipient=None):
     """Test the email configuration by sending a test email"""
-    from .email_service import send_email  # Local import to avoid circular dependency
+    from education_system.university_system.modules.shared.utils.email_service import send_email  # Local import to avoid circular dependency
     from education_system.university_system.infrastructure.email.template_utils import render_template
 
     if not config['sender_email']:

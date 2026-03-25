@@ -25,7 +25,7 @@ from education_system.university_system.modules.shared.utils.i18n import get_tex
 init_i18n()
 
 # Import path constants
-from education_system.university_system.modules.shared.constants.paths import BACKUP_DIR, DEFAULT_DB_PATH, LOG_DIR
+from education_system.university_system.modules.shared.constants.paths import BACKUP_DIR, BACKUP_ATTENDANCE_DIR, DEFAULT_DB_PATH, LOG_DIR
 
 # Import authentication system
 from education_system.university_system.infrastructure.auth import UserAuth
@@ -194,7 +194,7 @@ class BackupRecoveryWindow:
             
             if messagebox.askyesno("Confirm Restore",
                                  f"Restore from {filename}? This will overwrite current data."):
-                backup_path = str(BACKUP_DIR / filename)
+                backup_path = str(BACKUP_ATTENDANCE_DIR / filename)
                 self.perform_restore(backup_path)
     
     def perform_restore(self, backup_path):
@@ -335,7 +335,7 @@ class BackupSettingsWindow:
         
         self.retention_var.set("30")
         from education_system.university_system.modules.shared.constants import paths
-        self.location_var.set(str(paths.BACKUP_DIR / ""))
+        self.location_var.set(str(paths.BACKUP_ATTENDANCE_DIR / ""))
         self.compression_var.set(True)
         self.notifications_var.set(False)
     
@@ -563,8 +563,8 @@ class DatabaseMaintenanceWindow:
         for item in self.backup_tree.get_children():
             self.backup_tree.delete(item)
 
-        backups_dir = Path(BACKUP_DIR)
-        backups_dir.mkdir(exist_ok=True)
+        backups_dir = Path(BACKUP_ATTENDANCE_DIR)
+        backups_dir.mkdir(parents=True, exist_ok=True)
         backups = sorted(backups_dir.glob("attendance_backup_*.db"), reverse=True)
 
         for backup in backups:
@@ -623,8 +623,8 @@ class DatabaseMaintenanceWindow:
             messagebox.showwarning("No Database File", "Database path is unknown or unavailable.")
             return
 
-        backups_dir = Path(BACKUP_DIR)
-        backups_dir.mkdir(exist_ok=True)
+        backups_dir = Path(BACKUP_ATTENDANCE_DIR)
+        backups_dir.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         destination = backups_dir / f"attendance_backup_{timestamp}.db"
 
@@ -669,8 +669,8 @@ class DatabaseMaintenanceWindow:
             messagebox.showerror("Restore Failed", str(exc))
 
     def open_backup_folder(self):
-        backups_dir = Path(BACKUP_DIR)
-        backups_dir.mkdir(exist_ok=True)
+        backups_dir = Path(BACKUP_ATTENDANCE_DIR)
+        backups_dir.mkdir(parents=True, exist_ok=True)
 
         # Get list of backup files
         backups = sorted(backups_dir.glob("attendance_backup_*.db"), reverse=True)

@@ -2,7 +2,7 @@
 Facilities & Space Management Service Module
 """
 
-from .facilities_management_core import (
+from education_system.university_system.modules.domain.facilities.services.facilities_management_core import (
     BuildingManager, RoomManager, RoomBookingManager,
     MaintenanceRequestManager, WorkOrderManager, AssetManager
 )

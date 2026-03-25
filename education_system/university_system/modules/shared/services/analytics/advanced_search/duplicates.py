@@ -10,7 +10,7 @@ from education_system.university_system.modules.shared.utils.sql_safety import (
     SQLIdentifierError,
 )
 from education_system.university_system.utils.logging.log_config import configure_logging
-from .admin import audit_log
+from education_system.university_system.modules.shared.services.analytics.advanced_search.admin import audit_log
 
 logger = configure_logging(name=__name__)
 

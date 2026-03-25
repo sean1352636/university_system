@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/parent_portal/finance.py
+# hypothesis_version: 6.151.9
+
+[0.0, 10.0, 20.0, 100, '\nOptions:', '\nOutstanding Fees:', '%Y-%m-%d %H:%M:%S', '-', '0', '1', '1. Add funds', '3', '4. Back to menu', 'Enter choice: ', 'Invalid amount.', 'Invalid choice.', 'Invalid selection.', 'Parent top-up', 'Select option: ', 'credit', 'id', 'manage_meal_account', 'parent', 'role', 'view_fees', 'y']

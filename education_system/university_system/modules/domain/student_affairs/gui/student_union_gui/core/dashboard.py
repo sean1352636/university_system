@@ -95,7 +95,7 @@ def _render_dashboard_tab(self, parent_frame):
         # Get various counts
         cursor.execute('SELECT COUNT(*) FROM student_clubs WHERE status = "active"')
         active_clubs = cursor.fetchone()[0]
-        cursor.execute('SELECT COUNT(*) FROM union_events WHERE status = "upcoming"')
+        cursor.execute('SELECT COUNT(*) FROM unified_events WHERE status = "upcoming"')
         upcoming_events = cursor.fetchone()[0]
         cursor.execute('SELECT COUNT(*) FROM students')
         total_students = cursor.fetchone()[0]

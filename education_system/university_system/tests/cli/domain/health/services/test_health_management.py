@@ -439,7 +439,7 @@ class TestErrorHandling:
 
     def test_screening_reminders_database_error(self):
         """Test handling of database errors in screening_reminders."""
-        with patch('university_system.modules.domain.health.services.health_management.sqlite3.connect', side_effect=Exception("DB Error")):
+        with patch('education_system.university_system.modules.domain.health.services.health_management.sqlite3.connect', side_effect=Exception("DB Error")):
             reminders = health_management.screening_reminders()
 
             # Should return empty list on error

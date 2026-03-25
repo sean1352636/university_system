@@ -420,7 +420,7 @@ except ImportError:
         except Exception as e:
             print(f"Error setting up enhanced helpdesk permissions: {e}")
 
-from .base import HelpdeskGUI
+from education_system.university_system.modules.domain.student_affairs.gui.helpdesk.base import HelpdeskGUI
 
 def create_all_tickets_tab(self):
     """Create all tickets tab (admin only)"""

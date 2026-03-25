@@ -54,7 +54,7 @@ class TestDocumentManagerGUI(unittest.TestCase):
         self.root.withdraw()  # Hide the window during tests
 
         # Mock database path
-        self.patcher = patch('university_system.modules.shared.constants.paths.DEFAULT_DB_PATH',
+        self.patcher = patch('education_system.university_system.modules.shared.constants.paths.DEFAULT_DB_PATH',
                             self.test_db)
         self.patcher.start()
 
@@ -716,7 +716,7 @@ class TestDocumentManager(unittest.TestCase):
 
     def setUp(self):
         """Set up before each test"""
-        self.patcher = patch('university_system.modules.shared.constants.paths.DEFAULT_DB_PATH',
+        self.patcher = patch('education_system.university_system.modules.shared.constants.paths.DEFAULT_DB_PATH',
                             self.test_db)
         self.patcher.start()
 
@@ -765,7 +765,7 @@ class TestIntegrationScenarios(unittest.TestCase):
         self.root = tk.Tk()
         self.root.withdraw()
 
-        self.patcher = patch('university_system.modules.shared.constants.paths.DEFAULT_DB_PATH',
+        self.patcher = patch('education_system.university_system.modules.shared.constants.paths.DEFAULT_DB_PATH',
                             self.test_db)
         self.patcher.start()
 

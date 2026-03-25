@@ -1,19 +1,19 @@
 from education_system.university_system.modules.shared.utils.simple_activity_logger import log_menu_navigation
 from education_system.university_system.modules.shared.utils.i18n import get_text
 from education_system.university_system.modules.shared.utils.language_selector import display_language_menu_option
-from .database import initialize_enhanced_database
-from .courses import create_enhanced_course, view_all_courses, update_course, delete_course
-from .prerequisites import add_prerequisite, view_prerequisites, remove_prerequisite
-from .instructors import create_instructor, view_instructors, assign_instructor_to_course
-from .scheduling import create_course_schedule, view_course_schedules, update_schedule
-from .search import search_courses
-from .import_export import import_courses_from_csv, export_courses_to_csv, bulk_update_courses
-from .analytics import generate_course_analytics, generate_enrollment_report, department_statistics
-from .waitlist import add_to_waitlist, view_waitlists, process_waitlist
-from .recommendations import recommend_courses, find_alternative_courses
-from .status import manage_course_status
-from .history import view_course_history
-from .maintenance import system_maintenance
+from education_system.university_system.modules.domain.academics.services.course_management.database import initialize_enhanced_database
+from education_system.university_system.modules.domain.academics.services.course_management.courses import create_enhanced_course, view_all_courses, update_course, delete_course
+from education_system.university_system.modules.domain.academics.services.course_management.prerequisites import add_prerequisite, view_prerequisites, remove_prerequisite
+from education_system.university_system.modules.domain.academics.services.course_management.instructors import create_instructor, view_instructors, assign_instructor_to_course
+from education_system.university_system.modules.domain.academics.services.course_management.scheduling import create_course_schedule, view_course_schedules, update_schedule
+from education_system.university_system.modules.domain.academics.services.course_management.search import search_courses
+from education_system.university_system.modules.domain.academics.services.course_management.import_export import import_courses_from_csv, export_courses_to_csv, bulk_update_courses
+from education_system.university_system.modules.domain.academics.services.course_management.analytics import generate_course_analytics, generate_enrollment_report, department_statistics
+from education_system.university_system.modules.domain.academics.services.course_management.waitlist import add_to_waitlist, view_waitlists, process_waitlist
+from education_system.university_system.modules.domain.academics.services.course_management.recommendations import recommend_courses, find_alternative_courses
+from education_system.university_system.modules.domain.academics.services.course_management.status import manage_course_status
+from education_system.university_system.modules.domain.academics.services.course_management.history import view_course_history
+from education_system.university_system.modules.domain.academics.services.course_management.maintenance import system_maintenance
 
 
 @log_menu_navigation(description="Displaying enhanced course management menu")

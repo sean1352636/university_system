@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 def launch_integration_marketplace_gui(auth=None, parent=None):
     """Launch the Integration Marketplace GUI as a child window"""
-    from .main import IntegrationMarketplaceGUI
+    from education_system.university_system.modules.services.gui.integration_marketplace_gui.main import IntegrationMarketplaceGUI
 
     try:
         if parent:

@@ -160,10 +160,10 @@ def daily_sales_report(self):
         cursor.execute('''
             SELECT
                 COUNT(*) as total_orders,
-                SUM(total_price) as total_revenue,
-                AVG(total_price) as avg_order_value
-            FROM restaurant_orders
-            WHERE DATE(order_time) = ? AND status = 'Completed'
+                SUM(total_amount) as total_revenue,
+                AVG(total_amount) as avg_order_value
+            FROM orders
+            WHERE DATE(order_date) = ? AND order_status = 'Completed'
         ''', (date,))
         sales_data = cursor.fetchone()
         report = f"{_t('commerce.reports.daily_sales_report_header')} - {date}\n"
@@ -200,14 +200,14 @@ def monthly_summary_report(self):
         cursor.execute('''
             SELECT
                 COUNT(*) as total_orders,
-                SUM(total_price) as total_revenue,
+                SUM(total_amount) as total_revenue,
                 SUM(tax_amount) as total_tax,
-                AVG(total_price) as avg_order_value,
-                MIN(total_price) as min_order,
-                MAX(total_price) as max_order
-            FROM restaurant_orders
-            WHERE strftime('%Y-%m', order_time) = ?
-            AND status IN ('Completed', 'Paid')
+                AVG(total_amount) as avg_order_value,
+                MIN(total_amount) as min_order,
+                MAX(total_amount) as max_order
+            FROM orders
+            WHERE strftime('%Y-%m', order_date) = ?
+            AND order_status IN ('Completed', 'Paid')
         ''', (month_input,))
 
         sales_stats = cursor.fetchone()
@@ -217,10 +217,10 @@ def monthly_summary_report(self):
             SELECT
                 payment_method,
                 COUNT(*) as count,
-                SUM(total_price) as total
-            FROM restaurant_orders
-            WHERE strftime('%Y-%m', order_time) = ?
-            AND status IN ('Completed', 'Paid')
+                SUM(total_amount) as total
+            FROM orders
+            WHERE strftime('%Y-%m', order_date) = ?
+            AND order_status IN ('Completed', 'Paid')
             GROUP BY payment_method
             ORDER BY total DESC
         ''', (month_input,))
@@ -233,11 +233,11 @@ def monthly_summary_report(self):
                 item_name,
                 SUM(quantity) as total_sold,
                 SUM(subtotal) as revenue
-            FROM restaurant_order_items
+            FROM order_items
             WHERE order_id IN (
-                SELECT order_id FROM restaurant_orders
-                WHERE strftime('%Y-%m', order_time) = ?
-                AND status IN ('Completed', 'Paid')
+                SELECT order_id FROM orders
+                WHERE strftime('%Y-%m', order_date) = ?
+                AND order_status IN ('Completed', 'Paid')
             )
             GROUP BY item_name
             ORDER BY total_sold DESC
@@ -249,12 +249,12 @@ def monthly_summary_report(self):
         # Get daily sales trend
         cursor.execute('''
             SELECT
-                strftime('%Y-%m-%d', order_time) as date,
+                strftime('%Y-%m-%d', order_date) as date,
                 COUNT(*) as orders,
-                SUM(total_price) as revenue
-            FROM restaurant_orders
-            WHERE strftime('%Y-%m', order_time) = ?
-            AND status IN ('Completed', 'Paid')
+                SUM(total_amount) as revenue
+            FROM orders
+            WHERE strftime('%Y-%m', order_date) = ?
+            AND order_status IN ('Completed', 'Paid')
             GROUP BY date
             ORDER BY date
         ''', (month_input,))
@@ -359,11 +359,11 @@ def profit_analysis_report(self):
         cursor.execute('''
             SELECT
                 COUNT(*) as total_orders,
-                SUM(total_price) as gross_revenue,
+                SUM(total_amount) as gross_revenue,
                 SUM(tax_amount) as tax_collected
-            FROM restaurant_orders
-            WHERE DATE(order_time) BETWEEN ? AND ?
-            AND status IN ('Completed', 'Paid')
+            FROM orders
+            WHERE DATE(order_date) BETWEEN ? AND ?
+            AND order_status IN ('Completed', 'Paid')
         ''', (start_date, end_date))
 
         revenue_data = cursor.fetchone()
@@ -372,11 +372,11 @@ def profit_analysis_report(self):
         cursor.execute('''
             SELECT
                 SUM(subtotal) as total_cogs
-            FROM restaurant_order_items
+            FROM order_items
             WHERE order_id IN (
-                SELECT order_id FROM restaurant_orders
-                WHERE DATE(order_time) BETWEEN ? AND ?
-                AND status IN ('Completed', 'Paid')
+                SELECT order_id FROM orders
+                WHERE DATE(order_date) BETWEEN ? AND ?
+                AND order_status IN ('Completed', 'Paid')
             )
         ''', (start_date, end_date))
 
@@ -386,9 +386,9 @@ def profit_analysis_report(self):
         cursor.execute('''
             SELECT
                 COUNT(*) as refund_count,
-                SUM(refund_amount) as total_refunds
-            FROM order_refunds
-            WHERE DATE(refund_date) BETWEEN ? AND ?
+                SUM(amount) as total_refunds
+            FROM unified_refunds
+            WHERE source_type = 'order' AND DATE(refund_date) BETWEEN ? AND ?
         ''', (start_date, end_date))
 
         refund_data = cursor.fetchone()

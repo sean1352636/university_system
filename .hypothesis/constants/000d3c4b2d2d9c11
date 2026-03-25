@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/main/admin/database_admin_gui.py
+# hypothesis_version: 6.151.9
+
+[500, 600, 1000, '#000000', '#FFFFFF', ')', ') VALUES (', ', ', '1.0', '10', '1000x700', '600x400', '700x500', '800x600', '?', 'Arial', 'Cancelled', 'DELETE FROM [', 'Database Wiped', 'Error', 'Final Confirmation', 'WIPE', '[', ']', 'admin', 'auth', 'backup_restore', 'bold', 'column', 'current_user', 'database_maintenance', 'database_view', 'info', 'role', 'set_auth', 'staff', 'warning']

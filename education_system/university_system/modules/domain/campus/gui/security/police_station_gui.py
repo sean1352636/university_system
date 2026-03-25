@@ -11,23 +11,23 @@ from tkinter import messagebox
 
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
-from .utils import get_current_user
-from .database import DatabaseMixin
-from .tabs import (
+from education_system.university_system.modules.domain.campus.gui.security.utils import get_current_user
+from education_system.university_system.modules.domain.campus.gui.security.database import DatabaseMixin
+from education_system.university_system.modules.domain.campus.gui.security.tabs import (
     BaseMixin, DashboardMixin, CasesMixin, OfficersMixin,
     ComplaintsMixin, PatrolLogsMixin, CriminalsMixin,
     EvidenceMixin, ReportsMixin,
 )
 
 # Re-export constants and helpers for backward compatibility
-from .constants import (  # noqa: F401
+from education_system.university_system.modules.domain.campus.gui.security.constants import (  # noqa: F401
     CAMPUS_LOCATIONS, CAMPUS_INCIDENT_TYPES, CAMPUS_COMPLAINT_TYPES,
     CAMPUS_EMERGENCY_TYPES, CAMPUS_OFFICER_RANKS,
 )
-from .database import POLICE_STATION_SCHEMA, init_police_database  # noqa: F401
-from .utils import send_notification_email, get_admin_emails, get_officer_email  # noqa: F401
-from .widgets import ScrollableFrame  # noqa: F401
-from .dialogs import (  # noqa: F401
+from education_system.university_system.modules.domain.campus.gui.security.database import POLICE_STATION_SCHEMA, init_police_database  # noqa: F401
+from education_system.university_system.modules.domain.campus.gui.security.utils import send_notification_email, get_admin_emails, get_officer_email  # noqa: F401
+from education_system.university_system.modules.domain.campus.gui.security.widgets import ScrollableFrame  # noqa: F401
+from education_system.university_system.modules.domain.campus.gui.security.dialogs import (  # noqa: F401
     CaseDetailsDialog, WitnessDialog, ComplaintFormDialog,
     EmergencyAlertDialog, PatrolLogDialog, ReportPreviewDialog,
     OfficerDialog, CriminalDialog, EvidenceDialog,

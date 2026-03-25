@@ -11,7 +11,7 @@ class NotificationsMixin:
             print("You must be logged in to update notification preferences.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         
@@ -124,7 +124,7 @@ class NotificationsMixin:
             print("You must be logged in to manage advanced preferences.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         
@@ -256,7 +256,7 @@ class NotificationsMixin:
             print("You must be logged in to mark notifications as read.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         

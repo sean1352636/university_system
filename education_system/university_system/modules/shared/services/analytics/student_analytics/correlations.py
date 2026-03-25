@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import stats
 
-from .config import CONFIG
+from education_system.university_system.modules.shared.services.analytics.student_analytics.config import CONFIG
 
 
 class CorrelationsMixin:

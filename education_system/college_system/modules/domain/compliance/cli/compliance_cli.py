@@ -26,16 +26,15 @@ def compliance_menu(auth: UserAuth):
             records = svc.list_funding_records()
             for r in records:
                 name = f"{r.get('first_name', '')} {r.get('last_name', '')}".strip() or str(r.get("student_id", ""))
-                print(f"  [{r['id']}] {name} - {r.get('funding_body', '')} / {r.get('funding_type', '')} ({r.get('funding_status', '')})")
+                print(f"  [{r['id']}] {name} - {r.get('learning_aim', '')} / {r.get('funding_model', '')} ({r.get('completion_status', '')})")
             if not records:
                 print("  No funding records.")
         elif choice == "2":
             try:
                 sid = int(input("  Student ID: ").strip())
-                body = input("  Funding Body: ").strip()
-                ftype = input("  Funding Type: ").strip()
-                ilr = input("  ILR Reference: ").strip() or None
-                r = svc.create_funding_record(sid, body, ftype, ilr_reference=ilr)
+                aim = input("  Learning Aim: ").strip()
+                model = input("  Funding Model: ").strip()
+                r = svc.create_funding_record(sid, aim, model)
                 print(f"\n  Record #{r['id']} created.")
             except Exception as e:
                 print(f"\n  Error: {e}")
@@ -43,16 +42,16 @@ def compliance_menu(auth: UserAuth):
             resits = svc.list_resits()
             for r in resits:
                 name = f"{r.get('first_name', '')} {r.get('last_name', '')}".strip() or str(r.get("student_id", ""))
-                print(f"  [{r['id']}] {name} - {r.get('subject', '')} {r.get('original_grade', '')} -> {r.get('target_grade', '')} ({r.get('status', '')})")
+                print(f"  [{r['id']}] {name} - {r.get('subject', '')} {r.get('gcse_grade_on_entry', '')} -> {r.get('target_grade', '')} ({r.get('status', '')})")
             if not resits:
                 print("  No resits found.")
         elif choice == "4":
             try:
                 sid = int(input("  Student ID: ").strip())
                 subject = input("  Subject: ").strip()
-                orig = input("  Original Grade: ").strip() or None
+                gcse = input("  GCSE Grade on Entry: ").strip() or None
                 target = input("  Target Grade: ").strip() or None
-                r = svc.create_resit(sid, subject, original_grade=orig, target_grade=target)
+                r = svc.create_resit(sid, subject, gcse_grade_on_entry=gcse, target_grade=target)
                 print(f"\n  Resit #{r['id']} created.")
             except Exception as e:
                 print(f"\n  Error: {e}")
@@ -60,17 +59,17 @@ def compliance_menu(auth: UserAuth):
             dests = svc.list_destinations()
             for d in dests:
                 name = f"{d.get('first_name', '')} {d.get('last_name', '')}".strip() or str(d.get("student_id", ""))
-                confirmed = "Confirmed" if d.get("confirmed") else "Unconfirmed"
-                print(f"  [{d['id']}] {name} - {d.get('destination_type', '')}: {d.get('institution', '')} [{confirmed}]")
+                contacted = "Contacted" if d.get("contact_made") else "Not contacted"
+                print(f"  [{d['id']}] {name} - {d.get('destination_type', '')}: {d.get('institution_name', '')} [{contacted}]")
             if not dests:
                 print("  No destinations found.")
         elif choice == "6":
             try:
                 sid = int(input("  Student ID: ").strip())
                 dtype = input("  Type (university/apprenticeship/employment/gap_year): ").strip()
-                inst = input("  Institution: ").strip() or None
+                inst = input("  Institution Name: ").strip() or None
                 course = input("  Course Title: ").strip() or None
-                d = svc.create_destination(sid, dtype, institution=inst, course_title=course)
+                d = svc.create_destination(sid, dtype, institution_name=inst, course_title=course)
                 print(f"\n  Destination #{d['id']} recorded.")
             except Exception as e:
                 print(f"\n  Error: {e}")

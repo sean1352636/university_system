@@ -209,7 +209,7 @@ def format_date(date_obj: Any) -> str:
             return date_obj
 
     if isinstance(date_obj, (datetime, date)):
-        return date_obj.strftime('%m/%d/%Y')
+        return date_obj.strftime('%Y-%m-%d')
 
     return str(date_obj)
 

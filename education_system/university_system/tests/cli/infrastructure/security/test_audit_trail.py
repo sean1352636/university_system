@@ -138,7 +138,7 @@ class TestAuditEntry:
 # ---------------------------------------------------------------------------
 
 class TestAuditLoggerSingleton:
-    @patch("university_system.infrastructure.security.audit_trail.get_connection")
+    @patch("education_system.university_system.infrastructure.security.audit_trail.get_connection")
     def test_same_instance(self, mock_conn):
         from education_system.university_system.infrastructure.security.audit_trail import AuditLogger
         mock_conn.return_value.__enter__ = MagicMock(return_value=MagicMock())
@@ -154,7 +154,7 @@ class TestAuditLoggerSingleton:
 # ---------------------------------------------------------------------------
 
 class TestUserContext:
-    @patch("university_system.infrastructure.security.audit_trail.get_connection")
+    @patch("education_system.university_system.infrastructure.security.audit_trail.get_connection")
     def test_set_and_get_context(self, mock_conn):
         from education_system.university_system.infrastructure.security.audit_trail import AuditLogger
         mock_conn.return_value.__enter__ = MagicMock(return_value=MagicMock())
@@ -167,7 +167,7 @@ class TestUserContext:
         assert ctx["username"] == "admin"
         assert ctx["ip_address"] == "1.2.3.4"
 
-    @patch("university_system.infrastructure.security.audit_trail.get_connection")
+    @patch("education_system.university_system.infrastructure.security.audit_trail.get_connection")
     def test_clear_context(self, mock_conn):
         from education_system.university_system.infrastructure.security.audit_trail import AuditLogger
         mock_conn.return_value.__enter__ = MagicMock(return_value=MagicMock())
@@ -179,7 +179,7 @@ class TestUserContext:
         ctx = logger.get_user_context()
         assert ctx["user_id"] is None
 
-    @patch("university_system.infrastructure.security.audit_trail.get_connection")
+    @patch("education_system.university_system.infrastructure.security.audit_trail.get_connection")
     def test_context_manager(self, mock_conn):
         from education_system.university_system.infrastructure.security.audit_trail import AuditLogger
         mock_conn.return_value.__enter__ = MagicMock(return_value=MagicMock())
@@ -204,7 +204,7 @@ class TestUserContext:
 # ---------------------------------------------------------------------------
 
 class TestComputeDataHash:
-    @patch("university_system.infrastructure.security.audit_trail.get_connection")
+    @patch("education_system.university_system.infrastructure.security.audit_trail.get_connection")
     def test_none_returns_empty(self, mock_conn):
         from education_system.university_system.infrastructure.security.audit_trail import AuditLogger
         mock_conn.return_value.__enter__ = MagicMock(return_value=MagicMock())
@@ -213,7 +213,7 @@ class TestComputeDataHash:
         logger = AuditLogger()
         assert logger._compute_data_hash(None) == ""
 
-    @patch("university_system.infrastructure.security.audit_trail.get_connection")
+    @patch("education_system.university_system.infrastructure.security.audit_trail.get_connection")
     def test_deterministic(self, mock_conn):
         from education_system.university_system.infrastructure.security.audit_trail import AuditLogger
         mock_conn.return_value.__enter__ = MagicMock(return_value=MagicMock())
@@ -225,7 +225,7 @@ class TestComputeDataHash:
         assert h1 == h2
         assert len(h1) == 16  # Truncated to 16 chars
 
-    @patch("university_system.infrastructure.security.audit_trail.get_connection")
+    @patch("education_system.university_system.infrastructure.security.audit_trail.get_connection")
     def test_different_data_different_hash(self, mock_conn):
         from education_system.university_system.infrastructure.security.audit_trail import AuditLogger
         mock_conn.return_value.__enter__ = MagicMock(return_value=MagicMock())
@@ -242,7 +242,7 @@ class TestComputeDataHash:
 # ---------------------------------------------------------------------------
 
 class TestLogMethod:
-    @patch("university_system.infrastructure.security.audit_trail.get_connection")
+    @patch("education_system.university_system.infrastructure.security.audit_trail.get_connection")
     def test_log_returns_entry_id(self, mock_conn):
         from education_system.university_system.infrastructure.security.audit_trail import AuditLogger, AuditAction
         mock_cm = MagicMock()
@@ -262,7 +262,7 @@ class TestLogMethod:
         )
         assert entry_id == 42
 
-    @patch("university_system.infrastructure.security.audit_trail.get_connection")
+    @patch("education_system.university_system.infrastructure.security.audit_trail.get_connection")
     def test_log_with_string_action(self, mock_conn):
         from education_system.university_system.infrastructure.security.audit_trail import AuditLogger
         mock_cm = MagicMock()
@@ -276,7 +276,7 @@ class TestLogMethod:
         entry_id = logger.log(action="custom_action", resource_type="test")
         assert entry_id == 1
 
-    @patch("university_system.infrastructure.security.audit_trail.get_connection")
+    @patch("education_system.university_system.infrastructure.security.audit_trail.get_connection")
     def test_log_uses_context_when_no_explicit_user(self, mock_conn):
         from education_system.university_system.infrastructure.security.audit_trail import AuditLogger
         mock_cm = MagicMock()
@@ -302,7 +302,7 @@ class TestLogMethod:
 # ---------------------------------------------------------------------------
 
 class TestQueryMethod:
-    @patch("university_system.infrastructure.security.audit_trail.get_connection")
+    @patch("education_system.university_system.infrastructure.security.audit_trail.get_connection")
     def test_query_returns_entries(self, mock_conn):
         from education_system.university_system.infrastructure.security.audit_trail import AuditLogger
         mock_cm = MagicMock()
@@ -320,7 +320,7 @@ class TestQueryMethod:
         assert entries[0].action == "read"
         assert entries[0].details == {"foo": "bar"}
 
-    @patch("university_system.infrastructure.security.audit_trail.get_connection")
+    @patch("education_system.university_system.infrastructure.security.audit_trail.get_connection")
     def test_query_empty(self, mock_conn):
         from education_system.university_system.infrastructure.security.audit_trail import AuditLogger
         mock_cm = MagicMock()
@@ -332,7 +332,7 @@ class TestQueryMethod:
         entries = logger.query()
         assert entries == []
 
-    @patch("university_system.infrastructure.security.audit_trail.get_connection")
+    @patch("education_system.university_system.infrastructure.security.audit_trail.get_connection")
     def test_query_with_all_filters(self, mock_conn):
         from education_system.university_system.infrastructure.security.audit_trail import AuditLogger
         mock_cm = MagicMock()
@@ -362,7 +362,7 @@ class TestQueryMethod:
 # ---------------------------------------------------------------------------
 
 class TestConvenienceFunctions:
-    @patch("university_system.infrastructure.security.audit_trail.get_connection")
+    @patch("education_system.university_system.infrastructure.security.audit_trail.get_connection")
     def test_get_user_activity(self, mock_conn):
         from education_system.university_system.infrastructure.security.audit_trail import AuditLogger
         mock_cm = MagicMock()
@@ -374,7 +374,7 @@ class TestConvenienceFunctions:
         result = logger.get_user_activity(user_id=1)
         assert isinstance(result, list)
 
-    @patch("university_system.infrastructure.security.audit_trail.get_connection")
+    @patch("education_system.university_system.infrastructure.security.audit_trail.get_connection")
     def test_get_resource_history(self, mock_conn):
         from education_system.university_system.infrastructure.security.audit_trail import AuditLogger
         mock_cm = MagicMock()
@@ -386,7 +386,7 @@ class TestConvenienceFunctions:
         result = logger.get_resource_history("student", "s1")
         assert isinstance(result, list)
 
-    @patch("university_system.infrastructure.security.audit_trail.get_connection")
+    @patch("education_system.university_system.infrastructure.security.audit_trail.get_connection")
     def test_get_failed_operations(self, mock_conn):
         from education_system.university_system.infrastructure.security.audit_trail import AuditLogger
         mock_cm = MagicMock()
@@ -398,7 +398,7 @@ class TestConvenienceFunctions:
         result = logger.get_failed_operations()
         assert isinstance(result, list)
 
-    @patch("university_system.infrastructure.security.audit_trail.get_connection")
+    @patch("education_system.university_system.infrastructure.security.audit_trail.get_connection")
     def test_log_activity_function(self, mock_conn):
         from education_system.university_system.infrastructure.security.audit_trail import log_activity
         mock_cm = MagicMock()
@@ -417,7 +417,7 @@ class TestConvenienceFunctions:
 # ---------------------------------------------------------------------------
 
 class TestAuditDataAccessDecorator:
-    @patch("university_system.infrastructure.security.audit_trail.get_connection")
+    @patch("education_system.university_system.infrastructure.security.audit_trail.get_connection")
     def test_decorator_logs_call(self, mock_conn):
         from education_system.university_system.infrastructure.security.audit_trail import (
             audit_data_access, AuditAction, AuditLogger,
@@ -440,7 +440,7 @@ class TestAuditDataAccessDecorator:
         insert_calls = [c for c in mock_cm.execute.call_args_list if "INSERT" in str(c)]
         assert len(insert_calls) >= 1
 
-    @patch("university_system.infrastructure.security.audit_trail.get_connection")
+    @patch("education_system.university_system.infrastructure.security.audit_trail.get_connection")
     def test_decorator_logs_on_exception(self, mock_conn):
         from education_system.university_system.infrastructure.security.audit_trail import (
             audit_data_access, AuditAction, AuditLogger,
@@ -463,7 +463,7 @@ class TestAuditDataAccessDecorator:
         insert_calls = [c for c in mock_cm.execute.call_args_list if "INSERT" in str(c)]
         assert len(insert_calls) >= 1
 
-    @patch("university_system.infrastructure.security.audit_trail.get_connection")
+    @patch("education_system.university_system.infrastructure.security.audit_trail.get_connection")
     def test_decorator_extracts_resource_id(self, mock_conn):
         from education_system.university_system.infrastructure.security.audit_trail import (
             audit_data_access, AuditAction, AuditLogger,

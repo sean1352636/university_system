@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/layout/_refunds.py
+# hypothesis_version: 6.151.9
+
+[0.0, 100, 120, 150, 180, 200, '#e3f2fd', '*.*', '*.csv', '.csv', '1.0', '1200x700', '800x600', '=', 'All Refunds', 'All files', 'Amount', 'Arial', 'BUDGET SUMMARY\n', 'COLLECTION SUMMARY\n', 'CSV files', 'Clear', 'Close', 'Courier', 'Date', 'Department', 'Error', 'Export to CSV', 'ID', 'Loading...', 'Method', 'No Data', 'Notes', 'Processed By', 'Reference', 'Reference ID', 'Refresh', 'Refund Reference', 'Search:', 'Source', 'Source Type', 'Student Account', 'Success', 'bold', 'both', 'center', 'common.error', 'dashboard', 'disabled', 'e', 'end', 'ew', 'gui_process_refund', 'headings', 'horizontal', 'left', 'normal', 'ns', 'nsew', 'primary', 'refunds_export.csv', 'report_manager', 'right', 'student_account', 'summary_label', 'transactions', 'utf-8', 'values', 'vertical', 'w', 'white', 'word', 'x']

@@ -356,7 +356,7 @@ class DocumentTypeManager:
                 cursor = conn.cursor()
 
                 # Check if there are documents using this type
-                cursor.execute('SELECT COUNT(*) FROM student_documents WHERE type_id = ?', (type_id,))
+                cursor.execute('SELECT COUNT(*) FROM documents WHERE type_id = ?', (type_id,))
                 doc_count = cursor.fetchone()[0]
 
                 if doc_count > 0:

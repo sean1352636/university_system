@@ -1,4 +1,4 @@
-from ..exceptions import PlagiarismCheckerError
+from education_system.university_system.modules.domain.academics.services.plagiarism.exceptions import PlagiarismCheckerError
 
 
 def safe_input(prompt, default=None, validator=None):
@@ -103,7 +103,7 @@ def check_document(checker, auth):
                 print("This may take a moment, please wait...")
 
                 try:
-                    from .reporting import display_check_result
+                    from education_system.university_system.modules.domain.academics.services.plagiarism.cli.reporting import display_check_result
                     result = checker.check_plagiarism(doc_id, auth.current_user['id'], threshold)
                     display_check_result(result)
                 except PlagiarismCheckerError as e:
@@ -228,7 +228,7 @@ def view_results(checker, auth):
             try:
                 view_num = int(view_choice)
                 if 1 <= view_num <= len(checked_docs):
-                    from .reporting import display_result_details
+                    from education_system.university_system.modules.domain.academics.services.plagiarism.cli.reporting import display_result_details
                     result_id = checked_docs[view_num-1][1]['result_id']
                     display_result_details(checker, result_id)
                 else:

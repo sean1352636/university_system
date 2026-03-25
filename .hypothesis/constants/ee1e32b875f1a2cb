@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/gui/student_union_gui/clubs/club_dialogs.py
+# hypothesis_version: 6.151.9
+
+[1.0, 100, 150, ')', '500x400', '600x500', '800x600', '<<ComboboxSelected>>', 'Academic', 'Arial', 'Available Clubs', 'Cancel', 'Category', 'Category:', 'Close', 'Club Management', 'Club Name:', 'Club Officers', 'Confirm', 'Create Club', 'Create New Club', 'Cultural', 'Description:', 'Error', 'Events', 'Finances', 'ID', 'ID: ', 'Join Club', 'Join Date', 'Join Selected Club', 'Join a Club', 'Manage Clubs', 'Management Options', 'Members', 'Name', 'Other', 'President ID:', 'Refresh', 'Role', 'Secretary ID:', 'Service', 'Sports', 'Success', 'Technology', 'Treasurer ID:', 'Warning', 'bold', 'both', 'category', 'club_id', 'club_name', 'description', 'end', 'ew', 'id', 'left', 'name', 'nw', 'president_id', 'right', 'secretary_id', 'treasurer_id', 'tree headings', 'values', 'vertical', 'w', 'x', 'y']

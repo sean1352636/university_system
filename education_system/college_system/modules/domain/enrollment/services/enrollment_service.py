@@ -126,7 +126,7 @@ class EnrollmentService:
                         type="success",
                     )
             except Exception:
-                pass  # Don't break enrollment if notification fails
+                logger.warning("Failed to send enrollment notification to student user_id=%s", student["user_id"], exc_info=True)
 
             return {
                 "status": "enrolled",
@@ -236,7 +236,8 @@ class EnrollmentService:
 
     def list_enrollments(self, student_pk: int | None = None,
                          course_pk: int | None = None,
-                         status: str | None = None) -> list[dict]:
+                         status: str | None = None,
+                         limit: int = 100, offset: int = 0) -> list[dict]:
         """List enrollments with optional filters."""
         sql = """SELECT e.*, s.student_id as sid, s.first_name, s.last_name,
                         c.course_code, c.title
@@ -244,7 +245,7 @@ class EnrollmentService:
                  JOIN students s ON e.student_id = s.id
                  JOIN courses c ON e.course_id = c.id
                  WHERE 1=1"""
-        params = []
+        params: list = []
 
         if student_pk is not None:
             sql += " AND e.student_id = ?"
@@ -256,12 +257,39 @@ class EnrollmentService:
             sql += " AND e.status = ?"
             params.append(status)
 
-        sql += " ORDER BY e.enrolled_at DESC"
+        sql += " ORDER BY e.enrolled_at DESC LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
 
         conn = self._conn()
         try:
             rows = conn.execute(sql, params).fetchall()
             return [dict(r) for r in rows]
+        finally:
+            conn.close()
+
+    def count_enrollments(self, student_pk: int | None = None,
+                          course_pk: int | None = None,
+                          status: str | None = None) -> int:
+        """Count total enrollments with optional filters."""
+        sql = """SELECT COUNT(*) as cnt
+                 FROM enrollments e
+                 JOIN students s ON e.student_id = s.id
+                 JOIN courses c ON e.course_id = c.id
+                 WHERE 1=1"""
+        params: list = []
+        if student_pk is not None:
+            sql += " AND e.student_id = ?"
+            params.append(student_pk)
+        if course_pk is not None:
+            sql += " AND e.course_id = ?"
+            params.append(course_pk)
+        if status:
+            sql += " AND e.status = ?"
+            params.append(status)
+        conn = self._conn()
+        try:
+            row = conn.execute(sql, params).fetchone()
+            return row["cnt"]
         finally:
             conn.close()
 
@@ -277,6 +305,26 @@ class EnrollmentService:
                 (course_pk,),
             ).fetchall()
             return [dict(r) for r in rows]
+        finally:
+            conn.close()
+
+    def delete_enrollment(self, enrollment_id: int) -> bool:
+        """Delete an enrollment record by ID."""
+        conn = self._conn()
+        try:
+            result = conn.execute(
+                "DELETE FROM enrollments WHERE id = ?", (enrollment_id,)
+            )
+            conn.commit()
+            if result.rowcount == 0:
+                raise EnrollmentError(f"Enrollment {enrollment_id} not found.")
+            logger.info("Enrollment deleted: id=%d", enrollment_id)
+            return True
+        except EnrollmentError:
+            raise
+        except Exception as e:
+            conn.rollback()
+            raise EnrollmentError(f"Failed to delete enrollment: {e}") from e
         finally:
             conn.close()
 

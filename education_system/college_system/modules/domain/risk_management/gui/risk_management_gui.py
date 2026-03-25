@@ -3,6 +3,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
+from education_system.college_system.core.i18n import t
 from education_system.college_system.modules.domain.risk_management.services.risk_management_service import (
     RiskManagementService, RISK_CATEGORIES, RISK_STATUSES,
 )
@@ -26,7 +27,7 @@ class RiskManagementFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Risk Management",
+        tk.Label(header, text=t("risk_management.management"),
                  font=("Helvetica", 15, "bold"), bg="#2c3e50", fg="white"
                  ).pack(side="left", padx=20, pady=10)
 
@@ -41,37 +42,38 @@ class RiskManagementFrame(tk.Frame):
 
     def _build_register_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Risk Register")
+        self._nb.add(tab, text=t("risk_management.risk_title"))
 
         # Filters
         filt = tk.Frame(tab, bg="#ecf0f1")
         filt.pack(fill="x", pady=(0, 8))
 
-        tk.Label(filt, text="Status:", bg="#ecf0f1").pack(side="left")
-        self._reg_status_var = tk.StringVar(value="All")
+        tk.Label(filt, text=t("common.status") + ":", bg="#ecf0f1").pack(side="left")
+        self._reg_status_var = tk.StringVar(value=t("common.all"))
         ttk.Combobox(filt, textvariable=self._reg_status_var,
-                     values=["All"] + RISK_STATUSES,
+                     values=[t("common.all")] + RISK_STATUSES,
                      width=12, state="readonly").pack(side="left", padx=5)
 
-        tk.Label(filt, text="Category:", bg="#ecf0f1").pack(side="left", padx=(10, 0))
-        self._reg_cat_var = tk.StringVar(value="All")
+        tk.Label(filt, text=t("common.category") + ":", bg="#ecf0f1").pack(side="left", padx=(10, 0))
+        self._reg_cat_var = tk.StringVar(value=t("common.all"))
         ttk.Combobox(filt, textvariable=self._reg_cat_var,
-                     values=["All"] + RISK_CATEGORIES,
+                     values=[t("common.all")] + RISK_CATEGORIES,
                      width=16, state="readonly").pack(side="left", padx=5)
 
-        tk.Label(filt, text="Search:", bg="#ecf0f1").pack(side="left", padx=(10, 0))
+        tk.Label(filt, text=t("common.search") + ":", bg="#ecf0f1").pack(side="left", padx=(10, 0))
         self._reg_search_var = tk.StringVar()
         ttk.Entry(filt, textvariable=self._reg_search_var, width=18).pack(side="left", padx=5)
 
-        ttk.Button(filt, text="Filter", command=self._load_risks).pack(side="left", padx=5)
+        ttk.Button(filt, text=t("common.filter"), command=self._load_risks).pack(side="left", padx=5)
 
         # Buttons
         btn_bar = tk.Frame(tab, bg="#ecf0f1")
         btn_bar.pack(fill="x", pady=(0, 8))
-        ttk.Button(btn_bar, text="New Risk", command=self._new_risk_dialog).pack(side="left", padx=2)
-        ttk.Button(btn_bar, text="View", command=self._view_risk).pack(side="left", padx=2)
-        ttk.Button(btn_bar, text="Edit", command=self._edit_risk_dialog).pack(side="left", padx=2)
-        ttk.Button(btn_bar, text="Delete", command=self._delete_risk).pack(side="left", padx=2)
+        ttk.Button(btn_bar, text=t("risk_management.add_risk"), command=self._new_risk_dialog).pack(side="left", padx=2)
+        ttk.Button(btn_bar, text=t("common.view"), command=self._view_risk).pack(side="left", padx=2)
+        ttk.Button(btn_bar, text=t("common.edit"), command=self._edit_risk_dialog).pack(side="left", padx=2)
+        ttk.Button(btn_bar, text=t("common.delete"), command=self._delete_risk).pack(side="left", padx=2)
+        ttk.Button(btn_bar, text="Export CSV", command=self._export_risks_csv).pack(side="left", padx=2)
 
         # Treeview
         cols = ("id", "risk_title", "category", "likelihood", "impact",
@@ -79,11 +81,11 @@ class RiskManagementFrame(tk.Frame):
         self._risk_tree = ttk.Treeview(tab, columns=cols, show="headings",
                                        selectmode="browse")
         for c, h, w in [
-            ("id", "ID", 40), ("risk_title", "Title", 200),
-            ("category", "Category", 110), ("likelihood", "L", 35),
-            ("impact", "I", 35), ("risk_score", "Score", 50),
-            ("status", "Status", 80), ("risk_owner", "Owner", 100),
-            ("review_date", "Review Date", 90),
+            ("id", t("common.id"), 40), ("risk_title", t("risk_management.risk_title"), 200),
+            ("category", t("common.category"), 110), ("likelihood", t("risk_management.likelihood"), 35),
+            ("impact", t("risk_management.impact"), 35), ("risk_score", t("common.score"), 50),
+            ("status", t("common.status"), 80), ("risk_owner", t("risk_management.owner"), 100),
+            ("review_date", t("common.date"), 90),
         ]:
             self._risk_tree.heading(c, text=h)
             self._risk_tree.column(c, width=w, anchor="center")
@@ -102,26 +104,27 @@ class RiskManagementFrame(tk.Frame):
 
     def _build_reviews_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Reviews")
+        self._nb.add(tab, text=t("common.history"))
 
         top = tk.Frame(tab, bg="#ecf0f1")
         top.pack(fill="x", pady=(0, 8))
-        tk.Label(top, text="Risk ID:", bg="#ecf0f1").pack(side="left")
+        tk.Label(top, text=t("common.id") + ":", bg="#ecf0f1").pack(side="left")
         self._rev_risk_id_var = tk.StringVar()
         ttk.Entry(top, textvariable=self._rev_risk_id_var, width=8).pack(side="left", padx=5)
-        ttk.Button(top, text="Load Reviews", command=self._load_reviews).pack(side="left", padx=5)
-        ttk.Button(top, text="New Review", command=self._new_review_dialog).pack(side="left", padx=5)
-        ttk.Button(top, text="Delete Review", command=self._delete_review).pack(side="left", padx=5)
+        ttk.Button(top, text=t("common.refresh"), command=self._load_reviews).pack(side="left", padx=5)
+        ttk.Button(top, text=t("common.create"), command=self._new_review_dialog).pack(side="left", padx=5)
+        ttk.Button(top, text=t("common.delete"), command=self._delete_review).pack(side="left", padx=5)
+        ttk.Button(top, text="Export CSV", command=self._export_reviews_csv).pack(side="left", padx=5)
 
         cols = ("id", "risk_id", "review_date", "reviewer", "previous_score",
                 "new_score", "commentary", "actions_taken")
         self._rev_tree = ttk.Treeview(tab, columns=cols, show="headings",
                                       selectmode="browse")
         for c, h, w in [
-            ("id", "ID", 40), ("risk_id", "Risk", 50),
-            ("review_date", "Date", 90), ("reviewer", "Reviewer", 100),
-            ("previous_score", "Prev", 45), ("new_score", "New", 45),
-            ("commentary", "Commentary", 200), ("actions_taken", "Actions", 200),
+            ("id", t("common.id"), 40), ("risk_id", t("risk_management.risk_title"), 50),
+            ("review_date", t("common.date"), 90), ("reviewer", t("common.name"), 100),
+            ("previous_score", t("common.score"), 45), ("new_score", t("common.score"), 45),
+            ("commentary", t("common.comments"), 200), ("actions_taken", t("common.actions"), 200),
         ]:
             self._rev_tree.heading(c, text=h)
             self._rev_tree.column(c, width=w, anchor="center")
@@ -137,14 +140,22 @@ class RiskManagementFrame(tk.Frame):
 
     def _build_stats_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Statistics")
+        self._nb.add(tab, text=t("common.summary"))
 
         self._stats_text = tk.Text(tab, wrap="word", font=("Courier", 11),
                                    bg="white", state="disabled", height=20)
         self._stats_text.pack(fill="both", expand=True)
 
-        ttk.Button(tab, text="Refresh Statistics",
+        ttk.Button(tab, text=t("common.refresh"),
                    command=self._load_stats).pack(pady=8)
+
+    def _export_risks_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._risk_tree, "risk_register_export.csv")
+
+    def _export_reviews_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._rev_tree, "risk_reviews_export.csv")
 
     # ── Data Loading ─────────────────────────────────────────────────────
 
@@ -160,8 +171,8 @@ class RiskManagementFrame(tk.Frame):
             cat = self._reg_cat_var.get()
             search = self._reg_search_var.get().strip() or None
             risks = self._svc.list_risks(
-                status=status if status != "All" else None,
-                category=cat if cat != "All" else None,
+                status=status if status != t("common.all") else None,
+                category=cat if cat != t("common.all") else None,
                 search=search,
             )
             for r in risks:
@@ -174,18 +185,18 @@ class RiskManagementFrame(tk.Frame):
                     r.get("review_date", ""),
                 ), tags=(tag,))
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self)
+            messagebox.showerror(t("common.error"), str(e), parent=self)
 
     def _load_reviews(self):
         self._rev_tree.delete(*self._rev_tree.get_children())
         rid = self._rev_risk_id_var.get().strip()
         if not rid or not rid.isdigit():
-            messagebox.showwarning("Input", "Enter a valid Risk ID.", parent=self)
+            messagebox.showwarning(t("common.input"), t("common.field_required"), parent=self)
             return
         try:
             reviews = self._svc.list_reviews(int(rid))
             if not reviews:
-                messagebox.showinfo("Info", "No reviews for this risk.", parent=self)
+                messagebox.showinfo(t("common.info"), t("common.no_data"), parent=self)
                 return
             for rv in reviews:
                 self._rev_tree.insert("", "end", values=(
@@ -195,25 +206,25 @@ class RiskManagementFrame(tk.Frame):
                     rv.get("actions_taken", ""),
                 ))
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self)
+            messagebox.showerror(t("common.error"), str(e), parent=self)
 
     def _load_stats(self):
         try:
             stats = self._svc.get_stats()
             lines = [
-                "=== Risk Register Statistics ===",
+                f"=== {t('risk_management.management')} {t('common.summary')} ===",
                 "",
-                f"  Total Risks:        {stats['total_risks']}",
-                f"  High Risks (>=15):  {stats['high_risks']}",
-                f"  Average Score:      {stats['avg_risk_score']}",
-                f"  Total Reviews:      {stats['reviews_count']}",
+                f"  {t('common.total')}:        {stats['total_risks']}",
+                f"  {t('common.high')} (>=15):  {stats['high_risks']}",
+                f"  {t('common.average')}:      {stats['avg_risk_score']}",
+                f"  {t('common.total')} {t('common.history')}:      {stats['reviews_count']}",
                 "",
-                "  By Status:",
+                f"  {t('common.status')}:",
             ]
             for s, c in stats["by_status"].items():
                 lines.append(f"    {s:<14} {c}")
             lines.append("")
-            lines.append("  By Category:")
+            lines.append(f"  {t('common.category')}:")
             for cat, c in stats["by_category"].items():
                 lines.append(f"    {cat:<18} {c}")
 
@@ -222,13 +233,13 @@ class RiskManagementFrame(tk.Frame):
             self._stats_text.insert("1.0", "\n".join(lines))
             self._stats_text.configure(state="disabled")
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self)
+            messagebox.showerror(t("common.error"), str(e), parent=self)
 
     # ── Risk Dialogs ─────────────────────────────────────────────────────
 
     def _new_risk_dialog(self):
         dlg = tk.Toplevel(self)
-        dlg.title("New Risk")
+        dlg.title(t("risk_management.add_risk"))
         dlg.geometry("500x520")
         dlg.transient(self)
         dlg.grab_set()
@@ -238,13 +249,13 @@ class RiskManagementFrame(tk.Frame):
         def _save():
             title = fields["risk_title"].get().strip()
             if not title:
-                messagebox.showwarning("Input", "Title is required.", parent=dlg)
+                messagebox.showwarning(t("common.input"), t("common.field_required"), parent=dlg)
                 return
             try:
                 lk = int(fields["likelihood"].get())
                 imp = int(fields["impact"].get())
             except ValueError:
-                messagebox.showwarning("Input", "Likelihood and Impact must be integers 1-5.",
+                messagebox.showwarning(t("common.input"), t("common.invalid_input"),
                                        parent=dlg)
                 return
             try:
@@ -261,31 +272,31 @@ class RiskManagementFrame(tk.Frame):
                     status=fields["status"].get(),
                     notes=fields["notes"].get().strip() or None,
                 )
-                messagebox.showinfo("Success", "Risk created.", parent=dlg)
+                messagebox.showinfo(t("common.success"), t("common.created_success"), parent=dlg)
                 dlg.destroy()
                 self._load_risks()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(t("common.error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Save", command=_save).pack(pady=10)
+        ttk.Button(dlg, text=t("common.save"), command=_save).pack(pady=10)
 
     def _view_risk(self):
         sel = self._risk_tree.selection()
         if not sel:
-            messagebox.showwarning("Select", "Select a risk first.", parent=self)
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"), parent=self)
             return
         rid = self._risk_tree.item(sel[0])["values"][0]
         try:
             r = self._svc.get_risk(int(rid))
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self)
+            messagebox.showerror(t("common.error"), str(e), parent=self)
             return
         if not r:
-            messagebox.showinfo("Info", "Risk not found.", parent=self)
+            messagebox.showinfo(t("common.info"), t("common.no_data"), parent=self)
             return
 
         dlg = tk.Toplevel(self)
-        dlg.title(f"Risk #{r['id']}")
+        dlg.title(f"{t('risk_management.risk_title')} #{r['id']}")
         dlg.geometry("480x480")
         dlg.transient(self)
 
@@ -299,22 +310,22 @@ class RiskManagementFrame(tk.Frame):
             residual = f"\n  Residual L x I:    {r['residual_likelihood']} x {r['residual_impact']} = {r['residual_likelihood'] * r['residual_impact']}"
 
         info = (
-            f"  ID:                {r['id']}\n"
-            f"  Title:             {r['risk_title']}\n"
-            f"  Category:          {r['category']}\n"
-            f"  Status:            {r['status']}\n"
-            f"  Likelihood:        {r['likelihood']}\n"
-            f"  Impact:            {r['impact']}\n"
-            f"  Risk Score:        {score}\n"
+            f"  {t('common.id')}:                {r['id']}\n"
+            f"  {t('common.title')}:             {r['risk_title']}\n"
+            f"  {t('common.category')}:          {r['category']}\n"
+            f"  {t('common.status')}:            {r['status']}\n"
+            f"  {t('risk_management.likelihood')}:        {r['likelihood']}\n"
+            f"  {t('risk_management.impact')}:            {r['impact']}\n"
+            f"  {t('common.score')}:        {score}\n"
             f"{residual}\n"
-            f"  Owner:             {r.get('risk_owner', '')}\n"
-            f"  Review Date:       {r.get('review_date', '')}\n"
-            f"  Controls:          {r.get('current_controls', '')}\n"
-            f"  Mitigation:        {r.get('mitigation_strategy', '')}\n"
-            f"  Notes:             {r.get('notes', '')}\n"
-            f"  Description:\n    {r.get('description', '')}\n"
-            f"\n  Created:  {r.get('created_at', '')}"
-            f"\n  Updated:  {r.get('updated_at', '')}"
+            f"  {t('risk_management.owner')}:             {r.get('risk_owner', '')}\n"
+            f"  {t('common.date')}:       {r.get('review_date', '')}\n"
+            f"  {t('common.details')}:          {r.get('current_controls', '')}\n"
+            f"  {t('risk_management.mitigation')}:        {r.get('mitigation_strategy', '')}\n"
+            f"  {t('common.notes')}:             {r.get('notes', '')}\n"
+            f"  {t('common.description')}:\n    {r.get('description', '')}\n"
+            f"\n  {t('common.created_at')}:  {r.get('created_at', '')}"
+            f"\n  {t('common.updated_at')}:  {r.get('updated_at', '')}"
         )
         txt.configure(state="normal")
         txt.insert("1.0", info)
@@ -323,20 +334,20 @@ class RiskManagementFrame(tk.Frame):
     def _edit_risk_dialog(self):
         sel = self._risk_tree.selection()
         if not sel:
-            messagebox.showwarning("Select", "Select a risk first.", parent=self)
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"), parent=self)
             return
         rid = self._risk_tree.item(sel[0])["values"][0]
         try:
             r = self._svc.get_risk(int(rid))
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self)
+            messagebox.showerror(t("common.error"), str(e), parent=self)
             return
         if not r:
-            messagebox.showinfo("Info", "Risk not found.", parent=self)
+            messagebox.showinfo(t("common.info"), t("common.no_data"), parent=self)
             return
 
         dlg = tk.Toplevel(self)
-        dlg.title(f"Edit Risk #{r['id']}")
+        dlg.title(f"{t('common.edit')} #{r['id']}")
         dlg.geometry("500x560")
         dlg.transient(self)
         dlg.grab_set()
@@ -346,13 +357,13 @@ class RiskManagementFrame(tk.Frame):
         def _save():
             title = fields["risk_title"].get().strip()
             if not title:
-                messagebox.showwarning("Input", "Title is required.", parent=dlg)
+                messagebox.showwarning(t("common.input"), t("common.field_required"), parent=dlg)
                 return
             try:
                 lk = int(fields["likelihood"].get())
                 imp = int(fields["impact"].get())
             except ValueError:
-                messagebox.showwarning("Input", "Likelihood and Impact must be integers 1-5.",
+                messagebox.showwarning(t("common.input"), t("common.invalid_input"),
                                        parent=dlg)
                 return
             try:
@@ -370,41 +381,41 @@ class RiskManagementFrame(tk.Frame):
                     status=fields["status"].get(),
                     notes=fields["notes"].get().strip() or None,
                 )
-                messagebox.showinfo("Success", "Risk updated.", parent=dlg)
+                messagebox.showinfo(t("common.success"), t("common.updated_success"), parent=dlg)
                 dlg.destroy()
                 self._load_risks()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(t("common.error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Save", command=_save).pack(pady=10)
+        ttk.Button(dlg, text=t("common.save"), command=_save).pack(pady=10)
 
     def _delete_risk(self):
         sel = self._risk_tree.selection()
         if not sel:
-            messagebox.showwarning("Select", "Select a risk first.", parent=self)
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"), parent=self)
             return
         rid = self._risk_tree.item(sel[0])["values"][0]
-        if not messagebox.askyesno("Confirm",
-                                   f"Delete risk #{rid} and all its reviews?",
+        if not messagebox.askyesno(t("common.confirm_delete"),
+                                   t("common.delete_confirm_msg"),
                                    parent=self):
             return
         try:
             self._svc.delete_risk(int(rid))
-            messagebox.showinfo("Deleted", "Risk deleted.", parent=self)
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"), parent=self)
             self._load_risks()
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self)
+            messagebox.showerror(t("common.error"), str(e), parent=self)
 
     # ── Review Dialogs ───────────────────────────────────────────────────
 
     def _new_review_dialog(self):
         rid = self._rev_risk_id_var.get().strip()
         if not rid or not rid.isdigit():
-            messagebox.showwarning("Input", "Enter a valid Risk ID first.", parent=self)
+            messagebox.showwarning(t("common.input"), t("common.field_required"), parent=self)
             return
 
         dlg = tk.Toplevel(self)
-        dlg.title(f"New Review for Risk #{rid}")
+        dlg.title(f"{t('common.create')} #{rid}")
         dlg.geometry("420x350")
         dlg.transient(self)
         dlg.grab_set()
@@ -415,12 +426,12 @@ class RiskManagementFrame(tk.Frame):
         vars_ = {}
 
         for label, key, width in [
-            ("Review Date (YYYY-MM-DD):", "review_date", 14),
-            ("Reviewer:", "reviewer", 20),
-            ("Previous Score:", "previous_score", 6),
-            ("New Score:", "new_score", 6),
-            ("Commentary:", "commentary", 30),
-            ("Actions Taken:", "actions_taken", 30),
+            (t("common.date") + " (YYYY-MM-DD):", "review_date", 14),
+            (t("common.name") + ":", "reviewer", 20),
+            (t("common.score") + ":", "previous_score", 6),
+            (t("common.score") + ":", "new_score", 6),
+            (t("common.comments") + ":", "commentary", 30),
+            (t("common.actions") + ":", "actions_taken", 30),
         ]:
             row = tk.Frame(frame)
             row.pack(fill="x", pady=3)
@@ -432,7 +443,7 @@ class RiskManagementFrame(tk.Frame):
         def _save():
             rd = vars_["review_date"].get().strip()
             if not rd:
-                messagebox.showwarning("Input", "Review date is required.", parent=dlg)
+                messagebox.showwarning(t("common.input"), t("common.field_required"), parent=dlg)
                 return
             prev = vars_["previous_score"].get().strip()
             new = vars_["new_score"].get().strip()
@@ -446,28 +457,28 @@ class RiskManagementFrame(tk.Frame):
                     commentary=vars_["commentary"].get().strip() or None,
                     actions_taken=vars_["actions_taken"].get().strip() or None,
                 )
-                messagebox.showinfo("Success", "Review created.", parent=dlg)
+                messagebox.showinfo(t("common.success"), t("common.created_success"), parent=dlg)
                 dlg.destroy()
                 self._load_reviews()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(t("common.error"), str(e), parent=dlg)
 
-        ttk.Button(frame, text="Save", command=_save).pack(pady=10)
+        ttk.Button(frame, text=t("common.save"), command=_save).pack(pady=10)
 
     def _delete_review(self):
         sel = self._rev_tree.selection()
         if not sel:
-            messagebox.showwarning("Select", "Select a review first.", parent=self)
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"), parent=self)
             return
         rev_id = self._rev_tree.item(sel[0])["values"][0]
-        if not messagebox.askyesno("Confirm", f"Delete review #{rev_id}?", parent=self):
+        if not messagebox.askyesno(t("common.confirm_delete"), t("common.delete_confirm_msg"), parent=self):
             return
         try:
             self._svc.delete_review(int(rev_id))
-            messagebox.showinfo("Deleted", "Review deleted.", parent=self)
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"), parent=self)
             self._load_reviews()
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self)
+            messagebox.showerror(t("common.error"), str(e), parent=self)
 
     # ── Helpers ──────────────────────────────────────────────────────────
 
@@ -480,14 +491,14 @@ class RiskManagementFrame(tk.Frame):
 
         # Title
         row = tk.Frame(frame); row.pack(fill="x", pady=3)
-        tk.Label(row, text="Title:", width=16, anchor="w").pack(side="left")
+        tk.Label(row, text=t("risk_management.risk_title") + ":", width=16, anchor="w").pack(side="left")
         v = tk.StringVar(value=existing["risk_title"] if existing else "")
         ttk.Entry(row, textvariable=v, width=30).pack(side="left", padx=5)
         fields["risk_title"] = v
 
         # Category
         row = tk.Frame(frame); row.pack(fill="x", pady=3)
-        tk.Label(row, text="Category:", width=16, anchor="w").pack(side="left")
+        tk.Label(row, text=t("common.category") + ":", width=16, anchor="w").pack(side="left")
         v = tk.StringVar(value=existing["category"] if existing else "operational")
         ttk.Combobox(row, textvariable=v, values=RISK_CATEGORIES,
                      width=18, state="readonly").pack(side="left", padx=5)
@@ -495,11 +506,11 @@ class RiskManagementFrame(tk.Frame):
 
         # Likelihood & Impact
         row = tk.Frame(frame); row.pack(fill="x", pady=3)
-        tk.Label(row, text="Likelihood (1-5):", width=16, anchor="w").pack(side="left")
+        tk.Label(row, text=t("risk_management.likelihood") + " (1-5):", width=16, anchor="w").pack(side="left")
         v = tk.StringVar(value=str(existing["likelihood"]) if existing else "3")
         ttk.Spinbox(row, textvariable=v, from_=1, to=5, width=4).pack(side="left", padx=5)
         fields["likelihood"] = v
-        tk.Label(row, text="Impact (1-5):").pack(side="left", padx=(15, 0))
+        tk.Label(row, text=t("risk_management.impact") + " (1-5):").pack(side="left", padx=(15, 0))
         v2 = tk.StringVar(value=str(existing["impact"]) if existing else "3")
         ttk.Spinbox(row, textvariable=v2, from_=1, to=5, width=4).pack(side="left", padx=5)
         fields["impact"] = v2
@@ -513,7 +524,7 @@ class RiskManagementFrame(tk.Frame):
             try:
                 s = int(fields["likelihood"].get()) * int(fields["impact"].get())
                 color = "#c0392b" if s >= 15 else ("#e67e22" if s >= 8 else "#27ae60")
-                score_lbl.configure(text=f"  Risk Score: {s}", fg=color)
+                score_lbl.configure(text=f"  {t('common.score')}: {s}", fg=color)
             except ValueError:
                 score_lbl.configure(text="")
 
@@ -523,7 +534,7 @@ class RiskManagementFrame(tk.Frame):
 
         # Status
         row = tk.Frame(frame); row.pack(fill="x", pady=3)
-        tk.Label(row, text="Status:", width=16, anchor="w").pack(side="left")
+        tk.Label(row, text=t("common.status") + ":", width=16, anchor="w").pack(side="left")
         v = tk.StringVar(value=existing["status"] if existing else "open")
         ttk.Combobox(row, textvariable=v, values=RISK_STATUSES,
                      width=14, state="readonly").pack(side="left", padx=5)
@@ -531,41 +542,41 @@ class RiskManagementFrame(tk.Frame):
 
         # Owner
         row = tk.Frame(frame); row.pack(fill="x", pady=3)
-        tk.Label(row, text="Risk Owner:", width=16, anchor="w").pack(side="left")
+        tk.Label(row, text=t("risk_management.owner") + ":", width=16, anchor="w").pack(side="left")
         v = tk.StringVar(value=existing.get("risk_owner", "") if existing else "")
         ttk.Entry(row, textvariable=v, width=20).pack(side="left", padx=5)
         fields["risk_owner"] = v
 
         # Review Date
         row = tk.Frame(frame); row.pack(fill="x", pady=3)
-        tk.Label(row, text="Review Date:", width=16, anchor="w").pack(side="left")
+        tk.Label(row, text=t("common.date") + ":", width=16, anchor="w").pack(side="left")
         v = tk.StringVar(value=existing.get("review_date", "") if existing else "")
         ttk.Entry(row, textvariable=v, width=14).pack(side="left", padx=5)
         fields["review_date"] = v
 
         # Controls
         row = tk.Frame(frame); row.pack(fill="x", pady=3)
-        tk.Label(row, text="Controls:", width=16, anchor="w").pack(side="left")
+        tk.Label(row, text=t("common.details") + ":", width=16, anchor="w").pack(side="left")
         v = tk.StringVar(value=existing.get("current_controls", "") if existing else "")
         ttk.Entry(row, textvariable=v, width=30).pack(side="left", padx=5)
         fields["current_controls"] = v
 
         # Mitigation
         row = tk.Frame(frame); row.pack(fill="x", pady=3)
-        tk.Label(row, text="Mitigation:", width=16, anchor="w").pack(side="left")
+        tk.Label(row, text=t("risk_management.mitigation") + ":", width=16, anchor="w").pack(side="left")
         v = tk.StringVar(value=existing.get("mitigation_strategy", "") if existing else "")
         ttk.Entry(row, textvariable=v, width=30).pack(side="left", padx=5)
         fields["mitigation_strategy"] = v
 
         # Notes
         row = tk.Frame(frame); row.pack(fill="x", pady=3)
-        tk.Label(row, text="Notes:", width=16, anchor="w").pack(side="left")
+        tk.Label(row, text=t("common.notes") + ":", width=16, anchor="w").pack(side="left")
         v = tk.StringVar(value=existing.get("notes", "") if existing else "")
         ttk.Entry(row, textvariable=v, width=30).pack(side="left", padx=5)
         fields["notes"] = v
 
         # Description
-        tk.Label(frame, text="Description:", anchor="w").pack(fill="x", pady=(5, 0))
+        tk.Label(frame, text=t("common.description") + ":", anchor="w").pack(fill="x", pady=(5, 0))
         desc = tk.Text(frame, height=4, wrap="word")
         desc.pack(fill="x", pady=3)
         if existing and existing.get("description"):

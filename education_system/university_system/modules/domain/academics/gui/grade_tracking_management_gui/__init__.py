@@ -1,7 +1,7 @@
-from .core import GradeTrackingManagementGUI
+from education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui.core import GradeTrackingManagementGUI
 
 # Re-export availability flags and fallback functions for backward compatibility
-from ._imports import (
+from education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui._imports import (
     GRADE_TRACKING_GUI_AVAILABLE,
     GRADE_TRACKING_CLI_AVAILABLE,
     LEARNING_OUTCOMES_AVAILABLE,

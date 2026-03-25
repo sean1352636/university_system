@@ -99,9 +99,137 @@ class ModelManagementMixin:
                     WHERE a.status = 'confirmed'
                 ''')
             else:
-                # Custom dataset - would need to parse from file
+                # Custom dataset - load from file path
                 conn.close()
-                return {'success': False, 'error': 'Custom dataset not implemented'}
+                if not os.path.exists(data_source):
+                    return {'success': False, 'error': f'Custom dataset file not found: {data_source}'}
+
+                try:
+                    with open(data_source, 'r') as ds_file:
+                        if data_source.endswith('.json'):
+                            dataset = json.load(ds_file)
+                        elif data_source.endswith('.jsonl'):
+                            dataset = [json.loads(line) for line in ds_file if line.strip()]
+                        elif data_source.endswith('.csv'):
+                            import csv
+                            reader = csv.DictReader(ds_file)
+                            dataset = list(reader)
+                        else:
+                            return {'success': False, 'error': f'Unsupported file format. Use .json, .jsonl, or .csv'}
+
+                    # Validate dataset entries have required fields
+                    if not dataset:
+                        return {'success': False, 'error': 'Custom dataset is empty'}
+
+                    validated_samples = []
+                    for i, entry in enumerate(dataset):
+                        if not isinstance(entry, dict):
+                            continue
+                        text = entry.get('text_content') or entry.get('text') or entry.get('content')
+                        label = entry.get('label')
+                        if text and label is not None:
+                            try:
+                                validated_samples.append({'text_content': str(text), 'label': int(label)})
+                            except (ValueError, TypeError):
+                                logger.warning(f"Skipping invalid label in dataset entry {i}")
+
+                    if len(validated_samples) < min_samples:
+                        return {
+                            'success': False,
+                            'error': f'Insufficient valid samples in custom dataset ({len(validated_samples)}/{min_samples})'
+                        }
+
+                    positive_samples = [s for s in validated_samples if s['label'] == 1]
+                    negative_samples = [s for s in validated_samples if s['label'] == 0]
+                    all_samples = validated_samples
+                except json.JSONDecodeError as je:
+                    return {'success': False, 'error': f'Invalid JSON in dataset file: {je}'}
+                except Exception as parse_err:
+                    return {'success': False, 'error': f'Error parsing custom dataset: {parse_err}'}
+
+                # Skip the DB fetch below since we already have all_samples
+                # Jump directly to training
+                if len(all_samples) < min_samples:
+                    return {
+                        'success': False,
+                        'error': f'Insufficient samples ({len(all_samples)}/{min_samples})'
+                    }
+
+                texts = [s['text_content'] for s in all_samples]
+                labels = [s['label'] for s in all_samples]
+
+                vectorizer = TfidfVectorizer(max_features=5000, ngram_range=(1, 2))
+                X = vectorizer.fit_transform(texts)
+                y = np.array(labels)
+
+                X_train, X_test, y_train, y_test = train_test_split(
+                    X, y, test_size=0.2, random_state=42
+                )
+
+                model = RandomForestClassifier(n_estimators=100, random_state=42)
+                model.fit(X_train, y_train)
+
+                y_pred = model.predict(X_test)
+                accuracy = accuracy_score(y_test, y_pred)
+
+                from sklearn.metrics import precision_score, recall_score, f1_score
+                precision = precision_score(y_test, y_pred, zero_division=0)
+                recall = recall_score(y_test, y_pred, zero_division=0)
+                f1 = f1_score(y_test, y_pred, zero_division=0)
+
+                model_version = f"v{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                model_dir = os.path.join(os.path.dirname(self.db_path), 'models')
+                os.makedirs(model_dir, exist_ok=True)
+
+                model_path = os.path.join(model_dir, f'detector_model_{model_version}.pkl')
+                with open(model_path, 'wb') as f:
+                    pickle.dump({'model': model, 'vectorizer': vectorizer}, f)
+
+                conn = self._get_connection()
+                cursor = conn.cursor()
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS ai_detector_model_versions (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        version TEXT UNIQUE NOT NULL,
+                        model_path TEXT NOT NULL,
+                        accuracy REAL,
+                        precision_score REAL,
+                        recall_score REAL,
+                        f1_score REAL,
+                        training_samples INTEGER,
+                        is_active INTEGER DEFAULT 0,
+                        created_at TEXT NOT NULL
+                    )
+                ''')
+                cursor.execute('''
+                    INSERT INTO ai_detector_model_versions
+                    (version, model_path, accuracy, precision_score, recall_score, f1_score,
+                     training_samples, is_active, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
+                ''', (model_version, model_path, accuracy, precision, recall, f1,
+                      len(all_samples), datetime.now().isoformat()))
+                cursor.execute('''
+                    UPDATE ai_detector_model_versions SET is_active = 0
+                    WHERE version != ?
+                ''', (model_version,))
+                conn.commit()
+                conn.close()
+
+                training_time = time.time() - start_time
+                logger.info(f"Model retrained from custom dataset: {model_version} with accuracy {accuracy:.2%}")
+                return {
+                    'success': True,
+                    'model_version': model_version,
+                    'training_samples': len(all_samples),
+                    'training_time': training_time,
+                    'data_source': data_source,
+                    'metrics': {
+                        'accuracy': accuracy,
+                        'precision': precision,
+                        'recall': recall,
+                        'f1_score': f1
+                    }
+                }
 
             positive_samples = cursor.fetchall()
 

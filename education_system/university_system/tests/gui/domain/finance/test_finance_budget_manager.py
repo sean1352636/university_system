@@ -149,8 +149,8 @@ class TestCreateBudgetPlan:
         # Verify Toplevel was called to create dialog
         mock_toplevel.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.budget_manager.get_connection')
-    @patch('university_system.modules.domain.finance.gui.finance.budget_manager.get_auth')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.budget_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.budget_manager.get_auth')
     def test_create_budget_plan_inserts_to_database(self, mock_auth, mock_get_conn, test_db_with_budget_data):
         """Test that budget plan data is inserted into database"""
         mock_auth_instance = Mock()
@@ -224,7 +224,7 @@ class TestDeleteBudgetPlan:
 
     @patch('tkinter.messagebox.askyesno', return_value=True)
     @patch('tkinter.messagebox.showinfo')
-    @patch('university_system.modules.domain.finance.gui.finance.budget_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.budget_manager.get_connection')
     def test_delete_budget_plan_deletes_from_database(self, mock_conn, mock_info, mock_confirm, budget_manager, test_db_with_budget_data):
         """Test that delete_budget_plan removes plan from database"""
         mock_conn.return_value = test_db_with_budget_data
@@ -284,7 +284,7 @@ class TestApproveBudget:
 class TestRefreshBudget:
     """Test budget refresh functionality"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.budget_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.budget_manager.get_connection')
     def test_refresh_budget_loads_data(self, mock_conn, budget_manager, test_db_with_budget_data):
         """Test that refresh_budget loads budget data"""
         mock_conn.return_value = test_db_with_budget_data
@@ -320,7 +320,7 @@ class TestCategoryManagement:
         # Verify dialog was created
         mock_toplevel.assert_called()
 
-    @patch('university_system.modules.domain.finance.gui.finance.budget_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.budget_manager.get_connection')
     def test_create_category_inserts_to_database(self, mock_conn, test_db_with_budget_data):
         """Test that category creation inserts to database"""
         mock_conn.return_value = test_db_with_budget_data
@@ -354,7 +354,7 @@ class TestErrorHandling:
     """Test error handling across budget manager"""
 
     @patch('tkinter.messagebox.showerror')
-    @patch('university_system.modules.domain.finance.gui.finance.budget_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.budget_manager.get_connection')
     def test_delete_budget_plan_handles_errors(self, mock_conn, mock_error, budget_manager):
         """Test that delete_budget_plan handles database errors"""
         mock_conn.side_effect = Exception("Database error")
@@ -371,7 +371,7 @@ class TestErrorHandling:
         # Verify error message was shown
         mock_error.assert_called()
 
-    @patch('university_system.modules.domain.finance.gui.finance.budget_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.budget_manager.get_connection')
     def test_refresh_budget_handles_errors(self, mock_conn, budget_manager, capsys):
         """Test that refresh_budget handles errors gracefully"""
         mock_conn.side_effect = Exception("Database error")

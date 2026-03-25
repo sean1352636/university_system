@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/plugins/audit.py
+# hypothesis_version: 6.151.9
+
+['a', 'action', 'admin', 'audit_actions', 'audit_file', 'audit_trail.log', 'create', 'delete', 'details', 'error', 'export', 'file_path', 'file_size', 'ip_address', 'login', 'logout', 'module', 'r', 'security_level', 'status', 'timestamp', 'total_entries', 'trace_id', 'update', 'user_id', 'username', 'utf-8']

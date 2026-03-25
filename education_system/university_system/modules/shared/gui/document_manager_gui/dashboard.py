@@ -90,7 +90,7 @@ class DashboardManager:
 
             cursor.execute('''
             SELECT verification_status, COUNT(*) as count
-            FROM student_documents
+            FROM documents
             WHERE is_current_version = 1
             GROUP BY verification_status
             ORDER BY count DESC
@@ -161,10 +161,10 @@ class DashboardManager:
             SELECT s.first_name || ' ' || s.last_name as student_name,
                    dt.type_name, 'Uploaded' as action,
                    DATE(sd.upload_date) as activity_date
-            FROM student_documents sd
-            JOIN students s ON sd.student_id = s.student_id
+            FROM documents sd
+            JOIN students s ON sd.owner_id = s.student_id
             JOIN document_types dt ON sd.type_id = dt.type_id
-            WHERE sd.upload_date >= date('now', '-7 days')
+            WHERE sd.source_type = 'student' AND sd.upload_date >= date('now', '-7 days')
             ORDER BY sd.upload_date DESC
             LIMIT 15
             ''')
@@ -190,11 +190,11 @@ class DashboardManager:
             cursor = conn.cursor()
 
             # Total documents
-            cursor.execute('SELECT COUNT(*) FROM student_documents WHERE is_current_version = 1')
+            cursor.execute('SELECT COUNT(*) FROM documents WHERE is_current_version = 1')
             total_docs = cursor.fetchone()[0]
 
             # Pending documents
-            cursor.execute('SELECT COUNT(*) FROM student_documents WHERE verification_status = "Pending" AND is_current_version = 1')
+            cursor.execute('SELECT COUNT(*) FROM documents WHERE verification_status = "Pending" AND is_current_version = 1')
             pending_docs = cursor.fetchone()[0]
 
             # Total students
@@ -203,7 +203,7 @@ class DashboardManager:
 
             # Today's uploads
             today = datetime.now().strftime('%Y-%m-%d')
-            cursor.execute('SELECT COUNT(*) FROM student_documents WHERE DATE(upload_date) = ?', (today,))
+            cursor.execute('SELECT COUNT(*) FROM documents WHERE DATE(upload_date) = ?', (today,))
             today_uploads = cursor.fetchone()[0]
 
             conn.close()

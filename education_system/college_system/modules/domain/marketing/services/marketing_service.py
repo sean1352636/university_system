@@ -3,6 +3,7 @@
 from education_system.college_system.core.exceptions import MarketingError
 from education_system.college_system.infrastructure.database.db import connect
 
+from education_system.college_system.core.sql_safety import escape_like
 import logging
 
 logger = logging.getLogger(__name__)
@@ -165,7 +166,8 @@ class MarketingService:
                 params.append(event_id)
             if search:
                 sql += " AND (student_name LIKE ? OR email LIKE ? OR school LIKE ?)"
-                like = f"%{search}%"
+                escaped = escape_like(search)
+                like = f"%{escaped}%"
                 params.extend([like, like, like])
             sql += " ORDER BY created_at DESC"
             rows = conn.execute(sql, params).fetchall()

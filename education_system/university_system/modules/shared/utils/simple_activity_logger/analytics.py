@@ -7,7 +7,7 @@ from typing import Dict, List, Any, Union
 
 import psutil
 
-from .storage import DatabaseLogger
+from education_system.university_system.modules.shared.utils.simple_activity_logger.storage import DatabaseLogger
 
 _logger = logging.getLogger(__name__)
 

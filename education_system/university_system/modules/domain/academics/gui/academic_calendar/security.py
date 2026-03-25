@@ -1,7 +1,7 @@
 import hashlib
 import secrets
 from typing import Tuple, Optional
-from .exceptions import ValidationError
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.exceptions import ValidationError
 
 def hash_password(password: str, salt: Optional[bytes] = None,
                  iterations: int = 100000) -> Tuple[str, str]:

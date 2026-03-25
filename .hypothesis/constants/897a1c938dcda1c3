@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/assignment_system/assignment_manager/templates.py
+# hypothesis_version: 6.151.9
+
+[1.0, '.pdf,.docx,.txt', '0', '10', '100', '2', '23:59', '4', '600x400', 'Cancel', 'Error', 'Load', 'Load Template/Draft', 'No Selection', 'No Templates', 'Success', 'Template Name', 'TkDefaultFont', 'allow_late', 'assessment_type', 'assessment_type_var', 'assignment_type', 'auto_release', 'bold', 'both', 'description', 'draft', 'due_date', 'due_time', 'essay', 'file_types', 'grading_method', 'grading_method_var', 'group_max', 'group_min', 'id', 'individual', 'instructions', 'late_penalty', 'left', 'max_marks', 'max_size', 'module', 'peer_review', 'points', 'right', 'title', 'visibility', 'visibility_var', 'y']

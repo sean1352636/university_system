@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/grade_tracking_management_gui/curve_analysis.py
+# hypothesis_version: 6.151.9
+
+['apply_curve', 'common.error', 'manage_grades', 'view_risk_analysis']

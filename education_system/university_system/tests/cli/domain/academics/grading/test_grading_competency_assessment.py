@@ -62,7 +62,7 @@ class TestAddCompetencyLevels:
 class TestManageCompetencyLevels:
     """Test the manage_competency_levels function"""
 
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.get_connection')
     @patch('builtins.input', side_effect=['1', '4'])  # Select competency 1, then exit
     @patch('builtins.print')
     def test_manage_competency_levels_no_competencies(
@@ -78,7 +78,7 @@ class TestManageCompetencyLevels:
 
         mock_print.assert_any_call("No competencies found in the database. Please add competencies first.")
 
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.get_connection')
     @patch('builtins.input', side_effect=['1', '4'])
     def test_manage_competency_levels_invalid_id(self, mock_input, mock_get_conn):
         """Test with invalid competency ID"""
@@ -116,8 +116,8 @@ class TestViewStudentCompetencyProfile:
 
         return cursor
 
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.get_connection')
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.select_student')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.select_student')
     @patch('builtins.input', side_effect=['n', 'n'])  # Don't view evidence, don't visualize
     @patch('builtins.print')
     def test_view_student_competency_profile_success(
@@ -134,8 +134,8 @@ class TestViewStudentCompetencyProfile:
         # Verify statistics were calculated and printed
         assert any('Total Assessed Competencies' in str(call) for call in mock_print.call_args_list)
 
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.get_connection')
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.select_student')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.select_student')
     @patch('builtins.print')
     def test_view_student_competency_profile_no_assessments(
         self, mock_print, mock_select, mock_get_conn
@@ -152,11 +152,11 @@ class TestViewStudentCompetencyProfile:
 
         mock_print.assert_any_call("No competency assessments recorded for this student.")
 
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.get_connection')
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.select_student')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.select_student')
     @patch('builtins.input', return_value='y')
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.plt')
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.os.makedirs')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.plt')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.os.makedirs')
     def test_view_student_competency_profile_with_visualization(
         self, mock_makedirs, mock_plt, mock_input, mock_select, mock_get_conn,
         mock_cursor_with_competencies
@@ -175,7 +175,7 @@ class TestViewStudentCompetencyProfile:
 class TestGenerateCompetencyReport:
     """Test the generate_competency_report function"""
 
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.get_connection')
     @patch('builtins.input', side_effect=['3'])  # Return to menu
     def test_generate_competency_report_exit(self, mock_input, mock_get_conn):
         """Test exiting the report menu"""
@@ -188,9 +188,9 @@ class TestGenerateCompetencyReport:
         # Should exit without generating report
         conn.close.assert_called_once()
 
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.get_connection')
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.select_student')
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.generate_student_competency_report')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.select_student')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.generate_student_competency_report')
     @patch('builtins.input', side_effect=['1'])  # Individual student report
     def test_generate_competency_report_student(
         self, mock_input, mock_gen_report, mock_select, mock_get_conn
@@ -225,11 +225,11 @@ class TestGenerateStudentCompetencyReport:
 
         return cursor
 
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.SimpleDocTemplate')
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.plt')
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.os.makedirs')
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.os.path.exists')
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.os.remove')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.SimpleDocTemplate')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.plt')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.os.makedirs')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.os.path.exists')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.os.remove')
     @patch('builtins.print')
     def test_generate_student_competency_report_success(
         self, mock_print, mock_remove, mock_exists, mock_makedirs,
@@ -282,9 +282,9 @@ class TestGenerateCourseCompetencyReport:
 
         return cursor
 
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.SimpleDocTemplate')
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.plt')
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.os.makedirs')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.SimpleDocTemplate')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.plt')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.os.makedirs')
     @patch('builtins.print')
     def test_generate_course_competency_report_success(
         self, mock_print, mock_makedirs, mock_plt, mock_doc, course_cursor
@@ -329,7 +329,7 @@ class TestAssessStudentRisk:
 
         return cursor
 
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.calculate_student_gpa')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.calculate_student_gpa')
     def test_assess_student_risk_high_risk(self, mock_gpa, risk_cursor):
         """Test assessment of high-risk student"""
         mock_gpa.return_value = (1.8, 30, [])  # Low GPA
@@ -340,7 +340,7 @@ class TestAssessStudentRisk:
         assert result['student_id'] == 'S001'
         assert len(result['risk_factors']) > 0
 
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.calculate_student_gpa')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.calculate_student_gpa')
     def test_assess_student_risk_low_risk(self, mock_gpa):
         """Test assessment of low-risk student"""
         cursor = Mock()
@@ -361,7 +361,7 @@ class TestAssessStudentRisk:
         assert result['risk_level'] == 'Minimal'
         assert result['risk_score'] < 10
 
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.calculate_student_gpa')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.calculate_student_gpa')
     def test_assess_student_risk_medium_risk(self, mock_gpa):
         """Test assessment of medium-risk student"""
         cursor = Mock()
@@ -384,7 +384,7 @@ class TestAssessStudentRisk:
 class TestAssessComprehensiveStudentRisk:
     """Test the assess_comprehensive_student_risk function"""
 
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.calculate_student_gpa')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.calculate_student_gpa')
     def test_assess_comprehensive_student_risk_multiple_factors(self, mock_gpa):
         """Test comprehensive risk assessment with multiple factors"""
         cursor = Mock()
@@ -411,7 +411,7 @@ class TestAssessComprehensiveStudentRisk:
         assert 'Academic Performance' in result['risk_factors']
         assert result['risk_score'] >= 50
 
-    @patch('university_system.modules.domain.academics.grading.competency_assessment.calculate_student_gpa')
+    @patch('education_system.university_system.modules.domain.academics.grading.competency_assessment.calculate_student_gpa')
     def test_assess_comprehensive_student_risk_minimal(self, mock_gpa):
         """Test comprehensive assessment of minimal-risk student"""
         cursor = Mock()

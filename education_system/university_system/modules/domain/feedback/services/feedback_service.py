@@ -10,6 +10,7 @@ Provides comprehensive feedback and suggestion management with:
 """
 
 from education_system.university_system.infrastructure.database.db import sqlite3
+from education_system.university_system.core.sql_safety import escape_like
 from datetime import datetime
 from typing import Optional, List, Dict, Any, Tuple
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
@@ -816,7 +817,7 @@ class FeedbackService:
             LIMIT ?
         """
 
-        search_pattern = f"%{search_term}%"
+        search_pattern = f"%{escape_like(search_term)}%"
 
         with get_connection() as conn:
             results = conn.execute(

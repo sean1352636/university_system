@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/parent_portal/services.py
+# hypothesis_version: 6.151.9
+
+['  STATUS: OVERDUE', '%Y-%m-%d', 'Invalid choice.', 'parent', 'role', 'view_extracurricular', 'view_library_account', 'view_transportation']

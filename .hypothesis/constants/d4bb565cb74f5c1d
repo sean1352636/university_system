@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/managers/__init__.py
+# hypothesis_version: 6.151.9
+
+['BiometricManager', 'LoginManager', 'MFAManager', 'PermissionManager', 'RoleManager', 'SSOManager', 'SessionManager', 'UserManager', 'WebAuthnManager', 'activity_logger', 'password_manager']

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/logging/log_management/cli/security_analysis.py
+# hypothesis_version: 6.151.9
+
+[100, 1000, 5000, '\nActions by admin:', '\nActions by type:', '\n🔒 SECURITY ANALYSIS', '%Y-%m-%d', '-', '1', '2', '3', '4', '5', '5. Return', '=', 'Choose analysis: ', 'action', 'actions_by_hour', 'admin', 'create', 'date_from', 'delete', 'failure', 'failures', 'login', 'module', 'read', 'role', 'status', 'success_rate', 'system_config', 'timestamp', 'total_actions', 'unique_modules', 'update', 'user_management', 'username', '█', '⚠️', '✅']

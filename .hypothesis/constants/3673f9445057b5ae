@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/auth/schema.py
+# hypothesis_version: 6.151.9
+
+['College Staff', 'College Student', 'Demo Student', 'Primary Staff', 'Primary Student', 'S12345', 'School Administrator', 'School Staff', 'School Student', 'Super Administrator', 'SuperAdmin@123', 'University Staff', 'admin', 'admin1', 'admin123', 'admin1234', 'admin2', 'admin3', 'admin@college.local', 'admin@primary.local', 'admin@school.local', 'admin@university.edu', 'cnt', 'college', 'display_name', 'email', 'id', 'legacy_salt', 'password', 'primary', 'school', 'staff', 'staff1', 'staff123', 'staff1234', 'staff2', 'staff3', 'staff@college.local', 'staff@primary.local', 'staff@school.local', 'staff@university.edu', 'student', 'student1', 'student123', 'student1234', 'student2', 'student3', 'student@school.local', 'superadmin', 'systems', 'teacher', 'university', 'username']

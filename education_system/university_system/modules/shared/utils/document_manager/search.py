@@ -1,4 +1,5 @@
-from ._common import sqlite3, get_connection
+from education_system.university_system.core.sql_safety import escape_like
+from education_system.university_system.modules.shared.utils.document_manager._common import sqlite3, get_connection
 
 
 class SearchMixin:
@@ -85,8 +86,8 @@ class SearchMixin:
                    DATE(sd.upload_date) as upload_date,
                    sd.version_number,
                    sd.tags
-            FROM student_documents sd
-            JOIN students s ON sd.student_id = s.student_id
+            FROM documents sd
+            JOIN students s ON sd.owner_id = s.student_id
             JOIN document_types dt ON sd.type_id = dt.type_id
             WHERE sd.is_current_version = 1
             '''
@@ -96,12 +97,12 @@ class SearchMixin:
             # Add search conditions
             if 'student' in criteria:
                 query += " AND (s.first_name LIKE ? OR s.last_name LIKE ? OR s.student_id LIKE ?)"
-                search_term = f"%{criteria['student']}%"
+                search_term = f"%{escape_like(criteria['student'])}%"
                 params.extend([search_term, search_term, search_term])
 
             if 'doc_type' in criteria:
                 query += " AND dt.type_name LIKE ?"
-                params.append(f"%{criteria['doc_type']}%")
+                params.append(f"%{escape_like(criteria['doc_type'])}%")
 
             if 'status' in criteria:
                 query += " AND sd.verification_status = ?"
@@ -120,7 +121,7 @@ class SearchMixin:
                 tag_conditions = []
                 for tag in tag_list:
                     tag_conditions.append("sd.tags LIKE ?")
-                    params.append(f"%{tag}%")
+                    params.append(f"%{escape_like(tag)}%")
                 query += " AND (" + " OR ".join(tag_conditions) + ")"
 
             query += " ORDER BY sd.upload_date DESC LIMIT 100"

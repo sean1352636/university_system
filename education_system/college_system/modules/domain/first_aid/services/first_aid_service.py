@@ -121,6 +121,26 @@ class FirstAidService:
         finally:
             conn.close()
 
+    def delete_incident(self, incident_id: int) -> bool:
+        """Delete a first aid incident by ID."""
+        conn = self._conn()
+        try:
+            result = conn.execute(
+                "DELETE FROM first_aid_incidents WHERE id = ?", (incident_id,)
+            )
+            conn.commit()
+            if result.rowcount == 0:
+                raise FirstAidError(f"Incident {incident_id} not found.")
+            logger.info("First aid incident deleted: id=%d", incident_id)
+            return True
+        except FirstAidError:
+            raise
+        except Exception as e:
+            conn.rollback()
+            raise FirstAidError(f"Failed to delete incident: {e}") from e
+        finally:
+            conn.close()
+
     def get_student_incidents(self, student_id: int) -> list[dict]:
         """Get all incidents for a student."""
         conn = self._conn()

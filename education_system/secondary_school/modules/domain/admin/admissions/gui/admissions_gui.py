@@ -99,7 +99,7 @@ class AdmissionsFrame(tk.Frame):
         c.pack()
         vars_ = {}
         fields = [("First Name", "first_name", "", None), ("Last Name", "last_name", "", None),
-                  ("Date of Birth", "dob", "", None), ("Gender", "gender", "", ["Male", "Female", "Other"]),
+                  ("Date of Birth (YYYY-MM-DD)", "dob", "", None), ("Gender", "gender", "", ["Male", "Female", "Other"]),
                   ("Year Group", "year", "7", list(YEAR_GROUPS)),
                   ("Address", "address", "", None),
                   ("Parent Name", "parent_name", "", None), ("Parent Email", "parent_email", "", None),

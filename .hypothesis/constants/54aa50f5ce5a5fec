@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/admin/documents/services/document_service.py
+# hypothesis_version: 6.151.9
+
+[' AND category = ?', ' AND status = ?', ' ORDER BY title', '1.0', 'active', 'cnt', 'consent_form', 'curriculum', 'other', 'policy', 'procedure', 'safeguarding', 'staff_record', 'student_record', 'template']

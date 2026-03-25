@@ -29,9 +29,9 @@ class TestSendConfirmationEmail:
     """Tests for send_confirmation_email function."""
 
     @patch('builtins.print')
-    @patch('university_system.infrastructure.email.queue_email', return_value=True)
-    @patch('university_system.infrastructure.email.log_event')
-    @patch('university_system.modules.core.services.student_union_misc.communications.get_connection')
+    @patch('education_system.university_system.infrastructure.email.queue_email', return_value=True)
+    @patch('education_system.university_system.infrastructure.email.log_event')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.communications.get_connection')
     def test_send_email_success(self, mock_get_conn, mock_log, mock_queue, mock_print):
         """Test successfully sending confirmation email."""
         # Setup mocks
@@ -54,8 +54,8 @@ class TestSendConfirmationEmail:
         mock_conn.close.assert_called_once()
 
     @patch('builtins.print')
-    @patch('university_system.infrastructure.email.log_event')
-    @patch('university_system.modules.core.services.student_union_misc.communications.get_connection')
+    @patch('education_system.university_system.infrastructure.email.log_event')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.communications.get_connection')
     def test_send_email_student_not_found(self, mock_get_conn, mock_log, mock_print):
         """Test sending email when student doesn't exist."""
         # Setup mocks
@@ -78,9 +78,9 @@ class TestSendConfirmationEmail:
         mock_conn.close.assert_called_once()
 
     @patch('builtins.print')
-    @patch('university_system.infrastructure.email.queue_email', return_value=False)
-    @patch('university_system.infrastructure.email.log_event')
-    @patch('university_system.modules.core.services.student_union_misc.communications.get_connection')
+    @patch('education_system.university_system.infrastructure.email.queue_email', return_value=False)
+    @patch('education_system.university_system.infrastructure.email.log_event')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.communications.get_connection')
     def test_send_email_queue_failure(self, mock_get_conn, mock_log, mock_queue, mock_print):
         """Test when email queueing fails."""
         # Setup mocks
@@ -102,7 +102,7 @@ class TestSendConfirmationEmail:
         mock_log.assert_called_with('error', 'Failed to send confirmation email to student S12345')
 
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.communications.get_connection')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.communications.get_connection')
     def test_send_email_import_error_fallback(self, mock_get_conn, mock_print):
         """Test fallback when email system is not available."""
         # Setup mocks
@@ -114,7 +114,7 @@ class TestSendConfirmationEmail:
 
         # Patch the imports to raise ImportError
         with patch.dict('sys.modules', {'university_system.infrastructure.email': None}):
-            with patch('university_system.modules.core.services.student_union_misc.communications.queue_email',
+            with patch('education_system.university_system.modules.core.services.student_union_misc.communications.queue_email',
                       side_effect=ImportError):
                 # Call function
                 result = communications.send_confirmation_email(
@@ -127,7 +127,7 @@ class TestSendConfirmationEmail:
                   for call in mock_print.call_args_list)
 
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.communications.get_connection')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.communications.get_connection')
     def test_send_email_database_error(self, mock_get_conn, mock_print):
         """Test handling of database errors."""
         # Setup mocks
@@ -148,9 +148,9 @@ class TestSendConfirmationEmail:
                   for call in mock_print.call_args_list)
 
     @patch('builtins.print')
-    @patch('university_system.infrastructure.email.queue_email', return_value=True)
-    @patch('university_system.infrastructure.email.log_event')
-    @patch('university_system.modules.core.services.student_union_misc.communications.get_connection')
+    @patch('education_system.university_system.infrastructure.email.queue_email', return_value=True)
+    @patch('education_system.university_system.infrastructure.email.log_event')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.communications.get_connection')
     def test_send_email_with_long_message(self, mock_get_conn, mock_log, mock_queue, mock_print):
         """Test sending email with long message body."""
         # Setup mocks
@@ -175,9 +175,9 @@ class TestSendConfirmationEmail:
         assert call_args[2] == long_message
 
     @patch('builtins.print')
-    @patch('university_system.infrastructure.email.queue_email', return_value=True)
-    @patch('university_system.infrastructure.email.log_event')
-    @patch('university_system.modules.core.services.student_union_misc.communications.get_connection')
+    @patch('education_system.university_system.infrastructure.email.queue_email', return_value=True)
+    @patch('education_system.university_system.infrastructure.email.log_event')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.communications.get_connection')
     def test_send_email_with_special_characters(self, mock_get_conn, mock_log, mock_queue, mock_print):
         """Test sending email with special characters."""
         # Setup mocks
@@ -227,8 +227,8 @@ class TestIntegrationCommunications:
         yield conn
         conn.close()
 
-    @patch('university_system.infrastructure.email.queue_email', return_value=True)
-    @patch('university_system.infrastructure.email.log_event')
+    @patch('education_system.university_system.infrastructure.email.queue_email', return_value=True)
+    @patch('education_system.university_system.infrastructure.email.log_event')
     def test_send_email_integration(self, mock_log, mock_queue, db_conn):
         """Test email sending with real database."""
         cursor = db_conn.cursor()

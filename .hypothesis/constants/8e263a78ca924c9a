@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/academic_calendar/security.py
+# hypothesis_version: 6.151.9
+
+[100000, 'length', 'password', 'sha256', 'utf-8']

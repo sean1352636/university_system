@@ -115,9 +115,9 @@ def view_all_tables():
         cursor = conn.cursor()
 
         cursor.execute('''
-            SELECT t.*, o.order_time, o.customer_id
+            SELECT t.*, o.order_date, o.customer_id
             FROM restaurant_tables t
-            LEFT JOIN restaurant_orders o ON t.current_order_id = o.order_id
+            LEFT JOIN orders o ON t.current_order_id = o.order_id
             ORDER BY t.table_id
         ''')
 
@@ -1200,7 +1200,7 @@ def optimize_table_structure():
 
         # Analyze table structures and suggest optimizations
         tables_to_analyze = [
-            'restaurant_orders', 'restaurant_customers', 'menu_items',
+            'orders', 'restaurant_customers', 'menu_items',
             'restaurant_inventory', 'restaurant_staff', 'restaurant_audit_logs'
         ]
 
@@ -1227,14 +1227,14 @@ def optimize_table_structure():
                 # Check for missing indexes on frequently queried columns
                 index_suggestions = []
                 
-                if table == 'restaurant_orders':
+                if table == 'orders':
                     # Check for date index
-                    cursor.execute("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='restaurant_orders' AND name LIKE '%order_time%'")
+                    cursor.execute("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='orders' AND name LIKE '%order_date%'")
                     if not cursor.fetchone():
-                        index_suggestions.append("order_time (for date queries)")
+                        index_suggestions.append("order_date (for date queries)")
                     
                     # Check for customer index
-                    cursor.execute("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='restaurant_orders' AND name LIKE '%customer%'")
+                    cursor.execute("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='orders' AND name LIKE '%customer%'")
                     if not cursor.fetchone():
                         index_suggestions.append("customer_id (for customer lookups)")
                 
@@ -1258,9 +1258,9 @@ def optimize_table_structure():
                     print("✅ Table structure appears optimized")
                 
                 # Check for potential data issues
-                if table == 'restaurant_orders' and row_count > 0:
+                if table == 'orders' and row_count > 0:
                     # Check for orders without customer info
-                    cursor.execute('SELECT COUNT(*) FROM restaurant_orders WHERE customer_id IS NULL')
+                    cursor.execute('SELECT COUNT(*) FROM orders WHERE customer_id IS NULL')
                     null_customers = cursor.fetchone()[0]
                     if null_customers > 0:
                         print(f"⚠️  {null_customers} orders without customer information")

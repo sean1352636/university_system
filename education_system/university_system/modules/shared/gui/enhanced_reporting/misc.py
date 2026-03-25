@@ -7,25 +7,25 @@ implementation that have not been explicitly wrapped elsewhere.
 from __future__ import annotations
 
 # Database functions
-from .core import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import (
     get_db_connection,
 )
 
 # Settings functions
-from .core import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import (
     show_directory_settings,
     show_theme_settings,
     validate_email_settings,
 )
 
 # Data processing functions
-from .core import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import (
     serialize_dataframe,
     get_template,
 )
 
 # Report generation functions
-from .core import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import (
     generate_enhanced_pdf_report,
     generate_enhanced_section,
     generate_enhanced_excel_report,
@@ -33,7 +33,7 @@ from .core import (
 )
 
 # Visualization functions
-from .core import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import (
     create_advanced_visualization,
     create_interactive_chart,
     create_standard_chart,
@@ -44,14 +44,14 @@ from .core import (
 )
 
 # Statistical functions
-from .core import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import (
     generate_statistical_summary,
     generate_quality_section,
     generate_predictions_section,
 )
 
 # Data retrieval functions
-from .core import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import (
     get_section_dataframe,
     get_correlation_data,
     get_trend_data,
@@ -60,7 +60,7 @@ from .core import (
 )
 
 # System maintenance functions
-from .core import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import (
     run_system_maintenance,
     cleanup_old_reports,
     load_scheduled_reports,
@@ -69,13 +69,13 @@ from .core import (
 )
 
 # Email functions
-from .core import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import (
     send_report_email,
     get_log_file,
 )
 
 # GUI classes and functions
-from .core import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import (
     ReportingSystemGUI,
     TemplateDialog,
     start_gui,

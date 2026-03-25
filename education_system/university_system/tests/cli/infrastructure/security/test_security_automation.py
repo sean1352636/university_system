@@ -200,8 +200,8 @@ class TestAutomatedNotifications:
 
     def test_setup_automated_notifications(self, sample_data, mock_auth):
         """Test setting up automated notification schedules"""
-        with patch('university_system.modules.domain.finance.core.security_automation.get_connection') as mock_conn, \
-             patch('university_system.modules.domain.finance.core.security_automation.auth', mock_auth):
+        with patch('education_system.university_system.modules.domain.finance.core.security_automation.get_connection') as mock_conn, \
+             patch('education_system.university_system.modules.domain.finance.core.security_automation.auth', mock_auth):
 
             conn = sqlite3.connect(sample_data)
             mock_conn.return_value = conn
@@ -217,8 +217,8 @@ class TestAutomatedNotifications:
 
     def test_send_automated_notifications(self, sample_data):
         """Test sending automated notifications"""
-        with patch('university_system.modules.domain.finance.core.security_automation.get_connection') as mock_conn, \
-             patch('university_system.modules.domain.finance.core.security_automation.send_notification', return_value=True):
+        with patch('education_system.university_system.modules.domain.finance.core.security_automation.get_connection') as mock_conn, \
+             patch('education_system.university_system.modules.domain.finance.core.security_automation.send_notification', return_value=True):
 
             conn = sqlite3.connect(sample_data)
             mock_conn.return_value = conn
@@ -242,9 +242,9 @@ class TestFraudDetection:
 
     def test_detect_payment_fraud(self, sample_data, mock_auth):
         """Test fraud detection on payments"""
-        with patch('university_system.modules.domain.finance.core.security_automation.get_connection') as mock_conn, \
-             patch('university_system.modules.domain.finance.core.security_automation.auth', mock_auth), \
-             patch('university_system.modules.domain.finance.core.security_automation.log_audit_action'):
+        with patch('education_system.university_system.modules.domain.finance.core.security_automation.get_connection') as mock_conn, \
+             patch('education_system.university_system.modules.domain.finance.core.security_automation.auth', mock_auth), \
+             patch('education_system.university_system.modules.domain.finance.core.security_automation.log_audit_action'):
 
             conn = sqlite3.connect(sample_data)
             mock_conn.return_value = conn
@@ -264,8 +264,8 @@ class TestAuditLogging:
 
     def test_log_audit_action(self, sample_data, mock_auth):
         """Test logging audit actions"""
-        with patch('university_system.modules.domain.finance.core.security_automation.get_connection') as mock_conn, \
-             patch('university_system.modules.domain.finance.core.security_automation.auth', mock_auth):
+        with patch('education_system.university_system.modules.domain.finance.core.security_automation.get_connection') as mock_conn, \
+             patch('education_system.university_system.modules.domain.finance.core.security_automation.auth', mock_auth):
 
             conn = sqlite3.connect(sample_data)
             mock_conn.return_value = conn
@@ -285,8 +285,8 @@ class TestWorkflowManagement:
 
     def test_create_approval_workflow(self, sample_data, mock_auth):
         """Test creating approval workflow"""
-        with patch('university_system.modules.domain.finance.core.security_automation.get_connection') as mock_conn, \
-             patch('university_system.modules.domain.finance.core.security_automation.auth', mock_auth):
+        with patch('education_system.university_system.modules.domain.finance.core.security_automation.get_connection') as mock_conn, \
+             patch('education_system.university_system.modules.domain.finance.core.security_automation.auth', mock_auth):
 
             conn = sqlite3.connect(sample_data)
             mock_conn.return_value = conn
@@ -305,8 +305,8 @@ class TestNotificationSending:
 
     def test_send_notification(self, sample_data):
         """Test sending a single notification"""
-        with patch('university_system.modules.domain.finance.core.security_automation.get_connection') as mock_conn, \
-             patch('university_system.modules.domain.finance.core.security_automation.send_email_notification', return_value=True):
+        with patch('education_system.university_system.modules.domain.finance.core.security_automation.get_connection') as mock_conn, \
+             patch('education_system.university_system.modules.domain.finance.core.security_automation.send_email_notification', return_value=True):
 
             conn = sqlite3.connect(sample_data)
             mock_conn.return_value = conn
@@ -327,7 +327,7 @@ class TestNotificationSending:
 
     def test_send_email_notification(self):
         """Test email notification wrapper"""
-        with patch('university_system.modules.domain.finance.core.security_automation.send_email', return_value=True):
+        with patch('education_system.university_system.modules.domain.finance.core.security_automation.send_email', return_value=True):
             result = security_automation.send_email_notification('test@test.com', 'Subject', 'Body')
             assert result is True or result is None, "Email should be sent or mocked"
 
@@ -340,7 +340,7 @@ class TestPermissions:
         mock_auth.current_user = {"username": "test_user"}
         mock_auth.check_permission = MagicMock(return_value=False)
 
-        with patch('university_system.modules.domain.finance.core.security_automation.auth', mock_auth):
+        with patch('education_system.university_system.modules.domain.finance.core.security_automation.auth', mock_auth):
             security_automation.setup_automated_notifications()
 
 if __name__ == '__main__':

@@ -527,7 +527,7 @@ class MusicShopGUI:
 
         for p in products:
             self.products_tree.insert('', tk.END, values=(
-                p['product_id'], p['sku'], p['title'], p.get('artist', ''),
+                p['product_id'], p['sku'], p.get('title') or p.get('name', ''), p.get('artist', ''),
                 p['category'], p.get('genre', ''), f"£{p['price']:.2f}", p['stock_quantity']
             ))
 
@@ -544,7 +544,7 @@ class MusicShopGUI:
         products = ProductManager.get_products_by_genre(genre)
         for p in products:
             self.products_tree.insert('', tk.END, values=(
-                p['product_id'], p['sku'], p['title'], p.get('artist', ''),
+                p['product_id'], p['sku'], p.get('title') or p.get('name', ''), p.get('artist', ''),
                 p['category'], p.get('genre', ''), f"£{p['price']:.2f}", p['stock_quantity']
             ))
 
@@ -873,8 +873,8 @@ class MusicShopGUI:
         try:
             with get_db_connection() as conn:
                 cursor = conn.execute('''
-                    SELECT transaction_id FROM musicshop_transactions
-                    WHERE order_id = ? AND transaction_type = 'payment'
+                    SELECT transaction_id FROM transactions
+                    WHERE source_type = 'music_shop' AND reference_id = ? AND reference_type = 'order' AND transaction_type = 'payment'
                     ORDER BY created_at DESC LIMIT 1
                 ''', (order_id,))
                 trans_result = cursor.fetchone()
@@ -898,9 +898,9 @@ class MusicShopGUI:
                 if transaction_id:
                     with get_db_connection() as conn:
                         conn.execute('''
-                            UPDATE musicshop_transactions
+                            UPDATE transactions
                             SET status = 'refunded'
-                            WHERE transaction_id = ?
+                            WHERE transaction_id = ? AND source_type = 'music_shop'
                         ''', (transaction_id,))
                         conn.commit()
 
@@ -1257,10 +1257,10 @@ Rare/Collectible Items: {summary['rare_items_count']}
 
                 if search_term:
                     query = '''
-                        SELECT transaction_id, order_id, created_at, customer_id,
+                        SELECT transaction_id, reference_id as order_id, created_at, customer_id,
                                amount, payment_method, status
-                        FROM musicshop_transactions
-                        WHERE transaction_id LIKE ? OR order_id LIKE ? OR customer_id LIKE ?
+                        FROM transactions
+                        WHERE source_type = 'music_shop' AND (transaction_id LIKE ? OR reference_id LIKE ? OR customer_id LIKE ?)
                         ORDER BY created_at DESC
                         LIMIT 500
                     '''
@@ -1268,9 +1268,10 @@ Rare/Collectible Items: {summary['rare_items_count']}
                     cursor = conn.execute(query, (search_pattern, search_pattern, search_pattern))
                 else:
                     query = '''
-                        SELECT transaction_id, order_id, created_at, customer_id,
+                        SELECT transaction_id, reference_id as order_id, created_at, customer_id,
                                amount, payment_method, status
-                        FROM musicshop_transactions
+                        FROM transactions
+                        WHERE source_type = 'music_shop'
                         ORDER BY created_at DESC
                         LIMIT 500
                     '''
@@ -1340,8 +1341,8 @@ Rare/Collectible Items: {summary['rare_items_count']}
             with get_db_connection() as conn:
                 cursor = conn.execute('''
                     SELECT customer_id, payment_method
-                    FROM musicshop_transactions
-                    WHERE transaction_id = ?
+                    FROM transactions
+                    WHERE transaction_id = ? AND source_type = 'music_shop'
                 ''', (transaction_id,))
 
                 trans_data = cursor.fetchone()
@@ -1368,39 +1369,23 @@ Rare/Collectible Items: {summary['rare_items_count']}
             with get_db_connection() as conn:
                 # Update transaction status to refunded
                 conn.execute('''
-                    UPDATE musicshop_transactions
+                    UPDATE transactions
                     SET status = 'refunded'
-                    WHERE transaction_id = ?
+                    WHERE transaction_id = ? AND source_type = 'music_shop'
                 ''', (transaction_id,))
 
                 # Generate refund reference
                 refund_ref = f"MUSIC-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-                # Create refunds table if it doesn't exist
-                conn.execute('''
-                    CREATE TABLE IF NOT EXISTS musicshop_refunds (
-                        refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        transaction_id INTEGER NOT NULL,
-                        order_id INTEGER,
-                        refund_date TEXT NOT NULL,
-                        refund_amount REAL NOT NULL,
-                        refund_method TEXT NOT NULL,
-                        refund_reference TEXT UNIQUE,
-                        customer_id TEXT,
-                        processed_by TEXT,
-                        notes TEXT,
-                        FOREIGN KEY (transaction_id) REFERENCES musicshop_transactions (transaction_id)
-                    )
-                ''')
-
-                # Insert refund record
+                # Insert refund record into unified_refunds table
                 processed_by = self.current_user.get('username', 'System') if self.current_user else 'System'
                 conn.execute('''
-                    INSERT INTO musicshop_refunds
-                    (transaction_id, order_id, refund_date, refund_amount, refund_method, refund_reference, customer_id, processed_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (transaction_id, order_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), amount, refund_method,
-                      refund_ref, customer_id, processed_by))
+                    INSERT INTO unified_refunds
+                    (source_type, reference_id, reference_type, refund_date, amount,
+                     refund_method, refund_reference, student_id, processed_by, notes)
+                    VALUES ('music_shop', ?, 'order', ?, ?, ?, ?, ?, ?, ?)
+                ''', (str(order_id), datetime.now().strftime('%Y-%m-%d %H:%M:%S'), amount, refund_method,
+                      refund_ref, customer_id, processed_by, f'musicshop_transaction_{transaction_id}'))
 
                 conn.commit()
 
@@ -1532,10 +1517,10 @@ Rare/Collectible Items: {summary['rare_items_count']}
                 # Record transaction
                 processed_by = self.current_user.get('username', 'System') if self.current_user else 'System'
                 conn.execute('''
-                    INSERT INTO student_finance_transactions
-                    (account_id, student_id, transaction_type, amount, balance_before,
+                    INSERT INTO transactions
+                    (source_type, account_id, student_id, transaction_type, amount, balance_before,
                      balance_after, description, reference_id, processed_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES ('student_finance', ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (account_id, customer_id, 'credit', amount, balance_before, balance_after,
                       'Music Shop Purchase Refund', refund_ref, processed_by))
 
@@ -1593,22 +1578,9 @@ Rare/Collectible Items: {summary['rare_items_count']}
             logger.error(f"Error sending refund receipt: {e}")
 
     def notify_musicshop_finance_gui(self, transaction_id, amount, method, refund_ref, customer_id):
-        """Notify finance GUI about the refund"""
+        """Notify finance GUI about the refund - already recorded in unified_refunds."""
         try:
-            with get_db_connection() as conn:
-                # Insert into finance_refunds table (table already exists)
-                processed_by = self.current_user.get('username', 'System') if self.current_user else 'System'
-                conn.execute('''
-                    INSERT INTO finance_refunds
-                    (transaction_id, refund_reference, department, amount, refund_method,
-                     refund_date, student_id, processed_by, notes)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (str(transaction_id), refund_ref, 'Music Shop', amount, method,
-                      datetime.now().strftime('%Y-%m-%d %H:%M:%S'), customer_id, processed_by,
-                      'Music Shop purchase refund'))
-
-                conn.commit()
-
+            logger.info(f"[Music Shop] Refund {refund_ref} recorded in unified_refunds")
         except Exception as e:
             logger.error(f"Error notifying finance GUI: {e}")
 
@@ -1634,9 +1606,9 @@ Rare/Collectible Items: {summary['rare_items_count']}
                 # Get transaction details
                 cursor = conn.execute('''
                     SELECT t.*, o.shipping_address, o.status as order_status
-                    FROM musicshop_transactions t
-                    LEFT JOIN musicshop_orders o ON t.order_id = o.order_id
-                    WHERE t.transaction_id = ?
+                    FROM transactions t
+                    LEFT JOIN orders o ON t.reference_id = o.id AND t.reference_type = 'order' AND o.source_type = 'music_shop'
+                    WHERE t.source_type = 'music_shop' AND t.transaction_id = ?
                 ''', (transaction_id,))
 
                 trans = cursor.fetchone()
@@ -1647,9 +1619,9 @@ Rare/Collectible Items: {summary['rare_items_count']}
 
                 # Get order items
                 cursor = conn.execute('''
-                    SELECT oi.product_id, p.title, p.artist, p.genre, oi.quantity, oi.unit_price, oi.subtotal
-                    FROM musicshop_order_items oi
-                    LEFT JOIN musicshop_products p ON oi.product_id = p.product_id
+                    SELECT oi.product_id, p.name, p.artist, p.genre, oi.quantity, oi.unit_price, oi.subtotal
+                    FROM order_items oi
+                    LEFT JOIN products p ON oi.product_id = p.id AND p.source_type = 'music_shop'
                     WHERE oi.order_id = ?
                 ''', (order_id,))
 

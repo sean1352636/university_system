@@ -277,6 +277,17 @@ class BookingManager:
                 )
                 dialog.destroy()
                 self._refresh_bookings()
+
+                # Email both student and instructor
+                self._send_booking_emails(
+                    student_id=student_id,
+                    instructor_id=instructor,
+                    day=day,
+                    start_time=start,
+                    end_time=end,
+                    location=location,
+                    booking_date=booking_date,
+                )
             except ValueError as e:
                 messagebox.showwarning("Booking Error", str(e), parent=dialog)
             except Exception as e:
@@ -349,6 +360,15 @@ class BookingManager:
             if success:
                 messagebox.showinfo("Success", "Booking cancelled successfully.")
                 self._refresh_bookings()
+
+                # Email both parties about cancellation
+                self._send_cancellation_emails(
+                    student_id=student_id,
+                    instructor_id=instructor,
+                    day=day,
+                    time_str=time_str,
+                    booking_date=date,
+                )
             else:
                 messagebox.showwarning(
                     "Not Cancelled",
@@ -360,3 +380,143 @@ class BookingManager:
             messagebox.showerror(
                 "Error", f"Failed to cancel booking:\n{e}",
             )
+
+    # ------------------------------------------------------------------ #
+    #  Email notifications
+    # ------------------------------------------------------------------ #
+
+    def _send_booking_emails(self, student_id, instructor_id, day, start_time,
+                             end_time, location, booking_date):
+        """Email both the student and the instructor about the booking."""
+        try:
+            from education_system.university_system.infrastructure.email.email_service import send_email
+            from education_system.university_system.infrastructure.database.db import get_connection
+
+            with get_connection() as conn:
+                # Get student info
+                student_row = conn.execute(
+                    "SELECT first_name, last_name, email_address FROM students WHERE student_id = ?",
+                    (student_id,)
+                ).fetchone()
+
+                if not student_row:
+                    student_row = conn.execute(
+                        "SELECT first_name, last_name, email FROM users WHERE username = ? OR id = ?",
+                        (student_id, student_id)
+                    ).fetchone()
+
+                # Get instructor info
+                instructor_row = conn.execute(
+                    "SELECT first_name, last_name, email FROM users WHERE username = ? OR id = ?",
+                    (instructor_id, instructor_id)
+                ).fetchone()
+
+            student_name = f"{student_row[0]} {student_row[1]}" if student_row else student_id
+            student_email = student_row[2] if student_row else None
+
+            instructor_name = f"{instructor_row[0]} {instructor_row[1]}" if instructor_row else instructor_id
+            instructor_email = instructor_row[2] if instructor_row else None
+
+            meeting_details = (
+                f"Date: {booking_date}\n"
+                f"Day: {day}\n"
+                f"Time: {start_time} - {end_time}\n"
+                f"Location: {location}\n"
+            )
+
+            # Email student
+            if student_email:
+                send_email(
+                    recipient_email=student_email,
+                    subject=f"Office Hours Booking Confirmed - {booking_date}",
+                    body=(
+                        f"Dear {student_name},\n\n"
+                        f"Your office hours appointment has been confirmed:\n\n"
+                        f"Instructor: {instructor_name}\n"
+                        f"{meeting_details}\n"
+                        f"Please arrive on time. If you need to cancel, please do so "
+                        f"through the Office Hours Management system.\n\n"
+                        f"Best regards,\nAcademic Administration"
+                    )
+                )
+
+            # Email instructor
+            if instructor_email:
+                send_email(
+                    recipient_email=instructor_email,
+                    subject=f"Office Hours Booking - {student_name} on {booking_date}",
+                    body=(
+                        f"Dear {instructor_name},\n\n"
+                        f"A student has booked an office hours appointment with you:\n\n"
+                        f"Student: {student_name} ({student_id})\n"
+                        f"{meeting_details}\n"
+                        f"Best regards,\nAcademic Administration"
+                    )
+                )
+
+        except Exception as e:
+            logger.warning("Failed to send booking emails: %s", e)
+
+    def _send_cancellation_emails(self, student_id, instructor_id, day, time_str,
+                                   booking_date):
+        """Email both the student and the instructor about a cancelled booking."""
+        try:
+            from education_system.university_system.infrastructure.email.email_service import send_email
+            from education_system.university_system.infrastructure.database.db import get_connection
+
+            with get_connection() as conn:
+                student_row = conn.execute(
+                    "SELECT first_name, last_name, email_address FROM students WHERE student_id = ?",
+                    (student_id,)
+                ).fetchone()
+                if not student_row:
+                    student_row = conn.execute(
+                        "SELECT first_name, last_name, email FROM users WHERE username = ? OR id = ?",
+                        (student_id, student_id)
+                    ).fetchone()
+
+                instructor_row = conn.execute(
+                    "SELECT first_name, last_name, email FROM users WHERE username = ? OR id = ?",
+                    (instructor_id, instructor_id)
+                ).fetchone()
+
+            student_name = f"{student_row[0]} {student_row[1]}" if student_row else student_id
+            student_email = student_row[2] if student_row else None
+            instructor_name = f"{instructor_row[0]} {instructor_row[1]}" if instructor_row else instructor_id
+            instructor_email = instructor_row[2] if instructor_row else None
+
+            details = (
+                f"Date: {booking_date}\n"
+                f"Day: {day}\n"
+                f"Time: {time_str}\n"
+            )
+
+            if student_email:
+                send_email(
+                    recipient_email=student_email,
+                    subject=f"Office Hours Booking Cancelled - {booking_date}",
+                    body=(
+                        f"Dear {student_name},\n\n"
+                        f"Your office hours appointment has been cancelled:\n\n"
+                        f"Instructor: {instructor_name}\n"
+                        f"{details}\n"
+                        f"If you need to rebook, please visit the Office Hours Management system.\n\n"
+                        f"Best regards,\nAcademic Administration"
+                    )
+                )
+
+            if instructor_email:
+                send_email(
+                    recipient_email=instructor_email,
+                    subject=f"Office Hours Booking Cancelled - {student_name} on {booking_date}",
+                    body=(
+                        f"Dear {instructor_name},\n\n"
+                        f"A student has cancelled their office hours appointment:\n\n"
+                        f"Student: {student_name} ({student_id})\n"
+                        f"{details}\n"
+                        f"Best regards,\nAcademic Administration"
+                    )
+                )
+
+        except Exception as e:
+            logger.warning("Failed to send cancellation emails: %s", e)

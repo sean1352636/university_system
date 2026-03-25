@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/plagiarism/cli/reporting.py
+# hypothesis_version: 6.151.9
+
+[100, '\nDetailed Report:', '\nDocument Details', '\nMatched Documents:', '\nSimilar Documents:', '================', 'Invalid selection.', 'NO_MATCH', 'documents_by_module', 'exact', 'highest_similarity', 'latest_check', 'match_type', 'matched_document_id', 'matches', 'recent_checks', 'report', 'result_id', 'similarity_score', 'status', 'status_counts', 'y']

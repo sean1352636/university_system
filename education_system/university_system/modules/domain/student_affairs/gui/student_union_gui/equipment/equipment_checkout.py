@@ -408,7 +408,9 @@ class CheckOutEquipmentDialog:
 
 
 class ReturnEquipmentDialog:
-    """Dialog for returning equipment"""
+    """Dialog for returning equipment with late fee handling and email confirmations"""
+
+    LATE_FEE_PER_DAY = 10.00  # £10 per day late
 
     def __init__(self, parent, auth_manager):
         self.parent = parent
@@ -416,103 +418,472 @@ class ReturnEquipmentDialog:
 
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Return Equipment")
-        self.dialog.geometry("700x600")
+        self.dialog.geometry("750x650")
         self.dialog.transient(parent)
         self.dialog.grab_set()
 
         self.create_widgets()
+        self.load_checkouts()
+
+    def _get_borrower_id(self):
+        """Resolve current user to a borrower_id."""
+        if not self.auth or not self.auth.current_user:
+            return None
+        user = self.auth.current_user
+        try:
+            from education_system.university_system.infrastructure.database.db import get_connection
+            conn = get_connection()
+            try:
+                cursor = conn.cursor()
+                cursor.execute("SELECT student_id FROM users WHERE id = ?", (user.get('id'),))
+                row = cursor.fetchone()
+                if row and row[0]:
+                    return row[0]
+            finally:
+                conn.close()
+        except Exception:
+            pass
+        return user.get('username') or str(user.get('id', ''))
+
+    def _get_user_email(self):
+        """Look up current user's email."""
+        if not self.auth or not self.auth.current_user:
+            return None
+        user = self.auth.current_user
+        if user.get('email'):
+            return user['email']
+        try:
+            from education_system.university_system.infrastructure.database.db import get_connection
+            conn = get_connection()
+            try:
+                cursor = conn.cursor()
+                cursor.execute("SELECT email FROM users WHERE id = ?", (user.get('id'),))
+                row = cursor.fetchone()
+                if row and row[0]:
+                    return row[0]
+                cursor.execute("SELECT email_address FROM students WHERE student_id = ?",
+                             (user.get('username', ''),))
+                row = cursor.fetchone()
+                if row and row[0]:
+                    return row[0]
+            finally:
+                conn.close()
+        except Exception:
+            pass
+        return None
 
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="↩️ Return Equipment",
+        ttk.Label(main_frame, text="Return Equipment",
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
-        # Your checkouts
+        # Current checkouts
         checkouts_frame = ttk.LabelFrame(main_frame, text="Your Current Checkouts")
         checkouts_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         columns = ('ID', 'Equipment', 'Checkout Date', 'Due Date', 'Days Left', 'Status')
-        tree = ttk.Treeview(checkouts_frame, columns=columns, show='tree headings', height=6)
+        self.tree = ttk.Treeview(checkouts_frame, columns=columns, show='headings', height=6)
 
         for col in columns:
-            tree.heading(col, text=col)
+            self.tree.heading(col, text=col)
             if col == 'Equipment':
-                tree.column(col, width=200)
+                self.tree.column(col, width=200)
             else:
-                tree.column(col, width=90)
+                self.tree.column(col, width=90)
 
-        tree.pack(fill='both', expand=True, padx=5, pady=5)
+        self.tree.pack(fill='both', expand=True, padx=5, pady=5)
+        self.tree.bind('<<TreeviewSelect>>', self._on_select)
 
-        # Sample checkouts
-        checkouts = [
-            ("CHK234", "Professional Camera (Canon EOS R5)", "2025-03-29", "2025-04-05", "3 days", "On Time"),
-            ("CHK220", "Wireless Microphone System", "2025-03-25", "2025-04-01", "0 days", "Due Today"),
-            ("CHK198", "Tripod (Manfrotto Pro)", "2025-03-15", "2025-03-22", "-5 days", "OVERDUE")
-        ]
-
-        for checkout in checkouts:
-            tree.insert('', 'end', values=checkout)
+        # Late fee info
+        self.fee_label = ttk.Label(main_frame, text="", foreground='red',
+                                   font=('Arial', 10, 'bold'))
+        self.fee_label.pack(anchor='w', pady=(0, 10))
 
         # Return form
-        return_frame = ttk.LabelFrame(main_frame, text="Return Equipment")
+        return_frame = ttk.LabelFrame(main_frame, text="Return Details")
         return_frame.pack(fill='x', pady=(0, 15))
 
         return_content = ttk.Frame(return_frame)
         return_content.pack(fill='x', padx=15, pady=10)
 
-        ttk.Label(return_content, text="Checkout ID:").grid(row=0, column=0, sticky='w', pady=5)
-        ttk.Entry(return_content, width=30).grid(row=0, column=1, sticky='ew', padx=10, pady=5)
+        ttk.Label(return_content, text="Condition on Return:").grid(row=0, column=0, sticky='w', pady=5)
+        self.condition_combo = ttk.Combobox(return_content, width=28, state='readonly')
+        self.condition_combo['values'] = ('good', 'excellent', 'fair', 'poor', 'damaged')
+        self.condition_combo.current(0)
+        self.condition_combo.grid(row=0, column=1, sticky='ew', padx=10, pady=5)
 
-        ttk.Label(return_content, text="Condition:").grid(row=1, column=0, sticky='w', pady=5)
-        condition_combo = ttk.Combobox(return_content, width=28, state='readonly')
-        condition_combo['values'] = ('Same as checkout (Good)', 'Excellent', 'Minor wear', 'Damaged - Minor', 'Damaged - Major')
-        condition_combo.current(0)
-        condition_combo.grid(row=1, column=1, sticky='ew', padx=10, pady=5)
-
-        ttk.Label(return_content, text="Notes/Issues:").grid(row=2, column=0, sticky='nw', pady=5)
-        notes_text = scrolledtext.ScrolledText(return_content, height=4, width=30)
-        notes_text.grid(row=2, column=1, sticky='ew', padx=10, pady=5)
-        notes_text.insert('1.0', "Equipment in good condition, no issues to report.")
+        ttk.Label(return_content, text="Notes:").grid(row=1, column=0, sticky='nw', pady=5)
+        self.notes_text = scrolledtext.ScrolledText(return_content, height=3, width=30)
+        self.notes_text.grid(row=1, column=1, sticky='ew', padx=10, pady=5)
 
         return_content.columnconfigure(1, weight=1)
-
-        # Late fee warning
-        fee_frame = ttk.Frame(main_frame)
-        fee_frame.pack(fill='x', pady=(0, 15))
-
-        ttk.Label(fee_frame, text="⚠️ Late Fee Calculation:", font=('Arial', 10, 'bold')).pack(anchor='w')
-        ttk.Label(fee_frame, text="CHK198 (Tripod): 5 days overdue × £10/day = £50", foreground='red').pack(anchor='w', padx=20)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Process Return", command=self.process_return).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Report Damage", command=self.report_damage).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text="Process Return",
+                  command=self.process_return).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Refresh",
+                  command=self.load_checkouts).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Close",
+                  command=self.dialog.destroy).pack(side='right')
+
+    def load_checkouts(self):
+        """Load current user's checked-out equipment from DB."""
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        self.fee_label.config(text="")
+
+        borrower_id = self._get_borrower_id()
+        if not borrower_id:
+            self.tree.insert('', 'end', values=('', 'No user session', '', '', '', ''))
+            return
+
+        try:
+            from education_system.university_system.infrastructure.database.db import get_connection
+            conn = get_connection()
+            try:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT c.checkout_id, e.equipment_name, c.checkout_date,
+                           c.expected_return, e.equipment_id
+                    FROM equipment_checkouts c
+                    JOIN union_equipment e ON c.equipment_id = e.equipment_id
+                    WHERE c.borrower_id = ? AND c.status = 'checked_out'
+                    ORDER BY c.expected_return ASC
+                ''', (borrower_id,))
+                rows = cursor.fetchall()
+            finally:
+                conn.close()
+
+            if not rows:
+                self.tree.insert('', 'end', values=('', 'No current checkouts', '', '', '', ''))
+                return
+
+            today = datetime.now().date()
+            for row in rows:
+                checkout_id, equip_name, checkout_date, due_date, equip_id = row
+                try:
+                    due = datetime.strptime(due_date, '%Y-%m-%d').date()
+                    days_left = (due - today).days
+                    if days_left < 0:
+                        status = 'OVERDUE'
+                        days_text = f"{days_left} days"
+                    elif days_left == 0:
+                        status = 'Due Today'
+                        days_text = '0 days'
+                    else:
+                        status = 'On Time'
+                        days_text = f"{days_left} days"
+                except (ValueError, TypeError):
+                    days_text = 'N/A'
+                    status = 'Unknown'
+
+                self.tree.insert('', 'end', values=(
+                    checkout_id, equip_name or '', checkout_date or '',
+                    due_date or '', days_text, status
+                ))
+        except Exception as e:
+            self.tree.insert('', 'end', values=('', f'Error: {e}', '', '', '', ''))
+
+    def _on_select(self, event):
+        """Update late fee display when a checkout is selected."""
+        selection = self.tree.selection()
+        if not selection:
+            self.fee_label.config(text="")
+            return
+
+        values = self.tree.item(selection[0], 'values')
+        status = values[5] if len(values) > 5 else ''
+        days_text = values[4] if len(values) > 4 else ''
+
+        if status == 'OVERDUE':
+            try:
+                days_late = abs(int(days_text.split()[0]))
+                fee = days_late * self.LATE_FEE_PER_DAY
+                self.fee_label.config(
+                    text=f"Late fee: {days_late} days overdue x £{self.LATE_FEE_PER_DAY:.2f}/day = £{fee:.2f}")
+            except (ValueError, IndexError):
+                self.fee_label.config(text="Late fee applies")
+        else:
+            self.fee_label.config(text="No late fee - on time return")
 
     def process_return(self):
-        messagebox.showinfo("Return Processed",
-                          "Equipment return processed!\n\n" +
-                          "Checkout ID: CHK234\n" +
-                          "Equipment: Professional Camera (Canon EOS R5)\n" +
-                          "Returned: 2025-04-02\n" +
-                          "Condition: Same as checkout (Good)\n" +
-                          "Late Fee: £0.00\n\n" +
-                          "Thank you for returning on time!\n" +
-                          "Confirmation email sent.")
+        """Process the equipment return with late fee handling."""
+        selection = self.tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a checkout to return.",
+                                 parent=self.dialog)
+            return
 
-    def report_damage(self):
-        messagebox.showinfo("Report Damage",
-                          "Damage Report Form:\n\n" +
-                          "Please provide:\n" +
-                          "- Description of damage\n" +
-                          "- Photos if possible\n" +
-                          "- How damage occurred\n\n" +
-                          "Damage assessment will be conducted\n" +
-                          "and you'll be notified of any charges.")
+        values = self.tree.item(selection[0], 'values')
+        checkout_id = values[0]
+        equip_name = values[1]
+        due_date = values[3]
+        status = values[5] if len(values) > 5 else ''
+        days_text = values[4] if len(values) > 4 else ''
+
+        if not checkout_id or checkout_id == '':
+            return
+
+        condition = self.condition_combo.get()
+        notes = self.notes_text.get('1.0', tk.END).strip()
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        # Calculate late fee
+        late_fee = 0.0
+        days_late = 0
+        if status == 'OVERDUE':
+            try:
+                days_late = abs(int(days_text.split()[0]))
+                late_fee = days_late * self.LATE_FEE_PER_DAY
+            except (ValueError, IndexError):
+                pass
+
+        # If late, handle payment first
+        if late_fee > 0:
+            paid = self._handle_late_fee_payment(checkout_id, equip_name, days_late, late_fee)
+            if not paid:
+                return  # Payment cancelled
+
+        # Process the return in DB
+        try:
+            from education_system.university_system.infrastructure.database.db import get_connection
+            conn = get_connection()
+            try:
+                cursor = conn.cursor()
+                # Update checkout record
+                cursor.execute('''
+                    UPDATE equipment_checkouts
+                    SET status = 'returned', actual_return = ?, condition_in = ?, notes = ?
+                    WHERE checkout_id = ?
+                ''', (now, condition, notes, checkout_id))
+
+                # Get equipment_id to update availability
+                cursor.execute('SELECT equipment_id FROM equipment_checkouts WHERE checkout_id = ?',
+                             (checkout_id,))
+                row = cursor.fetchone()
+                if row:
+                    cursor.execute('''
+                        UPDATE union_equipment
+                        SET availability_status = 'available', condition_status = ?
+                        WHERE equipment_id = ?
+                    ''', (condition, row[0]))
+
+                conn.commit()
+            finally:
+                conn.close()
+
+            # Send confirmation email
+            self._send_return_confirmation_email(checkout_id, equip_name, condition, late_fee)
+
+            msg = (f"Equipment returned successfully!\n\n"
+                   f"Equipment: {equip_name}\n"
+                   f"Condition: {condition}\n"
+                   f"Returned: {now}\n")
+            if late_fee > 0:
+                msg += f"Late Fee Paid: £{late_fee:.2f}\n"
+            else:
+                msg += "Late Fee: £0.00\n"
+            msg += "\nConfirmation email sent."
+
+            messagebox.showinfo("Return Processed", msg, parent=self.dialog)
+            self.load_checkouts()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to process return: {e}", parent=self.dialog)
+
+    def _handle_late_fee_payment(self, checkout_id, equip_name, days_late, late_fee):
+        """Show late fee payment dialog. Returns True if paid, False if cancelled."""
+        pay_dialog = tk.Toplevel(self.dialog)
+        pay_dialog.title("Late Fee Payment Required")
+        pay_dialog.geometry("450x350")
+        pay_dialog.transient(self.dialog)
+        pay_dialog.grab_set()
+
+        result = {'paid': False}
+
+        main = ttk.Frame(pay_dialog, padding=20)
+        main.pack(fill='both', expand=True)
+
+        ttk.Label(main, text="Late Fee Payment Required",
+                 font=('Arial', 13, 'bold')).pack(pady=(0, 15))
+
+        ttk.Label(main, text=f"Equipment: {equip_name}").pack(anchor='w')
+        ttk.Label(main, text=f"Days Overdue: {days_late}").pack(anchor='w')
+        ttk.Label(main, text=f"Fee Rate: £{self.LATE_FEE_PER_DAY:.2f}/day").pack(anchor='w')
+        ttk.Label(main, text=f"Total Due: £{late_fee:.2f}",
+                 font=('Arial', 12, 'bold'), foreground='red').pack(anchor='w', pady=(5, 15))
+
+        ttk.Label(main, text="Select Payment Method:",
+                 font=('Arial', 10, 'bold')).pack(anchor='w', pady=(0, 10))
+
+        def pay_with(method):
+            success = self._process_late_fee(checkout_id, equip_name, late_fee, method)
+            if success:
+                result['paid'] = True
+                pay_dialog.destroy()
+
+        ttk.Button(main, text="Cash", width=30,
+                  command=lambda: pay_with('cash')).pack(pady=3)
+        ttk.Button(main, text="Card", width=30,
+                  command=lambda: pay_with('card')).pack(pady=3)
+        ttk.Button(main, text="Student Finance Account", width=30,
+                  command=lambda: pay_with('student_finance')).pack(pady=3)
+
+        ttk.Separator(main).pack(fill='x', pady=10)
+        ttk.Button(main, text="Cancel Return", command=pay_dialog.destroy).pack()
+
+        self.dialog.wait_window(pay_dialog)
+        return result['paid']
+
+    def _process_late_fee(self, checkout_id, equip_name, amount, method):
+        """Process the late fee payment. Returns True on success."""
+        from education_system.university_system.infrastructure.database.db import get_connection
+
+        borrower_id = self._get_borrower_id()
+        user = self.auth.current_user if self.auth else {}
+        username = user.get('username', 'Unknown')
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        if method == 'student_finance':
+            # Deduct from student finance account
+            try:
+                conn = get_connection()
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        SELECT account_id, balance FROM student_finance_accounts
+                        WHERE student_id = ? AND account_status = 'active'
+                    ''', (borrower_id,))
+                    acct = cursor.fetchone()
+
+                    if not acct:
+                        messagebox.showerror("Error",
+                            "No active student finance account found.\nPlease use another payment method.",
+                            parent=self.dialog)
+                        return False
+
+                    account_id, balance = acct[0], float(acct[1])
+                    if balance < amount:
+                        messagebox.showerror("Insufficient Funds",
+                            f"Account balance: £{balance:.2f}\nAmount due: £{amount:.2f}\n\n"
+                            "Please use another payment method.",
+                            parent=self.dialog)
+                        return False
+
+                    new_balance = balance - amount
+
+                    # Deduct from account
+                    cursor.execute('''
+                        UPDATE student_finance_accounts
+                        SET balance = ?, updated_at = ?
+                        WHERE account_id = ?
+                    ''', (new_balance, now, account_id))
+
+                    # Record transaction
+                    cursor.execute('''
+                        INSERT INTO transactions
+                        (source_type, account_id, student_id, transaction_type, amount,
+                         balance_before, balance_after, description, reference_id, processed_by, created_at)
+                        VALUES ('student_finance', ?, ?, 'debit', ?, ?, ?, ?, ?, ?, ?)
+                    ''', (account_id, borrower_id, amount, balance, new_balance,
+                          f'Equipment late fee - {equip_name}',
+                          f'EQFEE-{checkout_id}', username, now))
+
+                    conn.commit()
+                finally:
+                    conn.close()
+            except Exception as e:
+                messagebox.showerror("Payment Error", f"Failed to process payment: {e}",
+                                   parent=self.dialog)
+                return False
+
+        # Record payment in payments table for finance tracking
+        try:
+            conn = get_connection()
+            try:
+                cursor = conn.cursor()
+                payment_ref = f"EQFEE-{checkout_id}-{now.replace(' ', '').replace(':', '').replace('-', '')}"
+                cursor.execute('''
+                    INSERT OR IGNORE INTO payments
+                    (source_type, student_id, amount, payment_method, payment_date,
+                     payment_reference, department, notes, processed_by)
+                    VALUES ('finance', ?, ?, ?, ?, ?, 'Student Union Equipment',
+                            ?, ?)
+                ''', (borrower_id, amount, method, now,
+                      payment_ref,
+                      f'Late fee for equipment return - {equip_name}', username))
+                conn.commit()
+            finally:
+                conn.close()
+        except Exception:
+            pass  # payments table may not exist - non-critical
+
+        # Send payment receipt email
+        self._send_payment_receipt_email(checkout_id, equip_name, amount, method)
+
+        return True
+
+    def _send_return_confirmation_email(self, checkout_id, equip_name, condition, late_fee):
+        """Send return confirmation email."""
+        email = self._get_user_email()
+        if not email:
+            return
+        try:
+            from education_system.university_system.infrastructure.email.email_service.core import send_email
+            username = self.auth.current_user.get('username', '') if self.auth else ''
+            now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+            body = (
+                f"Dear {username},\n\n"
+                f"Your equipment return has been processed.\n\n"
+                f"Equipment: {equip_name}\n"
+                f"Return Date: {now}\n"
+                f"Condition: {condition}\n"
+                f"Late Fee: £{late_fee:.2f}\n\n"
+                f"Thank you for returning the equipment.\n\n"
+                f"Best regards,\nStudent Union Equipment Team"
+            )
+            send_email(email, f"Equipment Return Confirmation - {equip_name}", body)
+        except Exception as e:
+            logging.warning(f"Could not send return confirmation email: {e}")
+
+    def _send_payment_receipt_email(self, checkout_id, equip_name, amount, method):
+        """Send late fee payment receipt email."""
+        email = self._get_user_email()
+        if not email:
+            return
+        try:
+            from education_system.university_system.infrastructure.email.email_service.core import send_email
+            username = self.auth.current_user.get('username', '') if self.auth else ''
+            now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+            method_display = {
+                'cash': 'Cash',
+                'card': 'Card',
+                'student_finance': 'Student Finance Account'
+            }.get(method, method)
+
+            body = (
+                f"Dear {username},\n\n"
+                f"PAYMENT RECEIPT\n"
+                f"{'=' * 40}\n\n"
+                f"Reference: EQFEE-{checkout_id}\n"
+                f"Date: {now}\n"
+                f"Description: Equipment late return fee\n"
+                f"Equipment: {equip_name}\n"
+                f"Amount Paid: £{amount:.2f}\n"
+                f"Payment Method: {method_display}\n\n"
+                f"This is your official receipt of payment.\n\n"
+                f"Best regards,\nStudent Union Equipment Team"
+            )
+            send_email(email, f"Payment Receipt - Equipment Late Fee £{amount:.2f}", body)
+        except Exception as e:
+            logging.warning(f"Could not send payment receipt email: {e}")
 
 
 
@@ -529,25 +900,44 @@ class ViewMyEquipmentCheckoutsDialog:
         self.dialog.transient(parent)
         self.dialog.grab_set()
 
+        self.current_tree = None
+        self.history_tree = None
+        self.summary_label = None
+
         self.create_widgets()
+        self.load_data()
+
+    def _get_borrower_id(self, conn):
+        """Resolve the current user to a borrower_id used in equipment_checkouts."""
+        cursor = conn.cursor()
+        user_id = self.auth.current_user.get('id')
+
+        # Try looking up a student_id first (student users)
+        try:
+            cursor.execute('SELECT student_id FROM users WHERE id = ?', (user_id,))
+            result = cursor.fetchone()
+            if result and result[0]:
+                return result[0]
+        except sqlite3.OperationalError:
+            pass
+
+        # Fall back to the user id / username
+        username = self.auth.current_user.get('username')
+        return username if username else str(user_id)
 
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="📚 My Equipment Checkouts",
+        ttk.Label(main_frame, text="My Equipment Checkouts",
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Summary
         summary_frame = ttk.LabelFrame(main_frame, text="Summary")
         summary_frame.pack(fill='x', pady=(0, 15))
 
-        summary_text = """Current Checkouts: 3
-Overdue Items: 1
-Total Borrowed (All Time): 18
-On-Time Returns: 94% (17/18)"""
-
-        ttk.Label(summary_frame, text=summary_text, justify='left', font=('Courier', 10)).pack(padx=15, pady=10)
+        self.summary_label = ttk.Label(summary_frame, text="Loading...", justify='left', font=('Courier', 10))
+        self.summary_label.pack(padx=15, pady=10)
 
         # Create notebook
         notebook = ttk.Notebook(main_frame)
@@ -558,51 +948,32 @@ On-Time Returns: 94% (17/18)"""
         notebook.add(current_frame, text="Current Checkouts")
 
         columns = ('ID', 'Equipment', 'Checkout Date', 'Due Date', 'Days Left', 'Status')
-        current_tree = ttk.Treeview(current_frame, columns=columns, show='tree headings', height=10)
+        self.current_tree = ttk.Treeview(current_frame, columns=columns, show='tree headings', height=10)
 
         for col in columns:
-            current_tree.heading(col, text=col)
+            self.current_tree.heading(col, text=col)
             if col == 'Equipment':
-                current_tree.column(col, width=250)
+                self.current_tree.column(col, width=250)
             else:
-                current_tree.column(col, width=110)
+                self.current_tree.column(col, width=110)
 
-        current_tree.pack(fill='both', expand=True, padx=10, pady=10)
-
-        current_checkouts = [
-            ("CHK234", "Professional Camera (Canon EOS R5)", "2025-03-29", "2025-04-05", "3 days", "On Time"),
-            ("CHK220", "Wireless Microphone System", "2025-03-25", "2025-04-01", "0 days", "Due Today"),
-            ("CHK198", "Tripod (Manfrotto Pro)", "2025-03-15", "2025-03-22", "-5 days", "OVERDUE")
-        ]
-
-        for checkout in current_checkouts:
-            current_tree.insert('', 'end', values=checkout)
+        self.current_tree.pack(fill='both', expand=True, padx=10, pady=10)
 
         # History tab
         history_frame = ttk.Frame(notebook)
         notebook.add(history_frame, text="Checkout History")
 
         history_columns = ('ID', 'Equipment', 'Checkout Date', 'Return Date', 'Days Borrowed', 'Status')
-        history_tree = ttk.Treeview(history_frame, columns=history_columns, show='tree headings', height=10)
+        self.history_tree = ttk.Treeview(history_frame, columns=history_columns, show='tree headings', height=10)
 
         for col in history_columns:
-            history_tree.heading(col, text=col)
+            self.history_tree.heading(col, text=col)
             if col == 'Equipment':
-                history_tree.column(col, width=250)
+                self.history_tree.column(col, width=250)
             else:
-                history_tree.column(col, width=110)
+                self.history_tree.column(col, width=110)
 
-        history_tree.pack(fill='both', expand=True, padx=10, pady=10)
-
-        history_checkouts = [
-            ("CHK187", "LED Light Panel (3-pack)", "2025-03-10", "2025-03-17", "7 days", "Returned On Time"),
-            ("CHK156", "Laptop (Dell XPS 15)", "2025-02-25", "2025-03-04", "7 days", "Returned On Time"),
-            ("CHK134", "Portable Speaker (JBL)", "2025-02-15", "2025-02-18", "3 days", "Returned On Time"),
-            ("CHK112", "Projector (Epson 4K)", "2025-01-20", "2025-01-27", "7 days", "Returned On Time")
-        ]
-
-        for checkout in history_checkouts:
-            history_tree.insert('', 'end', values=checkout)
+        self.history_tree.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
@@ -613,13 +984,186 @@ On-Time Returns: 94% (17/18)"""
         ttk.Button(button_frame, text="Export History", command=self.export_history).pack(side='left', padx=(0, 10))
         ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
 
+    def load_data(self):
+        """Load checkout data from the database for the current user."""
+        if not self.auth or not self.auth.current_user:
+            self.summary_label.config(text="Not logged in.")
+            return
+
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            borrower_id = self._get_borrower_id(conn)
+            cursor = conn.cursor()
+            today = datetime.now().date()
+
+            # --- Current checkouts (not yet returned) ---
+            cursor.execute('''
+                SELECT ec.checkout_id, ue.equipment_name, ec.checkout_date,
+                       ec.expected_return, ec.status
+                FROM equipment_checkouts ec
+                INNER JOIN union_equipment ue ON ec.equipment_id = ue.equipment_id
+                WHERE ec.borrower_id = ? AND ec.status = 'checked_out'
+                ORDER BY ec.expected_return
+            ''', (borrower_id,))
+            current_rows = cursor.fetchall()
+
+            # Clear existing items
+            for item in self.current_tree.get_children():
+                self.current_tree.delete(item)
+
+            overdue_count = 0
+            for row in current_rows:
+                checkout_id, equip_name, checkout_date, expected_return, status = row
+                # Calculate days left
+                try:
+                    due_date = datetime.strptime(expected_return[:10], '%Y-%m-%d').date()
+                    delta = (due_date - today).days
+                    if delta < 0:
+                        days_left = f"{delta} days"
+                        display_status = "OVERDUE"
+                        overdue_count += 1
+                    elif delta == 0:
+                        days_left = "0 days"
+                        display_status = "Due Today"
+                    else:
+                        days_left = f"{delta} days"
+                        display_status = "On Time"
+                except (ValueError, TypeError):
+                    days_left = "N/A"
+                    display_status = status
+
+                display_checkout_date = checkout_date[:10] if checkout_date else ""
+                display_due_date = expected_return[:10] if expected_return else ""
+
+                self.current_tree.insert('', 'end', values=(
+                    checkout_id, equip_name, display_checkout_date,
+                    display_due_date, days_left, display_status
+                ))
+
+            if not current_rows:
+                self.current_tree.insert('', 'end', values=(
+                    "", "No current checkouts found", "", "", "", ""
+                ))
+
+            # --- History (returned checkouts) ---
+            cursor.execute('''
+                SELECT ec.checkout_id, ue.equipment_name, ec.checkout_date,
+                       ec.actual_return, ec.expected_return, ec.status
+                FROM equipment_checkouts ec
+                INNER JOIN union_equipment ue ON ec.equipment_id = ue.equipment_id
+                WHERE ec.borrower_id = ? AND ec.status != 'checked_out'
+                ORDER BY ec.actual_return DESC
+            ''', (borrower_id,))
+            history_rows = cursor.fetchall()
+
+            for item in self.history_tree.get_children():
+                self.history_tree.delete(item)
+
+            on_time_returns = 0
+            for row in history_rows:
+                checkout_id, equip_name, checkout_date, actual_return, expected_return, status = row
+                # Calculate days borrowed
+                try:
+                    co_date = datetime.strptime(checkout_date[:10], '%Y-%m-%d').date()
+                    ret_date = datetime.strptime(actual_return[:10], '%Y-%m-%d').date()
+                    days_borrowed = f"{(ret_date - co_date).days} days"
+                except (ValueError, TypeError):
+                    days_borrowed = "N/A"
+
+                # Determine if it was on time
+                try:
+                    due_date = datetime.strptime(expected_return[:10], '%Y-%m-%d').date()
+                    ret_date = datetime.strptime(actual_return[:10], '%Y-%m-%d').date()
+                    if ret_date <= due_date:
+                        display_status = "Returned On Time"
+                        on_time_returns += 1
+                    else:
+                        display_status = "Returned Late"
+                except (ValueError, TypeError):
+                    display_status = status.replace('_', ' ').title() if status else "Returned"
+
+                display_checkout_date = checkout_date[:10] if checkout_date else ""
+                display_return_date = actual_return[:10] if actual_return else ""
+
+                self.history_tree.insert('', 'end', values=(
+                    checkout_id, equip_name, display_checkout_date,
+                    display_return_date, days_borrowed, display_status
+                ))
+
+            if not history_rows:
+                self.history_tree.insert('', 'end', values=(
+                    "", "No checkout history found", "", "", "", ""
+                ))
+
+            # --- Summary ---
+            total_borrowed = len(current_rows) + len(history_rows)
+            if len(history_rows) > 0:
+                on_time_pct = int((on_time_returns / len(history_rows)) * 100)
+                on_time_text = f"{on_time_pct}% ({on_time_returns}/{len(history_rows)})"
+            else:
+                on_time_text = "N/A"
+
+            summary_text = (
+                f"Current Checkouts: {len(current_rows)}\n"
+                f"Overdue Items: {overdue_count}\n"
+                f"Total Borrowed (All Time): {total_borrowed}\n"
+                f"On-Time Returns: {on_time_text}"
+            )
+            self.summary_label.config(text=summary_text)
+
+        except sqlite3.Error as e:
+            self.summary_label.config(text=f"Error loading data: {e}")
+        finally:
+            if conn:
+                conn.close()
+
     def renew(self):
-        messagebox.showinfo("Renew Checkout",
-                          "Renew checkout for 7 more days?\n\n" +
-                          "Equipment: Professional Camera (Canon EOS R5)\n" +
-                          "Current Due Date: 2025-04-05\n" +
-                          "New Due Date: 2025-04-12\n\n" +
-                          "Renewals allowed: 2/3")
+        selection = self.current_tree.selection()
+        if not selection:
+            messagebox.showwarning("Warning", "Please select a checkout to renew.")
+            return
+
+        item = self.current_tree.item(selection[0])
+        values = item.get('values', [])
+        if not values or not values[0]:
+            return
+
+        checkout_id = values[0]
+        equip_name = values[1]
+        current_due = values[3]
+
+        try:
+            due_date = datetime.strptime(current_due, '%Y-%m-%d')
+            new_due = due_date + timedelta(days=7)
+            new_due_str = new_due.strftime('%Y-%m-%d')
+        except (ValueError, TypeError):
+            messagebox.showerror("Error", "Cannot determine current due date.")
+            return
+
+        if not messagebox.askyesno("Renew Checkout",
+                                   f"Renew checkout for 7 more days?\n\n"
+                                   f"Equipment: {equip_name}\n"
+                                   f"Current Due Date: {current_due}\n"
+                                   f"New Due Date: {new_due_str}"):
+            return
+
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE equipment_checkouts SET expected_return = ?
+                WHERE checkout_id = ? AND status = 'checked_out'
+            ''', (new_due_str, checkout_id))
+            conn.commit()
+            messagebox.showinfo("Success", f"Checkout renewed. New due date: {new_due_str}")
+            self.load_data()
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to renew checkout: {e}")
+        finally:
+            if conn:
+                conn.close()
 
     def return_equipment(self):
         dialog = ReturnEquipmentDialog(self.dialog, self.auth)

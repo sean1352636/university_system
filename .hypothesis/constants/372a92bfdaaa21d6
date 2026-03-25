@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/ai/ai_detector/features/student_self_check.py
+# hypothesis_version: 6.151.9
+
+[0.3, 0.4, 0.5, 0.7, 0.8, 'ai_fingerprints', 'confidence', 'error', 'hedging_language', 'high', 'high_risk', 'indicators', 'low', 'low_risk', 'medium', 'moderate_risk', 'name', 'overall_assessment', 'overall_score', 'pending', 'risk_indicators', 'score', 'severity', 'suggestion', 'suggestions', 'type']

@@ -6,8 +6,8 @@ import logging
 import os
 import json
 
-from .. import get_connection, _t
-from ..dialogs.violation_dialog import ViolationDialog
+from education_system.university_system.modules.domain.mobility.gui.parking_management import get_connection, _t
+from education_system.university_system.modules.domain.mobility.gui.parking_management.dialogs.violation_dialog import ViolationDialog
 
 
 class ViolationsMixin:

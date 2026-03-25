@@ -72,7 +72,7 @@ class TestDatabaseManagerInit:
 class TestDatabaseInitialization:
     """Test database initialization methods"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
     def test_initialize_database_success(self, mock_msgbox, db_manager):
         """Test successful database initialization"""
         with patch.object(db_manager, 'initialize_database_schema'):
@@ -80,14 +80,14 @@ class TestDatabaseInitialization:
             db_manager.initialize_database_schema.assert_called_once()
             mock_msgbox.showinfo.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
     def test_initialize_database_error(self, mock_msgbox, db_manager):
         """Test database initialization with error"""
         with patch.object(db_manager, 'initialize_database_schema', side_effect=Exception("Test error")):
             db_manager.initialize_database()
             mock_msgbox.showerror.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.get_connection')
     def test_initialize_database_schema(self, mock_get_conn, db_manager):
         """Test database schema initialization"""
         mock_conn = MagicMock()
@@ -105,7 +105,7 @@ class TestDatabaseInitialization:
         mock_conn.commit.assert_called_once()
         mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.get_connection')
     def test_ensure_db_compatibility(self, mock_get_conn, db_manager):
         """Test database compatibility check"""
         mock_conn = MagicMock()
@@ -124,15 +124,15 @@ class TestDatabaseInitialization:
 class TestDatabaseCleaning:
     """Test database cleaning operations"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
     def test_clean_database_cancelled(self, mock_msgbox, db_manager):
         """Test database cleaning cancelled by user"""
         mock_msgbox.askyesno.return_value = False
         db_manager.clean_database()
         mock_msgbox.askyesno.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.get_connection')
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
     def test_clean_database_success(self, mock_msgbox, mock_get_conn, db_manager):
         """Test successful database cleaning"""
         mock_msgbox.askyesno.return_value = True
@@ -156,10 +156,10 @@ class TestDatabaseCleaning:
 class TestDatabaseBackup:
     """Test database backup operations"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.filedialog')
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.os.path.exists')
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.paths')
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.filedialog')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.os.path.exists')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.paths')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
     def test_backup_database_no_db_file(self, mock_msgbox, mock_paths, mock_exists, mock_filedialog, db_manager):
         """Test backup when database file doesn't exist"""
         mock_paths.DEFAULT_DB_PATH = '/test/db.db'
@@ -169,11 +169,11 @@ class TestDatabaseBackup:
 
         mock_msgbox.showerror.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.shutil.copy2')
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.filedialog')
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.os.path')
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.paths')
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.shutil.copy2')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.filedialog')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.os.path')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.paths')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
     def test_backup_database_success(self, mock_msgbox, mock_paths, mock_os_path,
                                      mock_filedialog, mock_copy, db_manager):
         """Test successful database backup"""
@@ -187,9 +187,9 @@ class TestDatabaseBackup:
         mock_copy.assert_called_once()
         mock_msgbox.showinfo.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.filedialog')
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.os.path.exists')
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.paths')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.filedialog')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.os.path.exists')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.paths')
     def test_backup_database_cancelled(self, mock_paths, mock_exists, mock_filedialog, db_manager):
         """Test backup cancelled by user"""
         mock_paths.DEFAULT_DB_PATH = '/test/db.db'
@@ -203,9 +203,9 @@ class TestDatabaseBackup:
 class TestDatabaseStats:
     """Test database statistics display"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.get_connection')
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.os.path')
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.paths')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.os.path')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.paths')
     def test_show_database_stats(self, mock_paths, mock_os_path, mock_get_conn, db_manager):
         """Test showing database statistics"""
         mock_paths.DEFAULT_DB_PATH = '/test/db.db'
@@ -228,15 +228,15 @@ class TestDatabaseStats:
 class TestDatabaseFix:
     """Test database fix operations"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
     def test_gui_complete_database_fix_cancelled(self, mock_msgbox, db_manager):
         """Test complete database fix cancelled"""
         mock_msgbox.askyesno.return_value = False
         db_manager.gui_complete_database_fix()
         mock_msgbox.askyesno.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.threading.Thread')
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.threading.Thread')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
     def test_gui_complete_database_fix_confirmed(self, mock_msgbox, mock_thread, db_manager):
         """Test complete database fix confirmed"""
         mock_msgbox.askyesno.return_value = True
@@ -247,7 +247,7 @@ class TestDatabaseFix:
         mock_msgbox.askyesno.assert_called_once()
         mock_thread.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
     def test_gui_quick_fix_database_cancelled(self, mock_msgbox, db_manager):
         """Test quick database fix cancelled"""
         mock_msgbox.askyesno.return_value = False
@@ -287,8 +287,8 @@ class TestHelperMethods:
 class TestDatabaseVerification:
     """Test database verification operations"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.ensure_database_exists')
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.ensure_database_exists')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
     def test_gui_ensure_database_exists_success(self, mock_msgbox, mock_ensure, db_manager):
         """Test successful database existence verification"""
         db_manager.update_status = Mock()
@@ -298,8 +298,8 @@ class TestDatabaseVerification:
         mock_msgbox.showinfo.assert_called_once()
         db_manager.update_status.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.ensure_database_exists')
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.ensure_database_exists')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
     def test_gui_ensure_database_exists_error(self, mock_msgbox, mock_ensure, db_manager):
         """Test database existence verification with error"""
         mock_ensure.side_effect = Exception("Test error")
@@ -309,8 +309,8 @@ class TestDatabaseVerification:
 
         mock_msgbox.showerror.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.verify_fix')
-    @patch('university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.verify_fix')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.db_manager.messagebox')
     def test_gui_verify_fix(self, mock_msgbox, mock_verify, db_manager):
         """Test database fix verification"""
         db_manager.update_status = Mock()

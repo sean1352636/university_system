@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/primary_school/modules/domain/facilities/assets/services/asset_service.py
+# hypothesis_version: 6.151.9
+
+[' AND asset_type = ?', ' AND location = ?', ' AND status = ?', ' ORDER BY asset_name', ', ', 'Created asset %s: %s', 'Deleted asset %s', 'Good', 'In Use', 'Updated asset %s', 'asset_name', 'asset_type', 'assigned_to', 'condition', 'id', 'location', 'notes', 'purchase_cost', 'purchase_date', 'serial_number', 'status']

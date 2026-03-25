@@ -7,8 +7,8 @@ This module provides all GUI components for finance management including:
 - Financial Aid & Scholarships GUI
 """
 
-from .finance_management_gui import FinanceManagementGUI
-from .finance_reporting import FinancialManagementGUI
+from education_system.university_system.modules.domain.finance.gui.finance_management_gui import FinanceManagementGUI
+from education_system.university_system.modules.domain.finance.gui.finance_reporting import FinancialManagementGUI
 
 __all__ = [
     'FinanceManagementGUI',

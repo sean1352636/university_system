@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/layout/_reports.py
+# hypothesis_version: 6.151.9
+
+['#555', '1.0', 'Arial', 'bold', 'both', 'disabled', 'primary', 'reports', 'success', 'white', 'word']

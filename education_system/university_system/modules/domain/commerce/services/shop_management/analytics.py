@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from . import config
+from education_system.university_system.modules.domain.commerce.services.shop_management import config
 
 
 def get_customer_analytics():
@@ -24,8 +24,8 @@ def get_customer_analytics():
                 AVG(total_amount) as avg_order_value,
                 COUNT(*) as total_orders,
                 SUM(total_amount) as total_revenue
-            FROM shop_transactions
-            WHERE transaction_date >= date('now', '-30 days')
+            FROM transactions
+            WHERE source_type = 'shop' AND created_at >= date('now', '-30 days')
             '''
         )
 
@@ -35,12 +35,12 @@ def get_customer_analytics():
         cursor.execute(
             '''
             SELECT u.username, u.student_id,
-                   COUNT(t.transaction_id) as order_count,
+                   COUNT(t.source_transaction_id) as order_count,
                    SUM(t.total_amount) as total_spent,
                    AVG(t.total_amount) as avg_order
-            FROM shop_transactions t
-            JOIN users u ON t.user_id = u.id
-            WHERE t.transaction_date >= date('now', '-30 days')
+            FROM transactions t
+            JOIN users u ON t.customer_id = u.id
+            WHERE t.source_type = 'shop' AND t.created_at >= date('now', '-30 days')
             GROUP BY u.id
             ORDER BY total_spent DESC
             LIMIT 10
@@ -54,9 +54,9 @@ def get_customer_analytics():
             '''
             SELECT payment_method,
                    COUNT(*) as usage_count,
-                   ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM shop_transactions WHERE transaction_date >= date('now', '-30 days')), 1) as percentage
-            FROM shop_transactions
-            WHERE transaction_date >= date('now', '-30 days')
+                   ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM transactions WHERE source_type = 'shop' AND created_at >= date('now', '-30 days')), 1) as percentage
+            FROM transactions
+            WHERE source_type = 'shop' AND created_at >= date('now', '-30 days')
             GROUP BY payment_method
             ORDER BY usage_count DESC
             '''

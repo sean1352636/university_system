@@ -1,8 +1,8 @@
 import logging
 
-from ._imports import (
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.core._imports import (
     _, messagebox, tk, Toplevel, ScrolledText, Path, subprocess, sys,
-    ACADEMIC_SYSTEMS_AVAILABLE, launch_lms_gui, launch_degree_audit_gui,
+    ACADEMIC_SYSTEMS_AVAILABLE, launch_degree_audit_gui,
     launch_course_evaluation_gui,
     CourseCreateDialog, BulkUpdateDialog, MaintenanceDialog,
     ImportExportDialog, ManageCourseStatusDialog, CourseHistoryDialog,
@@ -21,14 +21,15 @@ class DialogsMixin:
     # --- Academic system launchers ---
 
     def show_lms_gui(self):
-        """Launch the LMS GUI"""
+        """Switch to the LMS tab in the course management notebook."""
         try:
-            if ACADEMIC_SYSTEMS_AVAILABLE:
-                launch_lms_gui(self.root, self.auth)
-            else:
-                messagebox.showerror(_("common.error"), _("course_management.messages.lms_not_available"))
+            for i in range(self.notebook.index("end")):
+                if self.notebook.tab(i, "text") == _("lms.title"):
+                    self.notebook.select(i)
+                    return
+            messagebox.showinfo("LMS", "LMS tab is available in the Course Management tabs above.")
         except Exception as e:
-            messagebox.showerror(_("common.error"), _("course_management.messages.lms_launch_failed").format(error=e))
+            messagebox.showerror(_("common.error"), f"Failed to open LMS tab: {e}")
 
     def show_degree_audit_gui(self):
         """Launch the Degree Audit GUI"""
@@ -204,7 +205,7 @@ A comprehensive GUI-based course management system with:
 Developed with Python and Tkinter
 Backwards compatible with original CLI version"""
 
-        messagebox.showinfo(_("course_management.dialogs.about_system"), about_text)
+        messagebox.showinfo(_("course_management.dialogs.about_system"), about_text, parent=self.root)
 
     def show_help(self):
         """Show help dialog"""
@@ -244,21 +245,9 @@ For more information, consult the documentation."""
         help_text_widget.config(state=tk.DISABLED)
 
     def return_to_main_menu(self):
-        """Return to the main menu/GUI"""
+        """Return to the main menu/GUI by closing this child window"""
         if messagebox.askyesno(_("course_management.messages.return_to_main_menu_confirm"), _("course_management.messages.return_to_main_menu_confirm")):
             try:
-                # Try to open the main GUI if it exists
-                try:
-                    import subprocess
-                    import sys
-                    # Attempt to launch the main GUI
-                    main_gui_path = Path(__file__).parent / 'main_gui.py'
-                    if main_gui_path.exists():
-                        subprocess.Popen([sys.executable, str(main_gui_path)])
-                except (OSError, subprocess.SubprocessError) as e:
-                    logger.warning("Failed to launch main GUI: %s", e)
-
-                # Close this window
                 self.root.destroy()
             except Exception as e:
                 messagebox.showerror(_("common.error"), _("course_management.messages.failed_return_to_main", error=str(e)))

@@ -34,7 +34,7 @@ class TestScholarshipManagerInit:
 class TestScholarshipOperations:
     """Test scholarship CRUD operations"""
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.scholarship_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.scholarship_manager.get_connection')
     def test_show_scholarships(self, mock_get_conn):
         """Test show_scholarships method"""
         root = tk.Tk()
@@ -51,7 +51,7 @@ class TestScholarshipOperations:
 
         root.destroy()
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.scholarship_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.scholarship_manager.get_connection')
     def test_load_scholarships(self, mock_get_conn):
         """Test _load_all_scholarships method"""
         root = tk.Tk()
@@ -79,7 +79,7 @@ class TestScholarshipOperations:
 class TestApplicationReview:
     """Test application review functionality"""
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.scholarship_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.scholarship_manager.get_connection')
     def test_review_applications(self, mock_get_conn):
         """Test review_applications method"""
         root = tk.Tk()

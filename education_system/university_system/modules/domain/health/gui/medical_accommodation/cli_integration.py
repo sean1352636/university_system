@@ -1,7 +1,7 @@
 # cli_integration.py
 # CLI integration mixin, standalone functions, and main entry point.
 
-from ._common import (
+from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import (
     tk, ttk, messagebox, ScrolledText,
     os, sys, threading, datetime, json, logging,
     Path, sqlite3,
@@ -9,7 +9,7 @@ from ._common import (
 )
 
 if CLI_AVAILABLE:
-    from ._common import (
+    from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import (
         display_accommodation_menu, verify_database_schema,
         migrate_audit_log_schema, fix_accommodation_db_schema,
         log_action,
@@ -278,14 +278,14 @@ def export_gui_data_to_cli_format(output_path=None):
 def main():
     """Main function to run the GUI application"""
     # Import here to avoid circular imports
-    from .main_gui import AccommodationGUI
+    from education_system.university_system.modules.domain.health.gui.medical_accommodation.main_gui import AccommodationGUI
 
     root = tk.Tk()
 
     # Set up global auth if available
     if CLI_AVAILABLE:
         try:
-            from ._common import auth
+            from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import auth
         except (ImportError, AttributeError):
             pass
 

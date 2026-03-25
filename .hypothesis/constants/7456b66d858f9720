@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/database/db.py
+# hypothesis_version: 6.151.9
+
+[0.1, 5.0, 10.0, 30.0, 100, 'BEGIN IMMEDIATE', 'BEGIN TRANSACTION', 'ConnectionPool', 'DB_DIR', 'DB_NO_CURSOR', 'DB_POOL_INIT_FAILED', 'DEFAULT_DB_PATH', 'DatabaseManager', 'EXPORTS_DIR', 'PooledConnection', 'SELECT 1', 'atomic_operation', 'connect', 'connection', 'database is locked', 'db_path', 'get_connection', 'get_connection_pool', 'get_db_connection', 'legacy_pool_active', 'max_connections', 'query', 'savepoint', 'savepoint name', 'sqlite3', 'thread_id', 'thread_local_active', 'timeout', 'total_active', 'total_connections', 'transaction']

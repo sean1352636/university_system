@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/gui/integration_marketplace_gui/catalog.py
+# hypothesis_version: 6.151.9
+
+['1.0', '1.0.0', '500x500', 'API', 'Analytics', 'CRM', 'Communication', 'Confirm Installation', 'Database', 'Integration Details', 'LMS', 'OAuth', 'SAML', 'SIS', 'Storage', 'Unknown', 'Webhook', 'common.error', 'common.success', 'common.warning', 'create', 'end', 'end-1c', 'integration_catalog', 'integration_id', 'integration_name', 'nw', 'readonly', 'username', 'values', 'w']

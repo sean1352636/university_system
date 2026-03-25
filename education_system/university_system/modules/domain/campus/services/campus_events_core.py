@@ -15,6 +15,25 @@ from education_system.university_system.infrastructure.email.template_utils impo
 from education_system.university_system.modules.shared.utils.i18n import get_text
 
 
+def _add_to_academic_calendar(event_name, event_date, description, event_type, created_by=None):
+    """Add an event to the academic calendar automatically on creation."""
+    import uuid
+    try:
+        with transaction() as conn:
+            conn.execute('''
+                INSERT INTO academic_calendar_events (
+                    id, name, description, event_type,
+                    date, created_by, date_added, last_modified
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                str(uuid.uuid4()), event_name, description or '',
+                event_type, event_date, created_by or 'System',
+                datetime.now().isoformat(), datetime.now().isoformat()
+            ))
+    except Exception:
+        pass  # Non-critical — don't block event creation if calendar insert fails
+
+
 class CampusEventManager:
     """Manages campus events"""
 
@@ -25,17 +44,24 @@ class CampusEventManager:
                     capacity: int = 0, registration_required: bool = False,
                     is_public: bool = True, description: str = "") -> int:
         try:
+            start_datetime = f"{event_date} {start_time}" if start_time else event_date
+            end_datetime = f"{event_date} {end_time}" if end_time else ""
             with transaction() as conn:
                 cursor = conn.execute('''
-                    INSERT INTO campus_events (
-                        event_name, event_type, event_category, organizer_id,
-                        organizer_type, event_date, start_time, end_time,
-                        location, capacity, registration_required, is_public, description
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO unified_events (
+                        title, event_type, event_category, organizer_id,
+                        organizer_type, start_datetime, end_datetime,
+                        location, max_capacity, registration_required, is_public,
+                        description, source_type
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'campus')
                 ''', (event_name, event_type, event_category, organizer_id,
-                      organizer_type, event_date, start_time, end_time,
-                      location, capacity, registration_required, is_public, description))
-                return cursor.lastrowid
+                      organizer_type, start_datetime, end_datetime,
+                      location, capacity, int(registration_required), int(is_public),
+                      description))
+                event_id = cursor.lastrowid
+
+            _add_to_academic_calendar(event_name, event_date, description, event_type, organizer_id)
+            return event_id
         except Exception as e:
             raise Exception(get_text("campus.events.errors.create_event", "Error creating event: {error}").format(error=e))
 
@@ -46,20 +72,36 @@ class CampusEventManager:
         try:
             if event_category:
                 cursor.execute('''
-                    SELECT * FROM campus_events
-                    WHERE event_date >= DATE('now')
-                      AND event_date <= DATE('now', '+' || ? || ' days')
+                    SELECT event_id, title AS event_name, event_type, event_category,
+                           DATE(start_datetime) AS event_date,
+                           TIME(start_datetime) AS start_time,
+                           TIME(end_datetime) AS end_time,
+                           location, max_capacity AS capacity,
+                           registration_required, is_public, description, status,
+                           organizer_id, organizer_type
+                    FROM unified_events
+                    WHERE source_type = 'campus'
+                      AND DATE(start_datetime) >= DATE('now')
+                      AND DATE(start_datetime) <= DATE('now', '+' || ? || ' days')
                       AND event_category = ?
                       AND status = 'scheduled'
-                    ORDER BY event_date, start_time
+                    ORDER BY start_datetime
                 ''', (days_ahead, event_category))
             else:
                 cursor.execute('''
-                    SELECT * FROM campus_events
-                    WHERE event_date >= DATE('now')
-                      AND event_date <= DATE('now', '+' || ? || ' days')
+                    SELECT event_id, title AS event_name, event_type, event_category,
+                           DATE(start_datetime) AS event_date,
+                           TIME(start_datetime) AS start_time,
+                           TIME(end_datetime) AS end_time,
+                           location, max_capacity AS capacity,
+                           registration_required, is_public, description, status,
+                           organizer_id, organizer_type
+                    FROM unified_events
+                    WHERE source_type = 'campus'
+                      AND DATE(start_datetime) >= DATE('now')
+                      AND DATE(start_datetime) <= DATE('now', '+' || ? || ' days')
                       AND status = 'scheduled'
-                    ORDER BY event_date, start_time
+                    ORDER BY start_datetime
                 ''', (days_ahead,))
             return [dict(row) for row in cursor.fetchall()]
         finally:
@@ -75,10 +117,10 @@ class EventRegistrationManager:
             with transaction() as conn:
                 # Check capacity
                 cursor = conn.execute('''
-                    SELECT capacity,
-                           (SELECT COUNT(*) FROM campus_event_registrations WHERE event_id = ?) as current_count
-                    FROM campus_events
-                    WHERE event_id = ?
+                    SELECT max_capacity AS capacity,
+                           (SELECT COUNT(*) FROM unified_event_registrations WHERE event_id = ?) as current_count
+                    FROM unified_events
+                    WHERE event_id = ? AND source_type = 'campus'
                 ''', (event_id, event_id))
                 event = cursor.fetchone()
 
@@ -86,7 +128,7 @@ class EventRegistrationManager:
                     raise Exception(get_text("campus.events.errors.full_capacity", "Event is at full capacity"))
 
                 cursor = conn.execute('''
-                    INSERT INTO campus_event_registrations (event_id, user_id, user_type)
+                    INSERT INTO unified_event_registrations (event_id, user_id, user_type)
                     VALUES (?, ?, ?)
                 ''', (event_id, user_id, user_type))
                 return cursor.lastrowid
@@ -98,7 +140,7 @@ class EventRegistrationManager:
         try:
             with transaction() as conn:
                 conn.execute('''
-                    UPDATE campus_event_registrations
+                    UPDATE unified_event_registrations
                     SET attendance_status = 'attended',
                         checked_in_at = ?
                     WHERE registration_id = ?
@@ -147,9 +189,12 @@ class EventAnnouncementManager:
 
                 # Get event details
                 event = conn.execute('''
-                    SELECT event_name, event_date, start_time, location
-                    FROM campus_events
-                    WHERE event_id = ?
+                    SELECT title AS event_name,
+                           DATE(start_datetime) AS event_date,
+                           TIME(start_datetime) AS start_time,
+                           location
+                    FROM unified_events
+                    WHERE event_id = ? AND source_type = 'campus'
                 ''', (event_id,)).fetchone()
 
                 if not event:
@@ -186,7 +231,7 @@ class EventAnnouncementManager:
                 # Get emails of all registered users for this event
                 cursor = conn.execute('''
                     SELECT DISTINCT user_id, user_type
-                    FROM campus_event_registrations
+                    FROM unified_event_registrations
                     WHERE event_id = ?
                 ''', (event_id,))
                 registrants = cursor.fetchall()

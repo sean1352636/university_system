@@ -5,8 +5,8 @@ import threading
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 
-from .constants import _t, logger
-from .progress_dialog import GUIProgressDialog
+from education_system.university_system.modules.shared.gui.batch_operations.constants import _t, logger
+from education_system.university_system.modules.shared.gui.batch_operations.progress_dialog import GUIProgressDialog
 
 
 class UpdateManager:

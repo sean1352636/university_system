@@ -2,8 +2,8 @@ from datetime import datetime
 from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.infrastructure.email.email_service import send_email
 from education_system.university_system.infrastructure.email.template_utils import load_template, render_template
-from .core import get_db_connection, auth
-from .gamification import award_engagement_points
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.core import get_db_connection, auth
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.gamification import award_engagement_points
 
 
 def update_business_listing():

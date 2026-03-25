@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/charity_shop_cli/donations.py
+# hypothesis_version: 6.151.9
+
+[0.3, 0.6, 1.0, 1.2, 1.5, 2.0, 3.0, 5.0, 7.0, 8.0, 10.0, 15.0, 25.0, 50.0, '%Y-%m-%d', 'Accessories', 'Books', 'Clothing', 'Electronics', 'Excellent', 'Fair', 'Furniture', 'Good', 'Homeware', 'Music/DVDs', 'New', 'Other', 'Poor', 'Sports', 'Toys', 'XX-XXXXXXX', 'add', 'address', 'category', 'date', 'date_registered', 'donation_count', 'donations', 'donor_address', 'donor_email', 'donor_id', 'donor_name', 'drive_id', 'email', 'end_date', 'estimated_value', 'get', 'id', 'item_description', 'items_donated', 'letter_text', 'list', 'list_drives', 'name', 'notes', 'organization', 'phone', 'quantity', 'receipt_number', 'search', 'start_date', 'statement', 'summary', 'tax_id', 'term', 'total_donations', 'total_items', 'total_value', 'year']

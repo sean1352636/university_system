@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/services/trip_management/expenses.py
+# hypothesis_version: 6.151.9
+
+[100, ' WHERE id = ?', '%Y-%m-%d', ', ', '-', '1', '1. Add New Expense', '2', '2. Edit Expense', '3', '3. Delete Expense', '4', '=', 'Accommodation', 'Activities', 'Add New Expense:', 'Amount (£): ', 'Deletion cancelled.', 'Description: ', 'Enter choice (1-4): ', 'Equipment', 'Expense Categories:', 'Expense not found.', 'Food', 'Insurance', 'Invalid choice.', 'Invalid expense ID.', 'Invalid trip ID.', 'Miscellaneous', 'No expenses to edit.', 'No trips found.', 'Transportation', 'Trip not found.', 'Unknown', 'amount = ?', 'date = ?', 'description = ?', 'id', 'manage_trip_expenses', 'trips', 'y']

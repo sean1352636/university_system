@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/managers/password_manager.py
+# hypothesis_version: 6.151.9
+
+[1000000, '%Y-%m-%d %H:%M:%S', 'Password changed', 'User not found.', 'admin_username', 'change_user_password', 'hash_password', 'id', 'manage_users', 'permissions', 'reset_user_password', 'sha256', 'system', 'target_username', 'user_account', 'username', 'verify_password']

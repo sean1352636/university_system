@@ -1,5 +1,5 @@
 # ViewWaitlistsDialog – view and remove waitlist entries
-from ._imports import _, messagebox, tk, ttk, sqlite3, DEFAULT_DB_PATH
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.waitlists._imports import _, messagebox, tk, ttk, sqlite3, DEFAULT_DB_PATH
 
 
 class ViewWaitlistsDialog:

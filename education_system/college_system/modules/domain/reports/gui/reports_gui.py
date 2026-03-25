@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.college_system.modules.domain.reports.services.reports_service import ReportsService
+from education_system.college_system.core.i18n import t
 
 
 class ReportsFrame(tk.Frame):
@@ -20,7 +21,7 @@ class ReportsFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Progress Reports", font=("Helvetica", 14, "bold"),
+        tk.Label(header, text=t("reports.management"), font=("Helvetica", 14, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=10)
 
         self._nb = ttk.Notebook(self)
@@ -28,19 +29,20 @@ class ReportsFrame(tk.Frame):
 
         # Reports tab
         self._reports_tab = tk.Frame(self._nb)
-        self._nb.add(self._reports_tab, text="Reports")
+        self._nb.add(self._reports_tab, text=t("reports.tab_reports", default="Reports"))
         self._build_reports_tab()
 
         # Entries tab
         self._entries_tab = tk.Frame(self._nb)
-        self._nb.add(self._entries_tab, text="Report Entries")
+        self._nb.add(self._entries_tab, text=t("reports.tab_entries", default="Report Entries"))
         self._build_entries_tab()
 
     def _build_reports_tab(self):
         toolbar = tk.Frame(self._reports_tab)
         toolbar.pack(fill="x", padx=5, pady=5)
-        ttk.Button(toolbar, text="Refresh", command=self._load_reports).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="New Report", command=self._new_report).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("common.refresh"), command=self._load_reports).pack(side="left", padx=5)
+        ttk.Button(toolbar, text="Export CSV", command=self._export_reports_csv).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("reports.generate"), command=self._new_report).pack(side="right", padx=5)
 
         cols = ("id", "title", "type", "academic_year", "term", "status", "due_date")
         self._rep_tree = ttk.Treeview(self._reports_tab, columns=cols, show="headings", height=15)
@@ -52,11 +54,12 @@ class ReportsFrame(tk.Frame):
     def _build_entries_tab(self):
         toolbar = tk.Frame(self._entries_tab)
         toolbar.pack(fill="x", padx=5, pady=5)
-        tk.Label(toolbar, text="Report ID:").pack(side="left", padx=5)
+        tk.Label(toolbar, text=t("reports.report_id_colon", default="Report ID:")).pack(side="left", padx=5)
         self._ent_rid = tk.Entry(toolbar, width=10)
         self._ent_rid.pack(side="left", padx=5)
-        ttk.Button(toolbar, text="Load Entries", command=self._load_entries).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="Add Entry", command=self._new_entry).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("reports.load_entries", default="Load Entries"), command=self._load_entries).pack(side="left", padx=5)
+        ttk.Button(toolbar, text="Export CSV", command=self._export_entries_csv).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("reports.add_entry", default="Add Entry"), command=self._new_entry).pack(side="right", padx=5)
 
         cols = ("id", "student", "course", "current", "target", "effort", "attendance")
         self._ent_tree = ttk.Treeview(self._entries_tab, columns=cols, show="headings", height=15)
@@ -76,7 +79,7 @@ class ReportsFrame(tk.Frame):
                     r.get("academic_year", ""), r.get("term", ""),
                     r.get("status", ""), r.get("due_date", "")))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _load_entries(self):
         for item in self._ent_tree.get_children():
@@ -93,11 +96,11 @@ class ReportsFrame(tk.Frame):
                     e.get("current_grade", ""), e.get("target_grade", ""),
                     e.get("effort_grade", ""), e.get("attendance_pct", "")))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _new_report(self):
         win = tk.Toplevel(self)
-        win.title("New Progress Report")
+        win.title(t("reports.generate"))
         win.geometry("400x300")
         fields = {}
         row = 0
@@ -125,16 +128,16 @@ class ReportsFrame(tk.Frame):
                     term=fields["term"].get().strip() or None,
                     due_date=fields["due_date"].get().strip() or None,
                     created_by=user_id)
-                messagebox.showinfo("Success", "Report created")
+                messagebox.showinfo(t("common.success"), t("reports.report_created", default="Report created"))
                 win.destroy()
                 self._load_reports()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
-        ttk.Button(win, text="Save", command=save).grid(row=row, column=0, columnspan=2, pady=15)
+                messagebox.showerror(t("common.error"), str(e))
+        ttk.Button(win, text=t("common.save"), command=save).grid(row=row, column=0, columnspan=2, pady=15)
 
     def _new_entry(self):
         win = tk.Toplevel(self)
-        win.title("Add Report Entry")
+        win.title(t("reports.add_entry", default="Add Report Entry"))
         win.geometry("400x400")
         fields = {}
         row = 0
@@ -166,12 +169,20 @@ class ReportsFrame(tk.Frame):
                     effort_grade=fields["effort_grade"].get().strip() or None,
                     attendance_pct=float(att) if att else None,
                     comment=comment.get("1.0", "end").strip() or None)
-                messagebox.showinfo("Success", "Entry added")
+                messagebox.showinfo(t("common.success"), t("reports.entry_added", default="Entry added"))
                 win.destroy()
                 self._load_entries()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
-        ttk.Button(win, text="Save", command=save).grid(row=row, column=0, columnspan=2, pady=15)
+                messagebox.showerror(t("common.error"), str(e))
+        ttk.Button(win, text=t("common.save"), command=save).grid(row=row, column=0, columnspan=2, pady=15)
+
+    def _export_reports_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._rep_tree, "reports_export.csv")
+
+    def _export_entries_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._ent_tree, "report_entries_export.csv")
 
     def refresh(self):
         self._load_reports()

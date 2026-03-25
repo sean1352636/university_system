@@ -315,10 +315,10 @@ def export_individual_student_data(self, student_id, first_name, last_name):
                 data_sections['meal_plan'] = cursor.fetchall()
 
                 cursor.execute("""
-                    SELECT transaction_date, location, amount, description
-                    FROM meal_transactions
-                    WHERE student_id = ?
-                    ORDER BY transaction_date DESC
+                    SELECT created_at, location, amount, description
+                    FROM transactions
+                    WHERE source_type = 'meal' AND student_id = ?
+                    ORDER BY created_at DESC
                     LIMIT 50
                 """, (student_id,))
                 data_sections['meal_transactions'] = cursor.fetchall()
@@ -388,8 +388,15 @@ def export_data_dialog(self):
                 "Text": [("Text files", "*.txt")]
             }
 
+            extensions = {
+                "CSV": ".csv",
+                "Excel": ".xlsx",
+                "PDF": ".pdf",
+                "Text": ".txt"
+            }
+
             filename = filedialog.asksaveasfilename(
-                defaultextension=f".{export_format.lower()}",
+                defaultextension=extensions[export_format],
                 filetypes=filetypes[export_format]
             )
 
@@ -596,57 +603,59 @@ def export_data_dialog(self):
                     body_style.wordWrap = 'CJK'
                     body_style.fontSize = 8
 
-                    table_data = [headers]
+                    # Create a style for wrapping cell text
+                    cell_style = styles['Normal'].clone('CellStyle')
+                    cell_style.fontSize = 7
+                    cell_style.leading = 8
+                    cell_style.wordWrap = 'CJK'
+
+                    header_style = styles['Normal'].clone('HeaderStyle')
+                    header_style.fontSize = 7
+                    header_style.leading = 8
+                    header_style.fontName = 'Helvetica-Bold'
+
+                    table_data = [[Paragraph(str(h), header_style) for h in headers]]
                     for row in processed_rows:
-                        # Convert all values to strings and truncate if too long
                         pdf_row = []
-                        for i, value in enumerate(row):
+                        for value in row:
                             val_str = str(value) if value else ""
-                            # Truncate emails and long strings to prevent overflow
-                            if i == 3 and len(val_str) > 25:  # Email column
-                                val_str = val_str[:22] + "..."
-                            elif len(val_str) > 30:
-                                val_str = val_str[:27] + "..."
-                            pdf_row.append(val_str)
+                            pdf_row.append(Paragraph(val_str, cell_style))
                         table_data.append(pdf_row)
 
                     # Calculate available width
                     page_width = landscape(letter)[0] - (0.8 * inch)  # Subtract margins (0.4 * 2)
 
-                    # Define column widths to fit within available space (~10.2 inches)
-                    # Total columns: 12 (Student ID, First Name, Last Name, Email, Course, Reg Date, 6 Modules)
-                    col_widths = [
+                    # Calculate column widths dynamically based on number of columns
+                    num_cols = len(headers)
+                    # Fixed columns: Student ID, First Name, Last Name, Email, Course, Reg Date
+                    fixed_widths = [
                         0.55*inch,  # Student ID
                         0.65*inch,  # First Name
                         0.65*inch,  # Last Name
-                        1.0*inch,   # Email
+                        1.1*inch,   # Email
                         0.75*inch,  # Course
-                        0.75*inch,  # Registration Date
-                        0.95*inch,  # Module 1
-                        0.95*inch,  # Module 2
-                        0.95*inch,  # Module 3
-                        0.95*inch,  # Module 4
-                        0.95*inch,  # Module 5
-                        0.95*inch   # Module 6
+                        0.7*inch,   # Registration Date
                     ]
-                    # Total: ~10.05 inches (fits within 10.2 available)
+                    fixed_total = sum(fixed_widths)
+                    num_module_cols = max(num_cols - 6, 0)
+                    if num_module_cols > 0:
+                        remaining = page_width - fixed_total
+                        module_width = remaining / num_module_cols
+                        col_widths = fixed_widths + [module_width] * num_module_cols
+                    else:
+                        col_widths = fixed_widths[:num_cols]
 
                     table = Table(table_data, colWidths=col_widths, repeatRows=1)
                     table.setStyle(TableStyle([
                         ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
                         ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                        ('FONTSIZE', (0, 0), (-1, 0), 8),
-                        ('FONTSIZE', (0, 1), (-1, -1), 7),
-                        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-                        ('TOPPADDING', (0, 0), (-1, -1), 4),
-                        ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
-                        ('LEFTPADDING', (0, 0), (-1, -1), 4),
-                        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+                        ('TOPPADDING', (0, 0), (-1, -1), 3),
+                        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+                        ('LEFTPADDING', (0, 0), (-1, -1), 3),
+                        ('RIGHTPADDING', (0, 0), (-1, -1), 3),
                         ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
                         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                        ('WORDWRAP', (0, 0), (-1, -1), True)
                     ]))
 
                     doc.build([table])

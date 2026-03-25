@@ -1,8 +1,8 @@
 """Bulk Operations Manager and CLI functions"""
 
-from ._imports import Any, Dict, List, get_connection, transaction
-from .installation import InstallationManager
-from .sync import SyncManager
+from education_system.university_system.modules.shared.services.integrations.integration_marketplace_core._imports import Any, Dict, List, get_connection, transaction
+from education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.installation import InstallationManager
+from education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.sync import SyncManager
 
 
 class BulkOperationsManager:

@@ -5,7 +5,7 @@ import logging
 import threading
 from pathlib import Path
 
-from education_system.university_system.core.paths import DATA_DIR, BACKUP_DIR
+from education_system.university_system.core.paths import DATA_DIR, BACKUP_DATABASE_DIR
 from education_system.university_system.core.i18n import get_text as _t, init_i18n
 from education_system.university_system.utils.logging.log_config import configure_logging
 
@@ -15,7 +15,7 @@ logger = configure_logging(name=__name__)
 
 # Enhanced default configuration
 DEFAULT_CONFIG = {
-    "backup_directory": str(BACKUP_DIR),
+    "backup_directory": str(BACKUP_DATABASE_DIR),
     "scheduled_backup_time": "02:00",
     "backup_frequency": "daily",
     "max_backups": 10,

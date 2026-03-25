@@ -344,7 +344,7 @@ class TestLibraryUtilityFunctions:
         # Different books should have different barcodes
         assert barcode1 != barcode2
 
-    @patch('university_system.modules.domain.academics.services.library.database.get_db_connection')
+    @patch('education_system.university_system.modules.domain.academics.services.library.database.get_db_connection')
     def test_log_audit_event(self, mock_get_connection):
         """Test log_audit_event function"""
         mock_conn = Mock()

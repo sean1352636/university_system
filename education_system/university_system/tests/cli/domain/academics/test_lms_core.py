@@ -55,7 +55,7 @@ class TestLMSCourseManager:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('university_system.modules.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_create_lms_course(self, mock_get_connection, temp_db):
         """Test creating an LMS course"""
         mock_conn = sqlite3.connect(temp_db)
@@ -85,7 +85,7 @@ class TestLMSCourseManager:
 
         mock_conn.close()
 
-    @patch('university_system.modules.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_publish_course(self, mock_get_connection, temp_db):
         """Test publishing a course"""
         mock_conn = sqlite3.connect(temp_db)
@@ -114,7 +114,7 @@ class TestLMSCourseManager:
 
         mock_conn.close()
 
-    @patch('university_system.modules.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_get_course_details(self, mock_get_connection, temp_db):
         """Test getting course details"""
         mock_conn = sqlite3.connect(temp_db)
@@ -139,7 +139,7 @@ class TestLMSCourseManager:
 
         mock_conn.close()
 
-    @patch('university_system.modules.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_get_course_details_not_found(self, mock_get_connection, temp_db):
         """Test getting details for non-existent course"""
         mock_conn = sqlite3.connect(temp_db)
@@ -152,7 +152,7 @@ class TestLMSCourseManager:
 
         mock_conn.close()
 
-    @patch('university_system.modules.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_get_instructor_courses(self, mock_get_connection, temp_db):
         """Test getting courses by instructor"""
         mock_conn = sqlite3.connect(temp_db)
@@ -242,7 +242,7 @@ class TestLMSContentManager:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('university_system.modules.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_add_content(self, mock_get_connection, temp_db):
         """Test adding content to a course"""
         mock_conn = sqlite3.connect(temp_db)
@@ -277,7 +277,7 @@ class TestLMSContentManager:
 
         mock_conn.close()
 
-    @patch('university_system.modules.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_get_course_content(self, mock_get_connection, temp_db):
         """Test getting course content"""
         mock_conn = sqlite3.connect(temp_db)
@@ -309,7 +309,7 @@ class TestLMSContentManager:
 
         mock_conn.close()
 
-    @patch('university_system.modules.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_add_video_lecture(self, mock_get_connection, temp_db):
         """Test adding a video lecture"""
         mock_conn = sqlite3.connect(temp_db)
@@ -350,7 +350,7 @@ class TestLMSContentManager:
 
         mock_conn.close()
 
-    @patch('university_system.modules.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_increment_video_view(self, mock_get_connection, temp_db):
         """Test incrementing video view count"""
         mock_conn = sqlite3.connect(temp_db)
@@ -450,7 +450,7 @@ class TestLMSDiscussionManager:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('university_system.modules.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_create_forum(self, mock_get_connection, temp_db):
         """Test creating a discussion forum"""
         mock_conn = sqlite3.connect(temp_db)
@@ -485,7 +485,7 @@ class TestLMSDiscussionManager:
 
         mock_conn.close()
 
-    @patch('university_system.modules.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_add_post(self, mock_get_connection, temp_db):
         """Test adding a post to a forum"""
         mock_conn = sqlite3.connect(temp_db)
@@ -524,7 +524,7 @@ class TestLMSDiscussionManager:
 
         mock_conn.close()
 
-    @patch('university_system.modules.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_like_post(self, mock_get_connection, temp_db):
         """Test liking a post"""
         mock_conn = sqlite3.connect(temp_db)
@@ -634,7 +634,7 @@ class TestLMSQuizManager:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('university_system.modules.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_create_quiz(self, mock_get_connection, temp_db):
         """Test creating a quiz"""
         mock_conn = sqlite3.connect(temp_db)
@@ -670,7 +670,7 @@ class TestLMSQuizManager:
 
         mock_conn.close()
 
-    @patch('university_system.modules.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_add_question(self, mock_get_connection, temp_db):
         """Test adding a question to a quiz"""
         mock_conn = sqlite3.connect(temp_db)
@@ -713,7 +713,7 @@ class TestLMSQuizManager:
 
         mock_conn.close()
 
-    @patch('university_system.modules.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_submit_quiz(self, mock_get_connection, temp_db):
         """Test submitting a quiz"""
         mock_conn = sqlite3.connect(temp_db)
@@ -809,7 +809,7 @@ class TestLMSGradebookManager:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('university_system.modules.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_add_grade_entry(self, mock_get_connection, temp_db):
         """Test adding a grade entry"""
         mock_conn = sqlite3.connect(temp_db)
@@ -848,7 +848,7 @@ class TestLMSGradebookManager:
 
         mock_conn.close()
 
-    @patch('university_system.modules.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_get_student_grades(self, mock_get_connection, temp_db):
         """Test getting student grades"""
         mock_conn = sqlite3.connect(temp_db)
@@ -881,7 +881,7 @@ class TestLMSGradebookManager:
 
         mock_conn.close()
 
-    @patch('university_system.modules.domain.academics.services.lms.lms_core.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_calculate_course_grade(self, mock_get_connection, temp_db):
         """Test calculating overall course grade"""
         mock_conn = sqlite3.connect(temp_db)

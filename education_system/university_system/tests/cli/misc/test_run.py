@@ -38,7 +38,7 @@ class TestDisplayInterfaceMenu:
         output = mock_stdout.getvalue()
         assert "Graphical User Interface (GUI)" in output
 
-    @patch('university_system.tests.run_all_tests.main')
+    @patch('education_system.university_system.tests.run_all_tests.main')
     @patch('builtins.input', side_effect=['3', '4'])
     @patch('sys.stdout', new_callable=StringIO)
     def test_choice_run_tests(self, mock_stdout, mock_input, mock_run_tests):
@@ -94,7 +94,7 @@ class TestRunCliMode:
     """Test suite for run_cli_mode() function"""
 
     @patch('run.log_error')
-    @patch('university_system.modules.shared.cli.cli_main.main')
+    @patch('education_system.university_system.modules.shared.cli.cli_main.main')
     @patch('sys.stdout', new_callable=StringIO)
     def test_successful_cli_execution(self, mock_stdout, mock_cli_main, mock_log_error):
         """Test successful CLI mode execution"""
@@ -107,7 +107,7 @@ class TestRunCliMode:
         assert "Starting Command Line Interface" in output
 
     @patch('run.log_error')
-    @patch('university_system.modules.shared.cli.cli_main.main', side_effect=ImportError("Module not found"))
+    @patch('education_system.university_system.modules.shared.cli.cli_main.main', side_effect=ImportError("Module not found"))
     @patch('sys.stdout', new_callable=StringIO)
     def test_import_error(self, mock_stdout, mock_cli_main, mock_log_error):
         """Test handling of ImportError"""
@@ -119,7 +119,7 @@ class TestRunCliMode:
         assert "Module not found" in output
 
     @patch('run.log_error')
-    @patch('university_system.modules.shared.cli.cli_main.main', side_effect=OSError("File system error"))
+    @patch('education_system.university_system.modules.shared.cli.cli_main.main', side_effect=OSError("File system error"))
     @patch('sys.stdout', new_callable=StringIO)
     def test_os_error(self, mock_stdout, mock_cli_main, mock_log_error):
         """Test handling of OSError"""
@@ -130,7 +130,7 @@ class TestRunCliMode:
         assert "CLI Application Error" in output
 
     @patch('run.log_error')
-    @patch('university_system.modules.shared.cli.cli_main.main', side_effect=RuntimeError("Runtime issue"))
+    @patch('education_system.university_system.modules.shared.cli.cli_main.main', side_effect=RuntimeError("Runtime issue"))
     @patch('sys.stdout', new_callable=StringIO)
     def test_runtime_error(self, mock_stdout, mock_cli_main, mock_log_error):
         """Test handling of RuntimeError"""
@@ -139,7 +139,7 @@ class TestRunCliMode:
         mock_log_error.assert_called_once()
 
     @patch('run.log_error')
-    @patch('university_system.modules.shared.cli.cli_main.main', side_effect=ValueError("Invalid value"))
+    @patch('education_system.university_system.modules.shared.cli.cli_main.main', side_effect=ValueError("Invalid value"))
     @patch('sys.stdout', new_callable=StringIO)
     def test_value_error(self, mock_stdout, mock_cli_main, mock_log_error):
         """Test handling of ValueError"""
@@ -148,7 +148,7 @@ class TestRunCliMode:
         mock_log_error.assert_called_once()
 
     @patch('run.log_error')
-    @patch('university_system.modules.shared.cli.cli_main.main', side_effect=Exception("Unexpected error"))
+    @patch('education_system.university_system.modules.shared.cli.cli_main.main', side_effect=Exception("Unexpected error"))
     @patch('sys.stdout', new_callable=StringIO)
     def test_general_exception(self, mock_stdout, mock_cli_main, mock_log_error):
         """Test handling of general Exception"""
@@ -163,7 +163,7 @@ class TestRunGuiMode:
     """Test suite for run_gui_mode() function"""
 
     @patch('run.log_error')
-    @patch('university_system.modules.shared.gui.main_gui.run_gui_interface')
+    @patch('education_system.university_system.modules.shared.gui.main_gui.run_gui_interface')
     @patch('sys.stdout', new_callable=StringIO)
     def test_successful_gui_execution(self, mock_stdout, mock_gui_main, mock_log_error):
         """Test successful GUI mode execution"""
@@ -177,7 +177,7 @@ class TestRunGuiMode:
 
     @patch('run.run_cli_mode')
     @patch('run.log_error')
-    @patch('university_system.modules.shared.gui.main_gui.run_gui_interface',
+    @patch('education_system.university_system.modules.shared.gui.main_gui.run_gui_interface',
            side_effect=ImportError("Tkinter not found"))
     @patch('sys.stdout', new_callable=StringIO)
     def test_import_error_fallback_to_cli(self, mock_stdout, mock_gui_main, mock_log_error, mock_cli):
@@ -193,7 +193,7 @@ class TestRunGuiMode:
 
     @patch('run.run_cli_mode')
     @patch('run.log_error')
-    @patch('university_system.modules.shared.gui.main_gui.run_gui_interface',
+    @patch('education_system.university_system.modules.shared.gui.main_gui.run_gui_interface',
            side_effect=OSError("Display not found"))
     @patch('sys.stdout', new_callable=StringIO)
     def test_os_error_fallback_to_cli(self, mock_stdout, mock_gui_main, mock_log_error, mock_cli):
@@ -204,7 +204,7 @@ class TestRunGuiMode:
 
     @patch('run.run_cli_mode')
     @patch('run.log_error')
-    @patch('university_system.modules.shared.gui.main_gui.run_gui_interface',
+    @patch('education_system.university_system.modules.shared.gui.main_gui.run_gui_interface',
            side_effect=RuntimeError("GUI runtime error"))
     @patch('sys.stdout', new_callable=StringIO)
     def test_runtime_error_fallback_to_cli(self, mock_stdout, mock_gui_main, mock_log_error, mock_cli):
@@ -215,7 +215,7 @@ class TestRunGuiMode:
 
     @patch('run.run_cli_mode')
     @patch('run.log_error')
-    @patch('university_system.modules.shared.gui.main_gui.run_gui_interface',
+    @patch('education_system.university_system.modules.shared.gui.main_gui.run_gui_interface',
            side_effect=ValueError("Invalid GUI value"))
     @patch('sys.stdout', new_callable=StringIO)
     def test_value_error_fallback_to_cli(self, mock_stdout, mock_gui_main, mock_log_error, mock_cli):
@@ -226,7 +226,7 @@ class TestRunGuiMode:
 
     @patch('run.run_cli_mode')
     @patch('run.log_error')
-    @patch('university_system.modules.shared.gui.main_gui.run_gui_interface',
+    @patch('education_system.university_system.modules.shared.gui.main_gui.run_gui_interface',
            side_effect=AttributeError("Missing attribute"))
     @patch('sys.stdout', new_callable=StringIO)
     def test_attribute_error_fallback_to_cli(self, mock_stdout, mock_gui_main, mock_log_error, mock_cli):
@@ -237,7 +237,7 @@ class TestRunGuiMode:
 
     @patch('run.run_cli_mode')
     @patch('run.log_error')
-    @patch('university_system.modules.shared.gui.main_gui.run_gui_interface',
+    @patch('education_system.university_system.modules.shared.gui.main_gui.run_gui_interface',
            side_effect=Exception("Unexpected GUI error"))
     @patch('sys.stdout', new_callable=StringIO)
     def test_general_exception_fallback_to_cli(self, mock_stdout, mock_gui_main, mock_log_error, mock_cli):
@@ -253,10 +253,10 @@ class TestMain:
     """Test suite for main() function"""
 
     @patch('run.run_cli_mode')
-    @patch('university_system.infrastructure.database.database_utils.init_db')
-    @patch('university_system.infrastructure.shared_context.set_auth')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('university_system.modules.shared.constants.paths.ensure_directories')
+    @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
+    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
+    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_with_cli_argument(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                     mock_set_auth, mock_init_db, mock_run_cli):
@@ -273,10 +273,10 @@ class TestMain:
         mock_run_cli.assert_called_once()
 
     @patch('run.run_gui_mode')
-    @patch('university_system.infrastructure.database.database_utils.init_db')
-    @patch('university_system.infrastructure.shared_context.set_auth')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('university_system.modules.shared.constants.paths.ensure_directories')
+    @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
+    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
+    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_with_gui_argument(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                    mock_set_auth, mock_init_db, mock_run_gui):
@@ -290,11 +290,11 @@ class TestMain:
         assert result is True
         mock_run_gui.assert_called_once()
 
-    @patch('university_system.tests.run_all_tests.main')
-    @patch('university_system.infrastructure.database.database_utils.init_db')
-    @patch('university_system.infrastructure.shared_context.set_auth')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('university_system.modules.shared.constants.paths.ensure_directories')
+    @patch('education_system.university_system.tests.run_all_tests.main')
+    @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
+    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
+    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_with_test_argument(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                     mock_set_auth, mock_init_db, mock_run_tests):
@@ -309,10 +309,10 @@ class TestMain:
         output = mock_stdout.getvalue()
         assert "Running all tests" in output
 
-    @patch('university_system.infrastructure.database.database_utils.init_db')
-    @patch('university_system.infrastructure.shared_context.set_auth')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('university_system.modules.shared.constants.paths.ensure_directories')
+    @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
+    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
+    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_with_help_argument(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                     mock_set_auth, mock_init_db):
@@ -329,10 +329,10 @@ class TestMain:
         assert "--gui" in output
         assert "--test" in output
 
-    @patch('university_system.infrastructure.database.database_utils.init_db')
-    @patch('university_system.infrastructure.shared_context.set_auth')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('university_system.modules.shared.constants.paths.ensure_directories')
+    @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
+    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
+    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_with_unknown_argument(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                        mock_set_auth, mock_init_db):
@@ -348,10 +348,10 @@ class TestMain:
 
     @patch('run.run_cli_mode')
     @patch('run.display_interface_menu')
-    @patch('university_system.infrastructure.database.database_utils.init_db')
-    @patch('university_system.infrastructure.shared_context.set_auth')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('university_system.modules.shared.constants.paths.ensure_directories')
+    @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
+    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
+    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_interactive_menu_cli(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                       mock_set_auth, mock_init_db, mock_menu, mock_run_cli):
@@ -369,10 +369,10 @@ class TestMain:
 
     @patch('run.run_gui_mode')
     @patch('run.display_interface_menu')
-    @patch('university_system.infrastructure.database.database_utils.init_db')
-    @patch('university_system.infrastructure.shared_context.set_auth')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('university_system.modules.shared.constants.paths.ensure_directories')
+    @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
+    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
+    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_interactive_menu_gui(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                       mock_set_auth, mock_init_db, mock_menu, mock_run_gui):
@@ -388,10 +388,10 @@ class TestMain:
         mock_menu.assert_called_once()
         mock_run_gui.assert_called_once()
 
-    @patch('university_system.infrastructure.database.database_utils.init_db')
-    @patch('university_system.infrastructure.shared_context.set_auth')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('university_system.modules.shared.constants.paths.ensure_directories')
+    @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
+    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
+    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_database_init_warning(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                        mock_set_auth, mock_init_db):
@@ -405,10 +405,10 @@ class TestMain:
         output = mock_stdout.getvalue()
         assert "Database initialization encountered issues" in output
 
-    @patch('university_system.infrastructure.database.database_utils.init_db')
-    @patch('university_system.infrastructure.shared_context.set_auth')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('university_system.modules.shared.constants.paths.ensure_directories')
+    @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
+    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
+    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_keyboard_interrupt(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                     mock_set_auth, mock_init_db):
@@ -423,7 +423,7 @@ class TestMain:
         assert "Application interrupted by user" in output
 
     @patch('run.log_error')
-    @patch('university_system.modules.shared.constants.paths.ensure_directories',
+    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories',
            side_effect=ImportError("Cannot import"))
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_import_error(self, mock_stdout, mock_ensure_dirs, mock_log_error):
@@ -435,11 +435,11 @@ class TestMain:
         mock_log_error.assert_called_once()
 
     @patch('run.log_error')
-    @patch('university_system.infrastructure.database.database_utils.init_db',
+    @patch('education_system.university_system.infrastructure.database.database_utils.init_db',
            side_effect=OSError("File system error"))
-    @patch('university_system.infrastructure.shared_context.set_auth')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('university_system.modules.shared.constants.paths.ensure_directories')
+    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
+    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_os_error(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                           mock_set_auth, mock_init_db, mock_log_error):
@@ -451,11 +451,11 @@ class TestMain:
         mock_log_error.assert_called_once()
 
     @patch('run.log_error')
-    @patch('university_system.infrastructure.database.database_utils.init_db',
+    @patch('education_system.university_system.infrastructure.database.database_utils.init_db',
            side_effect=RuntimeError("Runtime issue"))
-    @patch('university_system.infrastructure.shared_context.set_auth')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('university_system.modules.shared.constants.paths.ensure_directories')
+    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
+    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_runtime_error(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                mock_set_auth, mock_init_db, mock_log_error):
@@ -467,11 +467,11 @@ class TestMain:
         mock_log_error.assert_called_once()
 
     @patch('run.log_error')
-    @patch('university_system.infrastructure.database.database_utils.init_db',
+    @patch('education_system.university_system.infrastructure.database.database_utils.init_db',
            side_effect=Exception("Unexpected error"))
-    @patch('university_system.infrastructure.shared_context.set_auth')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('university_system.modules.shared.constants.paths.ensure_directories')
+    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
+    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_general_exception(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                    mock_set_auth, mock_init_db, mock_log_error):
@@ -483,10 +483,10 @@ class TestMain:
         mock_log_error.assert_called_once()
 
     @patch('run.run_cli_mode')
-    @patch('university_system.infrastructure.database.database_utils.init_db')
-    @patch('university_system.infrastructure.shared_context.set_auth')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('university_system.modules.shared.constants.paths.ensure_directories')
+    @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
+    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
+    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_cli_argument_variations(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                     mock_set_auth, mock_init_db, mock_run_cli):
@@ -500,10 +500,10 @@ class TestMain:
                 assert result is True
 
     @patch('run.run_gui_mode')
-    @patch('university_system.infrastructure.database.database_utils.init_db')
-    @patch('university_system.infrastructure.shared_context.set_auth')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('university_system.modules.shared.constants.paths.ensure_directories')
+    @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
+    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
+    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_gui_argument_variations(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                     mock_set_auth, mock_init_db, mock_run_gui):
@@ -516,11 +516,11 @@ class TestMain:
                 result = run.main()
                 assert result is True
 
-    @patch('university_system.tests.run_all_tests.main')
-    @patch('university_system.infrastructure.database.database_utils.init_db')
-    @patch('university_system.infrastructure.shared_context.set_auth')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('university_system.modules.shared.constants.paths.ensure_directories')
+    @patch('education_system.university_system.tests.run_all_tests.main')
+    @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
+    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
+    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_test_argument_variations(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                      mock_set_auth, mock_init_db, mock_run_tests):
@@ -532,10 +532,10 @@ class TestMain:
                 result = run.main()
                 assert result is True
 
-    @patch('university_system.infrastructure.database.database_utils.init_db')
-    @patch('university_system.infrastructure.shared_context.set_auth')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('university_system.modules.shared.constants.paths.ensure_directories')
+    @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
+    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
+    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_help_argument_variations(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                      mock_set_auth, mock_init_db):
@@ -654,7 +654,7 @@ class TestErrorLoggingIntegration:
     """Test suite for error logging integration"""
 
     @patch('run.log_error')
-    @patch('university_system.modules.shared.cli.cli_main.main', side_effect=ImportError("Test error"))
+    @patch('education_system.university_system.modules.shared.cli.cli_main.main', side_effect=ImportError("Test error"))
     @patch('sys.stdout', new_callable=StringIO)
     def test_log_error_called_with_context(self, mock_stdout, mock_cli_main, mock_log_error):
         """Test that log_error is called with proper context"""
@@ -673,7 +673,7 @@ class TestErrorLoggingIntegration:
         assert context_arg['mode'] == 'CLI'
 
     @patch('run.log_error')
-    @patch('university_system.modules.shared.gui.main_gui.run_gui_interface',
+    @patch('education_system.university_system.modules.shared.gui.main_gui.run_gui_interface',
            side_effect=ImportError("Test error"))
     @patch('run.run_cli_mode')
     @patch('sys.stdout', new_callable=StringIO)
@@ -704,10 +704,10 @@ class TestOutputFormatting:
         assert "-" * 60 in output  # Footer separator
         assert "UNIVERSITY MANAGEMENT SYSTEM" in output
 
-    @patch('university_system.infrastructure.database.database_utils.init_db')
-    @patch('university_system.infrastructure.shared_context.set_auth')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('university_system.modules.shared.constants.paths.ensure_directories')
+    @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
+    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
+    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_help_message_formatting(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                     mock_set_auth, mock_init_db):

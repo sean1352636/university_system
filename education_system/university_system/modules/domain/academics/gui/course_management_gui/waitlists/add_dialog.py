@@ -1,5 +1,6 @@
 # AddToWaitlistDialog – add a student to a course waitlist
-from ._imports import (
+from education_system.university_system.core.sql_safety import escape_like
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.waitlists._imports import (
     _, datetime, messagebox, tk, ttk, Toplevel, sqlite3, DEFAULT_DB_PATH,
 )
 
@@ -98,7 +99,7 @@ class AddToWaitlistDialog:
                         WHERE student_id LIKE ? OR first_name LIKE ? OR last_name LIKE ? OR email_address LIKE ?
                         ORDER BY student_id
                         LIMIT 100
-                    """, (f"%{search_text}%", f"%{search_text}%", f"%{search_text}%", f"%{search_text}%"))
+                    """, (f"%{escape_like(search_text)}%", f"%{escape_like(search_text)}%", f"%{escape_like(search_text)}%", f"%{escape_like(search_text)}%"))
                 else:
                     cursor.execute("""
                         SELECT student_id, first_name || ' ' || last_name, email_address
@@ -168,6 +169,11 @@ class AddToWaitlistDialog:
                 UNIQUE(course_id, student_id)
             )
             """)
+            cur.execute("SELECT id FROM course_waitlist WHERE course_id = ? AND student_id = ?", (course_id, student_id))
+            if cur.fetchone():
+                messagebox.showwarning("Already on Waitlist", "This student is already on the waitlist for this course.", parent=self.dialog)
+                conn.close()
+                return
             cur.execute("SELECT COALESCE(MAX(position),0) + 1 FROM course_waitlist WHERE course_id = ?", (course_id,))
             pos = cur.fetchone()[0] or 1
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')

@@ -406,48 +406,50 @@ class CreationMixin:
             due_date = datetime.strptime(due_date_str, "%Y-%m-%d %H:%M")
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            # Temporarily disable foreign key checks to avoid module_code issues
-            cursor.execute("PRAGMA foreign_keys = OFF")
+                # Temporarily disable foreign key checks to avoid module_code issues
+                cursor.execute("PRAGMA foreign_keys = OFF")
 
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-            cursor.execute('''
-            INSERT INTO assignments
-            (module_code, title, description, instructions, due_date, max_marks,
-             file_types_allowed, max_file_size_mb, assignment_type, group_size_min, group_size_max,
-             allow_late_submission, late_penalty_per_day, auto_release_grades, peer_review_enabled,
-             created_by, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                module_code,
-                self.title_var.get().strip(),
-                self.description_text.get(1.0, tk.END).strip(),
-                self.instructions_text.get(1.0, tk.END).strip(),
-                due_date.strftime('%Y-%m-%d %H:%M:%S'),
-                int(self.max_marks_var.get()),
-                self.file_types_var.get().strip(),
-                int(self.max_size_var.get()),
-                self.assignment_type_var.get(),
-                int(self.group_min_var.get()) if self.assignment_type_var.get() == 'group' else 1,
-                int(self.group_max_var.get()) if self.assignment_type_var.get() == 'group' else 1,
-                self.allow_late_var.get(),
-                float(self.late_penalty_var.get()) if self.late_penalty_var.get() else 0,
-                self.auto_release_var.get(),
-                self.peer_review_var.get(),
-                self.auth.current_user['id'],
-                timestamp,
-                timestamp
-            ))
+                cursor.execute('''
+                INSERT INTO assignments
+                (module_code, title, description, instructions, due_date, max_marks,
+                 file_types_allowed, max_file_size_mb, assignment_type, group_size_min, group_size_max,
+                 allow_late_submission, late_penalty_per_day, auto_release_grades, peer_review_enabled,
+                 created_by, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    module_code,
+                    self.title_var.get().strip(),
+                    self.description_text.get(1.0, tk.END).strip(),
+                    self.instructions_text.get(1.0, tk.END).strip(),
+                    due_date.strftime('%Y-%m-%d %H:%M:%S'),
+                    int(self.max_marks_var.get()),
+                    self.file_types_var.get().strip(),
+                    int(self.max_size_var.get()),
+                    self.assignment_type_var.get(),
+                    int(self.group_min_var.get()) if self.assignment_type_var.get() == 'group' else 1,
+                    int(self.group_max_var.get()) if self.assignment_type_var.get() == 'group' else 1,
+                    self.allow_late_var.get(),
+                    float(self.late_penalty_var.get()) if self.late_penalty_var.get() else 0,
+                    self.auto_release_var.get(),
+                    self.peer_review_var.get(),
+                    self.auth.current_user['id'],
+                    timestamp,
+                    timestamp
+                ))
 
-            assignment_id = cursor.lastrowid
+                assignment_id = cursor.lastrowid
 
-            # Re-enable foreign key checks
-            cursor.execute("PRAGMA foreign_keys = ON")
+                # Re-enable foreign key checks
+                cursor.execute("PRAGMA foreign_keys = ON")
 
-            conn.commit()
-            conn.close()
+                conn.commit()
+            finally:
+                conn.close()
 
             # Send assignment notification to students
             try:

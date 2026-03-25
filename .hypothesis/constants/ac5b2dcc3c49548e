@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/academic_calendar/holidays.py
+# hypothesis_version: 6.151.9
+
+[255, '%Y-%m-%d', 'Holiday', 'id', 'system_config']

@@ -114,7 +114,7 @@ except ImportError:
 _AUDIT_LOG_COLUMNS_CACHE: Optional[List[str]] = None
 _STUDENT_COLUMNS_CACHE: Optional[List[str]] = None
 
-from .base import LibraryGUI
+from education_system.university_system.modules.domain.academics.gui.library.base import LibraryGUI
 
 def _send_library_payment_confirmation_email(self, student_id, student_name, email, amount):
     """Send email confirmation for library fine payment"""
@@ -446,68 +446,78 @@ def send_automated_notifications_gui(self):
     ttk.Button(notif_window, text=_("common.close"), command=notif_window.destroy).pack(pady=10)
 
 def open_calendar_with_due_dates(self):
-    """Open calendar GUI with book return dates"""
+    """Show book return dates in a list view"""
     try:
-        from education_system.university_system.modules.domain.academics.gui.academic_calendar import CalendarGUI
-
-        # Get current user's checked out books
-        current_user_id = None
-        if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
-            current_user_id = self.auth.current_user.get('username', None)
-
-        if not current_user_id:
-            messagebox.showwarning(_("common.warning"), "Please log in to view your book return dates")
-            return
-
         conn = get_db_connection()
         if not conn:
             messagebox.showerror(_("common.error"), "Could not connect to database")
             return
 
         cursor = conn.cursor()
+        # Show all active/overdue loans
         cursor.execute('''
-            SELECT bl.book_id, b.title, bl.due_date, bl.status
+            SELECT bl.loan_id, bl.book_id, b.title, b.author, bl.user_id,
+                   bl.checkout_date, bl.due_date, bl.return_date, bl.status
             FROM book_loans bl
             JOIN books b ON bl.book_id = b.book_id
-            WHERE bl.user_id = ? AND bl.status IN ('active', 'overdue')
-            ORDER BY bl.due_date
-        ''', (current_user_id,))
-
-        book_loans = cursor.fetchall()
+            ORDER BY
+                CASE bl.status
+                    WHEN 'overdue' THEN 1
+                    WHEN 'active' THEN 2
+                    WHEN 'returned' THEN 3
+                    ELSE 4
+                END,
+                bl.due_date ASC
+        ''')
+        loans = cursor.fetchall()
         conn.close()
 
-        # Create calendar window
-        calendar_window = tk.Toplevel(self.master)
-        calendar_window.title("Library Book Return Calendar")
-        calendar_window.geometry("900x700")
+        # Create window
+        dialog = tk.Toplevel(self.master)
+        dialog.title("Book Return Calendar")
+        dialog.geometry("900x500")
+        dialog.transient(self.master)
 
-        # Initialize calendar GUI
-        calendar_gui = CalendarGUI(auth_manager=self.auth, parent_window=calendar_window)
+        ttk.Label(dialog, text="Book Return Dates", font=('Arial', 14, 'bold')).pack(pady=10)
 
-        # Add book return events to calendar
-        for book_id, title, due_date, status in book_loans:
-            event_title = f"Return: {title}"
-            event_description = f"Book ID: {book_id}\nStatus: {status}"
+        # Treeview
+        columns = ('Loan ID', 'Book ID', 'Title', 'Author', 'User', 'Checked Out', 'Due Date', 'Returned', 'Status')
+        tree_frame = ttk.Frame(dialog)
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
-            # Determine event type based on status
-            event_type = "deadline" if status == "overdue" else "library_due"
+        tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=18)
+        widths = {'Loan ID': 60, 'Book ID': 70, 'Title': 180, 'Author': 120,
+                  'User': 80, 'Checked Out': 100, 'Due Date': 100, 'Returned': 100, 'Status': 80}
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=widths.get(col, 100), anchor='w')
 
-            # Add event to calendar if method exists
-            if hasattr(calendar_gui, 'add_library_event'):
-                calendar_gui.add_library_event(
-                    title=event_title,
-                    date=due_date,
-                    description=event_description,
-                    event_type=event_type
-                )
+        vsb = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=tree.yview)
+        tree.configure(yscrollcommand=vsb.set)
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        vsb.pack(side=tk.RIGHT, fill=tk.Y)
 
-        messagebox.showinfo("Calendar Opened",
-                           f"Calendar opened with {len(book_loans)} book return dates")
+        for loan in loans:
+            lid, bid, title, author, uid, co_date, due, ret, status = loan
+            tags = []
+            if status == 'overdue':
+                tags = ['overdue']
+            elif status == 'returned':
+                tags = ['returned']
 
-    except ImportError:
-        messagebox.showerror(_("common.error"), "Calendar system is not available")
-    except tk.TclError as e:
-        messagebox.showerror(_("common.error"), f"Could not open calendar: {e}")
+            tree.insert('', 'end', values=(
+                lid, bid, title[:35], author[:20] if author else '',
+                uid, (co_date or '')[:10], (due or '')[:10],
+                (ret or '')[:10], status
+            ), tags=tags)
+
+        tree.tag_configure('overdue', background='#ffebee')
+        tree.tag_configure('returned', background='#e8f5e9')
+
+        ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+
+    except Exception as e:
+        messagebox.showerror(_("common.error"), f"Could not load return dates: {e}")
 
 def add_calendar_button_to_interface(self):
     """Add calendar button to the main interface"""

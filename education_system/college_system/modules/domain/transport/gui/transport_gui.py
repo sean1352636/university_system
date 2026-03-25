@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.college_system.modules.domain.transport.services.transport_service import TransportService
+from education_system.college_system.core.i18n import t
 
 
 class TransportFrame(tk.Frame):
@@ -19,7 +20,7 @@ class TransportFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Transport", font=("Helvetica", 14, "bold"),
+        tk.Label(header, text=t("transport.management"), font=("Helvetica", 14, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=10)
 
         toolbar = tk.Frame(self)
@@ -29,8 +30,8 @@ class TransportFrame(tk.Frame):
         ttk.Combobox(toolbar, textvariable=self._type_var,
                       values=["All", "bus", "train", "taxi", "walking", "cycling", "car"],
                       state="readonly", width=12).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="Filter", command=self._load_records).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="New Record", command=self._new_record).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("common.filter"), command=self._load_records).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("transport.add_route"), command=self._new_record).pack(side="right", padx=5)
 
         cols = ("id", "student", "type", "route", "pickup", "pass_no", "cost", "funded", "status")
         self._tree = ttk.Treeview(self, columns=cols, show="headings", height=18)
@@ -41,8 +42,9 @@ class TransportFrame(tk.Frame):
 
         btn_frame = tk.Frame(self)
         btn_frame.pack(fill="x", padx=10, pady=5)
-        ttk.Button(btn_frame, text="Edit", command=self._edit_record).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Delete", command=self._delete_record).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text=t("common.edit"), command=self._edit_record).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text=t("common.delete"), command=self._delete_record).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="Export CSV", command=self._export_csv).pack(side="left", padx=5)
 
     def _load_records(self):
         for item in self._tree.get_children():
@@ -58,11 +60,11 @@ class TransportFrame(tk.Frame):
                     f"\u00a3{r.get('cost', 0) or 0:.2f}",
                     "Yes" if r.get("funded") else "No", r.get("status", "")))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _new_record(self):
         win = tk.Toplevel(self)
-        win.title("New Transport Record")
+        win.title(t("transport.add_route"))
         win.geometry("400x350")
         fields = {}
         row = 0
@@ -96,26 +98,26 @@ class TransportFrame(tk.Frame):
                     pass_number=fields["pass_number"].get().strip() or None,
                     cost=float(cost) if cost else None,
                     funded=1 if funded_var.get() else 0)
-                messagebox.showinfo("Success", "Record created")
+                messagebox.showinfo(t("common.success"), t("common.created_success"))
                 win.destroy()
                 self._load_records()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
-        ttk.Button(win, text="Save", command=save).grid(row=row, column=0, columnspan=2, pady=15)
+                messagebox.showerror(t("common.error"), str(e))
+        ttk.Button(win, text=t("common.save"), command=save).grid(row=row, column=0, columnspan=2, pady=15)
 
     def _edit_record(self):
         sel = self._tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a record")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return
         record_id = int(sel[0])
         try:
             rec = self._svc.get_record(record_id)
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
             return
         win = tk.Toplevel(self)
-        win.title("Edit Transport Record")
+        win.title(t("transport.edit_record"))
         win.geometry("400x250")
         fields = {}
         row = 0
@@ -144,20 +146,24 @@ class TransportFrame(tk.Frame):
                 win.destroy()
                 self._load_records()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
-        ttk.Button(win, text="Save", command=save).grid(row=row, column=0, columnspan=2, pady=15)
+                messagebox.showerror(t("common.error"), str(e))
+        ttk.Button(win, text=t("common.save"), command=save).grid(row=row, column=0, columnspan=2, pady=15)
 
     def _delete_record(self):
         sel = self._tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a record")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return
-        if messagebox.askyesno("Confirm", "Delete this transport record?"):
+        if messagebox.askyesno(t("common.confirm"), t("transport.delete_confirm")):
             try:
                 self._svc.delete_record(int(sel[0]))
                 self._load_records()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._tree, "transport.csv")
 
     def refresh(self):
         self._load_records()

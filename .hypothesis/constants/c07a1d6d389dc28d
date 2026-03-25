@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/grading/grade_calculation/risk_assessment.py
+# hypothesis_version: 6.151.9
+
+[0.8, 0.85, 2.0, 2.5, 100, '  GPA: N/A', '%Y-%m-%d', '-', '=', 'Below Average GPA', 'High', 'Low', 'Low GPA', 'Low Submission Rate', 'Medium', 'Minimal', 'Rule-based Model', 'course', 'gpa', 'name', 'risk_factors', 'risk_level', 'risk_score', 'student_id', 'submission_rate']

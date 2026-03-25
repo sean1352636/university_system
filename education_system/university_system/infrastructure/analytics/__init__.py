@@ -17,7 +17,7 @@ Features:
 - Data warehouse synchronization
 """
 
-from .models import (
+from education_system.university_system.infrastructure.analytics.models import (
     ReportType,
     ReportFrequency,
     ReportFormat,
@@ -26,27 +26,27 @@ from .models import (
     DashboardWidget,
 )
 
-from .retention_prediction import (
+from education_system.university_system.infrastructure.analytics.retention_prediction import (
     RetentionPredictor,
     get_retention_predictor,
 )
 
-from .performance_analytics import (
+from education_system.university_system.infrastructure.analytics.performance_analytics import (
     PerformanceAnalyzer,
     get_performance_analyzer,
 )
 
-from .report_generator import (
+from education_system.university_system.infrastructure.analytics.report_generator import (
     ReportGenerator,
     get_report_generator,
 )
 
-from .data_warehouse import (
+from education_system.university_system.infrastructure.analytics.data_warehouse import (
     DataWarehouse,
     get_data_warehouse,
 )
 
-from .dashboard_service import (
+from education_system.university_system.infrastructure.analytics.dashboard_service import (
     DashboardService,
     get_dashboard_service,
 )

@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.college_system.modules.domain.parents_evening.services.parents_evening_service import ParentsEveningService
+from education_system.college_system.core.i18n import t
 
 
 class ParentsEveningFrame(tk.Frame):
@@ -19,25 +20,26 @@ class ParentsEveningFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Parents Evening", font=("Helvetica", 14, "bold"),
+        tk.Label(header, text=t("parents_evening.title"), font=("Helvetica", 14, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=10)
 
         self._nb = ttk.Notebook(self)
         self._nb.pack(fill="both", expand=True, padx=10, pady=10)
 
         self._evenings_tab = tk.Frame(self._nb)
-        self._nb.add(self._evenings_tab, text="Evenings")
+        self._nb.add(self._evenings_tab, text=t("parents_evening.evenings"))
         self._build_evenings_tab()
 
         self._slots_tab = tk.Frame(self._nb)
-        self._nb.add(self._slots_tab, text="Slots & Bookings")
+        self._nb.add(self._slots_tab, text=t("parents_evening.slots_bookings"))
         self._build_slots_tab()
 
     def _build_evenings_tab(self):
         toolbar = tk.Frame(self._evenings_tab)
         toolbar.pack(fill="x", padx=5, pady=5)
-        ttk.Button(toolbar, text="Refresh", command=self._load_evenings).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="New Evening", command=self._new_evening).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("common.refresh"), command=self._load_evenings).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("parents_evening.new_evening"), command=self._new_evening).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("common.export_csv", default="Export CSV"), command=self._export_evenings_csv).pack(side="right", padx=5)
 
         cols = ("id", "title", "date", "start", "end", "slot_mins", "status")
         self._eve_tree = ttk.Treeview(self._evenings_tab, columns=cols, show="headings", height=12)
@@ -49,12 +51,13 @@ class ParentsEveningFrame(tk.Frame):
     def _build_slots_tab(self):
         toolbar = tk.Frame(self._slots_tab)
         toolbar.pack(fill="x", padx=5, pady=5)
-        tk.Label(toolbar, text="Evening ID:").pack(side="left", padx=5)
+        tk.Label(toolbar, text=t("parents_evening.evening_id_colon")).pack(side="left", padx=5)
         self._slot_eid = tk.Entry(toolbar, width=8)
         self._slot_eid.pack(side="left", padx=5)
-        ttk.Button(toolbar, text="Load Slots", command=self._load_slots).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="Add Slot", command=self._new_slot).pack(side="right", padx=5)
-        ttk.Button(toolbar, text="Book Slot", command=self._book_slot).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("parents_evening.load_slots"), command=self._load_slots).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("parents_evening.add_slot"), command=self._new_slot).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("parents_evening.book_slot"), command=self._book_slot).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("common.export_csv", default="Export CSV"), command=self._export_slots_csv).pack(side="right", padx=5)
 
         cols = ("id", "teacher", "time", "status", "parent", "student")
         self._slot_tree = ttk.Treeview(self._slots_tab, columns=cols, show="headings", height=15)
@@ -74,7 +77,7 @@ class ParentsEveningFrame(tk.Frame):
                     e.get("start_time", ""), e.get("end_time", ""),
                     e.get("slot_duration_mins", ""), e.get("status", "")))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _load_slots(self):
         for item in self._slot_tree.get_children():
@@ -90,17 +93,17 @@ class ParentsEveningFrame(tk.Frame):
                     s.get("slot_time", ""), s.get("status", ""),
                     s.get("parent_user_id", ""), s.get("student_id", "")))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _new_evening(self):
         win = tk.Toplevel(self)
-        win.title("New Parents Evening")
+        win.title(t("parents_evening.new_parents_evening"))
         win.geometry("400x300")
         fields = {}
         row = 0
-        for label, key in [("Title*:", "title"), ("Date* (YYYY-MM-DD):", "event_date"),
-                           ("Start Time:", "start_time"), ("End Time:", "end_time"),
-                           ("Slot Duration (mins):", "slot_duration_mins")]:
+        for label, key in [(t("parents_evening.title_required"), "title"), (t("parents_evening.date_required"), "event_date"),
+                           (t("parents_evening.start_time_colon"), "start_time"), (t("parents_evening.end_time_colon"), "end_time"),
+                           (t("parents_evening.slot_duration_colon"), "slot_duration_mins")]:
             tk.Label(win, text=label).grid(row=row, column=0, padx=10, pady=5, sticky="e")
             e = tk.Entry(win, width=25)
             e.grid(row=row, column=1, padx=10, pady=5)
@@ -121,21 +124,21 @@ class ParentsEveningFrame(tk.Frame):
                     end_time=fields["end_time"].get().strip() or "20:00",
                     slot_duration_mins=int(dm) if dm else 5,
                     created_by=user_id)
-                messagebox.showinfo("Success", "Evening created")
+                messagebox.showinfo(t("common.success"), t("parents_evening.evening_created"))
                 win.destroy()
                 self._load_evenings()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
-        ttk.Button(win, text="Save", command=save).grid(row=row, column=0, columnspan=2, pady=15)
+                messagebox.showerror(t("common.error"), str(e))
+        ttk.Button(win, text=t("common.save"), command=save).grid(row=row, column=0, columnspan=2, pady=15)
 
     def _new_slot(self):
         win = tk.Toplevel(self)
-        win.title("Add Slot")
+        win.title(t("parents_evening.add_slot"))
         win.geometry("300x200")
         fields = {}
         row = 0
-        for label, key in [("Evening ID*:", "evening_id"), ("Teacher ID*:", "teacher_id"),
-                           ("Time* (HH:MM):", "slot_time")]:
+        for label, key in [(t("parents_evening.evening_id_required"), "evening_id"), (t("parents_evening.teacher_id_required"), "teacher_id"),
+                           (t("parents_evening.time_required"), "slot_time")]:
             tk.Label(win, text=label).grid(row=row, column=0, padx=10, pady=5, sticky="e")
             e = tk.Entry(win, width=20)
             e.grid(row=row, column=1, padx=10, pady=5)
@@ -148,25 +151,25 @@ class ParentsEveningFrame(tk.Frame):
                     evening_id=int(fields["evening_id"].get().strip()),
                     teacher_id=int(fields["teacher_id"].get().strip()),
                     slot_time=fields["slot_time"].get().strip())
-                messagebox.showinfo("Success", "Slot created")
+                messagebox.showinfo(t("common.success"), t("parents_evening.slot_created"))
                 win.destroy()
                 self._load_slots()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
-        ttk.Button(win, text="Save", command=save).grid(row=row, column=0, columnspan=2, pady=15)
+                messagebox.showerror(t("common.error"), str(e))
+        ttk.Button(win, text=t("common.save"), command=save).grid(row=row, column=0, columnspan=2, pady=15)
 
     def _book_slot(self):
         sel = self._slot_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a slot to book")
+            messagebox.showwarning(t("common.warning"), t("parents_evening.select_slot"))
             return
         slot_id = int(sel[0])
         win = tk.Toplevel(self)
-        win.title("Book Slot")
+        win.title(t("parents_evening.book_slot"))
         win.geometry("300x150")
         fields = {}
         row = 0
-        for label, key in [("Parent User ID*:", "parent_user_id"), ("Student ID*:", "student_id")]:
+        for label, key in [(t("parents_evening.parent_user_id_required"), "parent_user_id"), (t("common.student_id_required"), "student_id")]:
             tk.Label(win, text=label).grid(row=row, column=0, padx=10, pady=5, sticky="e")
             e = tk.Entry(win, width=20)
             e.grid(row=row, column=1, padx=10, pady=5)
@@ -178,12 +181,20 @@ class ParentsEveningFrame(tk.Frame):
                 self._svc.book_slot(
                     slot_id, int(fields["parent_user_id"].get().strip()),
                     int(fields["student_id"].get().strip()))
-                messagebox.showinfo("Success", "Slot booked")
+                messagebox.showinfo(t("common.success"), t("parents_evening.slot_booked"))
                 win.destroy()
                 self._load_slots()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
-        ttk.Button(win, text="Book", command=save).grid(row=row, column=0, columnspan=2, pady=15)
+                messagebox.showerror(t("common.error"), str(e))
+        ttk.Button(win, text=t("parents_evening.book"), command=save).grid(row=row, column=0, columnspan=2, pady=15)
+
+    def _export_evenings_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._eve_tree, "parents_evenings.csv")
+
+    def _export_slots_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._slot_tree, "parents_evening_slots.csv")
 
     def refresh(self):
         self._load_evenings()

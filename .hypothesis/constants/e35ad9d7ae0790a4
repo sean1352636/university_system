@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/chat_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/chat', '/rooms', '/rooms/<int:room_id>', 'GET', 'POST', 'chat', 'chat_message', 'chat_messages', 'chat_room', 'chat_rooms', 'content', 'create', 'description', 'is_active = 1', 'items', 'max_members', 'name', 'room_type', 'room_type = ?', 'search', 'sub', 'total', 'user_id', 'view']

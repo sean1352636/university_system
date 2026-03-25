@@ -14,20 +14,20 @@ from tkinter.ttk import Progressbar, Notebook
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
-from .constants import GUI_SETTINGS_PATH
+from education_system.university_system.modules.shared.gui.batch_operations.constants import GUI_SETTINGS_PATH
 
 # Import managers
-from .import_manager import ImportManager
-from .update_manager import UpdateManager
-from .export_manager import ExportManager
-from .report_manager import ReportManager
-from .quality_manager import QualityManager
-from .utility_manager import UtilityManager
-from .automation_manager import AutomationManager
-from .user_operations_manager import UserOperationsManager
+from education_system.university_system.modules.shared.gui.batch_operations.import_manager import ImportManager
+from education_system.university_system.modules.shared.gui.batch_operations.update_manager import UpdateManager
+from education_system.university_system.modules.shared.gui.batch_operations.export_manager import ExportManager
+from education_system.university_system.modules.shared.gui.batch_operations.report_manager import ReportManager
+from education_system.university_system.modules.shared.gui.batch_operations.quality_manager import QualityManager
+from education_system.university_system.modules.shared.gui.batch_operations.utility_manager import UtilityManager
+from education_system.university_system.modules.shared.gui.batch_operations.automation_manager import AutomationManager
+from education_system.university_system.modules.shared.gui.batch_operations.user_operations_manager import UserOperationsManager
 
 # Import the enhanced batch operations class with GUI-specific methods
-from .backend import EnhancedBatchOperationManager
+from education_system.university_system.modules.shared.gui.batch_operations.backend import EnhancedBatchOperationManager
 
 
 class BatchOperationsGUI:
@@ -64,6 +64,10 @@ class BatchOperationsGUI:
 
         # Start queue processing
         self.process_queue()
+
+    def show_import_results(self, result, operation_type="Import"):
+        """Delegate to import manager's results dialog."""
+        self.import_mgr.show_import_results(result, operation_type)
 
     def return_to_main_menu(self):
         """Return to the main menu"""
@@ -369,8 +373,8 @@ class BatchOperationsGUI:
             ("Batch Course Enrollment",
              "Enroll multiple students in courses from a CSV file.",
              self.batch_course_enrollment),
-            ("Batch Email Campaign",
-             "Send targeted email campaigns to user segments (students, staff, by course).",
+            ("Send Email Campaign",
+             "Send targeted email campaigns to all users or segments via the email system.",
              self.batch_email_campaign),
         ]
 

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/secondary_school/core/paths.py
+# hypothesis_version: 6.151.9
+
+['config', 'data', 'db_files', 'logs', 'secondary_school.db']

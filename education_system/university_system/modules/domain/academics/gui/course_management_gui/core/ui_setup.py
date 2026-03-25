@@ -1,6 +1,9 @@
-from ._imports import (
+from tkinter.scrolledtext import ScrolledText
+
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.core._imports import (
     _, logging, messagebox, threading, tk, ttk, Path,
     ORIGINAL_MODULE_AVAILABLE, display_enhanced_course_menu,
+    ACADEMIC_SYSTEMS_AVAILABLE,
 )
 
 
@@ -154,8 +157,14 @@ class UISetupMixin:
         # Instructors Tab
         self.create_instructors_tab()
 
-        # Academic Systems Tab
-        self.create_academic_systems_tab()
+        # LMS Tab (embedded)
+        self.create_lms_tab()
+
+        # Degree Audit Tab (embedded)
+        self.create_degree_audit_tab()
+
+        # Course Evaluation Tab (embedded)
+        self.create_course_eval_tab()
 
     def open_course_management_cli(self):
         """Launch the course management CLI in a terminal."""
@@ -415,19 +424,6 @@ class UISetupMixin:
         canvas.bind_all('<MouseWheel>', on_mousewheel)
         canvas.bind_all('<Button-4>', lambda e: canvas.yview_scroll(-1, 'units'))
         canvas.bind_all('<Button-5>', lambda e: canvas.yview_scroll(1, 'units'))
-
-        # LMS System
-        lms_frame = ttk.LabelFrame(container, text=_("course_management.labels.lms"), padding=20)
-        lms_frame.pack(fill=tk.X, pady=10)
-
-        lms_desc = ttk.Label(lms_frame,
-                            text=_("course_management.labels.lms_description"),
-                            wraplength=500)
-        lms_desc.pack(pady=5)
-
-        ttk.Button(lms_frame, text=_("course_management.buttons.launch_lms"),
-                  command=self.show_lms_gui,
-                  width=30).pack(pady=10)
 
         # Degree Audit System
         audit_frame = ttk.LabelFrame(container, text=_("course_management.labels.degree_audit"), padding=20)

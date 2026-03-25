@@ -94,6 +94,25 @@ class SafeguardingService:
         finally:
             conn.close()
 
+    def delete_concern(self, concern_id: int) -> bool:
+        """Delete a safeguarding concern by ID."""
+        conn = self._conn()
+        try:
+            result = conn.execute(
+                "DELETE FROM safeguarding_concerns WHERE id = ?", (concern_id,)
+            )
+            conn.commit()
+            if result.rowcount == 0:
+                raise SafeguardingError(f"Concern {concern_id} not found.")
+            return True
+        except SafeguardingError:
+            raise
+        except Exception as e:
+            conn.rollback()
+            raise SafeguardingError(f"Failed to delete concern: {e}")
+        finally:
+            conn.close()
+
     def get_student_concerns(self, student_id: int) -> list[dict]:
         conn = self._conn()
         try:

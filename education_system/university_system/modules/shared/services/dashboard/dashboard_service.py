@@ -57,7 +57,7 @@ class DashboardService:
                     if grade_rows and grade_rows['gpa'] is not None:
                         data['gpa'] = round(grade_rows['gpa'], 2)
                 except Exception:
-                    pass
+                    logger.exception("Failed to calculate student GPA")
 
                 # Upcoming assignments
                 try:
@@ -70,7 +70,7 @@ class DashboardService:
                     ).fetchall()
                     data['upcoming_assignments'] = [dict(r) for r in assignment_rows] if assignment_rows else []
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch upcoming assignments")
 
                 # Office hour bookings
                 try:
@@ -85,7 +85,7 @@ class DashboardService:
                     ).fetchall()
                     data['office_hour_bookings'] = [dict(r) for r in booking_rows] if booking_rows else []
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch office hour bookings")
 
                 # TA assignments
                 try:
@@ -97,7 +97,7 @@ class DashboardService:
                     ).fetchall()
                     data['ta_assignments'] = [dict(r) for r in ta_rows] if ta_rows else []
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch TA assignments")
 
         except Exception as e:
             logger.error(f"Error fetching student dashboard data: {e}")
@@ -137,7 +137,7 @@ class DashboardService:
                     ).fetchall()
                     data['courses_taught'] = [dict(r) for r in course_rows] if course_rows else []
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch courses taught by instructor")
 
                 # Total enrolled students
                 try:
@@ -150,7 +150,7 @@ class DashboardService:
                     ).fetchone()
                     data['total_students'] = count_row['cnt'] if count_row else 0
                 except Exception:
-                    pass
+                    logger.exception("Failed to count total enrolled students")
 
                 # Pending grading (assignments past due without grades)
                 try:
@@ -163,7 +163,7 @@ class DashboardService:
                     ).fetchone()
                     data['pending_grading'] = pending_row['cnt'] if pending_row else 0
                 except Exception:
-                    pass
+                    logger.exception("Failed to count pending grading items")
 
                 # Office hours
                 try:
@@ -174,7 +174,7 @@ class DashboardService:
                     ).fetchall()
                     data['office_hours'] = [dict(r) for r in oh_rows] if oh_rows else []
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch instructor office hours")
 
                 # Upcoming bookings
                 try:
@@ -189,7 +189,7 @@ class DashboardService:
                     ).fetchall()
                     data['upcoming_bookings'] = [dict(r) for r in booking_rows] if booking_rows else []
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch upcoming office hour bookings")
 
                 # TAs assigned to instructor's courses
                 try:
@@ -201,7 +201,7 @@ class DashboardService:
                     ).fetchall()
                     data['ta_assignments'] = [dict(r) for r in ta_rows] if ta_rows else []
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch instructor TA assignments")
 
                 # At-risk students in instructor's courses
                 try:
@@ -221,7 +221,7 @@ class DashboardService:
                     ).fetchall()
                     data['at_risk_students'] = [dict(r) for r in risk_rows] if risk_rows else []
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch at-risk students for instructor")
 
                 # Grading backlog (ungraded submissions)
                 try:
@@ -239,7 +239,7 @@ class DashboardService:
                     ).fetchall()
                     data['grading_backlog'] = [dict(r) for r in backlog_rows] if backlog_rows else []
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch grading backlog")
 
                 # Recent announcements for instructor's courses
                 try:
@@ -252,7 +252,7 @@ class DashboardService:
                     ).fetchall()
                     data['announcements'] = [dict(r) for r in ann_rows] if ann_rows else []
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch instructor announcements")
 
         except Exception as e:
             logger.error(f"Error fetching instructor dashboard data: {e}")
@@ -367,7 +367,7 @@ class DashboardService:
                         ).fetchone()
                         info['enrolled'] = row['cnt'] if row else 0
                     except Exception:
-                        pass
+                        logger.exception("Failed to count enrolled students for course %s", mc)
 
                     try:
                         row = conn.execute(
@@ -378,7 +378,7 @@ class DashboardService:
                         ).fetchone()
                         info['avg_grade'] = row['avg_g'] if row and row['avg_g'] is not None else None
                     except Exception:
-                        pass
+                        logger.exception("Failed to calculate average grade for course %s", mc)
 
                     try:
                         row = conn.execute(
@@ -387,7 +387,7 @@ class DashboardService:
                         ).fetchone()
                         info['attendance_rate'] = row['avg_att'] if row and row['avg_att'] is not None else None
                     except Exception:
-                        pass
+                        logger.exception("Failed to fetch attendance rate for course %s", mc)
 
                     try:
                         total_row = conn.execute(
@@ -406,7 +406,7 @@ class DashboardService:
                         submitted = sub_row['submitted'] if sub_row else 0
                         info['submission_rate'] = round((submitted / total) * 100, 1) if total > 0 else None
                     except Exception:
-                        pass
+                        logger.exception("Failed to calculate submission rate for course %s", mc)
 
                     try:
                         row = conn.execute(
@@ -417,7 +417,7 @@ class DashboardService:
                         ).fetchone()
                         info['at_risk_count'] = row['cnt'] if row else 0
                     except Exception:
-                        pass
+                        logger.exception("Failed to count at-risk students for course %s", mc)
 
                     results.append(info)
         except Exception as e:
@@ -463,7 +463,7 @@ class DashboardService:
                         ).fetchone()
                         semester['enrollment_count'] = row['cnt'] if row else 0
                     except Exception:
-                        pass
+                        logger.exception("Failed to fetch semester enrollment count")
 
                     try:
                         row = conn.execute(
@@ -479,7 +479,7 @@ class DashboardService:
                         ).fetchone()
                         semester['avg_grade'] = row['avg_g'] if row and row['avg_g'] is not None else None
                     except Exception:
-                        pass
+                        logger.exception("Failed to fetch semester average grade")
 
                     try:
                         row = conn.execute(
@@ -493,7 +493,7 @@ class DashboardService:
                         ).fetchone()
                         semester['attendance_rate'] = row['avg_att'] if row and row['avg_att'] is not None else None
                     except Exception:
-                        pass
+                        logger.exception("Failed to fetch semester attendance rate")
 
                     data[label] = semester
         except Exception as e:
@@ -528,7 +528,7 @@ class DashboardService:
                     row = conn.execute("SELECT COUNT(*) as cnt FROM users WHERE role = 'staff'").fetchone()
                     data['total_instructors'] = row['cnt'] if row else 0
                 except Exception:
-                    pass
+                    logger.exception("Failed to count total instructors")
 
                 # Total courses (real courses, excluding auto-generated module mirrors)
                 try:
@@ -537,7 +537,7 @@ class DashboardService:
                     ).fetchone()
                     data['total_courses'] = row['cnt'] if row else 0
                 except Exception:
-                    pass
+                    logger.exception("Failed to count total courses")
 
                 # Active enrollments
                 try:
@@ -546,7 +546,7 @@ class DashboardService:
                     ).fetchone()
                     data['total_active_enrollments'] = row['cnt'] if row else 0
                 except Exception:
-                    pass
+                    logger.exception("Failed to count active enrollments")
 
                 # Recent registrations (last 7 days)
                 try:
@@ -559,14 +559,14 @@ class DashboardService:
                     ).fetchall()
                     data['recent_registrations'] = [dict(r) for r in recent] if recent else []
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch recent registrations")
 
                 # System stats
                 try:
                     users_row = conn.execute("SELECT COUNT(*) as cnt FROM users").fetchone()
                     data['system_stats']['total_users'] = users_row['cnt'] if users_row else 0
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch system stats user count")
 
                 # Financial summary
                 try:
@@ -575,7 +575,7 @@ class DashboardService:
                     ).fetchone()
                     data['financial_summary']['total_payments'] = fin_row['total'] if fin_row and fin_row['total'] else 0
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch financial summary")
 
         except Exception as e:
             logger.error(f"Error fetching admin dashboard data: {e}")
@@ -616,7 +616,7 @@ class DashboardService:
                     ).fetchall()
                     data['daily_login_trends'] = [dict(r) for r in rows] if rows else []
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch daily login trends")
 
                 # Top users with failed logins (last 7 days)
                 try:
@@ -629,7 +629,7 @@ class DashboardService:
                     ).fetchall()
                     data['failed_logins_by_user'] = [dict(r) for r in rows] if rows else []
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch failed logins by user")
 
                 # Hourly activity pattern (last 7 days)
                 try:
@@ -642,7 +642,7 @@ class DashboardService:
                     ).fetchall()
                     data['hourly_activity'] = [dict(r) for r in rows] if rows else []
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch hourly activity pattern")
 
                 # MFA adoption rates
                 try:
@@ -663,7 +663,7 @@ class DashboardService:
                             'rate_pct': round((enabled / total) * 100, 1) if total > 0 else 0.0,
                         }
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch MFA adoption rates")
 
                 # Top IPs with failed logins
                 try:
@@ -676,7 +676,7 @@ class DashboardService:
                     ).fetchall()
                     data['top_failed_ips'] = [dict(r) for r in rows] if rows else []
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch top failed login IPs")
 
                 # Recent failed login attempts
                 try:
@@ -687,7 +687,7 @@ class DashboardService:
                     ).fetchall()
                     data['recent_failed_logins'] = [dict(r) for r in rows] if rows else []
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch recent failed logins")
 
                 # Overall success rate (last 30 days)
                 try:
@@ -708,7 +708,7 @@ class DashboardService:
                             'rate_pct': round((successful / total) * 100, 1) if total > 0 else 0.0,
                         }
                 except Exception:
-                    pass
+                    logger.exception("Failed to calculate login success rate")
 
                 # Active users (24h and 7d)
                 try:
@@ -718,7 +718,7 @@ class DashboardService:
                     ).fetchone()
                     data['active_users_24h'] = row['cnt'] if row else 0
                 except Exception:
-                    pass
+                    logger.exception("Failed to count active users in last 24 hours")
 
                 try:
                     row = conn.execute(
@@ -727,7 +727,7 @@ class DashboardService:
                     ).fetchone()
                     data['active_users_7d'] = row['cnt'] if row else 0
                 except Exception:
-                    pass
+                    logger.exception("Failed to count active users in last 7 days")
 
         except Exception as e:
             logger.error(f"Error fetching login analytics: {e}")
@@ -780,7 +780,7 @@ class DashboardService:
                     ).fetchall()
                     data['course_utilization'] = [dict(r) for r in rows] if rows else []
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch course utilization data")
 
                 # Grade distribution (overall)
                 try:
@@ -799,7 +799,7 @@ class DashboardService:
                     ).fetchall()
                     data['grade_distribution'] = [dict(r) for r in rows] if rows else []
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch overall grade distribution")
 
                 # Grade distribution by instructor
                 try:
@@ -818,7 +818,7 @@ class DashboardService:
                     ).fetchall()
                     data['grade_distribution_by_instructor'] = [dict(r) for r in rows] if rows else []
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch grade distribution by instructor")
 
                 # Student retention metrics
                 try:
@@ -846,7 +846,7 @@ class DashboardService:
                         'retention_rate_pct': round((active / total) * 100, 1) if total > 0 else 0.0,
                     }
                 except Exception:
-                    pass
+                    logger.exception("Failed to calculate student retention metrics")
 
                 # Financial aid funnel
                 try:
@@ -871,7 +871,7 @@ class DashboardService:
                             'total_disbursed': row['total_disbursed'] or 0.0,
                         }
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch financial aid funnel data")
 
                 # Support ticket stats
                 try:
@@ -904,7 +904,7 @@ class DashboardService:
                     if res_row and res_row['avg_hours'] is not None:
                         data['ticket_stats']['avg_resolution_hours'] = round(res_row['avg_hours'], 1)
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch support ticket stats")
 
                 # Tickets by category
                 try:
@@ -914,7 +914,7 @@ class DashboardService:
                     ).fetchall()
                     data['tickets_by_category'] = [dict(r) for r in rows] if rows else []
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch tickets by category")
 
                 # Tickets by priority
                 try:
@@ -924,7 +924,7 @@ class DashboardService:
                     ).fetchall()
                     data['tickets_by_priority'] = [dict(r) for r in rows] if rows else []
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch tickets by priority")
 
         except Exception as e:
             logger.error(f"Error fetching operational metrics: {e}")
@@ -976,7 +976,7 @@ class DashboardService:
                     ).fetchone()
                     data['active_sessions_24h'] = row['cnt'] if row else 0
                 except Exception:
-                    pass
+                    logger.exception("Failed to count active sessions in last 24 hours")
 
                 # Database file size
                 try:
@@ -986,7 +986,7 @@ class DashboardService:
                     page_size = row2[0] if row2 else 0
                     data['db_size_mb'] = round((page_count * page_size) / (1024 * 1024), 2)
                 except Exception:
-                    pass
+                    logger.exception("Failed to calculate database file size")
 
                 # Table row counts for key tables
                 key_tables = [
@@ -1002,7 +1002,7 @@ class DashboardService:
                             'table': table, 'rows': row['cnt'] if row else 0
                         })
                     except Exception:
-                        pass
+                        logger.exception("Failed to count rows in table %s", table)
 
         except Exception as e:
             logger.error(f"Error fetching system health data: {e}")
@@ -1044,7 +1044,7 @@ class DashboardService:
                     ).fetchone()
                     data["balance"] = acct["balance"] if acct else 0.0
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch student finance account balance")
 
                 try:
                     today = datetime.now().strftime("%Y-%m-%d")
@@ -1061,7 +1061,7 @@ class DashboardService:
                         r.get("is_overdue") for r in data["upcoming_deadlines"]
                     )
                 except Exception:
-                    pass
+                    logger.exception("Failed to fetch upcoming payment deadlines")
         except Exception as e:
             logger.error(f"Error fetching student financial summary: {e}")
         return data

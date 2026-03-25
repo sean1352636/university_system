@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/gui/health_portal/ui_framework.py
+# hypothesis_version: 6.151.9
+
+[120, '  |  ', '#555555', '#e0e0e0', '#f0f0f0', '10', '5', '<Configure>', '<MouseWheel>', 'Arial', 'Available Features', 'Data Management', 'Email Manager', 'Emergency Contacts', 'Error.TLabel', 'Feature Information', 'Heading.TLabel', 'Record Vaccinations', 'Security Audit', 'Success.TLabel', 'Title.TLabel', 'Warning.TLabel', '_', 'all', 'bold', 'clam', 'common.error', 'data_management', 'email_manager', 'ew', 'gray', 'green', 'health_reports', 'manage_vaccinations', 'nw', 'orange', 'record_vaccination', 'red', 'schedule_appointment', 'security_audit', 'units', 'verify_vaccinations', 'view_appointments', 'view_health_records', 'view_medical_history', 'w']

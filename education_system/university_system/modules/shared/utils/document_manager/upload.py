@@ -1,4 +1,4 @@
-from ._common import (
+from education_system.university_system.modules.shared.utils.document_manager._common import (
     os, hashlib, datetime, sqlite3,
     get_connection, get_current_user, _t, log_event,
     EMAIL_SYSTEM_AVAILABLE, send_email, render_template,
@@ -29,8 +29,8 @@ class UploadMixin:
             # Check for existing documents of this type
             cursor.execute('''
             SELECT document_id, version_number, original_filename
-            FROM student_documents
-            WHERE student_id = ? AND type_id = ? AND is_current_version = 1
+            FROM documents
+            WHERE owner_id = ? AND source_type = 'student' AND type_id = ? AND is_current_version = 1
             ''', (student_id, type_id))
 
             existing_doc = cursor.fetchone()
@@ -52,7 +52,7 @@ class UploadMixin:
 
                     # Mark existing as not current
                     cursor.execute('''
-                    UPDATE student_documents
+                    UPDATE documents
                     SET is_current_version = 0
                     WHERE document_id = ?
                     ''', (existing_doc[0],))
@@ -83,11 +83,11 @@ class UploadMixin:
             upload_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
             cursor.execute('''
-            INSERT INTO student_documents
-            (student_id, type_id, file_path, original_filename, upload_date, expiry_date,
+            INSERT INTO documents
+            (source_type, owner_id, type_id, file_path, original_filename, upload_date, expiry_date,
              verification_status, version_number, parent_document_id, uploaded_by,
              file_size, file_hash, tags, workflow_status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES ('student', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (student_id, type_id, file_path, original_filename, upload_date, expiry_date,
                   'Pending', new_version, parent_doc_id, self.current_user, file_size, file_hash, tags, 'submitted'))
 

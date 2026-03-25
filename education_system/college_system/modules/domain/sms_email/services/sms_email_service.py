@@ -3,6 +3,7 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import SmsEmailError, ValidationError
 from education_system.college_system.infrastructure.database.db import connect
+from education_system.college_system.core.sql_safety import validate_identifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -23,10 +24,22 @@ class SmsEmailService:
             raise ValidationError("user_id is required.")
         conn = self._conn()
         try:
+            # Build INSERT with only non-None values so DB defaults apply
+            fields = {k: v for k, v in {
+                'user_id': kwargs.get('user_id'),
+                'email_enabled': kwargs.get('email_enabled'),
+                'sms_enabled': kwargs.get('sms_enabled'),
+                'phone_number': kwargs.get('phone_number'),
+                'attendance_alerts': kwargs.get('attendance_alerts'),
+                'grade_alerts': kwargs.get('grade_alerts'),
+                'assignment_alerts': kwargs.get('assignment_alerts'),
+                'digest_frequency': kwargs.get('digest_frequency'),
+            }.items() if v is not None}
+            cols = ", ".join(fields.keys())
+            placeholders = ", ".join("?" for _ in fields)
             conn.execute(
-                """INSERT INTO notification_preferences (user_id, email_enabled, sms_enabled, phone_number, attendance_alerts, grade_alerts, assignment_alerts, digest_frequency)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                (kwargs.get('user_id'), kwargs.get('email_enabled'), kwargs.get('sms_enabled'), kwargs.get('phone_number'), kwargs.get('attendance_alerts'), kwargs.get('grade_alerts'), kwargs.get('assignment_alerts'), kwargs.get('digest_frequency'),),
+                f"INSERT INTO notification_preferences ({cols}) VALUES ({placeholders})",
+                list(fields.values()),
             )
             conn.commit()
             row = conn.execute(
@@ -58,7 +71,7 @@ class SmsEmailService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -76,7 +89,7 @@ class SmsEmailService:
         if not updates:
             raise ValidationError("No valid fields to update.")
         updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [pk]
         conn = self._conn()
         try:
@@ -114,7 +127,7 @@ class SmsEmailService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         conn = self._conn()
         try:

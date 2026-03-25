@@ -121,7 +121,6 @@ class EventsGUI:
 
         buttons = [
             ("My RSVPs", self.show_my_rsvps),
-            ("Create Event", self.create_event_dialog),
             ("Interests", self.manage_interests_dialog),
             ("My Stats", self.show_statistics),
             ("Return to Main Menu", self.close_window)
@@ -465,7 +464,7 @@ class EventsGUI:
         # RSVPs
         tk.Label(
             stats_frame,
-            text=f"👥 {event['rsvp_count']} going",
+            text=f"👥 {event.get('rsvp_count', 0)} going",
             font=('Helvetica', 9),
             bg='white',
             fg=self.colors['text_light']
@@ -869,7 +868,7 @@ class EventsGUI:
         if event['max_capacity'] > 0:
             tk.Label(
                 details_frame,
-                text=f"Capacity: {event['rsvp_count']}/{event['max_capacity']}",
+                text=f"Capacity: {event.get('rsvp_count', 0)}/{event['max_capacity']}",
                 font=('Helvetica', 10),
                 bg='white',
                 fg=self.colors['text_light']
@@ -1063,7 +1062,7 @@ class EventsGUI:
                 bg='white'
             ).pack(anchor=tk.W, pady=(20, 10))
 
-            stats_text = f"👥 {event['rsvp_count']} people going"
+            stats_text = f"👥 {event.get('rsvp_count', 0)} people going"
 
             if stats['average_rating']:
                 stars = '★' * int(round(stats['average_rating']))

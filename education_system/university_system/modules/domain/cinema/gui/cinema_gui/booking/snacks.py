@@ -19,8 +19,8 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
-from ..constants import SNACKS_MENU, SNACK_DIETARY, SNACK_COMBOS
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.constants import SNACKS_MENU, SNACK_DIETARY, SNACK_COMBOS
 
 def show_snacks_page(self, screening, movie):
     """Display snacks ordering page."""
@@ -127,12 +127,16 @@ def show_snacks_only_page(self):
     for col in columns:
         self.snack_tree.heading(col, text=col)
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM snack_orders ORDER BY created_at DESC LIMIT 50")
-    for row in cursor.fetchall():
-        items = row[4][:30] + "..." if len(row[4]) > 30 else row[4]
-        self.snack_tree.insert("", "end", values=(row[1], row[2] or "-", items, f"£{row[8]:.2f}", row[11].upper()))
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM orders WHERE source_type = 'snack' ORDER BY order_date DESC LIMIT 50")
+        for row in cursor.fetchall():
+            # id, source_type, source_order_id, student_id, customer_name, order_date, total_amount, payment_method, age_verified, order_status, notes
+            notes = row[10] or ""
+            items_display = notes[:30] + "..." if len(notes) > 30 else notes
+            self.snack_tree.insert("", "end", values=(row[2] or row[0], row[4] or "-", items_display, f"£{row[6]:.2f}", (row[9] or "pending").upper()))
+    finally:
+        conn.close()
     self.snack_tree.pack(fill="both", expand=True, side="left")
     scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.snack_tree.yview)
     self.snack_tree.configure(yscrollcommand=scrollbar.set)
@@ -168,11 +172,13 @@ def create_snack_order(self):
         items_str = ", ".join(items.keys())
         ref = 'SNK' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO snack_orders (order_ref, customer_name, items, subtotal, total_amount) VALUES (?, ?, ?, ?, ?)",
-                      (ref, name_e.get().strip(), items_str, total, total))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO orders (source_type, source_order_id, customer_name, total_amount, order_status, notes, order_number) VALUES ('snack', NULL, ?, ?, 'pending', ?, ?)",
+                          (name_e.get().strip(), total, items_str, ref))
+            conn.commit()
+        finally:
+            conn.close()
         messagebox.showinfo(_t("cinema.booking.order_created"), f"Ref: {ref}\nTotal: £{total:.2f}")
         form.destroy()
         self.show_snacks_only_page()

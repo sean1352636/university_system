@@ -3,10 +3,10 @@ import logging
 from datetime import datetime
 from typing import Dict, List, Tuple
 from education_system.university_system.utils.logging.log_config import configure_logging
-from .exceptions import CalendarError, ValidationError
-from .config import ValidationUtils
-from .database import DatabaseManager
-from .auth import AuthenticationManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.exceptions import CalendarError, ValidationError
+from education_system.university_system.modules.domain.academics.services.academic_calendar.config import ValidationUtils
+from education_system.university_system.modules.domain.academics.services.academic_calendar.database import DatabaseManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.auth import AuthenticationManager
 
 logger = configure_logging(name=__name__)
 

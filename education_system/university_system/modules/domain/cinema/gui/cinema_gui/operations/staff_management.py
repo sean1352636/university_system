@@ -14,8 +14,8 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
-from ..constants import STAFF_ROLES
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.constants import STAFF_ROLES
 
 # Email support (optional)
 try:
@@ -46,11 +46,13 @@ def show_staff_page(self):
     for col in columns:
         self.staff_tree.heading(col, text=col)
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM staff ORDER BY name")
-    for row in cursor.fetchall():
-        self.staff_tree.insert("", "end", values=(row[0], row[1], row[3], row[6].title(), row[4] or "-", row[9].upper()))
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM staff ORDER BY name")
+        for row in cursor.fetchall():
+            self.staff_tree.insert("", "end", values=(row[0], row[1], row[3], row[6].title(), row[4] or "-", row[9].upper()))
+    finally:
+        conn.close()
     self.staff_tree.pack(fill="both", expand=True, side="left")
     scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.staff_tree.yview)
     self.staff_tree.configure(yscrollcommand=scrollbar.set)

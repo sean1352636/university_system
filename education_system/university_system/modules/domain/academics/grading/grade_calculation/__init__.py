@@ -3,7 +3,7 @@ grade_calculation package - Split from the original grade_calculation.py
 
 Re-exports all public functions for backward compatibility so that
 existing imports like:
-    from ...grade_calculation import calculate_gpa
+    from education_system.university_system.modules.domain.academics.grading.grade_calculation import calculate_gpa
 continue to work.
 """
 

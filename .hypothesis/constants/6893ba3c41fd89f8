@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/advising_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' = ?', ' AND ', ' WHERE ', ', ', '/api/advising', '/appointments', 'GET', 'POST', 'PUT', 'advising', 'advising_appointment', 'advisor_id', 'advisor_id = ?', 'appointment_date', 'appointment_time', 'appointment_type', 'create', 'duration_minutes', 'notes', 'status', 'status = ?', 'student_id', 'student_id = ?', 'sub', 'topic', 'update', 'view']

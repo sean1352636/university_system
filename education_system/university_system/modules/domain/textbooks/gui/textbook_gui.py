@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
 from datetime import datetime
+from education_system.university_system.core.sql_safety import escape_like
 
 logger = logging.getLogger(__name__)
 
@@ -237,7 +238,7 @@ class TextbookStoreGUI:
                 search = self.search_entry.get().strip()
                 if search:
                     query += " AND (title LIKE ? OR author LIKE ? OR isbn LIKE ?)"
-                    s = f"%{search}%"
+                    s = f"%{escape_like(search)}%"
                     params.extend([s, s, s])
                 mod = self.module_filter.get()
                 if mod and mod != "All":

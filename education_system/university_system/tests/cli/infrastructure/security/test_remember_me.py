@@ -123,7 +123,7 @@ class TestGenerateToken:
 # ---------------------------------------------------------------------------
 
 class TestCreateToken:
-    @patch("university_system.infrastructure.security.remember_me.transaction")
+    @patch("education_system.university_system.infrastructure.security.remember_me.transaction")
     def test_returns_token_string(self, mock_tx):
         mgr = _make_manager()
         mock_conn = MagicMock()
@@ -137,7 +137,7 @@ class TestCreateToken:
         assert isinstance(token, str)
         assert len(token) > 0
 
-    @patch("university_system.infrastructure.security.remember_me.transaction")
+    @patch("education_system.university_system.infrastructure.security.remember_me.transaction")
     def test_inserts_hashed_token(self, mock_tx):
         mgr = _make_manager()
         mock_conn = MagicMock()
@@ -158,7 +158,7 @@ class TestCreateToken:
         insert_args = insert_calls[0][0][1]
         assert insert_args[0] == token_hash
 
-    @patch("university_system.infrastructure.security.remember_me.transaction")
+    @patch("education_system.university_system.infrastructure.security.remember_me.transaction")
     def test_removes_oldest_when_limit_exceeded(self, mock_tx):
         mgr = _make_manager(max_tokens_per_user=2)
         mock_conn = MagicMock()
@@ -183,7 +183,7 @@ class TestCreateToken:
 # ---------------------------------------------------------------------------
 
 class TestVerifyAndRotateToken:
-    @patch("university_system.infrastructure.security.remember_me.transaction")
+    @patch("education_system.university_system.infrastructure.security.remember_me.transaction")
     def test_invalid_token_returns_none(self, mock_tx):
         mgr = _make_manager()
         mock_conn = MagicMock()
@@ -194,7 +194,7 @@ class TestVerifyAndRotateToken:
         result = mgr.verify_and_rotate_token("bad_token", "fp")
         assert result is None
 
-    @patch("university_system.infrastructure.security.remember_me.transaction")
+    @patch("education_system.university_system.infrastructure.security.remember_me.transaction")
     def test_expired_token_returns_none(self, mock_tx):
         mgr = _make_manager()
         mock_conn = MagicMock()
@@ -213,7 +213,7 @@ class TestVerifyAndRotateToken:
         result = mgr.verify_and_rotate_token("tok", "fp-ok")
         assert result is None
 
-    @patch("university_system.infrastructure.security.remember_me.transaction")
+    @patch("education_system.university_system.infrastructure.security.remember_me.transaction")
     def test_fingerprint_mismatch_returns_none_and_revokes_all(self, mock_tx):
         mgr = _make_manager()
         mock_conn = MagicMock()
@@ -235,7 +235,7 @@ class TestVerifyAndRotateToken:
         ]
         assert len(delete_calls) >= 1
 
-    @patch("university_system.infrastructure.security.remember_me.transaction")
+    @patch("education_system.university_system.infrastructure.security.remember_me.transaction")
     def test_valid_token_returns_user_id(self, mock_tx):
         mgr = _make_manager(rotate_on_use=False)
         mock_conn = MagicMock()
@@ -250,7 +250,7 @@ class TestVerifyAndRotateToken:
         result = mgr.verify_and_rotate_token("tok", "fp-ok")
         assert result == 42
 
-    @patch("university_system.infrastructure.security.remember_me.transaction")
+    @patch("education_system.university_system.infrastructure.security.remember_me.transaction")
     def test_rotates_token_when_configured(self, mock_tx):
         mgr = _make_manager(rotate_on_use=True)
         mock_conn = MagicMock()
@@ -278,7 +278,7 @@ class TestVerifyAndRotateToken:
 # ---------------------------------------------------------------------------
 
 class TestRevokeToken:
-    @patch("university_system.infrastructure.security.remember_me.transaction")
+    @patch("education_system.university_system.infrastructure.security.remember_me.transaction")
     def test_revoke_existing_token(self, mock_tx):
         mgr = _make_manager()
         mock_conn = MagicMock()
@@ -288,7 +288,7 @@ class TestRevokeToken:
 
         assert mgr.revoke_token("some_token") is True
 
-    @patch("university_system.infrastructure.security.remember_me.transaction")
+    @patch("education_system.university_system.infrastructure.security.remember_me.transaction")
     def test_revoke_nonexistent_token(self, mock_tx):
         mgr = _make_manager()
         mock_conn = MagicMock()
@@ -304,7 +304,7 @@ class TestRevokeToken:
 # ---------------------------------------------------------------------------
 
 class TestRevokeAllUserTokens:
-    @patch("university_system.infrastructure.security.remember_me.transaction")
+    @patch("education_system.university_system.infrastructure.security.remember_me.transaction")
     def test_returns_count(self, mock_tx):
         mgr = _make_manager()
         mock_conn = MagicMock()
@@ -315,7 +315,7 @@ class TestRevokeAllUserTokens:
         count = mgr.revoke_all_user_tokens(user_id=42)
         assert count == 3
 
-    @patch("university_system.infrastructure.security.remember_me.transaction")
+    @patch("education_system.university_system.infrastructure.security.remember_me.transaction")
     def test_logs_activity(self, mock_tx):
         mgr = _make_manager()
         mock_conn = MagicMock()
@@ -338,7 +338,7 @@ class TestRevokeAllUserTokens:
 # ---------------------------------------------------------------------------
 
 class TestCleanupExpiredTokens:
-    @patch("university_system.infrastructure.security.remember_me.transaction")
+    @patch("education_system.university_system.infrastructure.security.remember_me.transaction")
     def test_returns_cleanup_count(self, mock_tx):
         mgr = _make_manager()
         mock_conn = MagicMock()
@@ -349,7 +349,7 @@ class TestCleanupExpiredTokens:
         count = mgr.cleanup_expired_tokens()
         assert count == 5
 
-    @patch("university_system.infrastructure.security.remember_me.transaction")
+    @patch("education_system.university_system.infrastructure.security.remember_me.transaction")
     def test_zero_expired(self, mock_tx):
         mgr = _make_manager()
         mock_conn = MagicMock()
@@ -366,7 +366,7 @@ class TestCleanupExpiredTokens:
 # ---------------------------------------------------------------------------
 
 class TestGetUserTokens:
-    @patch("university_system.infrastructure.security.remember_me.get_connection")
+    @patch("education_system.university_system.infrastructure.security.remember_me.get_connection")
     def test_returns_list(self, mock_get_conn):
         mgr = _make_manager()
         mock_conn = MagicMock()
@@ -382,7 +382,7 @@ class TestGetUserTokens:
         assert tokens[0]["token_id"] == "abcdef1234567890"[:16]
         assert tokens[0]["use_count"] == 0
 
-    @patch("university_system.infrastructure.security.remember_me.get_connection")
+    @patch("education_system.university_system.infrastructure.security.remember_me.get_connection")
     def test_empty_list_when_no_tokens(self, mock_get_conn):
         mgr = _make_manager()
         mock_conn = MagicMock()
@@ -399,7 +399,7 @@ class TestGetUserTokens:
 # ---------------------------------------------------------------------------
 
 class TestInitializeDatabase:
-    @patch("university_system.infrastructure.security.remember_me.transaction")
+    @patch("education_system.university_system.infrastructure.security.remember_me.transaction")
     def test_creates_table_and_indexes(self, mock_tx):
         mgr = _make_manager()
         mock_conn = MagicMock()

@@ -167,7 +167,7 @@ class DateFormat(ValidationRule):
         message: Optional[str] = None
     ):
         super().__init__(message)
-        self.formats = formats or ['%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y']
+        self.formats = formats or ['%Y-%m-%d']
         self.min_date = min_date
         self.max_date = max_date
 

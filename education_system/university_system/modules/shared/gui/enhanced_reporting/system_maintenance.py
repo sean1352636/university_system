@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from .core import ReportingSystemGUI
-from .core import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import ReportingSystemGUI
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import (
     run_system_maintenance,
     cleanup_old_reports,
     get_log_file as get_log_file_standalone,

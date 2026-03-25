@@ -115,202 +115,417 @@ class WellnessResourcesDialog:
 
         ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
 
+    def _ensure_wellness_tables(self, conn):
+        """Ensure wellness_resources table exists"""
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS wellness_resources (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                category TEXT NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT,
+                contact TEXT,
+                url TEXT,
+                created_at TEXT DEFAULT (datetime('now'))
+            )
+        ''')
+        conn.commit()
+
+    def _load_resources_by_category(self, category):
+        """Load wellness resources from DB for a given category"""
+        resources = []
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            self._ensure_wellness_tables(conn)
+            cursor = conn.cursor()
+            cursor.execute(
+                'SELECT id, title, description, contact, url FROM wellness_resources WHERE category = ? ORDER BY title',
+                (category,))
+            resources = cursor.fetchall()
+        except sqlite3.Error:
+            pass
+        finally:
+            if conn:
+                conn.close()
+        return resources
+
+    def _add_resource_dialog(self, category, refresh_callback):
+        """Open a dialog to add a new wellness resource"""
+        add_win = tk.Toplevel(self.dialog)
+        add_win.title(f"Add {category} Resource")
+        add_win.geometry("500x400")
+        add_win.transient(self.dialog)
+        add_win.grab_set()
+
+        frame = ttk.Frame(add_win)
+        frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        ttk.Label(frame, text="Title:").pack(anchor='w', pady=(0, 2))
+        title_var = tk.StringVar()
+        ttk.Entry(frame, textvariable=title_var, width=50).pack(fill='x', pady=(0, 8))
+
+        ttk.Label(frame, text="Description:").pack(anchor='w', pady=(0, 2))
+        desc_text = scrolledtext.ScrolledText(frame, height=6, wrap=tk.WORD)
+        desc_text.pack(fill='both', expand=True, pady=(0, 8))
+
+        ttk.Label(frame, text="Contact (phone/email):").pack(anchor='w', pady=(0, 2))
+        contact_var = tk.StringVar()
+        ttk.Entry(frame, textvariable=contact_var, width=50).pack(fill='x', pady=(0, 8))
+
+        ttk.Label(frame, text="URL (optional):").pack(anchor='w', pady=(0, 2))
+        url_var = tk.StringVar()
+        ttk.Entry(frame, textvariable=url_var, width=50).pack(fill='x', pady=(0, 8))
+
+        def save():
+            title = title_var.get().strip()
+            desc = desc_text.get(1.0, tk.END).strip()
+            contact = contact_var.get().strip()
+            url = url_var.get().strip()
+            if not title:
+                messagebox.showwarning("Warning", "Title is required.", parent=add_win)
+                return
+            conn = None
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                self._ensure_wellness_tables(conn)
+                cursor = conn.cursor()
+                cursor.execute(
+                    'INSERT INTO wellness_resources (category, title, description, contact, url) VALUES (?, ?, ?, ?, ?)',
+                    (category, title, desc, contact, url))
+                conn.commit()
+                messagebox.showinfo("Success", "Resource added successfully.", parent=add_win)
+                add_win.destroy()
+                refresh_callback()
+            except sqlite3.Error as e:
+                messagebox.showerror("Error", f"Failed to add resource: {e}", parent=add_win)
+            finally:
+                if conn:
+                    conn.close()
+
+        btn_frame = ttk.Frame(frame)
+        btn_frame.pack(fill='x', pady=(5, 0))
+        ttk.Button(btn_frame, text="Save", command=save).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text="Cancel", command=add_win.destroy).pack(side='left')
+
+    def _is_admin(self):
+        """Check if current user has admin privileges"""
+        try:
+            role = self.auth.current_user.get('role', '').lower()
+            return role in ('admin', 'superadmin', 'administrator', 'staff')
+        except (AttributeError, TypeError):
+            return False
+
     def create_mental_health_tab(self, parent):
-        """Create mental health resources tab"""
-        text = scrolledtext.ScrolledText(parent, wrap=tk.WORD, padx=10, pady=10)
-        text.pack(fill='both', expand=True)
+        """Create mental health resources tab - DB-backed"""
+        container = ttk.Frame(parent)
+        container.pack(fill='both', expand=True, padx=5, pady=5)
 
-        content = """MENTAL HEALTH HOTLINES AND RESOURCES
+        # Default content for when DB is empty
+        defaults = [
+            ("National Suicide Prevention Lifeline", "24/7 crisis support for people in distress", "1-800-273-8255", "https://suicidepreventionlifeline.org"),
+            ("Crisis Text Line", "24/7 text-based crisis support", "Text HOME to 741741", "https://www.crisistextline.org"),
+            ("SAMHSA National Helpline", "Free treatment referral and information service", "1-800-662-4357", "https://www.samhsa.gov"),
+            ("Student Counseling Center", "On-campus professional counseling services", "(555) 123-4567", ""),
+            ("Campus Health Services", "General health and mental health support", "(555) 123-4568", ""),
+            ("MindBeacon", "Online cognitive behavioral therapy platform", "", "https://www.mindbeacon.com"),
+            ("Headspace", "Meditation and mindfulness app (free for students)", "", "https://www.headspace.com"),
+            ("7 Cups", "Free emotional support chat with trained listeners", "", "https://www.7cups.com"),
+        ]
 
-24/7 Crisis Hotlines:
-• National Suicide Prevention Lifeline: 1-800-273-8255
-• Crisis Text Line: Text HOME to 741741
-• SAMHSA National Helpline: 1-800-662-4357
+        # Treeview for resources
+        tree_frame = ttk.Frame(container)
+        tree_frame.pack(fill='both', expand=True, pady=(0, 5))
 
-Campus Resources:
-• Student Counseling Center: (555) 123-4567
-• Campus Health Services: (555) 123-4568
-• Student Wellness Office: (555) 123-4569
+        columns = ('Title', 'Description', 'Contact', 'URL')
+        tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=10)
+        for col in columns:
+            tree.heading(col, text=col)
+            if col == 'Description':
+                tree.column(col, width=300)
+            elif col == 'Title':
+                tree.column(col, width=200)
+            else:
+                tree.column(col, width=150)
 
-Online Resources:
-• MindBeacon: Online cognitive behavioral therapy
-• Headspace: Meditation and mindfulness app
-• 7 Cups: Free emotional support chat
+        vsb = ttk.Scrollbar(tree_frame, orient='vertical', command=tree.yview)
+        tree.configure(yscrollcommand=vsb.set)
+        tree.pack(side='left', fill='both', expand=True)
+        vsb.pack(side='right', fill='y')
 
-Support Groups:
-• Anxiety and Depression Support Group
-• Mindfulness and Meditation Group
-• Stress Management Workshop
+        # Info label
+        info_label = ttk.Label(container, text="Remember: It's okay to ask for help. Taking care of your mental health is just as important as your physical health.",
+                               font=('Arial', 9, 'italic'), wraplength=700)
+        info_label.pack(pady=(0, 5))
 
-Emergency Services:
-• If you are in immediate danger, call 911
-• Campus Security: (555) 123-9999
+        def load():
+            for item in tree.get_children():
+                tree.delete(item)
+            resources = self._load_resources_by_category('Mental Health')
+            if resources:
+                for r in resources:
+                    tree.insert('', 'end', values=(r[1], r[2] or '', r[3] or '', r[4] or ''))
+            else:
+                for title, desc, contact, url in defaults:
+                    tree.insert('', 'end', values=(title, desc, contact, url))
 
-Remember: It's okay to ask for help. Taking care of your mental health is just as important as your physical health.
-"""
-        text.insert(1.0, content)
-        text.config(state='disabled')
+        load()
+
+        # Admin add button
+        if self._is_admin():
+            ttk.Button(container, text="Add Resource",
+                       command=lambda: self._add_resource_dialog('Mental Health', load)).pack(anchor='e', pady=(5, 0))
 
     def create_counseling_tab(self, parent):
-        """Create counseling services tab"""
-        text = scrolledtext.ScrolledText(parent, wrap=tk.WORD, padx=10, pady=10)
-        text.pack(fill='both', expand=True)
+        """Create counseling services tab - DB-backed"""
+        container = ttk.Frame(parent)
+        container.pack(fill='both', expand=True, padx=5, pady=5)
 
-        content = """COUNSELING SERVICES
+        defaults = [
+            ("Individual Counseling", "One-on-one sessions with a licensed counselor", "(555) 123-4567", ""),
+            ("Group Therapy", "Facilitated group sessions on various topics", "(555) 123-4567", ""),
+            ("Couples Counseling", "Relationship support for student couples", "(555) 123-4567", ""),
+            ("Crisis Intervention", "Immediate support for students in crisis - 24/7", "(555) 123-HELP", ""),
+            ("Psychiatric Services", "Medication management and psychiatric evaluation", "(555) 123-4567", ""),
+        ]
 
-Student Counseling Center:
-• Location: Student Services Building, 2nd Floor
-• Hours: Monday-Friday, 8:00 AM - 6:00 PM
-• Phone: (555) 123-4567
-• Email: counseling@university.edu
+        # Info section
+        info_frame = ttk.LabelFrame(container, text="Counseling Center Information")
+        info_frame.pack(fill='x', pady=(0, 10))
 
-Services Offered:
-• Individual counseling
-• Group therapy
-• Couples counseling
-• Family therapy
-• Crisis intervention
-• Psychiatric services
+        info_text = ("Location: Student Services Building, 2nd Floor  |  "
+                     "Hours: Mon-Fri 8:00 AM - 6:00 PM  |  "
+                     "Walk-in: Mon-Fri 9:00 AM - 11:00 AM  |  "
+                     "Email: counseling@university.edu")
+        ttk.Label(info_frame, text=info_text, wraplength=700, font=('Arial', 9)).pack(padx=10, pady=8)
 
-Confidentiality:
-• All counseling sessions are confidential
-• Your privacy is protected by HIPAA
+        # Counselor availability Treeview
+        avail_frame = ttk.LabelFrame(container, text="Services & Availability")
+        avail_frame.pack(fill='both', expand=True, pady=(0, 5))
 
-How to Schedule:
-• Call (555) 123-4567 to schedule an appointment
-• Walk-in hours: Monday-Friday, 9:00 AM - 11:00 AM
-• Emergency services available 24/7
+        columns = ('Service', 'Description', 'Contact', 'URL')
+        tree = ttk.Treeview(avail_frame, columns=columns, show='headings', height=8)
+        for col in columns:
+            tree.heading(col, text=col)
+            if col == 'Description':
+                tree.column(col, width=300)
+            elif col == 'Service':
+                tree.column(col, width=180)
+            else:
+                tree.column(col, width=130)
 
-Insurance:
-• Most student health plans cover counseling services
-• Financial aid available for those without insurance
-"""
-        text.insert(1.0, content)
-        text.config(state='disabled')
+        vsb = ttk.Scrollbar(avail_frame, orient='vertical', command=tree.yview)
+        tree.configure(yscrollcommand=vsb.set)
+        tree.pack(side='left', fill='both', expand=True)
+        vsb.pack(side='right', fill='y')
+
+        ttk.Label(container, text="All counseling sessions are confidential and protected by HIPAA. Most student health plans cover counseling services.",
+                  font=('Arial', 9, 'italic'), wraplength=700).pack(pady=(0, 5))
+
+        def load():
+            for item in tree.get_children():
+                tree.delete(item)
+            resources = self._load_resources_by_category('Counseling')
+            if resources:
+                for r in resources:
+                    tree.insert('', 'end', values=(r[1], r[2] or '', r[3] or '', r[4] or ''))
+            else:
+                for title, desc, contact, url in defaults:
+                    tree.insert('', 'end', values=(title, desc, contact, url))
+
+        load()
+
+        if self._is_admin():
+            ttk.Button(container, text="Add Resource",
+                       command=lambda: self._add_resource_dialog('Counseling', load)).pack(anchor='e', pady=(5, 0))
 
     def create_fitness_tab(self, parent):
-        """Create fitness programs tab"""
-        text = scrolledtext.ScrolledText(parent, wrap=tk.WORD, padx=10, pady=10)
-        text.pack(fill='both', expand=True)
+        """Create fitness programs tab - DB-backed"""
+        container = ttk.Frame(parent)
+        container.pack(fill='both', expand=True, padx=5, pady=5)
 
-        content = """FITNESS PROGRAMS
+        defaults = [
+            ("Yoga", "Monday/Wednesday 7:00 PM - Group fitness studio", "Recreation Building", ""),
+            ("Spin Class", "Tuesday/Thursday 6:00 PM - Cycling studio", "Recreation Building", ""),
+            ("Zumba", "Wednesday/Friday 5:30 PM - Group fitness studio", "Recreation Building", ""),
+            ("Boot Camp", "Saturday 9:00 AM - Outdoor fitness area", "Recreation Building", ""),
+            ("Pilates", "Tuesday/Thursday 7:00 PM - Group fitness studio", "Recreation Building", ""),
+            ("Personal Training", "One-on-one sessions available by appointment", "Recreation Office", ""),
+            ("Intramural Sports", "Basketball, Soccer, Volleyball - sign up at Recreation Office", "Recreation Office", ""),
+        ]
 
-Campus Fitness Center:
-• Location: Recreation Building
-• Hours: Monday-Sunday, 6:00 AM - 11:00 PM
-• Membership: Free for all students
+        # Facility info
+        info_frame = ttk.LabelFrame(container, text="Campus Fitness Center")
+        info_frame.pack(fill='x', pady=(0, 10))
 
-Facilities:
-• Weight room with free weights and machines
-• Cardio equipment (treadmills, bikes, ellipticals)
-• Group fitness studio
-• Indoor track
-• Basketball courts
-• Swimming pool
+        info_text = ("Location: Recreation Building  |  Hours: Mon-Sun 6:00 AM - 11:00 PM  |  "
+                     "Membership: FREE for all students\n"
+                     "Facilities: Weight room, Cardio equipment, Group fitness studio, Indoor track, "
+                     "Basketball courts, Swimming pool")
+        ttk.Label(info_frame, text=info_text, wraplength=700, font=('Arial', 9)).pack(padx=10, pady=8)
 
-Group Fitness Classes:
-• Yoga - Monday/Wednesday 7:00 PM
-• Spin Class - Tuesday/Thursday 6:00 PM
-• Zumba - Wednesday/Friday 5:30 PM
-• Boot Camp - Saturday 9:00 AM
-• Pilates - Tuesday/Thursday 7:00 PM
+        # Schedule Treeview
+        sched_frame = ttk.LabelFrame(container, text="Fitness Classes & Programs")
+        sched_frame.pack(fill='both', expand=True, pady=(0, 5))
 
-Personal Training:
-• One-on-one sessions available
-• Group training options
-• Nutrition counseling included
+        columns = ('Class/Program', 'Schedule/Description', 'Location', 'URL')
+        tree = ttk.Treeview(sched_frame, columns=columns, show='headings', height=8)
+        for col in columns:
+            tree.heading(col, text=col)
+            if col == 'Schedule/Description':
+                tree.column(col, width=300)
+            elif col == 'Class/Program':
+                tree.column(col, width=150)
+            else:
+                tree.column(col, width=130)
 
-Intramural Sports:
-• Basketball, Soccer, Volleyball
-• Sign up at the Recreation Office
-"""
-        text.insert(1.0, content)
-        text.config(state='disabled')
+        vsb = ttk.Scrollbar(sched_frame, orient='vertical', command=tree.yview)
+        tree.configure(yscrollcommand=vsb.set)
+        tree.pack(side='left', fill='both', expand=True)
+        vsb.pack(side='right', fill='y')
+
+        def load():
+            for item in tree.get_children():
+                tree.delete(item)
+            resources = self._load_resources_by_category('Fitness')
+            if resources:
+                for r in resources:
+                    tree.insert('', 'end', values=(r[1], r[2] or '', r[3] or '', r[4] or ''))
+            else:
+                for title, desc, contact, url in defaults:
+                    tree.insert('', 'end', values=(title, desc, contact, url))
+
+        load()
+
+        if self._is_admin():
+            ttk.Button(container, text="Add Resource",
+                       command=lambda: self._add_resource_dialog('Fitness', load)).pack(anchor='e', pady=(5, 0))
 
     def create_nutrition_tab(self, parent):
-        """Create nutrition resources tab"""
-        text = scrolledtext.ScrolledText(parent, wrap=tk.WORD, padx=10, pady=10)
-        text.pack(fill='both', expand=True)
+        """Create nutrition resources tab - DB-backed"""
+        container = ttk.Frame(parent)
+        container.pack(fill='both', expand=True, padx=5, pady=5)
 
-        content = """NUTRITION RESOURCES
+        defaults = [
+            ("Individual Nutrition Counseling", "One-on-one sessions with a registered dietitian", "(555) 123-4570", ""),
+            ("Meal Planning Assistance", "Help creating balanced, budget-friendly meal plans", "(555) 123-4570", ""),
+            ("Sports Nutrition Guidance", "Optimize performance through proper nutrition", "(555) 123-4570", ""),
+            ("Eating Disorder Support", "Confidential support and referrals for eating disorders", "(555) 123-4570", ""),
+            ("Cooking Demonstrations", "Hands-on workshops for healthy cooking techniques", "nutrition@university.edu", ""),
+            ("Food Pantry", "Free groceries for students in need - Student Union Room 105, Mon-Fri 10AM-4PM", "Student Union Room 105", ""),
+        ]
 
-Campus Nutritionist:
-• Location: Student Health Center
-• Phone: (555) 123-4570
-• Email: nutrition@university.edu
+        # Info section
+        info_frame = ttk.LabelFrame(container, text="Campus Nutritionist")
+        info_frame.pack(fill='x', pady=(0, 10))
 
-Services:
-• Individual nutrition counseling
-• Meal planning assistance
-• Weight management support
-• Sports nutrition guidance
-• Eating disorder support
+        info_text = ("Location: Student Health Center  |  Phone: (555) 123-4570  |  "
+                     "Email: nutrition@university.edu\n"
+                     "Dining halls offer nutritional info, vegetarian/vegan options, "
+                     "gluten-free and allergen-free meals, and customizable meal plans.")
+        ttk.Label(info_frame, text=info_text, wraplength=700, font=('Arial', 9)).pack(padx=10, pady=8)
 
-Healthy Dining Options:
-• Nutritional information available for all dining halls
-• Vegetarian and vegan options
-• Gluten-free and allergen-free meals
-• Customizable meal plans
+        # Resources Treeview
+        res_frame = ttk.LabelFrame(container, text="Nutrition Services & Programs")
+        res_frame.pack(fill='both', expand=True, pady=(0, 5))
 
-Nutrition Workshops:
-• Cooking demonstrations
-• Meal prep basics
-• Reading nutrition labels
-• Budget-friendly healthy eating
+        columns = ('Service', 'Description', 'Contact', 'URL')
+        tree = ttk.Treeview(res_frame, columns=columns, show='headings', height=8)
+        for col in columns:
+            tree.heading(col, text=col)
+            if col == 'Description':
+                tree.column(col, width=300)
+            elif col == 'Service':
+                tree.column(col, width=180)
+            else:
+                tree.column(col, width=130)
 
-Food Pantry:
-• Location: Student Union, Room 105
-• Hours: Monday-Friday, 10:00 AM - 4:00 PM
-• Free groceries for students in need
-"""
-        text.insert(1.0, content)
-        text.config(state='disabled')
+        vsb = ttk.Scrollbar(res_frame, orient='vertical', command=tree.yview)
+        tree.configure(yscrollcommand=vsb.set)
+        tree.pack(side='left', fill='both', expand=True)
+        vsb.pack(side='right', fill='y')
+
+        def load():
+            for item in tree.get_children():
+                tree.delete(item)
+            resources = self._load_resources_by_category('Nutrition')
+            if resources:
+                for r in resources:
+                    tree.insert('', 'end', values=(r[1], r[2] or '', r[3] or '', r[4] or ''))
+            else:
+                for title, desc, contact, url in defaults:
+                    tree.insert('', 'end', values=(title, desc, contact, url))
+
+        load()
+
+        if self._is_admin():
+            ttk.Button(container, text="Add Resource",
+                       command=lambda: self._add_resource_dialog('Nutrition', load)).pack(anchor='e', pady=(5, 0))
 
     def create_stress_tab(self, parent):
-        """Create stress management tab"""
-        text = scrolledtext.ScrolledText(parent, wrap=tk.WORD, padx=10, pady=10)
-        text.pack(fill='both', expand=True)
+        """Create stress management tab - DB-backed"""
+        container = ttk.Frame(parent)
+        container.pack(fill='both', expand=True, padx=5, pady=5)
 
-        content = """STRESS MANAGEMENT TOOLS
+        defaults = [
+            ("Deep Breathing Exercises", "Guided breathing techniques for immediate stress relief", "", ""),
+            ("Progressive Muscle Relaxation", "Systematic tension and release exercises for full-body relaxation", "", ""),
+            ("Mindfulness Meditation", "Guided meditation sessions - Meditation Room, Student Union 3rd Floor", "", ""),
+            ("Academic Support Center", "Tutoring, study skills workshops, and test anxiety support groups", "(555) 123-4571", ""),
+            ("Calm App", "Meditation and sleep app - free for students", "", "https://www.calm.com"),
+            ("Headspace App", "Mindfulness and meditation app - free for students", "", "https://www.headspace.com"),
+            ("Sleep Cycle App", "Sleep tracking and smart alarm - free for students", "", "https://www.sleepcycle.com"),
+            ("Stress Management Workshop", "Weekly workshops on coping strategies and time management", "(555) 123-4571", ""),
+        ]
 
-Relaxation Techniques:
-• Deep breathing exercises
-• Progressive muscle relaxation
-• Guided imagery
-• Mindfulness meditation
+        # Tips section
+        tips_frame = ttk.LabelFrame(container, text="Quick Tips")
+        tips_frame.pack(fill='x', pady=(0, 10))
 
-Time Management Tips:
-• Use a planner or digital calendar
-• Break large tasks into smaller steps
-• Prioritize your tasks
-• Learn to say no
-• Schedule breaks and downtime
+        tips_text = ("Use a planner  |  Break tasks into smaller steps  |  "
+                     "Prioritize and learn to say no  |  Schedule breaks  |  "
+                     "Get 7-9 hours of sleep  |  Exercise regularly  |  Maintain social connections")
+        ttk.Label(tips_frame, text=tips_text, wraplength=700, font=('Arial', 9)).pack(padx=10, pady=8)
 
-Study Stress:
-• Academic Support Center: (555) 123-4571
-• Tutoring services available
-• Study skills workshops
-• Test anxiety support groups
+        # Resources Treeview
+        res_frame = ttk.LabelFrame(container, text="Stress Management Resources & Workshops")
+        res_frame.pack(fill='both', expand=True, pady=(0, 5))
 
-Campus Resources:
-• Meditation Room: Student Union, 3rd Floor
-• Quiet Study Spaces: Library
-• Nature Trails: Behind Recreation Building
+        columns = ('Resource', 'Description', 'Contact', 'URL')
+        tree = ttk.Treeview(res_frame, columns=columns, show='headings', height=8)
+        for col in columns:
+            tree.heading(col, text=col)
+            if col == 'Description':
+                tree.column(col, width=300)
+            elif col == 'Resource':
+                tree.column(col, width=180)
+            else:
+                tree.column(col, width=130)
 
-Wellness Apps (Free for Students):
-• Calm: Meditation and sleep
-• Headspace: Mindfulness
-• MyFitnessPal: Nutrition tracking
-• Sleep Cycle: Sleep tracking
+        vsb = ttk.Scrollbar(res_frame, orient='vertical', command=tree.yview)
+        tree.configure(yscrollcommand=vsb.set)
+        tree.pack(side='left', fill='both', expand=True)
+        vsb.pack(side='right', fill='y')
 
-Remember:
-• Regular exercise reduces stress
-• Get 7-9 hours of sleep per night
-• Maintain social connections
-• Practice self-care
-"""
-        text.insert(1.0, content)
-        text.config(state='disabled')
+        ttk.Label(container, text="Campus quiet spaces: Meditation Room (Student Union 3rd Floor), Library quiet areas, Nature Trails (behind Recreation Building)",
+                  font=('Arial', 9, 'italic'), wraplength=700).pack(pady=(0, 5))
+
+        def load():
+            for item in tree.get_children():
+                tree.delete(item)
+            resources = self._load_resources_by_category('Stress Management')
+            if resources:
+                for r in resources:
+                    tree.insert('', 'end', values=(r[1], r[2] or '', r[3] or '', r[4] or ''))
+            else:
+                for title, desc, contact, url in defaults:
+                    tree.insert('', 'end', values=(title, desc, contact, url))
+
+        load()
+
+        if self._is_admin():
+            ttk.Button(container, text="Add Resource",
+                       command=lambda: self._add_resource_dialog('Stress Management', load)).pack(anchor='e', pady=(5, 0))
 
 
 class CrisisResourcesDialog:
@@ -453,20 +668,250 @@ YOU ARE NOT ALONE. PEOPLE CARE ABOUT YOU. HELP IS AVAILABLE.
                   command=self.dialog.destroy).pack(side='right')
 
     def view_all_resources(self):
-        self.dialog.destroy()
-        # Would open WellnessResourcesDialog
-        messagebox.showinfo("Resources", "Opening full wellness resources library...")
+        """Open Toplevel showing all crisis/wellness resources from DB"""
+        res_win = tk.Toplevel(self.dialog)
+        res_win.title("All Wellness Resources")
+        res_win.geometry("900x600")
+        res_win.transient(self.dialog)
+
+        main_frame = ttk.Frame(res_win)
+        main_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        ttk.Label(main_frame, text="Complete Wellness Resources Library",
+                  font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+
+        # Filter by category
+        filter_frame = ttk.Frame(main_frame)
+        filter_frame.pack(fill='x', pady=(0, 10))
+
+        ttk.Label(filter_frame, text="Category:").pack(side='left', padx=(0, 5))
+        cat_var = tk.StringVar(value="All")
+        cat_combo = ttk.Combobox(filter_frame, textvariable=cat_var, width=20, state='readonly')
+        cat_combo['values'] = ('All', 'Mental Health', 'Counseling', 'Fitness', 'Nutrition', 'Stress Management', 'Crisis')
+        cat_combo.pack(side='left', padx=(0, 10))
+
+        columns = ('Category', 'Title', 'Description', 'Contact', 'URL')
+        tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=18)
+        for col in columns:
+            tree.heading(col, text=col)
+            if col == 'Description':
+                tree.column(col, width=280)
+            elif col in ('Title', 'Category'):
+                tree.column(col, width=140)
+            else:
+                tree.column(col, width=130)
+
+        vsb = ttk.Scrollbar(main_frame, orient='vertical', command=tree.yview)
+        tree.configure(yscrollcommand=vsb.set)
+
+        tree_frame = ttk.Frame(main_frame)
+        tree_frame.pack(fill='both', expand=True, pady=(0, 10))
+        tree.pack(in_=tree_frame, side='left', fill='both', expand=True)
+        vsb.pack(in_=tree_frame, side='right', fill='y')
+
+        def load_all():
+            for item in tree.get_children():
+                tree.delete(item)
+            conn = None
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn.execute('''
+                    CREATE TABLE IF NOT EXISTS wellness_resources (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        category TEXT NOT NULL,
+                        title TEXT NOT NULL,
+                        description TEXT,
+                        contact TEXT,
+                        url TEXT,
+                        created_at TEXT DEFAULT (datetime('now'))
+                    )
+                ''')
+                cursor = conn.cursor()
+                selected_cat = cat_var.get()
+                if selected_cat == "All":
+                    cursor.execute('SELECT category, title, description, contact, url FROM wellness_resources ORDER BY category, title')
+                else:
+                    cursor.execute('SELECT category, title, description, contact, url FROM wellness_resources WHERE category = ? ORDER BY title',
+                                   (selected_cat,))
+                rows = cursor.fetchall()
+                if rows:
+                    for r in rows:
+                        tree.insert('', 'end', values=(r[0], r[1], r[2] or '', r[3] or '', r[4] or ''))
+                else:
+                    # Show built-in crisis defaults
+                    crisis_defaults = [
+                        ("Crisis", "National Suicide Prevention Lifeline", "24/7 crisis support", "1-800-273-8255", "https://suicidepreventionlifeline.org"),
+                        ("Crisis", "Crisis Text Line", "24/7 text-based crisis support", "Text HOME to 741741", "https://www.crisistextline.org"),
+                        ("Crisis", "SAMHSA National Helpline", "Treatment referral service", "1-800-662-4357", "https://www.samhsa.gov"),
+                        ("Crisis", "Campus Counseling Crisis Line", "After-hours campus support", "(555) 123-HELP", ""),
+                        ("Crisis", "NAMI Helpline", "Mental health information and referrals", "1-800-950-6264", ""),
+                        ("Crisis", "Campus Police", "Emergency services on campus", "(555) 123-9111", ""),
+                        ("Mental Health", "Student Counseling Center", "Professional counseling services", "(555) 123-4567", ""),
+                        ("Mental Health", "Campus Health Services", "General health support", "(555) 123-4568", ""),
+                        ("Counseling", "Walk-in Counseling", "Mon-Fri 9:00 AM - 11:00 AM, no appointment needed", "(555) 123-4567", ""),
+                        ("Stress Management", "Academic Support Center", "Tutoring and study skills", "(555) 123-4571", ""),
+                    ]
+                    for row in crisis_defaults:
+                        if selected_cat == "All" or row[0] == selected_cat:
+                            tree.insert('', 'end', values=row)
+            except sqlite3.Error as e:
+                messagebox.showerror("Error", f"Failed to load resources: {e}", parent=res_win)
+            finally:
+                if conn:
+                    conn.close()
+
+        cat_combo.bind('<<ComboboxSelected>>', lambda e: load_all())
+        load_all()
+
+        ttk.Button(main_frame, text="Close", command=res_win.destroy).pack(anchor='e')
+
+    def _ensure_safety_plans_table(self, conn):
+        """Ensure safety_plans table exists"""
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS safety_plans (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                warning_signs TEXT,
+                coping_strategies TEXT,
+                distractions TEXT,
+                support_people TEXT,
+                professionals TEXT,
+                safe_environment TEXT,
+                emergency_contacts TEXT,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now'))
+            )
+        ''')
+        conn.commit()
 
     def create_safety_plan(self):
-        messagebox.showinfo("Safety Plan",
-                           "Safety plan template:\n\n"
-                           "1. Warning signs I notice\n"
-                           "2. Coping strategies that work for me\n"
-                           "3. People/places that distract me\n"
-                           "4. People I can call\n"
-                           "5. Professionals to contact\n"
-                           "6. How to make environment safe\n\n"
-                           "Would you like to create a personalized plan?")
+        """Open Toplevel with a safety plan form and save to DB"""
+        plan_win = tk.Toplevel(self.dialog)
+        plan_win.title("Create Personal Safety Plan")
+        plan_win.geometry("700x750")
+        plan_win.transient(self.dialog)
+        plan_win.grab_set()
+
+        main_frame = ttk.Frame(plan_win)
+        main_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        ttk.Label(main_frame, text="Personal Safety Plan",
+                  font=('Arial', 14, 'bold')).pack(pady=(0, 5))
+        ttk.Label(main_frame, text="This plan is private and confidential. Fill in what feels right for you.",
+                  font=('Arial', 9, 'italic')).pack(pady=(0, 10))
+
+        # Scrollable form
+        canvas = tk.Canvas(main_frame)
+        scrollbar = ttk.Scrollbar(main_frame, orient='vertical', command=canvas.yview)
+        form_frame = ttk.Frame(canvas)
+
+        form_frame.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
+        canvas.create_window((0, 0), window=form_frame, anchor='nw')
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side='left', fill='both', expand=True)
+        scrollbar.pack(side='right', fill='y')
+
+        fields = {}
+        field_defs = [
+            ("warning_signs", "1. Warning Signs I Notice",
+             "What thoughts, feelings, or behaviours indicate a crisis may be developing?"),
+            ("coping_strategies", "2. Coping Strategies That Work For Me",
+             "What can I do on my own to take my mind off problems or help me feel better?"),
+            ("distractions", "3. People and Places That Provide Distraction",
+             "People I can contact or places I can go to take my mind off things:"),
+            ("support_people", "4. People I Can Call For Support",
+             "Friends, family, or others I trust (include names and phone numbers):"),
+            ("professionals", "5. Professionals or Agencies to Contact",
+             "Counselors, therapists, crisis lines (include names and phone numbers):"),
+            ("safe_environment", "6. Making My Environment Safe",
+             "Steps I can take to make my surroundings safer:"),
+            ("emergency_contacts", "7. Emergency Contacts",
+             "People to contact in an emergency (name, relationship, phone):"),
+        ]
+
+        for key, label, hint in field_defs:
+            ttk.Label(form_frame, text=label, font=('Arial', 10, 'bold')).pack(anchor='w', padx=5, pady=(10, 2))
+            ttk.Label(form_frame, text=hint, font=('Arial', 8, 'italic'), wraplength=600).pack(anchor='w', padx=5, pady=(0, 3))
+            text_widget = scrolledtext.ScrolledText(form_frame, height=3, wrap=tk.WORD, width=75)
+            text_widget.pack(fill='x', padx=5, pady=(0, 5))
+            fields[key] = text_widget
+
+        # Load existing plan if present
+        user_id = self.auth.current_user.get('id', 0) if self.auth and self.auth.current_user else 0
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            self._ensure_safety_plans_table(conn)
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT warning_signs, coping_strategies, distractions, support_people,
+                       professionals, safe_environment, emergency_contacts
+                FROM safety_plans WHERE user_id = ? ORDER BY updated_at DESC LIMIT 1
+            ''', (user_id,))
+            existing = cursor.fetchone()
+            if existing:
+                col_keys = ['warning_signs', 'coping_strategies', 'distractions', 'support_people',
+                            'professionals', 'safe_environment', 'emergency_contacts']
+                for i, key in enumerate(col_keys):
+                    if existing[i]:
+                        fields[key].insert(1.0, existing[i])
+        except sqlite3.Error:
+            pass
+        finally:
+            if conn:
+                conn.close()
+
+        def save_plan():
+            data = {}
+            for key, widget in fields.items():
+                data[key] = widget.get(1.0, tk.END).strip()
+
+            if not any(data.values()):
+                messagebox.showwarning("Warning", "Please fill in at least one section.", parent=plan_win)
+                return
+
+            conn = None
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                self._ensure_safety_plans_table(conn)
+                cursor = conn.cursor()
+
+                # Check for existing plan
+                cursor.execute('SELECT id FROM safety_plans WHERE user_id = ? ORDER BY updated_at DESC LIMIT 1', (user_id,))
+                existing_row = cursor.fetchone()
+
+                if existing_row:
+                    cursor.execute('''
+                        UPDATE safety_plans SET warning_signs=?, coping_strategies=?, distractions=?,
+                               support_people=?, professionals=?, safe_environment=?, emergency_contacts=?,
+                               updated_at=datetime('now')
+                        WHERE id=?
+                    ''', (data['warning_signs'], data['coping_strategies'], data['distractions'],
+                          data['support_people'], data['professionals'], data['safe_environment'],
+                          data['emergency_contacts'], existing_row[0]))
+                else:
+                    cursor.execute('''
+                        INSERT INTO safety_plans (user_id, warning_signs, coping_strategies, distractions,
+                                                  support_people, professionals, safe_environment, emergency_contacts)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (user_id, data['warning_signs'], data['coping_strategies'], data['distractions'],
+                          data['support_people'], data['professionals'], data['safe_environment'],
+                          data['emergency_contacts']))
+
+                conn.commit()
+                messagebox.showinfo("Saved", "Your safety plan has been saved securely.", parent=plan_win)
+            except sqlite3.Error as e:
+                messagebox.showerror("Error", f"Failed to save safety plan: {e}", parent=plan_win)
+            finally:
+                if conn:
+                    conn.close()
+
+        # Buttons at bottom (outside the canvas)
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill='x', pady=(10, 0), side='bottom')
+        ttk.Button(btn_frame, text="Save Plan", command=save_plan).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text="Cancel", command=plan_win.destroy).pack(side='left')
 
 
 

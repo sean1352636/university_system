@@ -2,7 +2,7 @@
 Main GUI application class for the Enhanced Activity Logger.
 """
 
-from ._imports import (
+from education_system.university_system.modules.shared.gui.simple_activity_logger_gui._imports import (
     tk, ttk, messagebox, filedialog, scrolledtext,
     time, json, os, sys, queue,
     datetime, timedelta,
@@ -11,14 +11,14 @@ from ._imports import (
 )
 
 if LOGGER_AVAILABLE:
-    from ._imports import (
+    from education_system.university_system.modules.shared.gui.simple_activity_logger_gui._imports import (
         logger, create_default_config,
         LogLevel, SecurityLevel,
     )
 
-from .theme import LoggerGUITheme
-from .status_bar import StatusBar
-from .tabs import (
+from education_system.university_system.modules.shared.gui.simple_activity_logger_gui.theme import LoggerGUITheme
+from education_system.university_system.modules.shared.gui.simple_activity_logger_gui.status_bar import StatusBar
+from education_system.university_system.modules.shared.gui.simple_activity_logger_gui.tabs import (
     LogViewerTab, AnalyticsTab, ConfigurationTab,
     SecurityTab, PluginTab, QueryTab,
 )

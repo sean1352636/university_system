@@ -1,9 +1,9 @@
-from . import common as _common
-from .common import (
+from education_system.university_system.modules.domain.housing.services.housing_accommodation import common as _common
+from education_system.university_system.modules.domain.housing.services.housing_accommodation.common import (
     sqlite3, datetime, get_text, get_connection, generate_id,
     log_create, log_read, log_update,
 )
-from .applications import select_student
+from education_system.university_system.modules.domain.housing.services.housing_accommodation.applications import select_student
 
 
 # Maintenance Request Functions

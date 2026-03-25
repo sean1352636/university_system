@@ -46,7 +46,34 @@
     "export": "エクスポート",
     "save_changes": "変更を保存",
     "create": "作成",
-    "select": "選択"
+    "select": "選択",
+    "switch_system": {
+      "title": "システム切替",
+      "header": "別のシステムに切り替える",
+      "choose_system": "起動するシステムを選択してください：",
+      "failed": "システムの切り替えに失敗しました：{error}",
+      "college": "シックスフォームカレッジシステム",
+      "secondary": "中等学校システム",
+      "primary": "小学校システム"
+    },
+    "mfa": {
+      "verification_status_disabled": "無効（パスワードのみ）",
+      "verification_status_enabled": "有効",
+      "login_verification_label": "ログイン認証：",
+      "configured": "設定済み",
+      "primary_method": "プライマリ",
+      "turned_off_success": "MFAが無効になりました。\n\n設定は保存されています。\n後でこのメニューから復元できます。",
+      "module_not_available": "MFAモジュールが利用できません：{error}",
+      "error_opening_setup": "MFA設定を開く際にエラーが発生しました：{error}",
+      "error_opening_wizard": "MFAウィザードを開く際にエラーが発生しました：{error}",
+      "reenable_email_subject": "あなたのアカウントのMFAが再有効化されました",
+      "reenable_email_body": "{username}様、\n\n多要素認証（MFA）が以前保存された設定を使用してアカウントに再有効化されました。\n\n詳細：\n- アカウント：{username}\n- メール：{email}\n- 復元されたメソッド：{methods_count}\n\nこの変更を行っていない場合は、すぐにサポートに連絡してパスワードを変更してください。\n\nありがとうございます。\n大学システムセキュリティチーム",
+      "reenabled_title": "MFA再有効化",
+      "reenabled_with_email": "保存された設定を使用してMFAが正常に再有効化されました。\n\n確認メールが送信されました：\n{email}",
+      "reenabled_no_email": "保存された設定を使用してMFAが正常に再有効化されました。\n\n（メール通知を送信できませんでした）",
+      "reenabled_email_error": "保存された設定を使用してMFAが正常に再有効化されました。\n\n（確認メールを送信できませんでした：{error}）",
+      "reenabled_simple": "保存された設定を使用してMFAが正常に再有効化されました。"
+    }
   },
   "nav": {
     "categories": {

@@ -6,10 +6,6 @@ This script tests the remember me feature in both GUI and CLI contexts.
 """
 
 import sys
-import os
-
-# Add project to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 
 def test_remember_me_token_operations():
@@ -19,20 +15,20 @@ def test_remember_me_token_operations():
     print("="*60)
 
     try:
-        from education_system.university_system.infrastructure.auth import (
-            _save_cli_remember_token,
-            _load_cli_remember_token,
-            _clear_cli_remember_token
+        from education_system.university_system.infrastructure.auth.managers.session_manager import (
+            save_cli_remember_token,
+            load_cli_remember_token,
+            clear_cli_remember_token
         )
 
         # Test save
         print("\n1. Testing token save...")
-        _save_cli_remember_token("test_user", "test_token_123", "device_abc")
+        save_cli_remember_token("test_user", "test_token_123", "device_abc")
         print("   ✅ Token saved successfully")
 
         # Test load
         print("\n2. Testing token load...")
-        data = _load_cli_remember_token()
+        data = load_cli_remember_token()
         if data and data['username'] == 'test_user':
             print(f"   ✅ Token loaded: username={data['username']}")
         else:
@@ -41,8 +37,8 @@ def test_remember_me_token_operations():
 
         # Test clear
         print("\n3. Testing token clear...")
-        _clear_cli_remember_token()
-        data = _load_cli_remember_token()
+        clear_cli_remember_token()
+        data = load_cli_remember_token()
         if data is None:
             print("   ✅ Token cleared successfully")
         else:

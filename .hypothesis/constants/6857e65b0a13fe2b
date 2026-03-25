@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/commerce/gui/cafe_menu.py
+# hypothesis_version: 6.151.9
+
+[150, 200, '0', '400x400', '400x450', ':', 'Available', 'Category', 'ID', 'Name', 'Price', 'Stock', 'Yes', 'cafe.categories.food', 'cafe.columns.id', 'cafe.columns.name', 'cafe.columns.price', 'cafe.columns.stock', 'cafe.dialogs.save', 'cafe.dialogs.update', 'cafe.stock_status.no', 'common.confirm', 'common.error', 'common.success', 'common.warning', 'headings', 'values', 'w', '£']

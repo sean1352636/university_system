@@ -1,4 +1,5 @@
-from ._imports import _, messagebox, tk, sqlite3, DEFAULT_DB_PATH
+from education_system.university_system.core.sql_safety import escape_like
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.core._imports import _, messagebox, tk, sqlite3, DEFAULT_DB_PATH
 
 
 class SearchFilterMixin:
@@ -25,19 +26,20 @@ class SearchFilterMixin:
             status_filter = self.status_filter.get()
 
             query = """
-            SELECT id, course_code, course_name,
+            SELECT id, COALESCE(course_code, code) as course_code, COALESCE(course_name, name) as course_name,
                    COALESCE(department, 'N/A') as department,
                    COALESCE(level, 'N/A') as level,
-                   COALESCE(credit_hours, 3.0) as credit_hours,
+                   COALESCE(credit_hours, credits, 3.0) as credit_hours,
                    COALESCE(current_enrollment, 0) || '/' || COALESCE(max_enrollment, 0) as enrollment,
                    COALESCE(status, 'Active') as status
-            FROM courses WHERE course_code IS NOT NULL
+            FROM courses WHERE COALESCE(course_code, code) IS NOT NULL
+            AND COALESCE(course_name, name) IS NOT NULL
             """
             params = []
 
             if search_text:
                 query += " AND (course_code LIKE ? OR course_name LIKE ? OR description LIKE ?)"
-                search_param = f"%{search_text}%"
+                search_param = f"%{escape_like(search_text)}%"
                 params.extend([search_param, search_param, search_param])
 
             if dept_filter and dept_filter != "All":
@@ -202,16 +204,20 @@ class SearchFilterMixin:
                 cursor = conn.cursor()
 
                 cursor.execute(
-                    "SELECT id, course_code, course_name "
-                    "FROM courses WHERE COALESCE(status, 'Active') = 'Active' ORDER BY course_code"
+                    "SELECT id, COALESCE(course_code, code) as ccode, COALESCE(course_name, name) as cname "
+                    "FROM courses WHERE COALESCE(course_code, code) IS NOT NULL "
+                    "AND COALESCE(course_name, name) IS NOT NULL "
+                    "AND LOWER(COALESCE(status, 'active')) = 'active' "
+                    "AND COALESCE(course_type, '') = 'Degree Program' "
+                    "ORDER BY ccode"
                 )
                 courses = cursor.fetchall()
 
-                course_options = [f"{course[1]} - {course[2]}" for course in courses]
+                course_options = [f"{course[1]} - {course[2]}" for course in courses if course[1] and course[2]]
                 self.course_selector['values'] = course_options
 
                 # Store course IDs for mapping
-                self.course_id_map = {f"{course[1]} - {course[2]}": course[0] for course in courses}
+                self.course_id_map = {f"{course[1]} - {course[2]}": course[0] for course in courses if course[1] and course[2]}
 
         except sqlite3.Error:
             pass

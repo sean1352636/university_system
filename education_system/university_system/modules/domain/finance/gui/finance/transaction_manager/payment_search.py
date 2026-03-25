@@ -3,6 +3,7 @@
 from education_system.university_system.modules.domain.finance.gui.finance.transaction_manager._imports import (
     tk, ttk, messagebox, filedialog, csv, _, get_connection,
 )
+from education_system.university_system.core.sql_safety import escape_like
 
 
 class PaymentSearchMixin:
@@ -135,7 +136,7 @@ class PaymentSearchMixin:
                 # Add criteria
                 if student_id_var.get().strip():
                     query += " AND p.student_id LIKE ?"
-                    params.append(f"%{student_id_var.get().strip()}%")
+                    params.append(f"%{escape_like(student_id_var.get().strip())}%")
 
                 if method_var.get():
                     query += " AND p.payment_method = ?"
@@ -159,7 +160,7 @@ class PaymentSearchMixin:
 
                 if transaction_id_var.get().strip():
                     query += " AND p.transaction_id LIKE ?"
-                    params.append(f"%{transaction_id_var.get().strip()}%")
+                    params.append(f"%{escape_like(transaction_id_var.get().strip())}%")
 
                 if status_var.get():
                     query += " AND p.status = ?"

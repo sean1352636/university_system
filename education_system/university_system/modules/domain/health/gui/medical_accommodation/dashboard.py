@@ -1,14 +1,14 @@
 # dashboard.py
 # Dashboard, statistics, and reporting mixin for AccommodationGUI.
 
-from ._common import (
+from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import (
     tk, ttk, messagebox, simpledialog, filedialog,
     ScrolledText, datetime, timedelta, sqlite3,
     CLI_AVAILABLE, get_connection, logger,
 )
 
 if CLI_AVAILABLE:
-    from ._common import (
+    from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import (
         generate_statistics_report, check_expiry_notifications,
         log_action,
     )
@@ -306,6 +306,7 @@ class StatisticsDialog:
     """Dialog for statistics report"""
 
     def __init__(self, parent):
+        self.parent = parent
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Statistics Report")
         self.dialog.geometry("700x600")
@@ -326,34 +327,123 @@ class StatisticsDialog:
         button_frame.pack(fill=tk.X, pady=10)
 
         ttk.Button(button_frame, text="Refresh", command=self.generate_statistics).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Export Report", command=self.export_report).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Save as TXT", command=self.save_as_txt).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Email to Admin", command=self.email_to_admin).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def generate_statistics(self):
-        """Generate statistics"""
+        """Generate statistics directly (avoids calling CLI function which uses input())"""
         if not CLI_AVAILABLE:
             return
 
         try:
-            import io
-            import contextlib
+            today = datetime.now().strftime('%Y-%m-%d')
+            current_year = datetime.now().year
 
-            output = io.StringIO()
+            with get_connection() as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
 
-            with contextlib.redirect_stdout(output):
-                generate_statistics_report()
+                cursor.execute('SELECT COUNT(*) FROM accommodations')
+                total_count = cursor.fetchone()[0]
 
-            result = output.getvalue()
+                cursor.execute('''
+                    SELECT COUNT(*) FROM accommodations
+                    WHERE (end_date >= ? OR end_date IS NULL) AND status = 'active'
+                ''', (today,))
+                active_count = cursor.fetchone()[0]
+
+                cursor.execute('''
+                    SELECT strftime('%m', created_at) as month, COUNT(*) as count
+                    FROM accommodations
+                    WHERE created_at LIKE ?
+                    GROUP BY month ORDER BY month
+                ''', (f"{current_year}%",))
+                monthly_data = cursor.fetchall()
+
+                cursor.execute('''
+                    SELECT COUNT(*) FROM (
+                        SELECT student_id FROM accommodations
+                        WHERE status = 'active'
+                        GROUP BY student_id HAVING COUNT(*) > 1
+                    )
+                ''')
+                multiple_acc_count = cursor.fetchone()[0]
+
+                cursor.execute('''
+                    SELECT s.course, COUNT(*) as count
+                    FROM accommodations a
+                    JOIN students s ON a.student_id = s.student_id
+                    WHERE a.status = 'active'
+                    GROUP BY s.course ORDER BY count DESC
+                ''')
+                course_distribution = cursor.fetchall()
+
+                cursor.execute('''
+                    SELECT AVG(julianday(end_date) - julianday(start_date)) as avg_days
+                    FROM accommodations
+                    WHERE start_date IS NOT NULL AND end_date IS NOT NULL
+                ''')
+                avg_duration = cursor.fetchone()['avg_days'] or 0
+
+                cursor.execute('''
+                    SELECT
+                        COUNT(*) as total_requests,
+                        SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as approved
+                    FROM accommodations
+                    WHERE status IN ('active', 'rejected')
+                ''')
+                approval_data = cursor.fetchone()
+                total_requests = approval_data['total_requests']
+                approved = approval_data['approved']
+                approval_rate = (approved / total_requests * 100) if total_requests > 0 else 0
+
+            # Build report text
+            report = []
+            report.append("=" * 60)
+            report.append(" " * 15 + "ACCOMMODATION STATISTICS")
+            report.append("=" * 60)
+            report.append(f"\nGenerated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            report.append(f"\nTotal accommodations: {total_count}")
+            report.append(f"Currently active: {active_count} ({(active_count/total_count*100) if total_count > 0 else 0:.1f}%)")
+            report.append(f"Students with multiple accommodations: {multiple_acc_count}")
+            report.append(f"Average accommodation duration: {avg_duration:.1f} days")
+            report.append(f"Approval rate: {approval_rate:.1f}%")
+
+            report.append("\nCourse Distribution:")
+            for course in course_distribution:
+                course_name = course['course'] or 'Unknown'
+                count = course['count']
+                percent = (count / active_count * 100) if active_count > 0 else 0
+                report.append(f" - {course_name}: {count} ({percent:.1f}%)")
+
+            month_names = {
+                '01': 'January', '02': 'February', '03': 'March', '04': 'April',
+                '05': 'May', '06': 'June', '07': 'July', '08': 'August',
+                '09': 'September', '10': 'October', '11': 'November', '12': 'December'
+            }
+
+            report.append("\nMonthly Trends for Current Year:")
+            max_count = max([row['count'] for row in monthly_data]) if monthly_data else 0
+            for month_data in monthly_data:
+                month = month_data['month']
+                count = month_data['count']
+                month_name = month_names.get(month, month)
+                bar_length = int((count / max_count) * 40) if max_count > 0 else 0
+                bar = '\u2588' * bar_length
+                report.append(f"{month_name:10} ({count:3}): {bar}")
+
+            report.append("=" * 60)
 
             self.stats_text.delete(1.0, tk.END)
-            self.stats_text.insert(tk.END, result)
+            self.stats_text.insert(tk.END, "\n".join(report))
 
         except Exception as e:
             self.stats_text.delete(1.0, tk.END)
             self.stats_text.insert(tk.END, f"Error generating statistics: {str(e)}")
 
-    def export_report(self):
-        """Export statistics report"""
+    def save_as_txt(self):
+        """Save statistics report as TXT file"""
         file_path = filedialog.asksaveasfilename(
             title="Save Statistics Report",
             filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
@@ -364,11 +454,62 @@ class StatisticsDialog:
             try:
                 with open(file_path, 'w', encoding='utf-8') as f:
                     f.write(self.stats_text.get(1.0, tk.END))
-
-                messagebox.showinfo("Success", f"Report exported to {file_path}")
-
+                messagebox.showinfo("Success", f"Report saved to {file_path}")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to export report: {str(e)}")
+                messagebox.showerror("Error", f"Failed to save report: {str(e)}")
+
+    def email_to_admin(self):
+        """Email the statistics report to admin"""
+        try:
+            from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import (
+                EMAIL_SERVICE_AVAILABLE,
+            )
+
+            if not EMAIL_SERVICE_AVAILABLE:
+                messagebox.showerror("Error", "Email service is not available")
+                return
+
+            from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import send_email
+
+            # Get admin email from users table
+            admin_email = None
+            try:
+                with get_connection() as conn:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        "SELECT email_address FROM students WHERE student_id IN "
+                        "(SELECT user_id FROM user_accounts WHERE role = 'admin') LIMIT 1"
+                    )
+                    row = cursor.fetchone()
+                    if row:
+                        admin_email = row[0]
+            except Exception:
+                pass
+
+            if not admin_email:
+                # Ask for email address
+                admin_email = simpledialog.askstring(
+                    "Admin Email",
+                    "Enter the admin email address:",
+                    parent=self.dialog
+                )
+
+            if not admin_email:
+                return
+
+            report_text = self.stats_text.get(1.0, tk.END).strip()
+            if not report_text:
+                messagebox.showerror("Error", "No report to send. Generate statistics first.")
+                return
+
+            try:
+                send_email(admin_email, "Accommodation Statistics Report", report_text)
+                messagebox.showinfo("Success", f"Report emailed to {admin_email}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to send email: {str(e)}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to email report: {str(e)}")
 
 
 class ExpiryResultDialog:

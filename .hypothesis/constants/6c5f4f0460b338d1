@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/primary_school/modules/domain/academics/sats/services/sats_service.py
+# hypothesis_version: 6.151.9
+
+[100, ' AND key_stage = ?', ' AND pupil_id = ?', ', ', 'Pupil ID is required', 'Subject is required', 'assessment_date', 'count', 'key_stage', 'outcome', 'outcomes', 'percentage', 'pupil_id', 'raw_score', 'result_id', 'scaled_score', 'subject', 'teacher_assessment', 'total']

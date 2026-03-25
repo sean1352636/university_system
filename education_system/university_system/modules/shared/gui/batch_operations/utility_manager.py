@@ -8,14 +8,14 @@ import threading
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 
-from .constants import (
+from education_system.university_system.modules.shared.gui.batch_operations.constants import (
     _t, logger, sqlite3, DEFAULT_DB_PATH, GUI_SETTINGS_PATH,
     EXTERNAL_DB_CONFIG_PATH, EXTERNAL_API_CONFIG_PATH,
     IMPORT_HISTORY_PATH,
     get_log_file, schedule, Notebook,
 )
-from .models import OriginalBatchOperationManager
-from .progress_dialog import GUIProgressDialog
+from education_system.university_system.modules.shared.gui.batch_operations.models import OriginalBatchOperationManager
+from education_system.university_system.modules.shared.gui.batch_operations.progress_dialog import GUIProgressDialog
 
 
 class UtilityManager:

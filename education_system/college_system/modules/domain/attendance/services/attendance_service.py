@@ -142,19 +142,34 @@ class AttendanceService:
         logger.info("Bulk attendance recorded: session=%d count=%d", session_id, count)
         return count
 
-    def get_session_records(self, session_id: int) -> list[dict]:
-        """Get all attendance records for a session."""
+    def get_session_records(self, session_id: int,
+                            limit: int = 0, offset: int = 0) -> list[dict]:
+        """Get attendance records for a session, with optional pagination."""
         conn = self._conn()
         try:
-            rows = conn.execute(
-                """SELECT ar.*, s.student_id as sid, s.first_name, s.last_name
+            sql = """SELECT ar.*, s.student_id as sid, s.first_name, s.last_name
                    FROM attendance_records ar
                    JOIN students s ON ar.student_id = s.id
                    WHERE ar.session_id = ?
-                   ORDER BY s.last_name, s.first_name""",
-                (session_id,),
-            ).fetchall()
+                   ORDER BY s.last_name, s.first_name"""
+            params: list = [session_id]
+            if limit > 0:
+                sql += " LIMIT ? OFFSET ?"
+                params.extend([limit, offset])
+            rows = conn.execute(sql, params).fetchall()
             return [dict(r) for r in rows]
+        finally:
+            conn.close()
+
+    def count_session_records(self, session_id: int) -> int:
+        """Count total attendance records for a session."""
+        conn = self._conn()
+        try:
+            row = conn.execute(
+                "SELECT COUNT(*) as cnt FROM attendance_records WHERE session_id = ?",
+                (session_id,),
+            ).fetchone()
+            return row["cnt"]
         finally:
             conn.close()
 
@@ -335,6 +350,26 @@ class AttendanceService:
                 (slot_id, session_date),
             ).fetchone()
             return dict(row) if row else None
+        finally:
+            conn.close()
+
+    def delete_attendance(self, record_id: int) -> bool:
+        """Delete an attendance record by ID."""
+        conn = self._conn()
+        try:
+            result = conn.execute(
+                "DELETE FROM attendance_records WHERE id = ?", (record_id,)
+            )
+            conn.commit()
+            if result.rowcount == 0:
+                raise AttendanceError(f"Attendance record {record_id} not found.")
+            logger.info("Attendance record deleted: id=%d", record_id)
+            return True
+        except AttendanceError:
+            raise
+        except Exception as e:
+            conn.rollback()
+            raise AttendanceError(f"Failed to delete attendance record: {e}") from e
         finally:
             conn.close()
 

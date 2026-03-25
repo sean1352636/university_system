@@ -181,28 +181,73 @@ def setup_database():
         )
     ''')
 
+    # LMS tables needed by RiskAssessmentManager._calculate_engagement_risk
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS student_modules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT,
+            module_code TEXT
+        )
+    ''')
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS lms_courses (
+            lms_course_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            module_code TEXT
+        )
+    ''')
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS lms_course_content (
+            content_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            lms_course_id INTEGER,
+            FOREIGN KEY (lms_course_id) REFERENCES lms_courses(lms_course_id)
+        )
+    ''')
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS lms_video_lectures (
+            video_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            content_id INTEGER,
+            student_id TEXT,
+            watched INTEGER DEFAULT 0,
+            FOREIGN KEY (content_id) REFERENCES lms_course_content(content_id)
+        )
+    ''')
+
     conn.commit()
     conn.close()
 
     yield
 
     # Cleanup
-    conn = get_connection()
-    cursor = conn.cursor()
+    try:
+        conn = get_connection(timeout=2)
+    except sqlite3.OperationalError:
+        return
 
-    tables = [
-        'early_warning_profiles', 'early_warning_indicators',
-        'early_warning_interventions', 'early_warning_coaches',
-        'early_warning_coaching_assignments', 'early_warning_progress_monitoring',
-        'early_warning_tutoring_recommendations', 'lms_gradebook',
-        'attendance_analytics', 'student_fees'
-    ]
+    try:
+        cursor = conn.cursor()
 
-    for table in tables:
-        cursor.execute(f'DELETE FROM {table}')
+        tables = [
+            'early_warning_coaching_assignments', 'early_warning_progress_monitoring',
+            'early_warning_tutoring_recommendations', 'early_warning_interventions',
+            'early_warning_indicators', 'early_warning_profiles',
+            'early_warning_coaches',
+            'lms_video_lectures', 'lms_course_content', 'lms_courses',
+            'student_modules', 'lms_gradebook',
+            'attendance_analytics', 'student_fees',
+        ]
 
-    conn.commit()
-    conn.close()
+        for table in tables:
+            try:
+                cursor.execute(f'DELETE FROM {table}')
+            except (sqlite3.OperationalError, sqlite3.IntegrityError):
+                pass
+
+        conn.commit()
+    finally:
+        conn.close()
 
 @pytest.fixture
 def sample_student(setup_database):
@@ -634,7 +679,7 @@ class TestCLIMenu:
 
     def test_display_early_warning_menu_exit(self, setup_database):
         """Test menu display and exit"""
-        with patch('builtins.input', return_value='8'):
+        with patch('builtins.input', return_value='9'):
             with patch('builtins.print'):
                 mock_auth = MagicMock()
                 display_early_warning_menu(mock_auth)

@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.college_system.modules.domain.settings.services.settings_service import SettingsService
+from education_system.college_system.core.i18n import t
 
 
 class SettingsFrame(tk.Frame):
@@ -23,7 +24,7 @@ class SettingsFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Settings",
+        tk.Label(header, text=t("settings.title"),
                  font=("Helvetica", 15, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=10)
 
@@ -33,63 +34,63 @@ class SettingsFrame(tk.Frame):
 
         # --- User Preferences tab ---
         user_tab = tk.Frame(self._nb, bg="#ecf0f1", padx=20, pady=20)
-        self._nb.add(user_tab, text="User Preferences")
+        self._nb.add(user_tab, text=t("settings.user_preferences"))
 
-        tk.Label(user_tab, text="Theme:", bg="#ecf0f1",
+        tk.Label(user_tab, text=t("settings.theme_colon"), bg="#ecf0f1",
                  font=("Helvetica", 10)).grid(row=0, column=0, sticky="w", pady=8)
         self._theme_var = tk.StringVar(value="light")
         ttk.Combobox(user_tab, textvariable=self._theme_var,
                      values=["light", "dark"], state="readonly",
                      width=12).grid(row=0, column=1, sticky="w", pady=8)
 
-        tk.Label(user_tab, text="Notifications:", bg="#ecf0f1",
+        tk.Label(user_tab, text=t("settings.notifications_colon"), bg="#ecf0f1",
                  font=("Helvetica", 10)).grid(row=1, column=0, sticky="w", pady=8)
         self._notif_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(user_tab, text="Enabled",
+        ttk.Checkbutton(user_tab, text=t("common.enabled"),
                         variable=self._notif_var).grid(
             row=1, column=1, sticky="w", pady=8)
 
-        tk.Label(user_tab, text="Language:", bg="#ecf0f1",
+        tk.Label(user_tab, text=t("settings.language_colon"), bg="#ecf0f1",
                  font=("Helvetica", 10)).grid(row=2, column=0, sticky="w", pady=8)
         self._lang_var = tk.StringVar(value="en")
         ttk.Combobox(user_tab, textvariable=self._lang_var,
                      values=["en"], state="readonly",
                      width=12).grid(row=2, column=1, sticky="w", pady=8)
 
-        tk.Label(user_tab, text="Items per page:", bg="#ecf0f1",
+        tk.Label(user_tab, text=t("settings.items_per_page_colon"), bg="#ecf0f1",
                  font=("Helvetica", 10)).grid(row=3, column=0, sticky="w", pady=8)
         self._ipp_var = tk.StringVar(value="25")
         ttk.Combobox(user_tab, textvariable=self._ipp_var,
                      values=["25", "50", "100"], state="readonly",
                      width=8).grid(row=3, column=1, sticky="w", pady=8)
 
-        ttk.Button(user_tab, text="Save Preferences",
+        ttk.Button(user_tab, text=t("settings.save_preferences"),
                    command=self._save_user_settings).grid(
             row=4, column=1, sticky="w", pady=20)
 
         # --- System Settings tab (admin only) ---
         self._system_tab = tk.Frame(self._nb, bg="#ecf0f1", padx=20, pady=20)
-        self._nb.add(self._system_tab, text="System Settings")
+        self._nb.add(self._system_tab, text=t("settings.system_settings"))
 
-        tk.Label(self._system_tab, text="College Name:", bg="#ecf0f1",
+        tk.Label(self._system_tab, text=t("settings.college_name_colon"), bg="#ecf0f1",
                  font=("Helvetica", 10)).grid(row=0, column=0, sticky="w", pady=8)
         self._college_name_var = tk.StringVar()
         ttk.Entry(self._system_tab, textvariable=self._college_name_var,
                   width=30).grid(row=0, column=1, sticky="w", pady=8)
 
-        tk.Label(self._system_tab, text="Academic Year:", bg="#ecf0f1",
+        tk.Label(self._system_tab, text=t("settings.academic_year_colon"), bg="#ecf0f1",
                  font=("Helvetica", 10)).grid(row=1, column=0, sticky="w", pady=8)
         self._academic_year_var = tk.StringVar()
         ttk.Entry(self._system_tab, textvariable=self._academic_year_var,
                   width=15).grid(row=1, column=1, sticky="w", pady=8)
 
-        tk.Label(self._system_tab, text="Default Capacity:", bg="#ecf0f1",
+        tk.Label(self._system_tab, text=t("settings.default_capacity_colon"), bg="#ecf0f1",
                  font=("Helvetica", 10)).grid(row=2, column=0, sticky="w", pady=8)
         self._capacity_var = tk.StringVar()
         ttk.Entry(self._system_tab, textvariable=self._capacity_var,
                   width=8).grid(row=2, column=1, sticky="w", pady=8)
 
-        ttk.Button(self._system_tab, text="Save System Settings",
+        ttk.Button(self._system_tab, text=t("settings.save_system_settings"),
                    command=self._save_system_settings).grid(
             row=3, column=1, sticky="w", pady=20)
 
@@ -136,9 +137,9 @@ class SettingsFrame(tk.Frame):
                                        "true" if self._notif_var.get() else "false")
             self._svc.set_user_setting(user_id, "language", self._lang_var.get())
             self._svc.set_user_setting(user_id, "items_per_page", self._ipp_var.get())
-            messagebox.showinfo("Success", "Preferences saved.")
+            messagebox.showinfo(t("common.success"), t("settings.preferences_saved"))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _load_system_settings(self):
         try:
@@ -161,6 +162,6 @@ class SettingsFrame(tk.Frame):
             cap = self._capacity_var.get().strip()
             if cap:
                 self._svc.set_system_setting("default_capacity", cap, user_id)
-            messagebox.showinfo("Success", "System settings saved.")
+            messagebox.showinfo(t("common.success"), t("settings.system_settings_saved"))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))

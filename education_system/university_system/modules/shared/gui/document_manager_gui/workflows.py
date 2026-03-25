@@ -59,10 +59,10 @@ class WorkflowManager:
             SELECT dw.workflow_id, sd.document_id, s.first_name || ' ' || s.last_name as student_name,
                    dt.type_name, dw.step_name, dw.assigned_to, sd.upload_date
             FROM document_workflow dw
-            JOIN student_documents sd ON dw.document_id = sd.document_id
-            JOIN students s ON sd.student_id = s.student_id
+            JOIN documents sd ON dw.document_id = sd.document_id
+            JOIN students s ON sd.owner_id = s.student_id
             JOIN document_types dt ON sd.type_id = dt.type_id
-            WHERE dw.status = 'pending'
+            WHERE sd.source_type = 'student' AND dw.status = 'pending'
             ORDER BY sd.upload_date ASC
             ''')
 
@@ -163,7 +163,7 @@ class WorkflowManager:
                     if pending_steps == 0:
                         # Mark document as verified
                         cursor.execute('''
-                        UPDATE student_documents
+                        UPDATE documents
                         SET verification_status = 'Verified', verification_date = ?,
                             workflow_status = 'completed'
                         WHERE document_id = ?
@@ -182,7 +182,7 @@ class WorkflowManager:
                           self.gui.current_user['username'], comments, workflow_id))
 
                     cursor.execute('''
-                    UPDATE student_documents
+                    UPDATE documents
                     SET verification_status = 'Rejected', verification_date = ?,
                         verification_notes = ?, workflow_status = 'rejected'
                     WHERE document_id = ?
@@ -304,8 +304,8 @@ class WorkflowManager:
                 SELECT dw.workflow_id, sd.document_id, s.first_name || ' ' || s.last_name as student_name,
                        dt.type_name, dw.step_name, dw.assigned_to, sd.upload_date
                 FROM document_workflow dw
-                JOIN student_documents sd ON dw.document_id = sd.document_id
-                JOIN students s ON sd.student_id = s.student_id
+                JOIN documents sd ON dw.document_id = sd.document_id
+                JOIN students s ON sd.owner_id = s.student_id
                 JOIN document_types dt ON sd.type_id = dt.type_id
                 WHERE dw.status = 'pending'
                 ORDER BY sd.upload_date ASC
@@ -346,8 +346,8 @@ class WorkflowManager:
             SELECT dw.workflow_id, dw.document_id, dw.step_name, dw.assigned_to,
                    s.first_name, s.last_name, dt.type_name, sd.upload_date
             FROM document_workflow dw
-            JOIN student_documents sd ON dw.document_id = sd.document_id
-            JOIN students s ON sd.student_id = s.student_id
+            JOIN documents sd ON dw.document_id = sd.document_id
+            JOIN students s ON sd.owner_id = s.student_id
             JOIN document_types dt ON sd.type_id = dt.type_id
             WHERE dw.workflow_id = ? AND dw.status = 'pending'
             ''', (workflow_id,))
@@ -424,7 +424,7 @@ class WorkflowManager:
                 if pending_steps == 0:
                     # Mark document as verified
                     cursor.execute('''
-                    UPDATE student_documents
+                    UPDATE documents
                     SET verification_status = 'Verified', verification_date = ?,
                         workflow_status = 'completed'
                     WHERE document_id = ?
@@ -443,7 +443,7 @@ class WorkflowManager:
                       self.gui.current_user['username'], comments, workflow_id))
 
                 cursor.execute('''
-                UPDATE student_documents
+                UPDATE documents
                 SET verification_status = 'Rejected', verification_date = ?,
                     verification_notes = ?, workflow_status = 'rejected'
                 WHERE document_id = ?

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/alumni_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' = ?', ' AND ', ' WHERE ', ' WHERE alumni_id = ?', ', ', '/<alumni_id>', '/api/alumni', '/donations', '/events', 'GET', 'POST', 'PUT', 'SELECT * FROM alumni', 'UPDATE alumni SET ', 'address', 'alumni', 'alumni_donation', 'alumni_donations', 'alumni_events', 'alumni_id', 'alumni_profile', 'bio', 'city', 'country', 'create', 'current_employer', 'donation_amount', 'donation_type', 'email_address', 'fund_designation', 'graduation_year', 'graduation_year = ?', 'industry', 'is_recurring', 'items', 'job_title', 'linkedin_url', 'payment_method', 'phone', 'recurrence_frequency', 'search', 'skills', 'sub', 'total', 'update', 'view']

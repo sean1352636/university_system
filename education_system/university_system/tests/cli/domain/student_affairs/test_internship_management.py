@@ -28,20 +28,26 @@ def setup_internship_database():
 
     yield
 
-    # Cleanup
-    conn = get_connection()
-    cursor = conn.cursor()
+    # Cleanup — delete child tables first to avoid FK violations
+    try:
+        conn = get_connection(timeout=2)
+    except sqlite3.OperationalError:
+        return
 
-    tables = ['internships', 'internship_applications', 'internship_placements']
+    try:
+        cursor = conn.cursor()
 
-    for table in tables:
-        try:
-            cursor.execute(f'DELETE FROM {table}')
-        except sqlite3.OperationalError:
-            pass
+        tables = ['internship_placements', 'internship_applications', 'internships']
 
-    conn.commit()
-    conn.close()
+        for table in tables:
+            try:
+                cursor.execute(f'DELETE FROM {table}')
+            except (sqlite3.OperationalError, sqlite3.IntegrityError):
+                pass
+
+        conn.commit()
+    finally:
+        conn.close()
 
 @pytest.fixture
 def mock_auth():

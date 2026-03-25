@@ -3,6 +3,7 @@
 import logging
 from education_system.primary_school.infrastructure.database.db import connect
 from education_system.primary_school.core.exceptions import FinanceError
+from education_system.primary_school.core.sql_safety import validate_identifier
 import traceback
 
 logger = logging.getLogger(__name__)
@@ -89,7 +90,7 @@ class FinanceService:
             updates = {k: v for k, v in kwargs.items() if k in allowed}
             if not updates:
                 return None
-            set_clause = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
             values = list(updates.values())
             values.append(txn_id)
             cursor.execute(
@@ -166,7 +167,7 @@ class FinanceService:
             updates = {k: v for k, v in kwargs.items() if k in allowed}
             if not updates:
                 return None
-            set_clause = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
             values = list(updates.values())
             values.append(budget_id)
             cursor.execute(

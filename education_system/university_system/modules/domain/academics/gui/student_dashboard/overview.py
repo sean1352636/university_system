@@ -5,7 +5,16 @@ Provides the welcome header, stat cards, today's schedule, and recent grades
 sections for the student dashboard portal.
 """
 
-from .common_imports import *
+from tkinter import ttk
+from datetime import datetime
+
+from education_system.university_system.modules.domain.academics.gui.student_dashboard.common_imports import (
+    COLORS,
+    _t,
+    create_stat_card,
+    get_connection,
+    logger,
+)
 
 
 class OverviewMixin:

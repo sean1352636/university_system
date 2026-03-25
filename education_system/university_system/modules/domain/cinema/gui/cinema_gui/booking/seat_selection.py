@@ -14,8 +14,8 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
-from ..constants import TICKET_TYPES
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.constants import TICKET_TYPES
 
 def show_seat_selection(self, screening_id, movie):
     """Display seat selection grid with ticket types."""
@@ -25,12 +25,14 @@ def show_seat_selection(self, screening_id, movie):
     self.current_screening = screening_id
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM screenings WHERE id = ?", (screening_id,))
-    screening = cursor.fetchone()
-    cursor.execute("SELECT * FROM seats WHERE screening_id = ?", (screening_id,))
-    seats = cursor.fetchall()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM screenings WHERE id = ?", (screening_id,))
+        screening = cursor.fetchone()
+        cursor.execute("SELECT * FROM seats WHERE screening_id = ?", (screening_id,))
+        seats = cursor.fetchall()
+    finally:
+        conn.close()
 
     ttk.Button(self.content_frame, text=_t("cinema.buttons.back"), style="Secondary.TButton",
               command=lambda: self.show_screenings(movie)).pack(anchor="w")

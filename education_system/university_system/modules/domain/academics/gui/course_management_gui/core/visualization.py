@@ -1,4 +1,4 @@
-from ._imports import (
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.core._imports import (
     _, messagebox, tk, ttk, Toplevel, sqlite3, DEFAULT_DB_PATH,
     CHARTS_AVAILABLE, Figure, FigureCanvasTkAgg, np,
 )

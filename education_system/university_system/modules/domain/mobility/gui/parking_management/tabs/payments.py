@@ -5,9 +5,9 @@ from datetime import datetime
 import logging
 import csv
 
-from .. import get_connection, _t, TEMPLATE_AVAILABLE, render_template
-from ..dialogs.payment_dialog import PaymentDialog
-from ..dialogs.refund_dialog import RefundDialog
+from education_system.university_system.modules.domain.mobility.gui.parking_management import get_connection, _t, TEMPLATE_AVAILABLE, render_template
+from education_system.university_system.modules.domain.mobility.gui.parking_management.dialogs.payment_dialog import PaymentDialog
+from education_system.university_system.modules.domain.mobility.gui.parking_management.dialogs.refund_dialog import RefundDialog
 
 
 class PaymentsMixin:
@@ -67,7 +67,7 @@ class PaymentsMixin:
             cursor.execute("""
                 SELECT
                     p.payment_id,
-                    p.violation_id,
+                    p.reference_id,
                     p.amount,
                     p.payment_method,
                     p.payment_reference,
@@ -76,8 +76,11 @@ class PaymentsMixin:
                         WHEN r.refund_id IS NOT NULL THEN 'Refunded'
                         ELSE 'Paid'
                     END as status
-                FROM parking_payments p
-                LEFT JOIN parking_refunds r ON p.payment_id = r.payment_id
+                FROM payments p
+                LEFT JOIN unified_refunds r ON CAST(p.payment_id AS TEXT) = r.reference_id
+                    AND r.reference_type = 'payment'
+                    AND r.source_type = 'parking'
+                WHERE p.source_type = 'parking'
                 ORDER BY p.payment_date DESC
             """)
             payments = cursor.fetchall()
@@ -132,8 +135,8 @@ class PaymentsMixin:
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT payment_id, violation_id, amount, payment_method, payment_reference, payment_date, student_id
-            FROM parking_payments WHERE payment_id = ?
+            SELECT payment_id, reference_id, amount, payment_method, payment_reference, payment_date, student_id
+            FROM payments WHERE payment_id = ? AND source_type = 'parking'
         """, (values[0],))
         payment_data = cursor.fetchone()
         conn.close()
@@ -155,9 +158,10 @@ class PaymentsMixin:
         cursor = conn.cursor()
         cursor.execute("""
             SELECT p.*, v.license_plate, v.violation_type, v.fine_amount
-            FROM parking_payments p
-            LEFT JOIN parking_violations v ON p.violation_id = v.violation_id
-            WHERE p.payment_id = ?
+            FROM payments p
+            LEFT JOIN parking_violations v ON p.reference_id = v.violation_id
+                AND p.reference_type = 'violation'
+            WHERE p.payment_id = ? AND p.source_type = 'parking'
         """, (values[0],))
         payment = cursor.fetchone()
         conn.close()
@@ -184,7 +188,7 @@ Notes: {payment[8] or 'None'}
         filename = filedialog.asksaveasfilename(
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
-            initialfile=f"parking_payments_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            initialfile=f"parking_payments_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
         )
 
         if not filename:
@@ -194,9 +198,10 @@ Notes: {payment[8] or 'None'}
             conn = get_connection()
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT p.payment_id, p.violation_id, p.amount, p.payment_method,
+                SELECT p.payment_id, p.reference_id, p.amount, p.payment_method,
                        p.payment_reference, p.payment_date, p.student_id, p.processed_by
-                FROM parking_payments p
+                FROM payments p
+                WHERE p.source_type = 'parking'
                 ORDER BY p.payment_date DESC
             """)
             payments = cursor.fetchall()
@@ -233,9 +238,9 @@ Notes: {payment[8] or 'None'}
 
                 # Record payment
                 cursor.execute("""
-                    INSERT INTO parking_payments
-                    (violation_id, amount, payment_method, payment_reference, student_id, processed_by, notes)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO payments
+                    (source_type, reference_id, reference_type, amount, payment_method, payment_reference, student_id, processed_by, notes)
+                    VALUES ('parking', ?, 'violation', ?, ?, ?, ?, ?, ?)
                 """, (dialog.result['violation_id'], dialog.result['amount'], dialog.result['payment_method'],
                       payment_ref, dialog.result['student_id'], processed_by, 'Parking fine payment'))
 
@@ -261,10 +266,10 @@ Notes: {payment[8] or 'None'}
                     if account_result:
                         account_id, new_balance = account_result
                         cursor.execute("""
-                            INSERT INTO student_finance_transactions
-                            (account_id, student_id, transaction_type, amount, balance_after, description,
+                            INSERT INTO transactions
+                            (source_type, account_id, student_id, transaction_type, amount, balance_after, description,
                              reference_id, processed_by, created_at)
-                            VALUES (?, ?, 'debit', ?, ?, ?, ?, ?, ?)
+                            VALUES ('student_finance', ?, ?, 'debit', ?, ?, ?, ?, ?, ?)
                         """, (account_id, dialog.result['student_id'], dialog.result['amount'], new_balance,
                               f"Parking fine payment - {payment_ref}", payment_ref, processed_by,
                               datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
@@ -272,26 +277,13 @@ Notes: {payment[8] or 'None'}
                 # Add to finance system for central tracking
                 try:
                     cursor.execute("""
-                        CREATE TABLE IF NOT EXISTS finance_payments (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            payment_reference TEXT UNIQUE,
-                            department TEXT,
-                            transaction_id TEXT,
-                            amount DECIMAL(10,2),
-                            payment_method TEXT,
-                            payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                            processed_by TEXT,
-                            notes TEXT
-                        )
-                    """)
-                    cursor.execute("""
-                        INSERT INTO finance_payments
-                        (payment_reference, department, transaction_id, amount, payment_method, processed_by, notes)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO payments
+                        (source_type, payment_reference, department, transaction_id, amount, payment_method, processed_by, notes)
+                        VALUES ('finance', ?, ?, ?, ?, ?, ?, ?)
                     """, (payment_ref, 'Parking Services', dialog.result['violation_id'], dialog.result['amount'],
                           dialog.result['payment_method'], processed_by, 'Parking fine payment'))
                 except Exception as e:
-                    logging.warning(f"Could not log to finance_payments: {e}")
+                    logging.warning(f"Could not log to payments (finance): {e}")
 
             # Send confirmation email
             self.send_payment_confirmation_email(dialog.result['violation_id'], dialog.result['amount'],
@@ -406,14 +398,16 @@ University Parking Management
             with transaction() as conn:
                 cursor = conn.cursor()
 
-                # Record refund
+                # Record refund in unified_refunds
                 cursor.execute("""
-                    INSERT INTO parking_refunds
-                    (payment_id, violation_id, amount, refund_method, refund_reference, student_id, processed_by, reason)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """, (dialog.result['payment_id'], dialog.result['violation_id'], dialog.result['amount'],
+                    INSERT INTO unified_refunds
+                    (source_type, reference_id, reference_type, amount, refund_method, refund_reference,
+                     student_id, processed_by, reason, refund_date)
+                    VALUES ('parking', ?, 'payment', ?, ?, ?, ?, ?, ?, ?)
+                """, (str(dialog.result['payment_id']), dialog.result['amount'],
                       dialog.result['refund_method'], refund_ref, dialog.result['student_id'], processed_by,
-                      'Parking fine refund'))
+                      f"Parking fine refund (violation: {dialog.result['violation_id']})",
+                      datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
                 # Update violation status
                 cursor.execute("""
@@ -425,9 +419,9 @@ University Parking Management
                 # Update payment notes
                 try:
                     cursor.execute("""
-                        UPDATE parking_payments
+                        UPDATE payments
                         SET notes = notes || ' [REFUNDED: ' || ? || ']'
-                        WHERE payment_id = ?
+                        WHERE payment_id = ? AND source_type = 'parking'
                     """, (refund_ref, dialog.result['payment_id']))
                 except Exception:
                     pass
@@ -447,21 +441,13 @@ University Parking Management
                     if account_result:
                         account_id, new_balance = account_result
                         cursor.execute("""
-                            INSERT INTO student_finance_transactions
-                            (account_id, student_id, transaction_type, amount, balance_after, description,
+                            INSERT INTO transactions
+                            (source_type, account_id, student_id, transaction_type, amount, balance_after, description,
                              reference_id, processed_by, created_at)
-                            VALUES (?, ?, 'credit', ?, ?, ?, ?, ?, ?)
+                            VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, ?, ?)
                         """, (account_id, dialog.result['student_id'], dialog.result['amount'], new_balance,
                               f"Parking fine refund - {refund_ref}", refund_ref, processed_by,
                               datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-
-                # Add to finance_refunds for central tracking
-                cursor.execute("""
-                    INSERT OR IGNORE INTO finance_refunds
-                    (refund_reference, department, transaction_id, amount, refund_method, processed_by, notes)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                """, (refund_ref, 'Parking Services', dialog.result['violation_id'], dialog.result['amount'],
-                      dialog.result['refund_method'], processed_by, 'Parking fine refund'))
 
             # Send confirmation email
             self.send_refund_confirmation_email(dialog.result['violation_id'], dialog.result['amount'],

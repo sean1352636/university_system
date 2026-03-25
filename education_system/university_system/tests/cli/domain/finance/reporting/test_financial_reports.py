@@ -40,7 +40,7 @@ class TestFinancialAlertSystem:
         assert isinstance(alert_system.alert_thresholds, dict)
         assert 'collection_rate_min' in alert_system.alert_thresholds
 
-    @patch('university_system.modules.domain.finance.reporting.financial_reports.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.reporting.financial_reports.get_connection')
     def test_check_collection_rate_alert(self, mock_get_conn):
         """Test check_collection_rate_alert method"""
         alert_system = FinancialAlertSystem()
@@ -54,7 +54,7 @@ class TestFinancialAlertSystem:
         # Should not raise exception
         alert_system.check_collection_rate_alert()
 
-    @patch('university_system.modules.domain.finance.reporting.financial_reports.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.reporting.financial_reports.get_connection')
     def test_log_alert(self, mock_get_conn):
         """Test log_alert method"""
         alert_system = FinancialAlertSystem()
@@ -88,7 +88,7 @@ class TestPaymentPredictionML:
         assert predictor.scaler is not None
         assert isinstance(predictor.feature_columns, list)
 
-    @patch('university_system.modules.domain.finance.reporting.financial_reports.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.reporting.financial_reports.get_connection')
     def test_prepare_training_data_insufficient(self, mock_get_conn):
         """Test prepare_training_data with insufficient data"""
         predictor = PaymentPredictionML()
@@ -123,7 +123,7 @@ class TestAnomalyDetector:
 
         assert detector.isolation_forest is not None
 
-    @patch('university_system.modules.domain.finance.reporting.financial_reports.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.reporting.financial_reports.get_connection')
     def test_detect_payment_anomalies_insufficient_data(self, mock_get_conn):
         """Test detect_payment_anomalies with insufficient data"""
         detector = AnomalyDetector()
@@ -149,7 +149,7 @@ class TestCashFlowForecaster:
         assert isinstance(forecaster.seasonal_factors, dict)
         assert '09' in forecaster.seasonal_factors
 
-    @patch('university_system.modules.domain.finance.reporting.financial_reports.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.reporting.financial_reports.get_connection')
     def test_generate_cash_flow_forecast(self, mock_get_conn):
         """Test generate_cash_flow_forecast method"""
         forecaster = CashFlowForecaster()

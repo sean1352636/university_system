@@ -13,7 +13,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_inventory_page(self):
     self.clear_content()
@@ -29,12 +29,14 @@ def show_inventory_page(self):
     for col in columns:
         self.inv_tree.heading(col, text=col)
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, item_name, unit, quantity, minimum_threshold, cost_per_unit FROM inventory ORDER BY item_name")
-    for row in cursor.fetchall():
-        status = "LOW" if row[3] < row[4] else "OK"
-        self.inv_tree.insert("", "end", values=(row[0], row[1], row[2], row[3], row[4], f"\u00a3{row[5]:.2f}" if row[5] else "-", status))
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, item_name, unit, quantity, minimum_threshold, cost_per_unit FROM inventory ORDER BY item_name")
+        for row in cursor.fetchall():
+            status = "LOW" if row[3] < row[4] else "OK"
+            self.inv_tree.insert("", "end", values=(row[0], row[1], row[2], row[3], row[4], f"\u00a3{row[5]:.2f}" if row[5] else "-", status))
+    finally:
+        conn.close()
     self.inv_tree.pack(fill="both", expand=True, side="left")
     scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.inv_tree.yview)
     self.inv_tree.configure(yscrollcommand=scrollbar.set)
@@ -44,10 +46,12 @@ def show_inventory_page(self):
     alert.pack(fill="x", pady=10)
     tk.Label(alert, text=_t("cinema.inventory.low_stock_alerts"), font=("Helvetica", 11, "bold"), bg="#ffffff", fg="#dc3545").pack(anchor="w")
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT item_name, quantity, minimum_threshold FROM inventory WHERE quantity < minimum_threshold")
-    low = cursor.fetchall()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT item_name, quantity, minimum_threshold FROM inventory WHERE quantity < minimum_threshold")
+        low = cursor.fetchall()
+    finally:
+        conn.close()
     if low:
         for item, stock, min_l in low:
             tk.Label(alert, text=f"\u26a0 {item}: {stock} (min: {min_l})", bg="#ffffff", fg="#ffc107").pack(anchor="w")
@@ -84,11 +88,13 @@ def add_inv_item(self):
         except (ValueError, TypeError):
             stock, min_l, cost = 0, 20, 0
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO inventory (item_name, unit, quantity, minimum_threshold, cost_per_unit) VALUES (?, ?, ?, ?, ?)",
-                      (entries['name'].get(), entries['unit'].get(), stock, min_l, cost))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO inventory (item_name, unit, quantity, minimum_threshold, cost_per_unit) VALUES (?, ?, ?, ?, ?)",
+                          (entries['name'].get(), entries['unit'].get(), stock, min_l, cost))
+            conn.commit()
+        finally:
+            conn.close()
         messagebox.showinfo(_t("cinema.common.success"), "Item added!")
         form.destroy()
         self.show_inventory_page()
@@ -119,10 +125,12 @@ def restock_inv(self):
             messagebox.showwarning(_t("cinema.common.warning"), "Invalid qty")
             return
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("UPDATE inventory SET quantity = quantity + ?, last_updated = ? WHERE id = ?", (qty, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), item_id))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE inventory SET quantity = quantity + ?, last_updated = ? WHERE id = ?", (qty, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), item_id))
+            conn.commit()
+        finally:
+            conn.close()
         messagebox.showinfo(_t("cinema.common.success"), f"Added {qty}")
         dialog.destroy()
         self.show_inventory_page()

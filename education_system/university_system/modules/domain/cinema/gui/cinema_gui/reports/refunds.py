@@ -19,7 +19,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 # Finance integration
 try:
@@ -400,50 +400,38 @@ def _complete_cinema_refund(self, booking_id, booking_ref, amount, refund_method
         refund_ref = f"CINEMA-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        # Update booking status
-        cursor.execute("""
-            UPDATE bookings
-            SET status = 'refunded'
-            WHERE id = ?
-        """, (booking_id,))
+            # Update booking status
+            cursor.execute("""
+                UPDATE bookings
+                SET status = 'refunded'
+                WHERE id = ?
+            """, (booking_id,))
 
-        # Create refund record in cinema_refunds table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS cinema_refunds (
-                refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                booking_id INTEGER,
-                booking_ref TEXT,
-                customer_email TEXT,
-                amount DECIMAL(10,2),
-                refund_method TEXT,
-                refund_reference TEXT,
-                refunded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                processed_by TEXT,
-                FOREIGN KEY (booking_id) REFERENCES bookings(id)
-            )
-        """)
+            # Get processed_by
+            processed_by = None
+            if AUTH_AVAILABLE:
+                try:
+                    auth = get_auth()
+                    if auth and hasattr(auth, 'current_user') and auth.current_user:
+                        user = auth.current_user
+                        processed_by = user.get('username') or user.get('id', '')
+                except Exception:
+                    pass
 
-        # Get processed_by
-        processed_by = None
-        if AUTH_AVAILABLE:
-            try:
-                auth = get_auth()
-                if auth and hasattr(auth, 'current_user') and auth.current_user:
-                    user = auth.current_user
-                    processed_by = user.get('username') or user.get('id', '')
-            except Exception:
-                pass
+            # Record refund in unified_refunds table
+            cursor.execute("""
+                INSERT INTO unified_refunds
+                (source_type, reference_id, reference_type, customer_email, amount,
+                 refund_method, refund_reference, refund_date, processed_by)
+                VALUES ('cinema', ?, 'booking', ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+            """, (booking_ref, customer_email, amount, refund_method, refund_ref, processed_by))
 
-        cursor.execute("""
-            INSERT INTO cinema_refunds
-            (booking_id, booking_ref, customer_email, amount, refund_method, refund_reference, processed_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (booking_id, booking_ref, customer_email, amount, refund_method, refund_ref, processed_by))
-
-        conn.commit()
-        conn.close()
+            conn.commit()
+        finally:
+            conn.close()
 
         # Send receipt
         self.send_cinema_refund_receipt(customer_email, amount, refund_method, refund_ref, booking_ref)
@@ -479,44 +467,32 @@ def add_cinema_refund_to_student_account(self, booking_id, booking_ref, amount, 
 
         # Update cinema booking
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("UPDATE bookings SET status = 'refunded' WHERE id = ?", (booking_id,))
+        try:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE bookings SET status = 'refunded' WHERE id = ?", (booking_id,))
 
-        # Create refund record
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS cinema_refunds (
-                refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                booking_id INTEGER,
-                booking_ref TEXT,
-                customer_email TEXT,
-                amount DECIMAL(10,2),
-                refund_method TEXT,
-                refund_reference TEXT,
-                refunded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                processed_by TEXT,
-                FOREIGN KEY (booking_id) REFERENCES bookings(id)
-            )
-        """)
+            # Get processed_by
+            processed_by = None
+            if AUTH_AVAILABLE:
+                try:
+                    auth = get_auth()
+                    if auth and hasattr(auth, 'current_user') and auth.current_user:
+                        user = auth.current_user
+                        processed_by = user.get('username') or user.get('id', '')
+                except Exception:
+                    pass
 
-        # Get processed_by
-        processed_by = None
-        if AUTH_AVAILABLE:
-            try:
-                auth = get_auth()
-                if auth and hasattr(auth, 'current_user') and auth.current_user:
-                    user = auth.current_user
-                    processed_by = user.get('username') or user.get('id', '')
-            except Exception:
-                pass
+            # Record refund in unified_refunds table
+            cursor.execute("""
+                INSERT INTO unified_refunds
+                (source_type, reference_id, reference_type, customer_email, amount,
+                 refund_method, refund_reference, refund_date, processed_by)
+                VALUES ('cinema', ?, 'booking', ?, ?, 'student_account', ?, CURRENT_TIMESTAMP, ?)
+            """, (booking_ref, customer_email, amount, refund_ref, processed_by))
 
-        cursor.execute("""
-            INSERT INTO cinema_refunds
-            (booking_id, booking_ref, customer_email, amount, refund_method, refund_reference, processed_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (booking_id, booking_ref, customer_email, amount, 'student_account', refund_ref, processed_by))
-
-        conn.commit()
-        conn.close()
+            conn.commit()
+        finally:
+            conn.close()
 
         # Add to student finance account
         with transaction() as conn:
@@ -536,12 +512,12 @@ def add_cinema_refund_to_student_account(self, booking_id, booking_ref, amount, 
             else:
                 account_id, new_balance = None, amount
 
-            # Log transaction in student_finance_transactions
+            # Log transaction in transactions table
             cursor.execute("""
-                INSERT INTO student_finance_transactions
-                (account_id, student_id, transaction_type, amount, balance_after, description,
+                INSERT INTO transactions
+                (source_type, account_id, student_id, transaction_type, amount, balance_after, description,
                  reference_id, processed_by, created_at)
-                VALUES (?, ?, 'credit', ?, ?, ?, ?, ?, ?)
+                VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, ?, ?)
             """, (account_id, student_id, amount, new_balance, f'Cinema refund - {refund_ref}',
                   refund_ref, 'System', datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
@@ -643,43 +619,7 @@ def notify_cinema_finance_gui(self, booking_id, amount, refund_method, refund_re
     try:
         from education_system.university_system.infrastructure.database.db import get_db_connection, transaction
 
-        with transaction() as conn:
-            cursor = conn.cursor()
-
-            # Create finance_refunds table if not exists
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS finance_refunds (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    refund_reference TEXT UNIQUE,
-                    department TEXT,
-                    transaction_id TEXT,
-                    amount DECIMAL(10,2),
-                    refund_method TEXT,
-                    refund_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    processed_by TEXT,
-                    notes TEXT
-                )
-            """)
-
-            # Get processed_by
-            processed_by = None
-            if AUTH_AVAILABLE:
-                try:
-                    auth = get_auth()
-                    if auth and hasattr(auth, 'current_user') and auth.current_user:
-                        user = auth.current_user
-                        processed_by = user.get('username') or user.get('id', '')
-                except Exception:
-                    pass
-
-            # Insert refund record
-            cursor.execute("""
-                INSERT INTO finance_refunds
-                (refund_reference, department, transaction_id, amount, refund_method, processed_by, notes)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (refund_ref, 'Cinema', str(booking_id), amount, refund_method, processed_by,
-                 'Cinema booking refund'))
-
+        # Refund already recorded in unified_refunds table
         print(f"Finance GUI notified of refund {refund_ref}")
 
     except Exception as e:
@@ -861,24 +801,26 @@ def export_cinema_refunds_to_csv(self):
             return
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute("""
-            SELECT
-                b.id,
-                b.booking_ref,
-                b.booking_time,
-                b.customer_name,
-                b.customer_email,
-                b.total_amount,
-                b.payment_method,
-                b.status
-            FROM bookings b
-            ORDER BY b.booking_time DESC
-        """)
+            cursor.execute("""
+                SELECT
+                    b.id,
+                    b.booking_ref,
+                    b.booking_time,
+                    b.customer_name,
+                    b.customer_email,
+                    b.total_amount,
+                    b.payment_method,
+                    b.status
+                FROM bookings b
+                ORDER BY b.booking_time DESC
+            """)
 
-        bookings = cursor.fetchall()
-        conn.close()
+            bookings = cursor.fetchall()
+        finally:
+            conn.close()
 
         # Write to CSV
         with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/charity_shop_cli/customers.py
+# hypothesis_version: 6.151.9
+
+[100, 500, '%Y-%m-%d', '%m', 'Anonymous', 'add', 'address', 'amount', 'auto_promote', 'average', 'birthday', 'category', 'comment', 'count', 'customer_id', 'customer_name', 'date', 'date_added', 'date_registered', 'description', 'email', 'id', 'is_vip', 'item_id', 'item_name', 'list_vips', 'loyalty_points', 'make_vip', 'max_price', 'name', 'notes', 'notification', 'notified', 'payment_method', 'phone', 'quantity', 'rating', 'referral_code', 'referred_by', 'refunded', 'remove', 'remove_vip', 'sale_id', 'submit', 'total_spent', 'view', 'view_item', 'wishlist_id']

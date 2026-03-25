@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/data_exporter.py
+# hypothesis_version: 6.151.9
+
+[200, 86400, '%Y%m%d_%H%M%S', '*', '1.0', '=', 'ALIGN', 'BACKGROUND', 'BOTTOMPADDING', 'CENTER', 'CSVExporter', 'DATA EXPORT REPORT', 'Data Export Report', 'DataExportService', 'DataExporter', 'ExportFormat', 'ExportResult', 'FONTNAME', 'FONTSIZE', 'GRID', 'Heading2', 'Helvetica-Bold', 'JSONExporter', 'Normal', 'PDFExporter', 'StudentData', 'TEXTCOLOR', 'Title', '_', '__dict__', 'created', 'csv', 'data.csv', 'data.json', 'data.pdf', 'export_date', 'filename', 'formats', 'id', 'ignore', 'json', 'keys', 'metadata.json', 'path', 'pdf', 'size', 'student_data', 'student_id', 'user', 'user_id', 'utf-8', 'version', 'w', 'wb', 'zip']

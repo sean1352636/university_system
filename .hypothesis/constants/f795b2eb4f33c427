@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/attendance_tracker/dashboard_tab.py
+# hypothesis_version: 6.151.9
+
+[0.3, 0.5, 0.7, 120, '%1.1f%%', '--', '09:15', '09:20', '10:30', '12', '125', '8', '87.5%', 'Absent', 'Arial', 'CS101', 'CS102', 'D', 'Excused', 'Face Recognition', 'Late', 'Manual', 'Present', 'QR Code', 'S001 John Doe', 'S002 Jane Smith', 'S003 Bob Wilson', 'T', 'active_modules', 'attendance.absent', 'attendance.excused', 'attendance.late', 'attendance.present', 'blue', 'bold', 'center', 'count', 'date', 'end', 'ew', 'gray', 'green', 'headings', 'o', 'orange', 'overall_attendance', 'rate', 'red', 'status', 'todays_sessions', 'total_students', 'yellow']

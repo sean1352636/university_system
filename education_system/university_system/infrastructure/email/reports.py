@@ -390,7 +390,7 @@ def get_recent_communication_activity(dashboard, limit=10):
 @handle_exception
 def get_system_health_info():
     """Get system health information for communication components"""
-    from .email_service import email_queue, worker_threads  # Local import to avoid circular dependency
+    from education_system.university_system.infrastructure.email.email_service import email_queue, worker_threads  # Local import to avoid circular dependency
 
     health_info = {
         'email_system': 'operational',

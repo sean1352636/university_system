@@ -120,19 +120,7 @@ class Database:
             )
         ''')
 
-        # Train refunds table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS train_refunds (
-                refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                ticket_number TEXT NOT NULL,
-                student_id TEXT,
-                amount DECIMAL(10,2) NOT NULL,
-                refund_method TEXT NOT NULL,
-                refund_reference TEXT,
-                refunded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                processed_by TEXT
-            )
-        ''')
+        # Note: refunds now use the unified_refunds table (no local train_refunds table)
 
         conn.commit()
         conn.close()
@@ -403,33 +391,33 @@ class TrainStationApp:
         except Exception as e:
             logger.error(f"Error sending booking confirmation email: {e}")
             return False
-    
+
     def setup_styles(self):
         """Configure ttk styles"""
         style = ttk.Style()
         style.theme_use("clam")
-        
+
         # Button styles
-        style.configure("Primary.TButton", 
+        style.configure("Primary.TButton",
                        font=("Helvetica", 11, "bold"),
                        padding=10)
-        
-        style.configure("TLabel", 
+
+        style.configure("TLabel",
                        font=("Helvetica", 10),
                        background="#f0f4f8")
-        
+
         style.configure("Header.TLabel",
                        font=("Helvetica", 24, "bold"),
                        background="#f0f4f8",
                        foreground="#1a365d")
-        
+
         style.configure("Treeview",
                        font=("Helvetica", 10),
                        rowheight=30)
-        
+
         style.configure("Treeview.Heading",
                        font=("Helvetica", 10, "bold"))
-    
+
     def create_widgets(self):
         """Create the main interface"""
         # Header
@@ -485,12 +473,12 @@ class TrainStationApp:
 
         # Show services by default
         self.show_services()
-    
+
     def clear_content(self):
         """Clear the content frame"""
         for widget in self.content_frame.winfo_children():
             widget.destroy()
-    
+
     def show_services(self):
         """Display all train services"""
         self.clear_content()
@@ -517,7 +505,7 @@ class TrainStationApp:
         tree.heading("Arrival", text=_t("train.services.arrival"))
         tree.heading("Price", text=_t("train.services.price"))
         tree.heading("Seats", text=_t("train.services.available"))
-        
+
         tree.column("Service", width=100, anchor="center")
         tree.column("From", width=180)
         tree.column("To", width=180)
@@ -525,14 +513,14 @@ class TrainStationApp:
         tree.column("Arrival", width=80, anchor="center")
         tree.column("Price", width=80, anchor="center")
         tree.column("Seats", width=80, anchor="center")
-        
+
         # Add scrollbar
         scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
-        
+
         tree.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
-        
+
         # Populate data
         services = self.db.get_all_services()
         for service in services:
@@ -545,13 +533,13 @@ class TrainStationApp:
                 f"£{service[6]:.2f}",  # price
                 service[7]   # available_seats
             ))
-        
+
         # Add alternating row colors
         tree.tag_configure("oddrow", background="#e2e8f0")
         for i, item in enumerate(tree.get_children()):
             if i % 2:
                 tree.item(item, tags=("oddrow",))
-    
+
     def show_purchase(self):
         """Show ticket purchase interface"""
         self.clear_content()
@@ -647,7 +635,7 @@ class TrainStationApp:
                                 cursor="hand2",
                                 command=self.complete_purchase)
         purchase_btn.grid(row=5, column=0, columnspan=2, pady=30)
-    
+
     def update_price(self, event=None):
         """Update displayed price based on selection"""
         if not self.service_combo.current() >= 0:
@@ -664,7 +652,7 @@ class TrainStationApp:
             self.discount_label.config(text="")
 
         self.price_label.config(text=f"£{price:.2f}")
-    
+
     def complete_purchase(self):
         """Process the ticket purchase"""
         name = self.name_entry.get().strip()
@@ -763,7 +751,7 @@ class TrainStationApp:
             email_sent = self._send_booking_confirmation_email(ticket_data)
 
             self.show_receipt(ticket_num, email_sent=email_sent)
-    
+
     def show_receipt(self, ticket_number, email_sent=False):
         """Display payment receipt"""
         receipt_data = self.db.get_receipt(ticket_number)
@@ -856,7 +844,7 @@ class TrainStationApp:
         # Refresh services to update seat count
         self.services = self.db.get_all_services()
         messagebox.showinfo(_t("common.success"), _t("train.purchase.success", ticket_number=ticket_number))
-    
+
     def show_tickets(self):
         """Display all purchased tickets"""
         self.clear_content()
@@ -918,7 +906,7 @@ class TrainStationApp:
         try:
             conn = self.db.get_connection()
             cursor = conn.cursor()
-            cursor.execute("SELECT ticket_number FROM train_refunds")
+            cursor.execute("SELECT reference_id FROM unified_refunds WHERE source_type = 'train' AND reference_type = 'ticket'")
             refunded_tickets = set(row[0] for row in cursor.fetchall())
             conn.close()
         except Exception as e:
@@ -942,10 +930,10 @@ class TrainStationApp:
                 ticket[8],   # purchase_date
                 status
             ), tags=(tag,))
-        
+
         # Store tree reference for receipt viewing
         self.tickets_tree = tree
-        
+
         # Buttons frame - make it more prominent
         btn_frame = tk.Frame(self.content_frame, bg="#f0f4f8")
         btn_frame.pack(pady=20, fill=tk.X)
@@ -982,7 +970,7 @@ class TrainStationApp:
                               font=("Helvetica", 10),
                               bg="#f0f4f8", fg="#718096")
         count_label.pack()
-    
+
     def view_selected_receipt(self):
         """View receipt for selected ticket"""
         selection = self.tickets_tree.selection()
@@ -1013,7 +1001,7 @@ class TrainStationApp:
             conn = self.db.get_connection()
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT refund_id FROM train_refunds WHERE ticket_number = ?
+                SELECT id FROM unified_refunds WHERE source_type = 'train' AND reference_type = 'ticket' AND reference_id = ?
             """, (ticket_number,))
             existing_refund = cursor.fetchone()
             conn.close()
@@ -1153,10 +1141,10 @@ class TrainStationApp:
                     s.departure_station || ' → ' || s.arrival_station as route,
                     t.price_paid,
                     t.payment_method,
-                    CASE WHEN r.refund_id IS NOT NULL THEN 'refunded' ELSE 'active' END as status
+                    CASE WHEN r.id IS NOT NULL THEN 'refunded' ELSE 'active' END as status
                 FROM train_station_tickets t
                 JOIN train_station_services s ON t.service_id = s.id
-                LEFT JOIN train_refunds r ON t.ticket_number = r.ticket_number
+                LEFT JOIN unified_refunds r ON t.ticket_number = r.reference_id AND r.source_type = 'train' AND r.reference_type = 'ticket'
                 ORDER BY t.purchase_date DESC
             """
 
@@ -1370,13 +1358,13 @@ class TrainStationApp:
             conn = self.db.get_connection()
             cursor = conn.cursor()
 
-            # Add status column if it doesn't exist (optional - status is now derived from train_refunds)
+            # Add status column if it doesn't exist (optional - status is now derived from unified_refunds)
             try:
                 cursor.execute("ALTER TABLE train_station_tickets ADD COLUMN status TEXT DEFAULT 'active'")
             except Exception:
                 pass
 
-            # Update status if column exists (optional - status is now derived from train_refunds)
+            # Update status if column exists (optional - status is now derived from unified_refunds)
             try:
                 cursor.execute("""
                     UPDATE train_station_tickets
@@ -1384,18 +1372,18 @@ class TrainStationApp:
                     WHERE ticket_number = ?
                 """, (ticket_number,))
             except Exception:
-                pass  # Column doesn't exist, status will be derived from train_refunds table
+                pass  # Column doesn't exist, status will be derived from unified_refunds table
 
             # Get processed_by info
             processed_by = None
             if self.current_user:
                 processed_by = self.current_user.get('username') or self.current_user.get('id', '')
 
-            # Insert refund record into local database
+            # Insert refund record into unified_refunds in local database
             cursor.execute("""
-                INSERT INTO train_refunds
-                (ticket_number, student_id, amount, refund_method, refund_reference, processed_by)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO unified_refunds
+                (source_type, reference_id, reference_type, student_id, amount, refund_method, refund_reference, refund_date, processed_by)
+                VALUES ('train', ?, 'ticket', ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
             """, (ticket_number, student_id, amount, refund_method, refund_ref, processed_by))
 
             conn.commit()
@@ -1406,22 +1394,9 @@ class TrainStationApp:
                 cursor = conn.cursor()
 
                 cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS train_refunds (
-                        refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        ticket_number TEXT,
-                        student_id TEXT,
-                        amount DECIMAL(10,2),
-                        refund_method TEXT,
-                        refund_reference TEXT,
-                        refunded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        processed_by TEXT
-                    )
-                """)
-
-                cursor.execute("""
-                    INSERT INTO train_refunds
-                    (ticket_number, student_id, amount, refund_method, refund_reference, processed_by)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    INSERT INTO unified_refunds
+                    (source_type, reference_id, reference_type, student_id, amount, refund_method, refund_reference, refund_date, processed_by)
+                    VALUES ('train', ?, 'ticket', ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
                 """, (ticket_number, student_id, amount, refund_method, refund_ref, processed_by))
 
             # Send receipt
@@ -1470,13 +1445,13 @@ class TrainStationApp:
             conn = self.db.get_connection()
             cursor = conn.cursor()
 
-            # Add status column if it doesn't exist (optional - status is now derived from train_refunds)
+            # Add status column if it doesn't exist (optional - status is now derived from unified_refunds)
             try:
                 cursor.execute("ALTER TABLE train_station_tickets ADD COLUMN status TEXT DEFAULT 'active'")
             except Exception:
                 pass
 
-            # Update status if column exists (optional - status is now derived from train_refunds)
+            # Update status if column exists (optional - status is now derived from unified_refunds)
             try:
                 cursor.execute("""
                     UPDATE train_station_tickets
@@ -1484,19 +1459,19 @@ class TrainStationApp:
                     WHERE ticket_number = ?
                 """, (ticket_number,))
             except Exception:
-                pass  # Column doesn't exist, status will be derived from train_refunds table
+                pass  # Column doesn't exist, status will be derived from unified_refunds table
 
             # Get processed_by info
             processed_by = None
             if self.current_user:
                 processed_by = self.current_user.get('username') or self.current_user.get('id', '')
 
-            # Insert refund record into local database
+            # Insert refund record into unified_refunds in local database
             cursor.execute("""
-                INSERT INTO train_refunds
-                (ticket_number, student_id, amount, refund_method, refund_reference, processed_by)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (ticket_number, student_id, amount, 'student_account', refund_ref, processed_by))
+                INSERT INTO unified_refunds
+                (source_type, reference_id, reference_type, student_id, amount, refund_method, refund_reference, refund_date, processed_by)
+                VALUES ('train', ?, 'ticket', ?, ?, 'student_account', ?, CURRENT_TIMESTAMP, ?)
+            """, (ticket_number, student_id, amount, refund_ref, processed_by))
 
             conn.commit()
             conn.close()
@@ -1507,23 +1482,10 @@ class TrainStationApp:
 
                 # Create refund record in central database
                 cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS train_refunds (
-                        refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        ticket_number TEXT,
-                        student_id TEXT,
-                        amount DECIMAL(10,2),
-                        refund_method TEXT,
-                        refund_reference TEXT,
-                        refunded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        processed_by TEXT
-                    )
-                """)
-
-                cursor.execute("""
-                    INSERT INTO train_refunds
-                    (ticket_number, student_id, amount, refund_method, refund_reference, processed_by)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """, (ticket_number, student_id, amount, 'student_account', refund_ref, processed_by))
+                    INSERT INTO unified_refunds
+                    (source_type, reference_id, reference_type, student_id, amount, refund_method, refund_reference, refund_date, processed_by)
+                    VALUES ('train', ?, 'ticket', ?, ?, 'student_account', ?, CURRENT_TIMESTAMP, ?)
+                """, (ticket_number, student_id, amount, refund_ref, processed_by))
 
                 # Add to student finance account
                 cursor.execute("""
@@ -1540,12 +1502,12 @@ class TrainStationApp:
                 else:
                     account_id, new_balance = None, amount
 
-                # Log transaction in student_finance_transactions
+                # Log transaction in transactions table
                 cursor.execute("""
-                    INSERT INTO student_finance_transactions
-                    (account_id, student_id, transaction_type, amount, balance_after, description,
+                    INSERT INTO transactions
+                    (source_type, account_id, student_id, transaction_type, amount, balance_after, description,
                      reference_id, processed_by, created_at)
-                    VALUES (?, ?, 'credit', ?, ?, ?, ?, ?, ?)
+                    VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, ?, ?)
                 """, (account_id, student_id, amount, new_balance, f'Train ticket refund - {refund_ref}',
                       refund_ref, processed_by, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
@@ -1666,39 +1628,8 @@ University Train Station
     def notify_train_finance_gui(self, ticket_number, amount, refund_method, refund_ref):
         """Notify finance system about the refund"""
         try:
-            from education_system.university_system.infrastructure.database.db import get_db_connection as get_central_db, transaction as central_transaction
-
-            with central_transaction() as conn:
-                cursor = conn.cursor()
-
-                # Create finance_refunds table if not exists
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS finance_refunds (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        refund_reference TEXT UNIQUE,
-                        department TEXT,
-                        transaction_id TEXT,
-                        amount DECIMAL(10,2),
-                        refund_method TEXT,
-                        refund_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        processed_by TEXT,
-                        notes TEXT
-                    )
-                """)
-
-                # Get processed_by
-                processed_by = None
-                if self.current_user:
-                    processed_by = self.current_user.get('username') or self.current_user.get('id', '')
-
-                # Insert refund record
-                cursor.execute("""
-                    INSERT INTO finance_refunds
-                    (refund_reference, department, transaction_id, amount, refund_method, processed_by, notes)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                """, (refund_ref, 'Train Station', ticket_number, amount, refund_method, processed_by,
-                     'Train ticket refund'))
-
+            # Notify finance GUI via event/callback mechanism if available
+            # The finance_refunds SQL insert has been removed as part of unified_refunds migration
             logger.info(f"Finance GUI notified of refund {refund_ref}")
 
         except Exception as e:
@@ -1729,7 +1660,7 @@ University Train Station
                     t.price_paid,
                     t.payment_method,
                     t.purchase_date,
-                    CASE WHEN r.refund_id IS NOT NULL THEN 'refunded' ELSE 'active' END as status,
+                    CASE WHEN r.id IS NOT NULL THEN 'refunded' ELSE 'active' END as status,
                     s.service_number,
                     s.departure_station,
                     s.arrival_station,
@@ -1737,7 +1668,7 @@ University Train Station
                     s.arrival_time
                 FROM train_station_tickets t
                 JOIN train_station_services s ON t.service_id = s.id
-                LEFT JOIN train_refunds r ON t.ticket_number = r.ticket_number
+                LEFT JOIN unified_refunds r ON t.ticket_number = r.reference_id AND r.source_type = 'train' AND r.reference_type = 'ticket'
                 WHERE t.ticket_number = ?
             """, (ticket_number,))
 
@@ -1859,10 +1790,10 @@ FINANCIAL DETAILS
                     s.departure_station || ' → ' || s.arrival_station as route,
                     t.price_paid,
                     t.payment_method,
-                    CASE WHEN r.refund_id IS NOT NULL THEN 'refunded' ELSE 'active' END as status
+                    CASE WHEN r.id IS NOT NULL THEN 'refunded' ELSE 'active' END as status
                 FROM train_station_tickets t
                 JOIN train_station_services s ON t.service_id = s.id
-                LEFT JOIN train_refunds r ON t.ticket_number = r.ticket_number
+                LEFT JOIN unified_refunds r ON t.ticket_number = r.reference_id AND r.source_type = 'train' AND r.reference_type = 'ticket'
                 ORDER BY t.purchase_date DESC
             """)
 

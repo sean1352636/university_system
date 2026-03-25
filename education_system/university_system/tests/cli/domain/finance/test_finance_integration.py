@@ -123,7 +123,7 @@ class TestRecordPaymentToFinance:
         """Test recording a basic payment"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
             payment_id = finance_integration.record_payment_to_finance(
                 student_id='S001',
                 amount=250.00,
@@ -150,7 +150,7 @@ class TestRecordPaymentToFinance:
         """Test recording payment with all optional parameters"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
             payment_id = finance_integration.record_payment_to_finance(
                 student_id='S002',
                 amount=500.50,
@@ -184,7 +184,7 @@ class TestRecordPaymentToFinance:
         """Test that transaction_id is properly formatted"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
             payment_id = finance_integration.record_payment_to_finance(
                 student_id='S003',
                 amount=100.00,
@@ -205,7 +205,7 @@ class TestRecordPaymentToFinance:
         """Test that notes are properly formatted with source and ref"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
             payment_id = finance_integration.record_payment_to_finance(
                 student_id='S004',
                 amount=75.00,
@@ -230,7 +230,7 @@ class TestRecordPaymentToFinance:
         from education_system.university_system.modules.shared.utils import finance_integration
 
         # Use non-existent database path
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', '/nonexistent/db.db'):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', '/nonexistent/db.db'):
             payment_id = finance_integration.record_payment_to_finance(
                 student_id='S005',
                 amount=100.00,
@@ -245,7 +245,7 @@ class TestRecordPaymentToFinance:
         """Test that amount is rounded to 2 decimal places"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
             payment_id = finance_integration.record_payment_to_finance(
                 student_id='S006',
                 amount=123.456789,
@@ -275,7 +275,7 @@ class TestRecordRefundToFinance:
         """Test recording a basic refund"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
             refund_id = finance_integration.record_refund_to_finance(
                 student_id='S001',
                 refund_amount=50.00,
@@ -304,7 +304,7 @@ class TestRecordRefundToFinance:
         """Test recording refund with all parameters"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
             refund_id = finance_integration.record_refund_to_finance(
                 student_id='S002',
                 refund_amount=100.00,
@@ -337,7 +337,7 @@ class TestRecordRefundToFinance:
         """Test that refund is auto-approved and processed"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
             refund_id = finance_integration.record_refund_to_finance(
                 student_id='S003',
                 refund_amount=25.00,
@@ -362,7 +362,7 @@ class TestRecordRefundToFinance:
         """Test that refund handles database errors"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', '/nonexistent/db.db'):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', '/nonexistent/db.db'):
             refund_id = finance_integration.record_refund_to_finance(
                 student_id='S004',
                 refund_amount=50.00,
@@ -388,7 +388,7 @@ class TestRecordRevenueToFinance:
         """Test recording basic revenue"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
             payment_id = finance_integration.record_revenue_to_finance(
                 student_id='EXTERNAL',
                 amount=1000.00,
@@ -412,7 +412,7 @@ class TestRecordRevenueToFinance:
         """Test recording revenue with additional notes"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
             payment_id = finance_integration.record_revenue_to_finance(
                 student_id='S001',
                 amount=500.00,
@@ -444,7 +444,7 @@ class TestGetStudentFinancialSummary:
         """Test getting summary for student with no transactions"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
             summary = finance_integration.get_student_financial_summary('S999')
 
             assert summary['student_id'] == 'S999'
@@ -458,7 +458,7 @@ class TestGetStudentFinancialSummary:
         """Test getting summary with payments"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
             # Add payments
             conn = sqlite3.connect(temp_db)
             cursor = conn.cursor()
@@ -484,7 +484,7 @@ class TestGetStudentFinancialSummary:
         """Test getting summary with refunds"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
             # Add payments and refunds
             conn = sqlite3.connect(temp_db)
             cursor = conn.cursor()
@@ -509,7 +509,7 @@ class TestGetStudentFinancialSummary:
         """Test getting summary broken down by source"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
             # Add payments from different sources
             conn = sqlite3.connect(temp_db)
             cursor = conn.cursor()
@@ -541,7 +541,7 @@ class TestGetStudentFinancialSummary:
         """Test that summary handles database errors"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', '/nonexistent/db.db'):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', '/nonexistent/db.db'):
             summary = finance_integration.get_student_financial_summary('S001')
 
             assert summary == {}
@@ -559,7 +559,7 @@ class TestGetFinanceReportBySource:
         """Test getting basic report for a source"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
             # Add payments
             conn = sqlite3.connect(temp_db)
             cursor = conn.cursor()
@@ -587,7 +587,7 @@ class TestGetFinanceReportBySource:
         """Test getting report with date filters"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
             # Add payments
             conn = sqlite3.connect(temp_db)
             cursor = conn.cursor()
@@ -622,7 +622,7 @@ class TestGetFinanceReportBySource:
         """Test getting report for source with no transactions"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
             report = finance_integration.get_finance_report_by_source('NonexistentSource')
 
             assert report['source'] == 'NonexistentSource'
@@ -633,7 +633,7 @@ class TestGetFinanceReportBySource:
         """Test that report handles database errors"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', '/nonexistent/db.db'):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', '/nonexistent/db.db'):
             report = finance_integration.get_finance_report_by_source('Library')
 
             assert report == {}
@@ -660,7 +660,7 @@ class TestIntegration:
         """Test complete payment lifecycle: payment -> refund"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
             # Record payment
             payment_id = finance_integration.record_payment_to_finance(
                 student_id='S100',
@@ -696,7 +696,7 @@ class TestIntegration:
         """Test tracking payments from multiple sources"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
             # Library payment
             finance_integration.record_payment_to_finance(
                 student_id='S200',
@@ -737,7 +737,7 @@ class TestIntegration:
         """Test revenue tracking integration"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
             # Record revenue
             finance_integration.record_revenue_to_finance(
                 student_id='EXTERNAL',

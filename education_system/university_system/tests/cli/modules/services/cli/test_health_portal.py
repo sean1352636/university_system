@@ -213,7 +213,7 @@ class TestStubImplementations:
 class TestLogging:
     """Test logging behavior"""
 
-    @patch('university_system.modules.services.cli.health_portal.logger')
+    @patch('education_system.university_system.modules.services.cli.health_portal.logger')
     def test_functions_can_log(self, mock_logger):
         """Test that functions can use logger if available"""
         # Call various functions

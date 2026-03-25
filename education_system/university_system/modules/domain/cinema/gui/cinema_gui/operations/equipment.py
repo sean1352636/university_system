@@ -13,7 +13,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_equipment_page(self):
     """Display equipment management page."""
@@ -33,52 +33,54 @@ def show_equipment_page(self):
     alerts_frame.pack(fill="x", pady=10)
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    # Check for overdue maintenance
-    cursor.execute('''
-        SELECT name, equipment_type, screen_number, next_service_due, hours_used, max_hours_before_service
-        FROM equipment
-        WHERE status = 'operational' AND (
-            (next_service_due IS NOT NULL AND date(next_service_due) <= date('now'))
-            OR (hours_used >= max_hours_before_service)
-        )
-    ''')
-    alerts = cursor.fetchall()
+        # Check for overdue maintenance
+        cursor.execute('''
+            SELECT name, equipment_type, screen_number, next_service_due, hours_used, max_hours_before_service
+            FROM equipment
+            WHERE status = 'operational' AND (
+                (next_service_due IS NOT NULL AND date(next_service_due) <= date('now'))
+                OR (hours_used >= max_hours_before_service)
+            )
+        ''')
+        alerts = cursor.fetchall()
 
-    if alerts:
-        tk.Label(alerts_frame, text=_t("cinema.maintenance.alerts"), font=("Helvetica", 11, "bold"), bg="#ffffff", fg="#dc3545").pack(anchor="w")
-        for alert in alerts:
-            name, eq_type, screen, due_date, hours, max_hours = alert
-            alert_text = f"\u26a0 {name} (Screen {screen or 'N/A'})"
-            if due_date and datetime.strptime(due_date, "%Y-%m-%d") <= datetime.now():
-                alert_text += f" - Overdue since {due_date}"
-            if hours >= max_hours:
-                alert_text += f" - {hours}/{max_hours} hours"
-            tk.Label(alerts_frame, text=alert_text, bg="#ffffff", fg="#ffc107").pack(anchor="w")
-    else:
-        tk.Label(alerts_frame, text=_t("cinema.maintenance.no_alerts"), font=("Helvetica", 11, "bold"), bg="#ffffff", fg="#27ae60").pack(anchor="w")
-        tk.Label(alerts_frame, text=_t("cinema.maintenance.all_up_to_date"), bg="#ffffff", fg="#7f8c8d").pack(anchor="w")
+        if alerts:
+            tk.Label(alerts_frame, text=_t("cinema.maintenance.alerts"), font=("Helvetica", 11, "bold"), bg="#ffffff", fg="#dc3545").pack(anchor="w")
+            for alert in alerts:
+                name, eq_type, screen, due_date, hours, max_hours = alert
+                alert_text = f"\u26a0 {name} (Screen {screen or 'N/A'})"
+                if due_date and datetime.strptime(due_date, "%Y-%m-%d") <= datetime.now():
+                    alert_text += f" - Overdue since {due_date}"
+                if hours >= max_hours:
+                    alert_text += f" - {hours}/{max_hours} hours"
+                tk.Label(alerts_frame, text=alert_text, bg="#ffffff", fg="#ffc107").pack(anchor="w")
+        else:
+            tk.Label(alerts_frame, text=_t("cinema.maintenance.no_alerts"), font=("Helvetica", 11, "bold"), bg="#ffffff", fg="#27ae60").pack(anchor="w")
+            tk.Label(alerts_frame, text=_t("cinema.maintenance.all_up_to_date"), bg="#ffffff", fg="#7f8c8d").pack(anchor="w")
 
-    # Equipment list
-    tree_frame = ttk.Frame(self.content_frame, style="Card.TFrame")
-    tree_frame.pack(fill="both", expand=True, pady=10)
+        # Equipment list
+        tree_frame = ttk.Frame(self.content_frame, style="Card.TFrame")
+        tree_frame.pack(fill="both", expand=True, pady=10)
 
-    columns = ("ID", "Name", "Type", "Screen", "Hours", "Last Service", "Next Due", "Status")
-    self.equip_tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=12)
-    for col in columns:
-        self.equip_tree.heading(col, text=col)
-        self.equip_tree.column(col, width=90)
+        columns = ("ID", "Name", "Type", "Screen", "Hours", "Last Service", "Next Due", "Status")
+        self.equip_tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=12)
+        for col in columns:
+            self.equip_tree.heading(col, text=col)
+            self.equip_tree.column(col, width=90)
 
-    cursor.execute('''
-        SELECT id, name, equipment_type, screen_number, hours_used, last_service_date, next_service_due, status
-        FROM equipment ORDER BY screen_number, equipment_type
-    ''')
-    for row in cursor.fetchall():
-        status = row[7].upper() if row[7] else "OPERATIONAL"
-        self.equip_tree.insert("", "end", values=(row[0], row[1], row[2], row[3] or "-", row[4], row[5] or "-", row[6] or "-", status))
+        cursor.execute('''
+            SELECT id, name, equipment_type, screen_number, hours_used, last_service_date, next_service_due, status
+            FROM equipment ORDER BY screen_number, equipment_type
+        ''')
+        for row in cursor.fetchall():
+            status = row[7].upper() if row[7] else "OPERATIONAL"
+            self.equip_tree.insert("", "end", values=(row[0], row[1], row[2], row[3] or "-", row[4], row[5] or "-", row[6] or "-", status))
 
-    conn.close()
+    finally:
+        conn.close()
 
     self.equip_tree.pack(fill="both", expand=True, side="left")
     scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.equip_tree.yview)
@@ -148,16 +150,18 @@ def add_equipment(self):
             pass
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO equipment (name, equipment_type, screen_number, brand, model, serial_number,
-                                   install_date, warranty_until, max_hours_before_service)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (fields['name'].get(), fields['type_var'].get(), screen, fields['brand'].get(),
-              fields['model'].get(), fields['serial'].get(), fields['install'].get(),
-              fields['warranty'].get(), max_hours))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO equipment (name, equipment_type, screen_number, brand, model, serial_number,
+                                       install_date, warranty_until, max_hours_before_service)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (fields['name'].get(), fields['type_var'].get(), screen, fields['brand'].get(),
+                  fields['model'].get(), fields['serial'].get(), fields['install'].get(),
+                  fields['warranty'].get(), max_hours))
+            conn.commit()
+        finally:
+            conn.close()
 
         messagebox.showinfo(_t("cinema.common.success"), "Equipment added!")
         form.destroy()
@@ -183,10 +187,12 @@ def log_equipment_maintenance(self):
 
     # Get equipment list
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, name, screen_number FROM equipment ORDER BY name")
-    equipment_list = cursor.fetchall()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, name, screen_number FROM equipment ORDER BY name")
+        equipment_list = cursor.fetchall()
+    finally:
+        conn.close()
 
     equip_names = [f"{e[1]} (Screen {e[2] or 'N/A'})" for e in equipment_list]
     equip_ids = {f"{e[1]} (Screen {e[2] or 'N/A'})": e[0] for e in equipment_list}
@@ -270,30 +276,32 @@ def log_equipment_maintenance(self):
                 pass
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        # Log the maintenance
-        cursor.execute('''
-            INSERT INTO equipment_maintenance_log
-            (equipment_id, maintenance_type, description, performed_by, cost, parts_replaced, hours_at_service, next_service_hours, service_date)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (equip_id, fields['maint_var'].get(), fields['desc'].get("1.0", tk.END).strip(),
-              fields['performed'].get(), cost, fields['parts'].get(), hours_at, next_hours,
-              datetime.now().strftime("%Y-%m-%d")))
+            # Log the maintenance
+            cursor.execute('''
+                INSERT INTO equipment_maintenance_log
+                (equipment_id, maintenance_type, description, performed_by, cost, parts_replaced, hours_at_service, next_service_hours, service_date)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (equip_id, fields['maint_var'].get(), fields['desc'].get("1.0", tk.END).strip(),
+                  fields['performed'].get(), cost, fields['parts'].get(), hours_at, next_hours,
+                  datetime.now().strftime("%Y-%m-%d")))
 
-        # Update equipment record
-        next_due = None
-        if next_hours and hours_at:
-            # Calculate next service date based on average usage
-            next_due = (datetime.now() + timedelta(days=90)).strftime("%Y-%m-%d")
+            # Update equipment record
+            next_due = None
+            if next_hours and hours_at:
+                # Calculate next service date based on average usage
+                next_due = (datetime.now() + timedelta(days=90)).strftime("%Y-%m-%d")
 
-        cursor.execute('''
-            UPDATE equipment SET last_service_date = ?, next_service_due = ?
-            WHERE id = ?
-        ''', (datetime.now().strftime("%Y-%m-%d"), next_due, equip_id))
+            cursor.execute('''
+                UPDATE equipment SET last_service_date = ?, next_service_due = ?
+                WHERE id = ?
+            ''', (datetime.now().strftime("%Y-%m-%d"), next_due, equip_id))
 
-        conn.commit()
-        conn.close()
+            conn.commit()
+        finally:
+            conn.close()
 
         messagebox.showinfo(_t("cinema.common.success"), "Maintenance logged!")
         form.destroy()
@@ -338,10 +346,12 @@ def update_equipment_hours(self):
             return
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("UPDATE equipment SET hours_used = ? WHERE id = ?", (new_hours, equip_id))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE equipment SET hours_used = ? WHERE id = ?", (new_hours, equip_id))
+            conn.commit()
+        finally:
+            conn.close()
 
         messagebox.showinfo(_t("cinema.common.success"), "Hours updated!")
         dialog.destroy()
@@ -381,16 +391,18 @@ def view_equipment_history(self):
         tree.column(col, width=100)
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT service_date, maintenance_type, description, performed_by, cost, parts_replaced
-        FROM equipment_maintenance_log
-        WHERE equipment_id = ?
-        ORDER BY service_date DESC
-    ''', (equip_id,))
-    for row in cursor.fetchall():
-        tree.insert("", "end", values=(row[0], row[1], row[2][:30] if row[2] else "-", row[3] or "-", f"\u00a3{row[4]:.2f}" if row[4] else "-", row[5] or "-"))
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT service_date, maintenance_type, description, performed_by, cost, parts_replaced
+            FROM equipment_maintenance_log
+            WHERE equipment_id = ?
+            ORDER BY service_date DESC
+        ''', (equip_id,))
+        for row in cursor.fetchall():
+            tree.insert("", "end", values=(row[0], row[1], row[2][:30] if row[2] else "-", row[3] or "-", f"\u00a3{row[4]:.2f}" if row[4] else "-", row[5] or "-"))
+    finally:
+        conn.close()
 
     tree.pack(fill="both", expand=True, side="left")
     scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
@@ -407,10 +419,12 @@ def edit_equipment(self):
     equip_id = self.equip_tree.item(selected[0])['values'][0]
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM equipment WHERE id = ?", (equip_id,))
-    equip = cursor.fetchone()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM equipment WHERE id = ?", (equip_id,))
+        equip = cursor.fetchone()
+    finally:
+        conn.close()
 
     if not equip:
         messagebox.showerror(_t("cinema.common.error"), "Equipment not found")
@@ -449,13 +463,15 @@ def edit_equipment(self):
 
     def save():
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute('''
-            UPDATE equipment SET status = ?, next_service_due = ?, notes = ?
-            WHERE id = ?
-        ''', (status_var.get(), next_due_e.get() or None, notes_e.get(), equip_id))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE equipment SET status = ?, next_service_due = ?, notes = ?
+                WHERE id = ?
+            ''', (status_var.get(), next_due_e.get() or None, notes_e.get(), equip_id))
+            conn.commit()
+        finally:
+            conn.close()
 
         messagebox.showinfo(_t("cinema.common.success"), "Equipment updated!")
         form.destroy()
@@ -477,10 +493,12 @@ def mark_equipment_out_of_service(self):
         return
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("UPDATE equipment SET status = 'out_of_service' WHERE id = ?", (equip_id,))
-    conn.commit()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE equipment SET status = 'out_of_service' WHERE id = ?", (equip_id,))
+        conn.commit()
+    finally:
+        conn.close()
 
     messagebox.showinfo(_t("cinema.common.success"), "Equipment marked as out of service")
     self.show_equipment_page()
@@ -510,33 +528,35 @@ def show_maintenance_schedule(self):
         tree.column(col, width=100)
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT name, equipment_type, screen_number, next_service_due, hours_used, max_hours_before_service
-        FROM equipment
-        WHERE status = 'operational'
-        ORDER BY
-            CASE WHEN hours_used >= max_hours_before_service THEN 0
-                 WHEN next_service_due IS NOT NULL AND date(next_service_due) <= date('now', '+7 days') THEN 1
-                 WHEN next_service_due IS NOT NULL AND date(next_service_due) <= date('now', '+30 days') THEN 2
-                 ELSE 3 END,
-            next_service_due
-    ''')
-    for row in cursor.fetchall():
-        name, eq_type, screen, due_date, hours, max_hours = row
-        if hours >= max_hours:
-            priority = "CRITICAL"
-        elif due_date and datetime.strptime(due_date, "%Y-%m-%d") <= datetime.now():
-            priority = "OVERDUE"
-        elif due_date and datetime.strptime(due_date, "%Y-%m-%d") <= datetime.now() + timedelta(days=7):
-            priority = "HIGH"
-        elif due_date and datetime.strptime(due_date, "%Y-%m-%d") <= datetime.now() + timedelta(days=30):
-            priority = "MEDIUM"
-        else:
-            priority = "LOW"
+    try:
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT name, equipment_type, screen_number, next_service_due, hours_used, max_hours_before_service
+            FROM equipment
+            WHERE status = 'operational'
+            ORDER BY
+                CASE WHEN hours_used >= max_hours_before_service THEN 0
+                     WHEN next_service_due IS NOT NULL AND date(next_service_due) <= date('now', '+7 days') THEN 1
+                     WHEN next_service_due IS NOT NULL AND date(next_service_due) <= date('now', '+30 days') THEN 2
+                     ELSE 3 END,
+                next_service_due
+        ''')
+        for row in cursor.fetchall():
+            name, eq_type, screen, due_date, hours, max_hours = row
+            if hours >= max_hours:
+                priority = "CRITICAL"
+            elif due_date and datetime.strptime(due_date, "%Y-%m-%d") <= datetime.now():
+                priority = "OVERDUE"
+            elif due_date and datetime.strptime(due_date, "%Y-%m-%d") <= datetime.now() + timedelta(days=7):
+                priority = "HIGH"
+            elif due_date and datetime.strptime(due_date, "%Y-%m-%d") <= datetime.now() + timedelta(days=30):
+                priority = "MEDIUM"
+            else:
+                priority = "LOW"
 
-        tree.insert("", "end", values=(name, eq_type, screen or "-", due_date or "-", hours, max_hours, priority))
-    conn.close()
+            tree.insert("", "end", values=(name, eq_type, screen or "-", due_date or "-", hours, max_hours, priority))
+    finally:
+        conn.close()
 
     tree.pack(fill="both", expand=True, side="left")
     scrollbar = ttk.Scrollbar(schedule_frame, orient="vertical", command=tree.yview)

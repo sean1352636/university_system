@@ -12,18 +12,18 @@ from education_system.university_system.utils.logging.log_config import configur
 logger = configure_logging(name=__name__)
 
 # --- Core exports (used by tests, GUI, etc.) ---
-from .exceptions import (
+from education_system.university_system.modules.domain.academics.services.plagiarism.exceptions import (
     PlagiarismCheckerError,
     DatabaseError,
     FileProcessingError,
     IntegrationError,
 )
-from .nlp import download_nltk_data, NLTK_AVAILABLE, TEXTRACT_AVAILABLE
-from .db import get_safe_db_connection
-from .checker import PlagiarismChecker
+from education_system.university_system.modules.domain.academics.services.plagiarism.nlp import download_nltk_data, NLTK_AVAILABLE, TEXTRACT_AVAILABLE
+from education_system.university_system.modules.domain.academics.services.plagiarism.db import get_safe_db_connection
+from education_system.university_system.modules.domain.academics.services.plagiarism.checker import PlagiarismChecker
 
 # --- CLI functions ---
-from .cli import (
+from education_system.university_system.modules.domain.academics.services.plagiarism.cli import (
     safe_input,
     display_plagiarism_checker_menu,
     submit_document,
@@ -44,19 +44,19 @@ from .cli import (
 )
 
 # --- Setup & testing ---
-from .setup import (
+from education_system.university_system.modules.domain.academics.services.plagiarism.setup import (
     check_requirements,
     check_database,
     create_directories,
     setup_plagiarism_system,
 )
-from .sample_data import (
+from education_system.university_system.modules.domain.academics.services.plagiarism.sample_data import (
     create_sample_documents,
     create_ai_education_content,
     create_similar_ai_content,
     create_different_content,
 )
-from .tests import (
+from education_system.university_system.modules.domain.academics.services.plagiarism.tests import (
     test_document_repository,
     test_document_submission,
     test_plagiarism_check,

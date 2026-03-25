@@ -2,7 +2,7 @@
 
 import csv
 
-from ._imports import (
+from education_system.university_system.modules.services.gui.charity_shop_gui._imports import (
     tk, ttk, messagebox, filedialog, ScrolledText,
     datetime, json, sqlite3,
     DEFAULT_DB_PATH,
@@ -76,37 +76,29 @@ class RefundsMixin:
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
                 cursor = conn.cursor()
 
-                # Ensure table exists
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS charity_shop_transactions (
-                        transaction_id TEXT PRIMARY KEY,
-                        transaction_date TEXT NOT NULL,
-                        student_id TEXT,
-                        total_amount REAL NOT NULL,
-                        payment_method TEXT NOT NULL,
-                        status TEXT DEFAULT 'completed',
-                        items_json TEXT
-                    )
-                ''')
+                # Charity shop transactions now use unified 'transactions' table
 
                 search_term = refunds_search_var.get().strip()
                 if search_term:
                     query = '''
-                        SELECT transaction_id, transaction_date, student_id, total_amount,
+                        SELECT reference_number as transaction_id, created_at as transaction_date,
+                               customer_id as student_id, amount as total_amount,
                                payment_method, status
-                        FROM charity_shop_transactions
-                        WHERE transaction_id LIKE ? OR student_id LIKE ?
-                        ORDER BY transaction_date DESC
+                        FROM transactions
+                        WHERE source_type = 'charity_shop' AND (reference_number LIKE ? OR customer_id LIKE ?)
+                        ORDER BY created_at DESC
                         LIMIT 500
                     '''
                     search_pattern = f'%{search_term}%'
                     cursor.execute(query, (search_pattern, search_pattern))
                 else:
                     query = '''
-                        SELECT transaction_id, transaction_date, student_id, total_amount,
+                        SELECT reference_number as transaction_id, created_at as transaction_date,
+                               customer_id as student_id, amount as total_amount,
                                payment_method, status
-                        FROM charity_shop_transactions
-                        ORDER BY transaction_date DESC
+                        FROM transactions
+                        WHERE source_type = 'charity_shop'
+                        ORDER BY created_at DESC
                         LIMIT 500
                     '''
                     cursor.execute(query)
@@ -120,9 +112,9 @@ class RefundsMixin:
                         transaction_id,
                         trans_date,
                         student_id or 'Walk-in',
-                        f"\u00a3{amount:.2f}",
-                        payment_method,
-                        status.upper()
+                        f"£{float(amount or 0):.2f}",
+                        payment_method or 'N/A',
+                        (status or 'unknown').upper()
                     ))
 
                 conn.close()
@@ -169,9 +161,9 @@ class RefundsMixin:
                 cursor = conn.cursor()
 
                 cursor.execute('''
-                    SELECT student_id, payment_method
-                    FROM charity_shop_transactions
-                    WHERE transaction_id = ?
+                    SELECT customer_id as student_id, payment_method
+                    FROM transactions
+                    WHERE source_type = 'charity_shop' AND reference_number = ?
                 ''', (transaction_id,))
 
                 trans_data = cursor.fetchone()
@@ -201,37 +193,23 @@ class RefundsMixin:
 
                 # Update transaction status
                 cursor.execute('''
-                    UPDATE charity_shop_transactions
+                    UPDATE transactions
                     SET status = 'refunded'
-                    WHERE transaction_id = ?
+                    WHERE source_type = 'charity_shop' AND reference_number = ?
                 ''', (transaction_id,))
 
                 # Generate refund reference
                 refund_ref = f"CHARITY-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-                # Create refunds table if it doesn't exist
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS charity_shop_refunds (
-                        refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        transaction_id TEXT NOT NULL,
-                        refund_date TEXT NOT NULL,
-                        refund_amount REAL NOT NULL,
-                        refund_method TEXT NOT NULL,
-                        refund_reference TEXT UNIQUE,
-                        student_id TEXT,
-                        processed_by TEXT,
-                        notes TEXT,
-                        FOREIGN KEY (transaction_id) REFERENCES charity_shop_transactions (transaction_id)
-                    )
-                ''')
-
-                # Insert refund record
+                # Insert refund record into unified_refunds table
                 processed_by = self.current_user.get('username', 'System') if self.current_user else 'System'
                 cursor.execute('''
-                    INSERT INTO charity_shop_refunds
-                    (transaction_id, refund_date, refund_amount, refund_method, refund_reference, student_id, processed_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (transaction_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), amount, refund_method,
+                    INSERT INTO unified_refunds
+                    (source_type, reference_id, reference_type, refund_date, amount,
+                     refund_method, refund_reference, student_id, processed_by)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', ('charity_shop', transaction_id, 'transaction',
+                      datetime.now().strftime('%Y-%m-%d %H:%M:%S'), amount, refund_method,
                       refund_ref, student_id, processed_by))
 
                 conn.commit()
@@ -280,10 +258,11 @@ class RefundsMixin:
                 cursor = conn.cursor()
 
                 cursor.execute('''
-                    SELECT transaction_id, transaction_date, student_id, total_amount,
-                           payment_method, status, items_json
-                    FROM charity_shop_transactions
-                    WHERE transaction_id = ?
+                    SELECT reference_number as transaction_id, created_at as transaction_date,
+                           customer_id as student_id, amount as total_amount,
+                           payment_method, status, notes as items_json
+                    FROM transactions
+                    WHERE source_type = 'charity_shop' AND reference_number = ?
                 ''', (transaction_id,))
 
                 trans = cursor.fetchone()
@@ -475,52 +454,54 @@ TOTAL:              \u00a3{trans[3]:.2f}
 
             # Fallback: Direct database update with correct schema
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            # Check if student finance account exists and get account_id and current balance
-            cursor.execute('SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?', (student_id,))
-            account = cursor.fetchone()
-
-            if not account:
-                # Create account with refund amount
-                cursor.execute('''
-                    INSERT INTO student_finance_accounts (student_id, balance, created_at)
-                    VALUES (?, ?, ?)
-                ''', (student_id, amount, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-
-                # Get the newly created account_id
-                cursor.execute('SELECT account_id FROM student_finance_accounts WHERE student_id = ?', (student_id,))
+                # Check if student finance account exists and get account_id and current balance
+                cursor.execute('SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?', (student_id,))
                 account = cursor.fetchone()
-                account_id = account[0]
-                balance_before = 0.0
-                balance_after = amount
 
-                logger.info(f"Created new finance account for {student_id} with refund of \u00a3{amount:.2f}")
-            else:
-                account_id = account[0]
-                balance_before = account[1]
-                balance_after = balance_before + amount
+                if not account:
+                    # Create account with refund amount
+                    cursor.execute('''
+                        INSERT INTO student_finance_accounts (student_id, balance, created_at)
+                        VALUES (?, ?, ?)
+                    ''', (student_id, amount, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
-                # Update existing account
+                    # Get the newly created account_id
+                    cursor.execute('SELECT account_id FROM student_finance_accounts WHERE student_id = ?', (student_id,))
+                    account = cursor.fetchone()
+                    account_id = account[0]
+                    balance_before = 0.0
+                    balance_after = amount
+
+                    logger.info(f"Created new finance account for {student_id} with refund of \u00a3{amount:.2f}")
+                else:
+                    account_id = account[0]
+                    balance_before = account[1]
+                    balance_after = balance_before + amount
+
+                    # Update existing account
+                    cursor.execute('''
+                        UPDATE student_finance_accounts
+                        SET balance = ?, updated_at = CURRENT_TIMESTAMP
+                        WHERE student_id = ?
+                    ''', (balance_after, student_id))
+                    logger.info(f"Updated finance account for {student_id}: +\u00a3{amount:.2f}")
+
+                # Record transaction with correct schema
+                processed_by = self.current_user.get('username', 'System') if self.current_user else 'System'
                 cursor.execute('''
-                    UPDATE student_finance_accounts
-                    SET balance = ?, updated_at = CURRENT_TIMESTAMP
-                    WHERE student_id = ?
-                ''', (balance_after, student_id))
-                logger.info(f"Updated finance account for {student_id}: +\u00a3{amount:.2f}")
+                    INSERT INTO transactions
+                    (source_type, account_id, student_id, transaction_type, amount, balance_before, balance_after,
+                     description, reference_id, processed_by, created_at)
+                    VALUES ('student_finance', ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ''', (account_id, student_id, 'credit', amount, balance_before, balance_after,
+                      'Charity Shop Purchase Refund', refund_ref, processed_by))
 
-            # Record transaction with correct schema
-            processed_by = self.current_user.get('username', 'System') if self.current_user else 'System'
-            cursor.execute('''
-                INSERT INTO student_finance_transactions
-                (account_id, student_id, transaction_type, amount, balance_before, balance_after,
-                 description, reference_id, processed_by, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-            ''', (account_id, student_id, 'credit', amount, balance_before, balance_after,
-                  'Charity Shop Purchase Refund', refund_ref, processed_by))
-
-            conn.commit()
-            conn.close()
+                conn.commit()
+            finally:
+                conn.close()
             return True
 
         except Exception as e:
@@ -587,23 +568,8 @@ TOTAL:              \u00a3{trans[3]:.2f}
             logger.error(f"Error sending refund receipt: {e}")
 
     def _notify_charity_finance_gui(self, transaction_id, amount, method, refund_ref, student_id):
-        """Notify finance GUI about the refund"""
+        """Notify finance GUI about the refund - already recorded in unified_refunds."""
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-
-            # Insert into finance_refunds table (use 'amount' column name to match existing schema)
-            processed_by = self.current_user.get('username', 'System') if self.current_user else 'System'
-            cursor.execute('''
-                INSERT INTO finance_refunds
-                (transaction_id, refund_date, amount, refund_method, refund_reference,
-                 student_id, department, processed_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (transaction_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), amount, method,
-                  refund_ref, student_id, 'Charity Shop', processed_by))
-
-            conn.commit()
-            conn.close()
-
+            logger.info(f"Finance notified of charity shop refund: {refund_ref} for transaction {transaction_id}")
         except Exception as e:
             logger.error(f"Error notifying finance GUI: {e}")

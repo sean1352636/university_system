@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/batch_operations/export_ops.py
+# hypothesis_version: 6.151.9
+
+[' WHERE s.course = ?', '1', '2', '3', 'CS', 'DS', 'age_distribution', 'course_enrollment', 'csv', 'enrollment', 'gender_distribution', 'json', 'module_code', 'module_enrollment', 'module_name', 'registration_trends', 'utf-8', 'w', 'xlsx']

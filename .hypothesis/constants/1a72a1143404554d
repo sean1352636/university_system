@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/staff_hr/services/staff_hr_service.py
+# hypothesis_version: 6.151.9
+
+['active_goals', 'assigned_assets', 'current_clock_status', 'cycle_id', 'leave_balance', 'open', 'open_job_postings', 'pending', 'pending_training', 'profile', 'team_members', 'unread_announcements']

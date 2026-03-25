@@ -148,23 +148,8 @@ def init_gym_db():
                 )
             ''')
 
-            # Gym transactions
-            conn.execute('''
-                CREATE TABLE IF NOT EXISTS gym_transactions (
-                    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    reference TEXT UNIQUE NOT NULL,
-                    member_id INTEGER,
-                    user_id TEXT NOT NULL,
-                    transaction_type TEXT NOT NULL,
-                    amount DECIMAL(10,2) NOT NULL,
-                    payment_method TEXT,
-                    status TEXT DEFAULT 'completed',
-                    receipt_sent INTEGER DEFAULT 0,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    processed_by TEXT,
-                    FOREIGN KEY (member_id) REFERENCES gym_memberships(membership_id)
-                )
-            ''')
+            # NOTE: gym transactions now use the unified 'transactions' table
+            # with source_type = 'gym'
 
             # Gym attendance log
             conn.execute('''
@@ -585,10 +570,10 @@ class TransactionManager:
 
             with transaction() as conn:
                 conn.execute('''
-                    INSERT INTO gym_transactions
-                    (reference, member_id, user_id, transaction_type, amount,
+                    INSERT INTO transactions
+                    (source_type, reference_number, customer_id, user_id, transaction_type, amount,
                      payment_method, processed_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    VALUES ('gym', ?, ?, ?, ?, ?, ?, ?)
                 ''', (reference, member_id, user_id, transaction_type, amount,
                       payment_method, processed_by))
 
@@ -609,7 +594,7 @@ class TransactionManager:
         try:
             with get_connection() as conn:
                 cursor = conn.execute('''
-                    SELECT * FROM gym_transactions WHERE user_id = ?
+                    SELECT * FROM transactions WHERE source_type = 'gym' AND user_id = ?
                     ORDER BY created_at DESC LIMIT ?
                 ''', (user_id, limit))
                 columns = [desc[0] for desc in cursor.description]
@@ -635,7 +620,7 @@ class ReportManager:
                 check_ins = cursor.fetchone()[0]
 
                 cursor = conn.execute('''
-                    SELECT COALESCE(SUM(amount), 0) FROM gym_transactions WHERE DATE(created_at) = ?
+                    SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE source_type = 'gym' AND DATE(created_at) = ?
                 ''', (date,))
                 revenue = cursor.fetchone()[0]
 
@@ -682,8 +667,8 @@ class ReportManager:
 
             with get_connection() as conn:
                 cursor = conn.execute('''
-                    SELECT COALESCE(SUM(amount), 0) FROM gym_transactions
-                    WHERE strftime('%Y', created_at) = ? AND strftime('%m', created_at) = ?
+                    SELECT COALESCE(SUM(amount), 0) FROM transactions
+                    WHERE source_type = 'gym' AND strftime('%Y', created_at) = ? AND strftime('%m', created_at) = ?
                 ''', (str(year), f"{month:02d}"))
                 total_revenue = cursor.fetchone()[0]
 

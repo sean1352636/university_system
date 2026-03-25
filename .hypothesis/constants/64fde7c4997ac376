@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/transaction_manager/payment_search.py
+# hypothesis_version: 6.151.9
+
+[100, 120, ' AND p.amount <= ?', ' AND p.amount >= ?', ' AND p.status = ?', '*.*', '*.csv', '.csv', '950x750', '<Configure>', '<MouseWheel>', 'All files', 'Amount', 'Bank Transfer', 'CSV files', 'Card', 'Cash', 'Cheque', 'Date', 'Method', 'N/A', 'Online', 'Payment ID', 'Status', 'Student ID', 'Student Name', 'Transaction ID', 'all', 'both', 'center', 'completed', 'end', 'failed', 'headings', 'left', 'nw', 'pending', 'refunded', 'right', 'units', 'values', 'vertical', 'w', 'white', 'x', 'y']

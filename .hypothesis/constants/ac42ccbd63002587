@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/ai/ai_detector/__init__.py
+# hypothesis_version: 6.151.9
+
+['AIDetectionError', 'AIDetector', 'APIError', 'APIGateway', 'AdvancedMLTrainer', 'AdversarialDetector', 'BehavioralAnalyzer', 'BiasDetector', 'BlockchainAuditTrail', 'CitationVerifier', 'ComplianceManager', 'ConfigurationError', 'DatabaseError', 'DetectionMethod', 'DetectionResult', 'FederatedLearning', 'ML_AVAILABLE', 'MultiModalAnalyzer', 'OCR_AVAILABLE', 'OPENCV_AVAILABLE', 'PredictiveAnalytics', 'PrivacyError', 'PrivacyManager', 'REQUESTS_AVAILABLE', 'RealTimeProcessor', 'RiskLevel', 'SPACY_AVAILABLE', 'StudentSelfCheckTool', 'SubmissionMetadata', 'TemporalAnalyzer', 'ViolationType', 'VisualAnalyzer', 'logger', 'main', 'ultimate_demo']

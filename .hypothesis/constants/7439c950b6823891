@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/plagiarism/sample_data.py
+# hypothesis_version: 6.151.9
+
+['TEST_MODULE', 'content', 'different_paper.txt', 'filename', 'original_paper.txt', 'similar_paper.txt', 'text_files', 'title', 'txt', 'utf-8', 'w']

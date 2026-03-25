@@ -151,8 +151,9 @@ class ReportsDialog:
 
                 with open(filename, 'w', encoding='utf-8') as f:
                     f.write("Name,Date,End Date,Type,Description\n")
-                    for event in events:
-                        name = (event.get('name', '') or '').replace(',', ';')
+                    for row in events:
+                        event = dict(row)
+                        name = (event.get('name', '') or event.get('title', '') or '').replace(',', ';')
                         date = event.get('date') or event.get('date_start', '')
                         end_date = event.get('date_end', '')
                         etype = event.get('event_type', '')

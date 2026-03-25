@@ -7,7 +7,7 @@ from tkinter import ttk, messagebox, filedialog, simpledialog
 import csv
 from datetime import datetime
 
-from ._imports import sqlite3, DB_FILE, _t, EMAIL_AVAILABLE, send_email
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.reports._imports import sqlite3, DB_FILE, _t, EMAIL_AVAILABLE, send_email
 
 
 def export_report_csv(self, report_type, from_date, to_date):

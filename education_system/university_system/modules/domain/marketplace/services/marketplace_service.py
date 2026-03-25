@@ -13,7 +13,7 @@ import os
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 from education_system.university_system.modules.shared.utils.activity_logger import log_activity
 from education_system.university_system.modules.shared.constants import paths
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier, escape_like
 
 class MarketplaceService:
     """Service for student marketplace and exchanges."""
@@ -407,7 +407,7 @@ class MarketplaceService:
 
             if search_term:
                 query += " AND (title LIKE ? OR description LIKE ?)"
-                params.extend([f"%{search_term}%", f"%{search_term}%"])
+                params.extend([f"%{escape_like(search_term)}%", f"%{escape_like(search_term)}%"])
 
             query += " ORDER BY created_at DESC LIMIT ?"
             params.append(limit)
@@ -676,7 +676,7 @@ class MarketplaceService:
 
             if search_term:
                 query += " AND (title LIKE ? OR description LIKE ? OR address LIKE ?)"
-                params.extend([f"%{search_term}%"] * 3)
+                params.extend([f"%{escape_like(search_term)}%"] * 3)
 
             query += " ORDER BY created_at DESC LIMIT ?"
             params.append(limit)
@@ -815,7 +815,7 @@ class MarketplaceService:
 
             if search_term:
                 query += " AND (item_name LIKE ? OR description LIKE ?)"
-                params.extend([f"%{search_term}%", f"%{search_term}%"])
+                params.extend([f"%{escape_like(search_term)}%", f"%{escape_like(search_term)}%"])
 
             query += " ORDER BY created_at DESC LIMIT ?"
             params.append(limit)

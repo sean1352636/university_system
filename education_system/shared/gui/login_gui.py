@@ -117,7 +117,17 @@ class UniversalLoginWindow(tk.Tk):
         self._password_var = tk.StringVar()
         password_entry = ttk.Entry(card, textvariable=self._password_var, width=30,
                                    show="*", font=("Helvetica", 11))
-        password_entry.pack(fill="x", ipady=4, pady=(0, 20))
+        password_entry.pack(fill="x", ipady=4, pady=(0, 4))
+
+        # Show password toggle
+        self._show_pw_var = tk.BooleanVar()
+        def _toggle_pw():
+            password_entry.configure(show="" if self._show_pw_var.get() else "*")
+        tk.Checkbutton(
+            card, text="Show password", variable=self._show_pw_var,
+            command=_toggle_pw, bg=_CARD_BG, font=("Helvetica", 9),
+            activebackground=_CARD_BG,
+        ).pack(anchor="w", pady=(0, 12))
 
         # Bind Enter
         username_entry.bind("<Return>", lambda _: self._do_login())
@@ -145,6 +155,7 @@ class UniversalLoginWindow(tk.Tk):
     # ------------------------------------------------------------------
 
     def _do_login(self):
+        """Validate credentials and dispatch to MFA or system picker."""
         username = self._username_var.get().strip()
         password = self._password_var.get()
 
@@ -158,8 +169,8 @@ class UniversalLoginWindow(tk.Tk):
             self._error_var.set(str(exc))
             return
         except Exception as exc:
-            logger.error("Login error: %s", exc)
-            self._error_var.set(f"Unexpected error: {exc}")
+            logger.error("Login error: %s", exc, exc_info=True)
+            self._error_var.set("An unexpected error occurred. Please try again.")
             return
 
         # Handle MFA challenge
@@ -337,6 +348,7 @@ class UniversalLoginWindow(tk.Tk):
         ttk.Button(card, text="Back to Login", command=self._build_login_ui).pack(fill="x", pady=(10, 0))
 
     def _verify_mfa(self, user_id: int):
+        """Check the entered MFA code (TOTP or recovery) and proceed on success."""
         import hashlib
         from datetime import datetime
 
@@ -369,8 +381,14 @@ class UniversalLoginWindow(tk.Tk):
     #  System selection screen
     # ------------------------------------------------------------------
 
+    def _is_superadmin(self, user_info: dict) -> bool:
+        """Check if the user has admin access to all 4 systems."""
+        systems = user_info.get("systems", [])
+        admin_keys = {s["system_key"] for s in systems if s.get("role") == "admin"}
+        return admin_keys >= {"university", "college", "school", "primary"}
+
     def _on_login_success(self, user_info: dict):
-        """After login, show the system picker."""
+        """After login, show superadmin dashboard or system picker."""
         systems = user_info.get("systems", [])
 
         if not systems:
@@ -381,6 +399,15 @@ class UniversalLoginWindow(tk.Tk):
                 parent=self,
             )
             self._build_login_ui()
+            return
+
+        # Superadmin gets the full dashboard
+        if self._is_superadmin(user_info):
+            self.user_info = user_info
+            self.system_key = "__superadmin__"
+            self.system_role = "admin"
+            self.auth = self._auth
+            self.destroy()
             return
 
         # If user only has one system, go straight there

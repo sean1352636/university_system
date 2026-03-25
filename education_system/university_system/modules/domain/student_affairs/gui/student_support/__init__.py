@@ -1,15 +1,15 @@
 """Student Support GUI Package"""
-from .base import StudentSupportGUIBase
-from .dashboard import DashboardMixin
-from .search import SearchMixin
-from .ticket_forms import TicketFormsMixin
-from .ticket_detail import TicketDetailMixin
-from .ticket_actions import TicketActionsMixin
-from .content import ContentMixin
-from .admin import AdminMixin
-from .reports_export import ReportsExportMixin
-from .launcher import launch_student_support_gui, SupportPortalLauncher
-from .misc import MiscMixin
+from education_system.university_system.modules.domain.student_affairs.gui.student_support.base import StudentSupportGUIBase
+from education_system.university_system.modules.domain.student_affairs.gui.student_support.dashboard import DashboardMixin
+from education_system.university_system.modules.domain.student_affairs.gui.student_support.search import SearchMixin
+from education_system.university_system.modules.domain.student_affairs.gui.student_support.ticket_forms import TicketFormsMixin
+from education_system.university_system.modules.domain.student_affairs.gui.student_support.ticket_detail import TicketDetailMixin
+from education_system.university_system.modules.domain.student_affairs.gui.student_support.ticket_actions import TicketActionsMixin
+from education_system.university_system.modules.domain.student_affairs.gui.student_support.content import ContentMixin
+from education_system.university_system.modules.domain.student_affairs.gui.student_support.admin import AdminMixin
+from education_system.university_system.modules.domain.student_affairs.gui.student_support.reports_export import ReportsExportMixin
+from education_system.university_system.modules.domain.student_affairs.gui.student_support.launcher import launch_student_support_gui, SupportPortalLauncher
+from education_system.university_system.modules.domain.student_affairs.gui.student_support.misc import MiscMixin
 
 
 class StudentSupportGUI(

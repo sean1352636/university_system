@@ -41,7 +41,7 @@ except ImportError:
 
 
 
-from .base import ParentPortalGUI
+from education_system.university_system.modules.domain.academics.gui.parent_portal.base import ParentPortalGUI
 
 class AbsenceReportDialog:
     """Dialog for reporting absence with timetable selection"""
@@ -876,7 +876,7 @@ class ParentPortalCompat:
             print("You must be logged in to access the parent portal.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role') != 'parent':
             print("This function is only available for parent accounts.")
             return
         

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/config.py
+# hypothesis_version: 6.151.9
+
+[1.0, 2.0, 587, 65535, 65536, '\nAdvanced Settings:', '\nEmail Signature:', '\nSender Information:', '1', '2', '===================', 'Current signature:', 'Database Only', 'SMTP Sending', 'Teesside University', 'University System', 'boolean', 'config.current_mode', 'config.email_mode', 'config.smtp_settings', 'database_only_mode', 'email', 'email_signature', 'email_system_test', 'error', 'format', 'info', 'integer', 'max_threads', 'maximum', 'minimum', 'mode', 'mode_message', 'n', 'number', 'object', 'password', 'properties', 'r', 'required', 'save_password', 'send_delay', 'sender_email', 'sender_name', 'signature', 'smtp.gmail.com', 'smtp_port', 'smtp_server', 'string', 'templates_dir', 'tls_enabled', 'type', 'use_authentication', 'use_tls', 'username', 'utf-8', 'w', 'warning', 'y']

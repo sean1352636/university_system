@@ -20,7 +20,7 @@ class TestErrorLoggerModule:
 
     def test_error_logger_file_exists(self):
         """Test that error_logger file exists."""
-        logger_file = Path("university_system/utils/error_logger.py")
+        logger_file = Path(__file__).resolve().parents[4] / "utils" / "error_logger.py"
         assert logger_file.exists()
 
     def test_error_logger_imports(self):

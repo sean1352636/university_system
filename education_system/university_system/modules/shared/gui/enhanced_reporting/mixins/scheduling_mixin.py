@@ -1,6 +1,6 @@
 """Scheduling methods mixin for the enhanced reporting GUI."""
 
-from ..standalone.constants import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.standalone.constants import (
     tk, ttk, filedialog, messagebox,
     ScrolledText,
     threading, os, json, logging, time,
@@ -172,7 +172,7 @@ class SchedulingMixin:
             # Load available templates
             try:
                 if ENHANCED_AVAILABLE:
-                    from education_system.university_system.modules.domain.analytics.services.enhanced_reporting import get_available_templates
+                    from education_system.university_system.modules.shared.services.analytics.enhanced_reporting import load_templates as get_available_templates
                     templates = get_available_templates()
                     template_combo['values'] = list(templates.keys())
             except Exception:
@@ -237,7 +237,7 @@ class SchedulingMixin:
 
                     # Save to file
                     if ENHANCED_AVAILABLE:
-                        from education_system.university_system.modules.domain.analytics.services.enhanced_reporting import save_scheduled_reports
+                        from education_system.university_system.modules.shared.services.analytics.enhanced_reporting import save_scheduled_reports
                         save_scheduled_reports(self.scheduled_reports_data)
 
                     messagebox.showinfo("Success", "Schedule updated successfully!")

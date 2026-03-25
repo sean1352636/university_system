@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/services/financial_aid/aid_manager.py
+# hypothesis_version: 6.151.9
+
+['] = [', 'additional_info', 'approved', 'column', 'components', 'denied', 'dependent', 'dependents', 'grant', 'household_income', 'institutional', 'loan', 'package_id', 'pending', 's', 'scholarship', 'total_', 'under_review', 'work_study']

@@ -598,21 +598,23 @@ class TicketDetailMixin:
 
                 # Update ticket in database
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-                cursor = conn.cursor()
+                try:
+                    cursor = conn.cursor()
 
-                update_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    update_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-                cursor.execute('''
-                    UPDATE support_tickets
-                    SET title = ?, description = ?, category = ?, priority = ?,
-                        status = ?, tags = ?, last_updated_datetime = ?, updated_at = ?
-                    WHERE ticket_id = ?
-                ''', (new_title, new_description, edit_category_var.get(),
-                      edit_priority_var.get(), edit_status_var.get(), tags,
-                      update_time, update_time, ticket_id))
+                    cursor.execute('''
+                        UPDATE support_tickets
+                        SET title = ?, description = ?, category = ?, priority = ?,
+                            status = ?, tags = ?, last_updated_datetime = ?, updated_at = ?
+                        WHERE ticket_id = ?
+                    ''', (new_title, new_description, edit_category_var.get(),
+                          edit_priority_var.get(), edit_status_var.get(), tags,
+                          update_time, update_time, ticket_id))
 
-                conn.commit()
-                conn.close()
+                    conn.commit()
+                finally:
+                    conn.close()
 
                 # Log activity
                 if ACTIVITY_LOGGER_AVAILABLE:

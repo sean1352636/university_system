@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/reporting/financial_reports/scenario_planning.py
+# hypothesis_version: 6.151.9
+
+[0.05, 0.1, 0.15, 0.2, 0.3, 0.5, 0.7, 0.8, 0.86, 0.95, 0.97, 1.02, 1.1, 1.12, 1.2, 1.24, -50000, -20000, 100, 300, 1000, 3000, 5000, 8000, '-', '10% Fee Increase', '=', 'Baseline', 'Mild Downturn', 'Month', 'Net Benefit (£)', 'Return (%)', 'Revenue (£)', 'Risk Score', 'admin_cost', 'basic', 'blue', 'comprehensive', 'enrollment_impact', 'flexible', 'green', 'manage_finances', 'mild', 'moderate', 'offset points', 'orange', 'payment_delay', 'purple', 'red', 'severe', 'tight']

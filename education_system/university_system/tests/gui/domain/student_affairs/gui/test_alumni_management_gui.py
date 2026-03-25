@@ -50,8 +50,8 @@ def mock_db_connection():
 class TestAlumniGUIApp:
     """Test cases for AlumniGUIApp class"""
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
     def test_initialization_with_auth(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test GUI initialization with authentication"""
         with patch.object(AlumniGUIApp, 'create_widgets'), \
@@ -66,8 +66,8 @@ class TestAlumniGUIApp:
             assert gui.current_user == mock_auth.current_user
             assert gui.auth == mock_auth
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
     def test_initialization_without_auth(self, mock_permissions, mock_init_db, mock_root):
         """Test GUI initialization without authentication creates fallback user"""
         with patch.object(AlumniGUIApp, 'create_widgets'), \
@@ -78,8 +78,8 @@ class TestAlumniGUIApp:
             assert gui.current_user is not None
             assert gui.current_user['username'] == 'admin'
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
     def test_permission_checking(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test permission checking functionality"""
         with patch.object(AlumniGUIApp, 'create_widgets'), \
@@ -94,8 +94,8 @@ class TestAlumniGUIApp:
             # Test invalid permission
             assert gui.has_permission('invalid_permission') == True  # Admin has all
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
     def test_current_user_id_method(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test _current_user_id method"""
         with patch.object(AlumniGUIApp, 'create_widgets'), \
@@ -105,9 +105,9 @@ class TestAlumniGUIApp:
             user_id = gui._current_user_id()
             assert user_id == 'admin'
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.get_connection')
     def test_show_dashboard(self, mock_conn, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test dashboard display"""
         # Setup mock database
@@ -131,8 +131,8 @@ class TestAlumniGUIApp:
             gui.clear_content.assert_called_once()
             gui.update_status.assert_called()
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
     def test_show_register_alumni(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test alumni registration form display"""
         with patch.object(AlumniGUIApp, 'create_widgets'), \
@@ -147,8 +147,8 @@ class TestAlumniGUIApp:
             assert hasattr(gui, 'form_vars')
             assert isinstance(gui.form_vars, dict)
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
     def test_navigation_buttons_created(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test that navigation buttons are created"""
         with patch.object(AlumniGUIApp, 'create_widgets'), \
@@ -161,8 +161,8 @@ class TestAlumniGUIApp:
         assert hasattr(gui, 'show_view_alumni')
         assert hasattr(gui, 'show_update_alumni')
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
     def test_format_alumni_row(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test alumni row formatting for treeview"""
         with patch.object(AlumniGUIApp, 'create_widgets'), \
@@ -189,8 +189,8 @@ class TestAlumniGUIApp:
         assert formatted[2] == '2020'  # Graduation year
         assert formatted[3] == 'BSc Computer Science'  # Degree
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
     def test_create_sidebar(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test sidebar creation"""
         with patch.object(AlumniGUIApp, 'create_widgets', lambda self: None), \
@@ -200,15 +200,15 @@ class TestAlumniGUIApp:
         # Mock the parent frame
         parent = Mock()
 
-        with patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.ttk') as mock_ttk:
+        with patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.ttk') as mock_ttk:
             gui.create_sidebar(parent)
 
             # Should create frames and labels
             assert mock_ttk.Frame.called
             assert mock_ttk.Label.called
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
     def test_event_management_features(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test event management features exist"""
         with patch.object(AlumniGUIApp, 'create_widgets'), \
@@ -220,8 +220,8 @@ class TestAlumniGUIApp:
         assert hasattr(gui, 'show_view_events')
         assert hasattr(gui, 'show_event_checkin')
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
     def test_donation_features(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test donation features exist"""
         with patch.object(AlumniGUIApp, 'create_widgets'), \
@@ -233,8 +233,8 @@ class TestAlumniGUIApp:
         assert hasattr(gui, 'show_view_donations')
         assert hasattr(gui, 'show_campaigns')
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
     def test_mentorship_features(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test mentorship features exist"""
         with patch.object(AlumniGUIApp, 'create_widgets'), \
@@ -246,8 +246,8 @@ class TestAlumniGUIApp:
         assert hasattr(gui, 'show_view_mentorships')
         assert hasattr(gui, 'show_smart_matching')
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
     def test_communication_features(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test communication features exist"""
         with patch.object(AlumniGUIApp, 'create_widgets'), \
@@ -259,8 +259,8 @@ class TestAlumniGUIApp:
         assert hasattr(gui, 'show_forum')
         assert hasattr(gui, 'show_create_story')
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
     def test_networking_features(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test networking features exist"""
         with patch.object(AlumniGUIApp, 'create_widgets'), \
@@ -272,8 +272,8 @@ class TestAlumniGUIApp:
         assert hasattr(gui, 'show_connections')
         assert hasattr(gui, 'show_business_directory')
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
     def test_career_services_features(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test career services features exist"""
         with patch.object(AlumniGUIApp, 'create_widgets'), \
@@ -285,8 +285,8 @@ class TestAlumniGUIApp:
         assert hasattr(gui, 'show_post_job')
         assert hasattr(gui, 'show_career_counseling')
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
     def test_engagement_features(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test engagement features exist"""
         with patch.object(AlumniGUIApp, 'create_widgets'), \
@@ -298,8 +298,8 @@ class TestAlumniGUIApp:
         assert hasattr(gui, 'show_my_badges')
         assert hasattr(gui, 'show_recommendations')
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
     def test_reporting_features(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test reporting features exist"""
         with patch.object(AlumniGUIApp, 'create_widgets'), \
@@ -310,8 +310,8 @@ class TestAlumniGUIApp:
         assert hasattr(gui, 'show_generate_reports')
         assert hasattr(gui, 'show_analytics')
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
     def test_status_bar_updates(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test status bar update functionality"""
         with patch.object(AlumniGUIApp, 'create_widgets'), \
@@ -324,8 +324,8 @@ class TestAlumniGUIApp:
         # Should update status bar with timestamp
         assert gui.status_bar.config.called
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
     def test_clear_content(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test content clearing functionality"""
         with patch.object(AlumniGUIApp, 'create_widgets'), \
@@ -344,8 +344,8 @@ class TestAlumniGUIApp:
         widget1.destroy.assert_called_once()
         widget2.destroy.assert_called_once()
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
     def test_integration_services(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test integration services exist"""
         with patch.object(AlumniGUIApp, 'create_widgets'), \
@@ -356,9 +356,9 @@ class TestAlumniGUIApp:
         assert hasattr(gui, 'open_email_manager_gui')
         assert hasattr(gui, 'open_finance_gui')
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.messagebox')
     def test_database_error_handling(self, mock_messagebox, mock_permissions, mock_init_db,
                                      mock_root, mock_auth):
         """Test database error handling"""
@@ -371,8 +371,8 @@ class TestAlumniGUIApp:
         # Should show error message
         assert mock_messagebox.showerror.called
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
     def test_return_to_main_menu(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test return to main menu functionality"""
         with patch.object(AlumniGUIApp, 'create_widgets'), \
@@ -381,8 +381,8 @@ class TestAlumniGUIApp:
 
         assert hasattr(gui, 'return_to_main_menu')
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
     def test_photo_gallery_features(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test photo gallery features"""
         with patch.object(AlumniGUIApp, 'create_widgets'), \
@@ -394,8 +394,8 @@ class TestAlumniGUIApp:
         assert hasattr(gui, '_photo_file_paths')
         assert hasattr(gui, '_photo_storage_dir')
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
     def test_class_reunion_features(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test class reunion features exist"""
         with patch.object(AlumniGUIApp, 'create_widgets'), \
@@ -405,8 +405,8 @@ class TestAlumniGUIApp:
         # Should have class reunion methods
         assert hasattr(gui, 'show_class_reunions')
 
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
-    @patch('university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.init_alumni_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui.setup_alumni_permissions')
     def test_regional_chapter_features(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test regional chapter features exist"""
         with patch.object(AlumniGUIApp, 'create_widgets'), \

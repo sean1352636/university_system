@@ -6,14 +6,14 @@ from datetime import datetime
 
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 
-from .constants import (
+from education_system.university_system.modules.services.cli.cinema_cli.constants import (
     TICKET_TYPES, MEMBER_DISCOUNT, ACTIVITY_LOGGING, EMAIL_AVAILABLE,
 )
-from .utils import print_subheader, get_current_user
-from .screenings import view_screenings
-from .seats import select_seats, auto_select_seats, mark_seats_as_booked
-from .snacks import suggest_combo_for_party, add_snacks_to_order
-from .membership import get_user_membership, calculate_points_earned, award_points, redeem_points
+from education_system.university_system.modules.services.cli.cinema_cli.utils import print_subheader, get_current_user
+from education_system.university_system.modules.services.cli.cinema_cli.screenings import view_screenings
+from education_system.university_system.modules.services.cli.cinema_cli.seats import select_seats, auto_select_seats, mark_seats_as_booked
+from education_system.university_system.modules.services.cli.cinema_cli.snacks import suggest_combo_for_party, add_snacks_to_order
+from education_system.university_system.modules.services.cli.cinema_cli.membership import get_user_membership, calculate_points_earned, award_points, redeem_points
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ def send_booking_confirmation_email(user_email: str, booking_details: dict):
         return False
 
     try:
-        from .constants import send_email
+        from education_system.university_system.modules.services.cli.cinema_cli.constants import send_email
 
         subject = f"Cinema Booking Confirmation - {booking_details['booking_ref']}"
 
@@ -326,7 +326,7 @@ def book_tickets():
 
             # Log activity
             if ACTIVITY_LOGGING:
-                from .constants import log_activity
+                from education_system.university_system.modules.services.cli.cinema_cli.constants import log_activity
                 log_activity('create', 'cinema_booking',
                            booking_ref=booking_ref,
                            details={'movie': movie_title, 'amount': total_amount})

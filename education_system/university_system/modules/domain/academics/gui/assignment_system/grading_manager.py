@@ -504,61 +504,63 @@ class GradingManager:
             
             # Save to database
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            overall_feedback = self.overall_feedback_text.get(1.0, tk.END).strip()
-            
-            # Update main submission
-            cursor.execute('''
-            UPDATE assignment_submissions 
-            SET grade = ?, graded_by = ?, graded_date = ?, feedback = ?
-            WHERE id = ?
-            ''', (percentage, self.auth.current_user['id'], timestamp, overall_feedback, submission_id))
-            
-            # Save individual criterion grades
-            for criterion in criteria:
-                crit_id, name, desc, max_points = criterion
-                score = float(self.criteria_scores[crit_id].get() or 0)
-                feedback = self.criteria_feedback[crit_id].get(1.0, tk.END).strip()
-                
-                cursor.execute('''
-                INSERT INTO grades (submission_id, rubric_criteria_id, points_earned, max_points, 
-                                  percentage, feedback, graded_by, graded_date)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (submission_id, crit_id, score, max_points, 
-                      (score/max_points)*100, feedback, self.auth.current_user['id'], timestamp))
-            
-            conn.commit()
-
-            # Send grade notification email
             try:
-                # Get student email and assignment details
+                cursor = conn.cursor()
+
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                overall_feedback = self.overall_feedback_text.get(1.0, tk.END).strip()
+
+                # Update main submission
                 cursor.execute('''
-                SELECT s.email_address, a.title, a.module_code
-                FROM assignment_submissions sub
-                JOIN students s ON sub.student_id = s.student_id
-                JOIN assignments a ON sub.assignment_id = a.id
-                WHERE sub.id = ?
-                ''', (submission_id,))
-                result = cursor.fetchone()
+                UPDATE assignment_submissions 
+                SET grade = ?, graded_by = ?, graded_date = ?, feedback = ?
+                WHERE id = ?
+                ''', (percentage, self.auth.current_user['id'], timestamp, overall_feedback, submission_id))
 
-                if result:
-                    student_email, assignment_title, module_code = result
-                    from education_system.university_system.infrastructure.email.email_service import send_grade_notification
+                # Save individual criterion grades
+                for criterion in criteria:
+                    crit_id, name, desc, max_points = criterion
+                    score = float(self.criteria_scores[crit_id].get() or 0)
+                    feedback = self.criteria_feedback[crit_id].get(1.0, tk.END).strip()
+
+                    cursor.execute('''
+                    INSERT INTO grades (submission_id, rubric_criteria_id, points_earned, max_points, 
+                                      percentage, feedback, graded_by, graded_date)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (submission_id, crit_id, score, max_points, 
+                          (score/max_points)*100, feedback, self.auth.current_user['id'], timestamp))
+
+                conn.commit()
+
+                # Send grade notification email
+                try:
+                    # Get student email and assignment details
+                    cursor.execute('''
+                    SELECT s.email_address, a.title, a.module_code
+                    FROM assignment_submissions sub
+                    JOIN students s ON sub.student_id = s.student_id
+                    JOIN assignments a ON sub.assignment_id = a.id
+                    WHERE sub.id = ?
+                    ''', (submission_id,))
+                    result = cursor.fetchone()
+
+                    if result:
+                        student_email, assignment_title, module_code = result
+                        from education_system.university_system.infrastructure.email.email_service import send_grade_notification
+                        import logging
+                        send_grade_notification(
+                            student_email,
+                            assignment_title,
+                            module_code,
+                            f"{percentage:.1f}%",
+                            overall_feedback if overall_feedback else None
+                        )
+                except Exception as e:
                     import logging
-                    send_grade_notification(
-                        student_email,
-                        assignment_title,
-                        module_code,
-                        f"{percentage:.1f}%",
-                        overall_feedback if overall_feedback else None
-                    )
-            except Exception as e:
-                import logging
-                logging.warning(f"Failed to send grade notification email: {e}")
+                    logging.warning(f"Failed to send grade notification email: {e}")
 
-            conn.close()
+            finally:
+                conn.close()
 
             messagebox.showinfo("Success", f"Grade submitted: {percentage:.1f}% ({total_earned}/{total_possible})")
             
@@ -792,18 +794,20 @@ class GradingManager:
 
                     # Save to database
                     conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-                    cursor = conn.cursor()
+                    try:
+                        cursor = conn.cursor()
 
-                    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-                    cursor.execute('''
-                    UPDATE assignment_submissions
-                    SET grade = ?, graded_by = ?, graded_date = ?, feedback = ?
-                    WHERE id = ?
-                    ''', (percentage, self.auth.current_user['id'], timestamp, feedback, submission_id))
+                        cursor.execute('''
+                        UPDATE assignment_submissions
+                        SET grade = ?, graded_by = ?, graded_date = ?, feedback = ?
+                        WHERE id = ?
+                        ''', (percentage, self.auth.current_user['id'], timestamp, feedback, submission_id))
 
-                    conn.commit()
-                    conn.close()
+                        conn.commit()
+                    finally:
+                        conn.close()
 
                     messagebox.showinfo("Success", f"Grade submitted: {percentage:.1f}% ({score}/{max_marks})", parent=dialog)
                     dialog.destroy()

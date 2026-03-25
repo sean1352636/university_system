@@ -158,9 +158,13 @@ def view_accommodation_by_id(accommodation_id):
 
             # Get documents
             cursor.execute('''
-                SELECT * FROM accommodation_documents
-                WHERE accommodation_id = ?
-            ''', (accommodation_id,))
+                SELECT document_id as id, reference_id as accommodation_id,
+                       document_name, file_path as document_path,
+                       uploaded_by, upload_date as uploaded_at
+                FROM documents
+                WHERE source_type = 'accommodation' AND reference_id = ?
+                  AND reference_type = 'accommodation'
+            ''', (str(accommodation_id),))
 
             documents = cursor.fetchall()
 
@@ -475,7 +479,10 @@ def remove_accommodation():
                 cursor = conn.cursor()
 
                 # First remove any associated documents
-                cursor.execute('DELETE FROM accommodation_documents WHERE accommodation_id = ?', (accommodation_id,))
+                cursor.execute(
+                    "DELETE FROM documents WHERE source_type = 'accommodation'"
+                    " AND reference_id = ? AND reference_type = 'accommodation'",
+                    (str(accommodation_id),))
 
                 # Then remove the accommodation record
                 cursor.execute('DELETE FROM accommodations WHERE id = ?', (accommodation_id,))

@@ -46,7 +46,7 @@ class TestPayrollModule(unittest.TestCase):
             ('2024-01-17', '09:00', '17:00', '09:00:00', '17:00:00', 30),
         ]
 
-    @patch('university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
     @patch('builtins.input', return_value='2024-01-01')
     def test_calculate_weekly_payroll(self, mock_input, mock_get_conn):
         """Test weekly payroll calculation"""
@@ -68,7 +68,7 @@ class TestPayrollModule(unittest.TestCase):
 
         self.mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
     @patch('builtins.input', return_value='invalid-date')
     def test_calculate_weekly_payroll_invalid_date(self, mock_input, mock_get_conn):
         """Test weekly payroll with invalid date"""
@@ -84,7 +84,7 @@ class TestPayrollModule(unittest.TestCase):
         # Query should not be executed
         self.mock_cursor.execute.assert_not_called()
 
-    @patch('university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
     @patch('builtins.input', return_value='2024-01-01')
     def test_calculate_weekly_payroll_no_data(self, mock_input, mock_get_conn):
         """Test weekly payroll with no data"""
@@ -100,7 +100,7 @@ class TestPayrollModule(unittest.TestCase):
         # Should handle no data gracefully
         self.mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
     @patch('builtins.input', side_effect=['1', '2024'])
     def test_calculate_monthly_payroll(self, mock_input, mock_get_conn):
         """Test monthly payroll calculation"""
@@ -122,7 +122,7 @@ class TestPayrollModule(unittest.TestCase):
 
         self.mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
     @patch('builtins.input', side_effect=['12', '2024'])
     def test_calculate_monthly_payroll_december(self, mock_input, mock_get_conn):
         """Test monthly payroll for December (edge case)"""
@@ -139,7 +139,7 @@ class TestPayrollModule(unittest.TestCase):
         self.mock_cursor.execute.assert_called_once()
         self.mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
     @patch('builtins.input', side_effect=['13', '2024'])
     def test_calculate_monthly_payroll_invalid_month(self, mock_input, mock_get_conn):
         """Test monthly payroll with invalid month"""
@@ -154,7 +154,7 @@ class TestPayrollModule(unittest.TestCase):
         # Should handle invalid month gracefully
         self.mock_cursor.execute.assert_not_called()
 
-    @patch('university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
     @patch('builtins.input', side_effect=['0', '2024'])
     def test_calculate_monthly_payroll_month_zero(self, mock_input, mock_get_conn):
         """Test monthly payroll with month = 0"""
@@ -169,7 +169,7 @@ class TestPayrollModule(unittest.TestCase):
         # Should reject month 0
         self.mock_cursor.execute.assert_not_called()
 
-    @patch('university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
     @patch('builtins.input', side_effect=['abc', '2024'])
     def test_calculate_monthly_payroll_invalid_input(self, mock_input, mock_get_conn):
         """Test monthly payroll with non-numeric input"""
@@ -182,7 +182,7 @@ class TestPayrollModule(unittest.TestCase):
         # Connection should not be obtained
         mock_get_conn.assert_not_called()
 
-    @patch('university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
     @patch('builtins.input', side_effect=['STAFF001', '2024-01-01', '2024-01-07'])
     def test_calculate_individual_payroll(self, mock_input, mock_get_conn):
         """Test individual staff payroll calculation"""
@@ -208,7 +208,7 @@ class TestPayrollModule(unittest.TestCase):
 
         self.mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
     @patch('builtins.input', side_effect=['STAFF999', '2024-01-01', '2024-01-07'])
     def test_calculate_individual_payroll_staff_not_found(self, mock_input, mock_get_conn):
         """Test individual payroll for non-existent staff"""
@@ -226,7 +226,7 @@ class TestPayrollModule(unittest.TestCase):
         # Should only have one execute call (staff lookup)
         assert self.mock_cursor.execute.call_count == 1
 
-    @patch('university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
     @patch('builtins.input', side_effect=['STAFF001', '2024-01-01', '2024-01-07'])
     def test_calculate_individual_payroll_no_schedules(self, mock_input, mock_get_conn):
         """Test individual payroll with no schedule data"""
@@ -243,7 +243,7 @@ class TestPayrollModule(unittest.TestCase):
         # Should handle gracefully
         self.mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
     @patch('builtins.input', side_effect=['STAFF001', '2024-01-01', '2024-01-07'])
     def test_calculate_individual_payroll_with_actual_times(self, mock_input, mock_get_conn):
         """Test individual payroll with actual clock-in/out times"""
@@ -265,7 +265,7 @@ class TestPayrollModule(unittest.TestCase):
         # Should use actual times instead of scheduled
         self.mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
     @patch('builtins.input', side_effect=['STAFF001', '2024-01-01', '2024-01-07'])
     def test_calculate_individual_payroll_with_breaks(self, mock_input, mock_get_conn):
         """Test individual payroll correctly handles break time"""
@@ -288,7 +288,7 @@ class TestPayrollModule(unittest.TestCase):
         # 8 hours - 1 hour break = 7 hours paid
         self.mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.payroll.export_payroll_report')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.payroll.export_payroll_report')
     @patch('builtins.input', side_effect=['4', '5'])
     def test_payroll_calculations_menu_export(self, mock_input, mock_export):
         """Test payroll calculations menu - export option"""
@@ -322,7 +322,7 @@ class TestPayrollModule(unittest.TestCase):
         # Should handle invalid choice (no loop, just returns)
         assert mock_input.call_count == 1
 
-    @patch('university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
     @patch('builtins.input', return_value='2024-01-01')
     def test_calculate_weekly_payroll_null_hours(self, mock_input, mock_get_conn):
         """Test weekly payroll with NULL hours"""
@@ -344,7 +344,7 @@ class TestPayrollModule(unittest.TestCase):
         # Should handle NULL hours gracefully (treat as 0)
         self.mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
     @patch('builtins.input', side_effect=['1', '2024'])
     def test_calculate_monthly_payroll_null_rate(self, mock_input, mock_get_conn):
         """Test monthly payroll with NULL hourly rate"""
@@ -404,7 +404,7 @@ class TestPayrollCalculations(unittest.TestCase):
 class TestPayrollIntegration(unittest.TestCase):
     """Integration tests for payroll operations"""
 
-    @patch('university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.payroll.get_db_connection')
     def test_payroll_data_consistency(self, mock_get_conn):
         """Test payroll data consistency across different views"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.staff.payroll import (

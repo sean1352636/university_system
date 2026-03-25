@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/batch_operations/scheduling.py
+# hypothesis_version: 6.151.9
+
+['%H:%M', '.csv', '.xls', '.xlsx', '1', '2', '3', '4', '5', '587', 'FROM_EMAIL', 'From', 'SMTP_PASSWORD', 'SMTP_PORT', 'SMTP_SERVER', 'SMTP_USERNAME', 'Subject', 'To', 'batch_notification', 'localhost', 'message', 'plain', 'processed']

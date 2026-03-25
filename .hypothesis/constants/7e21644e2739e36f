@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/ai/university_chatbot/recommendation_engine.py
+# hypothesis_version: 6.151.9
+
+[0.0, 0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.7, 2.0, 2.3, 2.5, 2.7, 3.0, 3.3, 3.5, 3.7, 4.0, ',', 'A', 'A+', 'A-', 'B', 'B+', 'B-', 'C', 'C+', 'C-', 'D', 'F', 'advanced', 'beginner', 'core', 'course_code', 'course_name', 'credits', 'difficulty', 'error', 'gpa', 'grade_points', 'reasons', 'recommendation_score', 'semester', 'total_credits', 'type']

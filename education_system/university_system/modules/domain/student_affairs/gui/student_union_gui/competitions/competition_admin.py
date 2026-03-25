@@ -285,27 +285,29 @@ class UpdateCompetitionScoresDialog:
             comp_id = self.comp_data[selected_index][0]
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('''
-            SELECT DISTINCT c.club_id, c.club_name,
-                   COALESCE(AVG(cp.score), 0) as avg_score,
-                   MIN(cp.rank_position) as rank_pos
-            FROM student_clubs c
-            LEFT JOIN competition_participants cp ON c.club_id = cp.club_id AND cp.competition_id = ?
-            WHERE c.club_id IN (SELECT DISTINCT club_id FROM competition_participants WHERE competition_id = ?)
-            GROUP BY c.club_id, c.club_name
-            ORDER BY rank_pos, avg_score DESC
-            ''', (comp_id, comp_id))
+                cursor.execute('''
+                SELECT DISTINCT c.club_id, c.club_name,
+                       COALESCE(AVG(cp.score), 0) as avg_score,
+                       MIN(cp.rank_position) as rank_pos
+                FROM student_clubs c
+                LEFT JOIN competition_participants cp ON c.club_id = cp.club_id AND cp.competition_id = ?
+                WHERE c.club_id IN (SELECT DISTINCT club_id FROM competition_participants WHERE competition_id = ?)
+                GROUP BY c.club_id, c.club_name
+                ORDER BY rank_pos, avg_score DESC
+                ''', (comp_id, comp_id))
 
-            participants = cursor.fetchall()
+                participants = cursor.fetchall()
 
-            for p in participants:
-                self.participants_tree.insert('', 'end', values=(
-                    p[0], p[1], f"{p[2]:.2f}", p[3] or "TBD"
-                ))
+                for p in participants:
+                    self.participants_tree.insert('', 'end', values=(
+                        p[0], p[1], f"{p[2]:.2f}", p[3] or "TBD"
+                    ))
 
-            conn.close()
+            finally:
+                conn.close()
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Failed to load participants: {str(e)}")
 
@@ -333,17 +335,19 @@ class UpdateCompetitionScoresDialog:
             comp_id = self.comp_data[selected_index][0]
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            # Update all participants from this club in this competition
-            cursor.execute('''
-            UPDATE competition_participants
-            SET score = ?, rank_position = ?
-            WHERE competition_id = ? AND club_id = ?
-            ''', (score, rank, comp_id, club_id))
+                # Update all participants from this club in this competition
+                cursor.execute('''
+                UPDATE competition_participants
+                SET score = ?, rank_position = ?
+                WHERE competition_id = ? AND club_id = ?
+                ''', (score, rank, comp_id, club_id))
 
-            conn.commit()
-            conn.close()
+                conn.commit()
+            finally:
+                conn.close()
 
             messagebox.showinfo("Success", "Score updated successfully!")
             self.on_competition_selected()
@@ -363,29 +367,31 @@ class UpdateCompetitionScoresDialog:
             comp_id = self.comp_data[selected_index][0]
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            # Get all clubs with scores, ordered by score
-            cursor.execute('''
-            SELECT DISTINCT club_id, AVG(score) as avg_score
-            FROM competition_participants
-            WHERE competition_id = ? AND score IS NOT NULL
-            GROUP BY club_id
-            ORDER BY avg_score DESC
-            ''')
-
-            clubs = cursor.fetchall()
-
-            # Assign ranks
-            for rank, (club_id, score) in enumerate(clubs, 1):
+                # Get all clubs with scores, ordered by score
                 cursor.execute('''
-                UPDATE competition_participants
-                SET rank_position = ?
-                WHERE competition_id = ? AND club_id = ?
-                ''', (rank, comp_id, club_id))
+                SELECT DISTINCT club_id, AVG(score) as avg_score
+                FROM competition_participants
+                WHERE competition_id = ? AND score IS NOT NULL
+                GROUP BY club_id
+                ORDER BY avg_score DESC
+                ''')
 
-            conn.commit()
-            conn.close()
+                clubs = cursor.fetchall()
+
+                # Assign ranks
+                for rank, (club_id, score) in enumerate(clubs, 1):
+                    cursor.execute('''
+                    UPDATE competition_participants
+                    SET rank_position = ?
+                    WHERE competition_id = ? AND club_id = ?
+                    ''', (rank, comp_id, club_id))
+
+                conn.commit()
+            finally:
+                conn.close()
 
             messagebox.showinfo("Success", f"Ranks calculated and assigned for {len(clubs)} clubs!")
             self.on_competition_selected()

@@ -567,7 +567,7 @@ def seed_alumni(cursor: sqlite3.Cursor) -> int:
     )
     count += len(ach_rows)
 
-    # --- alumni_events ---
+    # --- unified_events (alumni source_type) ---
     event_rows = []
     events = [
         ("Annual Alumni Gala", "social", "Grand Hall, University Campus"),
@@ -590,14 +590,15 @@ def seed_alumni(cursor: sqlite3.Cursor) -> int:
             None, "admin", now,
             _rand_date("2026-02-01", d),
             1 if i > 3 else 0,
+            "alumni",
         ))
     cursor.executemany(
-        "INSERT OR IGNORE INTO alumni_events "
-        "(event_name, event_date, event_location, event_description, "
-        "registration_required, max_attendees, event_fee, payment_required, "
+        "INSERT OR IGNORE INTO unified_events "
+        "(title, start_datetime, location, description, "
+        "registration_required, max_capacity, event_fee, payment_required, "
         "event_type, virtual_link, qr_code_path, created_by, created_date, "
-        "registration_deadline, waitlist_enabled) "
-        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", event_rows
+        "registration_deadline, waitlist_enabled, source_type) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", event_rows
     )
     count += len(event_rows)
 
@@ -613,9 +614,9 @@ def seed_alumni(cursor: sqlite3.Cursor) -> int:
             None,
         ))
     cursor.executemany(
-        "INSERT OR IGNORE INTO alumni_event_registrations "
-        "(event_id, alumni_id, num_guests, registration_date, payment_status, attended) "
-        "VALUES (?,?,?,?,?,?)", reg_rows
+        "INSERT OR IGNORE INTO unified_event_registrations "
+        "(event_id, user_id, num_guests, registration_date, payment_status, attendance_status, user_type) "
+        "VALUES (?,?,?,?,?,?,?)", [(r[0], str(r[1]), r[2], r[3], r[4], 'attended' if r[5] else 'registered', 'alumni') for r in reg_rows]
     )
     count += len(reg_rows)
 

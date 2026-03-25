@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/student_union/clubs/club_management/membership.py
+# hypothesis_version: 6.151.9
+
+[100, '\nYour clubs:', '%Y-%m-%d', '-', '=', 'Invalid club ID.', 'Invalid selection.', 'MEMBERS:', 'Member', 'No members found.', 'OFFICERS:', 'President', 'Secretary', 'Treasurer', 'id', 'join_clubs']

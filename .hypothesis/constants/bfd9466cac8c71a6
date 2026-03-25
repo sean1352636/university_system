@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/analytics/advanced_search/admin.py
+# hypothesis_version: 6.151.9
+
+['\n👥 USER PERMISSIONS:', '-', '1', '2', '2. Add User', '3', '4', '4. Remove User', '=', 'Enter User ID: ', 'No audit log found.', 'No changes made.', 'Removal cancelled.', 'User not found.', 'r', 'search_audit.log', 'y']

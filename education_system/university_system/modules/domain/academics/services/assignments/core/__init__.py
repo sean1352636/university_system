@@ -1,5 +1,5 @@
-from .database import DatabaseMixin
-from .permissions import PermissionsMixin
-from .utils import UtilsMixin
+from education_system.university_system.modules.domain.academics.services.assignments.core.database import DatabaseMixin
+from education_system.university_system.modules.domain.academics.services.assignments.core.permissions import PermissionsMixin
+from education_system.university_system.modules.domain.academics.services.assignments.core.utils import UtilsMixin
 
 __all__ = ['DatabaseMixin', 'PermissionsMixin', 'UtilsMixin']

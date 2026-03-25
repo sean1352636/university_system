@@ -4,7 +4,7 @@ import logging
 
 from education_system.university_system.infrastructure.database.db import get_connection
 
-from .utils import print_subheader
+from education_system.university_system.modules.services.cli.cinema_cli.utils import print_subheader
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 def view_screenings():
     """View available screenings"""
     try:
-        from .movies import view_movies
+        from education_system.university_system.modules.services.cli.cinema_cli.movies import view_movies
         view_movies()
 
         movie_id = input("\n🎬 Enter movie ID to view screenings (0 to cancel): ").strip()

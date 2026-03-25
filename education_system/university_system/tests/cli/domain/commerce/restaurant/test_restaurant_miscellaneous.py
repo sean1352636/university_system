@@ -44,7 +44,7 @@ def test_db():
 class TestGetDBConnection:
     """Test database connection function"""
 
-    @patch('university_system.modules.core.services.restaurant_misc.connection.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.connection.get_db_connection')
     def test_get_db_connection_success(self, mock_get_conn, test_db):
         """Test successful database connection"""
         conn = sqlite3.connect(test_db)

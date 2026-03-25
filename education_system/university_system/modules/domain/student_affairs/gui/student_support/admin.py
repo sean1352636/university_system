@@ -1,3 +1,4 @@
+from education_system.university_system.core.sql_safety import escape_like
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import tkinter.font as tkFont
@@ -276,18 +277,20 @@ class AdminMixin:
 
             # Load from database
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
+            try:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
 
-            cursor.execute('''
-                SELECT template_id, name, category, priority, created_by,
-                       created_datetime, usage_count
-                FROM ticket_templates
-                ORDER BY created_datetime DESC
-            ''')
+                cursor.execute('''
+                    SELECT template_id, name, category, priority, created_by,
+                           created_datetime, usage_count
+                    FROM ticket_templates
+                    ORDER BY created_datetime DESC
+                ''')
 
-            templates = cursor.fetchall()
-            conn.close()
+                templates = cursor.fetchall()
+            finally:
+                conn.close()
 
             # Add database templates to tree
             for template in templates:
@@ -344,18 +347,20 @@ class AdminMixin:
 
             # Load from database
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
+            try:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
 
-            cursor.execute('''
-                SELECT template_id, name, subject, category, created_by,
-                       created_datetime, usage_count
-                FROM response_templates
-                ORDER BY created_datetime DESC
-            ''')
+                cursor.execute('''
+                    SELECT template_id, name, subject, category, created_by,
+                           created_datetime, usage_count
+                    FROM response_templates
+                    ORDER BY created_datetime DESC
+                ''')
 
-            templates = cursor.fetchall()
-            conn.close()
+                templates = cursor.fetchall()
+            finally:
+                conn.close()
 
             # Add to tree
             for template in templates:
@@ -844,19 +849,21 @@ class AdminMixin:
 
             # Load from database
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
+            try:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
 
-            # Build query based on filters
-            show_unpublished = self.kb_show_all_var.get()
-            if show_unpublished:
-                query = 'SELECT * FROM kb_articles ORDER BY created_datetime DESC'
-            else:
-                query = 'SELECT * FROM kb_articles WHERE is_published = 1 ORDER BY created_datetime DESC'
+                # Build query based on filters
+                show_unpublished = self.kb_show_all_var.get()
+                if show_unpublished:
+                    query = 'SELECT * FROM kb_articles ORDER BY created_datetime DESC'
+                else:
+                    query = 'SELECT * FROM kb_articles WHERE is_published = 1 ORDER BY created_datetime DESC'
 
-            cursor.execute(query)
-            articles = cursor.fetchall()
-            conn.close()
+                cursor.execute(query)
+                articles = cursor.fetchall()
+            finally:
+                conn.close()
 
             # Add to tree
             for article in articles:
@@ -891,28 +898,30 @@ class AdminMixin:
 
             # Search in database
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
+            try:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
 
-            search_query = f"%{query}%"
-            show_unpublished = self.kb_show_all_var.get()
+                search_query = f"%{escape_like(query)}%"
+                show_unpublished = self.kb_show_all_var.get()
 
-            if show_unpublished:
-                cursor.execute('''
-                    SELECT * FROM kb_articles
-                    WHERE title LIKE ? OR content LIKE ? OR category LIKE ? OR search_keywords LIKE ?
-                    ORDER BY created_datetime DESC
-                ''', (search_query, search_query, search_query, search_query))
-            else:
-                cursor.execute('''
-                    SELECT * FROM kb_articles
-                    WHERE (title LIKE ? OR content LIKE ? OR category LIKE ? OR search_keywords LIKE ?)
-                    AND is_published = 1
-                    ORDER BY created_datetime DESC
-                ''', (search_query, search_query, search_query, search_query))
+                if show_unpublished:
+                    cursor.execute('''
+                        SELECT * FROM kb_articles
+                        WHERE title LIKE ? OR content LIKE ? OR category LIKE ? OR search_keywords LIKE ?
+                        ORDER BY created_datetime DESC
+                    ''', (search_query, search_query, search_query, search_query))
+                else:
+                    cursor.execute('''
+                        SELECT * FROM kb_articles
+                        WHERE (title LIKE ? OR content LIKE ? OR category LIKE ? OR search_keywords LIKE ?)
+                        AND is_published = 1
+                        ORDER BY created_datetime DESC
+                    ''', (search_query, search_query, search_query, search_query))
 
-            articles = cursor.fetchall()
-            conn.close()
+                articles = cursor.fetchall()
+            finally:
+                conn.close()
 
             # Add to tree
             for article in articles:
@@ -1680,7 +1689,7 @@ class AdminMixin:
 
                 if search:
                     conditions.append("(LOWER(name) LIKE ? OR LOWER(description_template) LIKE ?)")
-                    like_term = f"%{search.lower()}%"
+                    like_term = f"%{escape_like(search.lower())}%"
                     params.extend([like_term, like_term])
 
                 if conditions:

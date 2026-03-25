@@ -178,7 +178,7 @@ class TestAwardPointsToStudent:
 
     @patch('builtins.print')
     @patch('builtins.input', side_effect=['S12345', '50', 'Event Attendance', 'Attended Tech Talk'])
-    @patch('university_system.modules.core.services.student_union_misc.points.check_and_award_badges')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.points.check_and_award_badges')
     def test_award_points_success(self, mock_check_badges, mock_input, mock_print, mock_cursor, mock_conn):
         """Test successfully awarding points to a student."""
         mock_cursor.fetchone.side_effect = [

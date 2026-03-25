@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/email/__init__.py
+# hypothesis_version: 6.151.9
+
+['EmailGUI', 'EmailManagerGUI', 'email_scheduler_main']

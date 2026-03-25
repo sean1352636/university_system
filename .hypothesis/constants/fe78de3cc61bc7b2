@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/housing/gui/housing_accommodation_gui/main_gui.py
+# hypothesis_version: 6.151.9
+
+['#f0f0f0', '10', '1400x900', '6 6 6 6', 'Arial', 'Error', 'Student Dashboard', '__main__', 'admin', 'bold', 'ew', 'housing.main_title', 'housing.menu_classic', 'housing.menu_reports', 'housing.window_title', 'id', 'red', 'role', 'username', 'view_accommodations', 'view_own_record', 'x']

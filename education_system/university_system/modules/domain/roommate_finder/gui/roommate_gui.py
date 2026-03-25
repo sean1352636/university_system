@@ -15,12 +15,12 @@ from education_system.university_system.modules.domain.roommate_finder.services.
 class RoommateFinderGUI:
     """Main GUI for Roommate Finder System"""
 
-    def __init__(self, parent):
+    def __init__(self, parent, auth=None):
         self.root = tk.Toplevel(parent)
         self.root.title("Roommate Finder")
         self.root.geometry("1200x800")
 
-        self.auth = get_auth()
+        self.auth = auth or get_auth()
         self.service = RoommateService()
 
         # Store current profile

@@ -33,16 +33,18 @@ class TemplatesMixin:
             }
 
             conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('''
-            INSERT INTO assignment_templates (name, description, template_data, category, created_by, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ''', (name, description, json.dumps(template_data), category,
-                  self.auth.current_user['id'], datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                cursor.execute('''
+                INSERT INTO assignment_templates (name, description, template_data, category, created_by, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ''', (name, description, json.dumps(template_data), category,
+                      self.auth.current_user['id'], datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
-            conn.commit()
-            conn.close()
+                conn.commit()
+            finally:
+                conn.close()
 
             print(f"Template '{name}' created successfully!")
 

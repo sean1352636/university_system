@@ -7,7 +7,7 @@ from tkinter import ttk, messagebox
 from datetime import datetime
 from education_system.university_system.modules.shared.utils.i18n import get_text as _
 
-from .constants import (
+from education_system.university_system.modules.domain.academics.gui.library.fines.constants import (
     ORIGINAL_LIBRARY_AVAILABLE,
     FINANCE_ACCOUNT_AVAILABLE,
     EMAIL_SERVICE_AVAILABLE,
@@ -110,30 +110,34 @@ def refund_fine_dialog(self):
             # Build search query
             if search_term:
                 cursor.execute('''
-                    SELECT lfp.user_id,
+                    SELECT p.student_id,
                            s.first_name, s.last_name, s.email_address,
-                           SUM(lfp.payment_amount) as total_paid,
-                           SUM(COALESCE(lfp.refund_amount, 0)) as total_refunded,
-                           COUNT(DISTINCT lfp.payment_id) as payment_count
-                    FROM library_fine_payments lfp
-                    JOIN students s ON lfp.user_id = s.student_id
-                    WHERE lfp.status = 'completed'
-                    AND (lfp.user_id LIKE ? OR s.first_name LIKE ? OR s.last_name LIKE ? OR s.email_address LIKE ?)
-                    GROUP BY lfp.user_id, s.first_name, s.last_name, s.email_address
+                           SUM(p.amount) as total_paid,
+                           COALESCE((SELECT SUM(ur.amount) FROM unified_refunds ur
+                                     WHERE ur.student_id = p.student_id AND ur.source_type = 'library'), 0) as total_refunded,
+                           COUNT(DISTINCT p.payment_id) as payment_count
+                    FROM payments p
+                    JOIN students s ON p.student_id = s.student_id
+                    WHERE p.source_type = 'library'
+                    AND p.status = 'completed'
+                    AND (p.student_id LIKE ? OR s.first_name LIKE ? OR s.last_name LIKE ? OR s.email_address LIKE ?)
+                    GROUP BY p.student_id, s.first_name, s.last_name, s.email_address
                     HAVING (total_paid - total_refunded) > 0
                     ORDER BY s.last_name, s.first_name
                 ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%', f'%{search_term}%'))
             else:
                 cursor.execute('''
-                    SELECT lfp.user_id,
+                    SELECT p.student_id,
                            s.first_name, s.last_name, s.email_address,
-                           SUM(lfp.payment_amount) as total_paid,
-                           SUM(COALESCE(lfp.refund_amount, 0)) as total_refunded,
-                           COUNT(DISTINCT lfp.payment_id) as payment_count
-                    FROM library_fine_payments lfp
-                    JOIN students s ON lfp.user_id = s.student_id
-                    WHERE lfp.status = 'completed'
-                    GROUP BY lfp.user_id, s.first_name, s.last_name, s.email_address
+                           SUM(p.amount) as total_paid,
+                           COALESCE((SELECT SUM(ur.amount) FROM unified_refunds ur
+                                     WHERE ur.student_id = p.student_id AND ur.source_type = 'library'), 0) as total_refunded,
+                           COUNT(DISTINCT p.payment_id) as payment_count
+                    FROM payments p
+                    JOIN students s ON p.student_id = s.student_id
+                    WHERE p.source_type = 'library'
+                    AND p.status = 'completed'
+                    GROUP BY p.student_id, s.first_name, s.last_name, s.email_address
                     HAVING (total_paid - total_refunded) > 0
                     ORDER BY s.last_name, s.first_name
                 ''')
@@ -215,17 +219,22 @@ def _show_user_refund_details(self, user_id):
             cursor = conn.cursor()
             print("Database connection successful")
 
-            # Get user's paid fines that can be refunded from library_fine_payments table
+            # Get user's paid fines that can be refunded from payments table
             print(f"Querying payments for user {user_id}...")
             cursor.execute('''
-                SELECT lfp.payment_id, lfp.loan_id, lfp.book_id, lfp.book_title,
-                       lfp.payment_amount, lfp.payment_method, lfp.payment_date,
-                       lfp.refund_amount
-                FROM library_fine_payments lfp
-                WHERE lfp.user_id = ?
-                AND lfp.status = 'completed'
-                AND (lfp.payment_amount - COALESCE(lfp.refund_amount, 0)) > 0
-                ORDER BY lfp.payment_date DESC
+                SELECT p.payment_id, p.reference_id, NULL as book_id, p.notes,
+                       p.amount,  p.payment_method, p.payment_date,
+                       COALESCE((SELECT SUM(ur.amount) FROM unified_refunds ur
+                                 WHERE ur.source_type = 'library'
+                                 AND ur.reference_id = CAST(p.payment_id AS TEXT)), 0) as refund_amount
+                FROM payments p
+                WHERE p.student_id = ?
+                AND p.source_type = 'library'
+                AND p.status = 'completed'
+                AND (p.amount - COALESCE((SELECT SUM(ur.amount) FROM unified_refunds ur
+                                          WHERE ur.source_type = 'library'
+                                          AND ur.reference_id = CAST(p.payment_id AS TEXT)), 0)) > 0
+                ORDER BY p.payment_date DESC
             ''', (user_id,))
 
             paid_fines = cursor.fetchall()
@@ -278,12 +287,14 @@ def _show_user_refund_details(self, user_id):
             fines_tree.column('Date', width=150, anchor='center')
 
             print(f"Populating tree with {len(paid_fines)} payments...")
-            for payment_id, loan_id, book_id, book_title, payment_amount, payment_method, payment_date, refund_amount in paid_fines:
+            for payment_id, loan_id, book_id, notes, payment_amount, payment_method, payment_date, refund_amount in paid_fines:
                 refund_amount = refund_amount or 0.0
                 available = payment_amount - refund_amount
+                # Extract book title from notes field
+                book_title = notes[:30] if notes else 'N/A'
                 print(f"  - Payment {payment_id}: \u00a3{available:.2f} available")
                 fines_tree.insert('', 'end', values=(
-                    payment_id, loan_id, book_title[:30] if book_title else 'N/A',
+                    payment_id, loan_id, book_title,
                     f"\u00a3{payment_amount:.2f}", f"\u00a3{refund_amount:.2f}", f"\u00a3{available:.2f}",
                     payment_method, payment_date
                 ))
@@ -435,30 +446,25 @@ def _process_library_fine_refund(self, user_id, payment_id, loan_id, book_title,
                 conn.close()
                 return False
 
-        # Update library_fine_payments table with refund information
+        # Record refund in unified_refunds table
+        processed_by = get_current_user_id() if ORIGINAL_LIBRARY_AVAILABLE else 'System'
         cursor.execute('''
-            UPDATE library_fine_payments
-            SET refund_amount = COALESCE(refund_amount, 0) + ?,
-                refunded_date = ?,
-                refunded_by = ?,
-                refund_reason = CASE
-                    WHEN refund_reason IS NULL THEN ?
-                    ELSE refund_reason || '; ' || ?
-                END,
-                notes = CASE
-                    WHEN notes IS NULL THEN ?
-                    ELSE notes || '; ' || ?
-                END
-            WHERE payment_id = ?
+            INSERT INTO unified_refunds
+            (source_type, reference_type, reference_id, student_id, amount,
+             currency, refund_type, refund_method, refund_reference, reason,
+             status, department, processed_by, requested_by, notes, created_at)
+            VALUES ('library', 'payment', ?, ?, ?, 'GBP', 'library_fine', ?, ?, ?, 'completed',
+                    'Library', ?, ?, ?, ?)
         ''', (
-            refund_amount, current_datetime,
-            get_current_user_id() if ORIGINAL_LIBRARY_AVAILABLE else 'System',
-            refund_reason, refund_reason,
-            f"Refund \u00a3{refund_amount:.2f} via {refund_method}", f"Refund \u00a3{refund_amount:.2f} via {refund_method}",
-            payment_id
+            str(payment_id), user_id, refund_amount,
+            refund_method.lower().replace(' ', '_'),
+            f"FINE_REFUND_{payment_id}",
+            refund_reason, processed_by, processed_by,
+            f"Book: {book_title}; Refund {refund_amount:.2f} via {refund_method}",
+            current_datetime
         ))
 
-        # Record refund in finance system
+        # Also record in finance system if available
         try:
             from education_system.university_system.modules.shared.utils.finance_integration import record_refund_to_finance
 
@@ -472,7 +478,7 @@ def _process_library_fine_refund(self, user_id, payment_id, loan_id, book_title,
                 transaction_ref=f"FINE_REFUND_{payment_id}",
                 refund_method=refund_method.lower().replace(' ', '_'),
                 currency="GBP",
-                requested_by=get_current_user_id() if ORIGINAL_LIBRARY_AVAILABLE else 'System',
+                requested_by=processed_by,
                 notes=f"Book: {book_title}"
             )
         except ImportError:

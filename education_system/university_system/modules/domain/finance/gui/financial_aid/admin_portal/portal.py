@@ -6,7 +6,7 @@ Core class that composes all mixin modules via multiple inheritance.
 
 from typing import Any, Dict
 
-from ._imports import (
+from education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal._imports import (
     tk, ttk, logging,
     get_connection, get_auth,
     FinancialAidManager,
@@ -15,15 +15,15 @@ from ._imports import (
     get_current_academic_year,
     get_text,
 )
-from ..scholarship_manager import ScholarshipManagerGUI
+from education_system.university_system.modules.domain.finance.gui.financial_aid.scholarship_manager import ScholarshipManagerGUI
 
-from .applications import ApplicationsMixin
-from .packages import PackagesMixin
-from .aid_types import AidTypesMixin
-from .disbursements import DisbursementsMixin
-from .reports import ReportsMixin
-from .report_export import ReportExportMixin
-from .fafsa_import import FAFSAImportMixin
+from education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.applications import ApplicationsMixin
+from education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.packages import PackagesMixin
+from education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.aid_types import AidTypesMixin
+from education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.disbursements import DisbursementsMixin
+from education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.reports import ReportsMixin
+from education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.report_export import ReportExportMixin
+from education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.fafsa_import import FAFSAImportMixin
 
 logger = logging.getLogger(__name__)
 

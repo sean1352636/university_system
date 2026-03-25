@@ -8,12 +8,12 @@ def display_parent_portal_menu(auth):
         print("You must be logged in to access the parent portal.")
         return
 
-    if auth.current_user['role'] != 'parent' and auth.current_user['role'] != 'admin':
+    if auth.current_user.get('role') not in ('parent', 'admin'):
         print("This function is only available for parent accounts and administrators.")
         return
 
     portal = ParentPortal(auth)
-    is_admin = auth.current_user['role'] == 'admin'
+    is_admin = auth.current_user.get('role') == 'admin'
 
     while True:
         print("\n" + "=" * 60)

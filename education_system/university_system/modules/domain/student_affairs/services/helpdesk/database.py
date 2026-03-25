@@ -351,11 +351,21 @@ def init_default_data():
         # Insert default departments
         cursor.execute("SELECT COUNT(*) FROM departments")
         if cursor.fetchone()[0] == 0:
+            # Look up actual SLA policy IDs by name
+            sla_ids = {}
+            cursor.execute("SELECT sla_id, name FROM sla_policies")
+            for row in cursor.fetchall():
+                sla_ids[row[1]] = row[0]
+
+            low_sla = sla_ids.get('Standard Low Priority')
+            med_sla = sla_ids.get('Standard Medium Priority')
+            high_sla = sla_ids.get('Standard High Priority')
+
             default_departments = [
-                ('IT Support', 'Information Technology Support Department', None, 'itsupport@school.edu', 1),
-                ('Academic Affairs', 'Academic Affairs Department', None, 'academic@school.edu', 2),
-                ('Financial Services', 'Financial Services Department', None, 'finance@school.edu', 3),
-                ('Student Services', 'Student Services Department', None, 'students@school.edu', 2)
+                ('IT Support', 'Information Technology Support Department', None, 'itsupport@school.edu', low_sla),
+                ('Academic Affairs', 'Academic Affairs Department', None, 'academic@school.edu', med_sla),
+                ('Financial Services', 'Financial Services Department', None, 'finance@school.edu', high_sla),
+                ('Student Services', 'Student Services Department', None, 'students@school.edu', med_sla)
             ]
 
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -369,11 +379,6 @@ def init_default_data():
         # Insert default workflows
         cursor.execute("SELECT COUNT(*) FROM ticket_workflows")
         if cursor.fetchone()[0] == 0:
-            # Get admin user ID for created_by foreign key
-            cursor.execute("SELECT id FROM users WHERE username = 'admin' LIMIT 1")
-            admin_result = cursor.fetchone()
-            admin_id = admin_result[0] if admin_result else None
-
             default_workflows = [
                 ('Auto-assign IT tickets', 'Automatically assign technical support tickets to IT department',
                  'ticket_created', '{"category": "Technical Support"}',
@@ -392,9 +397,9 @@ def init_default_data():
             for workflow in default_workflows:
                 cursor.execute('''
                 INSERT INTO ticket_workflows
-                (name, description, trigger_type, trigger_conditions, actions, created_by, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', workflow + (admin_id, timestamp))
+                (name, description, trigger_type, trigger_conditions, actions, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ''', workflow + (timestamp,))
 
         conn.commit()
         print("Default helpdesk data initialized successfully!")

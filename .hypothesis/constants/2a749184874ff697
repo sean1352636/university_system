@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/college_system/infrastructure/database/constants.py
+# hypothesis_version: 6.151.9
+
+[100, 5000, '-8000', '12', '13', 'A', 'A*', 'A-Level', 'Autumn', 'B', 'BTEC', 'C', 'Core Maths', 'D', 'D*', 'E', 'EPQ', 'GCSE', 'M', 'NORMAL', 'ON', 'P', 'Spring', 'Summer', 'T-Level', 'U', 'WAL', 'absent', 'busy_timeout', 'cache_size', 'excused', 'foreign_keys', 'journal_mode', 'late', 'present', 'synchronous']

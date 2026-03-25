@@ -1,18 +1,18 @@
 # course_management_gui package
 # Main GUI class
-from .core.main_gui import CourseManagementGUI
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.core.main_gui import CourseManagementGUI
 
 # Core dialogs
-from .core.validation import CourseValidationDialog
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.core.validation import CourseValidationDialog
 
 # Analytics dialogs
-from .analytics.analytics import CourseAnalyticsDialog, EnrollmentReportDialog
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.analytics.analytics import CourseAnalyticsDialog, EnrollmentReportDialog
 
 # Search dialogs
-from .search.search import AdvancedCourseSearchDialog, AdvancedSearchDialog
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.search.search import AdvancedCourseSearchDialog, AdvancedSearchDialog
 
 # Schedule dialogs
-from .schedules.schedules import (
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.schedules.schedules import (
     CreateScheduleDialog,
     ViewSchedulesDialog,
     UpdateScheduleDialog,
@@ -20,47 +20,47 @@ from .schedules.schedules import (
 )
 
 # Course dialogs
-from .courses.course_crud import CourseCreateDialog, CourseEditDialog
-from .courses.course_status import ManageCourseStatusDialog, CourseHistoryDialog
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.courses.course_crud import CourseCreateDialog, CourseEditDialog
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.courses.course_status import ManageCourseStatusDialog, CourseHistoryDialog
 
 # Prerequisites dialogs
-from .prerequisites.prerequisites import (
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.prerequisites.prerequisites import (
     PrerequisitesWindow,
     AddPrerequisiteDialog,
     RemovePrerequisiteDialog,
 )
 
 # Waitlist dialogs
-from .waitlists.waitlists import (
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.waitlists.waitlists import (
     AddToWaitlistDialog,
     ViewWaitlistsDialog,
     ProcessWaitlistDialog,
 )
 
 # Recommendation dialogs
-from .recommendations.recommendations import (
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.recommendations.recommendations import (
     RecommendCoursesDialog,
     AlternativeCourseDialog,
     RecommendationsDialog,
 )
 
 # Bulk operations
-from .bulk.bulk_operations import BulkUpdateDialog
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.bulk.bulk_operations import BulkUpdateDialog
 
 # Import/Export dialogs
-from .import_export.import_export import ImportExportDialog
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.import_export.import_export import ImportExportDialog
 
 # Instructor dialogs
-from .instructors.instructors import InstructorCreateDialog, AssignInstructorDialog
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.instructors.instructors import InstructorCreateDialog, AssignInstructorDialog
 
 # Maintenance dialogs
-from .maintenance.maintenance import MaintenanceDialog
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.maintenance.maintenance import MaintenanceDialog
 
 # Wrappers for backwards compatibility
-from .wrappers.compatibility import BackwardsCompatibilityWrapper
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.wrappers.compatibility import BackwardsCompatibilityWrapper
 
 # CLI entry points
-from .cli.entry_points import (
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.cli.entry_points import (
     run_gui_application,
     cli_interface,
     init_gui_mode,

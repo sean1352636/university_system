@@ -7,7 +7,8 @@ reviewing applications, and awarding scholarships to students.
 
 from typing import Any, Dict
 
-from .common_imports import (
+from education_system.university_system.core.sql_safety import escape_like
+from education_system.university_system.modules.domain.finance.gui.financial_aid.common_imports import (
     tk,
     ttk,
     scrolledtext,
@@ -283,7 +284,7 @@ class ScholarshipManagerGUI:
 
                 if search_term:
                     query += " AND scholarship_name LIKE ?"
-                    params.append(f"%{search_term}%")
+                    params.append(f"%{escape_like(search_term)}%")
 
                 if filter_status and filter_status != _t("financial_aid.scholarship_manager.filters.all"):
                     if filter_status == _t("financial_aid.scholarship_manager.filters.active"):

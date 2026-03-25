@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 from typing import Dict, List, Tuple
 from education_system.university_system.utils.logging.log_config import configure_logging
-from .exceptions import PermissionError, ValidationError
-from .config import ValidationUtils
+from education_system.university_system.modules.domain.academics.services.academic_calendar.exceptions import PermissionError, ValidationError
+from education_system.university_system.modules.domain.academics.services.academic_calendar.config import ValidationUtils
 
 logger = configure_logging(name=__name__)
 

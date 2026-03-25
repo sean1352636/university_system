@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/analytics/advanced_search/reports.py
+# hypothesis_version: 6.151.9
+
+[100, '\nEnter SQL query: ', '\nSchedule patterns:', '\n💻 CUSTOM SQL REPORT', ' | ', '%Y%m%d_%H%M%S', '-', '...', '1', '1. Daily', '2', '2. Weekly', '3', '3. Monthly', '4', '4. Custom', '5', '5. Custom SQL report', '=', 'ALTER', 'CREATE', 'DELETE', 'DROP', 'Deletion cancelled.', 'INSERT', 'Invalid choice.', 'N/A', 'Never', 'No', 'No changes made.', 'No query provided.', 'Report name: ', 'Report types:', 'Total', 'UPDATE', 'Yes', 'all_students', 'count', 'daily', 'email_recipients = ?', 'female', 'is_active = ?', 'last_search', 'male', 'monthly', 'n', 'other', 'report_name = ?', 'schedule_pattern = ?', 'type', 'w', 'weekly', 'y', '█']

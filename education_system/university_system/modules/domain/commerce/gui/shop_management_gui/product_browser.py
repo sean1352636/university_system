@@ -191,10 +191,10 @@ def search_products(self):
             cursor = conn.cursor()
             
             cursor.execute("""
-                SELECT p.product_id, p.name, p.category, p.price, p.description, i.quantity
-                FROM shop_products p
-                JOIN shop_inventory i ON p.product_id = i.product_id
-                WHERE p.is_active = 1 
+                SELECT p.source_product_id as product_id, p.name, p.category, p.price, p.description, i.quantity
+                FROM products p
+                JOIN shop_inventory i ON p.source_product_id = i.product_id
+                WHERE p.source_type = 'shop' AND p.is_active = 1 
                 AND (p.name LIKE ? OR p.description LIKE ? OR p.product_id LIKE ?)
                 ORDER BY p.category, p.name
             """, [f'%{search_term}%', f'%{search_term}%', f'%{search_term}%'])
@@ -238,10 +238,10 @@ def apply_filters(self):
             
             # Build query
             query = """
-                SELECT p.product_id, p.name, p.category, p.price, p.description, i.quantity
-                FROM shop_products p
-                JOIN shop_inventory i ON p.product_id = i.product_id
-                WHERE p.is_active = 1
+                SELECT p.source_product_id as product_id, p.name, p.category, p.price, p.description, i.quantity
+                FROM products p
+                JOIN shop_inventory i ON p.source_product_id = i.product_id
+                WHERE p.source_type = 'shop' AND p.is_active = 1
             """
             params = []
             
@@ -398,10 +398,11 @@ def get_product_details(self, product_id):
         cursor = conn.cursor()
 
         cursor.execute("""
-            SELECT p.*, i.quantity, i.restock_threshold
-            FROM shop_products p
-            JOIN shop_inventory i ON p.product_id = i.product_id
-            WHERE p.product_id = ?
+            SELECT p.source_product_id as product_id, p.name, p.description, p.price, p.category,
+                   p.created_at, p.updated_at, p.tax_rate, p.is_active, i.quantity, i.restock_threshold
+            FROM products p
+            JOIN shop_inventory i ON p.source_product_id = i.product_id
+            WHERE p.source_type = 'shop' AND p.source_product_id = ?
         """, [product_id])
 
         result = cursor.fetchone()

@@ -5,6 +5,7 @@ Backwards compatible with existing database and auth systems
 """
 
 
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
@@ -114,7 +115,7 @@ except ImportError:
 _AUDIT_LOG_COLUMNS_CACHE: Optional[List[str]] = None
 _STUDENT_COLUMNS_CACHE: Optional[List[str]] = None
 
-from .base import LibraryGUI
+from education_system.university_system.modules.domain.academics.gui.library.base import LibraryGUI
 
 def show_checkout(self):
     """Show checkout interface"""
@@ -377,13 +378,9 @@ def checkout_book_database(self, book_id, user_id):
 
         conn.close()
 
-        # Send book checkout confirmation email automatically
-        try:
-            from education_system.university_system.infrastructure.email.email_service import send_book_checkout_confirmation
-            send_book_checkout_confirmation(user_id, book_id, book_title, due_date.strftime('%Y-%m-%d'))
-        except (sqlite3.Error, DatabaseError) as e:
-            import logging
-            logging.warning(f"Failed to send book checkout confirmation: {e}")
+        # Send email notifications
+        due_date_str = due_date.strftime('%Y-%m-%d')
+        self._send_checkout_emails(user_id, book_id, book_title, due_date_str)
 
         # Log the action
         if ORIGINAL_LIBRARY_AVAILABLE:
@@ -434,7 +431,7 @@ def checkout_selected_book(self):
             cursor.execute('''
                 SELECT student_id FROM students
                 WHERE student_id = ? OR email_address LIKE ?
-            ''', (user_id, f"%{user_id}%"))
+            ''', (user_id, f"%{escape_like(user_id)}%"))
 
             user = cursor.fetchone()
             if not user:
@@ -708,14 +705,31 @@ def return_book_database(self):
             WHERE book_id = ?
             ''', (f"Returned {now[:10]}: {notes}", self.selected_return_book_id))
 
+        # Get book title and user_id for emails before closing
+        cursor.execute('SELECT title FROM books WHERE book_id = ?', (self.selected_return_book_id,))
+        book_row = cursor.fetchone()
+        book_title = book_row[0] if book_row else "Unknown Book"
+
+        cursor.execute('SELECT user_id FROM book_loans WHERE loan_id = ?', (self.selected_loan_id,))
+        user_row = cursor.fetchone()
+        loan_user_id = user_row[0] if user_row else None
+
         conn.commit()
         conn.close()
 
         # Log the action
         if ORIGINAL_LIBRARY_AVAILABLE:
-            log_audit_event(get_current_user_id(), 
-                          f"GUI: Returned book {self.selected_return_book_id}", 
+            log_audit_event(get_current_user_id(),
+                          f"GUI: Returned book {self.selected_return_book_id}",
                           "book_loans", str(self.selected_loan_id))
+
+        # Send email notifications
+        if loan_user_id:
+            self._send_return_emails(loan_user_id, self.selected_return_book_id, book_title)
+
+        # Notify users with active reservations for this book
+        if hasattr(self, 'notify_reserved_users_on_return'):
+            self.notify_reserved_users_on_return(self.selected_return_book_id)
 
         return True
 
@@ -1255,4 +1269,140 @@ def view_loan_history_gui(self):
     self.load_loan_history()
 
     ttk.Button(main_frame, text=_("common.close"), command=dialog.destroy).pack(pady=10)
+
+
+def _get_user_email(user_id):
+    """Look up email for a user_id (checks students then users tables)."""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return None, None
+        cursor = conn.cursor()
+
+        # Try students table
+        cursor.execute(
+            "SELECT first_name, email_address FROM students WHERE student_id = ?",
+            (user_id,))
+        row = cursor.fetchone()
+        if row and row[1]:
+            conn.close()
+            return row[0], row[1]
+
+        # Try users table
+        cursor.execute(
+            "SELECT first_name, email FROM users WHERE username = ? OR id = ?",
+            (user_id, user_id))
+        row = cursor.fetchone()
+        conn.close()
+        if row and row[1]:
+            return row[0], row[1]
+
+        return None, None
+    except Exception:
+        return None, None
+
+
+def _get_admin_emails():
+    """Get all admin email addresses."""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return []
+        cursor = conn.cursor()
+        cursor.execute("SELECT email FROM users WHERE LOWER(role) = 'admin' AND email IS NOT NULL AND email != ''")
+        emails = [r[0] for r in cursor.fetchall()]
+        conn.close()
+        return emails
+    except Exception:
+        return []
+
+
+def _send_checkout_emails(self, user_id, book_id, book_title, due_date):
+    """Email user and admin about a book checkout."""
+    try:
+        from education_system.university_system.infrastructure.email.email_service import send_email
+
+        # Email the user
+        name, email = _get_user_email(user_id)
+        if email:
+            send_email(
+                recipient_email=email,
+                subject=f"Book Checked Out: {book_title}",
+                body=(
+                    f"Dear {name or user_id},\n\n"
+                    f"You have checked out the following book:\n\n"
+                    f"Title: {book_title}\n"
+                    f"Book ID: {book_id}\n"
+                    f"Due Date: {due_date}\n\n"
+                    f"Please return the book by the due date to avoid any late fees.\n\n"
+                    f"Best regards,\nLibrary Services"
+                )
+            )
+
+        # Email admin(s)
+        for admin_email in _get_admin_emails():
+            try:
+                send_email(
+                    recipient_email=admin_email,
+                    subject=f"Library Checkout: {book_title}",
+                    body=(
+                        f"Book checkout notification:\n\n"
+                        f"User: {user_id}\n"
+                        f"Book: {book_title} ({book_id})\n"
+                        f"Due Date: {due_date}\n"
+                        f"Checked out via GUI"
+                    )
+                )
+            except Exception:
+                pass
+
+    except Exception as e:
+        import logging
+        logging.warning(f"Failed to send checkout emails: {e}")
+
+
+def _send_return_emails(self, user_id, book_id, book_title):
+    """Email user and admin about a book return."""
+    try:
+        from education_system.university_system.infrastructure.email.email_service import send_email
+
+        return_date = datetime.now().strftime('%Y-%m-%d %H:%M')
+
+        # Email the user
+        name, email = _get_user_email(user_id)
+        if email:
+            send_email(
+                recipient_email=email,
+                subject=f"Book Returned: {book_title}",
+                body=(
+                    f"Dear {name or user_id},\n\n"
+                    f"You have successfully returned the following book:\n\n"
+                    f"Title: {book_title}\n"
+                    f"Book ID: {book_id}\n"
+                    f"Returned: {return_date}\n\n"
+                    f"Thank you for using our library services.\n\n"
+                    f"Best regards,\nLibrary Services"
+                )
+            )
+
+        # Email admin(s)
+        for admin_email in _get_admin_emails():
+            try:
+                send_email(
+                    recipient_email=admin_email,
+                    subject=f"Library Return: {book_title}",
+                    body=(
+                        f"Book return notification:\n\n"
+                        f"User: {user_id}\n"
+                        f"Book: {book_title} ({book_id})\n"
+                        f"Returned: {return_date}\n"
+                        f"Returned via GUI"
+                    )
+                )
+            except Exception:
+                pass
+
+    except Exception as e:
+        import logging
+        logging.warning(f"Failed to send return emails: {e}")
 

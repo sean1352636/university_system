@@ -1,6 +1,7 @@
 """Asset management service."""
 
 import logging
+from education_system.secondary_school.core.sql_safety import validate_identifier, escape_like
 from education_system.secondary_school.core.exceptions import AssetError
 from education_system.secondary_school.infrastructure.database.db import connect
 
@@ -55,7 +56,8 @@ class AssetService:
                 params.append(status)
             if search:
                 sql += " AND (name LIKE ? OR asset_tag LIKE ? OR serial_number LIKE ?)"
-                q = f"%{search}%"
+                escaped = escape_like(search)
+                q = f"%{escaped}%"
                 params.extend([q, q, q])
             sql += " ORDER BY name"
             return [dict(r) for r in conn.execute(sql, params).fetchall()]
@@ -70,7 +72,7 @@ class AssetService:
             updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
             if not updates:
                 return
-            set_clause = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
             conn.execute(f"UPDATE assets SET {set_clause}, updated_at = datetime('now') WHERE id = ?",
                          list(updates.values()) + [asset_id])
             conn.commit()

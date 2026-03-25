@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/pastoral_care/safeguarding/services/safeguarding_service.py
+# hypothesis_version: 6.151.9
+
+[', ', 'action_taken', 'child_protection', 'critical', 'emotional', 'high', 'low', 'medium', 'neglect', 'online_safety', 'other', 'outcome', 'peer_on_peer', 'physical', 'radicalisation', 'referred_to', 'severity', 'sexual', 'welfare']

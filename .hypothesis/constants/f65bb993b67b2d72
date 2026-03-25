@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/legal/gui/reports.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d', '*.*', '*.txt', '.txt', '1.0', '10', ':', '@', 'All Files', 'Case Statistics', 'Clear', 'Courier', 'Email Report', 'End Date', 'Error', 'Failed to send email', 'Generate Report', 'Lawyer Performance', 'Monthly Summary', 'No report to save', 'Report Options', 'Report Output', 'Report Type', 'Reports & Analytics', 'Revenue Report', 'Save Report', 'Start Date', 'Success', 'Text Files', 'Warning', 'by_payment_method', 'by_payment_type', 'by_status', 'by_type', 'common.clear', 'common.error', 'common.save', 'common.success', 'common.warning', 'email_report', 'legal.report_output', 'legal.reports.title', 'legal.tabs.reports', 'legal_services', 'readonly', 'recipient', 'report_type', 'w']

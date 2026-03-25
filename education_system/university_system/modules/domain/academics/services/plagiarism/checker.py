@@ -1,3 +1,4 @@
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import ensure_parent_dir
 from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
 from education_system.university_system.utils.logging.log_config import configure_logging
@@ -8,12 +9,12 @@ import hashlib
 from datetime import datetime
 from difflib import SequenceMatcher
 
-from .exceptions import PlagiarismCheckerError, DatabaseError, FileProcessingError
-from .nlp import (
+from education_system.university_system.modules.domain.academics.services.plagiarism.exceptions import PlagiarismCheckerError, DatabaseError, FileProcessingError
+from education_system.university_system.modules.domain.academics.services.plagiarism.nlp import (
     NLTK_AVAILABLE, TEXTRACT_AVAILABLE,
     word_tokenize, stopwords, ngrams, textract,
 )
-from .db import get_safe_db_connection
+from education_system.university_system.modules.domain.academics.services.plagiarism.db import get_safe_db_connection
 
 logger = configure_logging(name=__name__)
 
@@ -673,7 +674,7 @@ class PlagiarismChecker:
                     if not isinstance(search_term, str):
                         raise ValueError("Search term must be a string")
                     query += " AND (title LIKE ? OR content LIKE ?)"
-                    search_pattern = f"%{search_term.strip()}%"
+                    search_pattern = f"%{escape_like(search_term.strip())}%"
                     params.extend([search_pattern, search_pattern])
 
                 if author_id:

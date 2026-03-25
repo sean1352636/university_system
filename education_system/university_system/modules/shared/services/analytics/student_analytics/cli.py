@@ -1,4 +1,4 @@
-from .config import GUI_AVAILABLE
+from education_system.university_system.modules.shared.services.analytics.student_analytics.config import GUI_AVAILABLE
 
 
 class CLIMixin:

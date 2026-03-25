@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/gui/parking_management/tabs/permits.py
+# hypothesis_version: 6.151.9
+
+[100, '%Y-%m-%d %H:%M:%S', ':', '<KeyRelease>', 'Active', 'Confirm Delete', 'Create New Permit', 'Edit Permit', 'End Date', 'Error', 'ID', 'Start Date', 'Status', 'Type', 'User', 'Vehicle', 'Warning', 'Zone', '__iter__', 'active_status', 'common.refresh', 'common.search', 'email', 'end_date', 'full_name', 'gray', 'headings', 'hidden', 'permit_type', 'start_date', 'user_id', 'values', 'vehicle_id', 'zone']

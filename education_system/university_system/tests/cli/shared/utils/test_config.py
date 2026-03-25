@@ -14,7 +14,7 @@ from pathlib import Path
 @pytest.fixture
 def mock_paths():
     """Mock paths module"""
-    with patch('university_system.modules.shared.utils.config.paths') as mock:
+    with patch('education_system.university_system.modules.shared.utils.config.paths') as mock:
         mock.EMAIL_CONFIG_PATH = Path('/tmp/email_config.json')
         mock.EMAIL_TEMPLATES_DIR = Path('/tmp/templates')
         yield mock
@@ -148,7 +148,7 @@ class TestConfigLoading:
         assert result['max_threads'] == 1
         assert result['send_delay'] >= 2.0
 
-    @patch('university_system.modules.shared.utils.config.save_config')
+    @patch('education_system.university_system.modules.shared.utils.config.save_config')
     def test_load_config_file_not_found(self, mock_save, mock_paths):
         """Test loading config when file doesn't exist"""
         from education_system.university_system.modules.shared.utils.config import load_config
@@ -331,7 +331,7 @@ class TestConfigValidation:
         assert result is False
 
     @patch('jsonschema.validate')
-    @patch('university_system.modules.shared.utils.config.send_email_via_smtp')
+    @patch('education_system.university_system.modules.shared.utils.config.send_email_via_smtp')
     def test_validate_config_smtp_test_success(self, mock_smtp, mock_validate, sample_config):
         """Test SMTP connection test succeeds"""
         from education_system.university_system.modules.shared.utils.config import validate_config, config
@@ -347,7 +347,7 @@ class TestConfigValidation:
         mock_smtp.assert_called_once()
 
     @patch('jsonschema.validate')
-    @patch('university_system.modules.shared.utils.config.send_email_via_smtp')
+    @patch('education_system.university_system.modules.shared.utils.config.send_email_via_smtp')
     def test_validate_config_smtp_test_failure(self, mock_smtp, mock_validate, sample_config):
         """Test SMTP connection test fails"""
         from education_system.university_system.modules.shared.utils.config import validate_config, config
@@ -366,7 +366,7 @@ class TestInteractiveConfiguration:
     """Test interactive configuration function"""
 
     @patch('builtins.input')
-    @patch('university_system.modules.shared.utils.config.save_config')
+    @patch('education_system.university_system.modules.shared.utils.config.save_config')
     def test_configure_email_settings_database_mode(self, mock_save, mock_input, sample_config):
         """Test configuring email settings in database mode"""
         from education_system.university_system.modules.shared.utils.config import configure_email_settings, config
@@ -389,9 +389,9 @@ class TestInteractiveConfiguration:
         mock_save.assert_called_once()
 
     @patch('builtins.input')
-    @patch('university_system.modules.shared.utils.config.save_config')
-    @patch('university_system.modules.shared.utils.config.validate_config')
-    @patch('university_system.modules.shared.utils.config.test_email_configuration')
+    @patch('education_system.university_system.modules.shared.utils.config.save_config')
+    @patch('education_system.university_system.modules.shared.utils.config.validate_config')
+    @patch('education_system.university_system.modules.shared.utils.config.test_email_configuration')
     def test_configure_email_settings_smtp_mode(self, mock_test, mock_validate, mock_save, mock_input, sample_config):
         """Test configuring email settings in SMTP mode"""
         from education_system.university_system.modules.shared.utils.config import configure_email_settings, config
@@ -425,7 +425,7 @@ class TestInteractiveConfiguration:
         mock_validate.assert_called_once()
 
     @patch('builtins.input')
-    @patch('university_system.modules.shared.utils.config.save_config')
+    @patch('education_system.university_system.modules.shared.utils.config.save_config')
     def test_configure_email_settings_invalid_port(self, mock_save, mock_input, sample_config, capsys):
         """Test configuring with invalid port"""
         from education_system.university_system.modules.shared.utils.config import configure_email_settings, config
@@ -453,7 +453,7 @@ class TestInteractiveConfiguration:
         assert config['smtp_port'] == original_port
 
     @patch('builtins.input')
-    @patch('university_system.modules.shared.utils.config.save_config')
+    @patch('education_system.university_system.modules.shared.utils.config.save_config')
     def test_configure_email_settings_out_of_range_port(self, mock_save, mock_input, sample_config):
         """Test configuring with out-of-range port"""
         from education_system.university_system.modules.shared.utils.config import configure_email_settings, config
@@ -481,7 +481,7 @@ class TestInteractiveConfiguration:
         assert config['smtp_port'] == original_port
 
     @patch('builtins.input')
-    @patch('university_system.modules.shared.utils.config.save_config')
+    @patch('education_system.university_system.modules.shared.utils.config.save_config')
     def test_configure_email_settings_invalid_delay(self, mock_save, mock_input, sample_config):
         """Test configuring with invalid delay"""
         from education_system.university_system.modules.shared.utils.config import configure_email_settings, config
@@ -504,7 +504,7 @@ class TestInteractiveConfiguration:
         assert config['send_delay'] == original_delay
 
     @patch('builtins.input')
-    @patch('university_system.modules.shared.utils.config.save_config')
+    @patch('education_system.university_system.modules.shared.utils.config.save_config')
     def test_configure_email_settings_negative_delay(self, mock_save, mock_input, sample_config):
         """Test configuring with negative delay"""
         from education_system.university_system.modules.shared.utils.config import configure_email_settings, config
@@ -527,9 +527,9 @@ class TestInteractiveConfiguration:
         assert config['send_delay'] == original_delay
 
     @patch('builtins.input')
-    @patch('university_system.modules.shared.utils.config.save_config')
-    @patch('university_system.modules.shared.utils.config.test_email_configuration')
-    @patch('university_system.modules.shared.utils.config.validate_config')
+    @patch('education_system.university_system.modules.shared.utils.config.save_config')
+    @patch('education_system.university_system.modules.shared.utils.config.test_email_configuration')
+    @patch('education_system.university_system.modules.shared.utils.config.validate_config')
     def test_configure_email_settings_with_test_email(self, mock_validate, mock_test, mock_save, mock_input, sample_config):
         """Test configuring with test email"""
         from education_system.university_system.modules.shared.utils.config import configure_email_settings, config
@@ -564,8 +564,8 @@ class TestInteractiveConfiguration:
 class TestEmailConfiguration:
     """Test test_email_configuration function"""
 
-    @patch('university_system.modules.shared.utils.config.send_email')
-    @patch('university_system.modules.shared.utils.config.render_template')
+    @patch('education_system.university_system.modules.shared.utils.config.send_email')
+    @patch('education_system.university_system.modules.shared.utils.config.render_template')
     def test_test_email_configuration_success(self, mock_render, mock_send, sample_config):
         """Test sending test email successfully"""
         from education_system.university_system.modules.shared.utils.config import test_email_configuration, config
@@ -580,8 +580,8 @@ class TestEmailConfiguration:
         assert result is True
         mock_send.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.config.send_email')
-    @patch('university_system.modules.shared.utils.config.render_template')
+    @patch('education_system.university_system.modules.shared.utils.config.send_email')
+    @patch('education_system.university_system.modules.shared.utils.config.render_template')
     def test_test_email_configuration_no_recipient(self, mock_render, mock_send, sample_config):
         """Test sending test email to self when no recipient"""
         from education_system.university_system.modules.shared.utils.config import test_email_configuration, config
@@ -598,8 +598,8 @@ class TestEmailConfiguration:
         call_args = mock_send.call_args
         assert call_args[0][0] == config['sender_email']
 
-    @patch('university_system.modules.shared.utils.config.send_email')
-    @patch('university_system.modules.shared.utils.config.render_template')
+    @patch('education_system.university_system.modules.shared.utils.config.send_email')
+    @patch('education_system.university_system.modules.shared.utils.config.render_template')
     def test_test_email_configuration_template_error(self, mock_render, mock_send, sample_config):
         """Test test email with template rendering error"""
         from education_system.university_system.modules.shared.utils.config import test_email_configuration, config
@@ -615,7 +615,7 @@ class TestEmailConfiguration:
         assert result is True
         mock_send.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.config.send_email')
+    @patch('education_system.university_system.modules.shared.utils.config.send_email')
     def test_test_email_configuration_no_sender(self, mock_send):
         """Test test email with no sender configured"""
         from education_system.university_system.modules.shared.utils.config import test_email_configuration, config
@@ -627,8 +627,8 @@ class TestEmailConfiguration:
         assert result is False
         mock_send.assert_not_called()
 
-    @patch('university_system.modules.shared.utils.config.send_email')
-    @patch('university_system.modules.shared.utils.config.render_template')
+    @patch('education_system.university_system.modules.shared.utils.config.send_email')
+    @patch('education_system.university_system.modules.shared.utils.config.render_template')
     def test_test_email_configuration_send_failure(self, mock_render, mock_send, sample_config):
         """Test test email send failure"""
         from education_system.university_system.modules.shared.utils.config import test_email_configuration, config

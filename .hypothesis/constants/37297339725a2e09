@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/ai/gui/features/search.py
+# hypothesis_version: 6.151.9
+
+[1.0, '500x400', '<Return>', '=', 'No results found.', 'Search', 'Search Chat History', 'Search:', 'Unknown', 'conversation_history', 'message', 'response', 'timestamp']

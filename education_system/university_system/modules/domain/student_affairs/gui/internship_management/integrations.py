@@ -1,4 +1,4 @@
-from ._imports import tk, messagebox, display_internship_menu
+from education_system.university_system.modules.domain.student_affairs.gui.internship_management._imports import tk, messagebox, display_internship_menu
 
 
 class IntegrationsMixin:

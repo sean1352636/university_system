@@ -38,9 +38,9 @@ class TestMaintenanceModule(unittest.TestCase):
             'role': 'admin'
         }
 
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.get_db_connection')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.ctx')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.log_audit_action')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.log_audit_action')
     def test_database_cleanup(self, mock_log_audit, mock_ctx, mock_get_conn):
         """Test database cleanup operation"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.maintenance import database_cleanup
@@ -64,14 +64,14 @@ class TestMaintenanceModule(unittest.TestCase):
         assert call_args[0][0] == 'TEST_USER_001'
         assert call_args[0][1] == 'DATABASE_CLEANUP'
 
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.os.listdir')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.os.path.exists')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.os.path.getmtime')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.os.path.getsize')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.os.remove')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.get_log_file')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.ctx')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.log_audit_action')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.os.listdir')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.os.path.exists')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.os.path.getmtime')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.os.path.getsize')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.os.remove')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.get_log_file')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.log_audit_action')
     def test_clear_old_logs(self, mock_log_audit, mock_ctx, mock_get_log_file,
                            mock_remove, mock_getsize, mock_getmtime,
                            mock_exists, mock_listdir):
@@ -98,9 +98,9 @@ class TestMaintenanceModule(unittest.TestCase):
         mock_remove.assert_called_once()
         assert 'old_log.log' in str(mock_remove.call_args)
 
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.get_db_connection')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.ctx')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.log_audit_action')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.log_audit_action')
     @patch('builtins.input', return_value='y')
     def test_reset_system_counters(self, mock_input, mock_log_audit, mock_ctx, mock_get_conn):
         """Test resetting system counters"""
@@ -121,9 +121,9 @@ class TestMaintenanceModule(unittest.TestCase):
         # Verify audit log
         mock_log_audit.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.get_db_connection')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.ctx')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.log_audit_action')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.log_audit_action')
     def test_rebuild_indexes(self, mock_log_audit, mock_ctx, mock_get_conn):
         """Test rebuilding database indexes"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.maintenance import rebuild_indexes
@@ -140,11 +140,11 @@ class TestMaintenanceModule(unittest.TestCase):
         self.mock_conn.commit.assert_called_once()
         self.mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.get_db_connection')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.ctx')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.os.path.getsize')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.DATABASE_FILE', '/tmp/test.db')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.log_audit_action')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.os.path.getsize')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.DATABASE_FILE', '/tmp/test.db')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.log_audit_action')
     def test_system_health_check(self, mock_log_audit, mock_getsize, mock_ctx, mock_get_conn):
         """Test system health check"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.maintenance import system_health_check
@@ -176,10 +176,10 @@ class TestMaintenanceModule(unittest.TestCase):
         assert self.mock_cursor.execute.call_count >= 10
         self.mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.os.listdir')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.os.remove')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.ctx')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.log_audit_action')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.os.listdir')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.os.remove')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.log_audit_action')
     def test_clear_cache(self, mock_log_audit, mock_ctx, mock_remove, mock_listdir):
         """Test cache clearing"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.maintenance import clear_cache
@@ -194,7 +194,7 @@ class TestMaintenanceModule(unittest.TestCase):
         # Verify temp files were removed
         assert mock_remove.call_count == 2  # Only .tmp and temp_ files
 
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.ctx')
     @patch('builtins.input', return_value='7')
     @patch('builtins.print')
     def test_system_maintenance_menu_return(self, mock_print, mock_input, mock_ctx):
@@ -211,7 +211,7 @@ class TestMaintenanceModule(unittest.TestCase):
         # Should complete without error
         assert mock_input.call_count == 1
 
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.ctx')
     @patch('builtins.input', return_value='1')
     @patch('builtins.print')
     def test_system_maintenance_no_auth(self, mock_print, mock_input, mock_ctx):
@@ -228,7 +228,7 @@ class TestMaintenanceModule(unittest.TestCase):
         print_calls = [str(call) for call in mock_print.call_args_list]
         assert any('must be logged in' in str(call).lower() for call in print_calls)
 
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.ctx')
     @patch('builtins.print')
     def test_system_maintenance_no_permission(self, mock_print, mock_ctx):
         """Test system maintenance without permission"""
@@ -245,9 +245,9 @@ class TestMaintenanceModule(unittest.TestCase):
         print_calls = [str(call) for call in mock_print.call_args_list]
         assert any('permission' in str(call).lower() for call in print_calls)
 
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.get_db_connection')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.ctx')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.log_audit_action')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.log_audit_action')
     def test_update_statistics(self, mock_log_audit, mock_ctx, mock_get_conn):
         """Test database statistics update"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.maintenance import update_statistics
@@ -264,9 +264,9 @@ class TestMaintenanceModule(unittest.TestCase):
         assert any('ANALYZE' in str(call) for call in calls)
         self.mock_conn.commit.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.get_db_connection')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.ctx')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.log_audit_action')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.log_audit_action')
     def test_defragment_database(self, mock_log_audit, mock_ctx, mock_get_conn):
         """Test database defragmentation"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.maintenance import defragment_database
@@ -283,7 +283,7 @@ class TestMaintenanceModule(unittest.TestCase):
         calls = [str(call) for call in self.mock_conn.execute.call_args_list]
         assert any('VACUUM' in str(call) for call in calls)
 
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.get_db_connection')
     def test_database_cleanup_error_handling(self, mock_get_conn):
         """Test database cleanup error handling"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.maintenance import database_cleanup
@@ -301,8 +301,8 @@ class TestMaintenanceModule(unittest.TestCase):
 class TestMaintenanceIntegration(unittest.TestCase):
     """Integration tests for maintenance operations"""
 
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.get_db_connection')
-    @patch('university_system.modules.core.services.restaurant_misc.maintenance.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.maintenance.ctx')
     def test_full_maintenance_workflow(self, mock_ctx, mock_get_conn):
         """Test full maintenance workflow"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.maintenance import (

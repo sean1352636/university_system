@@ -3,15 +3,15 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
 
-from . import (
+from education_system.university_system.modules.domain.mobility.gui.parking_management import (
     init_i18n, _t, get_connection, init_db, set_auth, get_auth, UserAuth,
 )
-from .tabs import (
+from education_system.university_system.modules.domain.mobility.gui.parking_management.tabs import (
     PermitsMixin, VehiclesMixin, ViolationsMixin,
     LotsMixin, PaymentsMixin, DashboardMixin,
 )
-from .reports import ReportsMixin
-from .exports import ExportsMixin
+from education_system.university_system.modules.domain.mobility.gui.parking_management.reports import ReportsMixin
+from education_system.university_system.modules.domain.mobility.gui.parking_management.exports import ExportsMixin
 
 
 class ParkingManagementGUI(
@@ -108,60 +108,11 @@ class ParkingManagementGUI(
             conn = get_connection()
             cursor = conn.cursor()
 
-            # Create parking_payments table
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS parking_payments (
-                    payment_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    violation_id TEXT NOT NULL,
-                    amount DECIMAL(10,2) NOT NULL,
-                    payment_method TEXT NOT NULL,
-                    payment_reference TEXT UNIQUE,
-                    payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    student_id TEXT,
-                    processed_by TEXT,
-                    notes TEXT,
-                    FOREIGN KEY (violation_id) REFERENCES parking_violations(violation_id)
-                )
-            ''')
-
-            # Create parking_refunds table
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS parking_refunds (
-                    refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    payment_id INTEGER NOT NULL,
-                    violation_id TEXT NOT NULL,
-                    amount DECIMAL(10,2) NOT NULL,
-                    refund_method TEXT NOT NULL,
-                    refund_reference TEXT UNIQUE,
-                    refund_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    student_id TEXT,
-                    processed_by TEXT,
-                    reason TEXT,
-                    FOREIGN KEY (payment_id) REFERENCES parking_payments(payment_id),
-                    FOREIGN KEY (violation_id) REFERENCES parking_violations(violation_id)
-                )
-            ''')
-
             # Add payment_status column to parking_violations if it doesn't exist
             try:
                 cursor.execute("SELECT payment_status FROM parking_violations LIMIT 1")
             except Exception:
                 cursor.execute("ALTER TABLE parking_violations ADD COLUMN payment_status TEXT DEFAULT 'Unpaid'")
-
-            # Create finance_payments table if it doesn't exist
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS finance_payments (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    payment_reference TEXT UNIQUE,
-                    department TEXT,
-                    transaction_id TEXT,
-                    amount DECIMAL(10,2),
-                    payment_method TEXT,
-                    payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    processed_by TEXT,
-                    notes TEXT
-                )
-            ''')
 
             conn.commit()
             conn.close()

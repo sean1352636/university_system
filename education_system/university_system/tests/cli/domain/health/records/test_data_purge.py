@@ -115,7 +115,7 @@ class TestUpdateRetentionPolicy:
 
     @patch('builtins.input', side_effect=['1', '3000', 'y', 'n'])
     @patch('builtins.print')
-    @patch('university_system.modules.domain.health.records.data_purge.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.health.records.data_purge.backup_before_operation')
     def test_update_retention_policy_success(self, mock_backup, mock_print, mock_input, mock_auth, setup_retention_db):
         """Test successfully updating a retention policy."""
         data_purge.update_retention_policy(mock_auth)
@@ -143,7 +143,7 @@ class TestUpdateRetentionPolicy:
 
     @patch('builtins.input', side_effect=['1', '2000', 'y', 'y', 'yes'])
     @patch('builtins.print')
-    @patch('university_system.modules.domain.health.records.data_purge.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.health.records.data_purge.backup_before_operation')
     def test_update_retention_policy_enable_auto_delete(self, mock_backup, mock_print, mock_input, mock_auth, setup_retention_db):
         """Test enabling auto-delete with confirmation."""
         data_purge.update_retention_policy(mock_auth)
@@ -163,7 +163,7 @@ class TestUpdateRetentionPolicy:
 
     @patch('builtins.input', side_effect=['1', '2000', 'y', 'y', 'no'])
     @patch('builtins.print')
-    @patch('university_system.modules.domain.health.records.data_purge.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.health.records.data_purge.backup_before_operation')
     def test_update_retention_policy_cancel_auto_delete(self, mock_backup, mock_print, mock_input, mock_auth, setup_retention_db):
         """Test cancelling auto-delete when user doesn't confirm."""
         data_purge.update_retention_policy(mock_auth)
@@ -176,7 +176,7 @@ class TestArchiveOldData:
 
     @patch('builtins.input', return_value='yes')
     @patch('builtins.print')
-    @patch('university_system.modules.domain.health.records.data_purge.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.health.records.data_purge.backup_before_operation')
     def test_archive_old_data_success(self, mock_backup, mock_print, mock_input, mock_auth, setup_retention_db):
         """Test archiving old data."""
         data_purge.archive_old_data(mock_auth)
@@ -194,7 +194,7 @@ class TestArchiveOldData:
 
     @patch('builtins.input', return_value='no')
     @patch('builtins.print')
-    @patch('university_system.modules.domain.health.records.data_purge.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.health.records.data_purge.backup_before_operation')
     def test_archive_old_data_cancel(self, mock_backup, mock_print, mock_input, mock_auth, setup_retention_db):
         """Test cancelling archival process."""
         data_purge.archive_old_data(mock_auth)
@@ -232,7 +232,7 @@ class TestPurgeExpiredData:
 
     @patch('builtins.input', side_effect=['DELETE', 'admin'])
     @patch('builtins.print')
-    @patch('university_system.modules.domain.health.records.data_purge.create_sqlite_backup')
+    @patch('education_system.university_system.modules.domain.health.records.data_purge.create_sqlite_backup')
     def test_purge_expired_data_success(self, mock_backup, mock_print, mock_input, mock_auth, setup_retention_db):
         """Test successful data purge."""
         mock_backup.return_value = '/path/to/backup.db'
@@ -246,7 +246,7 @@ class TestPurgeExpiredData:
 
     @patch('builtins.input', side_effect=['DELETE', 'admin'])
     @patch('builtins.print')
-    @patch('university_system.modules.domain.health.records.data_purge.create_sqlite_backup')
+    @patch('education_system.university_system.modules.domain.health.records.data_purge.create_sqlite_backup')
     def test_purge_expired_data_backup_failure(self, mock_backup, mock_print, mock_input, mock_auth, setup_retention_db):
         """Test purge abort when backup fails."""
         mock_backup.side_effect = Exception("Backup failed")
@@ -483,7 +483,7 @@ class TestIntegration:
     """Integration tests for data purge functionality."""
 
     @patch('builtins.input', side_effect=['1', '1000', 'y', 'n'])
-    @patch('university_system.modules.domain.health.records.data_purge.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.health.records.data_purge.backup_before_operation')
     def test_update_and_view_policy(self, mock_backup, mock_input, mock_auth, setup_retention_db):
         """Test updating a policy and then viewing it."""
         # Update policy

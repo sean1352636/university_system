@@ -9,9 +9,9 @@ import jwt as pyjwt
 import pytest
 from flask import Flask
 
-from education_system.university_system.api.auth import _blacklisted_tokens
-from education_system.university_system.api.errors import register_error_handlers
-from education_system.university_system.api.routes.auth_routes import auth_bp
+from education_system.shared.api.university.auth import _blacklisted_tokens
+from education_system.shared.api.university.errors import register_error_handlers
+from education_system.shared.api.university.routes.auth_routes import auth_bp
 from education_system.university_system.core.exceptions import InvalidCredentialsError
 
 # ---------------------------------------------------------------------------
@@ -89,8 +89,8 @@ def _clear_blacklist():
 
 class TestLogin:
 
-    @patch("university_system.api.routes.auth_routes.log_login")
-    @patch("university_system.api.routes.auth_routes.get_auth")
+    @patch("shared.api.university.routes.auth_routes.log_login")
+    @patch("shared.api.university.routes.auth_routes.get_auth")
     def test_successful_login(self, mock_get_auth, mock_log_login, client):
         auth = MagicMock()
         auth.login.return_value = True
@@ -127,7 +127,7 @@ class TestLogin:
         resp = client.post("/api/auth/login", data="not json")
         assert resp.status_code == 400
 
-    @patch("university_system.api.routes.auth_routes.get_auth")
+    @patch("shared.api.university.routes.auth_routes.get_auth")
     def test_login_invalid_credentials(self, mock_get_auth, client):
         auth = MagicMock()
         auth.login.side_effect = InvalidCredentialsError("Bad creds")
@@ -139,7 +139,7 @@ class TestLogin:
         )
         assert resp.status_code == 401
 
-    @patch("university_system.api.routes.auth_routes.get_auth")
+    @patch("shared.api.university.routes.auth_routes.get_auth")
     def test_login_password_reset_required(self, mock_get_auth, client):
         auth = MagicMock()
         auth.login.return_value = "password_reset_required"
@@ -153,7 +153,7 @@ class TestLogin:
         data = resp.get_json()
         assert data["password_reset_required"] is True
 
-    @patch("university_system.api.routes.auth_routes.get_auth")
+    @patch("shared.api.university.routes.auth_routes.get_auth")
     def test_login_requires_2fa(self, mock_get_auth, client):
         auth = MagicMock()
         auth.login.return_value = {"requires_2fa": True}
@@ -168,8 +168,8 @@ class TestLogin:
         assert data["requires_2fa"] is True
         assert "Two-factor" in data["message"]
 
-    @patch("university_system.api.routes.auth_routes.log_login")
-    @patch("university_system.api.routes.auth_routes.get_auth")
+    @patch("shared.api.university.routes.auth_routes.log_login")
+    @patch("shared.api.university.routes.auth_routes.get_auth")
     def test_login_logout_failure_is_swallowed(self, mock_get_auth, mock_log, client):
         """auth.logout() failing should not break the login response."""
         auth = MagicMock()
@@ -196,7 +196,7 @@ class TestLogin:
 
 class TestLogout:
 
-    @patch("university_system.api.routes.auth_routes.log_activity")
+    @patch("shared.api.university.routes.auth_routes.log_activity")
     def test_successful_logout(self, mock_log, client):
         token = _make_access_token()
         resp = client.post("/api/auth/logout", headers=_auth_header(token))
@@ -220,7 +220,7 @@ class TestLogout:
         resp = client.post("/api/auth/logout", headers={"Authorization": "Bearer garbage"})
         assert resp.status_code == 401
 
-    @patch("university_system.api.routes.auth_routes.log_activity")
+    @patch("shared.api.university.routes.auth_routes.log_activity")
     def test_logout_with_blacklisted_token(self, mock_log, client):
         token = _make_access_token()
         _blacklisted_tokens.add(token)
@@ -234,9 +234,9 @@ class TestLogout:
 
 class TestRefresh:
 
-    @patch("university_system.api.routes.auth_routes.create_access_token")
-    @patch("university_system.api.routes.auth_routes.decode_token")
-    @patch("university_system.api.routes.auth_routes.is_token_blacklisted", return_value=False)
+    @patch("shared.api.university.routes.auth_routes.create_access_token")
+    @patch("shared.api.university.routes.auth_routes.decode_token")
+    @patch("shared.api.university.routes.auth_routes.is_token_blacklisted", return_value=False)
     def test_successful_refresh(self, _bl, mock_decode, mock_create, client):
         mock_decode.return_value = {
             "sub": "testuser",
@@ -258,7 +258,7 @@ class TestRefresh:
         assert resp.status_code == 400
         assert "refresh_token" in resp.get_json()["error"].lower()
 
-    @patch("university_system.api.routes.auth_routes.is_token_blacklisted", return_value=True)
+    @patch("shared.api.university.routes.auth_routes.is_token_blacklisted", return_value=True)
     def test_refresh_blacklisted_token(self, _bl, client):
         resp = client.post(
             "/api/auth/refresh",
@@ -267,8 +267,8 @@ class TestRefresh:
         assert resp.status_code == 401
         assert "revoked" in resp.get_json()["error"].lower()
 
-    @patch("university_system.api.routes.auth_routes.decode_token")
-    @patch("university_system.api.routes.auth_routes.is_token_blacklisted", return_value=False)
+    @patch("shared.api.university.routes.auth_routes.decode_token")
+    @patch("shared.api.university.routes.auth_routes.is_token_blacklisted", return_value=False)
     def test_refresh_invalid_token(self, _bl, mock_decode, client):
         mock_decode.side_effect = Exception("bad token")
 
@@ -279,8 +279,8 @@ class TestRefresh:
         assert resp.status_code == 401
         assert "invalid" in resp.get_json()["error"].lower()
 
-    @patch("university_system.api.routes.auth_routes.decode_token")
-    @patch("university_system.api.routes.auth_routes.is_token_blacklisted", return_value=False)
+    @patch("shared.api.university.routes.auth_routes.decode_token")
+    @patch("shared.api.university.routes.auth_routes.is_token_blacklisted", return_value=False)
     def test_refresh_wrong_token_type(self, _bl, mock_decode, client):
         mock_decode.return_value = {
             "sub": "testuser",
@@ -294,9 +294,9 @@ class TestRefresh:
         assert resp.status_code == 401
         assert "invalid token type" in resp.get_json()["error"].lower()
 
-    @patch("university_system.api.routes.auth_routes.create_access_token")
-    @patch("university_system.api.routes.auth_routes.decode_token")
-    @patch("university_system.api.routes.auth_routes.is_token_blacklisted", return_value=False)
+    @patch("shared.api.university.routes.auth_routes.create_access_token")
+    @patch("shared.api.university.routes.auth_routes.decode_token")
+    @patch("shared.api.university.routes.auth_routes.is_token_blacklisted", return_value=False)
     def test_refresh_default_role(self, _bl, mock_decode, mock_create, client):
         """When role is missing from payload, it should default to 'student'."""
         mock_decode.return_value = {

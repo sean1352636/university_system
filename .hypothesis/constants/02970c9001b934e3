@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/commerce/services/shop_management/analytics.py
+# hypothesis_version: 6.151.9
+
+['-', '=', 'N/A', 'conn', 'overview', 'payment_methods', 'student_id', 'top_customers']

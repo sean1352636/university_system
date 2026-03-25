@@ -95,6 +95,25 @@ class BehaviourService:
         finally:
             conn.close()
 
+    def delete_incident(self, incident_id: int) -> bool:
+        """Delete a behaviour incident by ID."""
+        conn = self._conn()
+        try:
+            result = conn.execute(
+                "DELETE FROM behaviour_records WHERE id = ?", (incident_id,)
+            )
+            conn.commit()
+            if result.rowcount == 0:
+                raise BehaviourError(f"Incident {incident_id} not found.")
+            return True
+        except BehaviourError:
+            raise
+        except Exception as e:
+            conn.rollback()
+            raise BehaviourError(f"Failed to delete incident: {e}")
+        finally:
+            conn.close()
+
     def get_student_records(self, student_id: int) -> list[dict]:
         conn = self._conn()
         try:

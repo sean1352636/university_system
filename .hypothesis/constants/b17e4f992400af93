@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/parent_portal/quick_actions.py
+# hypothesis_version: 6.151.9
+
+['\nExport Options:', '\nQuick Actions Menu:', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', '1', '1. Academic concern', '2', '3', '3. Facility issue', '4', '4. Back to menu', '4. Safety concern', '5', '6', '6. Back to main menu', '6. Other', '==================', 'Academic', 'Administrative', 'Behavioral', 'END:VCALENDAR\n', 'Facility', 'Invalid choice.', 'Issue subject: ', 'No alerts for today.', 'No urgent messages.', 'Other', 'Safety', 'high', 'id', 'low', 'medium', 'parent', 'role', '⚠️ LOW', '✅ OK']

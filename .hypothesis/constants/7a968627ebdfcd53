@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/activity_logger.py
+# hypothesis_version: 6.151.9
+
+['ActivityLogger', 'get_user', 'log_access', 'log_activity', 'log_create', 'log_delete', 'log_error', 'log_export', 'log_import', 'log_login', 'log_logout', 'log_read', 'log_search', 'log_update', 'logger', 'set_user']

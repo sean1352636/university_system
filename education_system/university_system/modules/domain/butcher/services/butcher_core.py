@@ -38,85 +38,13 @@ ORDER_STATUSES = ['pending', 'processing', 'ready', 'collected', 'cancelled']
 def init_butcher_db():
     """Initialize butcher shop database tables"""
     with transaction() as conn:
-        # Products table
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS butcher_products (
-                product_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                category TEXT NOT NULL,
-                description TEXT,
-                price_per_unit DECIMAL(10,2) NOT NULL,
-                unit_type TEXT DEFAULT 'kg',
-                stock_quantity DECIMAL(10,2) DEFAULT 0,
-                min_stock_level DECIMAL(10,2) DEFAULT 5,
-                is_available INTEGER DEFAULT 1,
-                origin TEXT,
-                storage_temp TEXT,
-                shelf_life_days INTEGER,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
+        # Products now use unified 'products' table with source_type='butcher'
 
-        # Orders table
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS butcher_orders (
-                order_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                order_number TEXT UNIQUE NOT NULL,
-                customer_id TEXT NOT NULL,
-                customer_name TEXT NOT NULL,
-                customer_email TEXT,
-                customer_phone TEXT,
-                status TEXT DEFAULT 'pending',
-                order_type TEXT DEFAULT 'counter',
-                special_instructions TEXT,
-                total_amount DECIMAL(10,2) DEFAULT 0.00,
-                payment_status TEXT DEFAULT 'pending',
-                payment_method TEXT,
-                payment_reference TEXT,
-                pickup_date TEXT,
-                pickup_time TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                processed_by TEXT
-            )
-        ''')
+        # Orders now use unified 'orders' table with source_type='butcher'
 
-        # Order items table
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS butcher_order_items (
-                item_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                order_id INTEGER NOT NULL,
-                product_id INTEGER NOT NULL,
-                product_name TEXT NOT NULL,
-                quantity DECIMAL(10,2) NOT NULL,
-                unit_type TEXT NOT NULL,
-                unit_price DECIMAL(10,2) NOT NULL,
-                total_price DECIMAL(10,2) NOT NULL,
-                special_cut TEXT,
-                notes TEXT,
-                FOREIGN KEY (order_id) REFERENCES butcher_orders(order_id),
-                FOREIGN KEY (product_id) REFERENCES butcher_products(product_id)
-            )
-        ''')
+        # Order items now use unified 'order_items' table with source_type='butcher'
 
-        # Transactions table
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS butcher_transactions (
-                transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                order_id INTEGER,
-                customer_id TEXT NOT NULL,
-                amount DECIMAL(10,2) NOT NULL,
-                payment_method TEXT NOT NULL,
-                transaction_type TEXT DEFAULT 'sale',
-                reference_number TEXT,
-                status TEXT DEFAULT 'completed',
-                receipt_sent INTEGER DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                processed_by TEXT,
-                FOREIGN KEY (order_id) REFERENCES butcher_orders(order_id)
-            )
-        ''')
+        # Butcher transactions now use unified 'transactions' table with source_type='butcher'
 
         # Inventory log table
         conn.execute('''
@@ -130,7 +58,7 @@ def init_butcher_db():
                 reason TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 created_by TEXT,
-                FOREIGN KEY (product_id) REFERENCES butcher_products(product_id)
+                FOREIGN KEY (product_id) REFERENCES products(source_product_id)
             )
         ''')
 
@@ -163,10 +91,10 @@ class ProductManager:
         """Add a new product to the inventory"""
         with transaction() as conn:
             cursor = conn.execute('''
-                INSERT INTO butcher_products
-                (name, category, description, price_per_unit, unit_type,
+                INSERT INTO products
+                (source_type, name, category, description, price_per_unit, unit_type,
                  stock_quantity, origin, storage_temp, shelf_life_days)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES ('butcher', ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (name, category, description, price_per_unit, unit_type,
                   stock_quantity, origin, storage_temp, shelf_life_days))
             return cursor.lastrowid
@@ -176,8 +104,8 @@ class ProductManager:
         """Get product by ID"""
         with get_db_connection() as conn:
             row = conn.execute(
-                'SELECT * FROM butcher_products WHERE product_id = ?',
-                (product_id,)
+                'SELECT * FROM products WHERE source_product_id = ? AND source_type = ?',
+                (product_id, 'butcher')
             ).fetchone()
             if row:
                 return dict(row)
@@ -187,7 +115,7 @@ class ProductManager:
     def get_all_products(category: str = None, available_only: bool = True) -> List[Dict]:
         """Get all products, optionally filtered by category"""
         with get_db_connection() as conn:
-            query = 'SELECT * FROM butcher_products WHERE 1=1'
+            query = "SELECT * FROM products WHERE source_type = 'butcher'"
             params = []
 
             if category:
@@ -219,7 +147,7 @@ class ProductManager:
 
         with transaction() as conn:
             conn.execute(
-                f'UPDATE butcher_products SET {set_clause} WHERE product_id = ?',
+                f"UPDATE products SET {set_clause} WHERE source_product_id = ? AND source_type = 'butcher'",
                 values
             )
             return True
@@ -231,7 +159,7 @@ class ProductManager:
         with transaction() as conn:
             # Get current stock
             row = conn.execute(
-                'SELECT stock_quantity FROM butcher_products WHERE product_id = ?',
+                "SELECT stock_quantity FROM products WHERE source_product_id = ? AND source_type = 'butcher'",
                 (product_id,)
             ).fetchone()
 
@@ -243,7 +171,7 @@ class ProductManager:
 
             # Update stock
             conn.execute(
-                'UPDATE butcher_products SET stock_quantity = ?, updated_at = ? WHERE product_id = ?',
+                "UPDATE products SET stock_quantity = ?, updated_at = ? WHERE source_product_id = ? AND source_type = 'butcher'",
                 (new_qty, datetime.now().isoformat(), product_id)
             )
 
@@ -264,8 +192,8 @@ class ProductManager:
         """Get products with stock below minimum level"""
         with get_db_connection() as conn:
             rows = conn.execute('''
-                SELECT * FROM butcher_products
-                WHERE stock_quantity <= min_stock_level AND is_available = 1
+                SELECT * FROM products
+                WHERE source_type = 'butcher' AND stock_quantity <= min_stock_level AND is_available = 1
                 ORDER BY stock_quantity ASC
             ''').fetchall()
             return [dict(row) for row in rows]
@@ -275,8 +203,8 @@ class ProductManager:
         """Search products by name or description"""
         with get_db_connection() as conn:
             rows = conn.execute('''
-                SELECT * FROM butcher_products
-                WHERE name LIKE ? OR description LIKE ? OR category LIKE ?
+                SELECT * FROM products
+                WHERE source_type = 'butcher' AND (name LIKE ? OR description LIKE ? OR category LIKE ?)
                 ORDER BY name
             ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%')).fetchall()
             return [dict(row) for row in rows]
@@ -290,7 +218,7 @@ class OrderManager:
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
         with get_db_connection() as conn:
             count = conn.execute(
-                'SELECT COUNT(*) FROM butcher_orders WHERE DATE(created_at) = DATE(?)',
+                "SELECT COUNT(*) FROM orders WHERE source_type = 'butcher' AND DATE(created_at) = DATE(?)",
                 (datetime.now().isoformat(),)
             ).fetchone()[0]
         return f"BTR-{timestamp}-{count + 1:03d}"
@@ -305,10 +233,10 @@ class OrderManager:
 
         with transaction() as conn:
             cursor = conn.execute('''
-                INSERT INTO butcher_orders
-                (order_number, customer_id, customer_name, customer_email, customer_phone,
+                INSERT INTO orders
+                (source_type, order_number, customer_id, customer_name, customer_email, customer_phone,
                  order_type, pickup_date, pickup_time, special_instructions, processed_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES ('butcher', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (order_number, customer_id, customer_name, customer_email, customer_phone,
                   order_type, pickup_date, pickup_time, special_instructions, processed_by))
             return cursor.lastrowid, order_number
@@ -320,7 +248,7 @@ class OrderManager:
         with transaction() as conn:
             # Get product details
             product = conn.execute(
-                'SELECT name, price_per_unit, unit_type FROM butcher_products WHERE product_id = ?',
+                "SELECT name, price_per_unit, unit_type FROM products WHERE source_product_id = ? AND source_type = 'butcher'",
                 (product_id,)
             ).fetchone()
 
@@ -330,17 +258,17 @@ class OrderManager:
             total_price = product['price_per_unit'] * quantity
 
             cursor = conn.execute('''
-                INSERT INTO butcher_order_items
-                (order_id, product_id, product_name, quantity, unit_type,
-                 unit_price, total_price, special_cut, notes)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO order_items
+                (source_type, order_id, product_id, item_name, quantity, unit_type,
+                 unit_price, subtotal, special_cut, notes)
+                VALUES ('butcher', ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (order_id, product_id, product['name'], quantity, product['unit_type'],
                   product['price_per_unit'], total_price, special_cut, notes))
 
             # Update order total
             conn.execute('''
-                UPDATE butcher_orders
-                SET total_amount = (SELECT SUM(total_price) FROM butcher_order_items WHERE order_id = ?),
+                UPDATE orders
+                SET total_amount = (SELECT SUM(subtotal) FROM order_items WHERE order_id = ? AND source_type = 'butcher'),
                     updated_at = ?
                 WHERE order_id = ?
             ''', (order_id, datetime.now().isoformat(), order_id))
@@ -352,7 +280,7 @@ class OrderManager:
         """Get order by ID with items"""
         with get_db_connection() as conn:
             order = conn.execute(
-                'SELECT * FROM butcher_orders WHERE order_id = ?',
+                "SELECT * FROM orders WHERE order_id = ? AND source_type = 'butcher'",
                 (order_id,)
             ).fetchone()
 
@@ -362,7 +290,7 @@ class OrderManager:
             order_dict = dict(order)
 
             items = conn.execute(
-                'SELECT * FROM butcher_order_items WHERE order_id = ?',
+                "SELECT * FROM order_items WHERE order_id = ? AND source_type = 'butcher'",
                 (order_id,)
             ).fetchall()
             order_dict['items'] = [dict(item) for item in items]
@@ -374,7 +302,7 @@ class OrderManager:
         """Get order by order number"""
         with get_db_connection() as conn:
             order = conn.execute(
-                'SELECT * FROM butcher_orders WHERE order_number = ?',
+                "SELECT * FROM orders WHERE order_number = ? AND source_type = 'butcher'",
                 (order_number,)
             ).fetchone()
 
@@ -390,9 +318,9 @@ class OrderManager:
 
         with transaction() as conn:
             conn.execute('''
-                UPDATE butcher_orders
-                SET status = ?, updated_at = ?, processed_by = ?
-                WHERE order_id = ?
+                UPDATE orders
+                SET order_status = ?, updated_at = ?, processed_by = ?
+                WHERE order_id = ? AND source_type = 'butcher'
             ''', (status, datetime.now().isoformat(), user_id, order_id))
             return True
 
@@ -401,9 +329,9 @@ class OrderManager:
         """Update order payment status"""
         with transaction() as conn:
             conn.execute('''
-                UPDATE butcher_orders
+                UPDATE orders
                 SET payment_status = ?, payment_method = ?, updated_at = ?
-                WHERE order_id = ?
+                WHERE order_id = ? AND source_type = 'butcher'
             ''', (payment_status, payment_method, datetime.now().isoformat(), order_id))
             return True
 
@@ -412,7 +340,7 @@ class OrderManager:
         """Get orders by status"""
         with get_db_connection() as conn:
             rows = conn.execute(
-                'SELECT * FROM butcher_orders WHERE status = ? ORDER BY created_at DESC',
+                "SELECT * FROM orders WHERE order_status = ? AND source_type = 'butcher' ORDER BY created_at DESC",
                 (status,)
             ).fetchall()
             return [dict(row) for row in rows]
@@ -422,7 +350,7 @@ class OrderManager:
         """Get all orders for a customer"""
         with get_db_connection() as conn:
             rows = conn.execute(
-                'SELECT * FROM butcher_orders WHERE customer_id = ? ORDER BY created_at DESC',
+                "SELECT * FROM orders WHERE customer_id = ? AND source_type = 'butcher' ORDER BY created_at DESC",
                 (customer_id,)
             ).fetchall()
             return [dict(row) for row in rows]
@@ -432,8 +360,8 @@ class OrderManager:
         """Get all orders for today"""
         with get_db_connection() as conn:
             rows = conn.execute('''
-                SELECT * FROM butcher_orders
-                WHERE DATE(created_at) = DATE('now', 'localtime')
+                SELECT * FROM orders
+                WHERE source_type = 'butcher' AND DATE(created_at) = DATE('now', 'localtime')
                 ORDER BY created_at DESC
             ''').fetchall()
             return [dict(row) for row in rows]
@@ -449,18 +377,18 @@ class TransactionManager:
         with transaction() as conn:
             # Record transaction
             cursor = conn.execute('''
-                INSERT INTO butcher_transactions
-                (order_id, customer_id, amount, payment_method, reference_number, processed_by)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO transactions
+                (source_type, reference_id, reference_type, customer_id, amount, payment_method, reference_number, processed_by)
+                VALUES ('butcher', ?, 'order', ?, ?, ?, ?, ?)
             ''', (order_id, customer_id, amount, payment_method, reference_number, processed_by))
 
             transaction_id = cursor.lastrowid
 
             # Update order payment status
             conn.execute('''
-                UPDATE butcher_orders
+                UPDATE orders
                 SET payment_status = 'paid', payment_method = ?, payment_reference = ?, updated_at = ?
-                WHERE order_id = ?
+                WHERE order_id = ? AND source_type = 'butcher'
             ''', (payment_method, reference_number, datetime.now().isoformat(), order_id))
 
             # Record in main finance system
@@ -481,10 +409,10 @@ class TransactionManager:
         """Process refund for an order"""
         with transaction() as conn:
             cursor = conn.execute('''
-                INSERT INTO butcher_transactions
-                (order_id, customer_id, amount, payment_method, transaction_type,
+                INSERT INTO transactions
+                (source_type, reference_id, reference_type, customer_id, amount, payment_method, transaction_type,
                  reference_number, processed_by)
-                VALUES (?, ?, ?, 'refund', 'refund', ?, ?)
+                VALUES ('butcher', ?, 'order', ?, ?, 'refund', 'refund', ?, ?)
             ''', (order_id, customer_id, -amount, reason, processed_by))
 
             return cursor.lastrowid
@@ -494,8 +422,8 @@ class TransactionManager:
         """Get transaction by ID"""
         with get_db_connection() as conn:
             row = conn.execute(
-                'SELECT * FROM butcher_transactions WHERE transaction_id = ?',
-                (transaction_id,)
+                'SELECT * FROM transactions WHERE transaction_id = ? AND source_type = ?',
+                (transaction_id, 'butcher')
             ).fetchone()
             if row:
                 return dict(row)
@@ -506,7 +434,7 @@ class TransactionManager:
         """Mark receipt as sent"""
         with transaction() as conn:
             conn.execute(
-                'UPDATE butcher_transactions SET receipt_sent = 1 WHERE transaction_id = ?',
+                'UPDATE transactions SET receipt_sent = 1 WHERE transaction_id = ? AND source_type = \'butcher\'',
                 (transaction_id,)
             )
             return True
@@ -523,15 +451,15 @@ class TransactionManager:
                 SELECT
                     COUNT(*) as transaction_count,
                     SUM(total_amount) as total_sales
-                FROM butcher_orders
-                WHERE DATE(created_at) = ? AND payment_status = 'paid'
+                FROM orders
+                WHERE source_type = 'butcher' AND DATE(created_at) = ? AND payment_status = 'paid'
             ''', (date,)).fetchone()
 
             # Get refunds separately
             refunds = conn.execute('''
                 SELECT SUM(total_amount) as total_refunds
-                FROM butcher_orders
-                WHERE DATE(created_at) = ? AND payment_status = 'refunded'
+                FROM orders
+                WHERE source_type = 'butcher' AND DATE(created_at) = ? AND payment_status = 'refunded'
             ''', (date,)).fetchone()
 
             total_sales = row['total_sales'] or 0
@@ -558,8 +486,8 @@ class ReportManager:
                     COUNT(*) as total_orders,
                     SUM(total_amount) as total_revenue,
                     AVG(total_amount) as avg_order_value
-                FROM butcher_orders
-                WHERE DATE(created_at) BETWEEN ? AND ? AND payment_status = 'paid'
+                FROM orders
+                WHERE source_type = 'butcher' AND DATE(created_at) BETWEEN ? AND ? AND payment_status = 'paid'
             ''', (start_date, end_date)).fetchone()
 
             # Sales by category
@@ -567,11 +495,11 @@ class ReportManager:
                 SELECT
                     p.category,
                     SUM(oi.quantity) as total_quantity,
-                    SUM(oi.total_price) as total_sales
-                FROM butcher_order_items oi
-                JOIN butcher_products p ON oi.product_id = p.product_id
-                JOIN butcher_orders o ON oi.order_id = o.order_id
-                WHERE DATE(o.created_at) BETWEEN ? AND ?
+                    SUM(oi.subtotal) as total_sales
+                FROM order_items oi
+                JOIN products p ON oi.product_id = p.source_product_id AND p.source_type = 'butcher'
+                JOIN orders o ON oi.order_id = o.order_id AND o.source_type = 'butcher'
+                WHERE oi.source_type = 'butcher' AND DATE(o.created_at) BETWEEN ? AND ?
                     AND o.payment_status = 'paid'
                 GROUP BY p.category
                 ORDER BY total_sales DESC
@@ -580,14 +508,14 @@ class ReportManager:
             # Top selling products
             top_products = conn.execute('''
                 SELECT
-                    oi.product_name,
+                    oi.item_name as product_name,
                     SUM(oi.quantity) as total_quantity,
-                    SUM(oi.total_price) as total_sales
-                FROM butcher_order_items oi
-                JOIN butcher_orders o ON oi.order_id = o.order_id
-                WHERE DATE(o.created_at) BETWEEN ? AND ?
+                    SUM(oi.subtotal) as total_sales
+                FROM order_items oi
+                JOIN orders o ON oi.order_id = o.order_id AND o.source_type = 'butcher'
+                WHERE oi.source_type = 'butcher' AND DATE(o.created_at) BETWEEN ? AND ?
                     AND o.payment_status = 'paid'
-                GROUP BY oi.product_id, oi.product_name
+                GROUP BY oi.product_id, oi.item_name
                 ORDER BY total_quantity DESC
                 LIMIT 10
             ''', (start_date, end_date)).fetchall()
@@ -607,11 +535,11 @@ class ReportManager:
             # All products with stock info
             products = conn.execute('''
                 SELECT
-                    product_id, name, category, stock_quantity,
+                    source_product_id as product_id, name, category, stock_quantity,
                     min_stock_level, unit_type, price_per_unit,
                     (stock_quantity * price_per_unit) as stock_value
-                FROM butcher_products
-                WHERE is_available = 1
+                FROM products
+                WHERE source_type = 'butcher' AND is_available = 1
                 ORDER BY category, name
             ''').fetchall()
 
@@ -621,8 +549,8 @@ class ReportManager:
                     COUNT(*) as total_products,
                     SUM(stock_quantity * price_per_unit) as total_stock_value,
                     COUNT(CASE WHEN stock_quantity <= min_stock_level THEN 1 END) as low_stock_count
-                FROM butcher_products
-                WHERE is_available = 1
+                FROM products
+                WHERE source_type = 'butcher' AND is_available = 1
             ''').fetchone()
 
             return {

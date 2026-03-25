@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/early_warning_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' = ?', ' AND ', ' WHERE ', ', ', '/api/early-warning', '/interventions', '/profiles', 'GET', 'POST', 'PUT', 'assigned_to', 'completed_date', 'create', 'description', 'early_warning', 'intervention_type', 'notes', 'outcome', 'priority', 'priority = ?', 'risk_level', 'risk_level = ?', 'scheduled_date', 'status', 'status = ?', 'student_id', 'student_id = ?', 'sub', 'trigger_type', 'update', 'view']

@@ -1,6 +1,6 @@
 from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from .core import safe_execute, auth
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.core import safe_execute, auth
 
 
 def award_engagement_points(alumni_id, activity_type, points):
@@ -450,8 +450,8 @@ def generate_engagement_recommendations():
 
     # Event recommendations
     cursor.execute('''
-        SELECT COUNT(*) FROM alumni_events
-        WHERE event_date > datetime('now') AND registration_required = 1
+        SELECT COUNT(*) FROM unified_events
+        WHERE source_type = 'alumni' AND start_datetime > datetime('now') AND registration_required = 1
     ''', ())
 
     upcoming_events = cursor.fetchone()[0]

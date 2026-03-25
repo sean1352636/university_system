@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/housing/services/housing_accommodation/payments.py
+# hypothesis_version: 6.151.9
+
+['\nPayment Amount: $', '\nPayment Summary:', '\nSelect Building:', ' 23:59:59', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '1', '1. Credit Card', '1. View by student', '2', '2. Bank Transfer', '2. View by building', '3', '3. Cash', '4', '4. Check', '5', '5. Other', '=', 'Bank Transfer', 'Cash', 'Check', 'Completed', 'Credit Card', 'Housing', 'Invalid choice.', 'PAY', 'housing', 'id', 'role', 'student', 'username', 'view_accommodations', 'view_own_record']

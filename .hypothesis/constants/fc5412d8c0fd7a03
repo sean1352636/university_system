@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/attendance/db.py
+# hypothesis_version: 6.151.9
+
+['0.75', '1.5', '10', '1000', '15', '2', '24', '3', '30', '50', '60', '70', '80', 'False', 'SMS service API key', 'True', 'UTC', 'analytics', 'api', 'api_rate_limit', 'attendance_statuses', 'auto_backup_enabled', 'auto_email_warnings', 'boolean', 'en', 'enable_audit_log', 'enable_dark_mode', 'enable_gamification', 'enable_geofencing', 'enable_parent_portal', 'enable_qr_checkin', 'features', 'float', 'gamification', 'general', 'integer', 'integrations', 'language', 'location', 'notifications', 'qr_system', 'security', 'sms_api_key', 'string', 'system', 'thresholds', 'timezone', 'ui']

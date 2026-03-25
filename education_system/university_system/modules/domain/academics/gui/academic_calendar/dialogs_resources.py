@@ -171,10 +171,15 @@ class AddResourceDialog:
                 messagebox.showerror(_("common.error"), _("academic_calendar.messages.name_type_required"))
                 return
 
+            capacity_str = self.capacity_var.get().strip()
+            if capacity_str and not capacity_str.isdigit():
+                messagebox.showerror(_("common.error"), _("academic_calendar.messages.capacity_must_be_number"))
+                return
+
             resource_data = {
                 'name': name,
                 'type': resource_type,
-                'capacity': int(self.capacity_var.get()) if self.capacity_var.get().strip() else None,
+                'capacity': int(capacity_str) if capacity_str else None,
                 'location': self.location_var.get().strip() or None
             }
 
@@ -202,18 +207,22 @@ class AddResourceDialog:
 
 
 class BookResourceDialog:
-    """Dialog for booking resources"""
-    
+    """Dialog for booking resources with date/time pickers"""
+
     def __init__(self, parent, calendar_manager, resource_name=None, callback=None):
         self.calendar_manager = calendar_manager
         self.resource_name = resource_name
         self.callback = callback
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(_("academic_calendar.dialogs.resource_management.book_title"))
-        self.dialog.geometry("450x400")
+        self.dialog.geometry("520x600")
+        self.dialog.minsize(480, 550)
         self.dialog.transient(parent)
         safe_grab_set(self.dialog, parent)
+
+        # Get current user info for email
+        self._auth = getattr(calendar_manager, '_auth', None) or getattr(calendar_manager, 'auth', None)
 
         self._create_widgets()
         self._center_dialog()
@@ -224,71 +233,107 @@ class BookResourceDialog:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         ttk.Label(main_frame, text=_("academic_calendar.dialogs.resource_management.book_header"),
-                 font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Resource selection
         ttk.Label(main_frame, text=_("academic_calendar.labels.resource_required")).pack(anchor=tk.W)
         self.resource_var = tk.StringVar(value=self.resource_name or "")
-        resource_combo = ttk.Combobox(main_frame, textvariable=self.resource_var, width=42)
-        resource_combo.pack(fill=tk.X, pady=(5, 15))
-        
-        # Load resources
+        resource_combo = ttk.Combobox(main_frame, textvariable=self.resource_var, width=42, state='readonly')
+        resource_combo.pack(fill=tk.X, pady=(5, 10))
+
         try:
             resources = self.calendar_manager.db_manager.execute_query(
                 "SELECT name FROM resources WHERE status = 'available' ORDER BY name"
             )
-            resource_names = [r['name'] for r in resources]
-            resource_combo['values'] = resource_names
+            resource_combo['values'] = [r['name'] for r in resources]
         except Exception as e:
-            gui_logger.warning(f"Failed to load resources for allocation: {e}")
-        
+            gui_logger.warning(f"Failed to load resources: {e}")
+
         # Event selection
         ttk.Label(main_frame, text=_("academic_calendar.labels.event_optional")).pack(anchor=tk.W)
         self.event_var = tk.StringVar()
-        event_combo = ttk.Combobox(main_frame, textvariable=self.event_var, width=42)
-        event_combo.pack(fill=tk.X, pady=(5, 15))
+        self._event_map = {}
+        event_combo = ttk.Combobox(main_frame, textvariable=self.event_var, width=42, state='readonly')
+        event_combo.pack(fill=tk.X, pady=(5, 10))
 
-        # Load recent events
         try:
             events = self.calendar_manager.db_manager.execute_query(
-                "SELECT id, name FROM academic_calendar_events ORDER BY date_added DESC LIMIT 20"
+                "SELECT id, name FROM academic_calendar_events ORDER BY date_added DESC LIMIT 30"
             )
-            event_list = [f"{e['name']} ({e['id'][:8]})" for e in events]
-            event_combo['values'] = event_list
+            labels = ["(None)"]
+            self._event_map["(None)"] = None
+            for e in events:
+                label = f"{e['name']} ({e['id'][:8]}...)"
+                labels.append(label)
+                self._event_map[label] = e['id']
+            event_combo['values'] = labels
+            event_combo.current(0)
         except Exception as e:
-            gui_logger.warning(f"Failed to load events for allocation: {e}")
+            gui_logger.warning(f"Failed to load events: {e}")
 
-        # Start time
-        ttk.Label(main_frame, text=_("academic_calendar.labels.start_time_required")).pack(anchor=tk.W)
-        self.start_time_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=self.start_time_var, width=45).pack(fill=tk.X, pady=(5, 15))
+        # Date picker
+        ttk.Label(main_frame, text="Date:").pack(anchor=tk.W, pady=(5, 0))
+        date_frame = ttk.Frame(main_frame)
+        date_frame.pack(fill=tk.X, pady=(5, 10))
 
-        # End time
-        ttk.Label(main_frame, text=_("academic_calendar.labels.end_time_required")).pack(anchor=tk.W)
-        self.end_time_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=self.end_time_var, width=45).pack(fill=tk.X, pady=(5, 15))
+        now = datetime.now()
+        days = [(now + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(60)]
+
+        self.date_var = tk.StringVar(value=now.strftime("%Y-%m-%d"))
+        date_combo = ttk.Combobox(date_frame, textvariable=self.date_var, values=days, width=42, state='readonly')
+        date_combo.pack(fill=tk.X)
+
+        # Start time picker
+        ttk.Label(main_frame, text="Start Time:").pack(anchor=tk.W, pady=(5, 0))
+        start_frame = ttk.Frame(main_frame)
+        start_frame.pack(fill=tk.X, pady=(5, 10))
+
+        hours = [f"{h:02d}" for h in range(7, 22)]
+        minutes = ["00", "15", "30", "45"]
+
+        self.start_hour_var = tk.StringVar(value="09")
+        self.start_min_var = tk.StringVar(value="00")
+        ttk.Combobox(start_frame, textvariable=self.start_hour_var, values=hours, width=5, state='readonly').pack(side=tk.LEFT)
+        ttk.Label(start_frame, text=":").pack(side=tk.LEFT, padx=2)
+        ttk.Combobox(start_frame, textvariable=self.start_min_var, values=minutes, width=5, state='readonly').pack(side=tk.LEFT)
+
+        # End time picker
+        ttk.Label(main_frame, text="End Time:").pack(anchor=tk.W, pady=(5, 0))
+        end_frame = ttk.Frame(main_frame)
+        end_frame.pack(fill=tk.X, pady=(5, 10))
+
+        self.end_hour_var = tk.StringVar(value="10")
+        self.end_min_var = tk.StringVar(value="00")
+        ttk.Combobox(end_frame, textvariable=self.end_hour_var, values=hours, width=5, state='readonly').pack(side=tk.LEFT)
+        ttk.Label(end_frame, text=":").pack(side=tk.LEFT, padx=2)
+        ttk.Combobox(end_frame, textvariable=self.end_min_var, values=minutes, width=5, state='readonly').pack(side=tk.LEFT)
 
         # Notes
-        ttk.Label(main_frame, text=_("academic_calendar.labels.notes")).pack(anchor=tk.W)
+        ttk.Label(main_frame, text=_("academic_calendar.labels.notes")).pack(anchor=tk.W, pady=(5, 0))
         self.notes_text = scrolledtext.ScrolledText(main_frame, height=3, width=45)
-        self.notes_text.pack(fill=tk.X, pady=(5, 15))
+        self.notes_text.pack(fill=tk.X, pady=(5, 10))
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill=tk.X, pady=(20, 0))
+        button_frame.pack(fill=tk.X, pady=(10, 0))
 
-        ttk.Button(button_frame, text=_("common.cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=(10, 0))
-        ttk.Button(button_frame, text=_("academic_calendar.buttons.book_resource"), command=self._book_resource).pack(side=tk.RIGHT)
-    
+        ttk.Button(button_frame, text=_("academic_calendar.buttons.book_resource"), command=self._book_resource).pack(side=tk.RIGHT, padx=(10, 0))
+        ttk.Button(button_frame, text=_("common.cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT)
+
     def _book_resource(self):
         """Book the resource"""
         try:
             resource_name = self.resource_var.get().strip()
-            start_time = self.start_time_var.get().strip()
-            end_time = self.end_time_var.get().strip()
-            
-            if not all([resource_name, start_time, end_time]):
-                messagebox.showerror(_("common.error"), _("academic_calendar.messages.resource_start_end_required"))
+            date = self.date_var.get().strip()
+            start_time = f"{date} {self.start_hour_var.get()}:{self.start_min_var.get()}"
+            end_time = f"{date} {self.end_hour_var.get()}:{self.end_min_var.get()}"
+
+            if not resource_name:
+                messagebox.showerror(_("common.error"), "Please select a resource.", parent=self.dialog)
+                return
+
+            if start_time >= end_time:
+                messagebox.showerror(_("common.error"), "End time must be after start time.", parent=self.dialog)
                 return
 
             # Get resource ID
@@ -296,25 +341,15 @@ class BookResourceDialog:
                 "SELECT id FROM resources WHERE name = ?", (resource_name,)
             )
             if not resource_rows:
-                messagebox.showerror(_("common.error"), _("academic_calendar.messages.resource_not_found"))
+                messagebox.showerror(_("common.error"), _("academic_calendar.messages.resource_not_found"), parent=self.dialog)
                 return
-            
+
             resource_id = resource_rows[0]['id']
-            
+
             # Get event ID if selected
-            event_id = None
-            event_selection = self.event_var.get().strip()
-            if event_selection:
-                # Extract ID from "Name (ID)" format
-                if '(' in event_selection and ')' in event_selection:
-                    event_id_part = event_selection.split('(')[1].split(')')[0]
-                    # Find full event ID
-                    event_rows = self.calendar_manager.db_manager.execute_query(
-                        "SELECT id FROM academic_calendar_events WHERE id LIKE ?", (f"{event_id_part}%",)
-                    )
-                    if event_rows:
-                        event_id = event_rows[0]['id']
-            
+            event_selection = self.event_var.get()
+            event_id = self._event_map.get(event_selection)
+
             booking_data = {
                 'resource_id': resource_id,
                 'event_id': event_id,
@@ -322,20 +357,62 @@ class BookResourceDialog:
                 'end_time': end_time,
                 'notes': self.notes_text.get(1.0, tk.END).strip()
             }
-            
+
             success, message = self.calendar_manager.resources.book_resource(booking_data)
 
             if success:
-                messagebox.showinfo(_("common.success"), message)
+                self._send_booking_email(resource_name, start_time, end_time)
+                messagebox.showinfo(_("common.success"), message, parent=self.dialog)
                 if self.callback:
                     self.callback()
                 self.dialog.destroy()
             else:
-                messagebox.showerror(_("common.error"), message)
+                messagebox.showerror(_("common.error"), message, parent=self.dialog)
 
         except Exception as e:
-            messagebox.showerror(_("common.error"), _("academic_calendar.messages.failed_book_resource", error=str(e)))
-    
+            messagebox.showerror(_("common.error"), _("academic_calendar.messages.failed_book_resource", error=str(e)), parent=self.dialog)
+
+    def _send_booking_email(self, resource_name, start_time, end_time):
+        """Send booking confirmation email to current user"""
+        try:
+            from education_system.university_system.infrastructure.email.email_service import queue_email
+
+            user_email = None
+            username = "User"
+            if self._auth:
+                if hasattr(self._auth, 'current_user') and self._auth.current_user:
+                    user_email = self._auth.current_user.get('email')
+                    username = self._auth.current_user.get('username', 'User')
+                elif isinstance(self._auth, dict):
+                    user_email = self._auth.get('email')
+                    username = self._auth.get('username', 'User')
+
+            if not user_email:
+                return
+
+            notes = self.notes_text.get(1.0, tk.END).strip()
+            subject = f"Resource Booking Confirmation: {resource_name}"
+            body = (
+                f"Dear {username},\n\n"
+                f"Your resource booking has been confirmed:\n\n"
+                f"  Resource: {resource_name}\n"
+                f"  Start: {start_time}\n"
+                f"  End: {end_time}\n"
+            )
+            if notes:
+                body += f"  Notes: {notes}\n"
+            body += (
+                f"\nPlease ensure you arrive on time and leave the resource in good condition.\n\n"
+                f"Kind regards,\n"
+                f"Academic Calendar System"
+            )
+            queue_email(to=user_email, subject=subject, body=body)
+            gui_logger.info(f"Booking confirmation email queued for {user_email}")
+        except ImportError:
+            gui_logger.debug("Email service not available for booking confirmation")
+        except Exception as e:
+            gui_logger.warning(f"Failed to send booking email: {e}")
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()
@@ -483,30 +560,88 @@ class AddCourseDialog:
 
 
 class LinkCourseEventDialog:
-    """Simple dialog for linking courses to events"""
+    """Dialog for linking courses to events — shows dropdowns for both."""
 
-    def __init__(self, parent, calendar_manager, course_name, callback=None):
-        event_id = simpledialog.askstring(_("academic_calendar.messages.link_course_dialog.title"), _("academic_calendar.messages.link_course_dialog.event_id"))
-        if not event_id:
-            return
-        
+    def __init__(self, parent, calendar_manager, course_name=None, callback=None):
+        self.calendar_manager = calendar_manager
+        self.callback = callback
+
+        # Load events
+        self.event_map = {}
         try:
-            # Get course ID by name
-            courses = calendar_manager.db_manager.execute_query(
+            rows = calendar_manager.db_manager.execute_query(
+                "SELECT id, name FROM academic_calendar_events ORDER BY name"
+            )
+            for row in rows:
+                label = f"{row['name']} ({row['id'][:8]}...)"
+                self.event_map[label] = row['id']
+        except Exception:
+            pass
+
+        if not self.event_map:
+            messagebox.showwarning(_("common.warning"), "No events found. Create an event first.")
+            return
+
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title(_("academic_calendar.messages.link_course_dialog.title"))
+        self.dialog.geometry("500x250")
+        self.dialog.transient(parent)
+        safe_grab_set(self.dialog, parent)
+
+        frm = ttk.Frame(self.dialog, padding=15)
+        frm.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(frm, text="Link Course to Event",
+                  font=('Arial', 12, 'bold')).pack(pady=(0, 15))
+
+        # Course (pre-filled if provided)
+        ttk.Label(frm, text="Course:").pack(anchor=tk.W)
+        self.course_var = tk.StringVar(value=course_name or "")
+        course_entry = ttk.Entry(frm, textvariable=self.course_var, width=55)
+        course_entry.pack(fill=tk.X, pady=(5, 10))
+        if course_name:
+            course_entry.configure(state="readonly")
+
+        # Event dropdown
+        ttk.Label(frm, text="Event:").pack(anchor=tk.W)
+        self.event_combo = ttk.Combobox(frm, values=list(self.event_map.keys()), width=53, state='readonly')
+        self.event_combo.pack(fill=tk.X, pady=(5, 15))
+        if self.event_map:
+            self.event_combo.current(0)
+
+        btn_frame = ttk.Frame(frm)
+        btn_frame.pack(fill=tk.X)
+        ttk.Button(btn_frame, text="Link", command=self._link).pack(side=tk.RIGHT, padx=(10, 0))
+        ttk.Button(btn_frame, text=_("common.cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT)
+
+    def _link(self):
+        course_name = self.course_var.get().strip()
+        selected_event = self.event_combo.get()
+
+        if not course_name:
+            messagebox.showwarning(_("common.warning"), "Please enter a course name.")
+            return
+        if selected_event not in self.event_map:
+            messagebox.showwarning(_("common.warning"), "Please select an event.")
+            return
+
+        event_id = self.event_map[selected_event]
+
+        try:
+            courses = self.calendar_manager.db_manager.execute_query(
                 "SELECT id FROM courses WHERE name = ?", (course_name,)
             )
-            
             if not courses:
                 messagebox.showerror(_("common.error"), _("academic_calendar.messages.course_not_found"))
                 return
 
             course_id = courses[0]['id']
-
-            success, message = calendar_manager.courses.link_event_to_course(event_id, course_id)
+            success, message = self.calendar_manager.courses.link_event_to_course(event_id, course_id)
             if success:
                 messagebox.showinfo(_("common.success"), message)
-                if callback:
-                    callback()
+                if self.callback:
+                    self.callback()
+                self.dialog.destroy()
             else:
                 messagebox.showerror(_("common.error"), message)
         except Exception as e:

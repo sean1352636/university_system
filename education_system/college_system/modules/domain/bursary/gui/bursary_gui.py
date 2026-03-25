@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.college_system.modules.domain.bursary.services.bursary_service import BursaryService
+from education_system.college_system.core.i18n import t
 
 
 class BursaryFrame(tk.Frame):
@@ -19,25 +20,26 @@ class BursaryFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Bursary & Free Meals", font=("Helvetica", 14, "bold"),
+        tk.Label(header, text=t("bursary.management"), font=("Helvetica", 14, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=10)
 
         self._nb = ttk.Notebook(self)
         self._nb.pack(fill="both", expand=True, padx=10, pady=10)
 
         self._bursary_tab = tk.Frame(self._nb)
-        self._nb.add(self._bursary_tab, text="Bursary Records")
+        self._nb.add(self._bursary_tab, text=t("bursary.management"))
         self._build_bursary_tab()
 
         self._meals_tab = tk.Frame(self._nb)
-        self._nb.add(self._meals_tab, text="Free Meals")
+        self._nb.add(self._meals_tab, text=t("bursary.free_meals"))
         self._build_meals_tab()
 
     def _build_bursary_tab(self):
         toolbar = tk.Frame(self._bursary_tab)
         toolbar.pack(fill="x", padx=5, pady=5)
-        ttk.Button(toolbar, text="Refresh", command=self._load_bursaries).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="New Bursary", command=self._new_bursary).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("common.refresh"), command=self._load_bursaries).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("bursary.add_application"), command=self._new_bursary).pack(side="right", padx=5)
+        ttk.Button(toolbar, text="Export CSV", command=self._export_csv).pack(side="left", padx=5)
 
         cols = ("id", "student", "type", "amount", "status", "evidence", "frequency")
         self._bur_tree = ttk.Treeview(self._bursary_tab, columns=cols, show="headings", height=15)
@@ -49,8 +51,8 @@ class BursaryFrame(tk.Frame):
     def _build_meals_tab(self):
         toolbar = tk.Frame(self._meals_tab)
         toolbar.pack(fill="x", padx=5, pady=5)
-        ttk.Button(toolbar, text="Refresh", command=self._load_meals).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="Set Eligibility", command=self._set_eligibility).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("common.refresh"), command=self._load_meals).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("bursary.set_eligibility"), command=self._set_eligibility).pack(side="right", padx=5)
 
         cols = ("id", "student", "eligible", "evidence_type", "verified_date")
         self._meal_tree = ttk.Treeview(self._meals_tab, columns=cols, show="headings", height=15)
@@ -72,7 +74,7 @@ class BursaryFrame(tk.Frame):
                     "Yes" if r.get("evidence_provided") else "No",
                     r.get("payment_frequency", "")))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _load_meals(self):
         for item in self._meal_tree.get_children():
@@ -85,11 +87,11 @@ class BursaryFrame(tk.Frame):
                     r["id"], name, "Yes" if r.get("eligible") else "No",
                     r.get("evidence_type", ""), r.get("updated_at", "")))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _new_bursary(self):
         win = tk.Toplevel(self)
-        win.title("New Bursary Record")
+        win.title(t("bursary.add_application"))
         win.geometry("400x300")
         fields = {}
         row = 0
@@ -125,16 +127,16 @@ class BursaryFrame(tk.Frame):
                     amount=float(amt) if amt else 0.0,
                     evidence_provided=1 if ev_var.get() else 0,
                     payment_frequency=freq_var.get())
-                messagebox.showinfo("Success", "Bursary record created")
+                messagebox.showinfo(t("common.success"), t("bursary.record_created"))
                 win.destroy()
                 self._load_bursaries()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
-        ttk.Button(win, text="Save", command=save).grid(row=row, column=0, columnspan=2, pady=15)
+                messagebox.showerror(t("common.error"), str(e))
+        ttk.Button(win, text=t("common.save"), command=save).grid(row=row, column=0, columnspan=2, pady=15)
 
     def _set_eligibility(self):
         win = tk.Toplevel(self)
-        win.title("Set Meal Eligibility")
+        win.title(t("bursary.set_eligibility"))
         win.geometry("350x200")
         fields = {}
         row = 0
@@ -157,12 +159,16 @@ class BursaryFrame(tk.Frame):
                     eligible=1 if elig_var.get() else 0,
                     evidence_type=fields["evidence_type"].get().strip() or None,
                     verified_by=user_id)
-                messagebox.showinfo("Success", "Eligibility updated")
+                messagebox.showinfo(t("common.success"), t("bursary.eligibility_updated"))
                 win.destroy()
                 self._load_meals()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
-        ttk.Button(win, text="Save", command=save).grid(row=row, column=0, columnspan=2, pady=15)
+                messagebox.showerror(t("common.error"), str(e))
+        ttk.Button(win, text=t("common.save"), command=save).grid(row=row, column=0, columnspan=2, pady=15)
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._bur_tree, "bursary.csv")
 
     def refresh(self):
         self._load_bursaries()

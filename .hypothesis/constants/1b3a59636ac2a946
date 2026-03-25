@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/lms/lms_core.py
+# hypothesis_version: 6.151.9
+
+[0.0, 1.0, 70.0, 100, '1', '2', '3', '4', '5', '6', '7', '720p', '8', '9', '=', 'Error: {error}', 'Invalid choice.', 'LMSContentManager', 'LMSCourseManager', 'LMSDiscussionManager', 'LMSGradebookManager', 'LMSQuizManager', 'attempt_count', 'correct_answer', 'display_lms_menu', 'lms.error', 'lms.invalid_choice', 'max_score', 'points', 'question_id', 'score', 'weight']

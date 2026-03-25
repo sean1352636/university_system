@@ -59,7 +59,7 @@ class TestAddLearningOutcomeDialog:
 
         assert dialog.importance_var.get() == "3"
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.add_outcome_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.add_outcome_dialog.get_connection')
     @patch('tkinter.messagebox.showinfo')
     def test_add_outcome_success(self, mock_msg, mock_get_conn, root_window, mock_callback):
         """Test successfully adding a learning outcome"""
@@ -98,7 +98,7 @@ class TestAddLearningOutcomeDialog:
         mock_error.assert_called_once()
         mock_callback.assert_not_called()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.add_outcome_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.add_outcome_dialog.get_connection')
     @patch('tkinter.messagebox.showinfo')
     def test_course_code_uppercase_conversion(self, mock_msg, mock_get_conn, root_window, mock_callback):
         """Test that course code is converted to uppercase"""
@@ -126,7 +126,7 @@ class TestAddLearningOutcomeDialog:
         insert_args = insert_call[0][0][1]  # Get the tuple of values
         assert insert_args[0] == 'CS101'
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.add_outcome_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.add_outcome_dialog.get_connection')
     @patch('tkinter.messagebox.showinfo')
     def test_importance_as_integer(self, mock_msg, mock_get_conn, root_window, mock_callback):
         """Test that importance is stored as integer"""
@@ -153,7 +153,7 @@ class TestAddLearningOutcomeDialog:
         assert isinstance(insert_args[4], int)  # importance should be int
         assert insert_args[4] == 5
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.add_outcome_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.add_outcome_dialog.get_connection')
     @patch('tkinter.messagebox.showerror')
     def test_database_error_handling(self, mock_error, mock_get_conn, root_window, mock_callback):
         """Test handling of database errors"""
@@ -181,7 +181,7 @@ class TestAddLearningOutcomeDialog:
         # We can verify this indirectly by checking the widget tree
         assert dialog.category_var is not None
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.add_outcome_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.add_outcome_dialog.get_connection')
     @patch('tkinter.messagebox.showinfo')
     def test_table_creation_on_first_use(self, mock_msg, mock_get_conn, root_window, mock_callback):
         """Test that learning_outcomes table is created if it doesn't exist"""
@@ -204,7 +204,7 @@ class TestAddLearningOutcomeDialog:
         create_calls = [c for c in cursor.execute.call_args_list if 'CREATE TABLE' in str(c)]
         assert len(create_calls) >= 1
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.add_outcome_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.add_outcome_dialog.get_connection')
     @patch('tkinter.messagebox.showinfo')
     def test_dialog_closes_after_success(self, mock_msg, mock_get_conn, root_window, mock_callback):
         """Test that dialog is destroyed after successful addition"""
@@ -263,7 +263,7 @@ class TestAddLearningOutcomeDialog:
 class TestDialogIntegration:
     """Integration tests for AddLearningOutcomeDialog"""
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.add_outcome_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.add_outcome_dialog.get_connection')
     @patch('tkinter.messagebox.showinfo')
     def test_full_workflow(self, mock_msg, mock_get_conn, root_window):
         """Test complete workflow of adding multiple outcomes"""

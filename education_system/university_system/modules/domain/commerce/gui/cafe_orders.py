@@ -9,7 +9,7 @@ from tkinter import ttk, messagebox
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
-from .cafe_system_gui import get_db_connection
+from education_system.university_system.modules.domain.commerce.gui.cafe_system_gui import get_db_connection
 
 
 class CafeOrdersMixin:
@@ -97,18 +97,23 @@ class CafeOrdersMixin:
             elif filter_type == 'This Month':
                 date_filter = "WHERE DATE(order_date) >= DATE('now', 'start of month')"
 
+            # Add source_type filter to date_filter
+            source_filter = "WHERE o.source_type = 'cafe'"
+            if date_filter:
+                source_filter = date_filter.replace("WHERE", "WHERE o.source_type = 'cafe' AND")
+
             query = f'''
                 SELECT
                     o.order_id,
                     o.order_date,
                     COALESCE(o.customer_name, o.student_id, 'Walk-in'),
-                    COUNT(oi.id),
+                    COUNT(oi.item_id),
                     o.total_amount,
                     o.payment_method,
-                    o.status
-                FROM cafe_orders o
-                LEFT JOIN cafe_order_items oi ON o.order_id = oi.order_id
-                {date_filter}
+                    o.order_status
+                FROM orders o
+                LEFT JOIN order_items oi ON o.order_id = oi.source_order_id AND oi.source_type = 'cafe'
+                {source_filter}
                 GROUP BY o.order_id
                 ORDER BY o.order_date DESC
             '''
@@ -183,8 +188,8 @@ class CafeOrdersMixin:
             cursor = conn.cursor()
             cursor.execute('''
                 SELECT item_name, quantity, unit_price, subtotal
-                FROM cafe_order_items
-                WHERE order_id = ?
+                FROM order_items
+                WHERE source_type = 'cafe' AND source_order_id = ?
             ''', (order_id,))
 
             items = cursor.fetchall()

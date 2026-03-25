@@ -4,12 +4,12 @@ Admin tools for CLI system.
 Provides administrative utilities, database statistics, and system configuration.
 """
 
-from .imports import (
+from education_system.university_system.modules.shared.cli.imports import (
     logging, sqlite3, datetime, DB_PATH, logger, _t,
     log_activity, get_auth, validate_table_name, SQLIdentifierError
 )
 
-from .database_manager import (
+from education_system.university_system.modules.shared.cli.database_manager import (
     DatabaseError, validate_database_integrity, fix_duplicate_emails,
     emergency_fix_database
 )

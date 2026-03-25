@@ -77,11 +77,13 @@ def init_takeaway_db() -> bool:
         )
         ''')
 
-        # Create takeaway menu items table
+        # Products table (unified) for takeaway menu items
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS takeaway_menu_items (
-            item_id TEXT PRIMARY KEY,
-            restaurant_id TEXT NOT NULL,
+        CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_type TEXT NOT NULL DEFAULT 'takeaway',
+            source_product_id TEXT,
+            restaurant_id TEXT,
             name TEXT NOT NULL,
             description TEXT,
             category TEXT,
@@ -98,10 +100,12 @@ def init_takeaway_db() -> bool:
         )
         ''')
 
-        # Create takeaway orders table
+        # Orders table (unified) for takeaway orders
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS takeaway_orders (
-            order_id TEXT PRIMARY KEY,
+        CREATE TABLE IF NOT EXISTS orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_type TEXT NOT NULL DEFAULT 'takeaway',
+            source_order_id TEXT,
             user_id INTEGER,
             student_id TEXT,
             restaurant_id TEXT NOT NULL,
@@ -124,10 +128,11 @@ def init_takeaway_db() -> bool:
         )
         ''')
 
-        # Create takeaway order items table
+        # Order items table (unified) for takeaway order items
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS takeaway_order_items (
+        CREATE TABLE IF NOT EXISTS order_items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_type TEXT NOT NULL DEFAULT 'takeaway',
             order_id TEXT NOT NULL,
             item_id TEXT NOT NULL,
             item_name TEXT NOT NULL,
@@ -135,27 +140,12 @@ def init_takeaway_db() -> bool:
             unit_price REAL NOT NULL,
             special_instructions TEXT,
             subtotal REAL NOT NULL,
-            FOREIGN KEY (order_id) REFERENCES takeaway_orders (order_id),
-            FOREIGN KEY (item_id) REFERENCES takeaway_menu_items (item_id)
+            FOREIGN KEY (order_id) REFERENCES orders (id),
+            FOREIGN KEY (item_id) REFERENCES products (id)
         )
         ''')
 
-        # Create takeaway cart table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS takeaway_cart (
-            cart_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            restaurant_id TEXT NOT NULL,
-            item_id TEXT NOT NULL,
-            quantity INTEGER NOT NULL DEFAULT 1,
-            special_instructions TEXT,
-            added_at TEXT NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES users (id),
-            FOREIGN KEY (restaurant_id) REFERENCES takeaway_restaurants (restaurant_id),
-            FOREIGN KEY (item_id) REFERENCES takeaway_menu_items (item_id),
-            UNIQUE(user_id, item_id)
-        )
-        ''')
+        # Takeaway cart uses unified cart table with source_type='takeaway'
 
         # Create delivery addresses table
         cursor.execute('''
@@ -227,7 +217,7 @@ def init_takeaway_db() -> bool:
                 ('M027', 'R006', 'Halloumi Box', 'Grilled halloumi with chips', 'Boxes', 7.49, 1, 1, 0, 1, 650, 'Dairy', None, now),
             ]
             cursor.executemany(
-                '''INSERT INTO takeaway_menu_items VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                '''INSERT INTO products (source_type, source_product_id, restaurant_id, name, description, category, price, is_available, is_vegetarian, is_vegan, is_gluten_free, calories, allergens, image_url, created_at) VALUES ('takeaway', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                 menu_items
             )
 
@@ -372,8 +362,8 @@ def get_menu_items(restaurant_id: str) -> List[Dict]:
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute('''
-            SELECT * FROM takeaway_menu_items
-            WHERE restaurant_id = ? AND is_available = 1
+            SELECT * FROM products
+            WHERE source_type = 'takeaway' AND restaurant_id = ? AND is_available = 1
             ORDER BY category, name
         ''', (restaurant_id,))
         items = [dict(row) for row in cursor.fetchall()]
@@ -391,7 +381,7 @@ def add_to_cart(user_id: int, restaurant_id: str, item_id: str, quantity: int = 
         cursor = conn.cursor()
 
         # Check if cart has items from different restaurant
-        cursor.execute('SELECT restaurant_id FROM takeaway_cart WHERE user_id = ? LIMIT 1', (user_id,))
+        cursor.execute("SELECT restaurant_id FROM cart WHERE source_type = 'takeaway' AND user_id = ? LIMIT 1", (user_id,))
         existing = cursor.fetchone()
         if existing and existing[0] != restaurant_id:
             print("Cart contains items from a different restaurant. Please clear cart first.")
@@ -402,8 +392,8 @@ def add_to_cart(user_id: int, restaurant_id: str, item_id: str, quantity: int = 
 
         # Try to update existing item or insert new
         cursor.execute('''
-            INSERT INTO takeaway_cart (user_id, restaurant_id, item_id, quantity, special_instructions, added_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO cart (source_type, user_id, restaurant_id, item_id, quantity, special_instructions, added_at)
+            VALUES ('takeaway', ?, ?, ?, ?, ?, ?)
             ON CONFLICT(user_id, item_id) DO UPDATE SET
                 quantity = quantity + excluded.quantity,
                 special_instructions = excluded.special_instructions
@@ -425,10 +415,10 @@ def view_cart(user_id: int) -> Tuple[List[Dict], float, str]:
 
         cursor.execute('''
             SELECT c.*, m.name, m.price, r.name as restaurant_name, r.delivery_fee, r.min_order_amount
-            FROM takeaway_cart c
-            JOIN takeaway_menu_items m ON c.item_id = m.item_id
+            FROM cart c
+            JOIN products m ON c.item_id = m.source_product_id AND m.source_type = 'takeaway'
             JOIN takeaway_restaurants r ON c.restaurant_id = r.restaurant_id
-            WHERE c.user_id = ?
+            WHERE c.source_type = 'takeaway' AND c.user_id = ?
         ''', (user_id,))
 
         items = [dict(row) for row in cursor.fetchall()]
@@ -453,7 +443,7 @@ def clear_cart(user_id: int) -> bool:
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute('DELETE FROM takeaway_cart WHERE user_id = ?', (user_id,))
+        cursor.execute("DELETE FROM cart WHERE source_type = 'takeaway' AND user_id = ?", (user_id,))
         conn.commit()
         conn.close()
         return True
@@ -503,11 +493,11 @@ def place_order(user_id: int, delivery_address: str, delivery_type: str = 'deliv
 
         # Create order
         cursor.execute('''
-            INSERT INTO takeaway_orders
-            (order_id, user_id, student_id, restaurant_id, order_date, delivery_address,
+            INSERT INTO orders
+            (source_type, source_order_id, user_id, student_id, restaurant_id, order_date, delivery_address,
              delivery_type, subtotal, delivery_fee, total_amount, payment_method,
              payment_status, order_status, estimated_delivery, notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'paid', 'confirmed', ?, ?)
+            VALUES ('takeaway', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'paid', 'confirmed', ?, ?)
         ''', (order_id, user_id, student_id, restaurant_id, now, delivery_address,
               delivery_type, subtotal, delivery_fee, total, payment_method,
               estimated_delivery, notes))
@@ -515,9 +505,9 @@ def place_order(user_id: int, delivery_address: str, delivery_type: str = 'deliv
         # Create order items
         for item in cart_items:
             cursor.execute('''
-                INSERT INTO takeaway_order_items
-                (order_id, item_id, item_name, quantity, unit_price, special_instructions, subtotal)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO order_items
+                (source_type, order_id, item_id, item_name, quantity, unit_price, special_instructions, subtotal)
+                VALUES ('takeaway', ?, ?, ?, ?, ?, ?, ?)
             ''', (order_id, item['item_id'], item['name'], item['quantity'],
                   item['price'], item['special_instructions'], item['price'] * item['quantity']))
 
@@ -527,7 +517,7 @@ def place_order(user_id: int, delivery_address: str, delivery_type: str = 'deliv
         ''', (restaurant_id,))
 
         # Clear cart
-        cursor.execute('DELETE FROM takeaway_cart WHERE user_id = ?', (user_id,))
+        cursor.execute("DELETE FROM cart WHERE source_type = 'takeaway' AND user_id = ?", (user_id,))
 
         conn.commit()
         conn.close()
@@ -548,9 +538,9 @@ def get_order_history(user_id: int) -> List[Dict]:
         cursor = conn.cursor()
         cursor.execute('''
             SELECT o.*, r.name as restaurant_name
-            FROM takeaway_orders o
+            FROM orders o
             JOIN takeaway_restaurants r ON o.restaurant_id = r.restaurant_id
-            WHERE o.user_id = ?
+            WHERE o.source_type = 'takeaway' AND o.user_id = ?
             ORDER BY o.order_date DESC
         ''', (user_id,))
         orders = [dict(row) for row in cursor.fetchall()]
@@ -569,9 +559,9 @@ def get_order_details(order_id: str) -> Tuple[Optional[Dict], List[Dict]]:
 
         cursor.execute('''
             SELECT o.*, r.name as restaurant_name
-            FROM takeaway_orders o
+            FROM orders o
             JOIN takeaway_restaurants r ON o.restaurant_id = r.restaurant_id
-            WHERE o.order_id = ?
+            WHERE o.source_type = 'takeaway' AND o.source_order_id = ?
         ''', (order_id,))
         order = cursor.fetchone()
 
@@ -579,7 +569,7 @@ def get_order_details(order_id: str) -> Tuple[Optional[Dict], List[Dict]]:
             conn.close()
             return None, []
 
-        cursor.execute('SELECT * FROM takeaway_order_items WHERE order_id = ?', (order_id,))
+        cursor.execute("SELECT * FROM order_items WHERE source_type = 'takeaway' AND order_id = ?", (order_id,))
         items = [dict(row) for row in cursor.fetchall()]
 
         conn.close()
@@ -601,9 +591,9 @@ def rate_order(order_id: str, rating: int, review: str = "") -> bool:
         cursor = conn.cursor()
 
         cursor.execute('''
-            UPDATE takeaway_orders
+            UPDATE orders
             SET rating = ?, review = ?
-            WHERE order_id = ? AND order_status = 'delivered'
+            WHERE source_type = 'takeaway' AND source_order_id = ? AND order_status = 'delivered'
         ''', (rating, review, order_id))
 
         if cursor.rowcount == 0:
@@ -612,12 +602,12 @@ def rate_order(order_id: str, rating: int, review: str = "") -> bool:
             return False
 
         # Update restaurant rating
-        cursor.execute('SELECT restaurant_id FROM takeaway_orders WHERE order_id = ?', (order_id,))
+        cursor.execute('SELECT restaurant_id FROM orders WHERE source_type = ? AND source_order_id = ?', ('takeaway', order_id,))
         restaurant_id = cursor.fetchone()[0]
 
         cursor.execute('''
-            SELECT AVG(rating) FROM takeaway_orders
-            WHERE restaurant_id = ? AND rating IS NOT NULL
+            SELECT AVG(rating) FROM orders
+            WHERE source_type = 'takeaway' AND restaurant_id = ? AND rating IS NOT NULL
         ''', (restaurant_id,))
         avg_rating = cursor.fetchone()[0] or 0
 
@@ -1041,8 +1031,9 @@ def view_all_orders():
         cursor = conn.cursor()
         cursor.execute('''
             SELECT o.*, r.name as restaurant_name
-            FROM takeaway_orders o
+            FROM orders o
             JOIN takeaway_restaurants r ON o.restaurant_id = r.restaurant_id
+            WHERE o.source_type = 'takeaway'
             ORDER BY o.order_date DESC
             LIMIT 50
         ''')
@@ -1087,8 +1078,8 @@ def generate_reports():
         if choice == '1':
             cursor.execute('''
                 SELECT DATE(order_date) as date, COUNT(*) as orders, SUM(total_amount) as revenue
-                FROM takeaway_orders
-                WHERE payment_status = 'paid'
+                FROM orders
+                WHERE source_type = 'takeaway' AND payment_status = 'paid'
                 GROUP BY DATE(order_date)
                 ORDER BY date DESC
                 LIMIT 30
@@ -1104,7 +1095,7 @@ def generate_reports():
                 SELECT r.name, r.rating, COUNT(o.order_id) as orders,
                        COALESCE(SUM(o.total_amount), 0) as revenue
                 FROM takeaway_restaurants r
-                LEFT JOIN takeaway_orders o ON r.restaurant_id = o.restaurant_id
+                LEFT JOIN orders o ON r.restaurant_id = o.restaurant_id AND o.source_type = 'takeaway'
                 GROUP BY r.restaurant_id
                 ORDER BY revenue DESC
             ''')
@@ -1117,7 +1108,8 @@ def generate_reports():
         elif choice == '3':
             cursor.execute('''
                 SELECT item_name, SUM(quantity) as total_qty, SUM(subtotal) as revenue
-                FROM takeaway_order_items
+                FROM order_items
+                WHERE source_type = 'takeaway'
                 GROUP BY item_id
                 ORDER BY total_qty DESC
                 LIMIT 20

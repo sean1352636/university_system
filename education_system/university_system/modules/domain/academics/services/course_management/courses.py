@@ -7,8 +7,8 @@ from education_system.university_system.modules.shared.utils.simple_activity_log
     log_delete,
 )
 from education_system.university_system.modules.shared.utils.i18n import get_text
-from .database import initialize_enhanced_database
-from .validation import validate_course_code
+from education_system.university_system.modules.domain.academics.services.course_management.database import initialize_enhanced_database
+from education_system.university_system.modules.domain.academics.services.course_management.validation import validate_course_code
 
 
 @log_create(module="course_management", description="Creating new course with enhanced features")

@@ -4,7 +4,7 @@ from tkinter import messagebox
 
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.modules.domain.academics.gui.grade_tracking.utils import ensure_column_exists
-from .constants import get_connection
+from education_system.university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.constants import get_connection
 
 
 def init_basic_database():

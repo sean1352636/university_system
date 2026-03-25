@@ -23,17 +23,17 @@ def show_inspections(self):
         button_frame.pack(fill='x', pady=10)
 
         ttk.Button(button_frame, text="Schedule Inspection",
-                  command=self.schedule_inspection_dialog).pack(side='left', padx=5)
+                  command=lambda: schedule_inspection_dialog(self)).pack(side='left', padx=5)
         ttk.Button(button_frame, text="Record Inspection",
-                  command=self.record_inspection_dialog).pack(side='left', padx=5)
+                  command=lambda: record_inspection_dialog(self)).pack(side='left', padx=5)
         ttk.Button(button_frame, text="View Details",
-                  command=lambda: self.view_inspection_details(inspections_tree)).pack(side='left', padx=5)
+                  command=lambda: view_inspection_details(self, inspections_tree)).pack(side='left', padx=5)
         ttk.Button(button_frame, text="Edit Inspection",
-                  command=lambda: self.edit_inspection(inspections_tree)).pack(side='left', padx=5)
+                  command=lambda: edit_inspection(self, inspections_tree)).pack(side='left', padx=5)
         ttk.Button(button_frame, text="Delete Inspection",
-                  command=lambda: self.delete_inspection(inspections_tree)).pack(side='left', padx=5)
+                  command=lambda: delete_inspection(self, inspections_tree)).pack(side='left', padx=5)
         ttk.Button(button_frame, text="Refresh",
-                  command=lambda: self.load_inspections(inspections_tree)).pack(side='left', padx=5)
+                  command=lambda: load_inspections(self, inspections_tree)).pack(side='left', padx=5)
 
         # Inspections list
         list_frame = ttk.Frame(self.content_frame)
@@ -62,7 +62,7 @@ def show_inspections(self):
         scrollbar.pack(side='right', fill='y')
 
         # Load inspections
-        self.load_inspections(inspections_tree)
+        load_inspections(self, inspections_tree)
 
 def schedule_inspection_dialog(self):
         """Schedule a new inspection"""
@@ -251,7 +251,7 @@ def schedule_inspection_dialog(self):
 
                 # Send email notifications if requested
                 if send_email_var.get():
-                    self.send_inspection_emails(cursor, building_id, room_ids, inspection_date,
+                    send_inspection_emails(self, cursor, building_id, room_ids, inspection_date,
                                                inspection_time, type_var.get(), inspector_var.get(),
                                                notes, scope_var.get() == "Full Building")
 
@@ -748,8 +748,8 @@ def edit_inspection(self, tree):
 
                     # Send email notification if status changed and checkbox is checked
                     if email_var.get() and new_status != old_status and new_status in ['Completed', 'Issues Found']:
-                        self.send_post_inspection_email(
-                            cursor, inspection_data[0], inspection_id,
+                        send_post_inspection_email(
+                            self, cursor, inspection_data[0], inspection_id,
                             date_var.get(), type_var.get(), inspector_var.get(),
                             findings, new_status, action, followup
                         )
@@ -758,7 +758,7 @@ def edit_inspection(self, tree):
 
                     messagebox.showinfo("Success", "Inspection updated successfully!")
                     dialog.destroy()
-                    self.load_inspections(tree)
+                    load_inspections(self, tree)
 
                 except Exception as e:
                     messagebox.showerror("Error", f"Failed to update inspection: {str(e)}")
@@ -797,7 +797,7 @@ def delete_inspection(self, tree):
                 conn.close()
 
                 messagebox.showinfo("Success", f"Inspection {inspection_id} deleted successfully")
-                self.load_inspections(tree)
+                load_inspections(self, tree)
 
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to delete inspection: {str(e)}")

@@ -7,6 +7,7 @@ from education_system.college_system.modules.domain.grades.services.grade_servic
 from education_system.college_system.modules.domain.students.services.student_service import StudentService
 from education_system.college_system.modules.domain.courses.services.course_service import CourseService
 from education_system.college_system.core.exceptions import GradeError
+from education_system.college_system.core.i18n import t
 
 
 class GradeFrame(tk.Frame):
@@ -27,6 +28,11 @@ class GradeFrame(tk.Frame):
         self._student_svc = StudentService(db_path)
         self._course_svc = CourseService(db_path)
 
+        # Pagination state (paginates students in the all-grades view)
+        self._page = 0
+        self._page_size = 50
+        self._total_count = 0
+
         self._build_ui()
 
     # ------------------------------------------------------------------
@@ -40,58 +46,62 @@ class GradeFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Grade Management",
+        tk.Label(header, text=t("grade.management"),
                  font=("Helvetica", 15, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=10)
 
         # --- Record grade form ---
-        form_frame = tk.LabelFrame(self, text="Record / Update Grade",
+        form_frame = tk.LabelFrame(self, text=t("grade.record_update"),
                                    padx=12, pady=8, bg="#ecf0f1",
                                    font=("Helvetica", 10, "bold"))
         form_frame.pack(fill="x", padx=15, pady=(10, 5))
 
-        tk.Label(form_frame, text="Student ID:", bg="#ecf0f1").grid(
+        tk.Label(form_frame, text=t("grade.student_id_colon"), bg="#ecf0f1").grid(
             row=0, column=0, sticky="w", padx=5, pady=4)
         self._stu_id_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self._stu_id_var, width=14).grid(
             row=0, column=1, padx=5, pady=4)
 
-        tk.Label(form_frame, text="Course Code:", bg="#ecf0f1").grid(
+        tk.Label(form_frame, text=t("grade.course_code_colon"), bg="#ecf0f1").grid(
             row=0, column=2, sticky="w", padx=5, pady=4)
         self._crs_code_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self._crs_code_var, width=14).grid(
             row=0, column=3, padx=5, pady=4)
 
-        tk.Label(form_frame, text="Score (0-100):", bg="#ecf0f1").grid(
+        tk.Label(form_frame, text=t("grade.score_label"), bg="#ecf0f1").grid(
             row=0, column=4, sticky="w", padx=5, pady=4)
         self._score_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self._score_var, width=8).grid(
             row=0, column=5, padx=5, pady=4)
 
-        ttk.Button(form_frame, text="Submit Grade",
+        ttk.Button(form_frame, text=t("grade.submit_grade"),
                    command=self._on_submit_grade).grid(
             row=0, column=6, padx=10, pady=4)
 
         # --- UCAS Points / Transcript lookup ---
-        lookup_frame = tk.LabelFrame(self, text="Student Lookup", padx=12,
+        lookup_frame = tk.LabelFrame(self, text=t("grade.student_lookup"), padx=12,
                                      pady=8, bg="#ecf0f1",
                                      font=("Helvetica", 10, "bold"))
         lookup_frame.pack(fill="x", padx=15, pady=5)
 
-        tk.Label(lookup_frame, text="Student ID:", bg="#ecf0f1").grid(
+        tk.Label(lookup_frame, text=t("grade.student_id_colon"), bg="#ecf0f1").grid(
             row=0, column=0, sticky="w", padx=5, pady=4)
         self._lookup_var = tk.StringVar()
         ttk.Entry(lookup_frame, textvariable=self._lookup_var, width=14).grid(
             row=0, column=1, padx=5, pady=4)
 
-        ttk.Button(lookup_frame, text="Show UCAS Points",
+        ttk.Button(lookup_frame, text=t("grade.show_ucas_points"),
                    command=self._on_show_ucas_points).grid(row=0, column=2, padx=5, pady=4)
-        ttk.Button(lookup_frame, text="View Transcript",
+        ttk.Button(lookup_frame, text=t("grade.view_transcript"),
                    command=self._on_view_transcript).grid(
             row=0, column=3, padx=5, pady=4)
-        ttk.Button(lookup_frame, text="Load Grades",
+        ttk.Button(lookup_frame, text=t("grade.load_grades"),
                    command=self._on_load_student_grades).grid(
             row=0, column=4, padx=5, pady=4)
+
+        ttk.Button(lookup_frame, text="Export CSV",
+                   command=self._export_csv).grid(
+            row=0, column=6, padx=5, pady=4)
 
         self._ucas_var = tk.StringVar(value="UCAS Points: --")
         tk.Label(lookup_frame, textvariable=self._ucas_var, bg="#ecf0f1",
@@ -108,13 +118,13 @@ class GradeFrame(tk.Frame):
                                   selectmode="browse")
 
         headings = {
-            "sid":          ("Student ID",  90),
-            "student_name": ("Name",       140),
-            "course_code":  ("Course",      80),
-            "course_title": ("Title",      150),
-            "score":        ("Score",       70),
-            "letter":       ("Grade",       60),
-            "term":         ("Term",       100),
+            "sid":          (t("grade.col_student_id"),  90),
+            "student_name": (t("grade.col_name"),       140),
+            "course_code":  (t("grade.col_course"),      80),
+            "course_title": (t("grade.col_title"),      150),
+            "score":        (t("grade.col_score"),       70),
+            "letter":       (t("grade.col_grade"),       60),
+            "term":         (t("grade.col_term"),       100),
         }
         for col, (heading, width) in headings.items():
             self._tree.heading(col, text=heading)
@@ -126,11 +136,52 @@ class GradeFrame(tk.Frame):
         self._tree.pack(side="left", fill="both", expand=True)
         vsb.pack(side="right", fill="y")
 
+        # Pagination bar
+        self._pag_frame = tk.Frame(self, bg="#ecf0f1")
+        self._pag_frame.pack(fill="x", padx=15, pady=(0, 4))
+
+        self._prev_btn = ttk.Button(self._pag_frame, text="Previous",
+                                     command=self._prev_page, state="disabled")
+        self._prev_btn.pack(side="left", padx=4)
+
+        self._page_label_var = tk.StringVar(value="Page 1 of 1")
+        tk.Label(self._pag_frame, textvariable=self._page_label_var,
+                 bg="#ecf0f1", font=("Helvetica", 9)).pack(side="left", padx=8)
+
+        self._next_btn = ttk.Button(self._pag_frame, text="Next",
+                                     command=self._next_page, state="disabled")
+        self._next_btn.pack(side="left", padx=4)
+
+        self._record_count_var = tk.StringVar(value="")
+        tk.Label(self._pag_frame, textvariable=self._record_count_var,
+                 bg="#ecf0f1", font=("Helvetica", 9), fg="#7f8c8d").pack(
+            side="right", padx=8)
+
         # Status bar
-        self._status_var = tk.StringVar(value="Ready")
+        self._status_var = tk.StringVar(value=t("common.ready"))
         tk.Label(self, textvariable=self._status_var, bg="#ecf0f1", anchor="w",
                  font=("Helvetica", 9), fg="#7f8c8d").pack(
             fill="x", padx=15, pady=(0, 8))
+
+        # --- Keyboard shortcuts for accessibility ---
+        self._tree.bind("<Return>", lambda e: self._on_view_selected_grade())
+
+    def _on_view_selected_grade(self):
+        """Handle Return key on grades treeview -- show details of selected grade."""
+        sel = self._tree.selection()
+        if not sel:
+            return
+        values = self._tree.item(sel[0], "values")
+        if values:
+            detail = (
+                f"Student ID: {values[0]}\n"
+                f"Name: {values[1]}\n"
+                f"Course: {values[2]} - {values[3]}\n"
+                f"Score: {values[4]}\n"
+                f"Grade: {values[5]}\n"
+                f"Term: {values[6]}"
+            )
+            messagebox.showinfo("Grade Details", detail)
 
     # ------------------------------------------------------------------
     # Data loading
@@ -141,10 +192,14 @@ class GradeFrame(tk.Frame):
         self._load_all_grades()
 
     def _load_all_grades(self):
-        """Load grades for ALL students (used as default view)."""
+        """Load grades for students on the current page."""
         self._tree.delete(*self._tree.get_children())
         try:
-            students = self._student_svc.list_students(limit=500)
+            self._total_count = self._student_svc.count_students()
+            students = self._student_svc.list_students(
+                limit=self._page_size,
+                offset=self._page * self._page_size,
+            )
         except Exception:
             students = []
 
@@ -167,7 +222,8 @@ class GradeFrame(tk.Frame):
                 ))
                 count += 1
 
-        self._status_var.set(f"{count} grade record(s) loaded")
+        self._update_pagination()
+        self._status_var.set(t("grade.count_loaded", count=count))
 
     def _load_student_grades(self, student_pk: int, student_id_str: str):
         """Load grades for a single student into the treeview."""
@@ -175,7 +231,7 @@ class GradeFrame(tk.Frame):
         try:
             grades = self._grade_svc.get_student_grades(student_pk)
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load grades:\n{exc}")
+            messagebox.showerror(t("common.error"), f"Failed to load grades:\n{exc}")
             return
 
         student = self._student_svc.get_student(student_pk)
@@ -196,6 +252,38 @@ class GradeFrame(tk.Frame):
 
         self._status_var.set(
             f"{len(grades)} grade(s) for {student_id_str}")
+
+    # ------------------------------------------------------------------
+    # Pagination
+    # ------------------------------------------------------------------
+
+    def _update_pagination(self):
+        """Update pagination controls based on current state."""
+        total_pages = max(1, (self._total_count + self._page_size - 1) // self._page_size)
+        current = self._page + 1
+        self._page_label_var.set(f"Page {current} of {total_pages}")
+
+        start = self._page * self._page_size + 1
+        end = min((self._page + 1) * self._page_size, self._total_count)
+        if self._total_count == 0:
+            self._record_count_var.set("No records")
+        else:
+            self._record_count_var.set(
+                f"Showing students {start}-{end} of {self._total_count}")
+
+        self._prev_btn.configure(
+            state="normal" if self._page > 0 else "disabled")
+        self._next_btn.configure(
+            state="normal" if current < total_pages else "disabled")
+
+    def _next_page(self):
+        self._page += 1
+        self._load_all_grades()
+
+    def _prev_page(self):
+        if self._page > 0:
+            self._page -= 1
+        self._load_all_grades()
 
     # ------------------------------------------------------------------
     # Resolve helper
@@ -229,55 +317,59 @@ class GradeFrame(tk.Frame):
             student_pk, _ = self._resolve_student(self._stu_id_var.get())
             course_pk = self._resolve_course(self._crs_code_var.get())
         except GradeError as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
             return
 
         try:
             score = float(self._score_var.get().strip())
         except ValueError:
-            messagebox.showwarning("Validation", "Score must be a number (0-100).")
+            messagebox.showwarning(t("common.validation"), t("grade.score_must_be_number"))
             return
 
         try:
             self._grade_svc.record_grade(student_pk, course_pk, score)
-            messagebox.showinfo("Success", "Grade recorded successfully.")
+            messagebox.showinfo(t("common.success"), t("grade.recorded"))
             self._score_var.set("")
             self._load_all_grades()
         except GradeError as exc:
-            messagebox.showerror("Grade Error", str(exc))
+            messagebox.showerror(t("grade.error"), str(exc))
 
     def _on_show_ucas_points(self):
         try:
             student_pk, sid_str = self._resolve_student(self._lookup_var.get())
         except GradeError as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
             return
 
         try:
             ucas_points = self._grade_svc.calculate_ucas_points(student_pk)
-            self._ucas_var.set(f"UCAS Points: {ucas_points}")
+            self._ucas_var.set(t("grade.ucas_points_display", points=ucas_points))
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to calculate UCAS points:\n{exc}")
+            messagebox.showerror(t("common.error"), f"Failed to calculate UCAS points:\n{exc}")
 
     def _on_load_student_grades(self):
         try:
             student_pk, sid_str = self._resolve_student(self._lookup_var.get())
         except GradeError as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
             return
         self._load_student_grades(student_pk, sid_str)
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._tree, default_filename="grades.csv")
 
     def _on_view_transcript(self):
         try:
             student_pk, sid_str = self._resolve_student(self._lookup_var.get())
         except GradeError as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
             return
 
         try:
             transcript = self._grade_svc.get_transcript(student_pk)
         except GradeError as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
             return
 
         _TranscriptDialog(self, transcript)
@@ -288,13 +380,14 @@ class _TranscriptDialog(tk.Toplevel):
 
     def __init__(self, parent, transcript: dict):
         super().__init__(parent)
-        self.title("Student Transcript")
+        self.title(t("grade.transcript_title"))
         self.geometry("620x480")
         self.resizable(True, True)
         self.grab_set()
 
         self._build(transcript)
         self._center_on_parent(parent)
+        self.bind("<Escape>", lambda e: self.destroy())
 
     def _center_on_parent(self, parent):
         self.update_idletasks()
@@ -344,9 +437,9 @@ class _TranscriptDialog(tk.Toplevel):
         tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=12)
 
         for col, heading, w in [
-            ("course_code", "Code", 80), ("title", "Title", 180),
-            ("qualification_type", "Qual", 60), ("score", "Score", 60),
-            ("letter", "Grade", 50), ("term", "Term", 100),
+            ("course_code", t("grade.col_course"), 80), ("title", t("grade.col_title"), 180),
+            ("qualification_type", t("grade.col_qual"), 60), ("score", t("grade.col_score"), 60),
+            ("letter", t("grade.col_grade"), 50), ("term", t("grade.col_term"), 100),
         ]:
             tree.heading(col, text=heading)
             tree.column(col, width=w, anchor="center")
@@ -367,4 +460,4 @@ class _TranscriptDialog(tk.Toplevel):
             ))
 
         # Close button
-        ttk.Button(self, text="Close", command=self.destroy).pack(pady=(0, 10))
+        ttk.Button(self, text=t("common.close"), command=self.destroy).pack(pady=(0, 10))

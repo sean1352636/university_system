@@ -1,0 +1,1 @@
+"""Cover Agency CLI package."""

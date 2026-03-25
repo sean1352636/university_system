@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/cinema_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/cinema', '/bookings', '/movies', '/screenings', 'GET', 'POST', 'available_seats', 'cinema', 'cinema_bookings', 'cinema_movies', 'cinema_screenings', 'create', 'customer_id', 'customer_id = ?', 'description', 'director', 'duration_minutes', 'genre', 'items', 'movie_id', 'movie_id = ?', 'payment_status', 'price', 'rating', 'release_date', 'screen_number', 'screen_number = ?', 'screening_date', 'screening_id', 'screening_id = ?', 'screening_time', 'search', 'seats', 'status', 'status = ?', 'sub', 'title', 'total', 'total_amount', 'view']

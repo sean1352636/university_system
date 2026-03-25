@@ -85,9 +85,9 @@ def send_event_invitation(alumni_id, event_id=None, email_address=None, event_na
 
             if event_name is None or event_date is None or event_location is None:
                 cursor.execute('''
-                SELECT event_name, event_date, location
-                FROM alumni_events
-                WHERE event_id = ?
+                SELECT title as event_name, start_datetime as event_date, location
+                FROM unified_events
+                WHERE source_type = 'alumni' AND event_id = ?
                 ''', (event_id,))
 
                 result = cursor.fetchone()

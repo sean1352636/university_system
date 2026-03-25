@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/academic_calendar/notifications.py
+# hypothesis_version: 6.151.9
+
+[200, 5000, '-', 'Event not found', 'Failed to send email', 'Invalid event ID', 'Invalid user ID', 'account_sid', 'auth_token', 'description', 'email', 'from_number', 'pending', 'phone_number']

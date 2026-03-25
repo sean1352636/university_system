@@ -9,9 +9,9 @@ import jwt as pyjwt
 import pytest
 from flask import Flask
 
-from education_system.university_system.api.auth import _blacklisted_tokens
-from education_system.university_system.api.errors import register_error_handlers
-from education_system.university_system.api.routes.course_routes import course_bp, _row_to_dict
+from education_system.shared.api.university.auth import _blacklisted_tokens
+from education_system.shared.api.university.errors import register_error_handlers
+from education_system.shared.api.university.routes.course_routes import course_bp, _row_to_dict
 
 # ---------------------------------------------------------------------------
 # Token helpers
@@ -131,8 +131,8 @@ class TestCourseAuth:
 
 class TestListCourses:
 
-    @patch("university_system.api.routes.course_routes.log_activity")
-    @patch("university_system.api.routes.course_routes.get_connection")
+    @patch("shared.api.university.routes.course_routes.log_activity")
+    @patch("shared.api.university.routes.course_routes.get_connection")
     def test_list_paginated(self, mock_conn, mock_log, client):
         conn = MagicMock()
         conn.execute.return_value.fetchall.return_value = [_course_row()]
@@ -148,7 +148,7 @@ class TestListCourses:
         assert "items" in data
         assert "pagination" in data
 
-    @patch("university_system.api.routes.course_routes.get_connection")
+    @patch("shared.api.university.routes.course_routes.get_connection")
     def test_list_search(self, mock_conn, client):
         conn = MagicMock()
         conn.execute.return_value.fetchall.return_value = [_course_row()]
@@ -160,7 +160,7 @@ class TestListCourses:
         data = resp.get_json()
         assert data["total"] == 1
 
-    @patch("university_system.api.routes.course_routes.get_connection")
+    @patch("shared.api.university.routes.course_routes.get_connection")
     def test_list_by_department(self, mock_conn, client):
         conn = MagicMock()
         conn.execute.return_value.fetchall.return_value = []
@@ -172,8 +172,8 @@ class TestListCourses:
         data = resp.get_json()
         assert data["total"] == 0
 
-    @patch("university_system.api.routes.course_routes.log_activity")
-    @patch("university_system.api.routes.course_routes.get_connection")
+    @patch("shared.api.university.routes.course_routes.log_activity")
+    @patch("shared.api.university.routes.course_routes.get_connection")
     def test_list_empty(self, mock_conn, mock_log, client):
         conn = MagicMock()
         conn.execute.return_value.fetchall.return_value = []
@@ -193,8 +193,8 @@ class TestListCourses:
 
 class TestGetCourse:
 
-    @patch("university_system.api.routes.course_routes.log_activity")
-    @patch("university_system.api.routes.course_routes.get_connection")
+    @patch("shared.api.university.routes.course_routes.log_activity")
+    @patch("shared.api.university.routes.course_routes.get_connection")
     def test_get_existing(self, mock_conn, mock_log, client):
         conn = MagicMock()
         conn.execute.return_value.fetchone.return_value = _course_row(course_id=5)
@@ -205,7 +205,7 @@ class TestGetCourse:
         assert resp.status_code == 200
         assert resp.get_json()["course_id"] == 5
 
-    @patch("university_system.api.routes.course_routes.get_connection")
+    @patch("shared.api.university.routes.course_routes.get_connection")
     def test_get_nonexistent(self, mock_conn, client):
         conn = MagicMock()
         conn.execute.return_value.fetchone.return_value = None
@@ -222,9 +222,9 @@ class TestGetCourse:
 
 class TestCreateCourse:
 
-    @patch("university_system.api.routes.course_routes.log_activity")
-    @patch("university_system.api.routes.course_routes.transaction")
-    @patch("university_system.api.routes.course_routes.get_connection")
+    @patch("shared.api.university.routes.course_routes.log_activity")
+    @patch("shared.api.university.routes.course_routes.transaction")
+    @patch("shared.api.university.routes.course_routes.get_connection")
     def test_create_success(self, mock_conn, mock_tx, mock_log, client):
         conn = MagicMock()
         # First call: check existing -> None
@@ -269,7 +269,7 @@ class TestCreateCourse:
         resp = client.post("/api/courses", json={}, headers=_headers())
         assert resp.status_code == 400
 
-    @patch("university_system.api.routes.course_routes.get_connection")
+    @patch("shared.api.university.routes.course_routes.get_connection")
     def test_create_duplicate_code(self, mock_conn, client):
         conn = MagicMock()
         conn.execute.return_value.fetchone.return_value = _FakeRow({"1": 1})
@@ -291,9 +291,9 @@ class TestCreateCourse:
 
 class TestUpdateCourse:
 
-    @patch("university_system.api.routes.course_routes.log_activity")
-    @patch("university_system.api.routes.course_routes.transaction")
-    @patch("university_system.api.routes.course_routes.get_connection")
+    @patch("shared.api.university.routes.course_routes.log_activity")
+    @patch("shared.api.university.routes.course_routes.transaction")
+    @patch("shared.api.university.routes.course_routes.get_connection")
     def test_update_success(self, mock_conn, mock_tx, mock_log, client):
         existing = _course_row(course_id=1)
         updated = _course_row(course_id=1, course_name="Updated Name")
@@ -313,7 +313,7 @@ class TestUpdateCourse:
         )
         assert resp.status_code == 200
 
-    @patch("university_system.api.routes.course_routes.get_connection")
+    @patch("shared.api.university.routes.course_routes.get_connection")
     def test_update_nonexistent(self, mock_conn, client):
         conn = MagicMock()
         conn.execute.return_value.fetchone.return_value = None
@@ -327,7 +327,7 @@ class TestUpdateCourse:
         )
         assert resp.status_code == 404
 
-    @patch("university_system.api.routes.course_routes.get_connection")
+    @patch("shared.api.university.routes.course_routes.get_connection")
     def test_update_empty_body(self, mock_conn, client):
         existing = _course_row(course_id=1)
         conn = MagicMock()
@@ -338,7 +338,7 @@ class TestUpdateCourse:
         resp = client.put("/api/courses/1", json={}, headers=_headers())
         assert resp.status_code == 400
 
-    @patch("university_system.api.routes.course_routes.get_connection")
+    @patch("shared.api.university.routes.course_routes.get_connection")
     def test_update_no_valid_fields(self, mock_conn, client):
         existing = _course_row(course_id=1)
         conn = MagicMock()
@@ -360,8 +360,8 @@ class TestUpdateCourse:
 
 class TestCourseWaitlist:
 
-    @patch("university_system.api.routes.course_routes.log_activity")
-    @patch("university_system.api.routes.course_routes.get_connection")
+    @patch("shared.api.university.routes.course_routes.log_activity")
+    @patch("shared.api.university.routes.course_routes.get_connection")
     def test_waitlist_success(self, mock_conn, mock_log, client):
         course_row = _course_row(course_id=1)
         waitlist_row = _FakeRow({
@@ -380,7 +380,7 @@ class TestCourseWaitlist:
         assert data["course_id"] == 1
         assert len(data["waitlist"]) == 1
 
-    @patch("university_system.api.routes.course_routes.get_connection")
+    @patch("shared.api.university.routes.course_routes.get_connection")
     def test_waitlist_nonexistent_course(self, mock_conn, client):
         conn = MagicMock()
         conn.execute.return_value.fetchone.return_value = None
@@ -390,8 +390,8 @@ class TestCourseWaitlist:
         resp = client.get("/api/courses/999/waitlist", headers=_headers())
         assert resp.status_code == 404
 
-    @patch("university_system.api.routes.course_routes.log_activity")
-    @patch("university_system.api.routes.course_routes.get_connection")
+    @patch("shared.api.university.routes.course_routes.log_activity")
+    @patch("shared.api.university.routes.course_routes.get_connection")
     def test_waitlist_empty(self, mock_conn, mock_log, client):
         course_row = _course_row(course_id=2)
         conn = MagicMock()

@@ -14,13 +14,13 @@ def revenue_forecast():
         # Get historical revenue data (last 12 months)
         cursor.execute('''
             SELECT 
-                strftime('%Y-%m', order_time) as month,
-                SUM(total_price) as monthly_revenue,
+                strftime('%Y-%m', order_date) as month,
+                SUM(total_amount) as monthly_revenue,
                 COUNT(*) as order_count,
-                AVG(total_price) as avg_order_value
-            FROM restaurant_orders
-            WHERE order_time >= date('now', '-12 months') AND status = 'Completed'
-            GROUP BY strftime('%Y-%m', order_time)
+                AVG(total_amount) as avg_order_value
+            FROM orders
+            WHERE order_date >= date('now', '-12 months') AND order_status = 'Completed'
+            GROUP BY strftime('%Y-%m', order_date)
             ORDER BY month
         ''')
 
@@ -173,9 +173,9 @@ def cash_flow_projection():
 
         # Current month revenue
         cursor.execute('''
-            SELECT SUM(total_price) as current_revenue
-            FROM restaurant_orders
-            WHERE strftime('%Y-%m', order_time) = ? AND status = 'Completed'
+            SELECT SUM(total_amount) as current_revenue
+            FROM orders
+            WHERE strftime('%Y-%m', order_date) = ? AND order_status = 'Completed'
         ''', (current_month,))
 
         current_revenue = cursor.fetchone()[0] or 0
@@ -193,10 +193,10 @@ def cash_flow_projection():
         cursor.execute('''
             SELECT AVG(monthly_revenue) as avg_revenue
             FROM (
-                SELECT SUM(total_price) as monthly_revenue
-                FROM restaurant_orders
-                WHERE order_time >= date('now', '-6 months') AND status = 'Completed'
-                GROUP BY strftime('%Y-%m', order_time)
+                SELECT SUM(total_amount) as monthly_revenue
+                FROM orders
+                WHERE order_date >= date('now', '-6 months') AND order_status = 'Completed'
+                GROUP BY strftime('%Y-%m', order_date)
             )
         ''')
 
@@ -285,18 +285,18 @@ def seasonal_analysis():
         # Monthly revenue analysis
         cursor.execute('''
             SELECT 
-                strftime('%m', order_time) as month,
+                strftime('%m', order_date) as month,
                 AVG(monthly_revenue) as avg_revenue,
-                COUNT(DISTINCT strftime('%Y-%m', order_time)) as year_count
+                COUNT(DISTINCT strftime('%Y-%m', order_date)) as year_count
             FROM (
                 SELECT 
-                    order_time,
-                    SUM(total_price) as monthly_revenue
-                FROM restaurant_orders
-                WHERE status = 'Completed'
-                GROUP BY strftime('%Y-%m', order_time)
+                    order_date,
+                    SUM(total_amount) as monthly_revenue
+                FROM orders
+                WHERE order_status = 'Completed'
+                GROUP BY strftime('%Y-%m', order_date)
             )
-            GROUP BY strftime('%m', order_time)
+            GROUP BY strftime('%m', order_date)
             ORDER BY month
         ''')
 
@@ -350,7 +350,7 @@ def seasonal_analysis():
         # Day of week analysis
         cursor.execute('''
             SELECT 
-                CASE strftime('%w', order_time)
+                CASE strftime('%w', order_date)
                     WHEN '0' THEN 'Sunday'
                     WHEN '1' THEN 'Monday'
                     WHEN '2' THEN 'Tuesday'
@@ -362,14 +362,14 @@ def seasonal_analysis():
                 AVG(daily_revenue) as avg_daily_revenue
             FROM (
                 SELECT 
-                    order_time,
-                    SUM(total_price) as daily_revenue
-                FROM restaurant_orders
-                WHERE status = 'Completed' AND order_time >= date('now', '-90 days')
-                GROUP BY DATE(order_time)
+                    order_date,
+                    SUM(total_amount) as daily_revenue
+                FROM orders
+                WHERE order_status = 'Completed' AND order_date >= date('now', '-90 days')
+                GROUP BY DATE(order_date)
             )
-            GROUP BY strftime('%w', order_time)
-            ORDER BY strftime('%w', order_time)
+            GROUP BY strftime('%w', order_date)
+            ORDER BY strftime('%w', order_date)
         ''')
 
         daily_data = cursor.fetchall()
@@ -402,13 +402,13 @@ def growth_projections():
         # Calculate historical growth
         cursor.execute('''
             SELECT 
-                strftime('%Y-%m', order_time) as month,
-                SUM(total_price) as monthly_revenue,
+                strftime('%Y-%m', order_date) as month,
+                SUM(total_amount) as monthly_revenue,
                 COUNT(*) as order_count,
                 COUNT(DISTINCT customer_id) as unique_customers
-            FROM restaurant_orders
-            WHERE order_time >= date('now', '-12 months') AND status = 'Completed'
-            GROUP BY strftime('%Y-%m', order_time)
+            FROM orders
+            WHERE order_date >= date('now', '-12 months') AND order_status = 'Completed'
+            GROUP BY strftime('%Y-%m', order_date)
             ORDER BY month
         ''')
 

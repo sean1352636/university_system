@@ -200,28 +200,34 @@ def init_enhanced_finance_db():
         )
         ''')
 
-        # Refunds and Credits System
+        # Refunds and Credits System (unified_refunds)
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS refunds (
+        CREATE TABLE IF NOT EXISTS unified_refunds (
             refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id TEXT NOT NULL,
-            original_payment_id INTEGER,
-            refund_amount DECIMAL(10,2) NOT NULL,
+            source_type TEXT NOT NULL,
+            source_refund_id TEXT,
+            reference_type TEXT,
+            reference_id TEXT,
+            student_id TEXT,
+            customer_name TEXT,
+            customer_email TEXT,
+            amount DECIMAL(10,2) NOT NULL,
+            original_amount DECIMAL(10,2),
             currency TEXT DEFAULT 'GBP',
-            refund_reason TEXT NOT NULL,
-            refund_type TEXT NOT NULL, -- 'full', 'partial', 'withdrawal'
-            refund_method TEXT, -- 'bank_transfer', 'original_payment_method', 'check'
-            status TEXT DEFAULT 'pending', -- pending, approved, processed, rejected
+            refund_type TEXT,
+            refund_method TEXT,
+            refund_reference TEXT,
+            reason TEXT,
+            status TEXT DEFAULT 'pending',
+            department TEXT,
+            processed_by TEXT,
             requested_by TEXT,
             approved_by TEXT,
-            processed_by TEXT,
+            refund_date TEXT,
             request_date TEXT,
             approval_date TEXT,
-            processed_date TEXT,
             notes TEXT,
-            created_at TEXT,
-            FOREIGN KEY (student_id) REFERENCES students (student_id),
-            FOREIGN KEY (original_payment_id) REFERENCES payments (payment_id)
+            created_at TEXT
         )
         ''')
 
@@ -471,24 +477,8 @@ def init_enhanced_finance_db():
         )
         ''')
 
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS gateway_transactions (
-            transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            payment_id INTEGER,
-            gateway_id INTEGER NOT NULL,
-            gateway_transaction_id TEXT NOT NULL,
-            amount DECIMAL(10,2) NOT NULL,
-            currency TEXT NOT NULL,
-            status TEXT NOT NULL,
-            gateway_fee DECIMAL(10,2),
-            raw_response TEXT, -- JSON response from gateway
-            webhook_verified BOOLEAN DEFAULT 0,
-            created_at TEXT,
-            updated_at TEXT,
-            FOREIGN KEY (payment_id) REFERENCES payments (payment_id),
-            FOREIGN KEY (gateway_id) REFERENCES payment_gateways (gateway_id)
-        )
-        ''')
+        # NOTE: gateway transactions now use the unified 'transactions' table
+        # with source_type = 'gateway'
 
         # Financial Alerts System
         cursor.execute('''
@@ -1023,28 +1013,34 @@ def complete_database_fix():
     )
     ''')
 
-    # Refunds table
+    # Unified refunds table
     cursor.execute('''
-    CREATE TABLE refunds (
+    CREATE TABLE unified_refunds (
         refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        student_id TEXT NOT NULL,
-        original_payment_id INTEGER,
-        refund_amount DECIMAL(10,2) NOT NULL,
+        source_type TEXT NOT NULL,
+        source_refund_id TEXT,
+        reference_type TEXT,
+        reference_id TEXT,
+        student_id TEXT,
+        customer_name TEXT,
+        customer_email TEXT,
+        amount DECIMAL(10,2) NOT NULL,
+        original_amount DECIMAL(10,2),
         currency TEXT DEFAULT 'GBP',
-        refund_reason TEXT NOT NULL,
-        refund_type TEXT NOT NULL,
+        refund_type TEXT,
         refund_method TEXT,
+        refund_reference TEXT,
+        reason TEXT,
         status TEXT DEFAULT 'pending',
+        department TEXT,
+        processed_by TEXT,
         requested_by TEXT,
         approved_by TEXT,
-        processed_by TEXT,
+        refund_date TEXT,
         request_date TEXT,
         approval_date TEXT,
-        processed_date TEXT,
         notes TEXT,
-        created_at TEXT,
-        FOREIGN KEY (student_id) REFERENCES students (student_id),
-        FOREIGN KEY (original_payment_id) REFERENCES payments (payment_id)
+        created_at TEXT
     )
     ''')
 

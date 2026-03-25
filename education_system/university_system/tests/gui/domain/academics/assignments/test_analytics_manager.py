@@ -6,8 +6,6 @@ and reporting functionality for the grade tracking system.
 """
 
 import pytest
-import tkinter as tk
-from tkinter import ttk
 from unittest.mock import Mock, MagicMock, patch, call
 from education_system.university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
@@ -16,29 +14,36 @@ from education_system.university_system.modules.domain.academics.gui.grade_track
     AnalyticsManager
 )
 
-@pytest.fixture
-def root_window():
-    """Create a root Tkinter window for testing"""
-    root = tk.Tk()
-    yield root
-    try:
-        root.destroy()
-    except Exception:
-        pass
+_RISK_MOD = 'education_system.university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.risk'
+_PERF_MOD = 'education_system.university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.performance'
+_RPT_MOD = 'education_system.university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.reports'
+
 
 @pytest.fixture
-def mock_app(root_window):
-    """Create a mock app instance"""
-    app = Mock()
-    app.root = root_window
-    app.auth = Mock()
-    app.conn = Mock(spec=sqlite3.Connection)
+def mock_app():
+    """Create a mock app instance with fully mocked tkinter"""
+    # Patch tk/ttk/messagebox in all modules that create real widgets
+    with patch(f'{_RISK_MOD}.tk'), \
+         patch(f'{_RISK_MOD}.ttk'), \
+         patch(f'{_RISK_MOD}.messagebox'), \
+         patch(f'{_RISK_MOD}.safe_grab_set'), \
+         patch(f'{_PERF_MOD}.tk'), \
+         patch(f'{_PERF_MOD}.messagebox'), \
+         patch(f'{_RPT_MOD}.tk'), \
+         patch(f'{_RPT_MOD}.ttk'), \
+         patch(f'{_RPT_MOD}.messagebox'), \
+         patch(f'{_RPT_MOD}.scrolledtext'), \
+         patch(f'{_RPT_MOD}.safe_grab_set'):
 
-    # Create a mock layout with content_frame
-    app.layout = Mock()
-    app.layout.content_frame = ttk.Frame(root_window)
+        app = Mock()
+        app.root = MagicMock()
+        app.auth = Mock()
+        app.conn = Mock(spec=sqlite3.Connection)
 
-    return app
+        app.layout = Mock()
+        app.layout.content_frame = MagicMock()
+
+        yield app
 
 class TestAnalyticsManager:
     """Test suite for AnalyticsManager"""
@@ -78,18 +83,18 @@ class TestAnalyticsManager:
         assert hasattr(manager, 'analytics_results')
         assert hasattr(manager, 'chart_frame')
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.risk.get_connection')
+    @patch(f'{_RISK_MOD}.get_connection')
     def test_identify_at_risk_students(self, mock_get_conn, mock_app):
         """Test identifying at-risk students"""
         # Mock database connection
         conn = Mock()
         cursor = Mock()
         cursor.fetchall.return_value = [
-            ('student001', 'John Doe', 55.0, 2.1, 'CS101'),
-            ('student002', 'Jane Smith', 50.0, 1.8, 'CS102')
+            ('student001', 'John Doe', 10, 55.0, 3, 2),
+            ('student002', 'Jane Smith', 8, 50.0, 4, 1)
         ]
         conn.cursor.return_value = cursor
-        mock_get_conn.return_value.__enter__.return_value = conn
+        mock_get_conn.return_value = conn
 
         manager = AnalyticsManager(mock_app)
         manager.create_analytics_content()
@@ -100,7 +105,7 @@ class TestAnalyticsManager:
         # Verify database was queried
         cursor.execute.assert_called()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.performance.get_connection')
+    @patch(f'{_PERF_MOD}.get_connection')
     def test_show_grade_distribution(self, mock_get_conn, mock_app):
         """Test showing grade distribution"""
         conn = Mock()
@@ -113,7 +118,7 @@ class TestAnalyticsManager:
             ('C', 10)
         ]
         conn.cursor.return_value = cursor
-        mock_get_conn.return_value.__enter__.return_value = conn
+        mock_get_conn.return_value = conn
 
         manager = AnalyticsManager(mock_app)
         manager.create_analytics_content()
@@ -122,7 +127,7 @@ class TestAnalyticsManager:
 
         cursor.execute.assert_called()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.performance.get_connection')
+    @patch(f'{_PERF_MOD}.get_connection')
     def test_analyze_module_performance(self, mock_get_conn, mock_app):
         """Test analyzing module performance"""
         conn = Mock()
@@ -142,28 +147,28 @@ class TestAnalyticsManager:
 
         cursor.execute.assert_called()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.risk.get_connection')
+    @patch(f'{_RISK_MOD}.get_connection')
     def test_student_risk_assessment(self, mock_get_conn, mock_app):
         """Test student risk assessment"""
         conn = Mock()
         cursor = Mock()
         cursor.fetchone.return_value = (65.0, 2.5, 5, 2, 15.0)
-        cursor.fetchall.return_value = [
-            ('CS101', 55.0, 'D+'),
-            ('MATH201', 50.0, 'D')
+        # First fetchall returns students list, subsequent calls return course data
+        cursor.fetchall.side_effect = [
+            [('student001', 'John Doe'), ('student002', 'Jane Smith')],
+            [('CS101', 55.0, 'D+'), ('MATH201', 50.0, 'D')],
         ]
         conn.cursor.return_value = cursor
-        mock_get_conn.return_value.__enter__.return_value = conn
+        mock_get_conn.return_value = conn
 
         manager = AnalyticsManager(mock_app)
         manager.create_analytics_content()
 
-        with patch('tkinter.simpledialog.askstring', return_value='student001'):
-            manager.student_risk_assessment()
+        manager.student_risk_assessment()
 
         cursor.execute.assert_called()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.risk.get_connection')
+    @patch(f'{_RISK_MOD}.get_connection')
     def test_early_warning_system(self, mock_get_conn, mock_app):
         """Test early warning system"""
         conn = Mock()
@@ -182,7 +187,7 @@ class TestAnalyticsManager:
 
         cursor.execute.assert_called()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.risk.get_connection')
+    @patch(f'{_RISK_MOD}.get_connection')
     def test_dropout_risk_analysis(self, mock_get_conn, mock_app):
         """Test dropout risk analysis"""
         conn = Mock()
@@ -201,7 +206,7 @@ class TestAnalyticsManager:
 
         cursor.execute.assert_called()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.performance.get_connection')
+    @patch(f'{_PERF_MOD}.get_connection')
     def test_generate_performance_dashboard(self, mock_get_conn, mock_app):
         """Test generating performance dashboard with charts"""
         conn = Mock()
@@ -220,7 +225,7 @@ class TestAnalyticsManager:
         manager.generate_performance_dashboard()
         cursor.execute.assert_called()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.performance.get_connection')
+    @patch(f'{_PERF_MOD}.get_connection')
     def test_compare_course_performance(self, mock_get_conn, mock_app):
         """Test comparing course performance"""
         conn = Mock()
@@ -240,7 +245,7 @@ class TestAnalyticsManager:
 
         cursor.execute.assert_called()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.performance.get_connection')
+    @patch(f'{_PERF_MOD}.get_connection')
     def test_analyze_performance_trends(self, mock_get_conn, mock_app):
         """Test analyzing performance trends over time"""
         conn = Mock()
@@ -268,7 +273,7 @@ class TestAnalyticsManager:
 
         assert hasattr(manager, 'notebook')
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.risk.get_connection')
+    @patch(f'{_RISK_MOD}.get_connection')
     def test_intervention_recommendations(self, mock_get_conn, mock_app):
         """Test generating intervention recommendations"""
         conn = Mock()
@@ -287,7 +292,7 @@ class TestAnalyticsManager:
 
         cursor.execute.assert_called()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.risk.get_connection')
+    @patch(f'{_RISK_MOD}.get_connection')
     def test_database_error_handling(self, mock_get_conn, mock_app):
         """Test handling database errors gracefully"""
         mock_get_conn.side_effect = sqlite3.Error("Database connection failed")
@@ -302,8 +307,8 @@ class TestAnalyticsManager:
 class TestAnalyticsIntegration:
     """Integration tests for analytics features"""
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.performance.get_connection')
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.risk.get_connection')
+    @patch(f'{_PERF_MOD}.get_connection')
+    @patch(f'{_RISK_MOD}.get_connection')
     def test_full_analytics_workflow(self, mock_risk_conn, mock_perf_conn, mock_app):
         """Test complete analytics workflow"""
         conn = Mock()

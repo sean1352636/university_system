@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/commerce/services/shop_management/menus.py
+# hypothesis_version: 6.151.9
+
+['\nEnter your choice: ', '\nMain Menu:', '\nSales Reports Menu:', '1', '1. Add New Product', '2', '2. Edit Discount', '2. Edit Product', '2. Restock Products', '3', '4', '4. View All Products', '5', '6', '6. Export Sales Data', '7', '==========', 'all_transactions', 'browse_products', 'checkout', 'logout', 'make_purchase', 'manage_discounts', 'manage_inventory', 'manage_products', 'purchase_history', 'sales_reports', 'university_shop', 'view_cart', 'view_products']

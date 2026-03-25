@@ -7,7 +7,7 @@ corresponding method, allowing dialogs to be invoked without
 explicitly referencing the underlying class.
 """
 
-from .settings_dialogs import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.dialogs.settings_dialogs import (
     show_backup_restore_dialog,
     show_user_management_dialog,
     show_directory_settings,
@@ -18,7 +18,7 @@ from .settings_dialogs import (
     show_system_config_editor,
     validate_email_settings,
 )
-from .advanced_dialogs import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.dialogs.advanced_dialogs import (
     show_advanced_template_creation_dialog,
     show_enhanced_scheduling_dialog,
     show_template_comparison_dialog,
@@ -29,7 +29,7 @@ from .advanced_dialogs import (
     show_anomaly_detection_dialog,
     show_correlation_analysis_dialog,
 )
-from .visualization_dialogs import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.dialogs.visualization_dialogs import (
     show_data_visualization_studio,
     show_report_analytics_dashboard,
     show_api_endpoints_documentation,
@@ -41,7 +41,7 @@ from .visualization_dialogs import (
     show_performance_monitor,
     show_data_quality_dashboard,
 )
-from .template_wizard import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.dialogs.template_wizard import (
     show_template_wizard,
     show_wizard_step,
     show_wizard_step_1,

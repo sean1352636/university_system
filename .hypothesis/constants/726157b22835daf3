@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/layout/_admin.py
+# hypothesis_version: 6.151.9
+
+[0.0, 100, '%Y%m%d_%H%M%S', '%Y-%m-%d %H:%M:%S', '-', '1.0', '2024-2025', '500x400', '500x450', '=', 'Arial', 'DATABASE STATUS\n', 'Database Statistics\n', 'Last updated: ', ']', 'admin', 'bold', 'both', 'collection_cases', 'danger', 'exchange_rates', 'grant', 'info', 'late_fees', 'left', 'loan', 'payments', 'readonly', 'scholarship', 'scholarships', 'secondary', 'student_fees', 'student_scholarships', 'students', 'success', 'w', 'warning', 'white', 'work_study', 'x']

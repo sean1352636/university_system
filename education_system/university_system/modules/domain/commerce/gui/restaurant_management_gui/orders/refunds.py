@@ -2,15 +2,15 @@
 Restaurant Payment Refunds Module
 
 Provides comprehensive refund functionality for restaurant payments including:
-- Payment list display from restaurant_orders table
-- Refund processing with Cash/Card/Student Account options
+- Payment list display from orders table (source_type='restaurant')
+- Refund processing with Cash/Card/Finance Account options
 - Student finance account integration
 - Email receipt system
 - Finance GUI integration
 """
 
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, simpledialog
+from tkinter import ttk, messagebox, filedialog
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, sqlite3
 from datetime import datetime
 from typing import Optional
@@ -82,25 +82,25 @@ def create_refunds_tab(self, parent):
                     SELECT
                         order_id,
                         COALESCE(customer_id, 'N/A') as customer_id,
-                        order_time,
-                        total_price,
+                        order_date,
+                        total_amount,
                         COALESCE(payment_method, 'Pending') as payment_method,
-                        COALESCE(status, 'Pending') as status
-                    FROM restaurant_orders
+                        COALESCE(order_status, 'Pending') as status
+                    FROM orders
                     WHERE CAST(order_id AS TEXT) LIKE ? OR CAST(customer_id AS TEXT) LIKE ?
-                    ORDER BY order_time DESC
+                    ORDER BY order_date DESC
                 ''', (f'%{search_term}%', f'%{search_term}%'))
             else:
                 cursor.execute('''
                     SELECT
                         order_id,
                         COALESCE(customer_id, 'N/A') as customer_id,
-                        order_time,
-                        total_price,
+                        order_date,
+                        total_amount,
                         COALESCE(payment_method, 'Pending') as payment_method,
-                        COALESCE(status, 'Pending') as status
-                    FROM restaurant_orders
-                    ORDER BY order_time DESC
+                        COALESCE(order_status, 'Pending') as status
+                    FROM orders
+                    ORDER BY order_date DESC
                     LIMIT 100
                 ''')
 
@@ -209,25 +209,31 @@ Status: {values[5]}
                                    f"Payment Method: {payment_method}"):
             return
 
-        # Show refund method selection dialog
-        refund_method = show_refund_method_dialog(amount, order_id, self.root)
+        # Resolve who paid for this order
+        payer_info = get_payer_info_from_order(order_id)
+        payer_id = payer_info.get('user_identifier') if payer_info else None
+        payer_name = payer_info.get('name', 'Customer') if payer_info else 'Customer'
+        payer_email = payer_info.get('email') if payer_info else None
+
+        # Show refund method selection dialog with payer details
+        refund_method = show_refund_method_dialog(
+            amount, order_id, self.root,
+            original_method=payment_method,
+            payer_name=payer_name,
+            payer_id=payer_id
+        )
         if not refund_method:
             return
 
         # Process based on method
         success = False
-        student_id = None
 
-        if refund_method == 'Student Account':
-            # Get student ID from order
-            student_id = get_student_id_from_order(order_id)
-            if not student_id:
-                # Prompt for student ID
-                student_id = simpledialog.askstring("Student ID", "Enter Student ID for refund:")
-                if not student_id:
-                    return
-
-            success = add_refund_to_student_account(student_id, amount, order_id)
+        if refund_method == 'Finance Account':
+            if not payer_id:
+                messagebox.showerror("Refund Failed",
+                                    "Cannot refund to Finance Account — no account linked to this order")
+                return
+            success = add_refund_to_student_account(payer_id, amount, order_id)
         else:
             # For cash/card, just record the refund
             success = True
@@ -243,55 +249,49 @@ Status: {values[5]}
                 cursor = conn.cursor()
 
                 cursor.execute('''
-                    UPDATE restaurant_orders
-                    SET status = 'Refunded'
+                    UPDATE orders
+                    SET order_status = 'Refunded'
                     WHERE order_id = ?
                 ''', (order_id,))
 
                 # Generate refund reference
                 refund_ref = f"REST-REFUND-{uuid.uuid4().hex[:12].upper()}"
 
-                # Record refund in order_refunds table
+                # Record refund in unified_refunds table
                 cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS order_refunds (
-                        refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        order_id INTEGER,
-                        refund_amount REAL,
-                        refund_type TEXT,
-                        refund_method TEXT,
-                        refund_reference TEXT,
-                        reason TEXT,
-                        notes TEXT,
-                        refund_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (order_id) REFERENCES restaurant_orders(order_id)
-                    )
-                ''')
-
-                cursor.execute('''
-                    INSERT INTO order_refunds
-                    (order_id, refund_amount, refund_type, refund_method, refund_reference, reason)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                ''', (order_id, amount, 'Full', refund_method, refund_ref, 'Customer Request'))
+                    INSERT INTO unified_refunds
+                    (source_type, reference_id, reference_type, amount, refund_type,
+                     refund_method, refund_reference, reason, refund_date)
+                    VALUES ('order', ?, 'order', ?, 'Full', ?, ?, 'Customer Request', CURRENT_TIMESTAMP)
+                ''', (str(order_id), amount, refund_method, refund_ref))
 
                 conn.commit()
                 conn.close()
 
-                # Send refund receipt email
-                send_refund_receipt(order_id, amount, refund_method, refund_ref, student_id)
+                # Send refund receipt email to the payer
+                email_sent = send_refund_receipt(order_id, amount, refund_method, refund_ref,
+                                                payer_id, payer_name, payer_email)
 
                 # Notify finance GUI
-                notify_finance_gui(order_id, amount, refund_method, refund_ref, student_id)
+                notify_finance_gui(order_id, amount, refund_method, refund_ref, payer_id)
 
-                messagebox.showinfo("Refund Processed",
-                                  f"Refund of GBP {amount:.2f} processed successfully\n\n"
-                                  f"Method: {refund_method}\n"
-                                  f"Refund Reference: {refund_ref}")
+                success_msg = (f"Refund of GBP {amount:.2f} processed successfully\n\n"
+                              f"Refunded to: {payer_name}\n"
+                              f"Method: {refund_method}\n"
+                              f"Refund Reference: {refund_ref}")
+
+                if email_sent:
+                    success_msg += f"\n\nReceipt emailed to {payer_email}"
+                elif payer_email:
+                    success_msg += f"\n\nCould not send email receipt"
+
+                messagebox.showinfo("Refund Processed", success_msg)
 
                 refresh_payments_list()
             except Exception as e:
                 messagebox.showerror("Refund Error", f"Failed to process refund: {e}")
         else:
-            messagebox.showerror("Refund Failed", "Failed to process student account refund")
+            messagebox.showerror("Refund Failed", "Failed to process finance account refund")
 
     # Button frame
     button_frame = ttk.Frame(parent)
@@ -308,11 +308,13 @@ Status: {values[5]}
     refresh_payments_list()
 
 
-def show_refund_method_dialog(amount: float, order_id: int, parent_window) -> Optional[str]:
-    """Show refund method selection dialog."""
+def show_refund_method_dialog(amount: float, order_id: int, parent_window,
+                              original_method: str = None, payer_name: str = None,
+                              payer_id: str = None) -> Optional[str]:
+    """Show refund method selection dialog with payer details."""
     dialog = tk.Toplevel(parent_window)
     dialog.title("Select Refund Method")
-    dialog.geometry("450x350")
+    dialog.geometry("450x400")
     dialog.transient(parent_window)
     dialog.grab_set()
 
@@ -326,6 +328,13 @@ def show_refund_method_dialog(amount: float, order_id: int, parent_window) -> Op
     ttk.Label(info_frame, text=f"Refund Amount: GBP {amount:.2f}",
              font=('Arial', 12, 'bold')).pack(anchor=tk.W, pady=(5, 0))
 
+    if payer_name:
+        ttk.Label(info_frame, text=f"Refund to: {payer_name}",
+                 font=('Arial', 10)).pack(anchor=tk.W, pady=(5, 0))
+    if original_method:
+        ttk.Label(info_frame, text=f"Original Payment: {original_method}",
+                 font=('Arial', 10)).pack(anchor=tk.W)
+
     # Refund method selection
     method_frame = ttk.LabelFrame(dialog, text="Select Refund Method", padding="10")
     method_frame.pack(fill=tk.X, padx=10, pady=10)
@@ -335,16 +344,30 @@ def show_refund_method_dialog(amount: float, order_id: int, parent_window) -> Op
         dialog.destroy()
 
     # Cash button
-    ttk.Button(method_frame, text="Cash", width=30,
+    cash_text = "Cash"
+    if original_method == 'Cash':
+        cash_text += " (Original Method)"
+    ttk.Button(method_frame, text=cash_text, width=30,
               command=lambda: select_method('Cash')).pack(pady=5)
 
     # Card button
-    ttk.Button(method_frame, text="Card (Original Payment Method)", width=30,
+    card_text = "Card"
+    if original_method == 'Card':
+        card_text += " (Original Method)"
+    ttk.Button(method_frame, text=card_text, width=30,
               command=lambda: select_method('Card')).pack(pady=5)
 
-    # Student Account button
-    ttk.Button(method_frame, text="Student Finance Account", width=30,
-              command=lambda: select_method('Student Account')).pack(pady=5)
+    # Finance Account button
+    finance_text = "Finance Account"
+    if original_method == 'Finance Account':
+        finance_text += " (Original Method)"
+    if payer_id:
+        ttk.Button(method_frame, text=finance_text, width=30,
+                  command=lambda: select_method('Finance Account')).pack(pady=5)
+    else:
+        btn = ttk.Button(method_frame, text="Finance Account (No account linked)", width=30)
+        btn.pack(pady=5)
+        btn.configure(state='disabled')
 
     # Cancel button
     ttk.Button(dialog, text="Cancel", command=dialog.destroy).pack(pady=10)
@@ -353,11 +376,11 @@ def show_refund_method_dialog(amount: float, order_id: int, parent_window) -> Op
     return result['method']
 
 
-def get_student_id_from_order(order_id: int) -> Optional[str]:
-    """Try to get student ID associated with an order.
+def get_payer_info_from_order(order_id: int) -> Optional[dict]:
+    """Get full payer details from an order.
 
-    Since restaurant_orders has customer_id instead of student_id,
-    we'll return the customer_id which may represent a student.
+    Resolves through restaurant_customers to find the user identifier
+    (student_id or username) and email address.
     """
     try:
         conn = get_db_connection()
@@ -365,17 +388,66 @@ def get_student_id_from_order(order_id: int) -> Optional[str]:
             return None
 
         cursor = conn.cursor()
-        # Get customer_id from order (may be a student_id)
+
+        # Get customer_id from order
         cursor.execute('''
-            SELECT customer_id FROM restaurant_orders
+            SELECT customer_id, payment_method FROM orders
             WHERE order_id = ? AND customer_id IS NOT NULL
         ''', (order_id,))
-        row = cursor.fetchone()
+        order_row = cursor.fetchone()
+
+        if not order_row or not order_row[0]:
+            conn.close()
+            return None
+
+        customer_id = order_row[0]
+
+        # Look up restaurant_customers to get the name (which is the student_id/username)
+        cursor.execute('''
+            SELECT name, email FROM restaurant_customers
+            WHERE customer_id = ?
+        ''', (customer_id,))
+        cust_row = cursor.fetchone()
+
+        if not cust_row:
+            conn.close()
+            return None
+
+        user_identifier = cust_row[0]  # student_id or username
+        customer_email = cust_row[1]
+        customer_name = user_identifier
+
+        # Try to get full name and email from students table
+        cursor.execute('''
+            SELECT first_name, last_name, email FROM students
+            WHERE student_id = ?
+        ''', (user_identifier,))
+        student_row = cursor.fetchone()
+
+        if student_row:
+            first = student_row[0] or ''
+            last = student_row[1] or ''
+            customer_name = f"{first} {last}".strip() or user_identifier
+            if student_row[2]:
+                customer_email = student_row[2]
+
+        # Fallback: try users table (for admin/staff)
+        if not customer_email:
+            cursor.execute('SELECT email FROM users WHERE username = ?', (user_identifier,))
+            user_row = cursor.fetchone()
+            if user_row and user_row[0]:
+                customer_email = user_row[0]
+
         conn.close()
-        # Return as string for consistency with student_id usage
-        return str(row[0]) if row and row[0] else None
+
+        return {
+            'user_identifier': user_identifier,
+            'name': customer_name,
+            'email': customer_email
+        }
+
     except Exception as e:
-        print(f"Error getting customer/student ID from order: {e}")
+        print(f"Error getting payer info from order: {e}")
         return None
 
 
@@ -439,10 +511,10 @@ def add_refund_to_student_account(student_id: str, amount: float, order_id: int)
 
         # Record transaction
         cursor.execute('''
-            INSERT INTO student_finance_transactions
-            (account_id, student_id, transaction_type, amount, balance_before,
+            INSERT INTO transactions
+            (source_type, account_id, student_id, transaction_type, amount, balance_before,
              balance_after, description, created_at)
-            VALUES (?, ?, 'credit', ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, CURRENT_TIMESTAMP)
         ''', (account_id, student_id, amount, balance_before, balance_after,
               f'Restaurant Refund - Order: {order_id}'))
 
@@ -455,68 +527,59 @@ def add_refund_to_student_account(student_id: str, amount: float, order_id: int)
 
 
 def send_refund_receipt(order_id: int, amount: float, method: str,
-                       refund_ref: str, student_id: Optional[str]):
-    """Send refund receipt email."""
+                       refund_ref: str, payer_id: Optional[str] = None,
+                       payer_name: str = "Customer",
+                       payer_email: Optional[str] = None) -> bool:
+    """Send refund receipt email to the payer.
+
+    Returns True if email was sent successfully.
+    """
+    if not payer_email:
+        print(f"[Restaurant] No email found for order {order_id}")
+        return False
+
     try:
-        # Get order and customer details
-        conn = get_db_connection()
-        if not conn:
-            return
+        from education_system.university_system.infrastructure.email.email_service import send_email
+        from education_system.university_system.infrastructure.email.template_utils import render_template
 
-        cursor = conn.cursor()
+        # Build account balance info if applicable
+        account_balance_info = ""
+        if method == 'Finance Account' and payer_id:
+            balance = get_student_account_balance(payer_id)
+            if balance is not None:
+                account_balance_info = f"Your new Finance Account balance: GBP {balance:.2f}\n"
 
-        # Get customer email from order or student
-        email = None
-        customer_name = "Customer"
-
-        if student_id:
-            cursor.execute("SELECT email, first_name, last_name FROM students WHERE student_id = ?",
-                         (student_id,))
-            row = cursor.fetchone()
-            if row:
-                email = row[0]
-                customer_name = f"{row[1]} {row[2]}"
-
-        # Fallback: try to get from users table
-        if not email and student_id:
-            cursor.execute("SELECT email FROM users WHERE username = ?", (student_id,))
-            row = cursor.fetchone()
-            if row:
-                email = row[0]
-
-        conn.close()
-
-        if email:
-            try:
-                from education_system.university_system.infrastructure.email.email_service import send_email
-                from education_system.university_system.infrastructure.email.template_utils import render_template
-
-                # Build account balance info if applicable
-                account_balance_info = ""
-                if method == 'Student Account' and student_id:
-                    balance = get_student_account_balance(student_id)
-                    if balance is not None:
-                        account_balance_info = f"Your new Student Finance Account balance: GBP {balance:.2f}\n"
-
-                # Render email from template
-                subject, body = render_template('commerce/restaurant_payment_refund_receipt',
-                    customer_name=customer_name,
-                    refund_ref=refund_ref,
-                    order_id=order_id,
-                    amount=f"{amount:.2f}",
-                    method=method,
-                    refund_date=datetime.now().strftime('%Y-%m-%d %H:%M'),
-                    account_balance_info=account_balance_info
-                )
-
-                send_email(email, subject, body)
-                print(f"[Restaurant] Refund receipt sent to {email}")
-            except Exception as e:
-                print(f"Error sending email: {e}")
+        # Render email from template
+        result = render_template('commerce/restaurant_payment_refund_receipt', {
+            'customer_name': payer_name,
+            'refund_ref': refund_ref,
+            'order_id': order_id,
+            'amount': f"{amount:.2f}",
+            'method': method,
+            'refund_date': datetime.now().strftime('%Y-%m-%d %H:%M'),
+            'account_balance_info': account_balance_info
+        })
+        if result and isinstance(result, tuple):
+            subject, body = result
         else:
-            print(f"[Restaurant] No email found for order {order_id}")
+            subject = "Refund Receipt - University Restaurant"
+            body = (f"Dear {payer_name},\n\n"
+                    f"Your refund has been processed.\n\n"
+                    f"Refund Reference: {refund_ref}\n"
+                    f"Order ID: {order_id}\n"
+                    f"Amount: GBP {amount:.2f}\n"
+                    f"Refund Method: {method}\n"
+                    f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n"
+                    f"{account_balance_info}\n"
+                    f"Thank you.")
+
+        success = send_email(payer_email, subject, body)
+        if success:
+            print(f"[Restaurant] Refund receipt sent to {payer_email}")
+        return success
     except Exception as e:
-        print(f"Error sending refund receipt: {e}")
+        print(f"Error sending refund receipt email: {e}")
+        return False
 
 
 def notify_finance_gui(order_id: int, amount: float, method: str,
@@ -529,56 +592,8 @@ def notify_finance_gui(order_id: int, amount: float, method: str,
 
         cursor = conn.cursor()
 
-        # Try to insert into finance refunds table if it exists
-        try:
-            # Create table if it doesn't exist
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS finance_refunds (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    refund_reference TEXT UNIQUE,
-                    department TEXT,
-                    amount REAL,
-                    refund_method TEXT,
-                    refund_date TEXT,
-                    refund_time TEXT,
-                    transaction_reference TEXT,
-                    processed_by TEXT,
-                    notes TEXT
-                )
-            ''')
-
-            # Migrate finance_refunds table to ensure all columns exist
-            cursor.execute("PRAGMA table_info(finance_refunds)")
-            columns = [row[1] for row in cursor.fetchall()]
-
-            # Add missing columns if needed
-            if 'transaction_reference' not in columns:
-                cursor.execute('ALTER TABLE finance_refunds ADD COLUMN transaction_reference TEXT')
-                print("Migration: Added transaction_reference column to finance_refunds table")
-
-            if 'refund_time' not in columns:
-                cursor.execute('ALTER TABLE finance_refunds ADD COLUMN refund_time TEXT')
-                print("Migration: Added refund_time column to finance_refunds table")
-
-            if 'notes' not in columns:
-                cursor.execute('ALTER TABLE finance_refunds ADD COLUMN notes TEXT')
-                print("Migration: Added notes column to finance_refunds table")
-
-            # Insert into finance_refunds table
-            cursor.execute('''
-                INSERT INTO finance_refunds
-                (refund_reference, department, amount, refund_method,
-                 refund_date, refund_time, transaction_reference, processed_by, notes)
-                VALUES (?, ?, ?, ?, date('now'), time('now'), ?, ?, ?)
-            ''', (refund_ref, 'Restaurant', amount, method,
-                  f'order_{order_id}', 'restaurant',
-                  f'Restaurant Order #{order_id} Refund - Student: {student_id or "N/A"}'))
-            conn.commit()
-            print(f"[Restaurant] Refund recorded in finance system: {refund_ref}")
-        except Exception as e:
-            # Log error but don't fail the refund
-            print(f"Warning: Could not notify finance system: {e}")
-
+        # Refund already recorded in unified_refunds table
+        print(f"[Restaurant] Refund recorded in finance system: {refund_ref}")
         conn.close()
     except Exception as e:
         print(f"Error notifying finance system: {e}")

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/cinema_cli/membership.py
+# hypothesis_version: 6.151.9
+
+[100, 200, 500, '\n0. Cancel', '\n1. Join Membership', '\nEnter choice: ', '\n🎁 Benefits:', '\n🎁 MEMBER BENEFITS:', '\n📋 NOT A MEMBER YET', '+', '0', '1', '2', '2. Redeem Points', '3', '4', '5', '5. Cancel Membership', '=', 'CANCEL MEMBERSHIP', 'Free Medium Drink', 'Free Small Popcorn', 'MEMBERSHIP DETAILS', 'POINTS HISTORY', 'REDEEM POINTS', 'cinema_membership', 'create', 'delete', 'email', 'full_name', 'join_date', 'membership_id', 'membership_type', 'points_balance', 'reason', 'renewal_date', 'standard', 'status', 'total_points_earned', 'total_spent', 'user_requested', 'username', 'yes', '£10 discount voucher', '£25 discount voucher', '£5 discount voucher', '❌ Invalid choice', '❌ Redemption failed', '⭐', '🎁']

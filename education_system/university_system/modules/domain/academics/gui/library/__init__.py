@@ -3,7 +3,7 @@ Enhanced Library Management System - GUI Version
 Modular package that composes LibraryGUI class from multiple modules
 """
 
-from .base import LibraryGUI
+from education_system.university_system.modules.domain.academics.gui.library.base import LibraryGUI
 
 # Import all functions from submodules and bind them to LibraryGUI class
 import sys
@@ -14,7 +14,7 @@ if _BINDING_DEBUG:
     print("library/__init__.py: Starting method bindings...", file=sys.stderr)
 
 # Dashboard functions
-from .dashboard import (
+from education_system.university_system.modules.domain.academics.gui.library.dashboard import (
     show_dashboard, create_statistics_display, get_library_statistics,
     create_activity_display, get_recent_activity, _get_audit_log_columns,
     _get_student_columns, show_statistics_dashboard
@@ -31,7 +31,7 @@ LibraryGUI._get_student_columns = _get_student_columns
 LibraryGUI.show_statistics_dashboard = show_statistics_dashboard
 
 # Books functions
-from .books import (
+from education_system.university_system.modules.domain.academics.gui.library.books import (
     show_all_books, create_books_context_menu, show_books_context_menu,
     load_books_data, search_books_table, refresh_books_table,
     on_book_double_click, view_selected_book, show_book_details,
@@ -73,7 +73,7 @@ LibraryGUI.edit_book_dialog = edit_book_dialog
 LibraryGUI.show_book_reviews = show_book_reviews
 
 # Search functions
-from .search import (
+from education_system.university_system.modules.domain.academics.gui.library.search import (
     show_search_books, execute_search, clear_search, save_search,
     on_search_result_double_click, show_advanced_search, show_advanced_search_gui
 )
@@ -86,12 +86,13 @@ LibraryGUI.show_advanced_search = show_advanced_search
 LibraryGUI.show_advanced_search_gui = show_advanced_search_gui
 
 # Checkout/Return functions
-from .checkout_return import (
+from education_system.university_system.modules.domain.academics.gui.library.checkout_return import (
     show_checkout, checkout_dialog, lookup_checkout_book, verify_checkout_user,
     check_checkout_ready, process_checkout, checkout_book_database,
     checkout_selected_book, show_return, return_dialog, lookup_return_book,
     process_return, return_book_database, enhanced_checkout_book_gui,
-    enhanced_return_book_gui, renew_book_gui, view_loan_history_gui
+    enhanced_return_book_gui, renew_book_gui, view_loan_history_gui,
+    _send_checkout_emails, _send_return_emails,
 )
 LibraryGUI.show_checkout = show_checkout
 LibraryGUI.checkout_dialog = checkout_dialog
@@ -110,12 +111,15 @@ LibraryGUI.enhanced_checkout_book_gui = enhanced_checkout_book_gui
 LibraryGUI.enhanced_return_book_gui = enhanced_return_book_gui
 LibraryGUI.renew_book_gui = renew_book_gui
 LibraryGUI.view_loan_history_gui = view_loan_history_gui
+LibraryGUI._send_checkout_emails = _send_checkout_emails
+LibraryGUI._send_return_emails = _send_return_emails
 
 # Reservations functions
-from .reservations import (
+from education_system.university_system.modules.domain.academics.gui.library.reservations import (
     show_reservations, load_reservations, refresh_reservations,
     new_reservation_dialog, create_reservation_database, cancel_reservation,
-    reserve_selected_book, reserve_book_gui, manage_reservations_gui
+    reserve_selected_book, reserve_book_gui, manage_reservations_gui,
+    _send_reservation_email, notify_reserved_users_on_return
 )
 LibraryGUI.show_reservations = show_reservations
 LibraryGUI.load_reservations = load_reservations
@@ -123,12 +127,14 @@ LibraryGUI.refresh_reservations = refresh_reservations
 LibraryGUI.new_reservation_dialog = new_reservation_dialog
 LibraryGUI.create_reservation_database = create_reservation_database
 LibraryGUI.cancel_reservation = cancel_reservation
+LibraryGUI._send_reservation_email = _send_reservation_email
+LibraryGUI.notify_reserved_users_on_return = notify_reserved_users_on_return
 LibraryGUI.reserve_selected_book = reserve_selected_book
 LibraryGUI.reserve_book_gui = reserve_book_gui
 LibraryGUI.manage_reservations_gui = manage_reservations_gui
 
 # Reports functions
-from .reports import (
+from education_system.university_system.modules.domain.academics.gui.library.reports import (
     show_reports, generate_collection_report, _show_report_message,
     _show_report_not_available, get_collection_report_data,
     generate_circulation_report, get_circulation_report_data,
@@ -159,11 +165,11 @@ LibraryGUI.show_report_in_window = show_report_in_window
 LibraryGUI.open_current_report_window = open_current_report_window
 
 # Also add generate_circulation_report_gui from reports
-from .reports import generate_circulation_report_gui
+from education_system.university_system.modules.domain.academics.gui.library.reports import generate_circulation_report_gui
 LibraryGUI.generate_circulation_report_gui = generate_circulation_report_gui
 
 # Settings functions
-from .settings import (
+from education_system.university_system.modules.domain.academics.gui.library.settings import (
     show_settings, create_library_settings_tab, create_system_settings_tab,
     create_user_settings_tab, save_library_settings, save_system_settings,
     save_user_settings, show_user_preferences, save_user_preferences,
@@ -188,10 +194,10 @@ LibraryGUI.reset_settings_to_default_gui = reset_settings_to_default_gui
 LibraryGUI.backup_settings_only_gui = backup_settings_only_gui
 
 # Reading lists functions
-from .reading_lists import (
+from education_system.university_system.modules.domain.academics.gui.library.reading_lists import (
     show_reading_lists, create_reading_lists_context_menu,
     show_reading_lists_context_menu, load_reading_lists, refresh_reading_lists,
-    create_reading_list_dialog, create_reading_list_database,
+    import_reading_list_dialog, create_reading_list_dialog, create_reading_list_database,
     view_reading_list_details, get_reading_list_details, load_reading_list_items,
     manage_reading_lists_gui, create_reading_list_gui, view_reading_list_details_gui
 )
@@ -200,6 +206,7 @@ LibraryGUI.create_reading_lists_context_menu = create_reading_lists_context_menu
 LibraryGUI.show_reading_lists_context_menu = show_reading_lists_context_menu
 LibraryGUI.load_reading_lists = load_reading_lists
 LibraryGUI.refresh_reading_lists = refresh_reading_lists
+LibraryGUI.import_reading_list_dialog = import_reading_list_dialog
 LibraryGUI.create_reading_list_dialog = create_reading_list_dialog
 LibraryGUI.create_reading_list_database = create_reading_list_database
 LibraryGUI.view_reading_list_details = view_reading_list_details
@@ -210,10 +217,10 @@ LibraryGUI.create_reading_list_gui = create_reading_list_gui
 LibraryGUI.view_reading_list_details_gui = view_reading_list_details_gui
 
 # Reviews functions
-from .reviews import (
+from education_system.university_system.modules.domain.academics.gui.library.reviews import (
     show_reviews, load_reviews, show_my_reviews, show_all_reviews,
     refresh_reviews, write_review_dialog, submit_review_database,
-    view_review_details, rate_and_review_book_gui
+    view_review_details, publish_all_reviews, rate_and_review_book_gui
 )
 LibraryGUI.show_reviews = show_reviews
 LibraryGUI.load_reviews = load_reviews
@@ -223,10 +230,11 @@ LibraryGUI.refresh_reviews = refresh_reviews
 LibraryGUI.write_review_dialog = write_review_dialog
 LibraryGUI.submit_review_database = submit_review_database
 LibraryGUI.view_review_details = view_review_details
+LibraryGUI.publish_all_reviews = publish_all_reviews
 LibraryGUI.rate_and_review_book_gui = rate_and_review_book_gui
 
 # Overdue functions
-from .overdue import (
+from education_system.university_system.modules.domain.academics.gui.library.overdue import (
     show_overdue_books, create_overdue_context_menu, show_overdue_context_menu,
     load_overdue_books, refresh_overdue_books, send_overdue_reminders,
     send_overdue_notifications, process_overdue_fines, calculate_overdue_fines,
@@ -246,7 +254,7 @@ LibraryGUI.create_overdue_export = create_overdue_export
 LibraryGUI.check_and_display_late_fees = check_and_display_late_fees
 
 # Fines functions
-from .fines import (
+from education_system.university_system.modules.domain.academics.gui.library.fines import (
     show_fine_management, load_user_fines, process_fine_payment,
     pay_fine_from_finance_account, _show_topup_dialog, waive_all_fines,
     view_fine_history, generate_fine_statistics_report, adjust_fine_amount,
@@ -281,7 +289,7 @@ LibraryGUI._process_library_fine_refund = _process_library_fine_refund
 LibraryGUI._send_refund_receipt_email = _send_refund_receipt_email
 
 # Maintenance functions
-from .maintenance import (
+from education_system.university_system.modules.domain.academics.gui.library.maintenance import (
     optimize_database, check_database_integrity, show_audit_log,
     audit_log_dialog, load_audit_log, library_maintenance_gui,
     cleanup_expired_reservations, update_overdue_status, calculate_fines,
@@ -308,7 +316,7 @@ LibraryGUI.clear_cache_gui = clear_cache_gui
 LibraryGUI.manage_library_events_gui = manage_library_events_gui
 
 # Barcode and cards functions
-from .barcode_cards import (
+from education_system.university_system.modules.domain.academics.gui.library.barcode_cards import (
     show_barcode_generator, generate_barcodes, show_barcode_scanner,
     process_barcode_scan, clear_barcode_scan, show_library_cards_generator,
     bulk_generate_library_cards_gui, generate_library_card_gui, print_library_card_gui
@@ -324,7 +332,7 @@ LibraryGUI.generate_library_card_gui = generate_library_card_gui
 LibraryGUI.print_library_card_gui = print_library_card_gui
 
 # Import/Export functions
-from .import_export import (
+from education_system.university_system.modules.domain.academics.gui.library.import_export import (
     import_books_gui, export_books_gui, backup_system_gui, restore_system_gui,
     restore_from_backup, bulk_import_books_gui, _perform_import,
     bulk_export_books_gui, _perform_export, system_backup_gui,
@@ -343,7 +351,7 @@ LibraryGUI.system_backup_gui = system_backup_gui
 LibraryGUI.generate_library_statistics_export = generate_library_statistics_export
 
 # Digital library functions
-from .digital_library import (
+from education_system.university_system.modules.domain.academics.gui.library.digital_library import (
     show_digital_library, load_digital_resources, refresh_digital_library,
     add_digital_resource_dialog, browse_digital_file, save_digital_resource,
     add_digital_resource_database, show_digital_library_gui, load_digital_library,
@@ -364,7 +372,7 @@ LibraryGUI.download_digital_resource_gui = download_digital_resource_gui
 LibraryGUI.manage_digital_access_permissions_gui = manage_digital_access_permissions_gui
 
 # Analytics functions
-from .analytics import (
+from education_system.university_system.modules.domain.academics.gui.library.analytics import (
     show_advanced_analytics_gui, _create_collection_overview,
     _refresh_collection_overview, _load_collection_overview_data,
     _create_circulation_stats, _create_user_activity, _create_category_analysis,
@@ -380,7 +388,7 @@ LibraryGUI._create_category_analysis = _create_category_analysis
 LibraryGUI.export_analytics_report = export_analytics_report
 
 # Notifications functions
-from .notifications import (
+from education_system.university_system.modules.domain.academics.gui.library.notifications import (
     _send_library_payment_confirmation_email, _send_email_via_gui,
     _show_library_email_fallback, _send_checkout_confirmation_email,
     _send_return_confirmation_email, send_automated_notifications_gui,
@@ -396,17 +404,17 @@ LibraryGUI.open_calendar_with_due_dates = open_calendar_with_due_dates
 LibraryGUI.add_calendar_button_to_interface = add_calendar_button_to_interface
 
 # Help functions
-from .help import show_help, show_shortcuts, show_about
+from education_system.university_system.modules.domain.academics.gui.library.help import show_help, show_shortcuts, show_about
 LibraryGUI.show_help = show_help
 LibraryGUI.show_shortcuts = show_shortcuts
 LibraryGUI.show_about = show_about
 
 # Finance functions
-from .finance import open_library_finance, LibraryFinanceManager
+from education_system.university_system.modules.domain.academics.gui.library.finance import open_library_finance, LibraryFinanceManager
 LibraryGUI.open_library_finance = open_library_finance
 
 # Misc functions
-from .misc import load_loan_history
+from education_system.university_system.modules.domain.academics.gui.library.misc import load_loan_history
 LibraryGUI.load_loan_history = load_loan_history
 
 __all__ = ["LibraryGUI", "LibraryFinanceManager"]

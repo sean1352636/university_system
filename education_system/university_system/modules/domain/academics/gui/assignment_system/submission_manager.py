@@ -64,18 +64,19 @@ class SubmissionManager:
         """Load available modules"""
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('SELECT module_code, module_name FROM modules ORDER BY module_code')
-            modules = cursor.fetchall()
+                cursor.execute('SELECT module_code, module_name FROM modules ORDER BY module_code')
+                modules = cursor.fetchall()
 
-            module_list = [f"{code} - {name}" for code, name in modules]
-            combo['values'] = module_list
+                module_list = [f"{code} - {name}" for code, name in modules]
+                combo['values'] = module_list
 
-            # Create mapping for easy lookup
-            self.module_map = {f"{code} - {name}": code for code, name in modules}
-
-            conn.close()
+                # Create mapping for easy lookup
+                self.module_map = {f"{code} - {name}": code for code, name in modules}
+            finally:
+                conn.close()
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load modules: {e}")
@@ -150,13 +151,15 @@ class SubmissionManager:
         """Load student list for admin testing dropdown"""
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            cursor.execute('''
-                SELECT student_id, first_name, last_name, course
-                FROM students ORDER BY last_name, first_name
-            ''')
-            students = cursor.fetchall()
-            conn.close()
+            try:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT student_id, first_name, last_name, course
+                    FROM students ORDER BY last_name, first_name
+                ''')
+                students = cursor.fetchall()
+            finally:
+                conn.close()
 
             self._admin_student_map = {}
             display_list = []
@@ -176,67 +179,68 @@ class SubmissionManager:
         """Load available assignments for submission"""
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-    
-            # Check if user is admin
-            current_user_role = self.auth.current_user.get('role', '') if self.auth.current_user else ''
-    
-            if current_user_role == 'admin':
-                # Admin can see all assignments
-                cursor.execute('''
-                SELECT a.id, a.title, a.module_code, a.due_date, a.created_by
-                FROM assignments a
-                WHERE a.is_active = 1
-                ORDER BY a.due_date
-                ''')
-    
-                assignments = cursor.fetchall()
-    
-                # Format for display - include creator info for admin
-                assignment_list = []
-                self.assignment_map = {}
-    
-                for aid, title, module, due_date, created_by in assignments:
-                    # Get creator username
-                    cursor.execute('SELECT username FROM users WHERE id = ?', (created_by,))
-                    creator_result = cursor.fetchone()
-                    creator = creator_result[0] if creator_result else 'Unknown'
-    
-                    display_text = f"[ADMIN] {title} ({module}) - Due: {due_date} - Created by: {creator}"
-                    assignment_list.append(display_text)
-                    self.assignment_map[display_text] = aid
-    
-            else:
-                # Regular student logic
-                student_id = self.assignment_system._get_student_id()
-                if not student_id:
-                    combo['values'] = []
-                    conn.close()
-                    return
-    
-                cursor.execute('''
-                SELECT a.id, a.title, a.module_code, a.due_date
-                FROM assignments a
-                JOIN student_modules sm ON a.module_code = sm.module_code
-                LEFT JOIN assignment_submissions s ON a.id = s.assignment_id AND s.student_id = ?
-                WHERE sm.student_id = ? AND a.is_active = 1
-                ORDER BY a.due_date
-                ''', (student_id, student_id))
-    
-                assignments = cursor.fetchall()
-    
-                # Format for display
-                assignment_list = []
-                self.assignment_map = {}
-    
-                for aid, title, module, due_date in assignments:
-                    display_text = f"{title} ({module}) - Due: {due_date}"
-                    assignment_list.append(display_text)
-                    self.assignment_map[display_text] = aid
-    
-            combo['values'] = assignment_list
-            conn.close()
-    
+            try:
+                cursor = conn.cursor()
+
+                # Check if user is admin
+                current_user_role = self.auth.current_user.get('role', '') if self.auth.current_user else ''
+
+                if current_user_role == 'admin':
+                    # Admin can see all assignments
+                    cursor.execute('''
+                    SELECT a.id, a.title, a.module_code, a.due_date, a.created_by
+                    FROM assignments a
+                    WHERE a.is_active = 1
+                    ORDER BY a.due_date
+                    ''')
+
+                    assignments = cursor.fetchall()
+
+                    # Format for display - include creator info for admin
+                    assignment_list = []
+                    self.assignment_map = {}
+
+                    for aid, title, module, due_date, created_by in assignments:
+                        # Get creator username
+                        cursor.execute('SELECT username FROM users WHERE id = ?', (created_by,))
+                        creator_result = cursor.fetchone()
+                        creator = creator_result[0] if creator_result else 'Unknown'
+
+                        display_text = f"[ADMIN] {title} ({module}) - Due: {due_date} - Created by: {creator}"
+                        assignment_list.append(display_text)
+                        self.assignment_map[display_text] = aid
+
+                else:
+                    # Regular student logic
+                    student_id = self.assignment_system._get_student_id()
+                    if not student_id:
+                        combo['values'] = []
+                        return
+
+                    cursor.execute('''
+                    SELECT a.id, a.title, a.module_code, a.due_date
+                    FROM assignments a
+                    JOIN student_modules sm ON a.module_code = sm.module_code
+                    LEFT JOIN assignment_submissions s ON a.id = s.assignment_id AND s.student_id = ?
+                    WHERE sm.student_id = ? AND a.is_active = 1
+                    ORDER BY a.due_date
+                    ''', (student_id, student_id))
+
+                    assignments = cursor.fetchall()
+
+                    # Format for display
+                    assignment_list = []
+                    self.assignment_map = {}
+
+                    for aid, title, module, due_date in assignments:
+                        display_text = f"{title} ({module}) - Due: {due_date}"
+                        assignment_list.append(display_text)
+                        self.assignment_map[display_text] = aid
+
+                combo['values'] = assignment_list
+            finally:
+                conn.close()
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load assignments: {e}")
     
@@ -378,10 +382,12 @@ class SubmissionManager:
                     user_id = self.auth.current_user.get('id')
                     if user_id:
                         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-                        cursor = conn.cursor()
-                        cursor.execute('SELECT student_id FROM users WHERE id = ?', (user_id,))
-                        result = cursor.fetchone()
-                        conn.close()
+                        try:
+                            cursor = conn.cursor()
+                            cursor.execute('SELECT student_id FROM users WHERE id = ?', (user_id,))
+                            result = cursor.fetchone()
+                        finally:
+                            conn.close()
 
                         if result and result[0]:
                             student_id = result[0]
@@ -413,162 +419,158 @@ class SubmissionManager:
                 return
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-
-            # Validate that student_id exists in students table (foreign key requirement)
-            cursor.execute('SELECT student_id FROM students WHERE student_id = ?', (student_id,))
-            if not cursor.fetchone():
-                self.root.after(0, lambda: self.show_status_message(
-                    f"Student ID '{student_id}' not found in students table. Please ensure you are registered as a student.",
-                    "error"
-                ))
-                conn.close()
-                return
-            
-            # Get assignment details
-            cursor.execute('''
-            SELECT a.*, m.module_name
-            FROM assignments a
-            JOIN modules m ON a.module_code = m.module_code
-            WHERE a.id = ? AND a.is_active = 1
-            ''', (assignment_id,))
-
-            assignment = cursor.fetchone()
-            if not assignment:
-                # Check if assignment exists but is inactive
-                cursor.execute('SELECT id FROM assignments WHERE id = ?', (assignment_id,))
-                if cursor.fetchone():
-                    self.root.after(0, lambda: self.show_status_message("Assignment is no longer active", "error"))
-                else:
-                    self.root.after(0, lambda: self.show_status_message("Assignment not found", "error"))
-                conn.close()
-                return
-            
-            # Validate file
-            # Column indexes: 7=file_types_allowed, 8=max_file_size_mb
-            valid, message = self._validate_file_submission(
-                file_path, assignment[7], assignment[8]
-            )
-
-            if not valid:
-                self.root.after(0, lambda: self.show_status_message(f"File validation failed: {message}", "error"))
-                conn.close()
-                return
-
-            # Check for existing submissions
-            cursor.execute('''
-            SELECT version_number FROM assignment_submissions
-            WHERE assignment_id = ? AND student_id = ?
-            ORDER BY submission_date DESC LIMIT 1
-            ''', (assignment_id, student_id))
-
-            existing = cursor.fetchone()
-            version_number = (existing[0] + 1) if existing else 1
-
-            # Check due date
-            # Column index: 5=due_date
-            due_date = datetime.strptime(assignment[5], '%Y-%m-%d %H:%M:%S')
-            submission_time = datetime.now()
-            late_submission = submission_time > due_date
-            late_days = (submission_time - due_date).days if late_submission else 0
-
-            # Column index: 12=allow_late_submission
-            if late_submission and not assignment[12]:  # allow_late_submission
-                self.root.after(0, lambda: self.show_status_message("Late submissions are not allowed", "error"))
-                conn.close()
-                return
-            
-            # Create submission directory
-            import shutil
-            from education_system.university_system.modules.shared.constants import paths
-
-            # Use proper path from shared constants with fallback
-            assignment_submission_dir = getattr(self.assignment_system, 'submission_dir', None)
-            if assignment_submission_dir is None:
-                base_dir = paths.SUBMISSIONS_DIR
-            else:
-                base_dir = Path(assignment_submission_dir)
-
-            submission_dir = os.path.join(
-                str(base_dir),
-                'submitted', student_id, f"assignment_{assignment_id}"
-            )
-            os.makedirs(submission_dir, exist_ok=True)
-
-            # Read file content for secure validation
-            file_name = os.path.basename(file_path)
-            with open(file_path, 'rb') as f:
-                file_content = f.read()
-
-            # Validate file using secure upload handler
-            validation = validate_upload(file_name, file_content, category='documents')
-            if not validation['valid']:
-                self.root.after(0, lambda: self.show_status_message(
-                    f"File validation failed: {validation['error']}", "error"
-                ))
-                return
-
-            # Use sanitized filename
-            safe_filename = validation['safe_filename']
-            timestamp = submission_time.strftime('%Y%m%d_%H%M%S')
-            new_file_name = f"v{version_number}_{timestamp}_{safe_filename}"
-            new_file_path = os.path.join(submission_dir, new_file_name)
-
-            # Save file with secure copy
-            shutil.copy2(file_path, new_file_path)
-
-            # Set restrictive permissions on uploaded file
             try:
-                os.chmod(new_file_path, 0o600)
-            except OSError:
-                pass  # May fail on some systems
+                cursor = conn.cursor()
 
-            # Use hash and size from validation
-            file_hash = self._calculate_file_hash(new_file_path)
-            file_size = len(file_content)
+                # Validate that student_id exists in students table (foreign key requirement)
+                cursor.execute('SELECT student_id FROM students WHERE student_id = ?', (student_id,))
+                if not cursor.fetchone():
+                    self.root.after(0, lambda: self.show_status_message(
+                        f"Student ID '{student_id}' not found in students table. Please ensure you are registered as a student.",
+                        "error"
+                    ))
+                    return
 
-            logger.info(f"Assignment submission saved securely: {new_file_name} ({file_size} bytes)")
-            
-            # Save submission
-            submission_date = submission_time.strftime('%Y-%m-%d %H:%M:%S')
-            
-            # Mark previous submissions as not final
-            if existing:
+                # Get assignment details
                 cursor.execute('''
-                UPDATE assignment_submissions 
-                SET is_final_submission = 0 
+                SELECT a.*, m.module_name
+                FROM assignments a
+                JOIN modules m ON a.module_code = m.module_code
+                WHERE a.id = ? AND a.is_active = 1
+                ''', (assignment_id,))
+
+                assignment = cursor.fetchone()
+                if not assignment:
+                    # Check if assignment exists but is inactive
+                    cursor.execute('SELECT id FROM assignments WHERE id = ?', (assignment_id,))
+                    if cursor.fetchone():
+                        self.root.after(0, lambda: self.show_status_message("Assignment is no longer active", "error"))
+                    else:
+                        self.root.after(0, lambda: self.show_status_message("Assignment not found", "error"))
+                    return
+
+                # Validate file
+                # Column indexes: 7=file_types_allowed, 8=max_file_size_mb
+                valid, message = self._validate_file_submission(
+                    file_path, assignment[7], assignment[8]
+                )
+
+                if not valid:
+                    self.root.after(0, lambda: self.show_status_message(f"File validation failed: {message}", "error"))
+                    return
+
+                # Check for existing submissions
+                cursor.execute('''
+                SELECT version_number FROM assignment_submissions
                 WHERE assignment_id = ? AND student_id = ?
+                ORDER BY submission_date DESC LIMIT 1
                 ''', (assignment_id, student_id))
-            
-            try:
-                cursor.execute('''
-                INSERT INTO assignment_submissions
-                (assignment_id, student_id, submission_date, file_path,
-                 file_name, file_size, file_hash, status, late_submission, late_days,
-                 version_number, is_final_submission)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (assignment_id, student_id, submission_date, new_file_path,
-                      file_name, file_size, file_hash, 'submitted', late_submission, late_days,
-                      version_number, 1))
 
-                conn.commit()
-            except sqlite3.IntegrityError as ie:
-                conn.close()
-                error_msg = str(ie)
-                if 'FOREIGN KEY constraint failed' in error_msg:
-                    self.root.after(0, lambda: self.show_status_message(
-                        f"Database constraint error: Student ID '{student_id}' or Assignment ID '{assignment_id}' is invalid. "
-                        "Please ensure you are registered as a student and the assignment exists.",
-                        "error"
-                    ))
+                existing = cursor.fetchone()
+                version_number = (existing[0] + 1) if existing else 1
+
+                # Check due date
+                # Column index: 5=due_date
+                due_date = datetime.strptime(assignment[5], '%Y-%m-%d %H:%M:%S')
+                submission_time = datetime.now()
+                late_submission = submission_time > due_date
+                late_days = (submission_time - due_date).days if late_submission else 0
+
+                # Column index: 12=allow_late_submission
+                if late_submission and not assignment[12]:  # allow_late_submission
+                    self.root.after(0, lambda: self.show_status_message("Late submissions are not allowed", "error"))
+                    return
+
+                # Create submission directory
+                import shutil
+                from education_system.university_system.modules.shared.constants import paths
+
+                # Use proper path from shared constants with fallback
+                assignment_submission_dir = getattr(self.assignment_system, 'submission_dir', None)
+                if assignment_submission_dir is None:
+                    base_dir = paths.SUBMISSIONS_DIR
                 else:
-                    self.root.after(0, lambda: self.show_status_message(
-                        f"Database error: {error_msg}",
-                        "error"
-                    ))
-                return
+                    base_dir = Path(assignment_submission_dir)
 
-            conn.close()
+                submission_dir = os.path.join(
+                    str(base_dir),
+                    'submitted', student_id, f"assignment_{assignment_id}"
+                )
+                os.makedirs(submission_dir, exist_ok=True)
+
+                # Read file content for secure validation
+                file_name = os.path.basename(file_path)
+                with open(file_path, 'rb') as f:
+                    file_content = f.read()
+
+                # Validate file using secure upload handler
+                validation = validate_upload(file_name, file_content, category='documents')
+                if not validation['valid']:
+                    self.root.after(0, lambda: self.show_status_message(
+                        f"File validation failed: {validation['error']}", "error"
+                    ))
+                    return
+
+                # Use sanitized filename
+                safe_filename = validation['safe_filename']
+                timestamp = submission_time.strftime('%Y%m%d_%H%M%S')
+                new_file_name = f"v{version_number}_{timestamp}_{safe_filename}"
+                new_file_path = os.path.join(submission_dir, new_file_name)
+
+                # Save file with secure copy
+                shutil.copy2(file_path, new_file_path)
+
+                # Set restrictive permissions on uploaded file
+                try:
+                    os.chmod(new_file_path, 0o600)
+                except OSError:
+                    pass  # May fail on some systems
+
+                # Use hash and size from validation
+                file_hash = self._calculate_file_hash(new_file_path)
+                file_size = len(file_content)
+
+                logger.info(f"Assignment submission saved securely: {new_file_name} ({file_size} bytes)")
+
+                # Save submission
+                submission_date = submission_time.strftime('%Y-%m-%d %H:%M:%S')
+
+                # Mark previous submissions as not final
+                if existing:
+                    cursor.execute('''
+                    UPDATE assignment_submissions
+                    SET is_final_submission = 0
+                    WHERE assignment_id = ? AND student_id = ?
+                    ''', (assignment_id, student_id))
+
+                try:
+                    cursor.execute('''
+                    INSERT INTO assignment_submissions
+                    (assignment_id, student_id, submission_date, file_path,
+                     file_name, file_size, file_hash, status, late_submission, late_days,
+                     version_number, is_final_submission)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (assignment_id, student_id, submission_date, new_file_path,
+                          file_name, file_size, file_hash, 'submitted', late_submission, late_days,
+                          version_number, 1))
+
+                    conn.commit()
+                except sqlite3.IntegrityError as ie:
+                    error_msg = str(ie)
+                    if 'FOREIGN KEY constraint failed' in error_msg:
+                        self.root.after(0, lambda: self.show_status_message(
+                            f"Database constraint error: Student ID '{student_id}' or Assignment ID '{assignment_id}' is invalid. "
+                            "Please ensure you are registered as a student and the assignment exists.",
+                            "error"
+                        ))
+                    else:
+                        self.root.after(0, lambda: self.show_status_message(
+                            f"Database error: {error_msg}",
+                            "error"
+                        ))
+                    return
+            finally:
+                conn.close()
 
             # Send email notifications
             try:
@@ -683,25 +685,26 @@ class SubmissionManager:
                 return
             
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-            SELECT s.id, a.title, s.file_name, s.submission_date, s.status,
-                   COALESCE(CAST(s.grade AS TEXT), 'Not Graded') as grade,
-                   COALESCE(s.feedback, 'No feedback') as feedback
-            FROM assignment_submissions s
-            JOIN assignments a ON s.assignment_id = a.id
-            WHERE s.student_id = ?
-            ORDER BY s.submission_date DESC
-            ''', (student_id,))
-            
-            submissions = cursor.fetchall()
-            
-            for submission in submissions:
-                tree.insert('', 'end', values=submission)
-            
-            conn.close()
-            
+            try:
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                SELECT s.id, a.title, s.file_name, s.submission_date, s.status,
+                       COALESCE(CAST(s.grade AS TEXT), 'Not Graded') as grade,
+                       COALESCE(s.feedback, 'No feedback') as feedback
+                FROM assignment_submissions s
+                JOIN assignments a ON s.assignment_id = a.id
+                WHERE s.student_id = ?
+                ORDER BY s.submission_date DESC
+                ''', (student_id,))
+
+                submissions = cursor.fetchall()
+
+                for submission in submissions:
+                    tree.insert('', 'end', values=submission)
+            finally:
+                conn.close()
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load submissions: {e}")
     
@@ -821,80 +824,81 @@ class SubmissionManager:
                 return
             
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            
-            # Build query with filters
-            query = '''
-            SELECT s.id, a.title, a.module_code, s.file_name, s.submission_date,
-                   s.status, 
-                   CASE WHEN s.grade IS NULL THEN 'Not Graded' ELSE CAST(s.grade AS TEXT) || '%' END as grade,
-                   CASE WHEN s.feedback IS NOT NULL AND s.feedback != '' THEN 'Yes' ELSE 'No' END as has_feedback
-            FROM assignment_submissions s
-            JOIN assignments a ON s.assignment_id = a.id
-            WHERE s.student_id = ?
-            '''
-            
-            params = [student_id]
-            
-            # Apply assignment filter
-            assignment_filter = self.submission_assignment_filter.get()
-            assignment_id = self.submission_assignment_map.get(assignment_filter)
-            if assignment_id:
-                query += " AND s.assignment_id = ?"
-                params.append(assignment_id)
-            
-            # Apply status filter
-            status_filter = self.submission_status_filter.get()
-            if status_filter == "Graded":
-                query += " AND s.grade IS NOT NULL"
-            elif status_filter == "Ungraded":
-                query += " AND s.grade IS NULL"
-            elif status_filter == "Late":
-                query += " AND s.late_submission = 1"
-            
-            # Apply date filters
-            date_from = self.submission_date_from.get().strip()
-            if date_from:
-                query += " AND date(s.submission_date) >= ?"
-                params.append(date_from)
-            
-            date_to = self.submission_date_to.get().strip()
-            if date_to:
-                query += " AND date(s.submission_date) <= ?"
-                params.append(date_to)
-            
-            query += " ORDER BY s.submission_date DESC"
-            
-            cursor.execute(query, params)
-            submissions = cursor.fetchall()
-            
-            for submission in submissions:
-                sid, title, module, filename, date, status, grade, feedback = submission
-                
-                # Color coding
-                tags = []
-                if grade != 'Not Graded':
-                    if float(grade.replace('%', '')) >= 70:
-                        tags = ['good_grade']
-                    elif float(grade.replace('%', '')) >= 50:
-                        tags = ['average_grade']
-                    else:
-                        tags = ['poor_grade']
-                elif status == 'late':
-                    tags = ['late']
-                
-                self.enhanced_submissions_tree.insert('', 'end', 
-                                                    values=(sid, title, module, filename, date, status, grade, feedback),
-                                                    tags=tags)
-            
-            # Configure tags
-            self.enhanced_submissions_tree.tag_configure('good_grade', background='#e8f5e8')
-            self.enhanced_submissions_tree.tag_configure('average_grade', background='#fff3e0')
-            self.enhanced_submissions_tree.tag_configure('poor_grade', background='#ffebee')
-            self.enhanced_submissions_tree.tag_configure('late', background='#ffcdd2')
-            
-            conn.close()
-            
+            try:
+                cursor = conn.cursor()
+
+                # Build query with filters
+                query = '''
+                SELECT s.id, a.title, a.module_code, s.file_name, s.submission_date,
+                       s.status,
+                       CASE WHEN s.grade IS NULL THEN 'Not Graded' ELSE CAST(s.grade AS TEXT) || '%' END as grade,
+                       CASE WHEN s.feedback IS NOT NULL AND s.feedback != '' THEN 'Yes' ELSE 'No' END as has_feedback
+                FROM assignment_submissions s
+                JOIN assignments a ON s.assignment_id = a.id
+                WHERE s.student_id = ?
+                '''
+
+                params = [student_id]
+
+                # Apply assignment filter
+                assignment_filter = self.submission_assignment_filter.get()
+                assignment_id = self.submission_assignment_map.get(assignment_filter)
+                if assignment_id:
+                    query += " AND s.assignment_id = ?"
+                    params.append(assignment_id)
+
+                # Apply status filter
+                status_filter = self.submission_status_filter.get()
+                if status_filter == "Graded":
+                    query += " AND s.grade IS NOT NULL"
+                elif status_filter == "Ungraded":
+                    query += " AND s.grade IS NULL"
+                elif status_filter == "Late":
+                    query += " AND s.late_submission = 1"
+
+                # Apply date filters
+                date_from = self.submission_date_from.get().strip()
+                if date_from:
+                    query += " AND date(s.submission_date) >= ?"
+                    params.append(date_from)
+
+                date_to = self.submission_date_to.get().strip()
+                if date_to:
+                    query += " AND date(s.submission_date) <= ?"
+                    params.append(date_to)
+
+                query += " ORDER BY s.submission_date DESC"
+
+                cursor.execute(query, params)
+                submissions = cursor.fetchall()
+
+                for submission in submissions:
+                    sid, title, module, filename, date, status, grade, feedback = submission
+
+                    # Color coding
+                    tags = []
+                    if grade != 'Not Graded':
+                        if float(grade.replace('%', '')) >= 70:
+                            tags = ['good_grade']
+                        elif float(grade.replace('%', '')) >= 50:
+                            tags = ['average_grade']
+                        else:
+                            tags = ['poor_grade']
+                    elif status == 'late':
+                        tags = ['late']
+
+                    self.enhanced_submissions_tree.insert('', 'end',
+                                                        values=(sid, title, module, filename, date, status, grade, feedback),
+                                                        tags=tags)
+
+                # Configure tags
+                self.enhanced_submissions_tree.tag_configure('good_grade', background='#e8f5e8')
+                self.enhanced_submissions_tree.tag_configure('average_grade', background='#fff3e0')
+                self.enhanced_submissions_tree.tag_configure('poor_grade', background='#ffebee')
+                self.enhanced_submissions_tree.tag_configure('late', background='#ffcdd2')
+            finally:
+                conn.close()
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load submissions: {e}")
     
@@ -917,33 +921,34 @@ class SubmissionManager:
         
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            
-            # Get submission details with feedback
-            cursor.execute('''
-            SELECT s.*, a.title, a.max_marks, st.first_name, st.last_name
-            FROM assignment_submissions s
-            JOIN assignments a ON s.assignment_id = a.id
-            JOIN students st ON s.student_id = st.student_id
-            WHERE s.id = ?
-            ''', (submission_id,))
-            
-            submission = cursor.fetchone()
-            
-            if not submission:
-                messagebox.showerror("Error", "Submission not found")
-                feedback_window.destroy()
-                return
-            
-            # Display feedback
-            main_frame = ttk.Frame(feedback_window)
-            main_frame.pack(fill='both', expand=True, padx=10, pady=10)
-            
-            # Header info
-            header_label = ttk.Label(main_frame, text=f"Assignment: {submission[11]}")
-            header_label.pack(pady=5)
+            try:
+                cursor = conn.cursor()
 
-            conn.close()
+                # Get submission details with feedback
+                cursor.execute('''
+                SELECT s.*, a.title, a.max_marks, st.first_name, st.last_name
+                FROM assignment_submissions s
+                JOIN assignments a ON s.assignment_id = a.id
+                JOIN students st ON s.student_id = st.student_id
+                WHERE s.id = ?
+                ''', (submission_id,))
+
+                submission = cursor.fetchone()
+
+                if not submission:
+                    messagebox.showerror("Error", "Submission not found")
+                    feedback_window.destroy()
+                    return
+
+                # Display feedback
+                main_frame = ttk.Frame(feedback_window)
+                main_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+                # Header info
+                header_label = ttk.Label(main_frame, text=f"Assignment: {submission[11]}")
+                header_label.pack(pady=5)
+            finally:
+                conn.close()
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load feedback: {e}")
@@ -960,26 +965,27 @@ class SubmissionManager:
         
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            
-            cursor.execute('SELECT file_path, file_name FROM assignment_submissions WHERE id = ?', (submission_id,))
-            result = cursor.fetchone()
-            
-            if result and os.path.exists(result[0]):
-                save_path = filedialog.asksaveasfilename(
-                    defaultextension=os.path.splitext(result[1])[1],
-                    initialfile=result[1],
-                    filetypes=[("All files", "*.*")]
-                )
-                
-                if save_path:
-                    shutil.copy2(result[0], save_path)
-                    messagebox.showinfo("Success", f"File saved to: {save_path}")
-            else:
-                messagebox.showerror("Error", "File not found")
-            
-            conn.close()
-            
+            try:
+                cursor = conn.cursor()
+
+                cursor.execute('SELECT file_path, file_name FROM assignment_submissions WHERE id = ?', (submission_id,))
+                result = cursor.fetchone()
+
+                if result and os.path.exists(result[0]):
+                    save_path = filedialog.asksaveasfilename(
+                        defaultextension=os.path.splitext(result[1])[1],
+                        initialfile=result[1],
+                        filetypes=[("All files", "*.*")]
+                    )
+
+                    if save_path:
+                        shutil.copy2(result[0], save_path)
+                        messagebox.showinfo("Success", f"File saved to: {save_path}")
+                else:
+                    messagebox.showerror("Error", "File not found")
+            finally:
+                conn.close()
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to download file: {e}")
     
@@ -998,28 +1004,29 @@ class SubmissionManager:
         # Check if resubmission is allowed
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-            SELECT a.due_date, a.allow_late_submission, s.assignment_id
-            FROM assignment_submissions s
-            JOIN assignments a ON s.assignment_id = a.id
-            WHERE s.id = ?
-            ''', (submission_id,))
-            
-            result = cursor.fetchone()
-            if not result:
-                messagebox.showerror("Error", "Assignment not found")
-                return
-            
-            due_date, allow_late, assignment_id = result
-            due_datetime = datetime.strptime(due_date, '%Y-%m-%d %H:%M:%S')
-            
-            if datetime.now() > due_datetime and not allow_late:
-                messagebox.showerror("Error", "Resubmission not allowed after due date")
-                return
-            
-            conn.close()
+            try:
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                SELECT a.due_date, a.allow_late_submission, s.assignment_id
+                FROM assignment_submissions s
+                JOIN assignments a ON s.assignment_id = a.id
+                WHERE s.id = ?
+                ''', (submission_id,))
+
+                result = cursor.fetchone()
+                if not result:
+                    messagebox.showerror("Error", "Assignment not found")
+                    return
+
+                due_date, allow_late, assignment_id = result
+                due_datetime = datetime.strptime(due_date, '%Y-%m-%d %H:%M:%S')
+
+                if datetime.now() > due_datetime and not allow_late:
+                    messagebox.showerror("Error", "Resubmission not allowed after due date")
+                    return
+            finally:
+                conn.close()
             
             # Confirm resubmission
             if messagebox.askyesno("Confirm Resubmission", 
@@ -1051,35 +1058,37 @@ class SubmissionManager:
                 return
             
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-            SELECT a.title, a.module_code, s.submission_date, s.grade, s.late_submission,
-                   a.max_marks, s.feedback
-            FROM assignment_submissions s
-            JOIN assignments a ON s.assignment_id = a.id
-            WHERE s.student_id = ? AND s.grade IS NOT NULL
-            ORDER BY s.submission_date
-            ''', (student_id,))
-            
-            data = cursor.fetchall()
-            
+            try:
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                SELECT a.title, a.module_code, s.submission_date, s.grade, s.late_submission,
+                       a.max_marks, s.feedback
+                FROM assignment_submissions s
+                JOIN assignments a ON s.assignment_id = a.id
+                WHERE s.student_id = ? AND s.grade IS NOT NULL
+                ORDER BY s.submission_date
+                ''', (student_id,))
+
+                data = cursor.fetchall()
+            finally:
+                conn.close()
+
             import csv
             with open(save_path, 'w', newline='') as csvfile:
                 writer = csv.writer(csvfile)
                 writer.writerow(['Assignment', 'Module', 'Submission Date', 'Grade (%)', 'Late', 'Max Marks', 'Feedback'])
-                
+
                 for row in data:
                     # Convert grade percentage to actual grade
                     title, module, date, grade_pct, late, max_marks, feedback = row
                     actual_grade = (grade_pct * max_marks) / 100 if grade_pct else 0
                     late_text = 'Yes' if late else 'No'
-                    
+
                     writer.writerow([title, module, date, f"{grade_pct:.1f}", late_text, max_marks, feedback or ''])
-            
-            conn.close()
+
             messagebox.showinfo("Success", f"Grades exported to: {save_path}")
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to export grades: {e}")
     
@@ -1099,33 +1108,36 @@ class SubmissionManager:
         
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            
-            # Get grade statistics
-            cursor.execute('''
-            SELECT COUNT(*) as total_graded,
-                   AVG(grade) as avg_grade,
-                   MIN(grade) as min_grade,
-                   MAX(grade) as max_grade,
-                   COUNT(CASE WHEN late_submission = 1 THEN 1 END) as late_count
-            FROM assignment_submissions
-            WHERE student_id = ? AND grade IS NOT NULL
-            ''', (student_id,))
-            
-            stats = cursor.fetchone()
-            
-            if not stats or not stats[0]:
-                ttk.Label(stats_window, text="No graded submissions found").pack(pady=20)
-                return
-            
-            total, avg, min_grade, max_grade, late_count = stats
-            
-            # Display statistics
-            stats_frame = ttk.LabelFrame(stats_window, text="Grade Summary", padding=20)
-            stats_frame.pack(fill='x', padx=10, pady=10)
+            try:
+                cursor = conn.cursor()
 
-            stats_label = ttk.Label(stats_frame, text=f"Total Graded Assignments: {total}")
-            stats_label.pack(pady=5)
+                # Get grade statistics
+                cursor.execute('''
+                SELECT COUNT(*) as total_graded,
+                       AVG(grade) as avg_grade,
+                       MIN(grade) as min_grade,
+                       MAX(grade) as max_grade,
+                       COUNT(CASE WHEN late_submission = 1 THEN 1 END) as late_count
+                FROM assignment_submissions
+                WHERE student_id = ? AND grade IS NOT NULL
+                ''', (student_id,))
+
+                stats = cursor.fetchone()
+
+                if not stats or not stats[0]:
+                    ttk.Label(stats_window, text="No graded submissions found").pack(pady=20)
+                    return
+
+                total, avg, min_grade, max_grade, late_count = stats
+
+                # Display statistics
+                stats_frame = ttk.LabelFrame(stats_window, text="Grade Summary", padding=20)
+                stats_frame.pack(fill='x', padx=10, pady=10)
+
+                stats_label = ttk.Label(stats_frame, text=f"Total Graded Assignments: {total}")
+                stats_label.pack(pady=5)
+            finally:
+                conn.close()
 
         except Exception as e:
             messagebox.showerror("Error", f"Operation failed: {e}")
@@ -1213,66 +1225,67 @@ class SubmissionManager:
         
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-    
-            module_label = getattr(self, 'module_filter_var', tk.StringVar()).get()
-            module_code = None
-            if module_label:
-                module_code = self.module_map.get(module_label)
-                if module_code is None and module_label not in ("All Modules", "") and ' - ' not in module_label:
-                    module_code = module_label
-    
-            status_filter = getattr(self, 'status_filter_var', tk.StringVar(value="All")).get()
-    
-            query = '''
-                SELECT s.id, st.first_name, st.last_name, a.title, a.module_code,
-                       s.submission_date, s.status,
-                       CASE WHEN s.grade IS NULL THEN 'Not Graded' ELSE CAST(s.grade AS TEXT) || '%' END as grade
-                FROM assignment_submissions s
-                JOIN assignments a ON s.assignment_id = a.id
-                JOIN students st ON s.student_id = st.student_id
-                WHERE 1=1
-            '''
-            params = []
-    
-            if module_code:
-                query += " AND a.module_code = ?"
-                params.append(module_code)
-    
-            if status_filter and status_filter != "All":
-                if status_filter == "Late":
-                    query += " AND s.late_submission = 1"
-                else:
-                    query += " AND LOWER(s.status) = ?"
-                    params.append(status_filter.lower())
-    
-            query += " ORDER BY s.submission_date DESC"
-    
-            cursor.execute(query, params)
-            submissions = cursor.fetchall()
-            
-            for submission in submissions:
-                sid, fname, lname, title, module, date, status, grade = submission
-                student_name = f"{fname} {lname}"
-                
-                # Color coding
-                tags = []
-                if status == 'graded':
-                    tags = ['graded']
-                elif 'late' in status.lower():
-                    tags = ['late']
-                elif status.lower() == 'archived':
-                    tags = ['archived']
-                
-                self.all_submissions_tree.insert('', 'end', values=(sid, student_name, title, module, date, status, grade), tags=tags)
-            
-            # Configure tags
-            self.all_submissions_tree.tag_configure('graded', background='#e8f5e8')
-            self.all_submissions_tree.tag_configure('late', background='#ffebee')
-            self.all_submissions_tree.tag_configure('archived', background='#eeeeee')
-            
-            conn.close()
-            
+            try:
+                cursor = conn.cursor()
+
+                module_label = getattr(self, 'module_filter_var', tk.StringVar()).get()
+                module_code = None
+                if module_label:
+                    module_code = self.module_map.get(module_label)
+                    if module_code is None and module_label not in ("All Modules", "") and ' - ' not in module_label:
+                        module_code = module_label
+
+                status_filter = getattr(self, 'status_filter_var', tk.StringVar(value="All")).get()
+
+                query = '''
+                    SELECT s.id, st.first_name, st.last_name, a.title, a.module_code,
+                           s.submission_date, s.status,
+                           CASE WHEN s.grade IS NULL THEN 'Not Graded' ELSE CAST(s.grade AS TEXT) || '%' END as grade
+                    FROM assignment_submissions s
+                    JOIN assignments a ON s.assignment_id = a.id
+                    JOIN students st ON s.student_id = st.student_id
+                    WHERE 1=1
+                '''
+                params = []
+
+                if module_code:
+                    query += " AND a.module_code = ?"
+                    params.append(module_code)
+
+                if status_filter and status_filter != "All":
+                    if status_filter == "Late":
+                        query += " AND s.late_submission = 1"
+                    else:
+                        query += " AND LOWER(s.status) = ?"
+                        params.append(status_filter.lower())
+
+                query += " ORDER BY s.submission_date DESC"
+
+                cursor.execute(query, params)
+                submissions = cursor.fetchall()
+
+                for submission in submissions:
+                    sid, fname, lname, title, module, date, status, grade = submission
+                    student_name = f"{fname} {lname}"
+
+                    # Color coding
+                    tags = []
+                    if status == 'graded':
+                        tags = ['graded']
+                    elif 'late' in status.lower():
+                        tags = ['late']
+                    elif status.lower() == 'archived':
+                        tags = ['archived']
+
+                    self.all_submissions_tree.insert('', 'end', values=(sid, student_name, title, module, date, status, grade), tags=tags)
+
+                # Configure tags
+                self.all_submissions_tree.tag_configure('graded', background='#e8f5e8')
+                self.all_submissions_tree.tag_configure('late', background='#ffebee')
+                self.all_submissions_tree.tag_configure('archived', background='#eeeeee')
+            finally:
+                conn.close()
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load submissions: {e}")
     
@@ -1308,27 +1321,28 @@ class SubmissionManager:
         
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            
-            cursor.execute('SELECT file_path, file_name FROM assignment_submissions WHERE id = ?', (submission_id,))
-            result = cursor.fetchone()
-            
-            if result:
-                file_path, file_name = result
-                save_path = filedialog.asksaveasfilename(
-                    defaultextension=os.path.splitext(file_name)[1],
-                    initialfile=file_name,
-                    filetypes=[("All Files", "*.*")]
-                )
-                
-                if save_path and os.path.exists(file_path):
-                    shutil.copy2(file_path, save_path)
-                    messagebox.showinfo("Success", f"File saved to: {save_path}")
-                else:
-                    messagebox.showerror("Error", "Source file not found")
-            
-            conn.close()
-            
+            try:
+                cursor = conn.cursor()
+
+                cursor.execute('SELECT file_path, file_name FROM assignment_submissions WHERE id = ?', (submission_id,))
+                result = cursor.fetchone()
+
+                if result:
+                    file_path, file_name = result
+                    save_path = filedialog.asksaveasfilename(
+                        defaultextension=os.path.splitext(file_name)[1],
+                        initialfile=file_name,
+                        filetypes=[("All Files", "*.*")]
+                    )
+
+                    if save_path and os.path.exists(file_path):
+                        shutil.copy2(file_path, save_path)
+                        messagebox.showinfo("Success", f"File saved to: {save_path}")
+                    else:
+                        messagebox.showerror("Error", "Source file not found")
+            finally:
+                conn.close()
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to download file: {e}")
     
@@ -1345,28 +1359,30 @@ class SubmissionManager:
                 return
             
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-            SELECT s.id, st.student_id, st.first_name, st.last_name, 
-                   a.title, a.module_code, s.submission_date, s.status, s.grade
-            FROM assignment_submissions s
-            JOIN assignments a ON s.assignment_id = a.id
-            JOIN students st ON s.student_id = st.student_id
-            ORDER BY s.submission_date DESC
-            ''')
-            
-            data = cursor.fetchall()
-            
+            try:
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                SELECT s.id, st.student_id, st.first_name, st.last_name,
+                       a.title, a.module_code, s.submission_date, s.status, s.grade
+                FROM assignment_submissions s
+                JOIN assignments a ON s.assignment_id = a.id
+                JOIN students st ON s.student_id = st.student_id
+                ORDER BY s.submission_date DESC
+                ''')
+
+                data = cursor.fetchall()
+            finally:
+                conn.close()
+
             import csv
             with open(save_path, 'w', newline='') as csvfile:
                 writer = csv.writer(csvfile)
                 writer.writerow(['ID', 'Student ID', 'First Name', 'Last Name', 'Assignment', 'Module', 'Submitted', 'Status', 'Grade'])
                 writer.writerows(data)
-            
-            conn.close()
+
             messagebox.showinfo("Success", f"Submissions exported to: {save_path}")
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to export submissions: {e}")
     
@@ -1383,13 +1399,15 @@ class SubmissionManager:
     
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            cursor.execute(
-                'SELECT file_path FROM assignment_submissions WHERE id = ?',
-                (submission_id,)
-            )
-            row = cursor.fetchone()
-            conn.close()
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    'SELECT file_path FROM assignment_submissions WHERE id = ?',
+                    (submission_id,)
+                )
+                row = cursor.fetchone()
+            finally:
+                conn.close()
         except Exception as exc:
             messagebox.showerror("Error", f"Unable to load submission: {exc}")
             return
@@ -1417,13 +1435,15 @@ class SubmissionManager:
     
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            cursor.execute(
-                'SELECT file_path FROM assignment_submissions WHERE id = ?',
-                (submission_id,)
-            )
-            row = cursor.fetchone()
-            conn.close()
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    'SELECT file_path FROM assignment_submissions WHERE id = ?',
+                    (submission_id,)
+                )
+                row = cursor.fetchone()
+            finally:
+                conn.close()
         except Exception as exc:
             messagebox.showerror("Error", f"Unable to load submission: {exc}")
             return
@@ -1482,43 +1502,43 @@ class SubmissionManager:
             from education_system.university_system.infrastructure.email.email_service import send_email
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            # Get student info and email
-            cursor.execute('SELECT first_name, last_name, email_address FROM students WHERE student_id = ?', (student_id,))
-            student_row = cursor.fetchone()
+                # Get student info and email
+                cursor.execute('SELECT first_name, last_name, email_address FROM students WHERE student_id = ?', (student_id,))
+                student_row = cursor.fetchone()
 
-            if not student_row:
-                print(f"Warning: Student {student_id} not found in database")
-                conn.close()
-                return
+                if not student_row:
+                    print(f"Warning: Student {student_id} not found in database")
+                    return
 
-            student_first_name, student_last_name, student_email = student_row
-            student_name = f"{student_first_name} {student_last_name}"
+                student_first_name, student_last_name, student_email = student_row
+                student_name = f"{student_first_name} {student_last_name}"
 
-            # Send confirmation email to student
-            if student_email:
-                late_text = f" (Late submission - {late_days} days overdue)" if late_submission else ""
+                # Send confirmation email to student
+                if student_email:
+                    late_text = f" (Late submission - {late_days} days overdue)" if late_submission else ""
 
-                # Use email template
-                try:
-                    from education_system.university_system.infrastructure.email.template_utils import render_template
-                    student_subject, student_body = render_template("assignment_submission_student", {
-                        "first_name": student_first_name,
-                        "module_code": module_code,
-                        "module_name": module_name,
-                        "assignment_title": assignment_title,
-                        "version_number": str(version_number),
-                        "submission_status": 'Late Submission' if late_submission else 'On Time',
-                        "late_text": late_text,
-                        "submission_time": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    })
-                    if not student_subject or not student_body:
-                        raise ValueError("Template returned empty subject/body")
-                except Exception as template_error:
-                    # Fallback to hardcoded email
-                    student_subject = f"Assignment Submission Confirmed: {assignment_title}"
-                    student_body = f"""Dear {student_first_name},
+                    # Use email template
+                    try:
+                        from education_system.university_system.infrastructure.email.template_utils import render_template
+                        student_subject, student_body = render_template("assignment_submission_student", {
+                            "first_name": student_first_name,
+                            "module_code": module_code,
+                            "module_name": module_name,
+                            "assignment_title": assignment_title,
+                            "version_number": str(version_number),
+                            "submission_status": 'Late Submission' if late_submission else 'On Time',
+                            "late_text": late_text,
+                            "submission_time": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        })
+                        if not student_subject or not student_body:
+                            raise ValueError("Template returned empty subject/body")
+                    except Exception as template_error:
+                        # Fallback to hardcoded email
+                        student_subject = f"Assignment Submission Confirmed: {assignment_title}"
+                        student_body = f"""Dear {student_first_name},
 
 This email confirms that your assignment has been successfully submitted.
 
@@ -1537,57 +1557,57 @@ Best regards,
 Academic Administration Team
 """
 
-                try:
-                    send_email(student_email, student_subject, student_body)
-                    print(f"Confirmation email sent to student: {student_email}")
-                except Exception as e:
-                    print(f"Failed to send student email: {e}")
+                    try:
+                        send_email(student_email, student_subject, student_body)
+                        print(f"Confirmation email sent to student: {student_email}")
+                    except Exception as e:
+                        print(f"Failed to send student email: {e}")
 
-            # Get instructor/staff email for this module
-            # First try to get from assignments table (created_by)
-            cursor.execute('''
-                SELECT u.email, u.first_name, u.last_name
-                FROM assignments a
-                JOIN users u ON a.created_by = u.id
-                WHERE a.id = ?
-            ''', (assignment_id,))
+                # Get instructor/staff email for this module
+                # First try to get from assignments table (created_by)
+                cursor.execute('''
+                    SELECT u.email, u.first_name, u.last_name
+                    FROM assignments a
+                    JOIN users u ON a.created_by = u.id
+                    WHERE a.id = ?
+                ''', (assignment_id,))
 
-            instructor_row = cursor.fetchone()
+                instructor_row = cursor.fetchone()
 
-            # Also get admin emails as backup
-            cursor.execute('''
-                SELECT email, first_name FROM users
-                WHERE LOWER(role) IN ('admin', 'staff', 'instructor')
-                AND email IS NOT NULL AND email != ''
-            ''')
+                # Also get admin emails as backup
+                cursor.execute('''
+                    SELECT email, first_name FROM users
+                    WHERE LOWER(role) IN ('admin', 'staff', 'instructor')
+                    AND email IS NOT NULL AND email != ''
+                ''')
 
-            admin_staff_emails = cursor.fetchall()
+                admin_staff_emails = cursor.fetchall()
 
-            # Send notification to instructor/creator
-            if instructor_row and instructor_row[0]:
-                instructor_email, instructor_first, instructor_last = instructor_row
+                # Send notification to instructor/creator
+                if instructor_row and instructor_row[0]:
+                    instructor_email, instructor_first, instructor_last = instructor_row
 
-                # Use email template
-                try:
-                    from education_system.university_system.infrastructure.email.template_utils import render_template
-                    instructor_subject, instructor_body = render_template("assignment_submission_instructor", {
-                        "instructor_first_name": instructor_first,
-                        "module_code": module_code,
-                        "module_name": module_name,
-                        "assignment_title": assignment_title,
-                        "student_name": student_name,
-                        "student_id": student_id,
-                        "version_number": str(version_number),
-                        "submission_status": 'Late Submission' if late_submission else 'On Time',
-                        "late_text": late_text,
-                        "submission_time": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    })
-                    if not instructor_subject or not instructor_body:
-                        raise ValueError("Template returned empty subject/body")
-                except Exception as template_error:
-                    # Fallback to hardcoded email
-                    instructor_subject = f"New Assignment Submission: {assignment_title}"
-                    instructor_body = f"""Dear {instructor_first},
+                    # Use email template
+                    try:
+                        from education_system.university_system.infrastructure.email.template_utils import render_template
+                        instructor_subject, instructor_body = render_template("assignment_submission_instructor", {
+                            "instructor_first_name": instructor_first,
+                            "module_code": module_code,
+                            "module_name": module_name,
+                            "assignment_title": assignment_title,
+                            "student_name": student_name,
+                            "student_id": student_id,
+                            "version_number": str(version_number),
+                            "submission_status": 'Late Submission' if late_submission else 'On Time',
+                            "late_text": late_text,
+                            "submission_time": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        })
+                        if not instructor_subject or not instructor_body:
+                            raise ValueError("Template returned empty subject/body")
+                    except Exception as template_error:
+                        # Fallback to hardcoded email
+                        instructor_subject = f"New Assignment Submission: {assignment_title}"
+                        instructor_body = f"""Dear {instructor_first},
 
 A student has submitted an assignment for your review.
 
@@ -1605,36 +1625,36 @@ Best regards,
 Assignment Management System
 """
 
-                try:
-                    send_email(instructor_email, instructor_subject, instructor_body)
-                    print(f"Notification email sent to instructor: {instructor_email}")
-                except Exception as e:
-                    print(f"Failed to send instructor email: {e}")
+                    try:
+                        send_email(instructor_email, instructor_subject, instructor_body)
+                        print(f"Notification email sent to instructor: {instructor_email}")
+                    except Exception as e:
+                        print(f"Failed to send instructor email: {e}")
 
-            # Send to admins if instructor email failed or doesn't exist
-            if not instructor_row or not instructor_row[0]:
-                for admin_email, admin_first in admin_staff_emails[:3]:  # Limit to first 3
-                    if admin_email:
-                        # Use email template
-                        try:
-                            from education_system.university_system.infrastructure.email.template_utils import render_template
-                            admin_subject, admin_body = render_template("assignment_submission_admin", {
-                                "admin_first_name": admin_first,
-                                "module_code": module_code,
-                                "module_name": module_name,
-                                "assignment_title": assignment_title,
-                                "student_name": student_name,
-                                "student_id": student_id,
-                                "version_number": str(version_number),
-                                "submission_status": 'Late Submission' if late_submission else 'On Time',
-                                "late_text": late_text
-                            })
-                            if not admin_subject or not admin_body:
-                                raise ValueError("Template returned empty subject/body")
-                        except Exception as template_error:
-                            # Fallback to hardcoded email
-                            admin_subject = f"Assignment Submission Notification: {assignment_title}"
-                            admin_body = f"""Dear {admin_first},
+                # Send to admins if instructor email failed or doesn't exist
+                if not instructor_row or not instructor_row[0]:
+                    for admin_email, admin_first in admin_staff_emails[:3]:  # Limit to first 3
+                        if admin_email:
+                            # Use email template
+                            try:
+                                from education_system.university_system.infrastructure.email.template_utils import render_template
+                                admin_subject, admin_body = render_template("assignment_submission_admin", {
+                                    "admin_first_name": admin_first,
+                                    "module_code": module_code,
+                                    "module_name": module_name,
+                                    "assignment_title": assignment_title,
+                                    "student_name": student_name,
+                                    "student_id": student_id,
+                                    "version_number": str(version_number),
+                                    "submission_status": 'Late Submission' if late_submission else 'On Time',
+                                    "late_text": late_text
+                                })
+                                if not admin_subject or not admin_body:
+                                    raise ValueError("Template returned empty subject/body")
+                            except Exception as template_error:
+                                # Fallback to hardcoded email
+                                admin_subject = f"Assignment Submission Notification: {assignment_title}"
+                                admin_body = f"""Dear {admin_first},
 
 A student has submitted an assignment.
 
@@ -1651,13 +1671,13 @@ Best regards,
 Assignment Management System
 """
 
-                        try:
-                            send_email(admin_email, admin_subject, admin_body)
-                            print(f"Notification email sent to admin: {admin_email}")
-                        except Exception as e:
-                            print(f"Failed to send admin email to {admin_email}: {e}")
-
-            conn.close()
+                            try:
+                                send_email(admin_email, admin_subject, admin_body)
+                                print(f"Notification email sent to admin: {admin_email}")
+                            except Exception as e:
+                                print(f"Failed to send admin email to {admin_email}: {e}")
+            finally:
+                conn.close()
 
         except Exception as e:
             print(f"Error in _send_submission_emails: {e}")

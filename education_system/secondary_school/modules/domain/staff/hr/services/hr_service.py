@@ -1,6 +1,7 @@
 """HR service for staff management."""
 
 import logging
+from education_system.secondary_school.core.sql_safety import validate_identifier
 from education_system.secondary_school.core.exceptions import HRError
 from education_system.secondary_school.infrastructure.database.db import connect
 
@@ -104,7 +105,7 @@ class HRService:
             raise HRError("No valid fields to update.")
         conn = self._conn()
         try:
-            set_clause = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
             conn.execute(
                 f"UPDATE staff_hr SET {set_clause}, updated_at = datetime('now') WHERE id = ?",
                 (*updates.values(), staff_hr_id),

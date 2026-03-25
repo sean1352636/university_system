@@ -54,19 +54,41 @@ def init_admissions_crm_system_db():
         )
         ''')
 
-        # Application documents
+        # application_documents merged into unified documents table
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS application_documents (
+        CREATE TABLE IF NOT EXISTS documents (
             document_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            application_id INTEGER NOT NULL,
-            document_type TEXT NOT NULL,
-            document_name TEXT NOT NULL,
-            file_url TEXT NOT NULL,
-            upload_date TEXT DEFAULT CURRENT_TIMESTAMP,
-            verified BOOLEAN DEFAULT 0,
+            source_type TEXT NOT NULL DEFAULT 'general',
+            source_document_id INTEGER,
+            owner_id TEXT,
+            owner_type TEXT,
+            reference_type TEXT,
+            reference_id TEXT,
+            document_type TEXT,
+            document_name TEXT,
+            file_path TEXT,
+            file_content TEXT,
+            file_size INTEGER,
+            file_hash TEXT,
+            original_filename TEXT,
+            upload_date TEXT,
+            expiry_date TEXT,
+            issue_date TEXT,
+            status TEXT DEFAULT 'active',
+            verification_status TEXT,
+            verification_date TEXT,
+            verification_notes TEXT,
             verified_by TEXT,
-            verified_date TEXT,
-            FOREIGN KEY (application_id) REFERENCES admission_applications (application_id)
+            version_number INTEGER DEFAULT 1,
+            parent_document_id INTEGER,
+            is_current_version INTEGER DEFAULT 1,
+            workflow_status TEXT,
+            priority INTEGER,
+            tags TEXT,
+            notes TEXT,
+            uploaded_by TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT
         )
         ''')
 

@@ -11,21 +11,21 @@ import shutil
 from functools import partial
 
 # Import mixin classes using relative imports to avoid circular dependency
-from .dashboard import DashboardMixin
-from .alumni_crud import AlumniCRUDMixin
-from .directory import DirectoryMixin
-from .business_directory import BusinessDirectoryMixin
-from .events import EventsMixin
-from .forum import ForumMixin
-from .stories_photos import StoriesPhotosMixin
-from .donations import DonationsMixin
-from .reports import ReportsMixin
-from .chapters import ChaptersMixin
-from .mentorship import MentorshipMixin
-from .jobs_career import JobsCareerMixin
-from .reunions import ReunionsMixin
-from .gamification import GamificationMixin
-from .notifications import NotificationsMixin
+from education_system.university_system.modules.domain.student_affairs.gui.alumni.dashboard import DashboardMixin
+from education_system.university_system.modules.domain.student_affairs.gui.alumni.alumni_crud import AlumniCRUDMixin
+from education_system.university_system.modules.domain.student_affairs.gui.alumni.directory import DirectoryMixin
+from education_system.university_system.modules.domain.student_affairs.gui.alumni.business_directory import BusinessDirectoryMixin
+from education_system.university_system.modules.domain.student_affairs.gui.alumni.events import EventsMixin
+from education_system.university_system.modules.domain.student_affairs.gui.alumni.forum import ForumMixin
+from education_system.university_system.modules.domain.student_affairs.gui.alumni.stories_photos import StoriesPhotosMixin
+from education_system.university_system.modules.domain.student_affairs.gui.alumni.donations import DonationsMixin
+from education_system.university_system.modules.domain.student_affairs.gui.alumni.reports import ReportsMixin
+from education_system.university_system.modules.domain.student_affairs.gui.alumni.chapters import ChaptersMixin
+from education_system.university_system.modules.domain.student_affairs.gui.alumni.mentorship import MentorshipMixin
+from education_system.university_system.modules.domain.student_affairs.gui.alumni.jobs_career import JobsCareerMixin
+from education_system.university_system.modules.domain.student_affairs.gui.alumni.reunions import ReunionsMixin
+from education_system.university_system.modules.domain.student_affairs.gui.alumni.gamification import GamificationMixin
+from education_system.university_system.modules.domain.student_affairs.gui.alumni.notifications import NotificationsMixin
 
 # Import internationalization (i18n) for multi-language support
 try:

@@ -139,7 +139,7 @@ class TestSendEmail:
     @patch('smtplib.SMTP')
     def test_send_email_success(self, mock_smtp, temp_db):
         """Test successful email sending"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             mock_smtp_instance = MagicMock()
             mock_smtp.return_value.__enter__.return_value = mock_smtp_instance
 
@@ -152,7 +152,7 @@ class TestSendEmail:
     @patch('smtplib.SMTP')
     def test_send_email_with_cc_bcc(self, mock_smtp, temp_db):
         """Test email sending with CC and BCC"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             mock_smtp_instance = MagicMock()
             mock_smtp.return_value.__enter__.return_value = mock_smtp_instance
 
@@ -167,7 +167,7 @@ class TestSendEmail:
     @patch('smtplib.SMTP')
     def test_send_email_with_attachments(self, mock_smtp, temp_db):
         """Test email sending with attachments"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             mock_smtp_instance = MagicMock()
             mock_smtp.return_value.__enter__.return_value = mock_smtp_instance
 
@@ -188,7 +188,7 @@ class TestSendEmail:
 
     def test_send_email_db_only(self, temp_db):
         """Test database-only email sending (no SMTP)"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             result = email_service.send_email_db_only(
                 'recipient@example.com',
                 'Test Subject',
@@ -213,7 +213,7 @@ class TestTemplateEmail:
 
     def test_send_template_email_success(self, temp_db):
         """Test sending email using template"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             with patch('smtplib.SMTP'):
                 result = email_service.send_template_email(
                     'welcome',
@@ -223,7 +223,7 @@ class TestTemplateEmail:
 
     def test_send_template_email_with_variables(self, temp_db):
         """Test template email with variable substitution"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             with patch('smtplib.SMTP'):
                 result = email_service.send_template_email(
                     'test_template',
@@ -233,7 +233,7 @@ class TestTemplateEmail:
 
     def test_send_template_email_missing_template(self, temp_db):
         """Test sending email with non-existent template"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             with pytest.raises(Exception):
                 email_service.send_template_email(
                     'nonexistent_template',
@@ -246,7 +246,7 @@ class TestEmailQueue:
 
     def test_queue_email(self, temp_db):
         """Test adding email to queue"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             result = email_service.queue_email(
                 'recipient@example.com',
                 'Test Subject',
@@ -255,7 +255,7 @@ class TestEmailQueue:
 
     def test_queue_template_email(self, temp_db):
         """Test adding template email to queue"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             result = email_service.queue_template_email(
                 'welcome',
                 'recipient@example.com',
@@ -264,7 +264,7 @@ class TestEmailQueue:
 
     def test_queue_email_with_cc_bcc(self, temp_db):
         """Test queuing email with CC and BCC"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             result = email_service.queue_email(
                 'recipient@example.com',
                 'Test Subject',
@@ -278,21 +278,21 @@ class TestEmailWorkers:
 
     def test_start_email_workers(self, temp_db):
         """Test starting email worker threads"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             result = email_service.start_email_workers()
             # Stop workers immediately
             email_service.stop_email_workers()
 
     def test_stop_email_workers(self, temp_db):
         """Test stopping email worker threads"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             email_service.start_email_workers()
             result = email_service.stop_email_workers()
             assert isinstance(result, bool)
 
     def test_worker_threads_created(self, temp_db):
         """Test that worker threads are created"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             email_service.start_email_workers()
             assert len(email_service.worker_threads) > 0
             email_service.stop_email_workers()
@@ -302,7 +302,7 @@ class TestScheduledEmails:
 
     def test_schedule_send_single_recipient(self, temp_db):
         """Test scheduling email for single recipient"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             future_time = datetime.now() + timedelta(hours=1)
             result = email_service.schedule_send(
                 future_time,
@@ -322,7 +322,7 @@ class TestScheduledEmails:
 
     def test_schedule_send_multiple_recipients(self, temp_db):
         """Test scheduling emails for multiple recipients"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             future_time = datetime.now() + timedelta(hours=2)
             result = email_service.schedule_send(
                 future_time,
@@ -333,7 +333,7 @@ class TestScheduledEmails:
 
     def test_process_scheduled_emails(self, temp_db):
         """Test processing due scheduled emails"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             # Insert a due scheduled email
             conn = sqlite3.connect(temp_db)
             cursor = conn.cursor()
@@ -352,7 +352,7 @@ class TestScheduledEmails:
 
     def test_update_scheduled_email_status(self, temp_db):
         """Test updating scheduled email status"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             # Insert a scheduled email
             conn = sqlite3.connect(temp_db)
             cursor = conn.cursor()
@@ -374,7 +374,7 @@ class TestBulkEmails:
 
     def test_send_bulk_emails(self, temp_db):
         """Test sending bulk emails"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             with patch('smtplib.SMTP'):
                 result = email_service.send_bulk(
                     ['recipient1@example.com', 'recipient2@example.com'],
@@ -384,7 +384,7 @@ class TestBulkEmails:
 
     def test_send_bulk_with_rate_limit(self, temp_db):
         """Test bulk email with rate limiting"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             with patch('smtplib.SMTP'):
                 result = email_service.send_bulk(
                     ['recipient1@example.com', 'recipient2@example.com'],
@@ -397,7 +397,7 @@ class TestStoredEmails:
 
     def test_get_stored_emails(self, temp_db):
         """Test retrieving stored emails"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             # Insert test email
             conn = sqlite3.connect(temp_db)
             cursor = conn.cursor()
@@ -413,7 +413,7 @@ class TestStoredEmails:
 
     def test_get_stored_emails_with_filter(self, temp_db):
         """Test retrieving filtered stored emails"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             emails = email_service.get_stored_emails(
                 recipient_filter='test@example.com'
             )
@@ -421,7 +421,7 @@ class TestStoredEmails:
 
     def test_delete_stored_email(self, temp_db):
         """Test deleting stored email"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             # Insert test email
             conn = sqlite3.connect(temp_db)
             cursor = conn.cursor()
@@ -437,7 +437,7 @@ class TestStoredEmails:
 
     def test_clear_stored_emails(self, temp_db):
         """Test clearing old stored emails"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             result = email_service.clear_stored_emails(older_than_days=30)
 
 class TestSpecializedNotifications:
@@ -445,13 +445,13 @@ class TestSpecializedNotifications:
 
     def test_send_registration_confirmation(self, temp_db):
         """Test sending registration confirmation"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             with patch('smtplib.SMTP'):
                 result = email_service.send_registration_confirmation(1)
 
     def test_send_grade_notification(self, temp_db):
         """Test sending grade notification"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             with patch('smtplib.SMTP'):
                 result = email_service.send_grade_notification(
                     'test@example.com',
@@ -463,7 +463,7 @@ class TestSpecializedNotifications:
 
     def test_send_assignment_notification(self, temp_db):
         """Test sending assignment notification"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             with patch('smtplib.SMTP'):
                 result = email_service.send_assignment_notification(
                     1,
@@ -475,7 +475,7 @@ class TestSpecializedNotifications:
 
     def test_send_extension_notification(self, temp_db):
         """Test sending extension notification"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             with patch('smtplib.SMTP'):
                 result = email_service.send_extension_notification(
                     'test@example.com',
@@ -487,7 +487,7 @@ class TestSpecializedNotifications:
 
     def test_send_password_reset(self, temp_db):
         """Test sending password reset email"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             with patch('smtplib.SMTP'):
                 result = email_service.send_password_reset(1, 'ABC123')
 
@@ -496,7 +496,7 @@ class TestHealthAndWellnessNotifications:
 
     def test_send_appointment_confirmation(self, temp_db):
         """Test sending appointment confirmation"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             with patch('smtplib.SMTP'):
                 result = email_service.send_appointment_confirmation(
                     1, 1, '2025-12-01', '14:00', 'Dr. Smith', 'Checkup'
@@ -504,7 +504,7 @@ class TestHealthAndWellnessNotifications:
 
     def test_send_health_notification(self, temp_db):
         """Test sending health advisory"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             with patch('smtplib.SMTP'):
                 result = email_service.send_health_notification(
                     1,
@@ -518,7 +518,7 @@ class TestLibraryNotifications:
 
     def test_send_book_checkout_confirmation(self, temp_db):
         """Test sending book checkout confirmation"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             with patch('smtplib.SMTP'):
                 result = email_service.send_book_checkout_confirmation(
                     1, 1, 'Test Book', '2025-12-31'
@@ -526,7 +526,7 @@ class TestLibraryNotifications:
 
     def test_send_book_return_reminder(self, temp_db):
         """Test sending book return reminder"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             with patch('smtplib.SMTP'):
                 result = email_service.send_book_return_reminder(
                     1, 1, 'Test Book', '2025-12-31'
@@ -534,7 +534,7 @@ class TestLibraryNotifications:
 
     def test_send_overdue_notification(self, temp_db):
         """Test sending overdue book notification"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             with patch('smtplib.SMTP'):
                 result = email_service.send_overdue_notification(
                     1, 1, 'Test Book', '2025-11-01', 15
@@ -545,7 +545,7 @@ class TestTicketNotifications:
 
     def test_send_ticket_notification(self, temp_db):
         """Test sending ticket notification"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             with patch('smtplib.SMTP'):
                 result = email_service.send_ticket_notification(
                     1, 'Test Ticket', 'testuser'
@@ -553,7 +553,7 @@ class TestTicketNotifications:
 
     def test_send_reply_notification(self, temp_db):
         """Test sending reply notification"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             with patch('smtplib.SMTP'):
                 result = email_service.send_reply_notification(
                     1, user_id=1, username='testuser', responder='Admin'
@@ -561,13 +561,13 @@ class TestTicketNotifications:
 
     def test_send_sla_alert(self, temp_db):
         """Test sending SLA alert"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             with patch('smtplib.SMTP'):
                 result = email_service.send_sla_alert(1, 'overdue')
 
     def test_send_satisfaction_survey(self, temp_db):
         """Test sending satisfaction survey"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             with patch('smtplib.SMTP'):
                 result = email_service.send_satisfaction_survey(1)
 
@@ -576,7 +576,7 @@ class TestUtilityFunctions:
 
     def test_fix_inbox_display_issue(self, temp_db):
         """Test fixing inbox display issues"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             result = email_service.fix_inbox_display_issue()
 
     def test_generate_system_username(self):
@@ -590,7 +590,7 @@ class TestUtilityFunctions:
 
     def test_send_email_as_user(self, temp_db):
         """Test sending email as specific user"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             with patch('smtplib.SMTP'):
                 result = email_service.send_email_as_user(
                     'recipient@example.com',
@@ -601,7 +601,7 @@ class TestUtilityFunctions:
 
     def test_send_email_as_system(self, temp_db):
         """Test sending email as system"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             with patch('smtplib.SMTP'):
                 result = email_service.send_email_as_system(
                     'recipient@example.com',
@@ -615,7 +615,7 @@ class TestScheduleChangeNotifications:
 
     def test_send_schedule_change_notification(self, temp_db):
         """Test sending schedule change notification"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             with patch('smtplib.SMTP'):
                 old_data = {
                     'module_code': 'CS101',

@@ -1,25 +1,21 @@
 """Centralized path definitions for the Sixth Form College Management System."""
 
-from pathlib import Path
+from education_system.shared.core.paths import get_system_paths
 
-# Root directories
-COLLEGE_SYSTEM_ROOT = Path(__file__).resolve().parent.parent
-PROJECT_ROOT = COLLEGE_SYSTEM_ROOT.parent
+_paths = get_system_paths(__file__, "sixthform.db")
 
-# Data directories
-DATA_DIR = COLLEGE_SYSTEM_ROOT / "data"
-DB_DIR = DATA_DIR / "db_files"
-LOCALES_DIR = DATA_DIR / "locales"
-CONFIG_DIR = DATA_DIR / "config"
-
-# Logs
-LOGS_DIR = COLLEGE_SYSTEM_ROOT / "logs"
-
-# Database file
-DB_FILE = DB_DIR / "sixthform.db"
+# Re-export standard paths for backward compatibility
+COLLEGE_SYSTEM_ROOT = _paths.system_root
+PROJECT_ROOT = _paths.project_root
+DATA_DIR = _paths.data_dir
+DB_DIR = _paths.db_dir
+DB_FILE = _paths.db_file
+CONFIG_DIR = _paths.config_dir
+LOGS_DIR = _paths.logs_dir
+LOCALES_DIR = _paths.locales_dir
 
 
 def ensure_directories():
     """Create all required directories if they don't exist."""
-    for d in (DB_DIR, LOCALES_DIR / "en", CONFIG_DIR, LOGS_DIR):
-        d.mkdir(parents=True, exist_ok=True)
+    _paths.ensure_directories()
+    (LOCALES_DIR / "en").mkdir(parents=True, exist_ok=True)

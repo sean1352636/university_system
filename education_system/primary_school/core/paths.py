@@ -1,19 +1,21 @@
 """File-system paths for the Primary School Management System."""
 
-from pathlib import Path
+from education_system.shared.core.paths import get_system_paths
 
-PRIMARY_SCHOOL_ROOT = Path(__file__).resolve().parent.parent
-DATA_DIR = PRIMARY_SCHOOL_ROOT / "data"
-DB_FILE = DATA_DIR / "db_files" / "primary_school.db"
-DB_DIR = DATA_DIR / "db_files"
-CONFIG_DIR = DATA_DIR / "config"
-LOGS_DIR = PRIMARY_SCHOOL_ROOT / "logs"
+_paths = get_system_paths(__file__, "primary_school.db")
+
+# Re-export standard paths for backward compatibility
+PRIMARY_SCHOOL_ROOT = _paths.system_root
+DATA_DIR = _paths.data_dir
+DB_DIR = _paths.db_dir
+DB_FILE = _paths.db_file
+CONFIG_DIR = _paths.config_dir
+LOGS_DIR = _paths.logs_dir
 
 
 def ensure_directories():
     """Create required directories if they do not exist."""
-    for d in (DB_DIR, CONFIG_DIR, LOGS_DIR):
-        d.mkdir(parents=True, exist_ok=True)
+    _paths.ensure_directories()
 
 
 ensure_directories()

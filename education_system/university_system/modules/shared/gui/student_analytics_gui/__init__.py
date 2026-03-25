@@ -1,7 +1,7 @@
 """Student Analytics GUI package - composed from mixin modules."""
-from .student_analytics_gui import GUIStudentAnalytics
-from .dialogs import FilterDialog, CustomReportDialog, ConfigDialog
-from ._imports import CONFIG, configure_matplotlib, StudentAnalytics, pd, json, datetime
+from education_system.university_system.modules.shared.gui.student_analytics_gui.student_analytics_gui import GUIStudentAnalytics
+from education_system.university_system.modules.shared.gui.student_analytics_gui.dialogs import FilterDialog, CustomReportDialog, ConfigDialog
+from education_system.university_system.modules.shared.gui.student_analytics_gui._imports import CONFIG, configure_matplotlib, StudentAnalytics, pd, json, datetime
 
 __all__ = [
     'GUIStudentAnalytics',

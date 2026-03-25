@@ -1,52 +1,42 @@
-"""Internationalization support with JSON-based translations."""
+"""Internationalization support for the College Management System.
 
-import json
-from pathlib import Path
+Delegates to the shared i18n engine, adding the college-specific locale
+directory so that system-specific translations are loaded alongside shared ones.
+"""
 
-from education_system.college_system.core.paths import LOCALES_DIR
+from education_system.college_system.core.paths import LOCALES_DIR, CONFIG_DIR
+from education_system.shared.i18n import (
+    init_i18n as _shared_init,
+    add_locale_dir,
+    t,
+    get_text,
+    set_language,
+    get_current_language,
+    get_current_language_name,
+    get_available_languages,
+    reload_translations,
+    load_saved_language,
+    save_language_preference,
+    SUPPORTED_LANGUAGES,
+)
 
-_translations: dict = {}
-_current_locale: str = "en"
+# Convenience aliases
+_ = t
+load_locale = set_language
+
+_initialised = False
+
+# Re-export the language config path for backward compatibility
+LANGUAGE_CONFIG_PATH = CONFIG_DIR / "language_config.json"
 
 
-def load_locale(locale: str = "en"):
-    """Load translation strings for the given locale."""
-    global _translations, _current_locale
-    _current_locale = locale
-    locale_dir = LOCALES_DIR / locale
+def init_i18n(language: str | None = None):
+    """Initialise the i18n system with college-specific locale directory."""
+    global _initialised
 
-    _translations = {}
-    for json_file in locale_dir.glob("*.json"):
-        with open(json_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        _translations.update(data)
-
-
-def t(key: str, **kwargs) -> str:
-    """Get a translated string by dot-notation key.
-
-    Supports format placeholders: t("greeting", name="Alice")
-    Falls back to the key itself if not found.
-    """
-    if not _translations:
-        try:
-            load_locale(_current_locale)
-        except (FileNotFoundError, json.JSONDecodeError):
-            return key
-
-    parts = key.split(".")
-    value = _translations
-    for part in parts:
-        if isinstance(value, dict):
-            value = value.get(part)
-        else:
-            return key
-        if value is None:
-            return key
-
-    if isinstance(value, str) and kwargs:
-        try:
-            return value.format(**kwargs)
-        except (KeyError, IndexError):
-            return value
-    return value if isinstance(value, str) else key
+    if not _initialised:
+        _shared_init(language=language)
+        add_locale_dir(str(LOCALES_DIR))
+        _initialised = True
+    elif language is not None:
+        set_language(language)

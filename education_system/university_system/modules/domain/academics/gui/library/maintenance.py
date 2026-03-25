@@ -114,7 +114,7 @@ except ImportError:
 _AUDIT_LOG_COLUMNS_CACHE: Optional[List[str]] = None
 _STUDENT_COLUMNS_CACHE: Optional[List[str]] = None
 
-from .base import LibraryGUI
+from education_system.university_system.modules.domain.academics.gui.library.base import LibraryGUI
 
 def optimize_database(self):
     """Optimize database"""
@@ -393,10 +393,130 @@ def calculate_fines(self):
         self.maintenance_results.insert(tk.END, f"❌ Error: {str(e)}\n")
 
 def archive_old_records(self):
-    """Archive old loan records"""
-    result = "✅ Archive functionality would move old completed loans to archive table.\nThis helps maintain performance for active queries.\n"
-    self.maintenance_results.insert(tk.END, result)
-    self.maintenance_results.see(tk.END)
+    """Archive old completed/returned loan records to an archive table"""
+    try:
+        if not ORIGINAL_LIBRARY_AVAILABLE:
+            self.maintenance_results.insert(tk.END, "⚠️ Library module not available for archiving.\n")
+            self.maintenance_results.see(tk.END)
+            return
+
+        conn = get_db_connection()
+        if not conn:
+            self.maintenance_results.insert(tk.END, "❌ Could not connect to database.\n")
+            self.maintenance_results.see(tk.END)
+            return
+
+        cursor = conn.cursor()
+
+        # Create the archive table if it doesn't exist (mirrors book_loans schema)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS archived_book_loans (
+                loan_id INTEGER PRIMARY KEY,
+                book_id TEXT,
+                user_id TEXT,
+                checkout_date TEXT,
+                due_date TEXT,
+                return_date TEXT,
+                status TEXT,
+                fine_amount REAL DEFAULT 0,
+                renewal_count INTEGER DEFAULT 0,
+                reading_progress INTEGER DEFAULT 0,
+                checkout_method TEXT,
+                staff_id TEXT,
+                notes TEXT,
+                archived_at TEXT
+            )
+        ''')
+
+        # Find completed loans older than 90 days
+        cursor.execute('''
+            SELECT COUNT(*) FROM book_loans
+            WHERE status = 'returned'
+            AND return_date IS NOT NULL
+            AND return_date < datetime('now', '-90 days')
+        ''')
+        archivable_count = cursor.fetchone()[0]
+
+        if archivable_count == 0:
+            self.maintenance_results.insert(tk.END,
+                "✅ No old loan records to archive (returned loans older than 90 days).\n")
+            self.maintenance_results.see(tk.END)
+            conn.close()
+            return
+
+        # Confirm with user
+        if not messagebox.askyesno("Confirm Archive",
+                f"Found {archivable_count} returned loan(s) older than 90 days.\n\n"
+                "Move these to the archive table?\n"
+                "This helps maintain performance for active queries."):
+            self.maintenance_results.insert(tk.END, "⚠️ Archive cancelled by user.\n")
+            self.maintenance_results.see(tk.END)
+            conn.close()
+            return
+
+        self.maintenance_results.insert(tk.END, f"Archiving {archivable_count} old loan records...\n")
+        self.maintenance_results.see(tk.END)
+
+        # Copy records to archive table
+        archived_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        cursor.execute('''
+            INSERT INTO archived_book_loans
+            (loan_id, book_id, user_id, checkout_date, due_date, return_date,
+             status, fine_amount, renewal_count, reading_progress,
+             checkout_method, staff_id, notes, archived_at)
+            SELECT loan_id, book_id, user_id, checkout_date, due_date, return_date,
+                   status, fine_amount, renewal_count, reading_progress,
+                   checkout_method, staff_id, notes, ?
+            FROM book_loans
+            WHERE status = 'returned'
+            AND return_date IS NOT NULL
+            AND return_date < datetime('now', '-90 days')
+        ''', (archived_at,))
+
+        archived_count = cursor.rowcount
+
+        # Delete archived records from the active table
+        cursor.execute('''
+            DELETE FROM book_loans
+            WHERE status = 'returned'
+            AND return_date IS NOT NULL
+            AND return_date < datetime('now', '-90 days')
+        ''')
+
+        deleted_count = cursor.rowcount
+
+        conn.commit()
+
+        # Get remaining active loan count
+        cursor.execute('SELECT COUNT(*) FROM book_loans')
+        remaining = cursor.fetchone()[0]
+
+        cursor.execute('SELECT COUNT(*) FROM archived_book_loans')
+        total_archived = cursor.fetchone()[0]
+
+        conn.close()
+
+        result = (
+            f"✅ Archive complete!\n"
+            f"   Archived: {archived_count} loan records\n"
+            f"   Removed from active table: {deleted_count}\n"
+            f"   Active loans remaining: {remaining}\n"
+            f"   Total archived records: {total_archived}\n"
+        )
+        self.maintenance_results.insert(tk.END, result)
+        self.maintenance_results.see(tk.END)
+
+        if ORIGINAL_LIBRARY_AVAILABLE:
+            try:
+                log_audit_event(
+                    'system', f"Archived {archived_count} old loan records", "maintenance"
+                )
+            except Exception:
+                pass
+
+    except (sqlite3.Error, Exception) as e:
+        self.maintenance_results.insert(tk.END, f"❌ Archive failed: {str(e)}\n")
+        self.maintenance_results.see(tk.END)
 
 def check_data_integrity(self):
     """Check database integrity"""
@@ -477,14 +597,25 @@ def quick_system_health_check(self):
         else:
             health_status.append(("Database Connection", "✅ Demo Mode"))
 
-        # File system checks
-        important_dirs = ['backups', 'qr_codes', 'digital_library']
+        # File system checks — resolve relative to the university system root
+        # DB is at .../university_system/data/db_files/student_records.db
+        uni_root = os.path.dirname(os.path.dirname(os.path.dirname(str(DEFAULT_DB_PATH))))
+        dir_paths = {
+            'backups': os.path.join(uni_root, 'data', 'backups'),
+            'qr_codes': os.path.join(uni_root, 'qr_codes'),
+            'digital_library': os.path.join(uni_root, 'digital_library'),
+        }
 
-        for directory in important_dirs:
-            if os.path.exists(directory):
+        for directory, dir_path in dir_paths.items():
+            if os.path.exists(dir_path):
                 health_status.append((f"{directory.title()} Directory", "✅ Exists"))
             else:
-                health_status.append((f"{directory.title()} Directory", "⚠️ Missing"))
+                # Auto-create missing directories
+                try:
+                    os.makedirs(dir_path, exist_ok=True)
+                    health_status.append((f"{directory.title()} Directory", "✅ Created"))
+                except OSError:
+                    health_status.append((f"{directory.title()} Directory", "⚠️ Missing"))
 
         # Display results
         results_text.insert(tk.END, "Health Check Results:\n")

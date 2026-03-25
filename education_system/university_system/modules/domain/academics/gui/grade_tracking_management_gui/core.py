@@ -4,7 +4,7 @@ import threading
 
 from education_system.university_system.modules.shared.utils.i18n import get_text as _
 
-from ._imports import (
+from education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui._imports import (
     GradeTrackingApp,
     GRADE_TRACKING_GUI_AVAILABLE,
     GRADE_TRACKING_CLI_AVAILABLE,
@@ -17,16 +17,16 @@ from ._imports import (
     predictive_analytics_menu,
     performance_analysis_menu,
 )
-from .learning_outcomes import LearningOutcomesMixin
-from .performance_analytics import PerformanceAnalyticsMixin
-from .curve_analysis import CurveAnalysisMixin
-from .competency import CompetencyMixin
-from .predictive_analytics import PredictiveAnalyticsMixin
-from .grade_calculations import GradeCalculationsMixin
-from .student_management import StudentManagementMixin
-from .statistics import StatisticsMixin
-from .trends import TrendsMixin
-from .predictions import PredictionsMixin
+from education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui.learning_outcomes import LearningOutcomesMixin
+from education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui.performance_analytics import PerformanceAnalyticsMixin
+from education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui.curve_analysis import CurveAnalysisMixin
+from education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui.competency import CompetencyMixin
+from education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui.predictive_analytics import PredictiveAnalyticsMixin
+from education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui.grade_calculations import GradeCalculationsMixin
+from education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui.student_management import StudentManagementMixin
+from education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui.statistics import StatisticsMixin
+from education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui.trends import TrendsMixin
+from education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui.predictions import PredictionsMixin
 
 
 class GradeTrackingManagementGUI(

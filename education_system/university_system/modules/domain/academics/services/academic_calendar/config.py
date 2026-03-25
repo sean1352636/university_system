@@ -15,7 +15,7 @@ class CalendarConfig:
     db_file: str = os.fspath(paths.DEFAULT_DB_PATH)
     default_timezone: str = 'UTC'
     max_export_records: int = 10000
-    backup_directory: str = os.fspath(paths.BACKUP_DIR)
+    backup_directory: str = os.fspath(paths.BACKUP_CALENDAR_DIR)
     allowed_file_types: frozenset = frozenset(['.pdf', '.txt', '.csv', '.xlsx', '.ics'])
     smtp_timeout: int = 30
     api_rate_limit: int = 100
@@ -38,14 +38,16 @@ class ValidationUtils:
 
     @staticmethod
     def validate_datetime(datetime_string: str) -> bool:
-        """Validate datetime format YYYY-MM-DD HH:MM:SS"""
+        """Validate datetime format YYYY-MM-DD HH:MM:SS or ISO 8601"""
         if not isinstance(datetime_string, str):
             return False
-        try:
-            datetime.strptime(datetime_string, "%Y-%m-%d %H:%M:%S")
-            return True
-        except ValueError:
-            return False
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M:%S.%f"):
+            try:
+                datetime.strptime(datetime_string, fmt)
+                return True
+            except ValueError:
+                continue
+        return False
 
     @staticmethod
     def validate_email(email: str) -> bool:

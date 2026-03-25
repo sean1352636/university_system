@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/batch_operations/templates.py
+# hypothesis_version: 6.151.9
+
+['+44123456789', '1', '1234567', '1995-01-15', '2', '2024', '3', '4', '5', '85.5', 'CS', 'CS101', 'Doe', 'Fall', 'John', 'William', '_', 'compulsory', 'course', 'csv', 'custom_template', 'dob', 'email_address', 'first_name', 'gender', 'grade', 'john.doe@example.com', 'last_name', 'male', 'middle_name', 'module_code', 'module_name', 'module_type', 'phone_number', 'semester', 'student_id', 'utf-8', 'w', 'xlsx', 'year']

@@ -41,7 +41,7 @@ def send_email_as_system(*args, **kwargs):
 
 # Import immutable audit logging if available
 try:
-    from education_system.university_system.infrastructure.security.immutable_audit import (
+    from education_system.university_system.infrastructure.security.immutable_audit_log import (
         AuditAction, log_security_event
     )
     from education_system.university_system.modules.shared.utils.gui_context import get_gui_context
@@ -150,20 +150,22 @@ def refresh_payment_history(gui_instance):
 
         if student_filter:
             cursor.execute('''
-            SELECT p.payment_id, s.first_name, s.last_name, p.amount, p.payment_date,
+            SELECT p.source_payment_id, s.first_name, s.last_name, p.amount, p.payment_date,
                    p.payment_method, p.payment_period_start, p.payment_period_end, p.status
-            FROM housing_payments p
+            FROM payments p
             JOIN students s ON p.student_id = s.student_id
-            WHERE p.student_id LIKE ? OR s.first_name LIKE ? OR s.last_name LIKE ?
+            WHERE p.source_type = 'housing'
+              AND (p.student_id LIKE ? OR s.first_name LIKE ? OR s.last_name LIKE ?)
             ORDER BY p.payment_date DESC
             LIMIT 100
             ''', (f'%{student_filter}%', f'%{student_filter}%', f'%{student_filter}%'))
         else:
             cursor.execute('''
-            SELECT p.payment_id, s.first_name, s.last_name, p.amount, p.payment_date,
+            SELECT p.source_payment_id, s.first_name, s.last_name, p.amount, p.payment_date,
                    p.payment_method, p.payment_period_start, p.payment_period_end, p.status
-            FROM housing_payments p
+            FROM payments p
             JOIN students s ON p.student_id = s.student_id
+            WHERE p.source_type = 'housing'
             ORDER BY p.payment_date DESC
             LIMIT 50
             ''')
@@ -367,11 +369,12 @@ def record_payment(gui_instance):
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         cursor.execute('''
-        INSERT INTO housing_payments (
-            payment_id, assignment_id, student_id, amount, payment_date, payment_method,
-            transaction_reference, payment_period_start, payment_period_end, status,
-            received_by, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO payments (
+            source_payment_id, source_type, reference_id, reference_type,
+            student_id, amount, payment_date, payment_method,
+            payment_reference, payment_period_start, payment_period_end, status,
+            processed_by, created_at, updated_at
+        ) VALUES (?, 'housing', ?, 'assignment', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             payment_id, assignment_id, student_id, amount, timestamp, payment_method,
             transaction_ref, period_start, period_end, 'Completed',
@@ -521,8 +524,8 @@ def open_finance_gui(gui_instance):
         finance_window.geometry("1400x800")
 
         # Initialize Finance GUI in the new window
-        finance_gui = FinanceGUI(finance_window, gui_instance.auth)
-        finance_gui.show_dashboard()
+        # FinanceGUI sets up the dashboard automatically during __init__
+        FinanceGUI(finance_window, gui_instance.auth)
 
     except Exception as e:
         messagebox.showerror("Error", f"Failed to open Finance GUI: {str(e)}")

@@ -5,9 +5,9 @@ from education_system.university_system.modules.shared.constants.paths import DE
 from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.infrastructure.shared_context import get_auth
 
-from .exceptions import PlagiarismCheckerError
-from .checker import PlagiarismChecker
-from .db import get_safe_db_connection
+from education_system.university_system.modules.domain.academics.services.plagiarism.exceptions import PlagiarismCheckerError
+from education_system.university_system.modules.domain.academics.services.plagiarism.checker import PlagiarismChecker
+from education_system.university_system.modules.domain.academics.services.plagiarism.db import get_safe_db_connection
 
 
 def test_document_repository(checker, auth):

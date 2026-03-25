@@ -136,40 +136,9 @@ def init_db():
         )
         ''')
 
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS restaurant_orders (
-            order_id TEXT PRIMARY KEY,
-            customer_id TEXT,
-            table_id TEXT,
-            order_time TEXT NOT NULL,
-            total_price REAL NOT NULL,
-            status TEXT NOT NULL,
-            payment_method TEXT,
-            order_type TEXT DEFAULT 'dine_in',
-            estimated_time INTEGER,
-            actual_time INTEGER,
-            rating INTEGER,
-            feedback TEXT,
-            discount_applied REAL DEFAULT 0,
-            tax_amount REAL DEFAULT 0,
-            tip_amount REAL DEFAULT 0,
-            FOREIGN KEY (customer_id) REFERENCES restaurant_customers (customer_id),
-            FOREIGN KEY (table_id) REFERENCES restaurant_tables (table_id)
-        )
-        ''')
+        # restaurant_orders table removed - now using unified 'orders' table with source_type='restaurant'
 
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS restaurant_order_items (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            order_id TEXT NOT NULL,
-            item_id TEXT NOT NULL,
-            quantity INTEGER NOT NULL,
-            unit_price REAL NOT NULL,
-            special_instructions TEXT,
-            FOREIGN KEY (order_id) REFERENCES restaurant_orders (order_id),
-            FOREIGN KEY (item_id) REFERENCES menu_items (item_id)
-        )
-        ''')
+        # restaurant_order_items table removed - now using unified 'order_items' table with source_type='restaurant'
 
         # Customer Management
         cursor.execute('''
@@ -218,7 +187,7 @@ def init_db():
             response_date TEXT,
             category TEXT,
             FOREIGN KEY (customer_id) REFERENCES restaurant_customers (customer_id),
-            FOREIGN KEY (order_id) REFERENCES restaurant_orders (order_id),
+            FOREIGN KEY (order_id) REFERENCES orders (order_id),
             FOREIGN KEY (item_id) REFERENCES menu_items (item_id)
         )
         ''')
@@ -233,7 +202,7 @@ def init_db():
             location TEXT,
             table_type TEXT,
             last_cleaned TEXT,
-            FOREIGN KEY (current_order_id) REFERENCES restaurant_orders (order_id)
+            FOREIGN KEY (current_order_id) REFERENCES orders (order_id)
         )
         ''')
 
@@ -445,7 +414,7 @@ def init_db():
             discount_amount REAL,
             FOREIGN KEY (offer_id) REFERENCES restaurant_special_offers (offer_id),
             FOREIGN KEY (customer_id) REFERENCES restaurant_customers (customer_id),
-            FOREIGN KEY (order_id) REFERENCES restaurant_orders (order_id)
+            FOREIGN KEY (order_id) REFERENCES orders (order_id)
         )
         ''')
 
@@ -620,14 +589,14 @@ def init_db():
             location_info TEXT,
             pickup_time TEXT,
             notification_sent INTEGER DEFAULT 0,
-            FOREIGN KEY (order_id) REFERENCES restaurant_orders (order_id)
+            FOREIGN KEY (order_id) REFERENCES orders (order_id)
         )
         ''')
 
         # Create indexes for better performance
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_restaurant_orders_date ON restaurant_orders(order_time)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_restaurant_orders_customer ON restaurant_orders(customer_id)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_restaurant_orders_status ON restaurant_orders(status)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_restaurant_orders_date ON orders(order_date)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_restaurant_orders_customer ON orders(customer_id)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_restaurant_orders_status ON orders(order_status)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_restaurant_customer_email ON restaurant_customers(email)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_restaurant_inventory_reorder ON restaurant_inventory(reorder_level)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_restaurant_staff_schedules_date ON restaurant_staff_schedules(date)')

@@ -31,11 +31,11 @@ def export_tickets_csv(auth):
     try:
         import csv
 
-        if not os.path.exists(paths.EXPORTS_DIR):
-            os.makedirs(paths.EXPORTS_DIR)
+        if not os.path.exists(paths.EXPORTS_TICKETS_DIR):
+            os.makedirs(paths.EXPORTS_TICKETS_DIR)
 
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = paths.EXPORTS_DIR / f"tickets_export_{timestamp}.csv"
+        filename = paths.EXPORTS_TICKETS_DIR / f"tickets_export_{timestamp}.csv"
 
         conn = get_connection()
         cursor = conn.cursor()
@@ -84,11 +84,11 @@ def export_users_csv(auth):
     try:
         import csv
 
-        if not os.path.exists(paths.EXPORTS_DIR):
-            os.makedirs(paths.EXPORTS_DIR)
+        if not os.path.exists(paths.EXPORTS_TICKETS_DIR):
+            os.makedirs(paths.EXPORTS_TICKETS_DIR)
 
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = paths.EXPORTS_DIR / f"users_export_{timestamp}.csv"
+        filename = paths.EXPORTS_TICKETS_DIR / f"users_export_{timestamp}.csv"
 
         conn = get_connection()
         cursor = conn.cursor()
@@ -178,11 +178,11 @@ def import_tickets_csv(auth):
 def export_analytics_data(auth):
     """Export analytics data"""
     try:
-        if not os.path.exists(paths.EXPORTS_DIR):
-            os.makedirs(paths.EXPORTS_DIR)
+        if not os.path.exists(paths.EXPORTS_TICKETS_DIR):
+            os.makedirs(paths.EXPORTS_TICKETS_DIR)
 
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = paths.EXPORTS_DIR / f"analytics_export_{timestamp}.json"
+        filename = paths.EXPORTS_TICKETS_DIR / f"analytics_export_{timestamp}.json"
 
         conn = get_connection()
         cursor = conn.cursor()

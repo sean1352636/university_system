@@ -5,8 +5,8 @@ from datetime import datetime
 
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 
-from ..constants import ACTIVITY_LOGGING
-from ..utils import print_subheader
+from education_system.university_system.modules.services.cli.cinema_cli.constants import ACTIVITY_LOGGING
+from education_system.university_system.modules.services.cli.cinema_cli.utils import print_subheader
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ def admin_add_movie():
         print(f"\n✅ Movie added successfully! (ID: {movie_id})")
 
         if ACTIVITY_LOGGING:
-            from ..constants import log_activity
+            from education_system.university_system.modules.services.cli.cinema_cli.constants import log_activity
             log_activity('create', 'cinema_movie',
                        movie_id=movie_id,
                        details={'title': title, 'status': status})
@@ -109,7 +109,7 @@ def admin_update_movie():
                 print(f"✅ Movie updated successfully!")
 
                 if ACTIVITY_LOGGING:
-                    from ..constants import log_activity
+                    from education_system.university_system.modules.services.cli.cinema_cli.constants import log_activity
                     log_activity('update', 'cinema_movie',
                                movie_id=movie_id,
                                details={'status_changed': f'{current_status} -> {new_status}'})

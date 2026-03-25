@@ -167,7 +167,8 @@ class EditEventDialog:
 
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(_("academic_calendar.dialogs.edit_event.title"))
-        self.dialog.geometry("500x600")
+        self.dialog.geometry("550x750")
+        self.dialog.minsize(500, 650)
         self.dialog.transient(parent)
         safe_grab_set(self.dialog, parent)
 
@@ -177,17 +178,37 @@ class EditEventDialog:
     
     def _create_widgets(self):
         """Create dialog widgets"""
-        main_frame = ttk.Frame(self.dialog, padding=20)
-        main_frame.pack(fill=tk.BOTH, expand=True)
+        # Buttons at the bottom — packed FIRST so they always show
+        button_frame = ttk.Frame(self.dialog, padding=(20, 10))
+        button_frame.pack(side=tk.BOTTOM, fill=tk.X)
+
+        ttk.Button(button_frame, text=_("academic_calendar.buttons.save_changes"), command=self._save_event).pack(side=tk.RIGHT, padx=(10, 0))
+        ttk.Button(button_frame, text=_("common.cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT)
+
+        ttk.Separator(self.dialog, orient="horizontal").pack(side=tk.BOTTOM, fill=tk.X)
+
+        # Scrollable content area
+        canvas = tk.Canvas(self.dialog, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(self.dialog, orient="vertical", command=canvas.yview)
+        scroll_frame = ttk.Frame(canvas, padding=20)
+        scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # Mouse wheel scrolling
+        canvas.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(int(-1*(e.delta/120)), "units"))
+
+        main_frame = scroll_frame
 
         # Title
         ttk.Label(main_frame, text=_("academic_calendar.dialogs.edit_event.header"),
-                 font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+                 font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Event ID (read-only)
         ttk.Label(main_frame, text=_("academic_calendar.labels.event_id")).pack(anchor=tk.W)
         id_frame = ttk.Frame(main_frame)
-        id_frame.pack(fill=tk.X, pady=(5, 15))
+        id_frame.pack(fill=tk.X, pady=(5, 10))
 
         self.id_var = tk.StringVar()
         id_entry = ttk.Entry(id_frame, textvariable=self.id_var, state="readonly")
@@ -199,7 +220,7 @@ class EditEventDialog:
         # Event name
         ttk.Label(main_frame, text=_("academic_calendar.labels.event_name_required")).pack(anchor=tk.W)
         self.name_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=self.name_var, width=50).pack(fill=tk.X, pady=(5, 15))
+        ttk.Entry(main_frame, textvariable=self.name_var, width=50).pack(fill=tk.X, pady=(5, 10))
 
         # Event type
         ttk.Label(main_frame, text=_("academic_calendar.labels.event_type")).pack(anchor=tk.W)
@@ -207,38 +228,31 @@ class EditEventDialog:
         type_combo = ttk.Combobox(main_frame, textvariable=self.type_var, width=47,
                                 values=["Academic", "Holiday", "Administrative", "Social",
                                        "Sports", "Trip", "Deadline"])
-        type_combo.pack(fill=tk.X, pady=(5, 15))
+        type_combo.pack(fill=tk.X, pady=(5, 10))
 
-        # Dates (simplified - show current structure)
+        # Dates
         date_frame = ttk.LabelFrame(main_frame, text=_("academic_calendar.labels.dates"), padding=10)
-        date_frame.pack(fill=tk.X, pady=(0, 15))
+        date_frame.pack(fill=tk.X, pady=(0, 10))
 
         # Single date
         ttk.Label(date_frame, text=_("academic_calendar.labels.date_format")).pack(anchor=tk.W)
         self.date_var = tk.StringVar()
-        ttk.Entry(date_frame, textvariable=self.date_var, width=47).pack(fill=tk.X, pady=(5, 10))
+        ttk.Entry(date_frame, textvariable=self.date_var, width=47).pack(fill=tk.X, pady=(5, 8))
 
         # Start date
         ttk.Label(date_frame, text=_("academic_calendar.labels.start_date_format")).pack(anchor=tk.W)
         self.start_date_var = tk.StringVar()
-        ttk.Entry(date_frame, textvariable=self.start_date_var, width=47).pack(fill=tk.X, pady=(5, 10))
+        ttk.Entry(date_frame, textvariable=self.start_date_var, width=47).pack(fill=tk.X, pady=(5, 8))
 
         # End date
         ttk.Label(date_frame, text=_("academic_calendar.labels.end_date_format")).pack(anchor=tk.W)
         self.end_date_var = tk.StringVar()
-        ttk.Entry(date_frame, textvariable=self.end_date_var, width=47).pack(fill=tk.X, pady=(5, 10))
+        ttk.Entry(date_frame, textvariable=self.end_date_var, width=47).pack(fill=tk.X, pady=(5, 0))
 
         # Description
-        ttk.Label(main_frame, text=_("academic_calendar.labels.description")).pack(anchor=tk.W)
-        self.description_text = scrolledtext.ScrolledText(main_frame, height=5, width=50)
-        self.description_text.pack(fill=tk.X, pady=(5, 15))
-
-        # Buttons
-        button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill=tk.X, pady=(20, 0))
-
-        ttk.Button(button_frame, text=_("common.cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=(10, 0))
-        ttk.Button(button_frame, text=_("academic_calendar.buttons.save_changes"), command=self._save_event).pack(side=tk.RIGHT)
+        ttk.Label(main_frame, text=_("academic_calendar.labels.description")).pack(anchor=tk.W, pady=(10, 0))
+        self.description_text = scrolledtext.ScrolledText(main_frame, height=4, width=50)
+        self.description_text.pack(fill=tk.X, pady=(5, 0))
     
     def _load_event_data(self):
         """Load event data into form"""

@@ -1,16 +1,18 @@
 # Re-export all classes and functions
 
 # Exceptions
-from .exceptions import (
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.exceptions import (
     CalendarError,
     ValidationError,
     DatabaseError,
     AuthenticationError,
     PermissionError,
+    ExportError,
+    SyncError,
 )
 
 # Validators
-from .validators import (
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.validators import (
     validate_date,
     validate_datetime,
     validate_email,
@@ -19,33 +21,33 @@ from .validators import (
 )
 
 # Security
-from .security import (
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.security import (
     hash_password,
     verify_password,
     generate_token,
 )
 
 # Database
-from .database import (
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.database import (
     ConnectionPool,
     DatabaseManager,
     init_calendar_database,
 )
 
 # Managers
-from .managers import (
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.managers import (
     RecurringEventManager,
     EventDependencyManager,
 )
 
 # Reporting
-from .reporting import ReportingEngine
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.reporting import ReportingEngine
 
 # Notifications
-from .notifications import NotificationManager
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.notifications import NotificationManager
 
 # Utils
-from .utils import (
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.utils import (
     handle_exception,
     log_and_suppress,
     convert_to_user_error,
@@ -54,7 +56,7 @@ from .utils import (
 )
 
 # Main GUI
-from .main_gui import (
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.main_gui import (
     CalendarGUI,
     launch_calendar_gui,
     run_gui_calendar,
@@ -63,33 +65,33 @@ from .main_gui import (
 )
 
 # View Mixins
-from .dashboard import DashboardMixin
-from .calendar_view import CalendarViewMixin
-from .events_view import EventsViewMixin
-from .academic_view import AcademicViewMixin
-from .menu_actions import MenuActionsMixin
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.dashboard import DashboardMixin
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.calendar_view import CalendarViewMixin
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.events_view import EventsViewMixin
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.academic_view import AcademicViewMixin
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.menu_actions import MenuActionsMixin
 
 # Event Dialogs
-from .dialogs_event import (
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.dialogs_event import (
     AddEventDialog,
     EditEventDialog,
     EventDetailsDialog,
 )
 
 # Recurring Event Dialogs
-from .dialogs_recurring import (
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.dialogs_recurring import (
     RecurringEventDialog,
     RecurringEventsDialog,
 )
 
 # Academic Dialogs
-from .dialogs_academic import (
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.dialogs_academic import (
     AddAcademicYearDialog,
     AddSemesterDialog,
 )
 
 # Admin Dialogs
-from .dialogs_admin import (
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.dialogs_admin import (
     SystemMaintenanceDialog,
     AuditLogsDialog,
     AuditDetailsDialog,
@@ -98,7 +100,7 @@ from .dialogs_admin import (
 )
 
 # Resource Dialogs
-from .dialogs_resources import (
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.dialogs_resources import (
     ResourceManagementDialog,
     AddResourceDialog,
     BookResourceDialog,
@@ -107,7 +109,7 @@ from .dialogs_resources import (
 )
 
 # Category Dialogs
-from .dialogs_categories import (
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.dialogs_categories import (
     EventCategoriesDialog,
     AddCategoryDialog,
     AddTagDialog,
@@ -115,7 +117,7 @@ from .dialogs_categories import (
 )
 
 # Report Dialogs
-from .dialogs_reports import (
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.dialogs_reports import (
     ReportsDialog,
     ReportViewDialog,
     DataVisualizationDialog,
@@ -124,10 +126,10 @@ from .dialogs_reports import (
 )
 
 # Search Dialogs
-from .dialogs_search import AdvancedSearchDialog
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.dialogs_search import AdvancedSearchDialog
 
 # Misc Dialogs
-from .dialogs_misc import (
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.dialogs_misc import (
     ExportDialog,
     ImportCalendarDialog,
     CalendarSyncDialog,
@@ -136,7 +138,7 @@ from .dialogs_misc import (
 )
 
 # Misc functions (launcher aliases)
-from .misc import (
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.misc import (
     launch_calendar_gui as misc_launch_calendar_gui,
     run_gui_calendar as misc_run_gui_calendar,
     display_academic_calendar_gui as misc_display_academic_calendar_gui,
@@ -150,6 +152,8 @@ __all__ = [
     'DatabaseError',
     'AuthenticationError',
     'PermissionError',
+    'ExportError',
+    'SyncError',
     # Validators
     'validate_date',
     'validate_datetime',

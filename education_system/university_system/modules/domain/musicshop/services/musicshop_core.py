@@ -22,107 +22,99 @@ def get_musicshop_db_path():
 def init_musicshop_db():
     """Initialize the music shop database tables"""
     conn = sqlite3.connect(get_musicshop_db_path())
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    # Products table
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS musicshop_products (
-        product_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        sku TEXT UNIQUE NOT NULL,
-        title TEXT NOT NULL,
-        artist TEXT,
-        category TEXT NOT NULL,
-        genre TEXT,
-        format TEXT,
-        label TEXT,
-        release_year INTEGER,
-        condition TEXT DEFAULT 'new',
-        description TEXT,
-        price DECIMAL(10,2) NOT NULL,
-        cost_price DECIMAL(10,2),
-        stock_quantity INTEGER DEFAULT 0,
-        min_stock_level INTEGER DEFAULT 3,
-        is_rare BOOLEAN DEFAULT 0,
-        is_active BOOLEAN DEFAULT 1,
-        image_url TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-    ''')
+        # Products table (unified)
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS products (
+            product_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_type TEXT NOT NULL DEFAULT 'music_shop',
+            source_product_id TEXT,
+            sku TEXT UNIQUE NOT NULL,
+            name TEXT NOT NULL,
+            artist TEXT,
+            category TEXT NOT NULL,
+            genre TEXT,
+            format TEXT,
+            label TEXT,
+            release_year INTEGER,
+            condition TEXT DEFAULT 'new',
+            description TEXT,
+            price DECIMAL(10,2) NOT NULL,
+            cost_price DECIMAL(10,2),
+            stock_quantity INTEGER DEFAULT 0,
+            min_stock_level INTEGER DEFAULT 3,
+            is_rare BOOLEAN DEFAULT 0,
+            is_active BOOLEAN DEFAULT 1,
+            image_url TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        ''')
 
-    # Orders table
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS musicshop_orders (
-        order_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        order_number TEXT UNIQUE NOT NULL,
-        customer_id TEXT NOT NULL,
-        customer_name TEXT NOT NULL,
-        customer_email TEXT,
-        customer_phone TEXT,
-        shipping_address TEXT,
-        subtotal DECIMAL(10,2) NOT NULL,
-        tax_amount DECIMAL(10,2) DEFAULT 0,
-        shipping_fee DECIMAL(10,2) DEFAULT 0,
-        discount_amount DECIMAL(10,2) DEFAULT 0,
-        total_amount DECIMAL(10,2) NOT NULL,
-        status TEXT DEFAULT 'pending',
-        payment_status TEXT DEFAULT 'pending',
-        payment_method TEXT,
-        notes TEXT,
-        created_by TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-    ''')
+        # Orders table (unified)
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS orders (
+            order_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_type TEXT NOT NULL DEFAULT 'music_shop',
+            source_order_id TEXT,
+            order_number TEXT UNIQUE NOT NULL,
+            customer_id TEXT NOT NULL,
+            customer_name TEXT NOT NULL,
+            customer_email TEXT,
+            customer_phone TEXT,
+            shipping_address TEXT,
+            subtotal DECIMAL(10,2) NOT NULL,
+            tax_amount DECIMAL(10,2) DEFAULT 0,
+            shipping_fee DECIMAL(10,2) DEFAULT 0,
+            discount_amount DECIMAL(10,2) DEFAULT 0,
+            total_amount DECIMAL(10,2) NOT NULL,
+            order_status TEXT DEFAULT 'pending',
+            payment_status TEXT DEFAULT 'pending',
+            payment_method TEXT,
+            notes TEXT,
+            created_by TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        ''')
 
-    # Order items table
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS musicshop_order_items (
-        item_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        order_id INTEGER NOT NULL,
-        product_id INTEGER NOT NULL,
-        product_title TEXT NOT NULL,
-        artist TEXT,
-        quantity INTEGER NOT NULL,
-        unit_price DECIMAL(10,2) NOT NULL,
-        subtotal DECIMAL(10,2) NOT NULL,
-        FOREIGN KEY (order_id) REFERENCES musicshop_orders(order_id),
-        FOREIGN KEY (product_id) REFERENCES musicshop_products(product_id)
-    )
-    ''')
+        # Order items table (unified)
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS order_items (
+            item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_type TEXT NOT NULL DEFAULT 'music_shop',
+            order_id INTEGER NOT NULL,
+            product_id INTEGER NOT NULL,
+            item_name TEXT NOT NULL,
+            artist TEXT,
+            quantity INTEGER NOT NULL,
+            unit_price DECIMAL(10,2) NOT NULL,
+            subtotal DECIMAL(10,2) NOT NULL,
+            FOREIGN KEY (order_id) REFERENCES orders(order_id),
+            FOREIGN KEY (product_id) REFERENCES products(product_id)
+        )
+        ''')
 
-    # Transactions table
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS musicshop_transactions (
-        transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        order_id INTEGER NOT NULL,
-        customer_id TEXT NOT NULL,
-        transaction_type TEXT NOT NULL,
-        amount DECIMAL(10,2) NOT NULL,
-        payment_method TEXT,
-        reference_number TEXT,
-        status TEXT DEFAULT 'completed',
-        processed_by TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (order_id) REFERENCES musicshop_orders(order_id)
-    )
-    ''')
+        # Music shop transactions now use unified 'transactions' table with source_type='music_shop'
 
-    # Wishlist table
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS musicshop_wishlists (
-        wishlist_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        customer_id TEXT NOT NULL,
-        product_id INTEGER NOT NULL,
-        added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (product_id) REFERENCES musicshop_products(product_id),
-        UNIQUE(customer_id, product_id)
-    )
-    ''')
+        # Wishlist table
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS musicshop_wishlists (
+            wishlist_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_id TEXT NOT NULL,
+            product_id INTEGER NOT NULL,
+            added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (product_id) REFERENCES products(product_id),
+            UNIQUE(customer_id, product_id)
+        )
+        ''')
 
-    conn.commit()
-    conn.close()
-    logger.info("Music shop database initialized")
+        conn.commit()
+        logger.info("Music shop database initialized")
+    finally:
+        conn.close()
 
 class ProductManager:
     """Manage music shop products"""
@@ -135,10 +127,10 @@ class ProductManager:
 
         try:
             cursor.execute('''
-            INSERT INTO musicshop_products
-            (sku, title, artist, category, genre, format, label, release_year, condition,
+            INSERT INTO products
+            (source_type, sku, name, artist, category, genre, format, label, release_year, condition,
              description, price, cost_price, stock_quantity, min_stock_level, is_rare, image_url)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES ('music_shop', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 sku, title, kwargs.get('artist'), category, kwargs.get('genre'),
                 kwargs.get('format'), kwargs.get('label'), kwargs.get('release_year'),
@@ -159,155 +151,172 @@ class ProductManager:
     def get_product(product_id: int) -> Optional[Dict]:
         """Get product by ID"""
         conn = sqlite3.connect(get_musicshop_db_path())
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        try:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
 
-        cursor.execute('SELECT * FROM musicshop_products WHERE product_id = ?', (product_id,))
-        row = cursor.fetchone()
-        conn.close()
+            cursor.execute('SELECT * FROM products WHERE source_type = ? AND product_id = ?', ('music_shop', product_id,))
+            row = cursor.fetchone()
 
-        return dict(row) if row else None
+            return dict(row) if row else None
+        finally:
+            conn.close()
 
     @staticmethod
     def get_all_products() -> List[Dict]:
         """Get all products"""
         conn = sqlite3.connect(get_musicshop_db_path())
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        try:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
 
-        cursor.execute('SELECT * FROM musicshop_products WHERE is_active = 1 ORDER BY title')
-        rows = cursor.fetchall()
-        conn.close()
+            cursor.execute('SELECT * FROM products WHERE source_type = ? AND is_active = 1 ORDER BY name', ('music_shop',))
+            rows = cursor.fetchall()
 
-        return [dict(row) for row in rows]
+            return [dict(row) for row in rows]
+        finally:
+            conn.close()
 
     @staticmethod
     def get_products_by_category(category: str) -> List[Dict]:
         """Get products by category"""
         conn = sqlite3.connect(get_musicshop_db_path())
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        try:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
 
-        cursor.execute(
-            'SELECT * FROM musicshop_products WHERE category = ? AND is_active = 1 ORDER BY title',
-            (category,)
-        )
-        rows = cursor.fetchall()
-        conn.close()
+            cursor.execute(
+                'SELECT * FROM products WHERE source_type = ? AND category = ? AND is_active = 1 ORDER BY name',
+                ('music_shop', category,)
+            )
+            rows = cursor.fetchall()
 
-        return [dict(row) for row in rows]
+            return [dict(row) for row in rows]
+        finally:
+            conn.close()
 
     @staticmethod
     def get_products_by_genre(genre: str) -> List[Dict]:
         """Get products by genre"""
         conn = sqlite3.connect(get_musicshop_db_path())
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        try:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
 
-        cursor.execute(
-            'SELECT * FROM musicshop_products WHERE genre = ? AND is_active = 1 ORDER BY title',
-            (genre,)
-        )
-        rows = cursor.fetchall()
-        conn.close()
+            cursor.execute(
+                'SELECT * FROM products WHERE source_type = ? AND genre = ? AND is_active = 1 ORDER BY name',
+                ('music_shop', genre,)
+            )
+            rows = cursor.fetchall()
 
-        return [dict(row) for row in rows]
+            return [dict(row) for row in rows]
+        finally:
+            conn.close()
 
     @staticmethod
     def update_product(product_id: int, **kwargs) -> bool:
         """Update product"""
         conn = sqlite3.connect(get_musicshop_db_path())
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        updates = []
-        values = []
-        for key, value in kwargs.items():
-            if value is not None:
-                updates.append(f"{key} = ?")
-                values.append(value)
+            updates = []
+            values = []
+            for key, value in kwargs.items():
+                if value is not None:
+                    updates.append(f"{key} = ?")
+                    values.append(value)
 
-        if not updates:
+            if not updates:
+                return False
+
+            updates.append("updated_at = ?")
+            values.append(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            values.append(product_id)
+
+            cursor.execute(
+                "UPDATE products SET " + ", ".join(updates) + " WHERE source_type = 'music_shop' AND product_id = ?",
+                values)
+
+            conn.commit()
+            success = cursor.rowcount > 0
+            return success
+        finally:
             conn.close()
-            return False
-
-        updates.append("updated_at = ?")
-        values.append(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-        values.append(product_id)
-
-        cursor.execute(
-            "UPDATE musicshop_products SET " + ", ".join(updates) + " WHERE product_id = ?",
-            values)
-
-        conn.commit()
-        success = cursor.rowcount > 0
-        conn.close()
-        return success
 
     @staticmethod
     def update_stock(product_id: int, quantity_change: int) -> bool:
         """Update product stock"""
         conn = sqlite3.connect(get_musicshop_db_path())
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('''
-        UPDATE musicshop_products
-        SET stock_quantity = stock_quantity + ?, updated_at = ?
-        WHERE product_id = ?
-        ''', (quantity_change, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), product_id))
+            cursor.execute('''
+            UPDATE products
+            SET stock_quantity = stock_quantity + ?, updated_at = ?
+            WHERE source_type = 'music_shop' AND product_id = ?
+            ''', (quantity_change, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), product_id))
 
-        conn.commit()
-        success = cursor.rowcount > 0
-        conn.close()
-        return success
+            conn.commit()
+            success = cursor.rowcount > 0
+            return success
+        finally:
+            conn.close()
 
     @staticmethod
     def get_low_stock_products() -> List[Dict]:
         """Get products with low stock"""
         conn = sqlite3.connect(get_musicshop_db_path())
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        try:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
 
-        cursor.execute('''
-        SELECT * FROM musicshop_products
-        WHERE stock_quantity <= min_stock_level AND is_active = 1
-        ORDER BY stock_quantity
-        ''')
-        rows = cursor.fetchall()
-        conn.close()
+            cursor.execute('''
+            SELECT * FROM products
+            WHERE source_type = 'music_shop' AND stock_quantity <= min_stock_level AND is_active = 1
+            ORDER BY stock_quantity
+            ''')
+            rows = cursor.fetchall()
 
-        return [dict(row) for row in rows]
+            return [dict(row) for row in rows]
+        finally:
+            conn.close()
 
     @staticmethod
     def get_rare_items() -> List[Dict]:
         """Get rare/collectible items"""
         conn = sqlite3.connect(get_musicshop_db_path())
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        try:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
 
-        cursor.execute('''
-        SELECT * FROM musicshop_products WHERE is_rare = 1 AND is_active = 1 ORDER BY title
-        ''')
-        rows = cursor.fetchall()
-        conn.close()
+            cursor.execute('''
+            SELECT * FROM products WHERE source_type = 'music_shop' AND is_rare = 1 AND is_active = 1 ORDER BY name
+            ''')
+            rows = cursor.fetchall()
 
-        return [dict(row) for row in rows]
+            return [dict(row) for row in rows]
+        finally:
+            conn.close()
 
     @staticmethod
     def search_products(query: str) -> List[Dict]:
         """Search products"""
         conn = sqlite3.connect(get_musicshop_db_path())
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        try:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
 
-        cursor.execute('''
-        SELECT * FROM musicshop_products
-        WHERE (title LIKE ? OR artist LIKE ? OR genre LIKE ? OR sku LIKE ?) AND is_active = 1
-        ORDER BY title
-        ''', (f'%{query}%', f'%{query}%', f'%{query}%', f'%{query}%'))
-        rows = cursor.fetchall()
-        conn.close()
+            cursor.execute('''
+            SELECT * FROM products
+            WHERE source_type = 'music_shop' AND (name LIKE ? OR artist LIKE ? OR genre LIKE ? OR sku LIKE ?) AND is_active = 1
+            ORDER BY name
+            ''', (f'%{query}%', f'%{query}%', f'%{query}%', f'%{query}%'))
+            rows = cursor.fetchall()
 
-        return [dict(row) for row in rows]
+            return [dict(row) for row in rows]
+        finally:
+            conn.close()
 
 class OrderManager:
     """Manage music shop orders"""
@@ -333,11 +342,11 @@ class OrderManager:
             order_number = OrderManager._generate_order_number()
 
             cursor.execute('''
-            INSERT INTO musicshop_orders
-            (order_number, customer_id, customer_name, customer_email, customer_phone,
+            INSERT INTO orders
+            (source_type, order_number, customer_id, customer_name, customer_email, customer_phone,
              shipping_address, subtotal, tax_amount, shipping_fee, discount_amount,
              total_amount, payment_method, notes, created_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES ('music_shop', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 order_number, customer_id, customer_name,
                 kwargs.get('customer_email'), kwargs.get('customer_phone'),
@@ -350,9 +359,9 @@ class OrderManager:
 
             for item in items:
                 cursor.execute('''
-                INSERT INTO musicshop_order_items
-                (order_id, product_id, product_title, artist, quantity, unit_price, subtotal)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO order_items
+                (source_type, order_id, product_id, item_name, artist, quantity, unit_price, subtotal)
+                VALUES ('music_shop', ?, ?, ?, ?, ?, ?, ?)
                 ''', (
                     order_id, item['product_id'], item['product_title'],
                     item.get('artist'), item['quantity'], item['unit_price'],
@@ -360,7 +369,7 @@ class OrderManager:
                 ))
 
                 cursor.execute('''
-                UPDATE musicshop_products SET stock_quantity = stock_quantity - ? WHERE product_id = ?
+                UPDATE products SET stock_quantity = stock_quantity - ? WHERE source_type = 'music_shop' AND product_id = ?
                 ''', (item['quantity'], item['product_id']))
 
             conn.commit()
@@ -376,66 +385,74 @@ class OrderManager:
     def get_order(order_id: int) -> Optional[Dict]:
         """Get order by ID"""
         conn = sqlite3.connect(get_musicshop_db_path())
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        try:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
 
-        cursor.execute('SELECT * FROM musicshop_orders WHERE order_id = ?', (order_id,))
-        row = cursor.fetchone()
+            cursor.execute('SELECT * FROM orders WHERE source_type = ? AND order_id = ?', ('music_shop', order_id,))
+            row = cursor.fetchone()
 
-        if row:
-            order = dict(row)
-            cursor.execute('SELECT * FROM musicshop_order_items WHERE order_id = ?', (order_id,))
-            order['items'] = [dict(item) for item in cursor.fetchall()]
-        else:
-            order = None
+            if row:
+                order = dict(row)
+                cursor.execute('SELECT * FROM order_items WHERE source_type = ? AND order_id = ?', ('music_shop', order_id,))
+                order['items'] = [dict(item) for item in cursor.fetchall()]
+            else:
+                order = None
 
-        conn.close()
-        return order
+            return order
+        finally:
+            conn.close()
 
     @staticmethod
     def get_orders_by_status(status: str) -> List[Dict]:
         """Get orders by status"""
         conn = sqlite3.connect(get_musicshop_db_path())
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        try:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
 
-        cursor.execute('''
-        SELECT * FROM musicshop_orders WHERE status = ? ORDER BY created_at DESC
-        ''', (status,))
-        rows = cursor.fetchall()
-        conn.close()
+            cursor.execute('''
+            SELECT * FROM orders WHERE source_type = 'music_shop' AND order_status = ? ORDER BY created_at DESC
+            ''', (status,))
+            rows = cursor.fetchall()
 
-        return [dict(row) for row in rows]
+            return [dict(row) for row in rows]
+        finally:
+            conn.close()
 
     @staticmethod
     def get_customer_orders(customer_id: str) -> List[Dict]:
         """Get orders for a customer"""
         conn = sqlite3.connect(get_musicshop_db_path())
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        try:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
 
-        cursor.execute('''
-        SELECT * FROM musicshop_orders WHERE customer_id = ? ORDER BY created_at DESC
-        ''', (customer_id,))
-        rows = cursor.fetchall()
-        conn.close()
+            cursor.execute('''
+            SELECT * FROM orders WHERE source_type = 'music_shop' AND customer_id = ? ORDER BY created_at DESC
+            ''', (customer_id,))
+            rows = cursor.fetchall()
 
-        return [dict(row) for row in rows]
+            return [dict(row) for row in rows]
+        finally:
+            conn.close()
 
     @staticmethod
     def update_order_status(order_id: int, status: str) -> bool:
         """Update order status"""
         conn = sqlite3.connect(get_musicshop_db_path())
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('''
-        UPDATE musicshop_orders SET status = ?, updated_at = ? WHERE order_id = ?
-        ''', (status, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), order_id))
+            cursor.execute('''
+            UPDATE orders SET order_status = ?, updated_at = ? WHERE source_type = 'music_shop' AND order_id = ?
+            ''', (status, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), order_id))
 
-        conn.commit()
-        success = cursor.rowcount > 0
-        conn.close()
-        return success
+            conn.commit()
+            success = cursor.rowcount > 0
+            return success
+        finally:
+            conn.close()
 
     @staticmethod
     def cancel_order(order_id: int, reason: str = None) -> bool:
@@ -444,16 +461,16 @@ class OrderManager:
         cursor = conn.cursor()
 
         try:
-            cursor.execute('SELECT product_id, quantity FROM musicshop_order_items WHERE order_id = ?', (order_id,))
+            cursor.execute('SELECT product_id, quantity FROM order_items WHERE source_type = ? AND order_id = ?', ('music_shop', order_id,))
             items = cursor.fetchall()
 
             for product_id, quantity in items:
                 cursor.execute('''
-                UPDATE musicshop_products SET stock_quantity = stock_quantity + ? WHERE product_id = ?
+                UPDATE products SET stock_quantity = stock_quantity + ? WHERE source_type = 'music_shop' AND product_id = ?
                 ''', (quantity, product_id))
 
             cursor.execute('''
-            UPDATE musicshop_orders SET status = 'cancelled', notes = ?, updated_at = ? WHERE order_id = ?
+            UPDATE orders SET order_status = 'cancelled', notes = ?, updated_at = ? WHERE source_type = 'music_shop' AND order_id = ?
             ''', (reason, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), order_id))
 
             conn.commit()
@@ -476,17 +493,17 @@ class TransactionManager:
 
         try:
             cursor.execute('''
-            INSERT INTO musicshop_transactions
-            (order_id, customer_id, transaction_type, amount, payment_method, reference_number, processed_by)
-            VALUES (?, ?, 'payment', ?, ?, ?, ?)
+            INSERT INTO transactions
+            (source_type, reference_id, reference_type, customer_id, transaction_type, amount, payment_method, reference_number, processed_by)
+            VALUES ('music_shop', ?, 'order', ?, 'payment', ?, ?, ?, ?)
             ''', (
                 order_id, customer_id, amount, payment_method,
                 kwargs.get('reference_number'), kwargs.get('processed_by')
             ))
 
             cursor.execute('''
-            UPDATE musicshop_orders SET payment_status = 'completed', status = 'confirmed',
-            payment_method = ?, updated_at = ? WHERE order_id = ?
+            UPDATE orders SET payment_status = 'completed', order_status = 'confirmed',
+            payment_method = ?, updated_at = ? WHERE source_type = 'music_shop' AND order_id = ?
             ''', (payment_method, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), order_id))
 
             conn.commit()
@@ -510,17 +527,17 @@ class TransactionManager:
                 return None
 
             cursor.execute('''
-            INSERT INTO musicshop_transactions
-            (order_id, customer_id, transaction_type, amount, payment_method, reference_number, processed_by)
-            VALUES (?, ?, 'refund', ?, ?, ?, ?)
+            INSERT INTO transactions
+            (source_type, reference_id, reference_type, customer_id, transaction_type, amount, payment_method, reference_number, processed_by)
+            VALUES ('music_shop', ?, 'order', ?, 'refund', ?, ?, ?, ?)
             ''', (
                 order_id, order['customer_id'], -amount, order.get('payment_method'),
                 reason, kwargs.get('processed_by')
             ))
 
             cursor.execute('''
-            UPDATE musicshop_orders SET payment_status = 'refunded', status = 'refunded', updated_at = ?
-            WHERE order_id = ?
+            UPDATE orders SET payment_status = 'refunded', order_status = 'refunded', updated_at = ?
+            WHERE source_type = 'music_shop' AND order_id = ?
             ''', (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), order_id))
 
             conn.commit()
@@ -557,34 +574,38 @@ class WishlistManager:
     def remove_from_wishlist(customer_id: str, product_id: int) -> bool:
         """Remove product from wishlist"""
         conn = sqlite3.connect(get_musicshop_db_path())
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('''
-        DELETE FROM musicshop_wishlists WHERE customer_id = ? AND product_id = ?
-        ''', (customer_id, product_id))
+            cursor.execute('''
+            DELETE FROM musicshop_wishlists WHERE customer_id = ? AND product_id = ?
+            ''', (customer_id, product_id))
 
-        conn.commit()
-        success = cursor.rowcount > 0
-        conn.close()
-        return success
+            conn.commit()
+            success = cursor.rowcount > 0
+            return success
+        finally:
+            conn.close()
 
     @staticmethod
     def get_wishlist(customer_id: str) -> List[Dict]:
         """Get customer's wishlist"""
         conn = sqlite3.connect(get_musicshop_db_path())
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        try:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
 
-        cursor.execute('''
-        SELECT p.* FROM musicshop_products p
-        JOIN musicshop_wishlists w ON p.product_id = w.product_id
-        WHERE w.customer_id = ?
-        ORDER BY w.added_at DESC
-        ''', (customer_id,))
-        rows = cursor.fetchall()
-        conn.close()
+            cursor.execute('''
+            SELECT p.* FROM products p
+            JOIN musicshop_wishlists w ON p.product_id = w.product_id
+            WHERE p.source_type = 'music_shop' AND w.customer_id = ?
+            ORDER BY w.added_at DESC
+            ''', (customer_id,))
+            rows = cursor.fetchall()
 
-        return [dict(row) for row in rows]
+            return [dict(row) for row in rows]
+        finally:
+            conn.close()
 
 class ReportManager:
     """Generate music shop reports"""
@@ -593,118 +614,128 @@ class ReportManager:
     def get_sales_summary() -> Dict:
         """Get sales summary"""
         conn = sqlite3.connect(get_musicshop_db_path())
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('''
-        SELECT
-            COUNT(*) as total_orders,
-            SUM(CASE WHEN status NOT IN ('cancelled', 'refunded') THEN total_amount ELSE 0 END) as total_revenue,
-            AVG(CASE WHEN status NOT IN ('cancelled', 'refunded') THEN total_amount ELSE NULL END) as avg_order_value,
-            SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_orders,
-            SUM(CASE WHEN status = 'delivered' THEN 1 ELSE 0 END) as completed_orders
-        FROM musicshop_orders
-        ''')
-        row = cursor.fetchone()
-        conn.close()
+            cursor.execute('''
+            SELECT
+                COUNT(*) as total_orders,
+                SUM(CASE WHEN order_status NOT IN ('cancelled', 'refunded') THEN total_amount ELSE 0 END) as total_revenue,
+                AVG(CASE WHEN order_status NOT IN ('cancelled', 'refunded') THEN total_amount ELSE NULL END) as avg_order_value,
+                SUM(CASE WHEN order_status = 'pending' THEN 1 ELSE 0 END) as pending_orders,
+                SUM(CASE WHEN order_status = 'delivered' THEN 1 ELSE 0 END) as completed_orders
+            FROM orders WHERE source_type = 'music_shop'
+            ''')
+            row = cursor.fetchone()
 
-        return {
-            'total_orders': row[0] or 0,
-            'total_revenue': row[1] or 0,
-            'avg_order_value': row[2] or 0,
-            'pending_orders': row[3] or 0,
-            'completed_orders': row[4] or 0
-        }
+            return {
+                'total_orders': row[0] or 0,
+                'total_revenue': row[1] or 0,
+                'avg_order_value': row[2] or 0,
+                'pending_orders': row[3] or 0,
+                'completed_orders': row[4] or 0
+            }
+        finally:
+            conn.close()
 
     @staticmethod
     def get_inventory_summary() -> Dict:
         """Get inventory summary"""
         conn = sqlite3.connect(get_musicshop_db_path())
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('''
-        SELECT
-            COUNT(*) as total_products,
-            SUM(stock_quantity) as total_stock,
-            SUM(stock_quantity * price) as total_value,
-            SUM(CASE WHEN stock_quantity <= min_stock_level THEN 1 ELSE 0 END) as low_stock_count,
-            SUM(CASE WHEN is_rare = 1 THEN 1 ELSE 0 END) as rare_items_count
-        FROM musicshop_products WHERE is_active = 1
-        ''')
-        row = cursor.fetchone()
-        conn.close()
+            cursor.execute('''
+            SELECT
+                COUNT(*) as total_products,
+                SUM(stock_quantity) as total_stock,
+                SUM(stock_quantity * price) as total_value,
+                SUM(CASE WHEN stock_quantity <= min_stock_level THEN 1 ELSE 0 END) as low_stock_count,
+                SUM(CASE WHEN is_rare = 1 THEN 1 ELSE 0 END) as rare_items_count
+            FROM products WHERE source_type = 'music_shop' AND is_active = 1
+            ''')
+            row = cursor.fetchone()
 
-        return {
-            'total_products': row[0] or 0,
-            'total_stock': row[1] or 0,
-            'total_value': row[2] or 0,
-            'low_stock_count': row[3] or 0,
-            'rare_items_count': row[4] or 0
-        }
+            return {
+                'total_products': row[0] or 0,
+                'total_stock': row[1] or 0,
+                'total_value': row[2] or 0,
+                'low_stock_count': row[3] or 0,
+                'rare_items_count': row[4] or 0
+            }
+        finally:
+            conn.close()
 
     @staticmethod
     def get_sales_by_genre() -> List[Dict]:
         """Get sales breakdown by genre"""
         conn = sqlite3.connect(get_musicshop_db_path())
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        try:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
 
-        cursor.execute('''
-        SELECT p.genre, COUNT(oi.item_id) as items_sold, SUM(oi.subtotal) as revenue
-        FROM musicshop_order_items oi
-        JOIN musicshop_products p ON oi.product_id = p.product_id
-        JOIN musicshop_orders o ON oi.order_id = o.order_id
-        WHERE o.status NOT IN ('cancelled', 'refunded') AND p.genre IS NOT NULL
-        GROUP BY p.genre
-        ORDER BY revenue DESC
-        ''')
-        rows = cursor.fetchall()
-        conn.close()
+            cursor.execute('''
+            SELECT p.genre, COUNT(oi.item_id) as items_sold, SUM(oi.subtotal) as revenue
+            FROM order_items oi
+            JOIN products p ON oi.product_id = p.product_id AND p.source_type = 'music_shop'
+            JOIN orders o ON oi.order_id = o.order_id AND o.source_type = 'music_shop'
+            WHERE oi.source_type = 'music_shop' AND o.order_status NOT IN ('cancelled', 'refunded') AND p.genre IS NOT NULL
+            GROUP BY p.genre
+            ORDER BY revenue DESC
+            ''')
+            rows = cursor.fetchall()
 
-        return [dict(row) for row in rows]
+            return [dict(row) for row in rows]
+        finally:
+            conn.close()
 
     @staticmethod
     def get_top_selling_products(limit: int = 10) -> List[Dict]:
         """Get top selling products"""
         conn = sqlite3.connect(get_musicshop_db_path())
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        try:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
 
-        cursor.execute('''
-        SELECT p.*, SUM(oi.quantity) as total_sold, SUM(oi.subtotal) as total_revenue
-        FROM musicshop_products p
-        JOIN musicshop_order_items oi ON p.product_id = oi.product_id
-        JOIN musicshop_orders o ON oi.order_id = o.order_id
-        WHERE o.status NOT IN ('cancelled', 'refunded')
-        GROUP BY p.product_id
-        ORDER BY total_sold DESC
-        LIMIT ?
-        ''', (limit,))
-        rows = cursor.fetchall()
-        conn.close()
+            cursor.execute('''
+            SELECT p.*, SUM(oi.quantity) as total_sold, SUM(oi.subtotal) as total_revenue
+            FROM products p
+            JOIN order_items oi ON p.product_id = oi.product_id AND oi.source_type = 'music_shop'
+            JOIN orders o ON oi.order_id = o.order_id AND o.source_type = 'music_shop'
+            WHERE p.source_type = 'music_shop' AND o.order_status NOT IN ('cancelled', 'refunded')
+            GROUP BY p.product_id
+            ORDER BY total_sold DESC
+            LIMIT ?
+            ''', (limit,))
+            rows = cursor.fetchall()
 
-        return [dict(row) for row in rows]
+            return [dict(row) for row in rows]
+        finally:
+            conn.close()
 
     @staticmethod
     def get_top_artists(limit: int = 10) -> List[Dict]:
         """Get top selling artists"""
         conn = sqlite3.connect(get_musicshop_db_path())
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        try:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
 
-        cursor.execute('''
-        SELECT p.artist, COUNT(DISTINCT oi.order_id) as orders, SUM(oi.quantity) as items_sold, SUM(oi.subtotal) as revenue
-        FROM musicshop_order_items oi
-        JOIN musicshop_products p ON oi.product_id = p.product_id
-        JOIN musicshop_orders o ON oi.order_id = o.order_id
-        WHERE o.status NOT IN ('cancelled', 'refunded') AND p.artist IS NOT NULL
-        GROUP BY p.artist
-        ORDER BY revenue DESC
-        LIMIT ?
-        ''', (limit,))
-        rows = cursor.fetchall()
-        conn.close()
+            cursor.execute('''
+            SELECT p.artist, COUNT(DISTINCT oi.order_id) as orders, SUM(oi.quantity) as items_sold, SUM(oi.subtotal) as revenue
+            FROM order_items oi
+            JOIN products p ON oi.product_id = p.product_id AND p.source_type = 'music_shop'
+            JOIN orders o ON oi.order_id = o.order_id AND o.source_type = 'music_shop'
+            WHERE oi.source_type = 'music_shop' AND o.order_status NOT IN ('cancelled', 'refunded') AND p.artist IS NOT NULL
+            GROUP BY p.artist
+            ORDER BY revenue DESC
+            LIMIT ?
+            ''', (limit,))
+            rows = cursor.fetchall()
 
-        return [dict(row) for row in rows]
+            return [dict(row) for row in rows]
+        finally:
+            conn.close()
 
     @staticmethod
     def generate_admin_report() -> str:
@@ -740,7 +771,7 @@ TOP SELLING PRODUCTS
 --------------------
 """
         for i, p in enumerate(top_products, 1):
-            report += f"{i}. {p['title']} by {p.get('artist', 'Unknown')}\n"
+            report += f"{i}. {p['name']} by {p.get('artist', 'Unknown')}\n"
             report += f"   Sold: {p.get('total_sold', 0)} | Revenue: £{p.get('total_revenue', 0):.2f}\n"
 
         report += "\nTOP ARTISTS\n-----------\n"

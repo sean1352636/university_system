@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/primary_school/infrastructure/validation/validators.py
+# hypothesis_version: 6.151.9
+
+['Developing', 'Emerging', 'Exceeding', 'Expected', 'Greater Depth', '^PRI\\d{4}$', '^\\d{4}-\\d{2}-\\d{2}$']

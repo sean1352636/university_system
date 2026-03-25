@@ -120,22 +120,22 @@ def daily_sales_report():
         cursor.execute('''
             SELECT 
                 COUNT(*) as total_orders,
-                SUM(total_price) as total_revenue,
-                AVG(total_price) as avg_order_value,
-                SUM(CASE WHEN payment_method = 'Cash' THEN total_price ELSE 0 END) as cash_sales,
-                SUM(CASE WHEN payment_method LIKE '%Card%' THEN total_price ELSE 0 END) as card_sales,
-                SUM(CASE WHEN payment_method = 'Meal Plan' THEN total_price ELSE 0 END) as meal_plan_sales
-            FROM restaurant_orders
-            WHERE DATE(order_time) = ? AND status = 'Completed'
+                SUM(total_amount) as total_revenue,
+                AVG(total_amount) as avg_order_value,
+                SUM(CASE WHEN payment_method = 'Cash' THEN total_amount ELSE 0 END) as cash_sales,
+                SUM(CASE WHEN payment_method LIKE '%Card%' THEN total_amount ELSE 0 END) as card_sales,
+                SUM(CASE WHEN payment_method = 'Meal Plan' THEN total_amount ELSE 0 END) as meal_plan_sales
+            FROM orders
+            WHERE DATE(order_date) = ? AND order_status = 'Completed'
         ''', (report_date,))
 
         sales_data = cursor.fetchone()
 
         # Get sales by hour
         cursor.execute('''
-            SELECT strftime('%H', order_time) as hour, COUNT(*) as orders, SUM(total_price) as revenue
-            FROM restaurant_orders
-            WHERE DATE(order_time) = ? AND status = 'Completed'
+            SELECT strftime('%H', order_date) as hour, COUNT(*) as orders, SUM(total_amount) as revenue
+            FROM orders
+            WHERE DATE(order_date) = ? AND order_status = 'Completed'
             GROUP BY hour
             ORDER BY hour
         ''', (report_date,))
@@ -145,10 +145,10 @@ def daily_sales_report():
         # Get top selling items
         cursor.execute('''
             SELECT mi.name, SUM(oi.quantity) as qty_sold, SUM(oi.quantity * oi.unit_price) as revenue
-            FROM restaurant_order_items oi
+            FROM order_items oi
             JOIN menu_items mi ON oi.item_id = mi.item_id
-            JOIN restaurant_orders o ON oi.order_id = o.order_id
-            WHERE DATE(o.order_time) = ? AND o.status = 'Completed'
+            JOIN orders o ON oi.order_id = o.order_id
+            WHERE DATE(o.order_date) = ? AND o.order_status = 'Completed'
             GROUP BY mi.item_id, mi.name
             ORDER BY revenue DESC
             LIMIT 10
@@ -289,10 +289,10 @@ def monthly_financial_summary():
         cursor.execute('''
             SELECT 
                 COUNT(*) as total_orders,
-                SUM(total_price) as total_revenue,
-                AVG(total_price) as avg_order_value
-            FROM restaurant_orders
-            WHERE DATE(order_time) BETWEEN ? AND ? AND status = 'Completed'
+                SUM(total_amount) as total_revenue,
+                AVG(total_amount) as avg_order_value
+            FROM orders
+            WHERE DATE(order_date) BETWEEN ? AND ? AND order_status = 'Completed'
         ''', (month_start.strftime('%Y-%m-%d'), month_end.strftime('%Y-%m-%d')))
 
         sales_data = cursor.fetchone()
@@ -349,11 +349,11 @@ def monthly_financial_summary():
         # Weekly breakdown
         cursor.execute('''
             SELECT 
-                strftime('%W', order_time) as week,
+                strftime('%W', order_date) as week,
                 COUNT(*) as orders,
-                SUM(total_price) as revenue
-            FROM restaurant_orders
-            WHERE DATE(order_time) BETWEEN ? AND ? AND status = 'Completed'
+                SUM(total_amount) as revenue
+            FROM orders
+            WHERE DATE(order_date) BETWEEN ? AND ? AND order_status = 'Completed'
             GROUP BY week
             ORDER BY week
         ''', (month_start.strftime('%Y-%m-%d'), month_end.strftime('%Y-%m-%d')))
@@ -473,9 +473,9 @@ def generate_vat_report():
 
         # Calculate VAT on sales
         cursor.execute('''
-            SELECT SUM(total_price) as total_sales, SUM(tax_amount) as total_tax
-            FROM restaurant_orders
-            WHERE DATE(order_time) BETWEEN ? AND ? AND status = 'Completed'
+            SELECT SUM(total_amount) as total_sales, SUM(tax_amount) as total_tax
+            FROM orders
+            WHERE DATE(order_date) BETWEEN ? AND ? AND order_status = 'Completed'
         ''', (start_date, end_date))
 
         sales_data = cursor.fetchone()
@@ -548,12 +548,12 @@ def generate_sales_tax_summary():
 
         # Daily sales tax breakdown
         cursor.execute('''
-            SELECT DATE(order_time) as sale_date, 
-                   SUM(total_price) as daily_sales,
+            SELECT DATE(order_date) as sale_date, 
+                   SUM(total_amount) as daily_sales,
                    SUM(tax_amount) as daily_tax
-            FROM restaurant_orders
-            WHERE DATE(order_time) BETWEEN ? AND ? AND status = 'Completed'
-            GROUP BY DATE(order_time)
+            FROM orders
+            WHERE DATE(order_date) BETWEEN ? AND ? AND order_status = 'Completed'
+            GROUP BY DATE(order_date)
             ORDER BY sale_date
         ''', (month_start.strftime('%Y-%m-%d'), month_end.strftime('%Y-%m-%d')))
 
@@ -670,10 +670,10 @@ def export_complete_financial_data(start_date, end_date):
 
         # Get all financial data
         cursor.execute('''
-            SELECT 'REVENUE' as type, order_id as ref_id, order_time as date, 
-                   total_price as amount, payment_method as description, customer_id as details
-            FROM restaurant_orders
-            WHERE DATE(order_time) BETWEEN ? AND ? AND status = 'Completed'
+            SELECT 'REVENUE' as type, order_id as ref_id, order_date as date, 
+                   total_amount as amount, payment_method as description, customer_id as details
+            FROM orders
+            WHERE DATE(order_date) BETWEEN ? AND ? AND order_status = 'Completed'
             UNION ALL
             SELECT 'EXPENSE' as type, expense_id as ref_id, expense_date as date,
                    -amount as amount, category as description, vendor as details
@@ -704,10 +704,10 @@ def export_complete_financial_data(start_date, end_date):
         # Summary statistics
         cursor.execute('''
             SELECT 
-                SUM(CASE WHEN total_price > 0 THEN total_price ELSE 0 END) as total_revenue,
-                COUNT(CASE WHEN total_price > 0 THEN 1 END) as revenue_transactions
-            FROM restaurant_orders
-            WHERE DATE(order_time) BETWEEN ? AND ? AND status = 'Completed'
+                SUM(CASE WHEN total_amount > 0 THEN total_amount ELSE 0 END) as total_revenue,
+                COUNT(CASE WHEN total_amount > 0 THEN 1 END) as revenue_transactions
+            FROM orders
+            WHERE DATE(order_date) BETWEEN ? AND ? AND order_status = 'Completed'
         ''', (start_date, end_date))
 
         revenue_stats = cursor.fetchone()
@@ -742,12 +742,12 @@ def export_sales_data(start_date, end_date):
         cursor = conn.cursor()
 
         cursor.execute('''
-            SELECT o.order_id, o.order_time, o.total_price, o.tax_amount, 
-                   o.payment_method, c.name as customer_name, o.status
-            FROM restaurant_orders o
+            SELECT o.order_id, o.order_date, o.total_amount, o.tax_amount, 
+                   o.payment_method, c.name as customer_name, o.order_status
+            FROM orders o
             LEFT JOIN restaurant_customers c ON o.customer_id = c.customer_id
-            WHERE DATE(o.order_time) BETWEEN ? AND ? AND o.status = 'Completed'
-            ORDER BY o.order_time
+            WHERE DATE(o.order_date) BETWEEN ? AND ? AND o.order_status = 'Completed'
+            ORDER BY o.order_date
         ''', (start_date, end_date))
 
         sales_data = cursor.fetchall()

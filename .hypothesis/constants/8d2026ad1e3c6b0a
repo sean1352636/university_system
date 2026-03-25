@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/housing/services/housing_accommodation/inspections.py
+# hypothesis_version: 6.151.9
+
+['\nInspection Details:', '\nSelect Building:', '\nSelect Status:', '\nView Inspections:', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '1', '1. View by building', '2', '2. View by room', '3', '4', '4. View by status', '5', '=', 'Action Required: ', 'Annual', 'Complaint', 'Failed', 'Findings/Notes: ', 'INS', 'Incomplete', 'Inspector Name: ', 'Invalid choice.', 'Monthly', 'Move-in', 'Move-out', 'Needs Follow-up', 'Passed', 'Quarterly', 'housing', 'username', 'view_accommodations', 'y']

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/study_group_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' = ?', ' AND ', ' WHERE ', ' WHERE group_id = ?', ', ', '/<int:group_id>', '/api/study-groups', 'GET', 'Member', 'POST', 'PUT', 'Study group is full', 'course_id', 'course_id = ?', 'create', 'creator_id', 'current_members', 'group_name', 'is_virtual', 'items', 'location', 'max_members', 'meeting_schedule', 'role', 'status', 'status = ?', 'student_id', 'study_group', 'study_group_member', 'study_group_members', 'study_groups', 'sub', 'total', 'update', 'view']

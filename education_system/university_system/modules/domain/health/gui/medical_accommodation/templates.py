@@ -1,19 +1,19 @@
 # templates.py
 # Template management mixin and dialog classes for AccommodationGUI.
 
-from ._common import (
+from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import (
     tk, ttk, messagebox, simpledialog,
     datetime, timedelta, json, sqlite3, Path,
     CLI_AVAILABLE, TEMPLATES_TABLE, get_connection, logger,
 )
 
 if CLI_AVAILABLE:
-    from ._common import (
-        get_accommodation_types, check_conflict as cli_check_conflict,
-        log_action, notify_student as cli_notify_student,
+    from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import (
+        get_accommodation_types, cli_check_conflict,
+        log_action, cli_notify_student,
     )
 
-from .utils import resolve_user_identifier, check_conflict
+from education_system.university_system.modules.domain.health.gui.medical_accommodation.utils import resolve_user_identifier, check_conflict
 
 
 class TemplateMixin:
@@ -464,10 +464,11 @@ class ApplyTemplateDialog:
 
     def __init__(self, parent):
         self.result = None
+        self.student_map = {}
 
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Apply Template")
-        self.dialog.geometry("400x300")
+        self.dialog.geometry("450x300")
         self.dialog.transient(parent)
 
         self.create_widgets()
@@ -480,14 +481,34 @@ class ApplyTemplateDialog:
 
         self.dialog.wait_window()
 
+    def _load_students(self):
+        """Load students for dropdown."""
+        students = []
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT student_id, first_name, last_name FROM students ORDER BY last_name, first_name"
+                )
+                for row in cursor.fetchall():
+                    sid, first, last = row
+                    label = f"{sid} - {(first or '')} {(last or '')}".strip()
+                    students.append(label)
+                    self.student_map[label] = sid
+        except Exception:
+            pass
+        return students
+
     def create_widgets(self):
         """Create dialog widgets"""
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text="Student ID:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(main_frame, text="Student:").grid(row=0, column=0, sticky='w', pady=5)
         self.student_id_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=self.student_id_var, width=30).grid(row=0, column=1, pady=5, sticky='ew')
+        student_combo = ttk.Combobox(main_frame, textvariable=self.student_id_var, width=30)
+        student_combo['values'] = self._load_students()
+        student_combo.grid(row=0, column=1, pady=5, sticky='ew')
 
         ttk.Label(main_frame, text="Template:").grid(row=1, column=0, sticky='w', pady=5)
         self.template_var = tk.StringVar()
@@ -518,10 +539,18 @@ class ApplyTemplateDialog:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load templates: {str(e)}")
 
+    def _get_student_id(self):
+        """Extract student ID from dropdown selection or raw input."""
+        raw = self.student_id_var.get().strip()
+        if raw in self.student_map:
+            return self.student_map[raw]
+        return raw
+
     def apply(self):
         """Apply the template"""
-        if not self.student_id_var.get().strip():
-            messagebox.showerror("Error", "Student ID is required")
+        student_id = self._get_student_id()
+        if not student_id:
+            messagebox.showerror("Error", "Student is required")
             return
 
         if not self.template_var.get().strip():
@@ -529,13 +558,13 @@ class ApplyTemplateDialog:
             return
 
         if CLI_AVAILABLE:
-            from ._common import validate_student_id
-            if not validate_student_id(self.student_id_var.get().strip()):
+            from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import validate_student_id
+            if not validate_student_id(student_id):
                 messagebox.showerror("Error", "Student ID not found in the system")
                 return
 
         self.result = {
-            'student_id': self.student_id_var.get().strip(),
+            'student_id': student_id,
             'template_name': self.template_var.get().strip()
         }
 

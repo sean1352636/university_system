@@ -242,15 +242,17 @@ class SearchMixin:
             if self.search_text_var.get(): filters['search_text'] = self.search_text_var.get()
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('''
-                INSERT INTO saved_searches (name, user_id, search_params)
-                VALUES (?, ?, ?)
-            ''', (name, self.auth.current_user['id'], json.dumps(filters)))
+                cursor.execute('''
+                    INSERT INTO saved_searches (name, user_id, search_params)
+                    VALUES (?, ?, ?)
+                ''', (name, self.auth.current_user['id'], json.dumps(filters)))
 
-            conn.commit()
-            conn.close()
+                conn.commit()
+            finally:
+                conn.close()
 
             messagebox.showinfo(_t("log_management.messages.success"), _t("log_management.dialogs.save_search.saved", name=name))
 

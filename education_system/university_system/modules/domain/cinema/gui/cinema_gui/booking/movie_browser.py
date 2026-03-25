@@ -17,7 +17,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_movies_page(self):
     """Display the movies listing page."""
@@ -26,10 +26,12 @@ def show_movies_page(self):
     ttk.Label(self.content_frame, text=_t("cinema.movies.now_showing", default="Now Showing"), style="Subtitle.TLabel").pack(anchor="w", pady=10)
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM movies WHERE status = 'active' OR status IS NULL")
-    movies = cursor.fetchall()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM movies WHERE status = 'active' OR status IS NULL")
+        movies = cursor.fetchall()
+    finally:
+        conn.close()
 
     movies_frame = ttk.Frame(self.content_frame, style="Main.TFrame")
     movies_frame.pack(fill="both", expand=True)
@@ -96,24 +98,26 @@ def show_screenings(self, movie):
             tree.delete(item)
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        sql = '''
-            SELECT s.id, s.screen_number, s.show_time, s.price,
-                   (SELECT COUNT(*) FROM seats WHERE screening_id = s.id AND status = 'available')
-            FROM screenings s
-            WHERE s.movie_id = ? AND s.show_time >= datetime('now') AND (s.status = 'active' OR s.status IS NULL)
-        '''
-        params = [movie[0]]
+            sql = '''
+                SELECT s.id, s.screen_number, s.show_time, s.price,
+                       (SELECT COUNT(*) FROM seats WHERE screening_id = s.id AND status = 'available')
+                FROM screenings s
+                WHERE s.movie_id = ? AND s.show_time >= datetime('now') AND (s.status = 'active' OR s.status IS NULL)
+            '''
+            params = [movie[0]]
 
-        if date_var.get() != "all":
-            sql += " AND date(s.show_time) = ?"
-            params.append(date_var.get())
+            if date_var.get() != "all":
+                sql += " AND date(s.show_time) = ?"
+                params.append(date_var.get())
 
-        sql += " ORDER BY s.show_time"
-        cursor.execute(sql, params)
-        screenings = cursor.fetchall()
-        conn.close()
+            sql += " ORDER BY s.show_time"
+            cursor.execute(sql, params)
+            screenings = cursor.fetchall()
+        finally:
+            conn.close()
 
         for screening in screenings:
             tree.insert("", "end", values=(

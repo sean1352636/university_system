@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/betting_shop_cli/menus.py
+# hypothesis_version: 6.151.9
+
+['\n1. Slot Machine', '\n1. View Balance', '\nChoice: ', '\nEnter choice: ', '\n🎰 CASINO:', '\n🏆 SPORTS BETTING:', '\n💰 ACCOUNT:', '\n📅 SPORTS EVENTS:', '\n📊 REPORTS:', '\n🔧 ADMIN:', '\n🔮 PREDICTIONS:', '0', '0. Back to Main Menu', '1', '2', '2. Deposit Funds', '2. Place Single Bet', '2. Roulette', '2. Sports Betting', '2. Update Event Odds', '3', '3. Blackjack', '3. Casino Games', '3. Withdraw Funds', '4', '4. View My Bets', '5', '6', '6. View Statistics', '9', '9. Admin Panel', 'ACCOUNT MANAGEMENT', 'ADMIN PANEL', 'CASINO GAMES', 'PREDICTION MARKETS', 'SPORTS BETTING', 'username', '❌ Invalid choice']

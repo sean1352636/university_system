@@ -12,7 +12,7 @@ from unittest.mock import Mock, MagicMock, patch, call
 class TestEmailIntegration:
     """Test email integration functions"""
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_email_as_system')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_email_as_system')
     def test_send_email_unified_simple(self, mock_send):
         """Test simple email sending"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_email_unified
@@ -35,7 +35,7 @@ class TestEmailIntegration:
             attachments=None
         )
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_email_as_system')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_email_as_system')
     def test_send_email_unified_with_cc_bcc(self, mock_send):
         """Test email with CC and BCC"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_email_unified
@@ -54,7 +54,7 @@ class TestEmailIntegration:
         assert mock_send.call_args.kwargs['cc'] == ['cc@example.com']
         assert mock_send.call_args.kwargs['bcc'] == ['bcc@example.com']
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_email_as_system')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_email_as_system')
     def test_send_email_unified_with_attachments(self, mock_send):
         """Test email with attachments"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_email_unified
@@ -71,7 +71,7 @@ class TestEmailIntegration:
         assert result is True
         assert mock_send.call_args.kwargs['attachments'] == ['/path/to/file.pdf']
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_template_email')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_template_email')
     def test_send_email_unified_with_template(self, mock_template):
         """Test email with template"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_email_unified
@@ -96,7 +96,7 @@ class TestEmailIntegration:
             attachments=None
         )
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_email')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_email')
     def test_send_email_unified_user_sender(self, mock_send):
         """Test email with user sender type"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_email_unified
@@ -113,7 +113,7 @@ class TestEmailIntegration:
         assert result is True
         mock_send.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_email_as_system')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_email_as_system')
     def test_send_email_unified_error_fallback(self, mock_send, capsys):
         """Test email error fallback to console"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_email_unified
@@ -131,7 +131,7 @@ class TestEmailIntegration:
         assert "[EMAIL FALLBACK]" in captured.out
         assert "test@example.com" in captured.out
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_bulk')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_bulk')
     def test_send_bulk_email_unified(self, mock_bulk):
         """Test bulk email sending"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_bulk_email_unified
@@ -142,7 +142,7 @@ class TestEmailIntegration:
         assert result == {'sent': 2, 'failed': 0}
         mock_bulk.assert_called_once_with(recipients, 'template_name', None)
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_bulk')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_bulk')
     def test_send_bulk_email_with_vars(self, mock_bulk):
         """Test bulk email with template vars"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_bulk_email_unified
@@ -158,7 +158,7 @@ class TestEmailIntegration:
 
         assert result == {'sent': 2, 'failed': 0}
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_bulk')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_bulk')
     def test_send_bulk_email_error(self, mock_bulk):
         """Test bulk email error handling"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_bulk_email_unified
@@ -170,7 +170,7 @@ class TestEmailIntegration:
 
         assert result == {'sent': 0, 'failed': 2}
 
-    @patch('university_system.modules.shared.utils.communication_integration.queue_email')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.queue_email')
     def test_queue_email_unified(self, mock_queue):
         """Test queueing email"""
         from education_system.university_system.modules.shared.utils.communication_integration import queue_email_unified
@@ -184,7 +184,7 @@ class TestEmailIntegration:
         assert result is True
         mock_queue.assert_called_once_with('test@example.com', 'Subject', 'Body')
 
-    @patch('university_system.modules.shared.utils.communication_integration.queue_email')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.queue_email')
     def test_queue_email_error(self, mock_queue):
         """Test queue email error handling"""
         from education_system.university_system.modules.shared.utils.communication_integration import queue_email_unified
@@ -199,7 +199,7 @@ class TestEmailIntegration:
 class TestSMSIntegration:
     """Test SMS integration functions"""
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_sms')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_sms')
     def test_send_sms_unified_simple(self, mock_send):
         """Test simple SMS sending"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_sms_unified
@@ -216,7 +216,7 @@ class TestSMSIntegration:
             related_to=None
         )
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_sms')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_sms')
     def test_send_sms_unified_with_metadata(self, mock_send):
         """Test SMS with student_id and related_to"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_sms_unified
@@ -238,7 +238,7 @@ class TestSMSIntegration:
             related_to='calendar'
         )
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_sms')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_sms')
     def test_send_sms_unified_error_fallback(self, mock_send, capsys):
         """Test SMS error fallback to console"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_sms_unified
@@ -252,7 +252,7 @@ class TestSMSIntegration:
         assert "[SMS FALLBACK]" in captured.out
         assert "+447123456789" in captured.out
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_bulk_sms')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_bulk_sms')
     def test_send_bulk_sms_unified(self, mock_bulk):
         """Test bulk SMS sending"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_bulk_sms_unified
@@ -270,7 +270,7 @@ class TestSMSIntegration:
             related_to=None
         )
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_bulk_sms')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_bulk_sms')
     def test_send_bulk_sms_with_metadata(self, mock_bulk):
         """Test bulk SMS with metadata"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_bulk_sms_unified
@@ -288,7 +288,7 @@ class TestSMSIntegration:
 
         assert result == {'sent': 2, 'failed': 0}
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_bulk_sms')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_bulk_sms')
     def test_send_bulk_sms_error(self, mock_bulk):
         """Test bulk SMS error handling"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_bulk_sms_unified
@@ -304,7 +304,7 @@ class TestSMSIntegration:
 class TestLibraryNotifications:
     """Test library notification helper"""
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_email_unified')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_email_unified')
     def test_library_notification_due_soon_email(self, mock_email):
         """Test library due soon notification via email"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_library_notification
@@ -325,7 +325,7 @@ class TestLibraryNotifications:
         call_args = mock_email.call_args
         assert 'due on 2025-01-15' in call_args[0][2]
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_sms_unified')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_sms_unified')
     def test_library_notification_due_soon_sms(self, mock_sms):
         """Test library due soon notification via SMS"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_library_notification
@@ -346,7 +346,7 @@ class TestLibraryNotifications:
         call_args = mock_sms.call_args
         assert '2025-01-15' in call_args[0][1]
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_email_unified')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_email_unified')
     def test_library_notification_overdue(self, mock_email):
         """Test library overdue notification"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_library_notification
@@ -365,7 +365,7 @@ class TestLibraryNotifications:
         call_args = mock_email.call_args
         assert '5 days overdue' in call_args[0][2]
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_email_unified')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_email_unified')
     def test_library_notification_reservation_ready(self, mock_email):
         """Test library reservation ready notification"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_library_notification
@@ -383,7 +383,7 @@ class TestLibraryNotifications:
         call_args = mock_email.call_args
         assert 'ready for pickup' in call_args[0][2]
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_email_unified')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_email_unified')
     def test_library_notification_checkout(self, mock_email):
         """Test library checkout notification"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_library_notification
@@ -432,7 +432,7 @@ class TestLibraryNotifications:
 class TestCalendarReminder:
     """Test calendar reminder helper"""
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_email_unified')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_email_unified')
     def test_calendar_reminder_email(self, mock_email):
         """Test calendar reminder via email"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_calendar_reminder
@@ -455,7 +455,7 @@ class TestCalendarReminder:
         assert '2025-01-20' in call_args[0][2]
         assert 'Room 101' in call_args[0][2]
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_sms_unified')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_sms_unified')
     def test_calendar_reminder_sms(self, mock_sms):
         """Test calendar reminder via SMS"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_calendar_reminder
@@ -477,7 +477,7 @@ class TestCalendarReminder:
         assert 'Final Exam' in call_args[0][1]
         assert 'Room 101' in call_args[0][1]
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_email_unified')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_email_unified')
     def test_calendar_reminder_without_location(self, mock_email):
         """Test calendar reminder without location"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_calendar_reminder
@@ -514,7 +514,7 @@ class TestCalendarReminder:
 class TestRestaurantNotifications:
     """Test restaurant notification helper"""
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_email_unified')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_email_unified')
     def test_restaurant_order_confirmation(self, mock_email):
         """Test restaurant order confirmation"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_restaurant_notification
@@ -534,7 +534,7 @@ class TestRestaurantNotifications:
         assert 'ORD123' in call_args[0][1]
         assert '25.50' in call_args[0][2]
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_email_unified')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_email_unified')
     def test_restaurant_reservation_confirmation(self, mock_email):
         """Test restaurant reservation confirmation"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_restaurant_notification
@@ -558,7 +558,7 @@ class TestRestaurantNotifications:
         assert 'RES456' in call_args[0][1]
         assert '2025-01-20' in call_args[0][2]
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_email_unified')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_email_unified')
     def test_restaurant_loyalty_update(self, mock_email):
         """Test restaurant loyalty update"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_restaurant_notification
@@ -604,7 +604,7 @@ class TestRestaurantNotifications:
 class TestMigrationHelpers:
     """Test migration helper functions"""
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_email_unified')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_email_unified')
     def test_migrate_standalone_email(self, mock_email):
         """Test migrating standalone email function"""
         from education_system.university_system.modules.shared.utils.communication_integration import migrate_standalone_email
@@ -625,7 +625,7 @@ class TestMigrationHelpers:
             'Body'
         )
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_email_unified')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_email_unified')
     def test_migrate_standalone_email_with_kwargs(self, mock_email):
         """Test migrating standalone email with kwargs"""
         from education_system.university_system.modules.shared.utils.communication_integration import migrate_standalone_email
@@ -643,7 +643,7 @@ class TestMigrationHelpers:
         assert result is True
         assert mock_email.call_args.kwargs['cc'] == ['cc@example.com']
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_sms_unified')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_sms_unified')
     def test_migrate_standalone_sms(self, mock_sms):
         """Test migrating standalone SMS function"""
         from education_system.university_system.modules.shared.utils.communication_integration import migrate_standalone_sms
@@ -662,7 +662,7 @@ class TestMigrationHelpers:
             'Test message'
         )
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_sms_unified')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_sms_unified')
     def test_migrate_standalone_sms_with_kwargs(self, mock_sms):
         """Test migrating standalone SMS with kwargs"""
         from education_system.university_system.modules.shared.utils.communication_integration import migrate_standalone_sms
@@ -683,7 +683,7 @@ class TestMigrationHelpers:
 class TestEdgeCases:
     """Test edge cases and error scenarios"""
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_email_as_system')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_email_as_system')
     def test_send_email_with_empty_body(self, mock_send):
         """Test sending email with empty body"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_email_unified
@@ -694,7 +694,7 @@ class TestEdgeCases:
 
         assert result is True
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_sms')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_sms')
     def test_send_sms_with_long_message(self, mock_send):
         """Test sending SMS with long message"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_sms_unified
@@ -706,7 +706,7 @@ class TestEdgeCases:
 
         assert result is True
 
-    @patch('university_system.modules.shared.utils.communication_integration.send_template_email')
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_template_email')
     def test_send_email_with_template_no_vars(self, mock_template):
         """Test template email with no variables"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_email_unified

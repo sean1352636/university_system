@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/college_system/modules/domain/destinations/services/destination_service.py
+# hypothesis_version: 6.151.9
+
+[100, ' WHERE id = ?', ', ', 'No contact made', 'attended', 'by_type', 'c', 'confirmed', 'contact_made', 'course_title', 'destination_type', 'high', 'institution_name', 'intended_destination', 'low', 'max_score', 'medium', 'neet_risk', 'notes', 'reasons', 'risk_level', 'risk_score', 'student_id', 'total', 'unconfirmed', 'unknown']

@@ -222,7 +222,6 @@ class TestCompareByGender:
             finally:
                 conn.rollback()
 
-    @pytest.mark.skipif(True, reason="Requires scipy for t-test")
     def test_perform_statistical_test(self, setup_test_data, capsys):
         """Test statistical significance testing"""
         with get_connection() as conn:

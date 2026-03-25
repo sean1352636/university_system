@@ -481,45 +481,47 @@ def view_user_activity_log(self):
             self.activity_tree.delete(item)
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('''
-            SELECT name FROM sqlite_master
-            WHERE type='table' AND name='ai_activity_log'
-        ''')
-
-        if not cursor.fetchone():
             cursor.execute('''
-                CREATE TABLE IF NOT EXISTS ai_activity_log (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    user_id TEXT,
-                    username TEXT,
-                    action TEXT,
-                    details TEXT
-                )
+                SELECT name FROM sqlite_master
+                WHERE type='table' AND name='ai_activity_log'
             ''')
-            conn.commit()
 
-        user_filter = self.audit_user_var.get()
-        if user_filter == "All Users":
-            cursor.execute('''
-                SELECT datetime(timestamp), username, action, details
-                FROM ai_activity_log
-                ORDER BY timestamp DESC
-                LIMIT 100
-            ''')
-        else:
-            cursor.execute('''
-                SELECT datetime(timestamp), username, action, details
-                FROM ai_activity_log
-                WHERE username = ?
-                ORDER BY timestamp DESC
-                LIMIT 100
-            ''', (user_filter,))
+            if not cursor.fetchone():
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS ai_activity_log (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        user_id TEXT,
+                        username TEXT,
+                        action TEXT,
+                        details TEXT
+                    )
+                ''')
+                conn.commit()
 
-        logs = cursor.fetchall()
-        conn.close()
+            user_filter = self.audit_user_var.get()
+            if user_filter == "All Users":
+                cursor.execute('''
+                    SELECT datetime(timestamp), username, action, details
+                    FROM ai_activity_log
+                    ORDER BY timestamp DESC
+                    LIMIT 100
+                ''')
+            else:
+                cursor.execute('''
+                    SELECT datetime(timestamp), username, action, details
+                    FROM ai_activity_log
+                    WHERE username = ?
+                    ORDER BY timestamp DESC
+                    LIMIT 100
+                ''', (user_filter,))
+
+            logs = cursor.fetchall()
+        finally:
+            conn.close()
 
         for log in logs:
             self.activity_tree.insert('', 'end', values=log)

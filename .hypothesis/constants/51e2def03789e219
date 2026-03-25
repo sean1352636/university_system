@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/facility_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' = ?', ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', ', ', '/api/facilities', '/bookings', '/maintenance', 'GET', 'POST', 'PUT', 'assigned_date', 'assigned_to', 'booking_date', 'building_id', 'completion_date', 'cost', 'create', 'description', 'end_time', 'facilities', 'facility_booking', 'facility_bookings', 'facility_name', 'facility_name = ?', 'location_type', 'maintenance_request', 'maintenance_requests', 'notes', 'priority', 'priority = ?', 'purpose', 'reported_by', 'request_type', 'room_id', 'scheduled_date', 'start_time', 'status', 'status = ?', 'sub', 'update', 'user_id', 'user_id = ?', 'view']

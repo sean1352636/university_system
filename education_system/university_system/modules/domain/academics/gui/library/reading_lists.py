@@ -114,7 +114,7 @@ except ImportError:
 _AUDIT_LOG_COLUMNS_CACHE: Optional[List[str]] = None
 _STUDENT_COLUMNS_CACHE: Optional[List[str]] = None
 
-from .base import LibraryGUI
+from education_system.university_system.modules.domain.academics.gui.library.base import LibraryGUI
 
 def show_reading_lists(self):
     """Show reading lists interface"""
@@ -237,6 +237,125 @@ def load_reading_lists(self):
 def refresh_reading_lists(self):
     """Refresh reading lists"""
     self.load_reading_lists()
+
+
+def import_reading_list_dialog(self):
+    """Import a reading list from a CSV file (columns: book_id or isbn or title)"""
+    from tkinter import filedialog
+    import csv
+
+    file_path = filedialog.askopenfilename(
+        title="Import Reading List",
+        filetypes=[("CSV files", "*.csv"), ("Text files", "*.txt"), ("All files", "*.*")]
+    )
+    if not file_path:
+        return
+
+    try:
+        # Read CSV
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            reader = csv.reader(f)
+            header = next(reader, None)
+            if not header:
+                messagebox.showerror("Error", "CSV file is empty.")
+                return
+
+            # Determine column mapping
+            header_lower = [h.strip().lower() for h in header]
+            book_col = None
+            for i, h in enumerate(header_lower):
+                if h in ('book_id', 'bookid', 'id', 'isbn', 'title'):
+                    book_col = i
+                    break
+
+            if book_col is None:
+                book_col = 0  # Default to first column
+
+            entries = []
+            for row in reader:
+                if row and len(row) > book_col and row[book_col].strip():
+                    entries.append(row[book_col].strip())
+
+        if not entries:
+            messagebox.showinfo("Import", "No entries found in the file.")
+            return
+
+        # Ask for list name
+        dialog = tk.Toplevel(self.master)
+        dialog.title("Import Reading List")
+        dialog.geometry("400x200")
+        dialog.transient(self.master)
+        dialog.grab_set()
+
+        ttk.Label(dialog, text=f"Found {len(entries)} entries to import",
+                 font=('Arial', 11, 'bold')).pack(pady=(15, 5))
+
+        ttk.Label(dialog, text="Reading List Name:").pack(anchor='w', padx=20)
+        name_var = tk.StringVar(value=os.path.splitext(os.path.basename(file_path))[0])
+        ttk.Entry(dialog, textvariable=name_var, width=40).pack(padx=20, pady=5)
+
+        def do_import():
+            list_name = name_var.get().strip()
+            if not list_name:
+                messagebox.showerror("Error", "Please enter a list name.", parent=dialog)
+                return
+
+            try:
+                conn = get_db_connection()
+                if not conn:
+                    return
+                cursor = conn.cursor()
+
+                user_id = get_current_user_id() if ORIGINAL_LIBRARY_AVAILABLE else 'system'
+                now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                # Create the list
+                cursor.execute('''
+                    INSERT INTO reading_lists (name, description, creator_id, created_date, is_public, category)
+                    VALUES (?, ?, ?, ?, 1, 'Imported')
+                ''', (list_name, f"Imported from {os.path.basename(file_path)}", user_id, now))
+                list_id = cursor.lastrowid
+
+                # Add books — match by book_id, isbn, or title
+                added = 0
+                not_found = 0
+                for entry in entries:
+                    cursor.execute(
+                        "SELECT book_id FROM books WHERE book_id = ? OR isbn = ? OR title LIKE ?",
+                        (entry, entry, f"%{entry}%")
+                    )
+                    book_row = cursor.fetchone()
+                    if book_row:
+                        cursor.execute('''
+                            INSERT OR IGNORE INTO reading_list_items
+                            (list_id, book_id, added_date, added_by, order_index)
+                            VALUES (?, ?, ?, ?, ?)
+                        ''', (list_id, book_row[0], now, user_id, added))
+                        added += 1
+                    else:
+                        not_found += 1
+
+                conn.commit()
+                conn.close()
+
+                dialog.destroy()
+                self.load_reading_lists()
+                messagebox.showinfo("Import Complete",
+                    f"Reading list '{list_name}' created.\n\n"
+                    f"Books matched and added: {added}\n"
+                    f"Entries not found: {not_found}")
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Import failed: {e}", parent=dialog)
+
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(pady=15)
+        ttk.Button(btn_frame, text="Import", command=do_import).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to read file: {e}")
+
 
 def create_reading_list_dialog(self):
     """Create new reading list dialog"""

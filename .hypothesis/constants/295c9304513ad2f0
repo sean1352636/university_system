@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/gui/parking_management/exports.py
+# hypothesis_version: 6.151.9
+
+['*.*', '*.db', '.db', '350x300', '400x300', 'All files', 'Arial', 'CSV', 'Cancel', 'Close', 'Database files', 'Error', 'Excel', 'Export', 'Export Data', 'Export Options', 'Export Permits (CSV)', 'Export Type:', 'Format:', 'PDF', 'Parking Lots Only', 'Permits Only', 'Quick Export:', 'Save Database Backup', 'Success', 'Text', 'Users Only', 'Vehicles Only', 'Violations Only', 'all', 'bold', 'csv', 'excel', 'horizontal', 'lots', 'pdf', 'permits', 'txt', 'users', 'vehicles', 'violations', 'w']

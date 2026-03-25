@@ -4,8 +4,8 @@ from pathlib import Path
 import shutil
 from typing import Any, Optional, Tuple, List, Dict
 from education_system.university_system.infrastructure.database.db import sqlite3
-from .exceptions import DatabaseError, ExportError
-from .utils import convert_to_user_error
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.exceptions import DatabaseError, ExportError
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.utils import convert_to_user_error
 
 gui_logger = logging.getLogger(__name__)
 
@@ -290,16 +290,27 @@ def init_calendar_database(db_path: Optional[str] = None) -> DatabaseManager:
                 )
             """)
 
-            # Event attendance table
+            # Unified event registrations table (replaces event_attendance)
             conn.execute("""
-                CREATE TABLE IF NOT EXISTS event_attendance (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    event_id INTEGER NOT NULL,
-                    student_id INTEGER NOT NULL,
-                    attended BOOLEAN DEFAULT 0,
-                    attendance_time TEXT,
-                    FOREIGN KEY (event_id) REFERENCES calendar_events(id) ON DELETE CASCADE,
-                    UNIQUE(event_id, student_id)
+                CREATE TABLE IF NOT EXISTS unified_event_registrations (
+                    registration_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event_id INTEGER,
+                    user_id TEXT,
+                    user_type TEXT DEFAULT 'student',
+                    registration_date TEXT,
+                    attendance_status TEXT,
+                    checked_in_at TEXT,
+                    check_out_time TEXT,
+                    payment_status TEXT,
+                    payment_amount REAL DEFAULT 0.0,
+                    payment_method TEXT,
+                    is_waitlisted BOOLEAN DEFAULT 0,
+                    num_guests INTEGER DEFAULT 0,
+                    feedback_rating REAL,
+                    feedback_comment TEXT,
+                    qr_code TEXT,
+                    cpd_credits REAL DEFAULT 0.0,
+                    FOREIGN KEY (event_id) REFERENCES calendar_events(id) ON DELETE CASCADE
                 )
             """)
 

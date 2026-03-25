@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/academic_calendar/dialogs_recurring.py
+# hypothesis_version: 6.151.9
+
+[1.0, 100, 150, 365, 500, 650, 700, '#0', '%Y-%m-%d', '1', '1.0', '10', '550x750', '900x700', '<Configure>', '=', 'Academic', 'Administrative', 'Arial', 'Count', 'Deadline', 'End', 'End Date', 'Event Name', 'Holiday', 'N/A', 'Occurrences', 'Pattern', 'Social', 'Sports', 'Start', 'Start Date', 'Trip', 'Unknown', 'all', 'bold', 'common.cancel', 'common.close', 'common.error', 'common.success', 'count', 'daily', 'date', 'date_start', 'dateutil available', 'description', 'disabled', 'end', 'end_date', 'event_type', 'ew', 'frequency', 'green', 'id', 'interval', 'is_recurring', 'monthly', 'name', 'normal', 'ns', 'nsew', 'nw', 'occurrence_count', 'orange', 'recurrence_end_date', 'recurrence_pattern', 'success', 'tags', 'text', 'tree headings', 'values', 'weekly', 'yearly']

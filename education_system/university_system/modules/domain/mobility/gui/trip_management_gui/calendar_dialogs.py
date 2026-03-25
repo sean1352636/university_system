@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from tkinter.simpledialog import Dialog
 
-from ._imports import safe_db_operation
+from education_system.university_system.modules.domain.mobility.gui.trip_management_gui._imports import safe_db_operation
 
 
 class CreateCalendarEventDialog(Dialog):

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/main/features/student_affairs_gui.py
+# hypothesis_version: 6.151.9
+
+[800, 1200, '-c', '1200x800', '1400x900', 'auth', 'current_user']

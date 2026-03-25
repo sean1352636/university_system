@@ -3,6 +3,7 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import AppraisalError, ValidationError
 from education_system.college_system.infrastructure.database.db import connect
+from education_system.college_system.core.sql_safety import validate_identifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,10 +26,20 @@ class AppraisalService:
             raise ValidationError("academic_year is required.")
         conn = self._conn()
         try:
+            # Build INSERT with only non-None values so DB defaults apply
+            fields = {k: v for k, v in {
+                'staff_id': kwargs.get('staff_id'),
+                'appraiser_id': kwargs.get('appraiser_id'),
+                'academic_year': kwargs.get('academic_year'),
+                'appraisal_type': kwargs.get('appraisal_type'),
+                'overall_rating': kwargs.get('overall_rating'),
+                'status': kwargs.get('status'),
+            }.items() if v is not None}
+            cols = ", ".join(fields.keys())
+            placeholders = ", ".join("?" for _ in fields)
             conn.execute(
-                """INSERT INTO appraisals (staff_id, appraiser_id, academic_year, appraisal_type, overall_rating, status)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
-                (kwargs.get('staff_id'), kwargs.get('appraiser_id'), kwargs.get('academic_year'), kwargs.get('appraisal_type'), kwargs.get('overall_rating'), kwargs.get('status'),),
+                f"INSERT INTO appraisals ({cols}) VALUES ({placeholders})",
+                list(fields.values()),
             )
             conn.commit()
             row = conn.execute(
@@ -60,7 +71,7 @@ class AppraisalService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -78,7 +89,7 @@ class AppraisalService:
         if not updates:
             raise ValidationError("No valid fields to update.")
         updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [pk]
         conn = self._conn()
         try:
@@ -116,7 +127,7 @@ class AppraisalService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         conn = self._conn()
         try:

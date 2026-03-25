@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/special_features/accessibility.py
+# hypothesis_version: 6.151.9
+
+[275, 300, 500, 550, '#1a1a2e', '#27ae60', '#2d5a27', '#333333', '#3498db', '#555555', '#7f8c8d', '#9b59b6', '#e74c3c', '#e91e63', '#ecf0f1', '#ffffff', '+', '+ Companion', ',', '-', '.', '400x500', '500x400', 'A1', 'A10', 'A11', 'A12', 'A2', 'A3', 'A3, A10, H3, H10', 'ABCDEFGH', 'Card.TFrame', 'H1', 'H10', 'H11', 'H12', 'H2', 'H3', 'H5', 'H5, H6, H7, H8', 'H6', 'H7', 'H8', 'Helvetica', 'Main.TFrame', 'Primary.TButton', 'Regular', 'Secondary.TButton', 'Subtitle.TLabel', 'Success.TButton', '_', 'bold', 'both', 'cinema.common.error', 'cinema.labels.screen', 'left', 'w', 'white', 'x', '♥', '♥ Couple', '♿', '♿ Wheelchair']

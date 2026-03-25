@@ -28,7 +28,7 @@ class TestLogAuditAction:
         """Test successful audit action logging"""
         conn, cursor = mock_db_connection
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
             audit.log_audit_action(
                 user_id='USER001',
                 action='CREATE',
@@ -56,7 +56,7 @@ class TestLogAuditAction:
         """Test audit logging with None values"""
         conn, cursor = mock_db_connection
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
             audit.log_audit_action(
                 user_id='USER001',
                 action='DELETE',
@@ -72,7 +72,7 @@ class TestLogAuditAction:
 
     def test_log_audit_action_no_connection(self):
         """Test audit logging when database connection fails"""
-        with mock.patch('university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=None):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=None):
             # Should not raise exception
             audit.log_audit_action(
                 user_id='USER001',
@@ -85,8 +85,8 @@ class TestLogAuditAction:
         conn, cursor = mock_db_connection
         cursor.execute.side_effect = sqlite3.Error("Database error")
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
-            with mock.patch('university_system.modules.core.services.restaurant_misc.audit.logging.error') as mock_log:
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.audit.logging.error') as mock_log:
                 audit.log_audit_action(
                     user_id='USER001',
                     action='CREATE'
@@ -104,7 +104,7 @@ class TestViewUserActivityLogs:
             ('AUDIT002', 'USER002', 'UPDATE', 'orders', 'ORD001', None, None, '2025-01-15 11:00:00', None, None)
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', return_value='1'):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                     audit.view_user_activity_logs()
@@ -124,7 +124,7 @@ class TestViewUserActivityLogs:
             ('AUDIT001', 'USER001', 'CREATE', 'menu_items', 'ITEM001', None, None, '2025-01-15 10:00:00', None, None)
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', side_effect=['2', 'USER001']):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                     audit.view_user_activity_logs()
@@ -140,7 +140,7 @@ class TestViewUserActivityLogs:
         conn, cursor = mock_db_connection
         cursor.fetchall.return_value = []
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', side_effect=['3', 'CREATE']):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                     audit.view_user_activity_logs()
@@ -154,7 +154,7 @@ class TestViewUserActivityLogs:
         cursor.fetchall.return_value = []
         today = datetime.now().strftime('%Y-%m-%d')
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', return_value='4'):
                 with mock.patch('sys.stdout', new=StringIO()):
                     audit.view_user_activity_logs()
@@ -167,10 +167,10 @@ class TestViewUserActivityLogs:
         conn, cursor = mock_db_connection
         cursor.execute.side_effect = Exception("Database error")
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', return_value='1'):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
-                    with mock.patch('university_system.modules.core.services.restaurant_misc.audit.logging.error'):
+                    with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.audit.logging.error'):
                         audit.view_user_activity_logs()
 
                         output = fake_out.getvalue()
@@ -187,7 +187,7 @@ class TestViewAuditLogs:
             ('AUDIT002', 'USER002', 'UPDATE', 'orders', 'ORD001', None, None, '2025-01-15 11:00:00', '192.168.1.2', 'Chrome')
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', return_value='1'):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                     audit.view_audit_logs()
@@ -204,7 +204,7 @@ class TestViewAuditLogs:
         conn, cursor = mock_db_connection
         cursor.fetchall.return_value = []
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', side_effect=['2', 'USER001']):
                 with mock.patch('sys.stdout', new=StringIO()):
                     audit.view_audit_logs()
@@ -217,7 +217,7 @@ class TestViewAuditLogs:
         conn, cursor = mock_db_connection
         cursor.fetchall.return_value = []
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', side_effect=['3', 'DELETE']):
                 with mock.patch('sys.stdout', new=StringIO()):
                     audit.view_audit_logs()
@@ -229,7 +229,7 @@ class TestViewAuditLogs:
         conn, cursor = mock_db_connection
         cursor.fetchall.return_value = []
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', side_effect=['4', 'menu_items']):
                 with mock.patch('sys.stdout', new=StringIO()):
                     audit.view_audit_logs()
@@ -242,7 +242,7 @@ class TestViewAuditLogs:
         cursor.fetchall.return_value = []
         today = datetime.now().strftime('%Y-%m-%d')
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', return_value='5'):
                 with mock.patch('sys.stdout', new=StringIO()):
                     audit.view_audit_logs()
@@ -255,7 +255,7 @@ class TestViewAuditLogs:
         conn, cursor = mock_db_connection
         cursor.fetchall.return_value = []
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', side_effect=['6', '2025-01-01', '2025-01-31']):
                 with mock.patch('sys.stdout', new=StringIO()):
                     audit.view_audit_logs()
@@ -268,7 +268,7 @@ class TestViewAuditLogs:
         conn, cursor = mock_db_connection
         cursor.fetchall.return_value = []
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', return_value='1'):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                     audit.view_audit_logs()
@@ -281,10 +281,10 @@ class TestViewAuditLogs:
         conn, cursor = mock_db_connection
         cursor.fetchall.side_effect = Exception("Test error")
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.audit.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', return_value='1'):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
-                    with mock.patch('university_system.modules.core.services.restaurant_misc.audit.logging.error') as mock_log:
+                    with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.audit.logging.error') as mock_log:
                         audit.view_audit_logs()
 
                         output = fake_out.getvalue()

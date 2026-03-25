@@ -376,7 +376,7 @@ def _display_schedule_view(user_id) -> None:
 
 
 def _display_documents_view(user_id) -> None:
-    """Display staff documents from staff_documents table."""
+    """Display staff documents from unified documents table."""
     print("\n" + "=" * 60)
     print(_t('staff_hr.documents.title', default='MY DOCUMENTS'))
     print("=" * 60)
@@ -386,9 +386,9 @@ def _display_documents_view(user_id) -> None:
             docs = conn.execute('''
                 SELECT document_name, document_type, status,
                        issue_date, expiry_date, notes
-                FROM staff_documents
-                WHERE user_id = ?
-                ORDER BY created_at DESC
+                FROM documents
+                WHERE source_type = 'staff' AND owner_id = ? AND owner_type = 'staff'
+                ORDER BY upload_date DESC
             ''', (str(user_id),)).fetchall()
 
             if docs:

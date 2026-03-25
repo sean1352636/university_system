@@ -6,39 +6,39 @@ and provides the main() function that starts the application.
 """
 
 # Import from modular components
-from .imports import (
+from education_system.university_system.modules.shared.cli.imports import (
     logger, init_i18n, get_auth, set_auth, UserAuth,
     set_global_auth, cleanup_database_connections
 )
 
 # Import managers
-from .database_manager import (
+from education_system.university_system.modules.shared.cli.database_manager import (
     silent_integrity_check, fix_parent_portal_database,
     init_all_databases, init_auth_for_modules
 )
 
-from .auth_manager import (
+from education_system.university_system.modules.shared.cli.auth_manager import (
     initialize_security_modules, ensure_user_in_communication_system,
     ensure_default_users_exist_once
 )
 
-from .menu_router import display_menu
+from education_system.university_system.modules.shared.cli.menu_router import display_menu
 
-from .chatbot_integration import setup_chatbot_permissions
+from education_system.university_system.modules.shared.cli.chatbot_integration import setup_chatbot_permissions
 
-from .ai_tools_integration import (
+from education_system.university_system.modules.shared.cli.ai_tools_integration import (
     integrate_ai_detector_with_main,
     integrate_plagiarism_checker_with_main
 )
 
-from .integration_manager import ensure_communication_integration_on_startup
+from education_system.university_system.modules.shared.cli.integration_manager import ensure_communication_integration_on_startup
 
-from .utils import cleanup_connections
+from education_system.university_system.modules.shared.cli.utils import cleanup_connections
 
 import getpass
 
 # Import integrations
-from .imports import (
+from education_system.university_system.modules.shared.cli.imports import (
     init_assignment_system, add_assignment_permissions,
     init_trip_db, setup_trip_permissions, set_trip_auth, integrate_trip_management_with_main,
     init_housing_db, set_accommodation_auth,
@@ -193,6 +193,11 @@ def login_prompt(auth) -> bool:
     except Exception:
         pass
 
+    # Fall back to role-based permissions from constants if DB lookup returned nothing
+    if not permissions:
+        from education_system.university_system.infrastructure.auth.core_utils.constants import PERMISSIONS
+        permissions = list(PERMISSIONS.get(role, []))
+
     # Build current_user in university format
     user_dict = {
         "id": user_info["user_id"],
@@ -263,6 +268,11 @@ def main(user_info=None, role=None, shared_auth=None):
             )
         except Exception:
             pass
+
+        # Fall back to role-based permissions from constants if DB lookup returned nothing
+        if not permissions:
+            from education_system.university_system.infrastructure.auth.core_utils.constants import PERMISSIONS
+            permissions = list(PERMISSIONS.get(role, []))
 
         auth.current_user = {
             "id": user_info.get("user_id"),

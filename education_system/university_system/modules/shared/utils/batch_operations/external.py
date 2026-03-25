@@ -178,10 +178,12 @@ class ExternalMixin:
 
         # Get data to export
         conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM students")
-        students = cursor.fetchall()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM students")
+            students = cursor.fetchall()
+        finally:
+            conn.close()
 
         print(_t("batch_ops.external.exporting_records", count=len(students)))
 

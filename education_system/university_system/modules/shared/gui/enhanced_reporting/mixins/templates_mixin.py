@@ -1,6 +1,6 @@
 """Template management methods mixin for the enhanced reporting GUI."""
 
-from ..standalone.constants import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.standalone.constants import (
     tk, ttk, filedialog, messagebox, simpledialog,
     ScrolledText,
     os, json, logging, datetime,
@@ -138,14 +138,14 @@ Sections ({len(template_data.get('sections', []))} total):
 
     def create_template_dialog(self):
         """Open template creation dialog"""
-        from ..core import TemplateDialog
+        from education_system.university_system.modules.shared.gui.enhanced_reporting.core import TemplateDialog
         dialog = TemplateDialog(self.root, title="Create New Template")
         if dialog.result:
             self.refresh_data()
 
     def edit_template_dialog(self):
         """Open template editing dialog"""
-        from ..core import TemplateDialog
+        from education_system.university_system.modules.shared.gui.enhanced_reporting.core import TemplateDialog
         selection = self.template_listbox.curselection()
         if not selection or not hasattr(self, 'templates_data'):
             messagebox.showwarning("No Selection", "Please select a template to edit.")

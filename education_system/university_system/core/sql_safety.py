@@ -30,6 +30,12 @@ from functools import lru_cache
 
 logger = logging.getLogger(__name__)
 
+
+def escape_like(search: str) -> str:
+    """Escape special LIKE wildcard characters in a search term."""
+    return search.replace("%", "\\%").replace("_", "\\_")
+
+
 class SQLIdentifierError(ValueError):
     """Raised when an invalid SQL identifier is detected."""
     pass
@@ -125,8 +131,8 @@ KNOWN_TABLES: FrozenSet[str] = frozenset({
     'clubs',
     'student_clubs',
     'club_members',
-    'events',
-    'event_registrations',
+    'unified_events',
+    'unified_event_registrations',
     'mentorship',
     'mentorship_relationships',
     'alumni',
@@ -377,6 +383,7 @@ KNOWN_TABLES: FrozenSet[str] = frozenset({
     # Scheduling and portfolio tables
     'module_schedule',
     'discovery_events',
+    'campus_events',
     'project_milestones',
     'portfolios',
     'portfolio_items',
@@ -404,7 +411,7 @@ KNOWN_TABLES: FrozenSet[str] = frozenset({
     'realtime_notifications',
 
     # Campus and accommodation tables
-    'campus_event_registrations',
+    # campus_event_registrations merged into unified_event_registrations
     'medical_accommodations',
     'accommodation_notes',
     'disability_records',
@@ -592,7 +599,7 @@ def validate_column_name(
             validate_table_name(table_name, conn=conn)
 
             # Get actual columns from table
-            cursor = conn.execute(f"PRAGMA table_info([{table_name}])")
+            cursor = conn.execute(f"PRAGMA table_info([{table_name}])")  # nosec B608 - table_name validated above
             actual_columns = {row[1].lower() for row in cursor.fetchall()}
 
             if column_lower not in actual_columns:
@@ -687,7 +694,7 @@ def get_valid_columns(
     validate_table_name(table_name, conn=conn)
 
     try:
-        cursor = conn.execute(f"PRAGMA table_info([{table_name}])")
+        cursor = conn.execute(f"PRAGMA table_info([{table_name}])")  # nosec B608 - table_name validated by validate_table_name above
         return {row[1] for row in cursor.fetchall()}
     except sqlite3.Error as e:
         logger.error(f"Error getting columns for table {table_name}: {e}")
@@ -828,7 +835,7 @@ def validate_column_definition(
             validate_table_name(table_name, conn=conn)
 
             # Check existing columns
-            cursor = conn.execute(f"PRAGMA table_info([{table_name}])")
+            cursor = conn.execute(f"PRAGMA table_info([{table_name}])")  # nosec B608 - table_name validated above
             existing_columns = {row[1].lower() for row in cursor.fetchall()}
 
             if column_name.lower() in existing_columns:
@@ -869,7 +876,7 @@ def safe_alter_table_add_column(
     validated_table = validate_table_name(table_name, conn=conn)
 
     # Check if column already exists
-    cursor = conn.execute(f"PRAGMA table_info([{validated_table}])")
+    cursor = conn.execute(f"PRAGMA table_info([{validated_table}])")  # nosec B608 - validated by validate_table_name
     existing_columns = {row[1].lower() for row in cursor.fetchall()}
 
     if column_name.lower() in existing_columns:
@@ -884,7 +891,7 @@ def safe_alter_table_add_column(
     col_def = validate_column_definition(column_name, column_type)
 
     # Execute the ALTER TABLE statement
-    sql = f"ALTER TABLE [{validated_table}] ADD COLUMN [{col_def.name}] {col_def.type_def}"
+    sql = f"ALTER TABLE [{validated_table}] ADD COLUMN [{col_def.name}] {col_def.type_def}"  # nosec B608 - all identifiers validated
     logger.info(f"Adding column: {sql}")
     conn.execute(sql)
 
@@ -911,7 +918,7 @@ def get_table_schema(
     validated_table = validate_table_name(table_name, conn=conn)
 
     try:
-        cursor = conn.execute(f"PRAGMA table_info([{validated_table}])")
+        cursor = conn.execute(f"PRAGMA table_info([{validated_table}])")  # nosec B608 - validated by validate_table_name
         columns = []
         column_names = set()
 
@@ -999,6 +1006,7 @@ def build_update_set(data: dict, allowed_fields: list) -> tuple:
 
 
 __all__ = [
+    "escape_like",
     "SQLIdentifierError",
     "KNOWN_TABLES",
     "KNOWN_COLUMNS",

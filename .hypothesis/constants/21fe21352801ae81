@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/staff_hr/services/managers/comm_hub_manager.py
+# hypothesis_version: 6.151.9
+
+[' = ?', ' AND department = ?', ' AND forum_id = ?', ' AND forum_type = ?', ' AND status = ?', ' ORDER BY name', ' WHERE forum_id = ?', ' WHERE thread_id = ?', ', ', 'action', 'author_id', 'closed', 'column', 'comm_hub_forum', 'comm_hub_poll', 'comm_hub_poll_vote', 'comm_hub_reply', 'comm_hub_thread', 'content', 'create', 'created_by', 'delete', 'description', 'forum_id', 'forum_type', 'global', 'is_archived', 'is_locked', 'is_pinned', 'mark_solution', 'member', 'message_id', 'message_type', 'name', 'option_count', 'option_id', 'options', 'pin_id', 'pinned_by', 'poll_id', 'poll_type', 'replies', 'reply_id', 'role', 'single_choice', 'thread_id', 'threads', 'title', 'total_votes', 'update', 'updated_at = ?', 'updated_fields', 'user_id', 'visibility', 'vote_count', 'vote_id']

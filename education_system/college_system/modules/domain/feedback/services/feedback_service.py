@@ -3,6 +3,7 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import FeedbackError, ValidationError
 from education_system.college_system.infrastructure.database.db import connect
+from education_system.college_system.core.sql_safety import validate_identifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -23,10 +24,22 @@ class FeedbackService:
             raise ValidationError("title is required.")
         conn = self._conn()
         try:
+            # Build INSERT with only non-None values so DB defaults apply
+            fields = {k: v for k, v in {
+                'submitted_by': kwargs.get('submitted_by'),
+                'title': kwargs.get('title'),
+                'description': kwargs.get('description'),
+                'category': kwargs.get('category'),
+                'is_anonymous': kwargs.get('is_anonymous'),
+                'upvote_count': kwargs.get('upvote_count'),
+                'admin_response': kwargs.get('admin_response'),
+                'status': kwargs.get('status'),
+            }.items() if v is not None}
+            cols = ", ".join(fields.keys())
+            placeholders = ", ".join("?" for _ in fields)
             conn.execute(
-                """INSERT INTO feedback_items (submitted_by, title, description, category, is_anonymous, upvote_count, admin_response, status)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                (kwargs.get('submitted_by'), kwargs.get('title'), kwargs.get('description'), kwargs.get('category'), kwargs.get('is_anonymous'), kwargs.get('upvote_count'), kwargs.get('admin_response'), kwargs.get('status'),),
+                f"INSERT INTO feedback_items ({cols}) VALUES ({placeholders})",
+                list(fields.values()),
             )
             conn.commit()
             row = conn.execute(
@@ -58,7 +71,7 @@ class FeedbackService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -76,7 +89,7 @@ class FeedbackService:
         if not updates:
             raise ValidationError("No valid fields to update.")
         updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [pk]
         conn = self._conn()
         try:
@@ -114,7 +127,7 @@ class FeedbackService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         conn = self._conn()
         try:

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/staff_hr/services/managers/__init__.py
+# hypothesis_version: 6.151.9
+
+['AcademicStaffManager', 'AdminToolsManager', 'AssetManager', 'CommHubManager', 'CommitteeManager', 'CommunicationManager', 'ContractManager', 'CoverManager', 'CurriculumManager', 'DirectoryManager', 'EmployeeManager', 'EquipmentManager', 'ExitManager', 'ExpenseManager', 'GrantBudgetManager', 'GrievanceManager', 'IPManager', 'LeaveManager', 'MentoringManager', 'OnboardingManager', 'PayrollManager', 'PeerReviewManager', 'PerformanceManager', 'RecruitmentManager', 'SabbaticalManager', 'TeachingLoadManager', 'TimeManager', 'TrainingManager', 'TravelManager', 'WorkloadManager']

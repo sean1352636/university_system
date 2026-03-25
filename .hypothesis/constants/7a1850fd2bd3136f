@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/services/parking_management/constants.py
+# hypothesis_version: 6.151.9
+
+[1.75, 2.5, 150, 180, 220, 250, 350, 'A', 'Annual', 'B', 'C', 'Commuter Students', 'Compact', 'Daily', 'Faculty/Staff', 'H', 'Handicap Accessible', 'M', 'Metered', 'Monthly', 'Motorcycle', 'R', 'Reserved', 'Resident Students', 'SUV', 'Sedan', 'Semester', 'Temporary', 'Truck', 'V', 'Van', 'Visitor', 'annual_fee', 'hourly_rate', 'name']

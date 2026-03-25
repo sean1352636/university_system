@@ -3,9 +3,9 @@ from education_system.university_system.infrastructure.database.db import sqlite
 from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
 from education_system.university_system.utils.logging.log_config import configure_logging
 
-from .checker import PlagiarismChecker
-from .nlp import download_nltk_data
-from .sample_data import create_sample_documents
+from education_system.university_system.modules.domain.academics.services.plagiarism.checker import PlagiarismChecker
+from education_system.university_system.modules.domain.academics.services.plagiarism.nlp import download_nltk_data
+from education_system.university_system.modules.domain.academics.services.plagiarism.sample_data import create_sample_documents
 
 logger = configure_logging(name=__name__)
 

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/student_dashboard/quick_actions.py
+# hypothesis_version: 6.151.9
+
+['Arial', 'Financial Aid', 'Information', 'Library', 'My Timetable', 'Quick Actions', 'Register for Modules', 'View Exams', 'View Grades', 'bold', 'danger', 'dashboard.info', 'dashboard.library', 'dashboard.timetable', 'dashboard.view_exams', 'exams', 'financial_aid', 'flat', 'grades', 'hand2', 'info', 'library', 'nsew', 'primary', 'register', 'secondary', 'show_financial_aid', 'show_grades', 'success', 'timetable', 'warning', 'white', 'x']

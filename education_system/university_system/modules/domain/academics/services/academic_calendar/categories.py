@@ -3,8 +3,8 @@ import logging
 from datetime import datetime
 from typing import Dict, List, Tuple
 from education_system.university_system.utils.logging.log_config import configure_logging
-from .exceptions import CalendarError, ValidationError, PermissionError
-from .config import ValidationUtils
+from education_system.university_system.modules.domain.academics.services.academic_calendar.exceptions import CalendarError, ValidationError, PermissionError
+from education_system.university_system.modules.domain.academics.services.academic_calendar.config import ValidationUtils
 
 logger = configure_logging(name=__name__)
 
@@ -226,8 +226,8 @@ class CourseManager:
 
             with self.db_manager.transaction():
                 self.db_manager.execute_update(
-                    """INSERT INTO course_events (event_id, course_id, event_sub_type)
-                       VALUES (?, ?, ?)""",
+                    """INSERT INTO course_events (event_id, course_id, event_sub_type, date_added)
+                       VALUES (?, ?, ?, datetime('now'))""",
                     (event_id, course_id, ValidationUtils.sanitize_string(event_sub_type or "", 50))
                 )
 

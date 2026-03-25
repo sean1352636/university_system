@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/gui/medical_accommodation/search.py
+# hypothesis_version: 6.151.9
+
+[' AND ', ' ORDER BY a.id DESC', ' WHERE ', 'Error', 'N/A', 'a.end_date <= ?', 'a.start_date >= ?', 'a.status = ?', 'a.student_id = ?', 'accommodation_type', 'description', 'end', 'end_date', 'id', 'start_date', 'status', 'student_id']

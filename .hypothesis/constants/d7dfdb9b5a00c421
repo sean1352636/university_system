@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/fix_user_accounts.py
+# hypothesis_version: 6.151.9
+
+['\nAborted.', '\n✅ No issues found!', '%Y-%m-%d %H:%M:%S', ',', '--analyze-only', '--yes', '-y', ':', '=', 'APPLYING FIXES', 'Aborted.', 'Administrator', 'DATABASE ANALYSIS', 'Staff', 'Student', 'System', 'User', 'VERIFICATION', '__main__', 'admin', 'email', 'first_name', 'last_name', 'role', 'staff', 'store_true', 'student', 'y', 'yes']

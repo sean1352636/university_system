@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/booking/movie_browser.py
+# hypothesis_version: 6.151.9
+
+[150, ' →', '#333333', '#7f8c8d', '#888888', '#e74c3c', '#ffffff', '%Y-%m-%d', '.', 'Available Seats', 'Card.TFrame', 'Date & Time', 'Helvetica', 'ID', 'Main.TFrame', 'Now Showing', 'Price', 'Primary.TButton', 'Screen', 'Secondary.TButton', 'Subtitle.TLabel', 'Success.TButton', 'Warning', '_', 'all', 'bold', 'both', 'end', 'headings', 'left', 'right', 'values', 'vertical', 'w', 'x', 'y', '← ']

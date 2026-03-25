@@ -35,7 +35,7 @@ def mock_connection():
 class TestEditLearningOutcomeDialog:
     """Test EditLearningOutcomeDialog class"""
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.get_connection')
     def test_init_creates_dialog(self, mock_get_conn, root, mock_connection):
         """Test dialog initialization creates UI elements"""
         mock_conn, mock_cursor = mock_connection
@@ -65,7 +65,7 @@ class TestEditLearningOutcomeDialog:
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.get_connection')
     def test_load_outcome_data(self, mock_get_conn, root, mock_connection):
         """Test loading existing outcome data"""
         mock_conn, mock_cursor = mock_connection
@@ -93,8 +93,8 @@ class TestEditLearningOutcomeDialog:
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.get_connection')
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.messagebox')
     def test_update_outcome_success(self, mock_msgbox, mock_get_conn, root, mock_connection):
         """Test successful outcome update"""
         mock_conn, mock_cursor = mock_connection
@@ -146,8 +146,8 @@ class TestEditLearningOutcomeDialog:
         # Verify callback was called
         callback.assert_called_once()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.get_connection')
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.messagebox')
     def test_update_outcome_missing_fields(self, mock_msgbox, mock_get_conn, root, mock_connection):
         """Test validation for missing required fields"""
         mock_conn, mock_cursor = mock_connection
@@ -171,8 +171,8 @@ class TestEditLearningOutcomeDialog:
         # Verify no database update
         assert not mock_conn.commit.called
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.get_connection')
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.messagebox')
     def test_update_outcome_database_error(self, mock_msgbox, mock_get_conn, root, mock_connection):
         """Test handling of database errors during update"""
         mock_conn, mock_cursor = mock_connection
@@ -205,7 +205,7 @@ class TestEditLearningOutcomeDialog:
         mock_msgbox.showerror.assert_called()
         assert "Error updating outcome" in str(mock_msgbox.showerror.call_args)
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.get_connection')
     def test_ui_components_exist(self, mock_get_conn, root, mock_connection):
         """Test all expected UI components are created"""
         mock_conn, mock_cursor = mock_connection
@@ -228,8 +228,8 @@ class TestEditLearningOutcomeDialog:
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.get_connection')
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.messagebox')
     def test_load_outcome_data_not_found(self, mock_msgbox, mock_get_conn, root, mock_connection):
         """Test handling when outcome data is not found"""
         mock_conn, mock_cursor = mock_connection
@@ -246,8 +246,8 @@ class TestEditLearningOutcomeDialog:
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.get_connection')
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.messagebox')
     def test_load_outcome_data_database_error(self, mock_msgbox, mock_get_conn, root, mock_connection):
         """Test handling of database errors during load"""
         mock_conn, mock_cursor = mock_connection
@@ -264,7 +264,7 @@ class TestEditLearningOutcomeDialog:
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.get_connection')
     def test_importance_range(self, mock_get_conn, root, mock_connection):
         """Test importance value validation"""
         mock_conn, mock_cursor = mock_connection
@@ -284,7 +284,7 @@ class TestEditLearningOutcomeDialog:
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.edit_outcome_dialog.get_connection')
     def test_course_code_uppercase_conversion(self, mock_get_conn, root, mock_connection):
         """Test that course codes are converted to uppercase"""
         mock_conn, mock_cursor = mock_connection

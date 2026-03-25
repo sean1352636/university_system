@@ -9,7 +9,7 @@ from datetime import datetime
 
 from education_system.university_system.infrastructure.database.db import get_connection
 
-from .constants import (
+from education_system.university_system.modules.domain.finance.gui.finance.budget_manager.constants import (
     create_budget_category,
     deactivate_budget_category,
     edit_budget_category,
@@ -263,7 +263,7 @@ class BudgetCategoriesMixin:
                 conn.close()
 
                 for category in categories:
-                    tree.insert('', 'end', values=category)
+                    tree.insert('', 'end', values=tuple(category))
 
                 status_label.config(text=f"Total categories: {len(categories)}")
 

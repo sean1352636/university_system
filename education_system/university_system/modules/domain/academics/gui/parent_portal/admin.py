@@ -1,3 +1,4 @@
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, scrolledtext, filedialog
@@ -41,7 +42,7 @@ except ImportError:
 
 
 
-from .base import ParentPortalGUI
+from education_system.university_system.modules.domain.academics.gui.parent_portal.base import ParentPortalGUI
 
 def show_all_parent_accounts(self):
     """Show all parent accounts in the system (admin only)"""
@@ -125,7 +126,7 @@ def show_all_parent_accounts(self):
                 # Add search filter
                 if search_text:
                     query += " AND (p.first_name LIKE ? OR p.last_name LIKE ? OR p.email LIKE ? OR p.parent_id LIKE ?)"
-                    search_pattern = f"%{search_text}%"
+                    search_pattern = f"%{escape_like(search_text)}%"
                     params.extend([search_pattern, search_pattern, search_pattern, search_pattern])
 
                 # Status filter is no longer supported since is_active column doesn't exist
@@ -411,6 +412,7 @@ def show_create_parent_account_interface(self):
 
         try:
             import random
+            import secrets
             import string
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
@@ -434,7 +436,7 @@ def show_create_parent_account_interface(self):
             # Generate username and password
             # Use underscores instead of dots (dots not allowed by username validation)
             username = f"{first_name.lower()}_{last_name.lower()}_{random.randint(100, 999)}"
-            password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+            password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(12))
 
             # Close the connection - we'll use central auth now
             conn.commit()
@@ -459,20 +461,24 @@ def show_create_parent_account_interface(self):
                 messagebox.showerror("Error", "Failed to create user account.")
                 # Rollback parent account creation
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-                cursor = conn.cursor()
-                cursor.execute('DELETE FROM parent_accounts WHERE parent_id = ?', (parent_id,))
-                conn.commit()
-                conn.close()
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute('DELETE FROM parent_accounts WHERE parent_id = ?', (parent_id,))
+                    conn.commit()
+                finally:
+                    conn.close()
                 return
 
             # Get the created user ID
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            cursor.execute('SELECT user_id FROM user_accounts WHERE username = ?', (username,))
-            user_result = cursor.fetchone()
+            try:
+                cursor = conn.cursor()
+                cursor.execute('SELECT user_id FROM user_accounts WHERE username = ?', (username,))
+                user_result = cursor.fetchone()
 
-            if not user_result:
-                messagebox.showerror("Error", "User created but ID not found.")
+                if not user_result:
+                    messagebox.showerror("Error", "User created but ID not found.")
+            finally:
                 conn.close()
                 return
 
@@ -877,31 +883,33 @@ def export_parent_accounts_csv(self):
 
         # Connect to database
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        # Fetch all parent accounts with their associated children
-        cursor.execute('''
-            SELECT
-                pa.parent_id,
-                pa.first_name,
-                pa.last_name,
-                pa.email,
-                pa.phone,
-                pa.address,
-                pa.emergency_contact,
-                pa.registration_date,
-                pa.two_factor_enabled,
-                COUNT(DISTINCT pc.student_id) as child_count
-            FROM parent_accounts pa
-            LEFT JOIN parent_children pc ON pa.parent_id = pc.parent_id
-            GROUP BY pa.parent_id
-            ORDER BY pa.last_name, pa.first_name
-        ''')
+            # Fetch all parent accounts with their associated children
+            cursor.execute('''
+                SELECT
+                    pa.parent_id,
+                    pa.first_name,
+                    pa.last_name,
+                    pa.email,
+                    pa.phone,
+                    pa.address,
+                    pa.emergency_contact,
+                    pa.registration_date,
+                    pa.two_factor_enabled,
+                    COUNT(DISTINCT pc.student_id) as child_count
+                FROM parent_accounts pa
+                LEFT JOIN parent_children pc ON pa.parent_id = pc.parent_id
+                GROUP BY pa.parent_id
+                ORDER BY pa.last_name, pa.first_name
+            ''')
 
-        parent_data = cursor.fetchall()
+            parent_data = cursor.fetchall()
 
-        if not parent_data:
-            messagebox.showinfo("No Data", "No parent accounts found to export.")
+            if not parent_data:
+                messagebox.showinfo("No Data", "No parent accounts found to export.")
+        finally:
             conn.close()
             return
 

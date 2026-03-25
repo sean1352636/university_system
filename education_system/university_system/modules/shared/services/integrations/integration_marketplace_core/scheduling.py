@@ -1,6 +1,6 @@
 """Scheduling & Automation Manager and CLI functions"""
 
-from ._imports import (
+from education_system.university_system.modules.shared.services.integrations.integration_marketplace_core._imports import (
     datetime, json, os, Any, Dict, List, get_connection, paths, transaction,
 )
 

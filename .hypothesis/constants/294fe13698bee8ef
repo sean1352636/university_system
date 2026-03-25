@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/parent_portal/fundraising.py
+# hypothesis_version: 6.151.9
+
+[100, 120, 200, 600, '500x400', 'Amount', 'Amount:', 'Arial', 'Campaign', 'Campaign:', 'Cancel', 'Date', 'Donate', 'General Fund', 'Invalid Amount', 'Make a Donation', 'N/A', 'Payment Method', 'Title.TLabel', 'Type', 'Unnamed Campaign', 'bold', 'common.amount', 'common.date', 'common.success', 'common.type', 'e', 'general', 'headings', 'italic', 'readonly', 'values', 'w']

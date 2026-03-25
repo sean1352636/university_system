@@ -2,13 +2,13 @@
 
 import logging
 
-from ..utils import print_header, get_current_user, is_staff_or_admin
-from .movies import admin_add_movie, admin_update_movie, admin_view_all_movies
-from .screenings import (
+from education_system.university_system.modules.services.cli.cinema_cli.utils import print_header, get_current_user, is_staff_or_admin
+from education_system.university_system.modules.services.cli.cinema_cli.admin.movies import admin_add_movie, admin_update_movie, admin_view_all_movies
+from education_system.university_system.modules.services.cli.cinema_cli.admin.screenings import (
     admin_add_screening, admin_update_screening,
     admin_view_all_screenings, admin_create_exclusive_screening,
 )
-from .reports import (
+from education_system.university_system.modules.services.cli.cinema_cli.admin.reports import (
     admin_booking_reports, admin_revenue_analytics,
     admin_occupancy_report, admin_member_statistics,
 )

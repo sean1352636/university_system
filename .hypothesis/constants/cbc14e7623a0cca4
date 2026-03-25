@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/attendance/api.py
+# hypothesis_version: 6.151.9
+
+[400, 404, 429, 500, 1000, 5000, '/api/qr/checkin', '/api/qr/generate', '127.0.0.1', 'API', 'Attendance recorded', 'GET', 'POST', 'Rate limit exceeded', 'api_rate_limit', 'date', 'end_time', 'error', 'hour', 'location', 'location_data', 'message', 'module_code', 'notes', 'qr_data', 'qr_filename', 'recorded_by', 'requests', 'session_id', 'start_time', 'status', 'student_id', 'success']

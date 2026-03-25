@@ -13,10 +13,9 @@ import logging
 
 from education_system.secondary_school.core.logs import setup_logging
 from education_system.secondary_school.infrastructure.database.schema import (
-    initialise_database, seed_default_users,
+    initialise_database, seed_default_users, seed_default_staff,
 )
 from education_system.secondary_school.infrastructure.auth.core import UserAuth
-from education_system.shared.auth.exceptions import AuthError
 
 logger = logging.getLogger(__name__)
 
@@ -24,85 +23,6 @@ logger = logging.getLogger(__name__)
 HEADER_BG = "#1a5276"
 SIDEBAR_BG = "#2c3e50"
 MAIN_BG = "#ecf0f1"
-
-
-class LoginWindow(tk.Toplevel):
-    """Modal login dialog."""
-
-    def __init__(self, parent, db_path=None):
-        super().__init__(parent)
-        self.title("Secondary School - Login")
-        self.resizable(False, False)
-        self.protocol("WM_DELETE_WINDOW", self._on_close)
-        self._parent = parent
-        self._db_path = db_path
-        self._auth = UserAuth(db_path)
-        self.user: dict | None = None
-        self._build_ui()
-        self._center()
-
-    def _center(self):
-        self.update_idletasks()
-        w, h = self.winfo_width(), self.winfo_height()
-        sw, sh = self.winfo_screenwidth(), self.winfo_screenheight()
-        self.geometry(f"+{(sw - w) // 2}+{(sh - h) // 2}")
-
-    def _build_ui(self):
-        self.configure(bg=HEADER_BG)
-
-        # Title
-        title_frame = tk.Frame(self, bg=HEADER_BG, pady=20)
-        title_frame.pack(fill="x")
-        tk.Label(title_frame, text="Secondary School", font=("Helvetica", 20, "bold"),
-                 bg=HEADER_BG, fg="white").pack()
-        tk.Label(title_frame, text="Management System", font=("Helvetica", 12),
-                 bg=HEADER_BG, fg="#aed6f1").pack()
-
-        # Login form
-        form = tk.Frame(self, bg="white", padx=40, pady=30)
-        form.pack(fill="both", expand=True, padx=30, pady=(0, 30))
-
-        tk.Label(form, text="Username", font=("Helvetica", 10, "bold"),
-                 bg="white", anchor="w").pack(fill="x", pady=(10, 2))
-        self._username_var = tk.StringVar()
-        username_entry = ttk.Entry(form, textvariable=self._username_var, width=30)
-        username_entry.pack(fill="x", pady=(0, 10))
-        username_entry.focus_set()
-
-        tk.Label(form, text="Password", font=("Helvetica", 10, "bold"),
-                 bg="white", anchor="w").pack(fill="x", pady=(0, 2))
-        self._password_var = tk.StringVar()
-        password_entry = ttk.Entry(form, textvariable=self._password_var, show="*", width=30)
-        password_entry.pack(fill="x", pady=(0, 15))
-        password_entry.bind("<Return>", lambda _: self._on_login())
-
-        ttk.Button(form, text="Login", command=self._on_login).pack(fill="x", pady=5)
-
-        # Default credentials hint
-        hint = tk.Label(form, text="Default: admin / Admin@123",
-                        font=("Helvetica", 8), fg="#95a5a6", bg="white")
-        hint.pack(pady=(10, 0))
-
-        self._error_var = tk.StringVar()
-        tk.Label(form, textvariable=self._error_var, fg="red", bg="white",
-                 font=("Helvetica", 9)).pack(pady=(5, 0))
-
-    def _on_login(self):
-        username = self._username_var.get().strip()
-        password = self._password_var.get()
-
-        if not username or not password:
-            self._error_var.set("Please enter username and password.")
-            return
-
-        try:
-            self.user = self._auth.login(username, password)
-            self.destroy()
-        except AuthError as e:
-            self._error_var.set(str(e))
-
-    def _on_close(self):
-        self._parent.destroy()
 
 
 class DashboardFrame(tk.Frame):
@@ -291,17 +211,65 @@ class MainApplication(tk.Tk):
             ("Users", None),
             ("HR", None),
             ("Finance", None),
+            ("Payroll", None),
             ("Data Export", None),
+            ("MFA Settings", None),
+            ("Cross-System Notifications", None),
+            ("Student Journey", None),
+            # Shared modules
+            ("Analytics Dashboard", None),
+            ("Outcome Tracking", None),
+            ("Predictive Alerts", None),
+            ("Bulk Transfer", None),
+            ("Transfer Documents", None),
+            ("Reverse Lookup", None),
+            ("Parent Continuity", None),
+            ("Cross-System Calendar", None),
+            ("Inter-System Messaging", None),
+            ("Central Admin Portal", None),
+            ("GDPR Compliance", None),
+            ("Shared Documents", None),
+            ("Student Self-Service", None),
+            ("Digital Transcript", None),
+            ("Certificates", None),
+            ("Extras & Tools", None),
+            ("Academic Misconduct", None),
+            ("LMS", None),
+            # New modules
+            ("Student Wellbeing", None),
+            ("Intervention Tracking", None),
+            ("Feedback", None),
+            ("Complaints", None),
+            ("GDPR", None),
+            ("Data Dashboard", None),
+            ("Appraisals", None),
+            ("Observations", None),
+            ("Staff Wellbeing", None),
+            ("Lesson Plans", None),
+            ("Portfolio", None),
+            ("Skills Passport", None),
+            ("Student Council", None),
+            ("Study Planner", None),
         ]
 
         # Admin-only modules
-        admin_only = {"HR", "Finance", "Users", "Data Export", "Safeguarding", "Visitors", "Assets",
+        admin_only = {"HR", "Finance", "Payroll", "Users", "Data Export", "Safeguarding", "Visitors", "Assets",
                           "Admissions", "Settings", "Audit Log", "Policies",
-                          "Exclusions", "Consent", "Incidents"}
+                          "Exclusions", "Consent", "Incidents",
+                          "Central Admin Portal", "GDPR Compliance", "Academic Misconduct",
+                          "Complaints", "GDPR", "Data Dashboard", "Appraisals", "Observations",
+                          "Cross-System Notifications", "Student Journey",
+                          "Analytics Dashboard", "Outcome Tracking", "Predictive Alerts",
+                          "Bulk Transfer", "Transfer Documents", "Reverse Lookup",
+                          "Parent Continuity", "Cross-System Calendar", "Inter-System Messaging",
+                          "Shared Documents", "Student Self-Service", "Digital Transcript"}
         # Modules students can see
         student_modules = {"Dashboard", "Grades", "Timetable", "Exams", "Homework",
                            "Calendar", "Announcements", "Library", "Clubs",
-                           "Staff Directory", "Email", "Notifications", "Rewards"}
+                           "Staff Directory", "Email", "Notifications", "Rewards",
+                           "MFA Settings", "LMS",
+                           "Portfolio", "Skills Passport", "Study Planner",
+                           "Feedback", "Student Council"}
 
         if self._user["role"] == "student":
             modules = [m for m in modules if m[0] in student_modules]
@@ -320,13 +288,14 @@ class MainApplication(tk.Tk):
             btn.pack(fill="x")
             self._nav_buttons[name] = btn
 
-        # Switch System, Logout and Shutdown in bottom frame (outside scroll)
-        tk.Button(
-            bottom_frame, text="Switch System", font=("Helvetica", 10),
-            bg="#2980b9", fg="white", bd=0, pady=12,
-            activebackground="#3498db", activeforeground="white",
-            command=self._on_switch_system,
-        ).pack(fill="x")
+        # Switch System (superadmin only), Logout and Shutdown in bottom frame
+        if self._is_superadmin():
+            tk.Button(
+                bottom_frame, text="Switch System", font=("Helvetica", 10),
+                bg="#2980b9", fg="white", bd=0, pady=12,
+                activebackground="#3498db", activeforeground="white",
+                command=self._on_switch_system,
+            ).pack(fill="x")
         tk.Button(
             bottom_frame, text="Logout", font=("Helvetica", 10),
             bg="#c0392b", fg="white", bd=0, pady=12,
@@ -352,6 +321,7 @@ class MainApplication(tk.Tk):
         from education_system.secondary_school.modules.domain.academics.exams.gui.exam_gui import ExamFrame
         from education_system.secondary_school.modules.domain.staff.hr.gui.hr_gui import HRFrame
         from education_system.secondary_school.modules.domain.admin.finance.gui.finance_gui import FinanceFrame
+        from education_system.secondary_school.modules.domain.admin.payroll.gui.payroll_gui import PayrollFrame
         from education_system.secondary_school.modules.domain.academics.reports.gui.report_gui import ReportFrame
         from education_system.secondary_school.modules.domain.pastoral_care.send.gui.send_gui import SENDFrame
         from education_system.secondary_school.modules.domain.pastoral_care.safeguarding.gui.safeguarding_gui import SafeguardingFrame
@@ -391,6 +361,42 @@ class MainApplication(tk.Tk):
         from education_system.secondary_school.modules.domain.facilities.seating_plans.gui.seating_gui import SeatingFrame
         from education_system.secondary_school.modules.domain.student_life.consent.gui.consent_gui import ConsentFrame
         from education_system.secondary_school.modules.domain.facilities.incidents.gui.incident_gui import IncidentFrame
+        from education_system.secondary_school.modules.shared.gui.mfa_gui import MFASettingsFrame
+        from education_system.shared.notifications.gui import CrossSystemNotificationsFrame
+        from education_system.shared.cross_system.journey_dashboard import JourneyDashboardFrame
+        from education_system.shared.analytics.analytics_gui import AnalyticsDashboardFrame
+        from education_system.shared.outcomes.outcomes_gui import OutcomeTrackingFrame
+        from education_system.shared.predictive.predictive_gui import PredictiveAlertsFrame
+        from education_system.shared.bulk_transfer.bulk_transfer_gui import BulkTransferFrame
+        from education_system.shared.transfer_docs.transfer_docs_gui import TransferDocumentsFrame
+        from education_system.shared.reverse_lookup.reverse_lookup_gui import ReverseLookupFrame
+        from education_system.shared.parent_continuity.parent_gui import ParentContinuityFrame
+        from education_system.shared.calendar.calendar_gui import CrossSystemCalendarFrame
+        from education_system.shared.messaging.messaging_gui import InterSystemMessagingFrame
+        from education_system.shared.admin_portal.admin_gui import CentralAdminFrame
+        from education_system.shared.gdpr.gdpr_gui import GDPRComplianceFrame
+        from education_system.shared.documents.document_gui import SharedDocumentsFrame
+        from education_system.shared.student_portal.portal_gui import StudentSelfServiceFrame
+        from education_system.shared.transcript.transcript_gui import DigitalTranscriptFrame
+        from education_system.shared.certificates.certificates_gui import CertificatesGUI
+        from education_system.shared.extras.extras_frame import ExtrasFrame
+        from education_system.shared.academic_misconduct.misconduct_frame import MisconductFrame
+        from education_system.shared.lms.lms_gui import LMSFrame
+        # New modules
+        from education_system.secondary_school.modules.domain.pastoral_care.student_wellbeing.gui.student_wellbeing_gui import StudentWellbeingFrame
+        from education_system.secondary_school.modules.domain.pastoral_care.interventions.gui.intervention_gui import InterventionFrame as InterventionTrackingFrame
+        from education_system.secondary_school.modules.domain.communication.feedback.gui.feedback_gui import FeedbackFrame
+        from education_system.secondary_school.modules.domain.admin.complaints.gui.complaints_gui import ComplaintsFrame
+        from education_system.secondary_school.modules.domain.admin.gdpr.gui.gdpr_gui import GDPRFrame
+        from education_system.secondary_school.modules.domain.admin.data_dashboard.gui.data_dashboard_gui import DataDashboardFrame
+        from education_system.secondary_school.modules.domain.staff.appraisals.gui.appraisals_gui import AppraisalsFrame
+        from education_system.secondary_school.modules.domain.staff.observations.gui.observations_gui import ObservationsFrame
+        from education_system.secondary_school.modules.domain.staff.staff_wellbeing.gui.staff_wellbeing_gui import StaffWellbeingFrame
+        from education_system.secondary_school.modules.domain.staff.lesson_plans.gui.lesson_plans_gui import LessonPlansFrame
+        from education_system.secondary_school.modules.domain.student_life.portfolio.gui.portfolio_gui import PortfolioFrame
+        from education_system.secondary_school.modules.domain.student_life.skills_passport.gui.skills_passport_gui import SkillsPassportFrame
+        from education_system.secondary_school.modules.domain.student_life.student_council.gui.student_council_gui import StudentCouncilFrame
+        from education_system.secondary_school.modules.domain.student_life.study_planner.gui.study_planner_gui import StudyPlannerFrame
 
         frame_classes = {
             "Dashboard": DashboardFrame,
@@ -431,6 +437,7 @@ class MainApplication(tk.Tk):
             "Users": UserFrame,
             "HR": HRFrame,
             "Finance": FinanceFrame,
+            "Payroll": PayrollFrame,
             "Data Export": ExportFrame,
             "Settings": SettingsFrame,
             "Rewards": RewardsFrame,
@@ -444,11 +451,51 @@ class MainApplication(tk.Tk):
             "Seating Plans": SeatingFrame,
             "Consent": ConsentFrame,
             "Incidents": IncidentFrame,
+            "MFA Settings": MFASettingsFrame,
+            "Cross-System Notifications": CrossSystemNotificationsFrame,
+            "Student Journey": JourneyDashboardFrame,
+            # Shared modules
+            "Analytics Dashboard": AnalyticsDashboardFrame,
+            "Outcome Tracking": OutcomeTrackingFrame,
+            "Predictive Alerts": PredictiveAlertsFrame,
+            "Bulk Transfer": BulkTransferFrame,
+            "Transfer Documents": TransferDocumentsFrame,
+            "Reverse Lookup": ReverseLookupFrame,
+            "Parent Continuity": ParentContinuityFrame,
+            "Cross-System Calendar": CrossSystemCalendarFrame,
+            "Inter-System Messaging": InterSystemMessagingFrame,
+            "Central Admin Portal": CentralAdminFrame,
+            "GDPR Compliance": GDPRComplianceFrame,
+            "Shared Documents": SharedDocumentsFrame,
+            "Student Self-Service": StudentSelfServiceFrame,
+            "Digital Transcript": DigitalTranscriptFrame,
+            "Certificates": CertificatesGUI,
+            "Extras & Tools": ExtrasFrame,
+            "Academic Misconduct": MisconductFrame,
+            "LMS": LMSFrame,
+            # New modules
+            "Student Wellbeing": StudentWellbeingFrame,
+            "Intervention Tracking": InterventionTrackingFrame,
+            "Feedback": FeedbackFrame,
+            "Complaints": ComplaintsFrame,
+            "GDPR": GDPRFrame,
+            "Data Dashboard": DataDashboardFrame,
+            "Appraisals": AppraisalsFrame,
+            "Observations": ObservationsFrame,
+            "Staff Wellbeing": StaffWellbeingFrame,
+            "Lesson Plans": LessonPlansFrame,
+            "Portfolio": PortfolioFrame,
+            "Skills Passport": SkillsPassportFrame,
+            "Student Council": StudentCouncilFrame,
+            "Study Planner": StudyPlannerFrame,
         }
 
         for name, cls in frame_classes.items():
             if name in [n for n, _ in modules]:
-                frame = cls(self._content, db_path=self._db_path, auth=self._user)
+                if cls is MisconductFrame:
+                    frame = cls(self._content, db_path=self._db_path, auth=self._user, system_key='secondary')
+                else:
+                    frame = cls(self._content, db_path=self._db_path, auth=self._user)
                 self._frames[name] = frame
 
     def _show_module(self, name: str):
@@ -499,10 +546,27 @@ class MainApplication(tk.Tk):
         tk.Button(body, text="Primary School System",
                   bg="#e67e22", activebackground="#f39c12", activeforeground="white",
                   command=lambda: _pick("primary"), **btn_style).pack(pady=5)
+
+        # Super Admin Dashboard button (only for superadmin users)
+        if self._is_superadmin():
+            ttk.Separator(body, orient="horizontal").pack(fill="x", pady=10)
+            tk.Button(body, text="Super Admin Dashboard",
+                      bg="#2c3e50", activebackground="#34495e", activeforeground="white",
+                      command=lambda: _pick("__superadmin__"), **btn_style).pack(pady=5)
+
         tk.Button(body, text="Cancel", font=("Helvetica", 12), relief=tk.FLAT,
                   padx=20, pady=4, cursor="hand2", command=dlg.destroy).pack(pady=(10, 0))
 
         dlg.protocol("WM_DELETE_WINDOW", dlg.destroy)
+
+    def _is_superadmin(self):
+        """Check if current user has admin access to all 4 systems."""
+        user = getattr(self, "_user", None) or {}
+        systems = user.get("systems", [])
+        if not systems:
+            return False
+        admin_keys = {s["system_key"] for s in systems if s.get("role") == "admin"}
+        return admin_keys >= {"university", "college", "school", "primary"}
 
     def _on_logout(self):
         if messagebox.askyesno("Logout", "Are you sure you want to logout?"):
@@ -532,6 +596,7 @@ def run(db_path: str | None = None, user_info=None, role=None, shared_auth=None)
 
     initialise_database(db_path)
     seed_default_users(db_path)
+    seed_default_staff(db_path)
 
     if first_run:
         from education_system.secondary_school.seed_subjects import seed_subjects
@@ -544,24 +609,28 @@ def run(db_path: str | None = None, user_info=None, role=None, shared_auth=None)
             "username": user_info.get("username"),
             "role": role,
             "email": user_info.get("email"),
+            "systems": user_info.get("systems", []),
         }
         app = MainApplication(user, db_path)
         app.mainloop()
         return
 
-    # Standard login flow
-    root = tk.Tk()
-    root.withdraw()
+    # Standalone launch — use the universal login window
+    from education_system.shared.gui.login_gui import UniversalLoginWindow
+    login = UniversalLoginWindow()
+    login.mainloop()
 
-    login = LoginWindow(root, db_path)
-    root.wait_window(login)
-
-    if login.user is None:
+    if login.user_info is None:
         return
 
-    root.destroy()
-
-    app = MainApplication(login.user, db_path)
+    user = {
+        "id": login.user_info.get("user_id"),
+        "username": login.user_info.get("username"),
+        "role": login.system_role or "admin",
+        "email": login.user_info.get("email"),
+        "systems": login.user_info.get("systems", []),
+    }
+    app = MainApplication(user, db_path)
     app.mainloop()
 
 

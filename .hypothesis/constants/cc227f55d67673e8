@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/academic_progress_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/flashcards', '/plans', '/plans/<int:plan_id>', '/tasks', '/tasks/<int:task_id>', 'GET', 'POST', 'academic_progress', 'answer', 'completed', 'completed = ?', 'course_id', 'course_id = ?', 'create', 'deck_name', 'difficulty_level', 'difficulty_rating', 'duration_minutes', 'end_date', 'flashcards', 'items', 'plan_id', 'plan_id = ?', 'plan_name', 'priority', 'question', 'scheduled_date', 'search', 'start_date', 'status', 'status = ?', 'student_id', 'student_id = ?', 'study_plan_tasks', 'study_plans', 'sub', 'task_description', 'task_title', 'total', 'total_hours', 'view']

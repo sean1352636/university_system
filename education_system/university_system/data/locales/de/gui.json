@@ -46,7 +46,34 @@
     "export": "Exportieren",
     "save_changes": "Änderungen speichern",
     "create": "Erstellen",
-    "select": "Auswählen"
+    "select": "Auswählen",
+    "switch_system": {
+      "title": "System Wechseln",
+      "header": "Zu einem anderen System wechseln",
+      "choose_system": "Wählen Sie ein System zum Starten:",
+      "failed": "Systemwechsel fehlgeschlagen: {error}",
+      "college": "Oberstufensystem",
+      "secondary": "Sekundarschulsystem",
+      "primary": "Grundschulsystem"
+    },
+    "mfa": {
+      "verification_status_disabled": "Deaktiviert (Nur Passwort)",
+      "verification_status_enabled": "Aktiviert",
+      "login_verification_label": "Anmeldeverifizierung: ",
+      "configured": "Konfiguriert",
+      "primary_method": "Primär",
+      "turned_off_success": "MFA wurde deaktiviert.\n\nIhre Einstellungen wurden gespeichert.\nSie können sie später über dieses Menü wiederherstellen.",
+      "module_not_available": "MFA-Modul nicht verfügbar: {error}",
+      "error_opening_setup": "Fehler beim Öffnen der MFA-Einrichtung: {error}",
+      "error_opening_wizard": "Fehler beim Öffnen des MFA-Assistenten: {error}",
+      "reenable_email_subject": "MFA für Ihr Konto Reaktiviert",
+      "reenable_email_body": "Hallo {username},\n\nDie Multi-Faktor-Authentifizierung (MFA) wurde für Ihr Konto mit Ihren zuvor gespeicherten Einstellungen reaktiviert.\n\nDetails:\n- Konto: {username}\n- E-Mail: {email}\n- Wiederhergestellte Methoden: {methods_count}\n\nWenn Sie diese Änderung nicht vorgenommen haben, kontaktieren Sie sofort den Support und ändern Sie Ihr Passwort.\n\nVielen Dank,\nSicherheitsteam des Universitätssystems",
+      "reenabled_title": "MFA Reaktiviert",
+      "reenabled_with_email": "MFA wurde erfolgreich mit Ihren gespeicherten Einstellungen reaktiviert.\n\nEine Bestätigungs-E-Mail wurde gesendet an:\n{email}",
+      "reenabled_no_email": "MFA wurde erfolgreich mit Ihren gespeicherten Einstellungen reaktiviert.\n\n(E-Mail-Benachrichtigung konnte nicht gesendet werden)",
+      "reenabled_email_error": "MFA wurde erfolgreich mit Ihren gespeicherten Einstellungen reaktiviert.\n\n(Bestätigungs-E-Mail konnte nicht gesendet werden: {error})",
+      "reenabled_simple": "MFA wurde erfolgreich mit Ihren gespeicherten Einstellungen reaktiviert."
+    }
   },
   "nav": {
     "categories": {

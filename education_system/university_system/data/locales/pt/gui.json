@@ -46,7 +46,34 @@
     "export": "Exportar",
     "save_changes": "Salvar alterações",
     "create": "Criar",
-    "select": "Selecionar"
+    "select": "Selecionar",
+    "switch_system": {
+      "title": "Trocar Sistema",
+      "header": "Mudar para outro sistema",
+      "choose_system": "Escolha um sistema para iniciar:",
+      "failed": "Falha ao trocar de sistema: {error}",
+      "college": "Sistema de Colégio",
+      "secondary": "Sistema de Escola Secundária",
+      "primary": "Sistema de Escola Primária"
+    },
+    "mfa": {
+      "verification_status_disabled": "Desativado (Apenas Senha)",
+      "verification_status_enabled": "Ativado",
+      "login_verification_label": "Verificação de Login: ",
+      "configured": "Configurado",
+      "primary_method": "Principal",
+      "turned_off_success": "MFA foi desativado.\n\nSuas configurações foram salvas.\nVocê pode restaurá-las mais tarde neste menu.",
+      "module_not_available": "Módulo MFA não disponível: {error}",
+      "error_opening_setup": "Erro ao abrir configuração MFA: {error}",
+      "error_opening_wizard": "Erro ao abrir assistente MFA: {error}",
+      "reenable_email_subject": "MFA Reativado para Sua Conta",
+      "reenable_email_body": "Olá {username},\n\nA Autenticação Multifator (MFA) foi reativada para sua conta usando suas configurações salvas anteriormente.\n\nDetalhes:\n- Conta: {username}\n- E-mail: {email}\n- Métodos restaurados: {methods_count}\n\nSe você não fez esta alteração, entre em contato com o suporte imediatamente e altere sua senha.\n\nObrigado,\nEquipe de Segurança do Sistema Universitário",
+      "reenabled_title": "MFA Reativado",
+      "reenabled_with_email": "MFA foi reativado com sucesso usando suas configurações salvas.\n\nUm e-mail de confirmação foi enviado para:\n{email}",
+      "reenabled_no_email": "MFA foi reativado com sucesso usando suas configurações salvas.\n\n(Não foi possível enviar a notificação por e-mail)",
+      "reenabled_email_error": "MFA foi reativado com sucesso usando suas configurações salvas.\n\n(Não foi possível enviar o e-mail de confirmação: {error})",
+      "reenabled_simple": "MFA foi reativado com sucesso usando suas configurações salvas."
+    }
   },
   "nav": {
     "categories": {

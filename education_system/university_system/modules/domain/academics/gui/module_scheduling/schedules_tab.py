@@ -61,8 +61,8 @@ except ImportError:
     except Exception:
         class ModuleScheduler: pass
 
-from .main_gui import ModuleSchedulingGUI
-from .dialogs import AddScheduleDialog, EditScheduleDialog
+from education_system.university_system.modules.domain.academics.gui.module_scheduling.main_gui import ModuleSchedulingGUI
+from education_system.university_system.modules.domain.academics.gui.module_scheduling.dialogs import AddScheduleDialog, EditScheduleDialog
 
 def create_schedules_tab(self):
     """Create the schedules management tab"""
@@ -165,7 +165,7 @@ def refresh_schedules(self):
             ))
             
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to refresh schedules: {str(e)}")
+        messagebox.showerror("Error", f"Failed to refresh schedules: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.refresh_schedules = refresh_schedules
 
@@ -218,13 +218,13 @@ def filter_schedules(self, *args):
             ))
             
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to filter schedules: {str(e)}")
+        messagebox.showerror("Error", f"Failed to filter schedules: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.filter_schedules = filter_schedules
 
 def show_add_schedule_dialog(self):
     """Show dialog for adding a new schedule"""
-    dialog = AddScheduleDialog(self.root, self.scheduler)
+    dialog = AddScheduleDialog(self.root, self.scheduler, gui=self)
     if dialog.result:
         self.refresh_schedules()
         self.refresh_dashboard()
@@ -236,13 +236,13 @@ def edit_selected_schedule(self):
     """Edit the selected schedule"""
     selected = self.schedules_tree.selection()
     if not selected:
-        messagebox.showwarning("Warning", "Please select a schedule to edit.")
+        messagebox.showwarning("Warning", "Please select a schedule to edit.", parent=self.root)
         return
     
     schedule_data = self.schedules_tree.item(selected[0])['values']
     schedule_id = schedule_data[0]
     
-    dialog = EditScheduleDialog(self.root, self.scheduler, schedule_id)
+    dialog = EditScheduleDialog(self.root, self.scheduler, schedule_id, gui=self)
     if dialog.result:
         self.refresh_schedules()
         self.update_activity_log(f"Schedule {schedule_id} updated")
@@ -253,14 +253,14 @@ def delete_selected_schedule(self):
     """Delete the selected schedule"""
     selected = self.schedules_tree.selection()
     if not selected:
-        messagebox.showwarning("Warning", "Please select a schedule to delete.")
+        messagebox.showwarning("Warning", "Please select a schedule to delete.", parent=self.root)
         return
     
     schedule_data = self.schedules_tree.item(selected[0])['values']
     schedule_id = schedule_data[0]
     module_code = schedule_data[1]
     
-    if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete the schedule for {module_code}?"):
+    if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete the schedule for {module_code}?", parent=self.root):
         try:
             from education_system.university_system.infrastructure.database.db import sqlite3
             with get_connection(str(DEFAULT_DB_PATH), row_factory=False) as conn:
@@ -271,10 +271,10 @@ def delete_selected_schedule(self):
             self.refresh_schedules()
             self.refresh_dashboard()
             self.update_activity_log(f"Schedule {schedule_id} deleted")
-            messagebox.showinfo("Success", "Schedule deleted successfully.")
+            messagebox.showinfo("Success", "Schedule deleted successfully.", parent=self.root)
             
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete schedule: {str(e)}")
+            messagebox.showerror("Error", f"Failed to delete schedule: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.delete_selected_schedule = delete_selected_schedule
 
@@ -311,7 +311,7 @@ def view_module_schedule(self, module_code=None):
         schedules = cursor.fetchall()
 
     if not schedules:
-        messagebox.showinfo("No Schedule", f"No schedule found for module {module_code}")
+        messagebox.showinfo("No Schedule", f"No schedule found for module {module_code}", parent=self.root)
         return
 
     # Create dialog to show schedule

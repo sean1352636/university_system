@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/course_management_gui/cli/entry_points.py
+# hypothesis_version: 6.151.9
+
+[3.0, '%Y-%m-%d %H:%M:%S', '%s\n', ', ', '--backup', '--cli', '--export-csv', '--gui', '--import-csv', '.sql', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', 'Application Error', 'Core', 'Friday', 'Lab', 'Lecture', 'Monday', 'Seminar', 'Thursday', 'TkAgg', 'Tuesday', 'Tutorial', 'Wednesday', 'Workshop', '__main__', '_gui_app_instance', 'course_code', 'course_management', 'course_name', 'course_type', 'courses.db', 'credit_hours', 'department', 'description', 'level', 'max_enrollment', 'r', 'store_true', 'utf-8', 'w']

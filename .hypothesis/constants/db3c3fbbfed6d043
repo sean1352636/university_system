@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/attendance/gamification.py
+# hypothesis_version: 6.151.9
+
+[1.0, 1.5, 1000, '%Y-%m-%d', '1000 points earned', 'True', '[]', 'attendance', 'badge', 'date', 'description', 'enable_gamification', 'month_streak', 'point_master', 'week_streak']

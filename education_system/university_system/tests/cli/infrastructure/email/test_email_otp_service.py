@@ -66,7 +66,7 @@ class TestSMTPEmailProvider:
         with pytest.raises(ValueError, match="SMTP credentials not configured"):
             SMTPEmailProvider(smtp_server=None, username=None, password=None)
 
-    @patch('university_system.infrastructure.auth.email_otp_service.smtplib.SMTP')
+    @patch('education_system.university_system.infrastructure.auth.email_otp_service.smtplib.SMTP')
     def test_send_otp_success(self, mock_smtp):
         """Test successful OTP sending"""
         # Setup mock SMTP
@@ -91,7 +91,7 @@ class TestSMTPEmailProvider:
         mock_server.login.assert_called_once_with('test@test.com', 'testpass')
         mock_server.send_message.assert_called_once()
 
-    @patch('university_system.infrastructure.auth.email_otp_service.smtplib.SMTP')
+    @patch('education_system.university_system.infrastructure.auth.email_otp_service.smtplib.SMTP')
     def test_send_otp_smtp_error(self, mock_smtp):
         """Test OTP sending with SMTP error"""
         mock_smtp.return_value.__enter__.side_effect = Exception("SMTP connection failed")
@@ -197,7 +197,7 @@ class TestAWS_SES_Provider:
         with pytest.raises(ValueError, match="AWS SES from_email not configured"):
             AWS_SES_Provider(from_email=None)
 
-    @patch('university_system.infrastructure.auth.email_otp_service.boto3')
+    @patch('education_system.university_system.infrastructure.auth.email_otp_service.boto3')
     def test_send_otp_success(self, mock_boto3):
         """Test successful OTP sending via AWS SES"""
         mock_ses = MagicMock()
@@ -215,7 +215,7 @@ class TestAWS_SES_Provider:
 
     def test_send_otp_boto3_not_installed(self):
         """Test OTP sending when boto3 is not installed"""
-        with patch('university_system.infrastructure.auth.email_otp_service.boto3') as mock_boto3:
+        with patch('education_system.university_system.infrastructure.auth.email_otp_service.boto3') as mock_boto3:
             mock_boto3.side_effect = ImportError()
 
             # Need to reload the module to trigger ImportError
@@ -228,7 +228,7 @@ class TestAWS_SES_Provider:
             # For now, we'll just verify the provider was created
             assert provider.from_email == 'noreply@aws.com'
 
-    @patch('university_system.infrastructure.auth.email_otp_service.boto3')
+    @patch('education_system.university_system.infrastructure.auth.email_otp_service.boto3')
     def test_send_otp_ses_error(self, mock_boto3):
         """Test OTP sending with AWS SES error"""
         mock_ses = MagicMock()
@@ -465,7 +465,7 @@ class TestEmailConfiguration:
         with open(config_file, 'w') as f:
             json.dump(config_data, f)
 
-        with patch('university_system.infrastructure.auth.email_otp_service.paths') as mock_paths:
+        with patch('education_system.university_system.infrastructure.auth.email_otp_service.paths') as mock_paths:
             mock_paths.CONFIG_DIR = config_dir
             config = load_email_config()
 
@@ -474,7 +474,7 @@ class TestEmailConfiguration:
 
     def test_load_email_config_file_not_found(self):
         """Test loading configuration when file doesn't exist"""
-        with patch('university_system.infrastructure.auth.email_otp_service.paths') as mock_paths:
+        with patch('education_system.university_system.infrastructure.auth.email_otp_service.paths') as mock_paths:
             mock_paths.CONFIG_DIR = Path('/nonexistent')
             config = load_email_config()
 
@@ -486,7 +486,7 @@ class TestEmailConfiguration:
         monkeypatch.setenv('EMAIL_PRIMARY_PROVIDER', 'smtp')
         monkeypatch.setenv('EMAIL_FALLBACK_PROVIDER', 'aws_ses')
 
-        with patch('university_system.infrastructure.auth.email_otp_service.paths') as mock_paths:
+        with patch('education_system.university_system.infrastructure.auth.email_otp_service.paths') as mock_paths:
             mock_paths.CONFIG_DIR = Path('/nonexistent')
             config = load_email_config()
 
@@ -503,7 +503,7 @@ class TestEmailConfiguration:
         with open(config_file, 'w') as f:
             f.write("{ invalid json }")
 
-        with patch('university_system.infrastructure.auth.email_otp_service.paths') as mock_paths:
+        with patch('education_system.university_system.infrastructure.auth.email_otp_service.paths') as mock_paths:
             mock_paths.CONFIG_DIR = config_dir
             config = load_email_config()
 

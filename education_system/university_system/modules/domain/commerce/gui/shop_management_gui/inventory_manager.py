@@ -396,10 +396,10 @@ def load_inventory_data(self):
             cursor = conn.cursor()
             
             cursor.execute("""
-                SELECT p.product_id, p.name, p.category, i.quantity, i.restock_threshold, i.last_restock_date
-                FROM shop_products p
-                JOIN shop_inventory i ON p.product_id = i.product_id
-                WHERE p.is_active = 1
+                SELECT p.source_product_id as product_id, p.name, p.category, i.quantity, i.restock_threshold, i.last_restock_date
+                FROM products p
+                JOIN shop_inventory i ON p.source_product_id = i.product_id
+                WHERE p.source_type = 'shop' AND p.is_active = 1
                 ORDER BY (i.quantity <= i.restock_threshold) DESC, p.category, p.name
             """)
             

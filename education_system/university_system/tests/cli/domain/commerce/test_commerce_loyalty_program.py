@@ -122,11 +122,11 @@ def mock_db_connection(tmp_path):
 class TestCustomerCreation:
     """Tests for customer creation functionality."""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.get_db_connection')
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.log_audit_action')
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.send_confirmation_email')
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.render_template')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.send_confirmation_email')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.render_template')
     @patch('builtins.input')
     def test_create_customer_success(self, mock_input, mock_render, mock_email,
                                      mock_audit, mock_backup, mock_get_conn,
@@ -164,7 +164,7 @@ class TestCustomerCreation:
         mock_audit.assert_called_once()
         mock_email.assert_called_once()
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.get_db_connection')
     @patch('builtins.input')
     def test_create_customer_invalid_email(self, mock_input, mock_get_conn,
                                           mock_db_connection, mock_auth, capsys):
@@ -186,7 +186,7 @@ class TestCustomerCreation:
         captured = capsys.readouterr()
         assert "Invalid email format" in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.get_db_connection')
     @patch('builtins.input')
     def test_create_customer_duplicate_email(self, mock_input, mock_get_conn,
                                              mock_db_connection, mock_auth, capsys):
@@ -224,7 +224,7 @@ class TestCustomerCreation:
 class TestLoyaltyManagement:
     """Tests for loyalty program management."""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.get_db_connection')
     def test_view_loyalty_tiers(self, mock_get_conn, mock_db_connection, capsys):
         """Test viewing loyalty tier information."""
         # Setup
@@ -263,9 +263,9 @@ class TestLoyaltyManagement:
         assert "Gold" in captured.out
         assert "Platinum" in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.get_db_connection')
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.log_audit_action')
     @patch('builtins.input')
     def test_update_loyalty_points_add(self, mock_input, mock_audit, mock_backup,
                                        mock_get_conn, mock_db_connection, mock_auth):
@@ -304,9 +304,9 @@ class TestLoyaltyManagement:
         assert tier == 'Silver'  # Should upgrade from Bronze to Silver
         mock_audit.assert_called_once()
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.get_db_connection')
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.log_audit_action')
     @patch('builtins.input')
     def test_award_bonus_points_to_tier(self, mock_input, mock_audit, mock_backup,
                                         mock_get_conn, mock_db_connection, mock_auth):
@@ -352,7 +352,7 @@ class TestLoyaltyManagement:
 class TestFeedbackManagement:
     """Tests for customer feedback management."""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.get_db_connection')
     def test_view_recent_feedback(self, mock_get_conn, mock_db_connection, capsys):
         """Test viewing recent customer feedback."""
         # Setup
@@ -404,7 +404,7 @@ class TestFeedbackManagement:
     def test_export_feedback_report_csv(self, mock_db_connection, tmp_path):
         """Test exporting feedback to CSV."""
         # Setup
-        with patch('university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.get_db_connection') as mock_get_conn:
+        with patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.get_db_connection') as mock_get_conn:
             mock_get_conn.return_value = mock_db_connection
             cursor = mock_db_connection.cursor()
 
@@ -442,7 +442,7 @@ class TestCustomerAnalytics:
     def test_loyalty_analytics(self, mock_db_connection, capsys):
         """Test loyalty program analytics."""
         # Setup
-        with patch('university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.get_db_connection') as mock_get_conn:
+        with patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.get_db_connection') as mock_get_conn:
             mock_get_conn.return_value = mock_db_connection
             cursor = mock_db_connection.cursor()
 

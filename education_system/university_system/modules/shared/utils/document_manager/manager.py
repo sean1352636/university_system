@@ -7,31 +7,31 @@ feature-specific mixins, all composed here via multiple inheritance.
 import sys
 import getpass
 
-from ._common import (
+from education_system.university_system.modules.shared.utils.document_manager._common import (
     _t, get_current_user, get_auth,
     EMAIL_SYSTEM_AVAILABLE,
 )
 
 # Import all mixins
-from .database import DatabaseMixin
-from .upload import UploadMixin
-from .status import StatusMixin
-from .search import SearchMixin
-from .dashboard import DashboardMixin
-from .bulk_operations import BulkOperationsMixin
-from .reports import ReportsMixin
-from .student_portal import StudentPortalMixin
-from .notifications import NotificationsMixin
-from .versioning import VersioningMixin
-from .workflows import WorkflowMixin
-from .document_types import DocumentTypeMixin
-from .import_export import ImportExportMixin
-from .settings import SettingsMixin
-from .backup import BackupMixin
-from .ocr import OCRMixin
-from .api_server import APIServerMixin
-from .web_interface import WebInterfaceMixin
-from .viewing import ViewingMixin
+from education_system.university_system.modules.shared.utils.document_manager.database import DatabaseMixin
+from education_system.university_system.modules.shared.utils.document_manager.upload import UploadMixin
+from education_system.university_system.modules.shared.utils.document_manager.status import StatusMixin
+from education_system.university_system.modules.shared.utils.document_manager.search import SearchMixin
+from education_system.university_system.modules.shared.utils.document_manager.dashboard import DashboardMixin
+from education_system.university_system.modules.shared.utils.document_manager.bulk_operations import BulkOperationsMixin
+from education_system.university_system.modules.shared.utils.document_manager.reports import ReportsMixin
+from education_system.university_system.modules.shared.utils.document_manager.student_portal import StudentPortalMixin
+from education_system.university_system.modules.shared.utils.document_manager.notifications import NotificationsMixin
+from education_system.university_system.modules.shared.utils.document_manager.versioning import VersioningMixin
+from education_system.university_system.modules.shared.utils.document_manager.workflows import WorkflowMixin
+from education_system.university_system.modules.shared.utils.document_manager.document_types import DocumentTypeMixin
+from education_system.university_system.modules.shared.utils.document_manager.import_export import ImportExportMixin
+from education_system.university_system.modules.shared.utils.document_manager.settings import SettingsMixin
+from education_system.university_system.modules.shared.utils.document_manager.backup import BackupMixin
+from education_system.university_system.modules.shared.utils.document_manager.ocr import OCRMixin
+from education_system.university_system.modules.shared.utils.document_manager.api_server import APIServerMixin
+from education_system.university_system.modules.shared.utils.document_manager.web_interface import WebInterfaceMixin
+from education_system.university_system.modules.shared.utils.document_manager.viewing import ViewingMixin
 
 
 class DocumentManager(
@@ -285,7 +285,7 @@ def main():
 
     # 3) Give email subsystem the auth context if available
     try:
-        from ._common import set_auth as _set_auth_context
+        from education_system.university_system.modules.shared.utils.document_manager._common import set_auth as _set_auth_context
         if auth_instance is not None:
             _set_auth_context(auth_instance)
     except (ImportError, NameError):

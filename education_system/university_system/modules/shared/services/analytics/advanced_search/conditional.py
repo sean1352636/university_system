@@ -2,9 +2,9 @@
 from datetime import datetime
 
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from .display import display_search_results
-from .system import log_search
-from .admin import audit_log
+from education_system.university_system.modules.shared.services.analytics.advanced_search.display import display_search_results
+from education_system.university_system.modules.shared.services.analytics.advanced_search.system import log_search
+from education_system.university_system.modules.shared.services.analytics.advanced_search.admin import audit_log
 
 
 @audit_log

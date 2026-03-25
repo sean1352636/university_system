@@ -5,6 +5,7 @@ from tkinter import ttk, messagebox
 
 from education_system.college_system.modules.domain.feedback.services.feedback_service import FeedbackService
 from education_system.college_system.core.exceptions import FeedbackError
+from education_system.college_system.core.i18n import t
 
 
 class _FeedbackDialog(tk.Toplevel):
@@ -33,27 +34,27 @@ class _FeedbackDialog(tk.Toplevel):
         container.pack(fill="both", expand=True)
         self._vars: dict[str, tk.StringVar] = {}
 
-        tk.Label(container, text="Title", anchor="w",
+        tk.Label(container, text=t("common.title"), anchor="w",
                  font=("Helvetica", 9, "bold")).grid(row=0, column=0, sticky="w", **pad)
         var = tk.StringVar(value=self._item.get("title", "") if self._item else "")
         ttk.Entry(container, textvariable=var, width=36).grid(row=0, column=1, sticky="ew", **pad)
         self._vars["title"] = var
-        tk.Label(container, text="Description", anchor="w",
+        tk.Label(container, text=t("common.description"), anchor="w",
                  font=("Helvetica", 9, "bold")).grid(row=1, column=0, sticky="w", **pad)
         var = tk.StringVar(value=self._item.get("description", "") if self._item else "")
         ttk.Entry(container, textvariable=var, width=36).grid(row=1, column=1, sticky="ew", **pad)
         self._vars["description"] = var
-        tk.Label(container, text="Category", anchor="w",
+        tk.Label(container, text=t("common.category"), anchor="w",
                  font=("Helvetica", 9, "bold")).grid(row=2, column=0, sticky="w", **pad)
         var = tk.StringVar(value=self._item.get("category", "") if self._item else "")
         ttk.Entry(container, textvariable=var, width=36).grid(row=2, column=1, sticky="ew", **pad)
         self._vars["category"] = var
-        tk.Label(container, text="Response", anchor="w",
+        tk.Label(container, text=t("feedback.response"), anchor="w",
                  font=("Helvetica", 9, "bold")).grid(row=3, column=0, sticky="w", **pad)
         var = tk.StringVar(value=self._item.get("admin_response", "") if self._item else "")
         ttk.Entry(container, textvariable=var, width=36).grid(row=3, column=1, sticky="ew", **pad)
         self._vars["admin_response"] = var
-        tk.Label(container, text="Status", anchor="w",
+        tk.Label(container, text=t("common.status"), anchor="w",
                  font=("Helvetica", 9, "bold")).grid(row=4, column=0, sticky="w", **pad)
         var = tk.StringVar(value=self._item.get("status", "") if self._item else "")
         ttk.Entry(container, textvariable=var, width=36).grid(row=4, column=1, sticky="ew", **pad)
@@ -61,8 +62,8 @@ class _FeedbackDialog(tk.Toplevel):
 
         btn_frame = tk.Frame(container)
         btn_frame.grid(row=99, column=0, columnspan=2, pady=(15, 0))
-        ttk.Button(btn_frame, text="Save", command=self._on_save).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.destroy).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text=t("common.save"), command=self._on_save).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text=t("common.cancel"), command=self.destroy).pack(side="left", padx=5)
 
     def _on_save(self):
         self.result = {k: v.get().strip() for k, v in self._vars.items()}
@@ -85,16 +86,17 @@ class FeedbackFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Feedback",
+        tk.Label(header, text=t("feedback.management"),
                  font=("Helvetica", 15, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=10)
 
         toolbar = tk.Frame(self, bg="#ecf0f1", pady=8)
         toolbar.pack(fill="x", padx=15)
-        ttk.Button(toolbar, text="Add", command=self._on_add).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Edit", command=self._on_edit).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Delete", command=self._on_delete).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Refresh", command=self._load_items).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("feedback.add"), command=self._on_add).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.edit"), command=self._on_edit).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.delete"), command=self._on_delete).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.refresh"), command=self._load_items).pack(side="left", padx=4)
+        ttk.Button(toolbar, text="Export CSV", command=self._export_csv).pack(side="left", padx=4)
 
         tree_frame = tk.Frame(self)
         tree_frame.pack(fill="both", expand=True, padx=15, pady=(0, 15))
@@ -102,17 +104,17 @@ class FeedbackFrame(tk.Frame):
         columns = ('submitted_by', 'title', 'description', 'category', 'is_anonymous', 'upvote_count')
         self._tree = ttk.Treeview(tree_frame, columns=columns, show="headings", selectmode="browse")
 
-        self._tree.heading("submitted_by", text="By")
+        self._tree.heading("submitted_by", text=t("feedback.by"))
         self._tree.column("submitted_by", width=80, anchor="center")
-        self._tree.heading("title", text="Title")
+        self._tree.heading("title", text=t("common.title"))
         self._tree.column("title", width=200, anchor="center")
-        self._tree.heading("description", text="Description")
+        self._tree.heading("description", text=t("common.description"))
         self._tree.column("description", width=300, anchor="center")
-        self._tree.heading("category", text="Category")
+        self._tree.heading("category", text=t("common.category"))
         self._tree.column("category", width=100, anchor="center")
-        self._tree.heading("is_anonymous", text="Anonymous")
+        self._tree.heading("is_anonymous", text=t("feedback.anonymous"))
         self._tree.column("is_anonymous", width=60, anchor="center")
-        self._tree.heading("upvote_count", text="Votes")
+        self._tree.heading("upvote_count", text=t("feedback.votes"))
         self._tree.column("upvote_count", width=50, anchor="center")
 
         vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self._tree.yview)
@@ -120,7 +122,7 @@ class FeedbackFrame(tk.Frame):
         self._tree.pack(side="left", fill="both", expand=True)
         vsb.pack(side="right", fill="y")
 
-        self._status_var = tk.StringVar(value="Ready")
+        self._status_var = tk.StringVar(value=t("common.ready"))
         tk.Label(self, textvariable=self._status_var, bg="#ecf0f1", anchor="w",
                  font=("Helvetica", 9), fg="#7f8c8d").pack(fill="x", padx=15, pady=(0, 8))
 
@@ -135,14 +137,14 @@ class FeedbackFrame(tk.Frame):
                 self._tree.insert("", "end", iid=item["id"], values=(
                     item.get("submitted_by", ""), item.get("title", ""), item.get("description", ""), item.get("category", ""), item.get("is_anonymous", ""), item.get("upvote_count", ""),
                 ))
-            self._status_var.set(f"{len(items)} item(s) loaded")
+            self._status_var.set(t("feedback.count_loaded", count=len(items)))
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load:\n{exc}")
+            messagebox.showerror(t("common.error"), f"{t('common.failed_to_load')}\n{exc}")
 
     def _selected_pk(self) -> int | None:
         sel = self._tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select an item first.")
+            messagebox.showwarning(t("common.selection"), t("common.select_item_first"))
             return None
         return int(sel[0])
 
@@ -153,10 +155,10 @@ class FeedbackFrame(tk.Frame):
             return
         try:
             self._svc.create_feedback(**dlg.result)
-            messagebox.showinfo("Success", "Feedback created.")
+            messagebox.showinfo(t("common.success"), t("feedback.created"))
             self._load_items()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_edit(self):
         pk = self._selected_pk()
@@ -164,7 +166,7 @@ class FeedbackFrame(tk.Frame):
             return
         item = self._svc.get_feedback(pk)
         if not item:
-            messagebox.showerror("Error", "Feedback not found.")
+            messagebox.showerror(t("common.error"), t("feedback.not_found"))
             return
         dlg = _FeedbackDialog(self, title="Edit Feedback", item=item)
         self.wait_window(dlg)
@@ -172,20 +174,24 @@ class FeedbackFrame(tk.Frame):
             return
         try:
             self._svc.update_feedback(pk, **dlg.result)
-            messagebox.showinfo("Success", "Feedback updated.")
+            messagebox.showinfo(t("common.success"), t("feedback.updated"))
             self._load_items()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_delete(self):
         pk = self._selected_pk()
         if pk is None:
             return
-        if not messagebox.askyesno("Confirm", "Delete this feedback?"):
+        if not messagebox.askyesno(t("common.confirm"), t("feedback.delete_confirm")):
             return
         try:
             self._svc.delete_feedback(pk)
-            messagebox.showinfo("Success", "Feedback deleted.")
+            messagebox.showinfo(t("common.success"), t("feedback.deleted"))
             self._load_items()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._tree, "feedback_export.csv")

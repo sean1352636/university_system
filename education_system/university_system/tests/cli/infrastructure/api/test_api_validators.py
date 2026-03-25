@@ -2,7 +2,7 @@
 """
 Comprehensive tests for API input validators.
 
-Tests all validator functions in university_system.api.validators, covering:
+Tests all validator functions in shared.api.university.validators, covering:
 - _require_fields helper
 - _validate_email regex helper
 - All validate_*_create validators (required fields + value constraints)
@@ -14,7 +14,7 @@ Organised into test classes by domain area.
 import pytest
 
 from education_system.university_system.core.exceptions import ValidationError
-from education_system.university_system.api.validators import (
+from education_system.shared.api.university.validators import (
     _require_fields,
     _validate_email,
     validate_student_create,

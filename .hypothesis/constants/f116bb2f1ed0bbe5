@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/ai/university_chatbot/nlp_processor.py
+# hypothesis_version: 6.151.9
+
+[0.0, 0.5, 0.6, 0.7, 0.8, 0.9, 'DATE', 'MONEY', 'NEGATIVE', 'NEUTRAL', 'ORG', 'PERSON', 'confidence', 'dates', 'entities', 'general', 'intent', 'is_voice_command', 'label', 'listen', 'money', 'organizations', 'patterns', 'persons', 'requires_escalation', 'score', 'sentiment', 'speak', 'start voice mode', 'student_id', 'talk to me', 'voice mode', 'voice_command']

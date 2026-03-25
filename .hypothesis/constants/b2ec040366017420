@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/loyalty/gift_cards.py
+# hypothesis_version: 6.151.9
+
+[100, 120, 365, '#27ae60', '#333333', '#dc3545', '#e74c3c', '#ecf0f1', '#ffffff', '%Y-%m-%d', '-', '.', '1.0', '100', '150', '200', '25', '400x250', '50', '500x450', '75', 'Balance', 'Card.TFrame', 'Code', 'Create Gift Card', 'Danger.TButton', 'GC', 'Helvetica', 'ID', 'Initial', 'Invalid value', 'Main.TFrame', 'Primary.TButton', 'Purchased', 'Purchaser', 'Recipient', 'Secondary.TButton', 'Status', 'Subtitle.TLabel', 'Success.TButton', '_', 'active', 'bold', 'both', 'cinema.common.error', 'cinema.common.info', 'end', 'headings', 'left', 'nw', 'right', 'values', 'vertical', 'w', 'x', 'y']

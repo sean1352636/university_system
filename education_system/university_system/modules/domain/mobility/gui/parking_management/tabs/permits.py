@@ -4,8 +4,8 @@ from tkinter import ttk, messagebox
 from datetime import datetime
 import logging
 
-from .. import get_connection, _t
-from ..dialogs.permit_dialog import PermitDialog
+from education_system.university_system.modules.domain.mobility.gui.parking_management import get_connection, _t
+from education_system.university_system.modules.domain.mobility.gui.parking_management.dialogs.permit_dialog import PermitDialog
 
 
 class PermitsMixin:

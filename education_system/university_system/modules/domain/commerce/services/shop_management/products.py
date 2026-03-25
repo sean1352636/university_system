@@ -2,7 +2,7 @@ import time
 from datetime import datetime, timedelta
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.modules.shared.utils.simple_activity_logger import log_create, log_update, log_read
-from . import config
+from education_system.university_system.modules.domain.commerce.services.shop_management import config
 
 
 @log_create(module="shop", description="Adding new product")
@@ -24,7 +24,7 @@ def add_new_product():
         print("\nAdd New Product:")
 
         # Generate product ID
-        cursor.execute("SELECT MAX(SUBSTR(product_id, 2)) FROM shop_products WHERE product_id LIKE 'P%'")
+        cursor.execute("SELECT MAX(SUBSTR(source_product_id, 2)) FROM products WHERE source_type = 'shop' AND source_product_id LIKE 'P%'")
         result = cursor.fetchone()
 
         try:
@@ -60,7 +60,7 @@ def add_new_product():
                 print("Invalid price. Please enter a valid number.")
 
         # Get category
-        cursor.execute("SELECT DISTINCT category FROM shop_products ORDER BY category")
+        cursor.execute("SELECT DISTINCT category FROM products WHERE source_type = 'shop' ORDER BY category")
         categories = cursor.fetchall()
 
         print("\nExisting Categories:")
@@ -120,9 +120,9 @@ def add_new_product():
         # Insert product
         cursor.execute(
             '''
-            INSERT INTO shop_products
-            (product_id, name, description, price, category, created_at, updated_at, tax_rate, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO products
+            (source_product_id, source_type, name, description, price, category, created_at, updated_at, tax_rate, is_active)
+            VALUES (?, 'shop', ?, ?, ?, ?, ?, ?, ?, ?)
             ''',
             [product_id, name, description, price, category, now, now, tax_rate, 1]
         )
@@ -180,9 +180,11 @@ def edit_product():
         # Get product list
         cursor.execute(
             '''
-            SELECT p.*, i.quantity
-            FROM shop_products p
-            JOIN shop_inventory i ON p.product_id = i.product_id
+            SELECT p.source_product_id as product_id, p.name, p.description, p.price, p.category,
+                   p.tax_rate, p.is_active, i.quantity
+            FROM products p
+            JOIN shop_inventory i ON p.source_product_id = i.product_id
+            WHERE p.source_type = 'shop'
             ORDER BY p.name
             '''
         )
@@ -202,17 +204,18 @@ def edit_product():
         for product in products:
             price_formatted = f"£{product['price']:.2f}"
             active_status = "Yes" if product['is_active'] else "No"
-            print(f"{product['product_id']:<8} {product['name'][:28]:<30} {price_formatted:<10} {product['quantity']:<8} {active_status}")
+            print(f"{product['source_product_id']:<8} {product['name'][:28]:<30} {price_formatted:<10} {product['quantity']:<8} {active_status}")
 
         # Get product to edit
         product_id = input("\nEnter product ID to edit: ").strip().upper()
 
         cursor.execute(
             '''
-            SELECT p.*, i.quantity, i.restock_threshold
-            FROM shop_products p
-            JOIN shop_inventory i ON p.product_id = i.product_id
-            WHERE p.product_id = ?
+            SELECT p.source_product_id as product_id, p.name, p.description, p.price, p.category,
+                   p.tax_rate, p.is_active, i.quantity, i.restock_threshold
+            FROM products p
+            JOIN shop_inventory i ON p.source_product_id = i.product_id
+            WHERE p.source_type = 'shop' AND p.source_product_id = ?
             ''',
             [product_id]
         )
@@ -284,10 +287,10 @@ def edit_product():
 
         cursor.execute(
             '''
-            UPDATE shop_products
+            UPDATE products
             SET name = ?, description = ?, price = ?, category = ?,
                 tax_rate = ?, updated_at = ?
-            WHERE product_id = ?
+            WHERE source_type = 'shop' AND source_product_id = ?
             ''',
             [name, description, price, category, tax_rate, now, product_id]
         )
@@ -332,8 +335,9 @@ def toggle_product_status():
         cursor.execute(
             '''
             SELECT p.*, i.quantity
-            FROM shop_products p
-            JOIN shop_inventory i ON p.product_id = i.product_id
+            FROM products p
+            JOIN shop_inventory i ON p.source_product_id = i.product_id
+            WHERE p.source_type = 'shop'
             ORDER BY p.is_active DESC, p.name
             '''
         )
@@ -353,15 +357,17 @@ def toggle_product_status():
         for product in products:
             price_formatted = f"£{product['price']:.2f}"
             active_status = "Yes" if product['is_active'] else "No"
-            print(f"{product['product_id']:<8} {product['name'][:28]:<30} {price_formatted:<10} {product['quantity']:<8} {active_status}")
+            print(f"{product['source_product_id']:<8} {product['name'][:28]:<30} {price_formatted:<10} {product['quantity']:<8} {active_status}")
 
         # Get product to toggle
         product_id = input("\nEnter product ID to toggle status: ").strip().upper()
 
         cursor.execute(
             '''
-            SELECT * FROM shop_products
-            WHERE product_id = ?
+            SELECT source_product_id as product_id, name, description, price, category,
+                   tax_rate, is_active
+            FROM products
+            WHERE source_type = 'shop' AND source_product_id = ?
             ''',
             [product_id]
         )
@@ -386,9 +392,9 @@ def toggle_product_status():
 
         cursor.execute(
             '''
-            UPDATE shop_products
+            UPDATE products
             SET is_active = ?, updated_at = ?
-            WHERE product_id = ?
+            WHERE source_type = 'shop' AND source_product_id = ?
             ''',
             [new_status, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), product_id]
         )
@@ -432,9 +438,12 @@ def view_all_products():
         # Get all products with inventory
         cursor.execute(
             '''
-            SELECT p.*, i.quantity, i.restock_threshold, i.last_restock_date
-            FROM shop_products p
-            JOIN shop_inventory i ON p.product_id = i.product_id
+            SELECT p.source_product_id as product_id, p.name, p.description, p.price, p.category,
+                   p.created_at, p.updated_at, p.tax_rate, p.is_active,
+                   i.quantity, i.restock_threshold, i.last_restock_date
+            FROM products p
+            JOIN shop_inventory i ON p.source_product_id = i.product_id
+            WHERE p.source_type = 'shop'
             ORDER BY p.category, p.name
             '''
         )
@@ -502,10 +511,11 @@ def search_products(search_term, category=None, min_price=None, max_price=None):
 
         # Build query
         query = '''
-        SELECT p.*, i.quantity
-        FROM shop_products p
-        JOIN shop_inventory i ON p.product_id = i.product_id
-        WHERE p.is_active = 1
+        SELECT p.source_product_id as product_id, p.name, p.description, p.price, p.category,
+               p.tax_rate, p.is_active, i.quantity
+        FROM products p
+        JOIN shop_inventory i ON p.source_product_id = i.product_id
+        WHERE p.source_type = 'shop' AND p.is_active = 1
         '''
         params = []
 
@@ -552,14 +562,14 @@ def get_popular_products(limit=10, days=30):
 
         cursor.execute(
             '''
-            SELECT p.product_id, p.name, p.category, p.price,
+            SELECT p.source_product_id as product_id, p.name, p.category, p.price,
                    SUM(ti.quantity) as total_sold,
                    COUNT(DISTINCT ti.transaction_id) as transaction_count
             FROM shop_transaction_items ti
-            JOIN shop_transactions t ON ti.transaction_id = t.transaction_id
-            JOIN shop_products p ON ti.product_id = p.product_id
-            WHERE t.transaction_date >= ? AND p.is_active = 1
-            GROUP BY p.product_id
+            JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
+            JOIN products p ON ti.product_id = p.source_product_id AND p.source_type = 'shop'
+            WHERE t.created_at >= ? AND p.is_active = 1
+            GROUP BY p.source_product_id
             ORDER BY total_sold DESC, transaction_count DESC
             LIMIT ?
             ''',
@@ -655,7 +665,7 @@ def quick_add_product():
         conn = get_connection()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT MAX(SUBSTR(product_id, 2)) FROM shop_products WHERE product_id LIKE 'P%'")
+        cursor.execute("SELECT MAX(SUBSTR(source_product_id, 2)) FROM products WHERE source_type = 'shop' AND source_product_id LIKE 'P%'")
         result = cursor.fetchone()
 
         try:
@@ -672,9 +682,9 @@ def quick_add_product():
         # Insert product
         cursor.execute(
             '''
-            INSERT INTO shop_products
-            (product_id, name, description, price, category, created_at, updated_at, tax_rate, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO products
+            (source_product_id, source_type, name, description, price, category, created_at, updated_at, tax_rate, is_active)
+            VALUES (?, 'shop', ?, ?, ?, ?, ?, ?, ?, ?)
             ''',
             [product_id, name, f"Quick-added product: {name}", price, category, now, now, 0.2, 1]
         )
@@ -736,9 +746,9 @@ def bulk_update_prices():
 
                 cursor.execute(
                     '''
-                    UPDATE shop_products
+                    UPDATE products
                     SET price = price * (1 + ? / 100), updated_at = ?
-                    WHERE is_active = 1
+                    WHERE source_type = 'shop' AND is_active = 1
                     ''',
                     [percentage, datetime.now().strftime('%Y-%m-%d %H:%M:%S')]
                 )
@@ -753,7 +763,7 @@ def bulk_update_prices():
 
         elif choice == '2':
             # Update by category
-            cursor.execute("SELECT DISTINCT category FROM shop_products WHERE is_active = 1 ORDER BY category")
+            cursor.execute("SELECT DISTINCT category FROM products WHERE source_type = 'shop' AND is_active = 1 ORDER BY category")
             categories = cursor.fetchall()
 
             if not categories:
@@ -777,9 +787,9 @@ def bulk_update_prices():
 
                 cursor.execute(
                     '''
-                    UPDATE shop_products
+                    UPDATE products
                     SET price = price * (1 + ? / 100), updated_at = ?
-                    WHERE category = ? AND is_active = 1
+                    WHERE source_type = 'shop' AND category = ? AND is_active = 1
                     ''',
                     [percentage, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), selected_category]
                 )
@@ -794,7 +804,7 @@ def bulk_update_prices():
 
         elif choice == '3':
             # Set fixed price for category
-            cursor.execute("SELECT DISTINCT category FROM shop_products WHERE is_active = 1 ORDER BY category")
+            cursor.execute("SELECT DISTINCT category FROM products WHERE source_type = 'shop' AND is_active = 1 ORDER BY category")
             categories = cursor.fetchall()
 
             if not categories:
@@ -823,9 +833,9 @@ def bulk_update_prices():
 
                 cursor.execute(
                     '''
-                    UPDATE shop_products
+                    UPDATE products
                     SET price = ?, updated_at = ?
-                    WHERE category = ? AND is_active = 1
+                    WHERE source_type = 'shop' AND category = ? AND is_active = 1
                     ''',
                     [new_price, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), selected_category]
                 )

@@ -1,6 +1,6 @@
 """Charity Shop - Sales mixin for CharityShopApp."""
 
-from ._imports import (
+from education_system.university_system.modules.services.gui.charity_shop_gui._imports import (
     messagebox, datetime,
     FINANCE_INTEGRATION_AVAILABLE, ACTIVITY_LOGGER_AVAILABLE, EMAIL_SERVICE_AVAILABLE,
     get_current_user, get_student_info,
@@ -15,7 +15,7 @@ class SalesMixin:
 
     def sell_item(self):
         """Mark selected item as sold with payment processing and email receipt."""
-        from .dialogs import SellDialog
+        from education_system.university_system.modules.services.gui.charity_shop_gui.dialogs import SellDialog
 
         item = self.get_selected_item()
         if not item:

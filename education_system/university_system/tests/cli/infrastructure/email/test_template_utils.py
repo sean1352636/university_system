@@ -39,7 +39,7 @@ class TestInitializeAnalyticsTemplates:
         assert hasattr(template_utils, 'initialize_analytics_templates')
         assert callable(template_utils.initialize_analytics_templates)
 
-    @patch('university_system.infrastructure.email.template_utils.log_event')
+    @patch('education_system.university_system.infrastructure.email.template_utils.log_event')
     def test_initialize_analytics_templates_logs_info(self, mock_log):
         """Test that initialize_analytics_templates logs appropriate message"""
         template_utils.initialize_analytics_templates()
@@ -52,43 +52,43 @@ class TestInitializeAnalyticsTemplates:
 class TestEnsureTemplatesDirectory:
     """Test suite for ensure_templates_directory() function"""
 
-    @patch('university_system.modules.shared.constants.paths.EMAIL_TEMPLATES_DIR')
-    @patch('university_system.infrastructure.email.template_utils.log_event')
+    @patch('education_system.university_system.modules.shared.constants.paths.EMAIL_TEMPLATES_DIR')
+    @patch('education_system.university_system.infrastructure.email.template_utils.log_event')
     def test_ensure_templates_directory_exists(self, mock_log, mock_path):
         """Test ensure_templates_directory when directory exists"""
         mock_templates_dir = MagicMock()
         mock_templates_dir.exists.return_value = True
         mock_path.__str__ = MagicMock(return_value='/path/to/templates')
 
-        with patch('university_system.infrastructure.email.template_utils.paths.EMAIL_TEMPLATES_DIR', mock_templates_dir):
+        with patch('education_system.university_system.infrastructure.email.template_utils.paths.EMAIL_TEMPLATES_DIR', mock_templates_dir):
             result = template_utils.ensure_templates_directory()
 
             assert result == mock_templates_dir
             mock_templates_dir.exists.assert_called_once()
             mock_templates_dir.mkdir.assert_not_called()
 
-    @patch('university_system.modules.shared.constants.paths.EMAIL_TEMPLATES_DIR')
-    @patch('university_system.infrastructure.email.template_utils.log_event')
+    @patch('education_system.university_system.modules.shared.constants.paths.EMAIL_TEMPLATES_DIR')
+    @patch('education_system.university_system.infrastructure.email.template_utils.log_event')
     def test_ensure_templates_directory_creates_new(self, mock_log, mock_path):
         """Test ensure_templates_directory creates directory when missing"""
         mock_templates_dir = MagicMock()
         mock_templates_dir.exists.return_value = False
         mock_templates_dir.__str__ = MagicMock(return_value='/path/to/templates')
 
-        with patch('university_system.infrastructure.email.template_utils.paths.EMAIL_TEMPLATES_DIR', mock_templates_dir):
+        with patch('education_system.university_system.infrastructure.email.template_utils.paths.EMAIL_TEMPLATES_DIR', mock_templates_dir):
             result = template_utils.ensure_templates_directory()
 
             assert result == mock_templates_dir
             mock_templates_dir.mkdir.assert_called_once_with(parents=True, exist_ok=True)
             mock_log.assert_called_once()
 
-    @patch('university_system.infrastructure.email.template_utils.paths.EMAIL_TEMPLATES_DIR')
+    @patch('education_system.university_system.infrastructure.email.template_utils.paths.EMAIL_TEMPLATES_DIR')
     def test_ensure_templates_directory_exception_handling(self, mock_path):
         """Test ensure_templates_directory handles exceptions properly"""
         mock_templates_dir = MagicMock()
         mock_templates_dir.exists.side_effect = Exception("Filesystem error")
 
-        with patch('university_system.infrastructure.email.template_utils.paths.EMAIL_TEMPLATES_DIR', mock_templates_dir):
+        with patch('education_system.university_system.infrastructure.email.template_utils.paths.EMAIL_TEMPLATES_DIR', mock_templates_dir):
             # Function is decorated with @handle_exception, so it should return False on error
             result = template_utils.ensure_templates_directory()
             assert result is False
@@ -97,8 +97,8 @@ class TestEnsureTemplatesDirectory:
 class TestSaveDefaultTemplates:
     """Test suite for save_default_templates() function"""
 
-    @patch('university_system.infrastructure.email.template_utils.ensure_templates_directory')
-    @patch('university_system.infrastructure.email.template_utils.log_event')
+    @patch('education_system.university_system.infrastructure.email.template_utils.ensure_templates_directory')
+    @patch('education_system.university_system.infrastructure.email.template_utils.log_event')
     def test_save_default_templates_success(self, mock_log, mock_ensure_dir):
         """Test save_default_templates returns True"""
         mock_dir = MagicMock()
@@ -111,7 +111,7 @@ class TestSaveDefaultTemplates:
         mock_ensure_dir.assert_called_once()
         assert mock_log.call_count >= 1
 
-    @patch('university_system.infrastructure.email.template_utils.ensure_templates_directory')
+    @patch('education_system.university_system.infrastructure.email.template_utils.ensure_templates_directory')
     def test_save_default_templates_exception_handling(self, mock_ensure_dir):
         """Test save_default_templates handles exceptions"""
         mock_ensure_dir.side_effect = Exception("Directory error")
@@ -124,7 +124,7 @@ class TestSaveDefaultTemplates:
 class TestListTemplates:
     """Test suite for list_templates() function"""
 
-    @patch('university_system.infrastructure.email.template_utils.ensure_templates_directory')
+    @patch('education_system.university_system.infrastructure.email.template_utils.ensure_templates_directory')
     @patch('builtins.open', new_callable=mock_open)
     def test_list_templates_empty_directory(self, mock_file, mock_ensure_dir):
         """Test list_templates with no template files"""
@@ -137,8 +137,8 @@ class TestListTemplates:
         assert result == []
         mock_dir.glob.assert_called_once_with("*.json")
 
-    @patch('university_system.infrastructure.email.template_utils.ensure_templates_directory')
-    @patch('university_system.infrastructure.email.template_utils.log_event')
+    @patch('education_system.university_system.infrastructure.email.template_utils.ensure_templates_directory')
+    @patch('education_system.university_system.infrastructure.email.template_utils.log_event')
     @patch('builtins.open', new_callable=mock_open)
     def test_list_templates_with_files(self, mock_file, mock_log, mock_ensure_dir):
         """Test list_templates with template files"""
@@ -167,8 +167,8 @@ class TestListTemplates:
         assert 'body_preview' in result[0]
         assert 'is_default' in result[0]
 
-    @patch('university_system.infrastructure.email.template_utils.ensure_templates_directory')
-    @patch('university_system.infrastructure.email.template_utils.log_event')
+    @patch('education_system.university_system.infrastructure.email.template_utils.ensure_templates_directory')
+    @patch('education_system.university_system.infrastructure.email.template_utils.log_event')
     @patch('builtins.open', new_callable=mock_open)
     def test_list_templates_with_long_body(self, mock_file, mock_log, mock_ensure_dir):
         """Test list_templates truncates long body preview"""
@@ -192,8 +192,8 @@ class TestListTemplates:
         assert len(result) == 1
         assert len(result[0]['body_preview']) <= 104  # 100 chars + "..."
 
-    @patch('university_system.infrastructure.email.template_utils.ensure_templates_directory')
-    @patch('university_system.infrastructure.email.template_utils.log_event')
+    @patch('education_system.university_system.infrastructure.email.template_utils.ensure_templates_directory')
+    @patch('education_system.university_system.infrastructure.email.template_utils.log_event')
     def test_list_templates_handles_json_error(self, mock_log, mock_ensure_dir):
         """Test list_templates handles invalid JSON gracefully"""
         mock_file = MagicMock()
@@ -216,7 +216,7 @@ class TestListTemplates:
 class TestLoadTemplate:
     """Test suite for load_template() function"""
 
-    @patch('university_system.infrastructure.email.template_utils.ensure_templates_directory')
+    @patch('education_system.university_system.infrastructure.email.template_utils.ensure_templates_directory')
     @patch('builtins.open', new_callable=mock_open)
     def test_load_template_success(self, mock_file, mock_ensure_dir):
         """Test load_template successfully loads existing template"""
@@ -235,8 +235,8 @@ class TestLoadTemplate:
 
             assert result == template_data
 
-    @patch('university_system.infrastructure.email.template_utils.ensure_templates_directory')
-    @patch('university_system.infrastructure.email.template_utils.log_event')
+    @patch('education_system.university_system.infrastructure.email.template_utils.ensure_templates_directory')
+    @patch('education_system.university_system.infrastructure.email.template_utils.log_event')
     def test_load_template_not_found(self, mock_log, mock_ensure_dir):
         """Test load_template returns None when template doesn't exist"""
         mock_dir = Path('/templates')
@@ -250,9 +250,9 @@ class TestLoadTemplate:
             warning_calls = [call for call in mock_log.call_args_list if call[0][0] == 'warning']
             assert len(warning_calls) > 0
 
-    @patch('university_system.infrastructure.email.template_utils.ensure_templates_directory')
-    @patch('university_system.infrastructure.email.template_utils.log_event')
-    @patch('university_system.infrastructure.email.template_utils.DEFAULT_TEMPLATES', {'test_default': {'subject': 'Default', 'body': 'Default body'}})
+    @patch('education_system.university_system.infrastructure.email.template_utils.ensure_templates_directory')
+    @patch('education_system.university_system.infrastructure.email.template_utils.log_event')
+    @patch('education_system.university_system.infrastructure.email.template_utils.DEFAULT_TEMPLATES', {'test_default': {'subject': 'Default', 'body': 'Default body'}})
     def test_load_template_falls_back_to_default(self, mock_log, mock_ensure_dir):
         """Test load_template falls back to DEFAULT_TEMPLATES"""
         mock_dir = Path('/templates')
@@ -265,9 +265,9 @@ class TestLoadTemplate:
             assert result['subject'] == 'Default'
             assert result['body'] == 'Default body'
 
-    @patch('university_system.infrastructure.email.template_utils.ensure_templates_directory')
-    @patch('university_system.infrastructure.email.template_utils.log_event')
-    @patch('university_system.infrastructure.email.template_utils.DEFAULT_TEMPLATES', {'test_default': {'subject': 'Default', 'body': 'Default body'}})
+    @patch('education_system.university_system.infrastructure.email.template_utils.ensure_templates_directory')
+    @patch('education_system.university_system.infrastructure.email.template_utils.log_event')
+    @patch('education_system.university_system.infrastructure.email.template_utils.DEFAULT_TEMPLATES', {'test_default': {'subject': 'Default', 'body': 'Default body'}})
     @patch('builtins.open', new_callable=mock_open)
     def test_load_template_saves_default_on_first_use(self, mock_file, mock_log, mock_ensure_dir):
         """Test load_template saves default template on first use"""
@@ -280,8 +280,8 @@ class TestLoadTemplate:
             # Should attempt to save the default template
             mock_file.assert_called()
 
-    @patch('university_system.infrastructure.email.template_utils.ensure_templates_directory')
-    @patch('university_system.infrastructure.email.template_utils.log_event')
+    @patch('education_system.university_system.infrastructure.email.template_utils.ensure_templates_directory')
+    @patch('education_system.university_system.infrastructure.email.template_utils.log_event')
     def test_load_template_handles_json_error(self, mock_log, mock_ensure_dir):
         """Test load_template handles invalid JSON"""
         mock_dir = Path('/templates')
@@ -300,8 +300,8 @@ class TestLoadTemplate:
 class TestCreateTemplate:
     """Test suite for create_template() function"""
 
-    @patch('university_system.infrastructure.email.template_utils.ensure_templates_directory')
-    @patch('university_system.infrastructure.email.template_utils.log_event')
+    @patch('education_system.university_system.infrastructure.email.template_utils.ensure_templates_directory')
+    @patch('education_system.university_system.infrastructure.email.template_utils.log_event')
     @patch('builtins.open', new_callable=mock_open)
     def test_create_template_success(self, mock_file, mock_log, mock_ensure_dir):
         """Test create_template successfully creates new template"""
@@ -318,7 +318,7 @@ class TestCreateTemplate:
             assert result is True
             mock_file.assert_called()
 
-    @patch('university_system.infrastructure.email.template_utils.log_event')
+    @patch('education_system.university_system.infrastructure.email.template_utils.log_event')
     def test_create_template_empty_name(self, mock_log):
         """Test create_template rejects empty name"""
         result = template_utils.create_template('', 'Subject', 'Body')
@@ -328,22 +328,22 @@ class TestCreateTemplate:
         error_calls = [call for call in mock_log.call_args_list if call[0][0] == 'error']
         assert len(error_calls) > 0
 
-    @patch('university_system.infrastructure.email.template_utils.log_event')
+    @patch('education_system.university_system.infrastructure.email.template_utils.log_event')
     def test_create_template_empty_subject(self, mock_log):
         """Test create_template rejects empty subject"""
         result = template_utils.create_template('name', '', 'Body')
 
         assert result is False
 
-    @patch('university_system.infrastructure.email.template_utils.log_event')
+    @patch('education_system.university_system.infrastructure.email.template_utils.log_event')
     def test_create_template_empty_body(self, mock_log):
         """Test create_template rejects empty body"""
         result = template_utils.create_template('name', 'Subject', '')
 
         assert result is False
 
-    @patch('university_system.infrastructure.email.template_utils.ensure_templates_directory')
-    @patch('university_system.infrastructure.email.template_utils.log_event')
+    @patch('education_system.university_system.infrastructure.email.template_utils.ensure_templates_directory')
+    @patch('education_system.university_system.infrastructure.email.template_utils.log_event')
     def test_create_template_already_exists(self, mock_log, mock_ensure_dir):
         """Test create_template rejects duplicate template names"""
         mock_dir = Path('/templates')
@@ -361,8 +361,8 @@ class TestCreateTemplate:
             error_calls = [call for call in mock_log.call_args_list if call[0][0] == 'error']
             assert any('already exists' in str(call[0][1]) for call in error_calls)
 
-    @patch('university_system.infrastructure.email.template_utils.ensure_templates_directory')
-    @patch('university_system.infrastructure.email.template_utils.log_event')
+    @patch('education_system.university_system.infrastructure.email.template_utils.ensure_templates_directory')
+    @patch('education_system.university_system.infrastructure.email.template_utils.log_event')
     @patch('builtins.open', new_callable=mock_open)
     def test_create_template_sanitizes_name(self, mock_file, mock_log, mock_ensure_dir):
         """Test create_template sanitizes template name"""
@@ -380,7 +380,7 @@ class TestCreateTemplate:
             # Should succeed with sanitized name
             assert result is True
 
-    @patch('university_system.infrastructure.email.template_utils.ensure_templates_directory')
+    @patch('education_system.university_system.infrastructure.email.template_utils.ensure_templates_directory')
     @patch('builtins.open', new_callable=mock_open)
     def test_create_template_exception_handling(self, mock_file, mock_ensure_dir):
         """Test create_template handles exceptions"""
@@ -397,9 +397,9 @@ class TestCreateTemplate:
 class TestUpdateTemplate:
     """Test suite for update_template() function"""
 
-    @patch('university_system.infrastructure.email.template_utils.load_template')
-    @patch('university_system.infrastructure.email.template_utils.ensure_templates_directory')
-    @patch('university_system.infrastructure.email.template_utils.log_event')
+    @patch('education_system.university_system.infrastructure.email.template_utils.load_template')
+    @patch('education_system.university_system.infrastructure.email.template_utils.ensure_templates_directory')
+    @patch('education_system.university_system.infrastructure.email.template_utils.log_event')
     @patch('builtins.open', new_callable=mock_open)
     def test_update_template_subject(self, mock_file, mock_log, mock_ensure_dir, mock_load):
         """Test update_template updates subject only"""
@@ -416,8 +416,8 @@ class TestUpdateTemplate:
         # Verify json.dump was called with updated data
         mock_file.assert_called()
 
-    @patch('university_system.infrastructure.email.template_utils.load_template')
-    @patch('university_system.infrastructure.email.template_utils.ensure_templates_directory')
+    @patch('education_system.university_system.infrastructure.email.template_utils.load_template')
+    @patch('education_system.university_system.infrastructure.email.template_utils.ensure_templates_directory')
     @patch('builtins.open', new_callable=mock_open)
     def test_update_template_body(self, mock_file, mock_ensure_dir, mock_load):
         """Test update_template updates body only"""
@@ -432,8 +432,8 @@ class TestUpdateTemplate:
 
         assert result is True
 
-    @patch('university_system.infrastructure.email.template_utils.load_template')
-    @patch('university_system.infrastructure.email.template_utils.ensure_templates_directory')
+    @patch('education_system.university_system.infrastructure.email.template_utils.load_template')
+    @patch('education_system.university_system.infrastructure.email.template_utils.ensure_templates_directory')
     @patch('builtins.open', new_callable=mock_open)
     def test_update_template_both_fields(self, mock_file, mock_ensure_dir, mock_load):
         """Test update_template updates both subject and body"""
@@ -452,8 +452,8 @@ class TestUpdateTemplate:
 
         assert result is True
 
-    @patch('university_system.infrastructure.email.template_utils.load_template')
-    @patch('university_system.infrastructure.email.template_utils.log_event')
+    @patch('education_system.university_system.infrastructure.email.template_utils.load_template')
+    @patch('education_system.university_system.infrastructure.email.template_utils.log_event')
     def test_update_template_not_found(self, mock_log, mock_load):
         """Test update_template handles missing template"""
         mock_load.return_value = None
@@ -465,8 +465,8 @@ class TestUpdateTemplate:
         error_calls = [call for call in mock_log.call_args_list if call[0][0] == 'error']
         assert len(error_calls) > 0
 
-    @patch('university_system.infrastructure.email.template_utils.load_template')
-    @patch('university_system.infrastructure.email.template_utils.ensure_templates_directory')
+    @patch('education_system.university_system.infrastructure.email.template_utils.load_template')
+    @patch('education_system.university_system.infrastructure.email.template_utils.ensure_templates_directory')
     @patch('builtins.open', new_callable=mock_open)
     def test_update_template_no_changes(self, mock_file, mock_ensure_dir, mock_load):
         """Test update_template with no kwargs"""
@@ -486,8 +486,8 @@ class TestUpdateTemplate:
 class TestDeleteTemplate:
     """Test suite for delete_template() function"""
 
-    @patch('university_system.infrastructure.email.template_utils.ensure_templates_directory')
-    @patch('university_system.infrastructure.email.template_utils.log_event')
+    @patch('education_system.university_system.infrastructure.email.template_utils.ensure_templates_directory')
+    @patch('education_system.university_system.infrastructure.email.template_utils.log_event')
     def test_delete_template_success(self, mock_log, mock_ensure_dir):
         """Test delete_template successfully deletes template"""
         mock_dir = Path('/templates')
@@ -502,8 +502,8 @@ class TestDeleteTemplate:
             assert result is True
             mock_path.unlink.assert_called_once()
 
-    @patch('university_system.infrastructure.email.template_utils.DEFAULT_TEMPLATES', {'default_template': {}})
-    @patch('university_system.infrastructure.email.template_utils.log_event')
+    @patch('education_system.university_system.infrastructure.email.template_utils.DEFAULT_TEMPLATES', {'default_template': {}})
+    @patch('education_system.university_system.infrastructure.email.template_utils.log_event')
     def test_delete_template_prevents_default_deletion(self, mock_log):
         """Test delete_template prevents deletion of default templates"""
         result = template_utils.delete_template('default_template')
@@ -513,8 +513,8 @@ class TestDeleteTemplate:
         warning_calls = [call for call in mock_log.call_args_list if call[0][0] == 'warning']
         assert any('Cannot delete default' in str(call[0][1]) for call in warning_calls)
 
-    @patch('university_system.infrastructure.email.template_utils.ensure_templates_directory')
-    @patch('university_system.infrastructure.email.template_utils.log_event')
+    @patch('education_system.university_system.infrastructure.email.template_utils.ensure_templates_directory')
+    @patch('education_system.university_system.infrastructure.email.template_utils.log_event')
     def test_delete_template_not_found(self, mock_log, mock_ensure_dir):
         """Test delete_template handles missing template"""
         mock_dir = Path('/templates')
@@ -535,8 +535,8 @@ class TestDeleteTemplate:
 class TestRenderTemplate:
     """Test suite for render_template() function"""
 
-    @patch('university_system.infrastructure.email.template_utils.load_template')
-    @patch('university_system.infrastructure.email.template_utils.config')
+    @patch('education_system.university_system.infrastructure.email.template_utils.load_template')
+    @patch('education_system.university_system.infrastructure.email.template_utils.config')
     def test_render_template_success(self, mock_config, mock_load):
         """Test render_template successfully renders template"""
         mock_config.__getitem__.return_value = 'Best regards,\nUniversity Team'
@@ -556,7 +556,7 @@ class TestRenderTemplate:
         assert subject == 'Hello John'
         assert body == 'Welcome John to CS101'
 
-    @patch('university_system.infrastructure.email.template_utils.load_template')
+    @patch('education_system.university_system.infrastructure.email.template_utils.load_template')
     def test_render_template_not_found(self, mock_load):
         """Test render_template returns None for missing template"""
         mock_load.return_value = None
@@ -566,8 +566,8 @@ class TestRenderTemplate:
         assert subject is None
         assert body is None
 
-    @patch('university_system.infrastructure.email.template_utils.load_template')
-    @patch('university_system.infrastructure.email.template_utils.config')
+    @patch('education_system.university_system.infrastructure.email.template_utils.load_template')
+    @patch('education_system.university_system.infrastructure.email.template_utils.config')
     def test_render_template_adds_signature(self, mock_config, mock_load):
         """Test render_template adds signature if not provided"""
         signature = 'Test Signature'
@@ -585,8 +585,8 @@ class TestRenderTemplate:
 
         assert signature in body
 
-    @patch('university_system.infrastructure.email.template_utils.load_template')
-    @patch('university_system.infrastructure.email.template_utils.config')
+    @patch('education_system.university_system.infrastructure.email.template_utils.load_template')
+    @patch('education_system.university_system.infrastructure.email.template_utils.config')
     def test_render_template_preserves_custom_signature(self, mock_config, mock_load):
         """Test render_template preserves custom signature"""
         mock_config.__getitem__.return_value = 'Default Signature'
@@ -604,8 +604,8 @@ class TestRenderTemplate:
         assert 'Custom Signature' in body
         assert 'Default Signature' not in body
 
-    @patch('university_system.infrastructure.email.template_utils.load_template')
-    @patch('university_system.infrastructure.email.template_utils.config')
+    @patch('education_system.university_system.infrastructure.email.template_utils.load_template')
+    @patch('education_system.university_system.infrastructure.email.template_utils.config')
     def test_render_template_safe_substitute(self, mock_config, mock_load):
         """Test render_template uses safe_substitute (doesn't error on missing vars)"""
         mock_config.__getitem__.return_value = ''
@@ -625,8 +625,8 @@ class TestRenderTemplate:
         assert '$score' in body
         assert '$grade' in body
 
-    @patch('university_system.infrastructure.email.template_utils.load_template')
-    @patch('university_system.infrastructure.email.template_utils.log_event')
+    @patch('education_system.university_system.infrastructure.email.template_utils.load_template')
+    @patch('education_system.university_system.infrastructure.email.template_utils.log_event')
     def test_render_template_handles_errors(self, mock_log, mock_load):
         """Test render_template handles rendering errors"""
         mock_load.return_value = {
@@ -635,7 +635,7 @@ class TestRenderTemplate:
         }
 
         # Force an error by mocking Template to raise exception
-        with patch('university_system.infrastructure.email.template_utils.Template', side_effect=Exception("Template error")):
+        with patch('education_system.university_system.infrastructure.email.template_utils.Template', side_effect=Exception("Template error")):
             subject, body = template_utils.render_template('test', {})
 
             assert subject is None
@@ -664,7 +664,7 @@ class TestTemplateManagementMenu:
 
     @patch('builtins.input', side_effect=['1', '5'])  # List templates, then exit
     @patch('builtins.print')
-    @patch('university_system.infrastructure.email.template_utils.list_templates')
+    @patch('education_system.university_system.infrastructure.email.template_utils.list_templates')
     def test_template_management_menu_list_empty(self, mock_list, mock_print, mock_input):
         """Test template_management_menu lists templates when empty"""
         mock_list.return_value = []
@@ -687,7 +687,7 @@ class TestTemplateManagementMenu:
 class TestEdgeCases:
     """Test suite for edge cases and boundary conditions"""
 
-    @patch('university_system.infrastructure.email.template_utils.ensure_templates_directory')
+    @patch('education_system.university_system.infrastructure.email.template_utils.ensure_templates_directory')
     @patch('builtins.open', new_callable=mock_open)
     def test_template_with_unicode_characters(self, mock_file, mock_ensure_dir):
         """Test templates handle Unicode characters correctly"""
@@ -704,7 +704,7 @@ class TestEdgeCases:
             # Should handle Unicode properly
             assert result is True
 
-    @patch('university_system.infrastructure.email.template_utils.ensure_templates_directory')
+    @patch('education_system.university_system.infrastructure.email.template_utils.ensure_templates_directory')
     @patch('builtins.open', new_callable=mock_open)
     def test_template_with_very_long_content(self, mock_file, mock_ensure_dir):
         """Test templates handle very long content"""
@@ -723,8 +723,8 @@ class TestEdgeCases:
 
             assert result is True
 
-    @patch('university_system.infrastructure.email.template_utils.load_template')
-    @patch('university_system.infrastructure.email.template_utils.config')
+    @patch('education_system.university_system.infrastructure.email.template_utils.load_template')
+    @patch('education_system.university_system.infrastructure.email.template_utils.config')
     def test_render_template_with_empty_vars(self, mock_config, mock_load):
         """Test render_template with empty variables dictionary"""
         mock_config.__getitem__.return_value = 'Signature'
@@ -738,8 +738,8 @@ class TestEdgeCases:
         assert subject == 'Plain subject'
         assert body == 'Plain body'
 
-    @patch('university_system.infrastructure.email.template_utils.load_template')
-    @patch('university_system.infrastructure.email.template_utils.config')
+    @patch('education_system.university_system.infrastructure.email.template_utils.load_template')
+    @patch('education_system.university_system.infrastructure.email.template_utils.config')
     def test_render_template_with_special_characters_in_vars(self, mock_config, mock_load):
         """Test render_template with special characters in variable values"""
         mock_config.__getitem__.return_value = ''

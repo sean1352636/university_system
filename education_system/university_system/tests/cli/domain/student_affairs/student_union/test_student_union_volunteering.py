@@ -73,8 +73,8 @@ class TestSignupForVolunteerOpportunity:
 
     @patch('builtins.input', side_effect=['y'])
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.context.auth')
-    @patch('university_system.modules.core.services.student_union_misc.volunteering.auto_award_points')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.context.auth')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.volunteering.auto_award_points')
     def test_signup_success(self, mock_award, mock_auth, mock_print, mock_input, mock_cursor):
         """Test successfully signing up for opportunity."""
         # Mock context
@@ -93,7 +93,7 @@ class TestSignupForVolunteerOpportunity:
                   for call in mock_cursor.execute.call_args_list)
 
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.context.auth')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.context.auth')
     def test_signup_opportunity_not_found(self, mock_auth, mock_print, mock_cursor):
         """Test signing up for non-existent opportunity."""
         mock_auth.current_user = {'id': 1}
@@ -109,7 +109,7 @@ class TestSignupForVolunteerOpportunity:
         assert any('not found' in str(call).lower() for call in mock_print.call_args_list)
 
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.context.auth')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.context.auth')
     def test_signup_opportunity_full(self, mock_auth, mock_print, mock_cursor):
         """Test signing up for full opportunity."""
         mock_auth.current_user = {'id': 1}
@@ -125,7 +125,7 @@ class TestSignupForVolunteerOpportunity:
         assert any('full' in str(call).lower() for call in mock_print.call_args_list)
 
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.context.auth')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.context.auth')
     def test_signup_already_signed_up(self, mock_auth, mock_print, mock_cursor):
         """Test signing up when already signed up."""
         mock_auth.current_user = {'id': 1}
@@ -179,7 +179,7 @@ class TestTrackCommunityServiceHours:
 
     @patch('builtins.input', side_effect=['1', '1', '5', '', 'Helped serve meals'])
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.volunteering.auto_award_points')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.volunteering.auto_award_points')
     def test_log_hours_success(self, mock_award, mock_print, mock_input,
                                mock_cursor, mock_conn):
         """Test logging volunteer hours successfully."""

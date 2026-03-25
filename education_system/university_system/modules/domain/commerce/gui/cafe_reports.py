@@ -11,7 +11,7 @@ from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
-from .cafe_system_gui import get_db_connection, EMAIL_SERVICE_AVAILABLE
+from education_system.university_system.modules.domain.commerce.gui.cafe_system_gui import get_db_connection, EMAIL_SERVICE_AVAILABLE
 
 
 class CafeReportsMixin:
@@ -96,8 +96,8 @@ class CafeReportsMixin:
 
                 cursor.execute('''
                     SELECT COUNT(*), SUM(total_amount)
-                    FROM cafe_orders
-                    WHERE DATE(order_date) = DATE('now')
+                    FROM orders
+                    WHERE source_type = 'cafe' AND DATE(order_date) = DATE('now')
                 ''')
                 result = cursor.fetchone()
                 order_count = result[0] or 0
@@ -108,8 +108,8 @@ class CafeReportsMixin:
 
                 cursor.execute('''
                     SELECT payment_method, COUNT(*), SUM(total_amount)
-                    FROM cafe_orders
-                    WHERE DATE(order_date) = DATE('now')
+                    FROM orders
+                    WHERE source_type = 'cafe' AND DATE(order_date) = DATE('now')
                     GROUP BY payment_method
                 ''')
 
@@ -137,8 +137,8 @@ class CafeReportsMixin:
 
                 cursor.execute('''
                     SELECT COUNT(*), SUM(total_amount)
-                    FROM cafe_orders
-                    WHERE DATE(order_date) >= DATE('now', '-7 days')
+                    FROM orders
+                    WHERE source_type = 'cafe' AND DATE(order_date) >= DATE('now', '-7 days')
                 ''')
                 result = cursor.fetchone()
                 order_count = result[0] or 0
@@ -167,8 +167,8 @@ class CafeReportsMixin:
 
                 cursor.execute('''
                     SELECT COUNT(*), SUM(total_amount)
-                    FROM cafe_orders
-                    WHERE DATE(order_date) >= DATE('now', 'start of month')
+                    FROM orders
+                    WHERE source_type = 'cafe' AND DATE(order_date) >= DATE('now', 'start of month')
                 ''')
                 result = cursor.fetchone()
                 order_count = result[0] or 0
@@ -197,8 +197,8 @@ class CafeReportsMixin:
                 # Cafe orders total
                 cursor.execute('''
                     SELECT COUNT(*), COALESCE(SUM(total_amount), 0)
-                    FROM cafe_orders
-                    WHERE status = 'completed'
+                    FROM orders
+                    WHERE source_type = 'cafe' AND order_status = 'completed'
                 ''')
                 result = cursor.fetchone()
                 total_orders = result[0] or 0
@@ -215,8 +215,8 @@ class CafeReportsMixin:
                 report_content += "───────────────────────────────────────────────────────\n"
                 cursor.execute('''
                     SELECT payment_method, COUNT(*), SUM(total_amount)
-                    FROM cafe_orders
-                    WHERE status = 'completed'
+                    FROM orders
+                    WHERE source_type = 'cafe' AND order_status = 'completed'
                     GROUP BY payment_method
                     ORDER BY SUM(total_amount) DESC
                 ''')
@@ -250,7 +250,8 @@ class CafeReportsMixin:
 
                 cursor.execute('''
                     SELECT item_name, SUM(quantity) as total_qty, SUM(subtotal) as total_sales
-                    FROM cafe_order_items
+                    FROM order_items
+                    WHERE source_type = 'cafe'
                     GROUP BY item_name
                     ORDER BY total_qty DESC
                     LIMIT 20
@@ -268,8 +269,8 @@ class CafeReportsMixin:
 
                 cursor.execute('''
                     SELECT name, category, stock_quantity
-                    FROM cafe_menu_items
-                    WHERE stock_quantity < 20
+                    FROM products
+                    WHERE source_type = 'cafe' AND stock_quantity < 20
                     ORDER BY stock_quantity ASC
                 ''')
 

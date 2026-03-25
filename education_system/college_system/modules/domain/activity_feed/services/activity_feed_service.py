@@ -3,6 +3,7 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import ActivityFeedError, ValidationError
 from education_system.college_system.infrastructure.database.db import connect
+from education_system.college_system.core.sql_safety import validate_identifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -27,10 +28,24 @@ class ActivityFeedService:
             raise ValidationError("title is required.")
         conn = self._conn()
         try:
+            # Build INSERT with only non-None values so DB defaults apply
+            fields = {k: v for k, v in {
+                'user_id': kwargs.get('user_id'),
+                'activity_type': kwargs.get('activity_type'),
+                'title': kwargs.get('title'),
+                'description': kwargs.get('description'),
+                'entity_type': kwargs.get('entity_type'),
+                'entity_id': kwargs.get('entity_id'),
+                'target_role': kwargs.get('target_role'),
+                'target_user_id': kwargs.get('target_user_id'),
+                'is_read': kwargs.get('is_read'),
+                'dismissed': kwargs.get('dismissed'),
+            }.items() if v is not None}
+            cols = ", ".join(fields.keys())
+            placeholders = ", ".join("?" for _ in fields)
             conn.execute(
-                """INSERT INTO activity_feed_items (user_id, activity_type, title, description, entity_type, entity_id, target_role, target_user_id, is_read, dismissed)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (kwargs.get('user_id'), kwargs.get('activity_type'), kwargs.get('title'), kwargs.get('description'), kwargs.get('entity_type'), kwargs.get('entity_id'), kwargs.get('target_role'), kwargs.get('target_user_id'), kwargs.get('is_read'), kwargs.get('dismissed'),),
+                f"INSERT INTO activity_feed_items ({cols}) VALUES ({placeholders})",
+                list(fields.values()),
             )
             conn.commit()
             row = conn.execute(
@@ -62,7 +77,7 @@ class ActivityFeedService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -80,7 +95,7 @@ class ActivityFeedService:
         if not updates:
             raise ValidationError("No valid fields to update.")
         updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [pk]
         conn = self._conn()
         try:
@@ -118,7 +133,7 @@ class ActivityFeedService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         conn = self._conn()
         try:

@@ -361,10 +361,10 @@ class HelperManager:
                 title="Select Document File",
                 initialdir=initial_path,
                 filetypes=[
-                    ("All Supported", "*.pdf;*.jpg;*.jpeg;*.png;*.doc;*.docx;*.txt"),
+                    ("All Supported", "*.pdf *.jpg *.jpeg *.png *.doc *.docx *.txt"),
                     ("PDF files", "*.pdf"),
-                    ("Image files", "*.jpg;*.jpeg;*.png"),
-                    ("Word documents", "*.doc;*.docx"),
+                    ("Image files", "*.jpg *.jpeg *.png"),
+                    ("Word documents", "*.doc *.docx"),
                     ("Text files", "*.txt"),
                     ("All files", "*.*")
                 ]

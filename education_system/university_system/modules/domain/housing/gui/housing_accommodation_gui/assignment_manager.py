@@ -14,7 +14,7 @@ from education_system.university_system.modules.shared.utils.i18n import get_tex
 
 # Import immutable audit logging if available
 try:
-    from education_system.university_system.infrastructure.security.immutable_audit import (
+    from education_system.university_system.infrastructure.security.immutable_audit_log import (
         AuditAction, log_security_event
     )
     from education_system.university_system.modules.shared.utils.gui_context import get_gui_context

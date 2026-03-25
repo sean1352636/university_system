@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/library_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/library', '/books', '/books/<book_id>', '/loans', '/reservations', 'GET', 'POST', 'SELECT * FROM books', 'active', 'available', 'bl.status = ?', 'bl.user_id = ?', 'book', 'book_id', 'book_loan', 'book_loans', 'book_reservation', 'book_reservations', 'books', 'category', 'category = ?', 'checkout_method', 'create', 'due_date', 'expiry_date', 'items', 'library', 'manual', 'notes', 'return', 'search', 'status', 'status = ?', 'sub', 'total', 'user_id', 'view']

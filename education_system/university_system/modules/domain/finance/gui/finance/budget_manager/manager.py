@@ -3,17 +3,17 @@
 import tkinter as tk
 from tkinter import ttk
 
-from .constants import logger
-from .plans import BudgetPlansMixin
-from .categories import BudgetCategoriesMixin
-from .personal import PersonalBudgetMixin
-from .expenses_income import ExpensesIncomeMixin
-from .savings import SavingsGoalsMixin
-from .meal_plan import MealPlanMixin
-from .textbooks import TextbooksMixin
-from .reports import BudgetReportsMixin
-from .institutional import InstitutionalBudgetMixin
-from .utils import BudgetUtilsMixin
+from education_system.university_system.modules.domain.finance.gui.finance.budget_manager.constants import logger
+from education_system.university_system.modules.domain.finance.gui.finance.budget_manager.plans import BudgetPlansMixin
+from education_system.university_system.modules.domain.finance.gui.finance.budget_manager.categories import BudgetCategoriesMixin
+from education_system.university_system.modules.domain.finance.gui.finance.budget_manager.personal import PersonalBudgetMixin
+from education_system.university_system.modules.domain.finance.gui.finance.budget_manager.expenses_income import ExpensesIncomeMixin
+from education_system.university_system.modules.domain.finance.gui.finance.budget_manager.savings import SavingsGoalsMixin
+from education_system.university_system.modules.domain.finance.gui.finance.budget_manager.meal_plan import MealPlanMixin
+from education_system.university_system.modules.domain.finance.gui.finance.budget_manager.textbooks import TextbooksMixin
+from education_system.university_system.modules.domain.finance.gui.finance.budget_manager.reports import BudgetReportsMixin
+from education_system.university_system.modules.domain.finance.gui.finance.budget_manager.institutional import InstitutionalBudgetMixin
+from education_system.university_system.modules.domain.finance.gui.finance.budget_manager.utils import BudgetUtilsMixin
 
 
 class BudgetManager(

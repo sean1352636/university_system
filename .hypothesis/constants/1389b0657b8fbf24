@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/integrations/integration_marketplace_core/__init__.py
+# hypothesis_version: 6.151.9
+
+['CredentialManager', 'DataMappingManager', 'ImportExportManager', 'InstallationManager', 'SchedulingManager', 'SyncManager', 'WebhookManager', 'auto_detect_mappings', 'dry_run_sync', 'filter_by_rating', 'revoke_all_tokens', 'schedule_sync', 'search_catalog', 'search_sync_logs', 'show_error_analysis', 'validate_credentials', 'view_scheduled_tasks']

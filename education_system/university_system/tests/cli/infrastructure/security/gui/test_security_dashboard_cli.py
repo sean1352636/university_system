@@ -56,7 +56,7 @@ class TestDashboardInitialization:
     def test_init_initializes_security_tables(self, test_db):
         """Test initialization creates security tables"""
         # Create dashboard with test DB
-        with patch('university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
             dashboard = SecurityDashboardCLI(admin_user_id=1)
 
             # Verify tables exist
@@ -73,7 +73,7 @@ class TestDashboardInitialization:
 
     def test_init_creates_all_managers(self, test_db):
         """Test all security managers are initialized"""
-        with patch('university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
             dashboard = SecurityDashboardCLI(admin_user_id=1)
 
             # Check all managers are created
@@ -88,7 +88,7 @@ class TestDashboardInitialization:
 
     def test_init_with_different_admin_ids(self, test_db):
         """Test initialization with different admin IDs"""
-        with patch('university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
             dashboard1 = SecurityDashboardCLI(admin_user_id=1)
             dashboard2 = SecurityDashboardCLI(admin_user_id=999)
 
@@ -104,7 +104,7 @@ class TestManagerAccess:
 
     def test_access_session_manager(self, test_db):
         """Test accessing session manager"""
-        with patch('university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
             dashboard = SecurityDashboardCLI(admin_user_id=1)
 
             assert dashboard.session_mgr is not None
@@ -112,7 +112,7 @@ class TestManagerAccess:
 
     def test_access_encryption_manager(self, test_db):
         """Test accessing encryption manager"""
-        with patch('university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
             dashboard = SecurityDashboardCLI(admin_user_id=1)
 
             assert dashboard.encryption_mgr is not None
@@ -120,7 +120,7 @@ class TestManagerAccess:
 
     def test_access_api_security_manager(self, test_db):
         """Test accessing API security manager"""
-        with patch('university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
             dashboard = SecurityDashboardCLI(admin_user_id=1)
 
             assert dashboard.api_mgr is not None
@@ -128,7 +128,7 @@ class TestManagerAccess:
 
     def test_access_password_security_manager(self, test_db):
         """Test accessing password security manager"""
-        with patch('university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
             dashboard = SecurityDashboardCLI(admin_user_id=1)
 
             assert dashboard.password_mgr is not None
@@ -136,7 +136,7 @@ class TestManagerAccess:
 
     def test_access_audit_manager(self, test_db):
         """Test accessing security audit manager"""
-        with patch('university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
             dashboard = SecurityDashboardCLI(admin_user_id=1)
 
             assert dashboard.audit_mgr is not None
@@ -144,7 +144,7 @@ class TestManagerAccess:
 
     def test_access_dlp_manager(self, test_db):
         """Test accessing data loss prevention manager"""
-        with patch('university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
             dashboard = SecurityDashboardCLI(admin_user_id=1)
 
             assert dashboard.dlp_mgr is not None
@@ -152,7 +152,7 @@ class TestManagerAccess:
 
     def test_access_incident_manager(self, test_db):
         """Test accessing incident response manager"""
-        with patch('university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
             dashboard = SecurityDashboardCLI(admin_user_id=1)
 
             assert dashboard.incident_mgr is not None
@@ -160,7 +160,7 @@ class TestManagerAccess:
 
     def test_access_vulnerability_scanner(self, test_db):
         """Test accessing vulnerability scanner"""
-        with patch('university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
             dashboard = SecurityDashboardCLI(admin_user_id=1)
 
             assert dashboard.vuln_scanner is not None
@@ -173,12 +173,12 @@ class TestManagerAccess:
 class TestCLIIntegration:
     """Test CLI integration with security modules"""
 
-    @patch('university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
+    @patch('education_system.university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
     def test_session_creation_through_cli(self, mock_location, test_db):
         """Test creating session through CLI dashboard"""
         mock_location.return_value = {'city': 'Test', 'country': 'Test', 'latitude': 0, 'longitude': 0}
 
-        with patch('university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
             dashboard = SecurityDashboardCLI(admin_user_id=1)
 
             result = dashboard.session_mgr.create_session(
@@ -193,7 +193,7 @@ class TestCLIIntegration:
 
     def test_encryption_through_cli(self, test_db):
         """Test encryption operations through CLI dashboard"""
-        with patch('university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
             dashboard = SecurityDashboardCLI(admin_user_id=1)
 
             # Create encryption key
@@ -211,7 +211,7 @@ class TestCLIIntegration:
 
     def test_api_key_management_through_cli(self, test_db):
         """Test API key management through CLI dashboard"""
-        with patch('university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
             dashboard = SecurityDashboardCLI(admin_user_id=1)
 
             # Create API key
@@ -226,7 +226,7 @@ class TestCLIIntegration:
 
     def test_password_strength_check_through_cli(self, test_db):
         """Test password strength checking through CLI dashboard"""
-        with patch('university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
             dashboard = SecurityDashboardCLI(admin_user_id=1)
 
             # Check weak password
@@ -237,7 +237,7 @@ class TestCLIIntegration:
 
     def test_security_event_logging_through_cli(self, test_db):
         """Test security event logging through CLI dashboard"""
-        with patch('university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
             dashboard = SecurityDashboardCLI(admin_user_id=1)
 
             # Log event
@@ -259,7 +259,7 @@ class TestCLIIntegration:
 
     def test_pii_detection_through_cli(self, test_db):
         """Test PII detection through CLI dashboard"""
-        with patch('university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
             dashboard = SecurityDashboardCLI(admin_user_id=1)
 
             # Detect PII
@@ -271,7 +271,7 @@ class TestCLIIntegration:
 
     def test_incident_creation_through_cli(self, test_db):
         """Test incident creation through CLI dashboard"""
-        with patch('university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
             dashboard = SecurityDashboardCLI(admin_user_id=1)
 
             # Create incident
@@ -287,7 +287,7 @@ class TestCLIIntegration:
 
     def test_vulnerability_scanning_through_cli(self, test_db):
         """Test vulnerability scanning through CLI dashboard"""
-        with patch('university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
             dashboard = SecurityDashboardCLI(admin_user_id=1)
 
             # Scan for SQL injection
@@ -306,7 +306,7 @@ class TestMultipleDashboards:
 
     def test_multiple_dashboards_independent(self, test_db):
         """Test multiple dashboards are independent"""
-        with patch('university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
             dashboard1 = SecurityDashboardCLI(admin_user_id=1)
             dashboard2 = SecurityDashboardCLI(admin_user_id=2)
 
@@ -315,7 +315,7 @@ class TestMultipleDashboards:
 
     def test_dashboards_share_database(self, test_db):
         """Test multiple dashboards share same database"""
-        with patch('university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
             dashboard1 = SecurityDashboardCLI(admin_user_id=1)
             dashboard2 = SecurityDashboardCLI(admin_user_id=2)
 
@@ -386,7 +386,7 @@ class TestCLIErrorHandling:
 
     def test_dashboard_init_with_invalid_admin_id(self, test_db):
         """Test dashboard handles invalid admin ID gracefully"""
-        with patch('university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', test_db):
             # Should not raise exception
             dashboard = SecurityDashboardCLI(admin_user_id=-1)
 
@@ -397,7 +397,7 @@ class TestCLIErrorHandling:
         # Create invalid database path
         invalid_path = "/nonexistent/path/to/db.sqlite"
 
-        with patch('university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', invalid_path):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_cli.DEFAULT_DB_PATH', invalid_path):
             # Should handle initialization gracefully
             try:
                 dashboard = SecurityDashboardCLI(admin_user_id=1)

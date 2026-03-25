@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/enhanced_reporting/mixins/templates_mixin.py
+# hypothesis_version: 6.151.9
+
+[1.0, '*.*', '*.json', '.json', '1.0', '500x400', '600x500', 'All files', 'Applied Filters:\n', 'Arial', 'Cancel', 'Confirm Delete', 'Create New Template', 'Delete', 'Delete Template', 'Duplicate Template', 'Edit Template', 'Error', 'Import Error', 'Import Template', 'Invalid Template', 'JSON files', 'No Selection', 'No Templates', 'Not Available', 'Success', 'Template Exists', 'Unnamed', '_', 'age_distribution', 'anomaly_detection', 'attendance_summary', 'bold', 'correlation_analysis', 'course_distribution', 'created_at', 'data_quality_report', 'description', 'error', 'filters', 'format', 'gender_distribution', 'grade_distribution', 'module_popularity', 'name', 'pdf', 'predictive_analytics', 'r', 'registration_trends', 'sections', 'student_overview', 'success', 'templates_data', 'values', 'version', 'w']

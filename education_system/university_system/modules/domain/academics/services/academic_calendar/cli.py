@@ -11,8 +11,8 @@ from education_system.university_system.modules.shared.utils.language_selector i
     display_language_menu_option,
 )
 
-from .exceptions import CalendarError, ValidationError, DatabaseError, PermissionError
-from .config import CalendarConfig, ValidationUtils
+from education_system.university_system.modules.domain.academics.services.academic_calendar.exceptions import CalendarError, ValidationError, DatabaseError, PermissionError
+from education_system.university_system.modules.domain.academics.services.academic_calendar.config import CalendarConfig, ValidationUtils
 
 logger = configure_logging(name=__name__)
 
@@ -75,7 +75,7 @@ def display_academic_calendar_menu():
 
     try:
         # Create calendar manager with authentication
-        from .calendar_core import AcademicCalendarManager
+        from education_system.university_system.modules.domain.academics.services.academic_calendar.calendar_core import AcademicCalendarManager
         config = CalendarConfig()
         calendar_manager = AcademicCalendarManager(config=config, auth_manager=auth)
 
@@ -1140,21 +1140,23 @@ def ensure_calendar_permissions(auth=None):
         if auth is None:
             auth = UserAuth()
         conn = sqlite3.connect(auth.db_path)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-        for perm_name, perm_desc in calendar_permissions:
-            # Check if permission exists
-            cursor.execute('SELECT id FROM permissions WHERE permission_name = ?', (perm_name,))
-            if not cursor.fetchone():
-                cursor.execute(
-                    'INSERT INTO permissions (permission_name, description, created_at) VALUES (?, ?, ?)',
-                    (perm_name, perm_desc, timestamp)
-                )
+            for perm_name, perm_desc in calendar_permissions:
+                # Check if permission exists
+                cursor.execute('SELECT id FROM permissions WHERE permission_name = ?', (perm_name,))
+                if not cursor.fetchone():
+                    cursor.execute(
+                        'INSERT INTO permissions (permission_name, description, created_at) VALUES (?, ?, ?)',
+                        (perm_name, perm_desc, timestamp)
+                    )
 
-        conn.commit()
-        conn.close()
+            conn.commit()
+        finally:
+            conn.close()
 
         # Reinitialize the auth system to pick up new permissions
         auth._init_db()

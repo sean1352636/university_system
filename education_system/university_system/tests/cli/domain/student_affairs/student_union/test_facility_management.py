@@ -91,7 +91,7 @@ class TestEquipmentCheckout:
     """Test equipment checkout functionality."""
 
     @patch('builtins.input', side_effect=['1', 'personal', '2024-02-01', 'good', 'Test notes'])
-    @patch('university_system.modules.domain.student_affairs.student_union.facilities.facility_management.datetime')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.facilities.facility_management.datetime')
     def test_check_out_equipment_success(self, mock_datetime, mock_input, mock_cursor, mock_conn):
         """Test successfully checking out equipment."""
         mock_datetime.now.return_value.strftime.return_value = '2024-01-15 10:00:00'
@@ -107,7 +107,7 @@ class TestEquipmentCheckout:
         mock_conn.commit.assert_called_once()
 
     @patch('builtins.input', side_effect=['1', 'club', '1', '2024-02-01', 'good', ''])
-    @patch('university_system.modules.domain.student_affairs.student_union.facilities.facility_management.datetime')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.facilities.facility_management.datetime')
     def test_check_out_equipment_for_club(self, mock_datetime, mock_input, mock_cursor, mock_conn):
         """Test checking out equipment for a club."""
         mock_datetime.now.return_value.strftime.return_value = '2024-01-15 10:00:00'
@@ -147,7 +147,7 @@ class TestEquipmentReturn:
     """Test equipment return functionality."""
 
     @patch('builtins.input', side_effect=['1', 'good', 'No issues'])
-    @patch('university_system.modules.domain.student_affairs.student_union.facilities.facility_management.datetime')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.facilities.facility_management.datetime')
     def test_return_equipment_success(self, mock_datetime, mock_input, mock_cursor, mock_conn):
         """Test successfully returning equipment."""
         mock_datetime.now.return_value.strftime.return_value = '2024-01-20 10:00:00'
@@ -162,7 +162,7 @@ class TestEquipmentReturn:
         mock_conn.commit.assert_called_once()
 
     @patch('builtins.input', side_effect=['1', 'damaged', 'Screen cracked'])
-    @patch('university_system.modules.domain.student_affairs.student_union.facilities.facility_management.datetime')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.facilities.facility_management.datetime')
     def test_return_equipment_damaged(self, mock_datetime, mock_input, mock_cursor, mock_conn):
         """Test returning damaged equipment."""
         mock_datetime.now.return_value.strftime.return_value = '2024-01-20 10:00:00'
@@ -410,9 +410,9 @@ class TestFacilityBooking:
     @patch('builtins.input', side_effect=[
         '1', '2024-02-01', '10:00', '12:00', 'n', 'Meeting', ''
     ])
-    @patch('university_system.modules.domain.student_affairs.student_union.facilities.facility_management.view_facilities')
-    @patch('university_system.modules.domain.student_affairs.student_union.facilities.facility_management.send_confirmation_email')
-    @patch('university_system.modules.domain.student_affairs.student_union.facilities.facility_management.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.facilities.facility_management.view_facilities')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.facilities.facility_management.send_confirmation_email')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.facilities.facility_management.get_connection')
     def test_request_facility_booking_success(self, mock_get_conn, mock_email, mock_view, mock_input, mock_auth):
         """Test successfully requesting facility booking."""
         mock_conn = Mock()
@@ -434,9 +434,9 @@ class TestFacilityBooking:
     @patch('builtins.input', side_effect=[
         '1', '2024-02-01', '10:00', '12:00', 'y', '1', 'Meeting', ''
     ])
-    @patch('university_system.modules.domain.student_affairs.student_union.facilities.facility_management.view_facilities')
-    @patch('university_system.modules.domain.student_affairs.student_union.facilities.facility_management.send_confirmation_email')
-    @patch('university_system.modules.domain.student_affairs.student_union.facilities.facility_management.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.facilities.facility_management.view_facilities')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.facilities.facility_management.send_confirmation_email')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.facilities.facility_management.get_connection')
     def test_request_booking_for_club(self, mock_get_conn, mock_email, mock_view, mock_input, mock_auth):
         """Test requesting facility booking for a club."""
         mock_conn = Mock()
@@ -483,11 +483,11 @@ class TestEdgeCases:
         facility_management.auth = None
 
         with patch('builtins.print') as mock_print:
-            with patch('university_system.modules.domain.student_affairs.student_union.facilities.facility_management.get_connection'):
+            with patch('education_system.university_system.modules.domain.student_affairs.student_union.facilities.facility_management.get_connection'):
                 facility_management.manage_equipment_system()
                 assert any('logged in' in str(call).lower() for call in mock_print.call_args_list)
 
-    @patch('university_system.modules.domain.student_affairs.student_union.facilities.facility_management.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.facilities.facility_management.get_connection')
     def test_no_student_record(self, mock_get_conn, mock_auth):
         """Test handling when user has no student record."""
         mock_conn = Mock()

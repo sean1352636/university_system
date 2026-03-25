@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/gui/charity_shop_gui/basket.py
+# hypothesis_version: 6.151.9
+
+[0.0, 100, 200, 400, '+1', '-1', '0 items', '10', '15', '500x500', 'Adjust Quantity', 'Checkout.TButton', 'Clear All', 'Confirm', 'Empty', 'Empty Basket', 'Helvetica', 'Item', 'Limit Reached', 'No Selection', 'Price', 'Proceed to Checkout', 'Qty', 'Remove Item', 'Shopping Basket', 'Subtotal', 'Total:', 'WM_DELETE_WINDOW', 'bold', 'center', 'e', 'gray', 'green', 'headings', 'max_qty', 'name', 'price', 'qty', 'quantity', 'subtotal', 'w', '£0.00']

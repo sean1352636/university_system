@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/operations/rentals.py
+# hypothesis_version: 6.151.9
+
+[299.0, '#27ae60', '#333333', '#e74c3c', '#ecf0f1', '#ffffff', '%Y-%m-%d', '.', '1', '18:00', '21:00', '450x450', '50', 'Cancel this rental?', 'Card.TFrame', 'Danger.TButton', 'Date', 'Date:', 'Email:*', 'End:', 'Guests', 'Guests:', 'Helvetica', 'ID', 'Main.TFrame', 'Name:*', 'New Rental', 'Phone:', 'Rental confirmed!', 'Screen', 'Screen:', 'Select a rental', 'Start:', 'Status', 'Subtitle.TLabel', 'Success.TButton', 'Time', 'Total', '_', 'bold', 'both', 'cinema.btn.confirm', 'cinema.btn.submit', 'cinema.rentals.title', 'date', 'email', 'end', 'guests', 'headings', 'left', 'name', 'phone', 'right', 'screen', 'start', 'values', 'vertical', 'w', 'x', 'y']

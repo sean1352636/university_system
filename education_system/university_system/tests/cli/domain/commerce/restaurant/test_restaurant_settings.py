@@ -42,7 +42,7 @@ class TestSettingsModule(unittest.TestCase):
             ('min_order_delivery', '10.00', 'Minimum order for delivery', 'Orders', '2024-01-14'),
         ]
 
-    @patch('university_system.modules.core.services.restaurant_misc.settings.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.get_db_connection')
     def test_view_system_settings(self, mock_get_conn):
         """Test viewing system settings"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.settings import view_system_settings
@@ -62,7 +62,7 @@ class TestSettingsModule(unittest.TestCase):
 
         self.mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.settings.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.get_db_connection')
     def test_view_system_settings_empty(self, mock_get_conn):
         """Test viewing settings when none exist"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.settings import view_system_settings
@@ -77,7 +77,7 @@ class TestSettingsModule(unittest.TestCase):
         # Should handle empty result gracefully
         self.mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.settings.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.get_db_connection')
     def test_view_system_settings_grouped_by_category(self, mock_get_conn):
         """Test settings are displayed grouped by category"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.settings import view_system_settings
@@ -97,10 +97,10 @@ class TestSettingsModule(unittest.TestCase):
         # Should display with category grouping
         self.mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.settings.get_db_connection')
-    @patch('university_system.modules.core.services.restaurant_misc.settings.ctx')
-    @patch('university_system.modules.core.services.restaurant_misc.settings.backup_before_operation')
-    @patch('university_system.modules.core.services.restaurant_misc.settings.log_audit_action')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.backup_before_operation')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.log_audit_action')
     @patch('builtins.input', side_effect=['max_tables', '60'])
     def test_update_system_settings(self, mock_input, mock_log_audit, mock_backup,
                                    mock_ctx, mock_get_conn):
@@ -131,7 +131,7 @@ class TestSettingsModule(unittest.TestCase):
         self.mock_conn.commit.assert_called_once()
         mock_log_audit.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.settings.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.ctx')
     def test_update_system_settings_no_auth(self, mock_ctx):
         """Test updating settings without authentication"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.settings import update_system_settings
@@ -144,7 +144,7 @@ class TestSettingsModule(unittest.TestCase):
 
         # Should return early
 
-    @patch('university_system.modules.core.services.restaurant_misc.settings.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.ctx')
     def test_update_system_settings_no_permission(self, mock_ctx):
         """Test updating settings without admin permission"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.settings import update_system_settings
@@ -158,9 +158,9 @@ class TestSettingsModule(unittest.TestCase):
 
         # Should exit early
 
-    @patch('university_system.modules.core.services.restaurant_misc.settings.get_db_connection')
-    @patch('university_system.modules.core.services.restaurant_misc.settings.ctx')
-    @patch('university_system.modules.core.services.restaurant_misc.settings.backup_before_operation')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.backup_before_operation')
     @patch('builtins.input', return_value='nonexistent_setting')
     def test_update_system_settings_not_found(self, mock_input, mock_backup, mock_ctx, mock_get_conn):
         """Test updating non-existent setting"""
@@ -181,11 +181,11 @@ class TestSettingsModule(unittest.TestCase):
         assert len(update_calls) == 0
         self.mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.settings.get_db_connection')
-    @patch('university_system.modules.core.services.restaurant_misc.settings.ctx')
-    @patch('university_system.modules.core.services.restaurant_misc.settings.backup_before_operation')
-    @patch('university_system.modules.core.services.restaurant_misc.settings.log_audit_action')
-    @patch('university_system.modules.core.services.restaurant_misc.settings.datetime')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.backup_before_operation')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.log_audit_action')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.datetime')
     @patch('builtins.input', side_effect=['tax_rate', '0.25'])
     def test_update_system_settings_audit_trail(self, mock_input, mock_datetime, mock_log_audit,
                                                mock_backup, mock_ctx, mock_get_conn):
@@ -211,7 +211,7 @@ class TestSettingsModule(unittest.TestCase):
         assert audit_args[0] == 'TEST_USER_001'
         assert audit_args[1] == 'UPDATE_SYSTEM_SETTING'
 
-    @patch('university_system.modules.core.services.restaurant_misc.settings.view_system_settings')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.view_system_settings')
     @patch('builtins.input', side_effect=['1', '9'])
     def test_display_system_settings_view_option(self, mock_input, mock_view):
         """Test display settings menu - view option"""
@@ -223,7 +223,7 @@ class TestSettingsModule(unittest.TestCase):
         # Should call view_system_settings
         mock_view.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.settings.update_system_settings')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.update_system_settings')
     @patch('builtins.input', side_effect=['2', '9'])
     def test_display_system_settings_update_option(self, mock_input, mock_update):
         """Test display settings menu - update option"""
@@ -235,7 +235,7 @@ class TestSettingsModule(unittest.TestCase):
         # Should call update_system_settings
         mock_update.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.settings.user_management')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.user_management')
     @patch('builtins.input', side_effect=['3', '9'])
     def test_display_system_settings_user_management(self, mock_input, mock_user_mgmt):
         """Test display settings menu - user management option"""
@@ -247,7 +247,7 @@ class TestSettingsModule(unittest.TestCase):
         # Should call user_management
         mock_user_mgmt.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.settings.system_maintenance')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.system_maintenance')
     @patch('builtins.input', side_effect=['4', '9'])
     def test_display_system_settings_maintenance(self, mock_input, mock_maintenance):
         """Test display settings menu - maintenance option"""
@@ -259,7 +259,7 @@ class TestSettingsModule(unittest.TestCase):
         # Should call system_maintenance
         mock_maintenance.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.settings.view_audit_logs')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.view_audit_logs')
     @patch('builtins.input', side_effect=['5', '9'])
     def test_display_system_settings_audit_logs(self, mock_input, mock_audit):
         """Test display settings menu - audit logs option"""
@@ -271,7 +271,7 @@ class TestSettingsModule(unittest.TestCase):
         # Should call view_audit_logs
         mock_audit.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.settings.manage_notifications')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.manage_notifications')
     @patch('builtins.input', side_effect=['6', '9'])
     def test_display_system_settings_notifications(self, mock_input, mock_notifications):
         """Test display settings menu - notifications option"""
@@ -283,7 +283,7 @@ class TestSettingsModule(unittest.TestCase):
         # Should call manage_notifications
         mock_notifications.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.settings.system_backup')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.system_backup')
     @patch('builtins.input', side_effect=['7', '9'])
     def test_display_system_settings_backup(self, mock_input, mock_backup):
         """Test display settings menu - backup option"""
@@ -295,7 +295,7 @@ class TestSettingsModule(unittest.TestCase):
         # Should call system_backup
         mock_backup.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.settings.database_optimization')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.database_optimization')
     @patch('builtins.input', side_effect=['8', '9'])
     def test_display_system_settings_optimization(self, mock_input, mock_optimization):
         """Test display settings menu - optimization option"""
@@ -355,10 +355,10 @@ class TestSettingsValidation(unittest.TestCase):
 class TestSettingsIntegration(unittest.TestCase):
     """Integration tests for settings operations"""
 
-    @patch('university_system.modules.core.services.restaurant_misc.settings.get_db_connection')
-    @patch('university_system.modules.core.services.restaurant_misc.settings.ctx')
-    @patch('university_system.modules.core.services.restaurant_misc.settings.backup_before_operation')
-    @patch('university_system.modules.core.services.restaurant_misc.settings.log_audit_action')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.backup_before_operation')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.log_audit_action')
     def test_view_and_update_workflow(self, mock_log_audit, mock_backup, mock_ctx, mock_get_conn):
         """Test viewing then updating settings workflow"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.settings import (
@@ -388,10 +388,10 @@ class TestSettingsIntegration(unittest.TestCase):
         # Verify both operations completed
         assert mock_cursor.execute.call_count >= 2
 
-    @patch('university_system.modules.core.services.restaurant_misc.settings.get_db_connection')
-    @patch('university_system.modules.core.services.restaurant_misc.settings.ctx')
-    @patch('university_system.modules.core.services.restaurant_misc.settings.backup_before_operation')
-    @patch('university_system.modules.core.services.restaurant_misc.settings.log_audit_action')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.backup_before_operation')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.log_audit_action')
     def test_multiple_updates_tracking(self, mock_log_audit, mock_backup, mock_ctx, mock_get_conn):
         """Test multiple setting updates are tracked"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.settings import update_system_settings
@@ -421,7 +421,7 @@ class TestSettingsIntegration(unittest.TestCase):
 class TestSettingsErrorHandling(unittest.TestCase):
     """Test error handling in settings module"""
 
-    @patch('university_system.modules.core.services.restaurant_misc.settings.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.get_db_connection')
     def test_view_settings_database_error(self, mock_get_conn):
         """Test view settings handles database errors"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.settings import view_system_settings
@@ -434,9 +434,9 @@ class TestSettingsErrorHandling(unittest.TestCase):
 
         # Should handle gracefully
 
-    @patch('university_system.modules.core.services.restaurant_misc.settings.get_db_connection')
-    @patch('university_system.modules.core.services.restaurant_misc.settings.ctx')
-    @patch('university_system.modules.core.services.restaurant_misc.settings.backup_before_operation')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.settings.backup_before_operation')
     @patch('builtins.input', return_value='setting1')
     def test_update_settings_database_error(self, mock_input, mock_backup, mock_ctx, mock_get_conn):
         """Test update settings handles database errors"""

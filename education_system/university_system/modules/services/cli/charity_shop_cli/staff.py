@@ -2,7 +2,7 @@
 Staff management: registration, performance, shifts, tasks, volunteers.
 """
 
-from ._imports import (
+from education_system.university_system.modules.services.cli.charity_shop_cli._imports import (
     sqlite3, logger, datetime, timedelta,
     get_connection, List, Dict, Any, Optional,
     STAFF_TABLE, SALES_TABLE, SHIFTS_TABLE, TASKS_TABLE,

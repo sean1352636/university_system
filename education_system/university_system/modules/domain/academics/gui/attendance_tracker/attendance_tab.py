@@ -31,9 +31,9 @@ GEOFENCING_SUPPORT = True
 FACE_RECOGNITION_SUPPORT = True
 
 # Import window classes
-from .attendance_windows import ManualAttendanceWindow, BatchAttendanceWindow, EditAttendanceWindow
-from .qr_windows import QRAttendanceWindow
-from .face_recognition_windows import FaceRecognitionAttendanceWindow
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker.attendance_windows import ManualAttendanceWindow, BatchAttendanceWindow, EditAttendanceWindow
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker.qr_windows import QRAttendanceWindow
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker.face_recognition_windows import FaceRecognitionAttendanceWindow
 
 
 def refresh_attendance_data(self):

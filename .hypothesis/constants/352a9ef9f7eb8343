@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/plagiarism/setup.py
+# hypothesis_version: 6.151.9
+
+['NLTK available', 'NLTK not available', 'logs', 'nltk', 'permissions', 'roles', 'text_files', 'textract', 'textract available', 'users']

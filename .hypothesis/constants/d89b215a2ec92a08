@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/mental_health/mental_health_core.py
+# hypothesis_version: 6.151.9
+
+[100, ' AND category = ?', '1', '2', '2. Wellness Check-in', '3', '4', '5', '6', '7', '8', '=', 'AppointmentManager', 'CounselorManager', 'MeditationManager', 'PeerSupportManager', 'ResourceManager', 'TBD', 'To be assigned', 'anonymous_code', 'appointment_date', 'appointment_time', 'appointment_type', 'beginner', 'counselor_name', 'daily_appointments', 'duration_minutes', 'email_address', 'first_name', 'in-person', 'is_anonymous', 'location', 'mode', '❌ Invalid choice.']

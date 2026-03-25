@@ -1,7 +1,7 @@
 # dialogs/settings.py
 # Dialog for application settings.
 
-from .._common import tk, ttk, messagebox
+from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import tk, ttk, messagebox
 
 
 class SettingsDialog:

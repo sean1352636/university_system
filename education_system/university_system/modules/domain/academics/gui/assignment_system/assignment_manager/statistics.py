@@ -24,25 +24,27 @@ class StatisticsMixin:
             summary_frame.pack(fill='x', padx=10, pady=10)
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            # Total assignments
-            cursor.execute("SELECT COUNT(*) FROM assignments")
-            total_assignments = cursor.fetchone()[0]
+                # Total assignments
+                cursor.execute("SELECT COUNT(*) FROM assignments")
+                total_assignments = cursor.fetchone()[0]
 
-            # Active assignments
-            cursor.execute("SELECT COUNT(*) FROM assignments WHERE is_active = 1")
-            active_assignments = cursor.fetchone()[0]
+                # Active assignments
+                cursor.execute("SELECT COUNT(*) FROM assignments WHERE is_active = 1")
+                active_assignments = cursor.fetchone()[0]
 
-            # Total submissions
-            cursor.execute("SELECT COUNT(*) FROM assignment_submissions")
-            total_submissions = cursor.fetchone()[0]
+                # Total submissions
+                cursor.execute("SELECT COUNT(*) FROM assignment_submissions")
+                total_submissions = cursor.fetchone()[0]
 
-            # Average grade
-            cursor.execute("SELECT AVG(grade) FROM assignment_submissions WHERE grade IS NOT NULL")
-            avg_grade = cursor.fetchone()[0] or 0
+                # Average grade
+                cursor.execute("SELECT AVG(grade) FROM assignment_submissions WHERE grade IS NOT NULL")
+                avg_grade = cursor.fetchone()[0] or 0
 
-            conn.close()
+            finally:
+                conn.close()
 
             summary_text = f"""
             Total Assignments: {total_assignments}

@@ -100,24 +100,7 @@ def init_barber_db():
             )
         ''')
 
-        # Transactions table
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS barber_transactions (
-                transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                appointment_id INTEGER,
-                customer_id TEXT NOT NULL,
-                amount DECIMAL(10,2) NOT NULL,
-                payment_method TEXT NOT NULL,
-                transaction_type TEXT DEFAULT 'service',
-                tip_amount DECIMAL(10,2) DEFAULT 0,
-                reference_number TEXT,
-                status TEXT DEFAULT 'completed',
-                receipt_sent INTEGER DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                processed_by TEXT,
-                FOREIGN KEY (appointment_id) REFERENCES barber_appointments(appointment_id)
-            )
-        ''')
+        # Barber transactions now use unified 'transactions' table with source_type='barber'
 
         # Customer preferences table
         conn.execute('''
@@ -434,10 +417,10 @@ class TransactionManager:
         with transaction() as conn:
             # Record transaction
             cursor = conn.execute('''
-                INSERT INTO barber_transactions
-                (appointment_id, customer_id, amount, payment_method, tip_amount,
+                INSERT INTO transactions
+                (source_type, reference_id, reference_type, customer_id, amount, payment_method, tip_amount,
                  reference_number, processed_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES ('barber', ?, 'appointment', ?, ?, ?, ?, ?, ?)
             ''', (appointment_id, customer_id, amount, payment_method, tip_amount,
                   reference_number, processed_by))
 
@@ -468,8 +451,8 @@ class TransactionManager:
         """Get transaction by ID"""
         with get_db_connection() as conn:
             row = conn.execute(
-                'SELECT * FROM barber_transactions WHERE transaction_id = ?',
-                (transaction_id,)
+                'SELECT * FROM transactions WHERE transaction_id = ? AND source_type = ?',
+                (transaction_id, 'barber')
             ).fetchone()
             if row:
                 return dict(row)
@@ -480,8 +463,8 @@ class TransactionManager:
         """Mark receipt as sent"""
         with transaction() as conn:
             conn.execute(
-                'UPDATE barber_transactions SET receipt_sent = 1 WHERE transaction_id = ?',
-                (transaction_id,)
+                'UPDATE transactions SET receipt_sent = 1 WHERE transaction_id = ? AND source_type = ?',
+                (transaction_id, 'barber')
             )
             return True
 
@@ -498,8 +481,8 @@ class TransactionManager:
                     SUM(amount) as service_revenue,
                     SUM(tip_amount) as tips,
                     SUM(amount + tip_amount) as total_revenue
-                FROM barber_transactions
-                WHERE DATE(created_at) = ? AND status = 'completed'
+                FROM transactions
+                WHERE source_type = 'barber' AND DATE(created_at) = ? AND status = 'completed'
             ''', (date,)).fetchone()
 
             return {
@@ -524,8 +507,8 @@ class ReportManager:
                     SUM(amount) as service_revenue,
                     SUM(tip_amount) as total_tips,
                     AVG(amount) as avg_service_value
-                FROM barber_transactions
-                WHERE DATE(created_at) BETWEEN ? AND ? AND status = 'completed'
+                FROM transactions
+                WHERE source_type = 'barber' AND DATE(created_at) BETWEEN ? AND ? AND status = 'completed'
             ''', (start_date, end_date)).fetchone()
 
             # Revenue by service
@@ -534,9 +517,9 @@ class ReportManager:
                     a.service_name,
                     COUNT(*) as count,
                     SUM(t.amount) as revenue
-                FROM barber_transactions t
-                JOIN barber_appointments a ON t.appointment_id = a.appointment_id
-                WHERE DATE(t.created_at) BETWEEN ? AND ?
+                FROM transactions t
+                JOIN barber_appointments a ON t.reference_id = a.appointment_id AND t.reference_type = 'appointment'
+                WHERE t.source_type = 'barber' AND DATE(t.created_at) BETWEEN ? AND ?
                     AND t.status = 'completed'
                 GROUP BY a.service_name
                 ORDER BY revenue DESC
@@ -549,9 +532,9 @@ class ReportManager:
                     COUNT(*) as appointments,
                     SUM(t.amount) as revenue,
                     SUM(t.tip_amount) as tips
-                FROM barber_transactions t
-                JOIN barber_appointments a ON t.appointment_id = a.appointment_id
-                WHERE DATE(t.created_at) BETWEEN ? AND ?
+                FROM transactions t
+                JOIN barber_appointments a ON t.reference_id = a.appointment_id AND t.reference_type = 'appointment'
+                WHERE t.source_type = 'barber' AND DATE(t.created_at) BETWEEN ? AND ?
                     AND t.status = 'completed' AND a.staff_name IS NOT NULL
                 GROUP BY a.staff_id, a.staff_name
                 ORDER BY revenue DESC
@@ -886,8 +869,8 @@ class CustomerManager:
             ''', (primary_id, secondary_id))
             # Move transactions
             conn.execute('''
-                UPDATE barber_transactions SET customer_id = ?
-                WHERE customer_id = ?
+                UPDATE transactions SET customer_id = ?
+                WHERE source_type = 'barber' AND customer_id = ?
             ''', (primary_id, secondary_id))
             # Move notes
             conn.execute('''
@@ -1092,7 +1075,7 @@ class CommissionManager:
             appointments = conn.execute('''
                 SELECT a.*, t.amount, t.tip_amount
                 FROM barber_appointments a
-                JOIN barber_transactions t ON a.appointment_id = t.appointment_id
+                JOIN transactions t ON a.appointment_id = t.reference_id AND t.reference_type = 'appointment' AND t.source_type = 'barber'
                 WHERE a.staff_id = ? AND a.appointment_date BETWEEN ? AND ?
                 AND a.status = 'completed' AND t.status = 'completed'
             ''', (staff_id, start_date, end_date)).fetchall()
@@ -1196,9 +1179,9 @@ class GiftCardManager:
 
             # Log redemption
             conn.execute('''
-                INSERT INTO barber_gift_card_transactions
-                (gift_card_id, amount, transaction_type, appointment_id, processed_by)
-                VALUES (?, ?, 'redemption', ?, ?)
+                INSERT INTO barber_gift_card_redemptions
+                (gift_card_id, amount, appointment_id, redeemed_by)
+                VALUES (?, ?, ?, ?)
             ''', (card['gift_card_id'], amount, appointment_id, redeemed_by))
 
             return True, f"Redeemed £{amount:.2f}. Remaining balance: £{new_balance:.2f}"
@@ -1250,23 +1233,24 @@ class RefundManager:
         """Issue refund"""
         with transaction() as conn:
             trans = conn.execute(
-                'SELECT * FROM barber_transactions WHERE transaction_id = ?',
-                (transaction_id,)
+                'SELECT * FROM transactions WHERE transaction_id = ? AND source_type = ?',
+                (transaction_id, 'barber')
             ).fetchone()
 
             if not trans:
                 raise ValueError("Transaction not found")
 
             cursor = conn.execute('''
-                INSERT INTO barber_refunds
-                (transaction_id, appointment_id, original_amount, refund_amount,
-                 refund_type, reason, processed_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (transaction_id, trans['appointment_id'], trans['amount'],
-                  amount, refund_type, reason, processed_by))
+                INSERT INTO unified_refunds
+                (source_type, reference_id, reference_type, original_amount, amount,
+                 refund_type, reason, processed_by, refund_date, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+            ''', ('barber', str(trans['reference_id']), 'appointment',
+                  trans['amount'], amount, refund_type, reason, processed_by,
+                  f'barber_transaction_{transaction_id}'))
 
             conn.execute('''
-                UPDATE barber_transactions SET status = 'refunded' WHERE transaction_id = ?
+                UPDATE transactions SET status = 'refunded' WHERE transaction_id = ? AND source_type = 'barber'
             ''', (transaction_id,))
 
             return cursor.lastrowid
@@ -1301,8 +1285,8 @@ class CashDrawerManager:
             # Calculate expected
             cash_trans = conn.execute('''
                 SELECT SUM(amount + tip_amount) as total
-                FROM barber_transactions
-                WHERE payment_method = 'cash' AND DATE(created_at) = DATE(?)
+                FROM transactions
+                WHERE source_type = 'barber' AND payment_method = 'cash' AND DATE(created_at) = DATE(?)
                 AND status = 'completed'
             ''', (drawer['opened_at'],)).fetchone()
 
@@ -1383,8 +1367,8 @@ class AnalyticsManager:
             # Today's revenue
             revenue = conn.execute('''
                 SELECT SUM(amount) as revenue, SUM(tip_amount) as tips
-                FROM barber_transactions
-                WHERE DATE(created_at) = ? AND status = 'completed'
+                FROM transactions
+                WHERE source_type = 'barber' AND DATE(created_at) = ? AND status = 'completed'
             ''', (today,)).fetchone()
 
             # Active staff
@@ -1396,8 +1380,8 @@ class AnalyticsManager:
             month_start = datetime.now().replace(day=1).strftime('%Y-%m-%d')
             monthly = conn.execute('''
                 SELECT COUNT(*) as appointments, SUM(amount) as revenue
-                FROM barber_transactions
-                WHERE DATE(created_at) >= ? AND status = 'completed'
+                FROM transactions
+                WHERE source_type = 'barber' AND DATE(created_at) >= ? AND status = 'completed'
             ''', (month_start,)).fetchone()
 
             return {
@@ -1494,7 +1478,7 @@ class AnalyticsManager:
                     SUM(t.tip_amount) as tips,
                     AVG(f.rating) as avg_rating
                 FROM barber_appointments a
-                LEFT JOIN barber_transactions t ON a.appointment_id = t.appointment_id
+                LEFT JOIN transactions t ON a.appointment_id = t.reference_id AND t.reference_type = 'appointment' AND t.source_type = 'barber'
                 LEFT JOIN barber_feedback f ON a.appointment_id = f.appointment_id
                 WHERE a.appointment_date BETWEEN ? AND ?
                 AND a.staff_id IS NOT NULL
@@ -1804,15 +1788,14 @@ def init_extended_barber_db():
             )
         ''')
 
-        # Gift card transactions
+        # Gift card redemptions
         conn.execute('''
-            CREATE TABLE IF NOT EXISTS barber_gift_card_transactions (
-                gc_trans_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            CREATE TABLE IF NOT EXISTS barber_gift_card_redemptions (
+                redemption_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 gift_card_id INTEGER NOT NULL,
                 amount DECIMAL(10,2) NOT NULL,
-                transaction_type TEXT DEFAULT 'redemption',
                 appointment_id INTEGER,
-                processed_by TEXT,
+                redeemed_by TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (gift_card_id) REFERENCES barber_gift_cards(gift_card_id)
             )
@@ -1834,21 +1817,7 @@ def init_extended_barber_db():
             )
         ''')
 
-        # Refunds
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS barber_refunds (
-                refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                transaction_id INTEGER NOT NULL,
-                appointment_id INTEGER,
-                original_amount DECIMAL(10,2) NOT NULL,
-                refund_amount DECIMAL(10,2) NOT NULL,
-                refund_type TEXT NOT NULL,
-                reason TEXT,
-                processed_by TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (transaction_id) REFERENCES barber_transactions(transaction_id)
-            )
-        ''')
+        # Refunds - uses unified_refunds table
 
         # Cash drawer
         conn.execute('''

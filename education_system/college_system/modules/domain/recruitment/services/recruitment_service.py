@@ -3,6 +3,7 @@
 from education_system.college_system.core.exceptions import RecruitmentError
 from education_system.college_system.infrastructure.database.db import connect
 
+from education_system.college_system.core.sql_safety import escape_like
 import logging
 
 logger = logging.getLogger(__name__)
@@ -69,7 +70,8 @@ class RecruitmentService:
                 params.append(contract_type)
             if search:
                 sql += " AND (job_title LIKE ? OR description LIKE ?)"
-                params.extend([f"%{search}%", f"%{search}%"])
+                escaped = escape_like(search)
+                params.extend([f"%{escaped}%", f"%{escaped}%"])
             sql += " ORDER BY created_at DESC"
             return [dict(r) for r in conn.execute(sql, params).fetchall()]
         finally:

@@ -18,7 +18,7 @@ class TestInitializeChatTables:
 
     def test_initialize_chat_tables_success(self):
         """Test successful chat tables initialization"""
-        with patch('university_system.infrastructure.email.chat_rooms.execute_db_operation') as mock_db:
+        with patch('education_system.university_system.infrastructure.email.chat_rooms.execute_db_operation') as mock_db:
             mock_db.return_value = True
 
             result = chat_rooms.initialize_chat_tables()
@@ -32,7 +32,7 @@ class TestInitializeChatTables:
             mock_cursor = Mock()
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.chat_rooms.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.chat_rooms.execute_db_operation', side_effect=mock_operation):
             result = chat_rooms.initialize_chat_tables()
 
             assert result is True
@@ -43,14 +43,14 @@ class TestInitializeChatTables:
             mock_cursor = Mock()
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.chat_rooms.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.chat_rooms.execute_db_operation', side_effect=mock_operation):
             result = chat_rooms.initialize_chat_tables()
 
             assert result is True
 
     def test_initialize_chat_tables_database_error(self):
         """Test chat tables initialization with database error"""
-        with patch('university_system.infrastructure.email.chat_rooms.execute_db_operation') as mock_db:
+        with patch('education_system.university_system.infrastructure.email.chat_rooms.execute_db_operation') as mock_db:
             mock_db.side_effect = Exception("Database error")
 
             result = chat_rooms.initialize_chat_tables()
@@ -684,7 +684,7 @@ class TestEnterChatRoom:
 
         with patch('builtins.input', side_effect=['/invite', 'otheruser', '/quit']), \
              patch('builtins.print'), \
-             patch('university_system.infrastructure.email.chat_rooms.search_users') as mock_search:
+             patch('education_system.university_system.infrastructure.email.chat_rooms.search_users') as mock_search:
 
             mock_search.return_value = [{'id': 2, 'username': 'otheruser'}]
 
@@ -857,7 +857,7 @@ class TestManageChatRoom:
 
         with patch('builtins.input', side_effect=['2', 'otheruser', '7']), \
              patch('builtins.print'), \
-             patch('university_system.infrastructure.email.chat_rooms.search_users') as mock_search:
+             patch('education_system.university_system.infrastructure.email.chat_rooms.search_users') as mock_search:
 
             mock_search.return_value = [{'id': 2, 'username': 'otheruser', 'full_name': 'Other User', 'email': 'other@test.com'}]
 
@@ -877,7 +877,7 @@ class TestManageChatRoom:
 
         with patch('builtins.input', side_effect=['3', 'otheruser', '7']), \
              patch('builtins.print'), \
-             patch('university_system.infrastructure.email.chat_rooms.execute_db_operation', side_effect=mock_operation):
+             patch('education_system.university_system.infrastructure.email.chat_rooms.execute_db_operation', side_effect=mock_operation):
 
             chat_rooms.manage_chat_room(mock_dashboard, 1, 'Test Room')
 
@@ -900,7 +900,7 @@ class TestManageChatRoom:
 
         with patch('builtins.input', side_effect=['4', 'otheruser', '1', '7']), \
              patch('builtins.print'), \
-             patch('university_system.infrastructure.email.chat_rooms.execute_db_operation', side_effect=mock_operation):
+             patch('education_system.university_system.infrastructure.email.chat_rooms.execute_db_operation', side_effect=mock_operation):
 
             chat_rooms.manage_chat_room(mock_dashboard, 1, 'Test Room')
 
@@ -938,7 +938,7 @@ class TestManageChatRoom:
 
         with patch('builtins.input', side_effect=['6', '1', 'New Room Name', '7']), \
              patch('builtins.print'), \
-             patch('university_system.infrastructure.email.chat_rooms.execute_db_operation', side_effect=mock_operation):
+             patch('education_system.university_system.infrastructure.email.chat_rooms.execute_db_operation', side_effect=mock_operation):
 
             chat_rooms.manage_chat_room(mock_dashboard, 1, 'Test Room')
 
@@ -954,7 +954,7 @@ class TestManageChatRoom:
 
         with patch('builtins.input', side_effect=['6', '3', '7']), \
              patch('builtins.print'), \
-             patch('university_system.infrastructure.email.chat_rooms.execute_db_operation', side_effect=mock_operation):
+             patch('education_system.university_system.infrastructure.email.chat_rooms.execute_db_operation', side_effect=mock_operation):
 
             chat_rooms.manage_chat_room(mock_dashboard, 1, 'Test Room')
 

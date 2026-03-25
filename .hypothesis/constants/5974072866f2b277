@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/management/bookings.py
+# hypothesis_version: 6.151.9
+
+[130, '#333333', '#ffffff', '.', 'Card.TFrame', 'Date/Time', 'Main.TFrame', 'Movie', 'Primary.TButton', 'Ref', 'Seats', 'Secondary.TButton', 'Status', 'Subtitle.TLabel', 'Total', '_', 'both', 'end', 'headings', 'left', 'right', 'values', 'vertical', 'x', 'y']

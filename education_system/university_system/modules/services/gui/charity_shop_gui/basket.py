@@ -1,6 +1,6 @@
 """Charity Shop - Basket window."""
 
-from ._imports import tk, ttk, messagebox
+from education_system.university_system.modules.services.gui.charity_shop_gui._imports import tk, ttk, messagebox
 
 
 class BasketWindow(tk.Toplevel):
@@ -180,7 +180,7 @@ class BasketWindow(tk.Toplevel):
             messagebox.showwarning("Empty Basket", "Please add items to basket before checkout.", parent=self)
             return
 
-        from .dialogs import CheckoutDialog
+        from education_system.university_system.modules.services.gui.charity_shop_gui.dialogs import CheckoutDialog
 
         # Calculate total
         total = sum(item['price'] * item['quantity'] for item in self.app.basket)

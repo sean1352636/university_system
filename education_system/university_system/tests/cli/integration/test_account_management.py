@@ -176,11 +176,11 @@ class TestFeeAssignment:
 
     def test_assign_fee_to_student(self, sample_data, mock_auth):
         """Test assigning a fee to a student"""
-        with patch('university_system.modules.domain.finance.core.account_management.get_connection') as mock_conn, \
-             patch('university_system.modules.domain.finance.core.account_management.auth', mock_auth), \
+        with patch('education_system.university_system.modules.domain.finance.core.account_management.get_connection') as mock_conn, \
+             patch('education_system.university_system.modules.domain.finance.core.account_management.auth', mock_auth), \
              patch('builtins.input', side_effect=['STU001', '1', '1000.00', '2025-12-31']), \
-             patch('university_system.modules.domain.finance.core.account_management.student_exists', return_value=True), \
-             patch('university_system.modules.domain.finance.core.account_management.get_student_name', return_value='John Doe'):
+             patch('education_system.university_system.modules.domain.finance.core.account_management.student_exists', return_value=True), \
+             patch('education_system.university_system.modules.domain.finance.core.account_management.get_student_name', return_value='John Doe'):
 
             conn = sqlite3.connect(sample_data)
             mock_conn.return_value = conn
@@ -199,11 +199,11 @@ class TestPaymentRecording:
 
     def test_record_payment(self, sample_data, mock_auth):
         """Test recording a payment"""
-        with patch('university_system.modules.domain.finance.core.account_management.get_connection') as mock_conn, \
-             patch('university_system.modules.domain.finance.core.account_management.auth', mock_auth), \
+        with patch('education_system.university_system.modules.domain.finance.core.account_management.get_connection') as mock_conn, \
+             patch('education_system.university_system.modules.domain.finance.core.account_management.auth', mock_auth), \
              patch('builtins.input', side_effect=['STU001', '5000.00', 'Card', '', '', '']), \
-             patch('university_system.modules.domain.finance.core.account_management.student_exists', return_value=True), \
-             patch('university_system.modules.domain.finance.core.account_management.get_student_name', return_value='John Doe'):
+             patch('education_system.university_system.modules.domain.finance.core.account_management.student_exists', return_value=True), \
+             patch('education_system.university_system.modules.domain.finance.core.account_management.get_student_name', return_value='John Doe'):
 
             conn = sqlite3.connect(sample_data)
             mock_conn.return_value = conn
@@ -221,11 +221,11 @@ class TestPaymentRecording:
 
     def test_payment_allocation_to_fees(self, sample_data, mock_auth):
         """Test that payment is allocated to outstanding fees"""
-        with patch('university_system.modules.domain.finance.core.account_management.get_connection') as mock_conn, \
-             patch('university_system.modules.domain.finance.core.account_management.auth', mock_auth), \
+        with patch('education_system.university_system.modules.domain.finance.core.account_management.get_connection') as mock_conn, \
+             patch('education_system.university_system.modules.domain.finance.core.account_management.auth', mock_auth), \
              patch('builtins.input', side_effect=['STU001', '3000.00', 'Card', '', '', '']), \
-             patch('university_system.modules.domain.finance.core.account_management.student_exists', return_value=True), \
-             patch('university_system.modules.domain.finance.core.account_management.get_student_name', return_value='John Doe'):
+             patch('education_system.university_system.modules.domain.finance.core.account_management.student_exists', return_value=True), \
+             patch('education_system.university_system.modules.domain.finance.core.account_management.get_student_name', return_value='John Doe'):
 
             conn = sqlite3.connect(sample_data)
             mock_conn.return_value = conn
@@ -246,11 +246,11 @@ class TestPaymentRecording:
 
     def test_overpayment_creates_credit(self, sample_data, mock_auth):
         """Test that overpayment creates a credit"""
-        with patch('university_system.modules.domain.finance.core.account_management.get_connection') as mock_conn, \
-             patch('university_system.modules.domain.finance.core.account_management.auth', mock_auth), \
+        with patch('education_system.university_system.modules.domain.finance.core.account_management.get_connection') as mock_conn, \
+             patch('education_system.university_system.modules.domain.finance.core.account_management.auth', mock_auth), \
              patch('builtins.input', side_effect=['STU001', '10000.00', 'Card', '', '', '']), \
-             patch('university_system.modules.domain.finance.core.account_management.student_exists', return_value=True), \
-             patch('university_system.modules.domain.finance.core.account_management.get_student_name', return_value='John Doe'):
+             patch('education_system.university_system.modules.domain.finance.core.account_management.student_exists', return_value=True), \
+             patch('education_system.university_system.modules.domain.finance.core.account_management.get_student_name', return_value='John Doe'):
 
             conn = sqlite3.connect(sample_data)
             mock_conn.return_value = conn
@@ -269,11 +269,11 @@ class TestInvoiceGeneration:
 
     def test_generate_invoice(self, sample_data, mock_auth):
         """Test generating an invoice"""
-        with patch('university_system.modules.domain.finance.core.account_management.get_connection') as mock_conn, \
-             patch('university_system.modules.domain.finance.core.account_management.auth', mock_auth), \
+        with patch('education_system.university_system.modules.domain.finance.core.account_management.get_connection') as mock_conn, \
+             patch('education_system.university_system.modules.domain.finance.core.account_management.auth', mock_auth), \
              patch('builtins.input', side_effect=['STU001']), \
-             patch('university_system.modules.domain.finance.core.account_management.student_exists', return_value=True), \
-             patch('university_system.modules.domain.finance.core.account_management.send_email_notification'):
+             patch('education_system.university_system.modules.domain.finance.core.account_management.student_exists', return_value=True), \
+             patch('education_system.university_system.modules.domain.finance.core.account_management.send_email_notification'):
 
             conn = sqlite3.connect(sample_data)
             mock_conn.return_value = conn
@@ -288,12 +288,12 @@ class TestRefundProcessing:
 
     def test_process_refund(self, sample_data, mock_auth):
         """Test processing a refund"""
-        with patch('university_system.modules.domain.finance.core.account_management.get_connection') as mock_conn, \
-             patch('university_system.modules.domain.finance.core.account_management.auth', mock_auth), \
+        with patch('education_system.university_system.modules.domain.finance.core.account_management.get_connection') as mock_conn, \
+             patch('education_system.university_system.modules.domain.finance.core.account_management.auth', mock_auth), \
              patch('builtins.input', side_effect=['STU001', '1', '1', '1', '500.00', 'Overpayment', '1', 'y']), \
-             patch('university_system.modules.domain.finance.core.account_management.student_exists', return_value=True), \
-             patch('university_system.modules.domain.finance.core.account_management.get_student_name', return_value='John Doe'), \
-             patch('university_system.modules.domain.finance.core.account_management.log_audit_action'):
+             patch('education_system.university_system.modules.domain.finance.core.account_management.student_exists', return_value=True), \
+             patch('education_system.university_system.modules.domain.finance.core.account_management.get_student_name', return_value='John Doe'), \
+             patch('education_system.university_system.modules.domain.finance.core.account_management.log_audit_action'):
 
             conn = sqlite3.connect(sample_data)
             mock_conn.return_value = conn
@@ -319,9 +319,9 @@ class TestFinancialStatements:
 
     def test_view_student_financial_statement(self, sample_data):
         """Test viewing student financial statement"""
-        with patch('university_system.modules.domain.finance.core.account_management.get_connection') as mock_conn, \
+        with patch('education_system.university_system.modules.domain.finance.core.account_management.get_connection') as mock_conn, \
              patch('builtins.input', side_effect=['STU001']), \
-             patch('university_system.modules.domain.finance.core.account_management.student_exists', return_value=True):
+             patch('education_system.university_system.modules.domain.finance.core.account_management.student_exists', return_value=True):
 
             conn = sqlite3.connect(sample_data)
             mock_conn.return_value = conn
@@ -336,7 +336,7 @@ class TestCreditManagement:
 
     def test_manage_student_credits(self, sample_data, mock_auth):
         """Test managing student credits"""
-        with patch('university_system.modules.domain.finance.core.account_management.auth', mock_auth), \
+        with patch('education_system.university_system.modules.domain.finance.core.account_management.auth', mock_auth), \
              patch('builtins.input', side_effect=['5']):
 
             account_management.manage_student_credits()

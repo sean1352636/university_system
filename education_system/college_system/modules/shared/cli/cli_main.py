@@ -3,72 +3,16 @@
 import getpass
 import sys
 
-from education_system.college_system.core.i18n import t, load_locale
+from education_system.college_system.core.i18n import t, set_language
 from education_system.college_system.infrastructure.auth.core import UserAuth
 from education_system.college_system.infrastructure.database.schema import init_db, seed_default_data
 from education_system.college_system.core.paths import ensure_directories
+from education_system.shared.cli.cli_helpers import (
+    print_header, print_menu, get_choice, run_submenu as _run_submenu, login_prompt,
+)
 import logging
 
 logger = logging.getLogger(__name__)
-
-
-def clear_screen():
-    print("\n" * 2)
-
-
-def print_header(title: str):
-    print(f"\n{'=' * 50}")
-    print(f"  {title}")
-    print(f"{'=' * 50}")
-
-
-def print_menu(options: list[tuple[str, str]]):
-    """Print a numbered menu. Options are (key, label) tuples."""
-    for key, label in options:
-        print(f"  [{key}] {label}")
-    print()
-
-
-def get_choice(prompt: str = "Select option: ") -> str:
-    return input(prompt).strip()
-
-
-def login_prompt(auth: UserAuth) -> bool:
-    """Show login prompt. Returns True if login succeeds."""
-    from education_system.shared.cli.login_cli import cli_login_prompt
-    result = cli_login_prompt(auth)
-    if result is None:
-        return False
-    user_info, _ = result
-    display = user_info.get("display_name", user_info.get("username", "User"))
-    print(f"\n  Welcome, {display}!")
-    logger.info("CLI login: user '%s'", user_info["username"])
-    return True
-
-
-# ================================================================
-# Sub-menu helper functions
-# ================================================================
-
-def _run_submenu(auth, title, items):
-    """Generic sub-menu runner. items: list of (key, label, callable_or_func)."""
-    while True:
-        print_header(title)
-        options = [(k, lbl) for k, lbl, _ in items]
-        options.append(("0", "Back"))
-        print_menu(options)
-
-        choice = get_choice()
-        if choice == "0":
-            break
-        matched = False
-        for k, _, func in items:
-            if choice == k:
-                func(auth)
-                matched = True
-                break
-        if not matched:
-            print(f"\n  {t('menu.invalid_option')}")
 
 
 # ================================================================
@@ -145,6 +89,8 @@ def _admin_exams_assessment(auth):
     from education_system.college_system.modules.domain.apprenticeships.cli.apprenticeships_cli import apprenticeship_menu
     from education_system.college_system.modules.domain.functional_skills.cli.functional_skills_cli import functional_skills_menu
     from education_system.college_system.modules.domain.study_programmes.cli.study_programmes_cli import study_programmes_menu
+    from education_system.college_system.modules.domain.question_analysis.cli.question_analysis_cli import question_analysis_menu
+    from education_system.college_system.modules.domain.target_setting.cli.target_setting_cli import target_setting_menu
     _run_submenu(auth, "Exams & Assessment", [
         ("1", "Grades", lambda a: grade_menu(a)),
         ("2", "Exams", lambda a: exams_menu(a)),
@@ -152,6 +98,8 @@ def _admin_exams_assessment(auth):
         ("4", "Apprenticeships", lambda a: apprenticeship_menu(a)),
         ("5", "Functional Skills & GCSE Resits", lambda a: functional_skills_menu(a)),
         ("6", "Study Programmes", lambda a: study_programmes_menu(a)),
+        ("7", "Question-Level Analysis", lambda a: question_analysis_menu(a)),
+        ("8", "Target Setting (ALPS)", lambda a: target_setting_menu(a)),
     ])
 
 
@@ -166,6 +114,7 @@ def _admin_staff_hr(auth):
     from education_system.college_system.modules.domain.dbs_checks.cli.dbs_checks_cli import dbs_checks_menu
     from education_system.college_system.modules.domain.onboarding.cli.onboarding_cli import onboarding_menu
     from education_system.college_system.modules.domain.expense_claims.cli.expense_claims_cli import expense_claims_menu
+    from education_system.college_system.modules.domain.cover_agency.cli.cover_agency_cli import cover_agency_menu
     _run_submenu(auth, "Staff & HR", [
         ("1", "Staff HR", lambda a: staff_hr_menu(a)),
         ("2", "CPD Records", lambda a: cpd_menu(a)),
@@ -177,6 +126,7 @@ def _admin_staff_hr(auth):
         ("8", "DBS Checks", lambda a: dbs_checks_menu(a)),
         ("9", "Onboarding & Probation", lambda a: onboarding_menu(a)),
         ("A", "Expense Claims", lambda a: expense_claims_menu(a)),
+        ("B", "Cover Agency Integration", lambda a: cover_agency_menu(a)),
     ])
 
 
@@ -198,6 +148,7 @@ def _admin_administration(auth):
     from education_system.college_system.modules.domain.letter_templates.cli.letter_templates_cli import letter_templates_menu
     from education_system.college_system.modules.domain.health_safety.cli.health_safety_cli import health_safety_menu
     from education_system.college_system.modules.domain.lettings.cli.lettings_cli import lettings_menu
+    from education_system.college_system.modules.domain.lettings_portal.cli.lettings_portal_cli import lettings_portal_menu
     _run_submenu(auth, "Administration", [
         ("1", "Admissions", lambda a: admissions_menu(a)),
         ("2", "Visitors", lambda a: visitors_menu(a)),
@@ -216,6 +167,7 @@ def _admin_administration(auth):
         ("F", "Letter Templates", lambda a: letter_templates_menu(a)),
         ("G", "Health & Safety", lambda a: health_safety_menu(a)),
         ("H", "Facility Lettings", lambda a: lettings_menu(a)),
+        ("I", "Lettings Portal & Invoicing", lambda a: lettings_portal_menu(a)),
     ])
 
 
@@ -276,6 +228,9 @@ def _admin_analytics(auth):
     from education_system.college_system.modules.domain.self_assessment.cli.self_assessment_cli import self_assessment_menu
     from education_system.college_system.modules.domain.governance.cli.governance_cli import governance_menu
     from education_system.college_system.modules.domain.data_export.cli.data_export_cli import data_export_menu
+    from education_system.college_system.modules.domain.census_ilr.cli.census_ilr_cli import census_ilr_menu
+    from education_system.college_system.modules.domain.iqr_manager.cli.iqr_manager_cli import iqr_manager_menu
+    from education_system.college_system.modules.domain.sef_builder.cli.sef_builder_cli import sef_builder_menu
     _run_submenu(auth, "Analytics & Reports", [
         ("1", "Reports", lambda a: reports_menu(a)),
         ("2", "Compliance", lambda a: compliance_menu(a)),
@@ -286,6 +241,9 @@ def _admin_analytics(auth):
         ("7", "Self-Assessment & Ofsted", lambda a: self_assessment_menu(a)),
         ("8", "Governance & Board", lambda a: governance_menu(a)),
         ("9", "Data Export & ILR", lambda a: data_export_menu(a)),
+        ("A", "Census / ILR Returns", lambda a: census_ilr_menu(a)),
+        ("B", "IQR Cycle Manager", lambda a: iqr_manager_menu(a)),
+        ("C", "SEF Builder", lambda a: sef_builder_menu(a)),
     ])
 
 
@@ -297,6 +255,9 @@ def _admin_parent_careers(auth):
     from education_system.college_system.modules.domain.work_journal.cli.work_journal_cli import work_journal_menu
     from education_system.college_system.modules.domain.ucas.cli.ucas_cli import ucas_menu
     from education_system.college_system.modules.domain.alumni.cli.alumni_cli import alumni_menu
+    from education_system.college_system.modules.domain.ucas_export.cli.ucas_export_cli import ucas_export_menu
+    from education_system.college_system.modules.domain.destination_outcomes.cli.destination_outcome_cli import destination_outcome_menu
+    from education_system.college_system.modules.domain.employer_portal.cli.employer_portal_cli import employer_portal_menu
     _run_submenu(auth, "Parent & Careers", [
         ("1", "Parent Portal", lambda a: parent_menu(a)),
         ("2", "Parents Evening", lambda a: parents_evening_menu(a)),
@@ -305,6 +266,9 @@ def _admin_parent_careers(auth):
         ("5", "Work Journal", lambda a: work_journal_menu(a)),
         ("6", "UCAS Applications", lambda a: ucas_menu(a)),
         ("7", "Alumni Network", lambda a: alumni_menu(a)),
+        ("8", "UCAS Data Export", lambda a: ucas_export_menu(a)),
+        ("9", "Destination Outcomes", lambda a: destination_outcome_menu(a)),
+        ("A", "Employer Portal", lambda a: employer_portal_menu(a)),
     ])
 
 
@@ -358,9 +322,80 @@ def _admin_system_settings(auth):
     ])
 
 
+def _cross_system_tools(auth):
+    """Cross-system shared tools available across all education systems."""
+    db_path = getattr(auth, '_db_path', None)
+
+    def _run_shared(module_path, label):
+        """Lazily import and run a shared CLI module."""
+        def handler(a):
+            try:
+                import importlib
+                mod = importlib.import_module(module_path)
+                mod.run(db_path=db_path, auth=a)
+            except ImportError:
+                print(f"\n  {label} module is not available.")
+            except Exception as e:
+                print(f"\n  Error running {label}: {e}")
+        return handler
+
+    _run_submenu(auth, "Cross-System Tools", [
+        ("1", "Analytics Dashboard", _run_shared("education_system.shared.analytics.analytics_cli", "Analytics Dashboard")),
+        ("2", "Outcome Tracking", _run_shared("education_system.shared.outcomes.outcomes_cli", "Outcome Tracking")),
+        ("3", "Predictive Alerts", _run_shared("education_system.shared.predictive.predictive_cli", "Predictive Alerts")),
+        ("4", "Bulk Transfer", _run_shared("education_system.shared.bulk_transfer.bulk_transfer_cli", "Bulk Transfer")),
+        ("5", "Transfer Documents", _run_shared("education_system.shared.transfer_docs.transfer_docs_cli", "Transfer Documents")),
+        ("6", "Reverse Lookup", _run_shared("education_system.shared.reverse_lookup.reverse_lookup_cli", "Reverse Lookup")),
+        ("7", "Parent Continuity", _run_shared("education_system.shared.parent_continuity.parent_cli", "Parent Continuity")),
+        ("8", "Cross-System Calendar", _run_shared("education_system.shared.calendar.calendar_cli", "Cross-System Calendar")),
+        ("9", "Inter-System Messaging", _run_shared("education_system.shared.messaging.messaging_cli", "Inter-System Messaging")),
+        ("A", "Central Admin Portal", _run_shared("education_system.shared.admin_portal.admin_cli", "Central Admin Portal")),
+        ("B", "GDPR Compliance", _run_shared("education_system.shared.gdpr.gdpr_cli", "GDPR Compliance")),
+        ("C", "Shared Documents", _run_shared("education_system.shared.documents.document_cli", "Shared Documents")),
+        ("D", "Student Self-Service", _run_shared("education_system.shared.student_portal.portal_cli", "Student Self-Service")),
+        ("E", "Digital Transcript", _run_shared("education_system.shared.transcript.transcript_cli", "Digital Transcript")),
+    ])
+
+
 # ================================================================
 # Role-based menus
 # ================================================================
+
+def _is_superadmin(auth):
+    """Check if user is superadmin (admin in all 4 systems)."""
+    systems = getattr(auth, 'current_user', {})
+    if isinstance(systems, dict):
+        systems = systems.get('systems', [])
+    else:
+        systems = []
+    admin_keys = {s["system_key"] for s in systems if s.get("role") == "admin"}
+    return admin_keys >= {"university", "college", "school", "primary"}
+
+
+def _superadmin_switch_options(auth, this_system):
+    """Return switch menu options and handler for superadmin users."""
+    if not _is_superadmin(auth):
+        return [], {}
+
+    targets = {
+        "primary": ("1", "Primary School"),
+        "school": ("2", "Secondary School"),
+        "college": ("3", "Sixth Form College"),
+        "university": ("4", "University System"),
+        "__superadmin__": ("5", "Super Admin Dashboard"),
+    }
+    options = []
+    handler = {}
+    idx = 1
+    for key, (_, label) in targets.items():
+        if key == this_system:
+            continue
+        opt_key = f"SW{idx}"
+        options.append((opt_key, label))
+        handler[opt_key] = key
+        idx += 1
+    return options, handler
+
 
 def admin_menu(auth: UserAuth):
     """Admin-specific menu with categorized sub-menus."""
@@ -382,15 +417,16 @@ def admin_menu(auth: UserAuth):
             ("B", "Parent & Careers"),
             ("C", "Student Self-Service"),
             ("D", "System & Settings"),
+            ("E", "Cross-System Tools"),
             ("M", t("menu.mfa_settings")),
             ("P", t("menu.change_password")),
             ("G", "Switch to GUI"),
-            ("U", "Switch to University System"),
-            ("W", "Switch to Secondary School"),
-            ("R", "Switch to Primary School"),
             ("L", "Logout"),
             ("0", t("menu.exit")),
         ]
+        switch_opts, switch_map = _superadmin_switch_options(auth, "college")
+        if switch_opts:
+            options[-2:-2] = [("", "── Switch System ──")] + switch_opts
         print_menu(options)
 
         choice = get_choice().upper()
@@ -420,6 +456,8 @@ def admin_menu(auth: UserAuth):
             _admin_student_selfservice(auth)
         elif choice == "D":
             _admin_system_settings(auth)
+        elif choice == "E":
+            _cross_system_tools(auth)
         elif choice == "M":
             mfa_settings_menu(auth)
         elif choice == "P":
@@ -428,17 +466,9 @@ def admin_menu(auth: UserAuth):
             from education_system.switch import request_switch
             request_switch("college", "gui")
             return "switch"
-        elif choice == "U":
+        elif choice in switch_map:
             from education_system.switch import request_switch
-            request_switch("university", "cli")
-            return "switch"
-        elif choice == "W":
-            from education_system.switch import request_switch
-            request_switch("school", "cli")
-            return "switch"
-        elif choice == "R":
-            from education_system.switch import request_switch
-            request_switch("primary", "cli")
+            request_switch(switch_map[choice], "cli")
             return "switch"
         elif choice == "L":
             auth.logout()
@@ -469,12 +499,12 @@ def instructor_menu(auth: UserAuth):
             ("M", t("menu.mfa_settings")),
             ("P", t("menu.change_password")),
             ("G", "Switch to GUI"),
-            ("U", "Switch to University System"),
-            ("W", "Switch to Secondary School"),
-            ("R", "Switch to Primary School"),
             ("L", "Logout"),
             ("0", t("menu.exit")),
         ]
+        switch_opts, switch_map = _superadmin_switch_options(auth, "college")
+        if switch_opts:
+            options[-2:-2] = [("", "── Switch System ──")] + switch_opts
         print_menu(options)
 
         choice = get_choice().upper()
@@ -504,17 +534,9 @@ def instructor_menu(auth: UserAuth):
             from education_system.switch import request_switch
             request_switch("college", "gui")
             return "switch"
-        elif choice == "U":
+        elif choice in switch_map:
             from education_system.switch import request_switch
-            request_switch("university", "cli")
-            return "switch"
-        elif choice == "W":
-            from education_system.switch import request_switch
-            request_switch("school", "cli")
-            return "switch"
-        elif choice == "R":
-            from education_system.switch import request_switch
-            request_switch("primary", "cli")
+            request_switch(switch_map[choice], "cli")
             return "switch"
         elif choice == "L":
             auth.logout()
@@ -574,12 +596,12 @@ def student_menu_main(auth: UserAuth):
             ("M", t("menu.mfa_settings")),
             ("P", t("menu.change_password")),
             ("G", "Switch to GUI"),
-            ("U", "Switch to University System"),
-            ("W", "Switch to Secondary School"),
-            ("R", "Switch to Primary School"),
             ("L", "Logout"),
             ("0", t("menu.exit")),
         ]
+        switch_opts, switch_map = _superadmin_switch_options(auth, "college")
+        if switch_opts:
+            options[-2:-2] = [("", "── Switch System ──")] + switch_opts
         print_menu(options)
 
         choice = get_choice().upper()
@@ -631,17 +653,9 @@ def student_menu_main(auth: UserAuth):
             from education_system.switch import request_switch
             request_switch("college", "gui")
             return "switch"
-        elif choice == "U":
+        elif choice in switch_map:
             from education_system.switch import request_switch
-            request_switch("university", "cli")
-            return "switch"
-        elif choice == "W":
-            from education_system.switch import request_switch
-            request_switch("school", "cli")
-            return "switch"
-        elif choice == "R":
-            from education_system.switch import request_switch
-            request_switch("primary", "cli")
+            request_switch(switch_map[choice], "cli")
             return "switch"
         elif choice == "L":
             auth.logout()
@@ -679,9 +693,6 @@ def parent_menu_main(auth: UserAuth):
             ("M", t("menu.mfa_settings")),
             ("P", t("menu.change_password")),
             ("G", "Switch to GUI"),
-            ("U", "Switch to University System"),
-            ("W", "Switch to Secondary School"),
-            ("R", "Switch to Primary School"),
             ("L", "Logout"),
             ("0", t("menu.exit")),
         ]
@@ -711,18 +722,6 @@ def parent_menu_main(auth: UserAuth):
         elif choice == "G":
             from education_system.switch import request_switch
             request_switch("college", "gui")
-            return "switch"
-        elif choice == "U":
-            from education_system.switch import request_switch
-            request_switch("university", "cli")
-            return "switch"
-        elif choice == "W":
-            from education_system.switch import request_switch
-            request_switch("school", "cli")
-            return "switch"
-        elif choice == "R":
-            from education_system.switch import request_switch
-            request_switch("primary", "cli")
             return "switch"
         elif choice == "L":
             auth.logout()
@@ -759,7 +758,7 @@ def main(db_path: str | None = None, user_info=None, role=None, shared_auth=None
     login dialog is skipped.
     """
     ensure_directories()
-    load_locale("en")
+    set_language("en")
     from education_system.college_system.core.logs import configure_logging
     configure_logging()
 

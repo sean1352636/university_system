@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/course_management_gui/core/main_gui.py
+# hypothesis_version: 6.151.9
+
+['#f0f0f0', '1200x800', 'admin', 'black', 'bottom', 'current_user', 'instructor', 'red', 'role', 'staff', 'status_var', 'student', 'sunken', 'w', 'x']

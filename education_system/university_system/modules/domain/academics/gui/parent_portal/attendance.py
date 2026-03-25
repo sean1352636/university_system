@@ -41,8 +41,8 @@ except ImportError:
 
 
 
-from .base import ParentPortalGUI
-from .dialogs import AbsenceReportDialog
+from education_system.university_system.modules.domain.academics.gui.parent_portal.base import ParentPortalGUI
+from education_system.university_system.modules.domain.academics.gui.parent_portal.dialogs import AbsenceReportDialog
 
 def view_child_attendance(self, child):
     """View attendance for a specific child"""

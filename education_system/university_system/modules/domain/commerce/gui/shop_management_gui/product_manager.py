@@ -208,9 +208,11 @@ def load_products_for_management(self):
             cursor = conn.cursor()
             
             cursor.execute("""
-                SELECT p.*, i.quantity
-                FROM shop_products p
-                JOIN shop_inventory i ON p.product_id = i.product_id
+                SELECT p.source_product_id as product_id, p.name, p.description, p.price, p.category,
+                       p.created_at, p.updated_at, p.tax_rate, p.is_active, i.quantity
+                FROM products p
+                JOIN shop_inventory i ON p.source_product_id = i.product_id
+                WHERE p.source_type = 'shop'
                 ORDER BY p.created_at DESC
             """)
             
@@ -329,7 +331,7 @@ def create_product(self, product_data):
             cursor = conn.cursor()
             
             # Generate product ID
-            cursor.execute("SELECT MAX(SUBSTR(product_id, 2)) FROM shop_products WHERE product_id LIKE 'P%'")
+            cursor.execute("SELECT MAX(SUBSTR(source_product_id, 2)) FROM products WHERE source_type = 'shop' AND source_product_id LIKE 'P%'")
             result = cursor.fetchone()
             
             try:
@@ -345,9 +347,9 @@ def create_product(self, product_data):
             
             # Insert product
             cursor.execute("""
-                INSERT INTO shop_products
-                (product_id, name, description, price, category, created_at, updated_at, tax_rate, is_active)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO products
+                (source_product_id, source_type, name, description, price, category, created_at, updated_at, tax_rate, is_active)
+                VALUES (?, 'shop', ?, ?, ?, ?, ?, ?, ?, ?)
             """, [
                 product_id,
                 product_data['name'],
@@ -487,10 +489,10 @@ def update_product(self, product_id, updated_data):
             now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             
             cursor.execute("""
-                UPDATE shop_products
-                SET name = ?, description = ?, price = ?, category = ?, 
+                UPDATE products
+                SET name = ?, description = ?, price = ?, category = ?,
                     tax_rate = ?, is_active = ?, updated_at = ?
-                WHERE product_id = ?
+                WHERE source_type = 'shop' AND source_product_id = ?
             """, [
                 updated_data['name'],
                 updated_data['description'],
@@ -531,7 +533,7 @@ def delete_product(self, product_id):
             cursor.execute("DELETE FROM shop_inventory WHERE product_id = ?", [product_id])
             
             # Delete product
-            cursor.execute("DELETE FROM shop_products WHERE product_id = ?", [product_id])
+            cursor.execute("DELETE FROM products WHERE source_type = 'shop' AND source_product_id = ?", [product_id])
             
             conn.commit()
             conn.close()

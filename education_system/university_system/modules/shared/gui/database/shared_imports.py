@@ -33,13 +33,14 @@ except ImportError:
 # Import centralized paths
 try:
     from education_system.university_system.modules.shared.constants.paths import (
-        BACKUP_DIR, LOG_DIR, BACKUP_TEMPLATES_DIR, DATA_DIR, DEFAULT_DB_PATH as DB_PATH, PROJECT_ROOT
+        BACKUP_DIR, BACKUP_DATABASE_DIR, LOG_DIR, BACKUP_TEMPLATES_DIR, DATA_DIR, DEFAULT_DB_PATH as DB_PATH, PROJECT_ROOT
     )
 except ImportError:
     # Fallback if paths module not available - use PROJECT_ROOT relative paths
     from pathlib import Path
     PROJECT_ROOT = Path(__file__).resolve().parents[3]
     BACKUP_DIR = PROJECT_ROOT / "backups"
+    BACKUP_DATABASE_DIR = BACKUP_DIR / "database"
     LOG_DIR = PROJECT_ROOT / "logs"
     BACKUP_TEMPLATES_DIR = PROJECT_ROOT / "templates" / "backup_templates"
     DATA_DIR = PROJECT_ROOT / "data"
@@ -79,7 +80,7 @@ except ImportError as e:
 
 # Logging setup
 try:
-    from education_system.university_system.infrastructure.logging.log_config import configure_logging
+    from education_system.university_system.utils.logging.log_config import configure_logging
     logger = configure_logging(name="backup_gui")
 except Exception:
     logging.basicConfig(level=logging.INFO)

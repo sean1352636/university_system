@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/auth_routes.py
+# hypothesis_version: 6.151.9
+
+[200, 400, 401, 429, 500, '/api/auth', '/login', '/logout', '/me', '/mfa/send-code', '/mfa/verify', '/refresh', 'API_CONFIG', 'Failed to send code', 'GET', 'Invalid MFA code', 'Invalid token type', 'MFA code is required', 'MFA send-code error', 'POST', 'access_token', 'action', 'allow', 'auth', 'code', 'data', 'device_id', 'email', 'email_failed', 'error', 'expires_at', 'grace', 'id', 'identifier', 'is_primary', 'locked', 'logout', 'message', 'method', 'methods', 'mfa_grace_message', 'mfa_grace_period', 'mfa_methods', 'mfa_required', 'mfa_setup_required', 'mfa_token', 'password', 'phone', 'raw_token', 'recovery', 'refresh', 'refresh_token', 'require_mfa', 'require_setup', 'requires_2fa', 'role', 'session', 'sms', 'sms_failed', 'status', 'student', 'sub', 'success', 'totp', 'trust_token', 'type', 'user', 'user_id', 'username']

@@ -43,28 +43,30 @@ def test_query_performance(log_manager):
     ]
 
     conn = sqlite3.connect(str(_DB_PATH))
+    try:
 
-    print("Running performance tests...")
-    print(f"{'Query':<20} {'Time (ms)':<12} {'Result':<10}")
-    print("-" * 45)
+        print("Running performance tests...")
+        print(f"{'Query':<20} {'Time (ms)':<12} {'Result':<10}")
+        print("-" * 45)
 
-    for name, query in queries:
-        start_time = time.time()
+        for name, query in queries:
+            start_time = time.time()
 
-        try:
-            cursor = conn.cursor()
-            cursor.execute(query)
-            result = cursor.fetchone()[0]
+            try:
+                cursor = conn.cursor()
+                cursor.execute(query)
+                result = cursor.fetchone()[0]
 
-            end_time = time.time()
-            duration_ms = (end_time - start_time) * 1000
+                end_time = time.time()
+                duration_ms = (end_time - start_time) * 1000
 
-            print(f"{name:<20} {duration_ms:<11.2f} {result:<10}")
+                print(f"{name:<20} {duration_ms:<11.2f} {result:<10}")
 
-        except Exception as e:
-            print(f"{name:<20} ERROR: {e}")
+            except Exception as e:
+                print(f"{name:<20} ERROR: {e}")
 
-    conn.close()
+    finally:
+        conn.close()
     input("\nPress Enter to continue...")
 
 
@@ -118,11 +120,13 @@ def test_insert_performance(log_manager):
     cleanup = input("\nCleanup test entries? (y/n): ")
     if cleanup.lower() == 'y':
         conn = sqlite3.connect(str(_DB_PATH))
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM logs WHERE module = 'performance_test'")
-        deleted = cursor.rowcount
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM logs WHERE module = 'performance_test'")
+            deleted = cursor.rowcount
+            conn.commit()
+        finally:
+            conn.close()
         print(f"Deleted {deleted} test entries")
 
     input("\nPress Enter to continue...")
@@ -220,27 +224,31 @@ def test_database_response_times(log_manager):
 def test_simple_query(log_manager):
     """Helper function for simple query test"""
     conn = sqlite3.connect(str(_DB_PATH))
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM logs LIMIT 1")
-    result = cursor.fetchone()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM logs LIMIT 1")
+        result = cursor.fetchone()
+    finally:
+        conn.close()
     return result
 
 
 def test_complex_query(log_manager):
     """Helper function for complex query test"""
     conn = sqlite3.connect(str(_DB_PATH))
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT username, COUNT(*) as count
-        FROM logs
-        WHERE date(timestamp) >= date('now', '-7 days')
-        GROUP BY username
-        ORDER BY count DESC
-        LIMIT 10
-    """)
-    result = cursor.fetchall()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT username, COUNT(*) as count
+            FROM logs
+            WHERE date(timestamp) >= date('now', '-7 days')
+            GROUP BY username
+            ORDER BY count DESC
+            LIMIT 10
+        """)
+        result = cursor.fetchall()
+    finally:
+        conn.close()
     return result
 
 
@@ -261,7 +269,9 @@ def test_insert_operation(log_manager):
 
     # Clean up immediately
     conn = sqlite3.connect(str(_DB_PATH))
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM logs WHERE username = 'performance_test'")
-    conn.commit()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM logs WHERE username = 'performance_test'")
+        conn.commit()
+    finally:
+        conn.close()

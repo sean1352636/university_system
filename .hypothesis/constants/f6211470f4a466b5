@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/docs_routes.py
+# hypothesis_version: 6.151.9
+
+['/api/docs', '/api/openapi.json', '5.17.14', 'Content-Type', 'GET', 'docs']

@@ -13,7 +13,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_events_page(self):
     self.clear_content()
@@ -28,11 +28,13 @@ def show_events_page(self):
     for col in columns:
         self.event_tree.heading(col, text=col)
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM special_events ORDER BY event_date DESC")
-    for row in cursor.fetchall():
-        self.event_tree.insert("", "end", values=(row[0], row[1], row[2], row[4], row[7] or "-", f"\u00a3{row[9]:.2f}" if row[9] else "-", row[10] or "-", row[11], row[13].upper()))
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM special_events ORDER BY event_date DESC")
+        for row in cursor.fetchall():
+            self.event_tree.insert("", "end", values=(row[0], row[1], row[2], row[4], row[7] or "-", f"\u00a3{row[9]:.2f}" if row[9] else "-", row[10] or "-", row[11], row[13].upper()))
+    finally:
+        conn.close()
     self.event_tree.pack(fill="both", expand=True, side="left")
     scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.event_tree.yview)
     self.event_tree.configure(yscrollcommand=scrollbar.set)
@@ -72,11 +74,13 @@ def create_event(self):
         except (ValueError, TypeError):
             price, cap, screen = 25, 150, 1
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO special_events (name, event_type, event_date, start_time, screen_number, ticket_price, max_capacity) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                      (entries['name'].get(), entries['type'].get(), entries['date'].get(), entries['time'].get(), screen, price, cap))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO special_events (name, event_type, event_date, start_time, screen_number, ticket_price, max_capacity) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                          (entries['name'].get(), entries['type'].get(), entries['date'].get(), entries['time'].get(), screen, price, cap))
+            conn.commit()
+        finally:
+            conn.close()
         messagebox.showinfo(_t("cinema.common.success"), "Event created!")
         form.destroy()
         self.show_events_page()

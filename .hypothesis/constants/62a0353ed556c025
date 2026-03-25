@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/college_system/modules/domain/funding/services/funding_service.py
+# hypothesis_version: 6.151.9
+
+[' AND student_id = ?', ' AND subject = ?', ', ', '16-19', 'Evidence not found.', 'achieved', 'active_rules', 'actual_hours', 'aim_type', 'applies_to', 'current_level', 'description', 'eligibility', 'eligible', 'exam_entries_count', 'funding_model', 'funding_records', 'is_active', 'latest_result', 'learning_aim', 'notes', 'other', 'outcome', 'planned_end_date', 'planned_hours', 'rule_type', 'start_date', 'status', 'student_id', 'subjects', 'target_grade', 'total_actual', 'total_planned']

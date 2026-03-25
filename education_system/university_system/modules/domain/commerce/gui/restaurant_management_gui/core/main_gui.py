@@ -118,17 +118,7 @@ def init_db():
             )
         ''')
         
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS restaurant_orders (
-                order_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                customer_id INTEGER,
-                order_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-                total_price REAL,
-                tax_amount REAL,
-                status TEXT DEFAULT 'Pending',
-                payment_method TEXT
-            )
-        ''')
+        # restaurant_orders table removed - now using unified 'orders' table with source_type='restaurant'
         
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS restaurant_customers (
@@ -226,6 +216,22 @@ class RestaurantManagementGUI:
         # Don't auto-show - let the caller decide when to show
         # This prevents double window creation when called from main_gui
         self.restaurant_window = None
+
+        # Pre-initialize GUI attributes that are created later in
+        # create_main_interface / create_all_content_frames.  Without these
+        # defaults, any method that references them before the window is
+        # fully built would crash with an AttributeError (blank-screen bug).
+        self.content_area = None
+        self.content_frames = {}
+        self.side_panel = None
+        self.nav_buttons = {}
+        self.menu_tree = None
+        self.orders_tree = None
+        self.customers_tree = None
+        self.tables_tree = None
+        self.staff_tree = None
+        self.inventory_tree = None
+        self.report_text = None
 
     def setup_current_user(self):
         """Setup current user from existing authentication system"""
@@ -483,6 +489,9 @@ class RestaurantManagementGUI:
 
     def show_section(self, section_id):
         """Show the selected section and hide others"""
+        if not self.content_frames:
+            return
+
         # Hide all frames
         for frame in self.content_frames.values():
             frame.pack_forget()
@@ -500,20 +509,15 @@ class RestaurantManagementGUI:
 
     def clear_window(self):
         """Clear all widgets from the window"""
+        if self.root is None:
+            return
         for widget in self.root.winfo_children():
             widget.destroy()
 
     def return_to_main_menu(self):
         """Return to the main menu by closing this window"""
         try:
-            # Close the restaurant window
-            if hasattr(self, 'root') and self.root:
-                try:
-                    if self.root.winfo_exists():
-                        self.root.destroy()
-                except tk.TclError:
-                    pass
-            # Also try restaurant_window reference
+            # Close the restaurant window (not the parent root)
             if hasattr(self, 'restaurant_window') and self.restaurant_window:
                 try:
                     if self.restaurant_window.winfo_exists():
@@ -521,6 +525,10 @@ class RestaurantManagementGUI:
                 except tk.TclError:
                     pass
                 self.restaurant_window = None
+
+            # Restore root to the original parent so re-open works correctly
+            if hasattr(self, '_parent_root') and self._parent_root:
+                self.root = self._parent_root
         except Exception as e:
             print(f"Error returning to main menu: {e}")
             import traceback
@@ -533,24 +541,24 @@ class RestaurantManagementGUI:
     # dynamic method placeholders will be patched below
 
 # Import and attach methods from other modules
-from .tabs import create_menu_tab, create_place_order_tab, create_orders_tab, create_refunds_tab, create_customers_tab, create_tables_tab, create_staff_tab, create_inventory_tab, create_reports_tab
-from ..menu.menu_management import view_menu_items, add_menu_item_dialog, update_menu_item_dialog, show_menu_analytics, generate_menu_analytics_text
-from ..orders.order_management import view_orders_gui, update_order_status_dialog, process_payment_dialog, show_order_analytics, generate_order_analytics
-from ..orders.payments import add_tip, refund_order, apply_discount, process_cash_payment, process_card_payment, process_meal_plan_payment, open_finance_gui_for_payment, add_finance_button_to_payment_options
-from ..customers.customer_management import view_customers_gui, add_customer_dialog, update_customer_dialog
-from ..customers.feedback import manage_customer_feedback, view_recent_feedback, respond_to_feedback, submit_demo_feedback, export_feedback_report, export_feedback_report_pdf
-from ..customers.loyalty import manage_loyalty_dialog, view_loyalty_tiers, promote_customer_tier, award_bonus_points
-from ..tables.table_management import view_tables_gui, add_table_dialog, manage_reservations_dialog, optimize_table_structure
-from ..tables.qr_codes import generate_qr_dialog, create_qr_code_image, create_enhanced_qr_image, print_qr_codes, scan_qr_code_usage, update_qr_database_record
-from ..staff.staff_management import view_staff_gui, add_staff_dialog, manage_schedules_dialog, show_staff_analytics, generate_staff_analytics, view_schedule_conflicts
-from ..staff.performance import staff_performance, view_performance_rankings, update_performance_scores, export_performance_report
-from ..inventory.inventory_management import view_inventory_gui, waste_tracking_dialog, inventory_transactions, low_stock_alerts
-from ..inventory.purchase_orders import manage_purchase_orders_dialog, view_purchase_orders, create_purchase_order, update_purchase_order, receive_purchase_order, purchase_order_reports, manage_suppliers_dialog
-from ..inventory.inventory_reports import inventory_reports, inventory_valuation_report, stock_movement_report, low_stock_report, expiry_report, abc_analysis
-from ..reports.sales_reports import show_report_window, daily_sales_report, monthly_summary_report, profit_analysis_report, menu_performance_report, customer_analytics_report, generate_customer_analytics_text, staff_performance_report
-from ..reports.waste_reports import view_waste_reports, generate_waste_by_date_range, generate_waste_by_category, generate_waste_by_reason, generate_waste_trends, generate_waste_cost_analysis
-from ..reports.financial_reports import export_payroll_report, export_expense_report, tax_reports_menu, generate_vat_report, generate_sales_tax_summary, financial_forecasting, export_financial_data_menu, export_complete_financial_data, export_sales_data
-from ..settings.backup_settings import display_system_settings, backup_database, create_full_backup, create_incremental_backup, verify_backup, restore_from_backup, view_backup_history, manage_backup_location, schedule_backups, log_backup_event
+from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.core.tabs import create_menu_tab, create_place_order_tab, create_orders_tab, create_refunds_tab, create_customers_tab, create_tables_tab, create_staff_tab, create_inventory_tab, create_reports_tab
+from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.menu.menu_management import view_menu_items, add_menu_item_dialog, update_menu_item_dialog, show_menu_analytics, generate_menu_analytics_text
+from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.orders.order_management import view_orders_gui, update_order_status_dialog, process_payment_dialog, show_order_analytics, generate_order_analytics
+from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.orders.payments import add_tip, refund_order, apply_discount, process_cash_payment, process_card_payment, process_meal_plan_payment, open_finance_gui_for_payment, add_finance_button_to_payment_options
+from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.customers.customer_management import view_customers_gui, add_customer_dialog, update_customer_dialog
+from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.customers.feedback import manage_customer_feedback, view_recent_feedback, respond_to_feedback, submit_demo_feedback, export_feedback_report, export_feedback_report_pdf
+from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.customers.loyalty import manage_loyalty_dialog, view_loyalty_tiers, promote_customer_tier, award_bonus_points
+from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.tables.table_management import view_tables_gui, add_table_dialog, manage_reservations_dialog, optimize_table_structure
+from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.tables.qr_codes import generate_qr_dialog, create_qr_code_image, create_enhanced_qr_image, print_qr_codes, scan_qr_code_usage, update_qr_database_record
+from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.staff.staff_management import view_staff_gui, add_staff_dialog, manage_schedules_dialog, show_staff_analytics, generate_staff_analytics, view_schedule_conflicts
+from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.staff.performance import staff_performance, view_performance_rankings, update_performance_scores, export_performance_report
+from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.inventory.inventory_management import view_inventory_gui, waste_tracking_dialog, inventory_transactions, low_stock_alerts
+from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.inventory.purchase_orders import manage_purchase_orders_dialog, view_purchase_orders, create_purchase_order, update_purchase_order, receive_purchase_order, purchase_order_reports, manage_suppliers_dialog
+from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.inventory.inventory_reports import inventory_reports, inventory_valuation_report, stock_movement_report, low_stock_report, expiry_report, abc_analysis
+from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.reports.sales_reports import show_report_window, daily_sales_report, monthly_summary_report, profit_analysis_report, menu_performance_report, customer_analytics_report, generate_customer_analytics_text, staff_performance_report
+from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.reports.waste_reports import view_waste_reports, generate_waste_by_date_range, generate_waste_by_category, generate_waste_by_reason, generate_waste_trends, generate_waste_cost_analysis
+from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.reports.financial_reports import export_payroll_report, export_expense_report, tax_reports_menu, generate_vat_report, generate_sales_tax_summary, financial_forecasting, export_financial_data_menu, export_complete_financial_data, export_sales_data
+from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.settings.backup_settings import display_system_settings, backup_database, create_full_backup, create_incremental_backup, verify_backup, restore_from_backup, view_backup_history, manage_backup_location, schedule_backups, log_backup_event
 
 RestaurantManagementGUI.create_menu_tab = create_menu_tab
 RestaurantManagementGUI.create_place_order_tab = create_place_order_tab

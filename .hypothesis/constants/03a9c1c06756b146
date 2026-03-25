@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/layout/_base.py
+# hypothesis_version: 6.151.9
+
+['AUD', 'CAD', 'EUR', 'EXCHANGE_API_KEY', 'GBP', 'PAYPAL_CLIENT_ID', 'PAYPAL_CLIENT_SECRET', 'PAYPAL_ENVIRONMENT', 'STRIPE_PUBLIC_KEY', 'STRIPE_SECRET_KEY', 'USD', 'add_student_credit', 'aid_by_academic_year', 'analytics.log', 'apply_credit_to_fees', 'client_id', 'client_secret', 'create_aid_type', 'create_budget_plan', 'db_files', 'deactivate_aid_type', 'detect_payment_fraud', 'edit_aid_type', 'edit_budget_category', 'environment', 'generate_aid_reports', 'ignore', 'initialize_finance', 'manage_aid_types', 'manage_financial_aid', 'modify_payment_plan', 'paypal', 'process_loan_payment', 'public_key', 'quick_fix_database', 'sandbox', 'secret_key', 'setup_email_config', 'setup_sms_config', 'stripe', 'test_email_service', 'test_sms_service', 'view_aid_types', 'view_credit_history', 'view_student_credits', 'webhook_secret']

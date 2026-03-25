@@ -164,7 +164,7 @@ class TestDataQualityMonitor:
         """Test running complete quality checks"""
         mock_conn = Mock()
 
-        with patch('university_system.modules.shared.services.analytics.enhanced_reporting.get_reporting_db_connection', return_value=mock_conn):
+        with patch('education_system.university_system.modules.shared.services.analytics.enhanced_reporting.get_reporting_db_connection', return_value=mock_conn):
             with patch.object(DataQualityMonitor, 'check_missing_data', return_value={}):
                 with patch.object(DataQualityMonitor, 'check_duplicates', return_value={}):
                     with patch.object(DataQualityMonitor, 'check_invalid_data', return_value={}):
@@ -251,7 +251,7 @@ class TestPredictiveAnalytics:
 
     def test_init(self):
         """Test PredictiveAnalytics initialization"""
-        with patch('university_system.modules.shared.services.analytics.enhanced_reporting.get_reporting_db_connection'):
+        with patch('education_system.university_system.modules.shared.services.analytics.enhanced_reporting.get_reporting_db_connection'):
             pa = PredictiveAnalytics()
             assert hasattr(pa, 'conn')
 
@@ -408,20 +408,20 @@ class TestUtilityFunctions:
         """Test saving a template"""
         template = ReportTemplate(name="Test", sections=[])
 
-        with patch('university_system.modules.shared.services.analytics.enhanced_reporting.get_reporting_db_connection'):
-            with patch('university_system.modules.shared.services.analytics.enhanced_reporting.save_template_dict'):
+        with patch('education_system.university_system.modules.shared.services.analytics.enhanced_reporting.get_reporting_db_connection'):
+            with patch('education_system.university_system.modules.shared.services.analytics.enhanced_reporting.save_template_dict'):
                 result = save_template(template)
                 # Should complete without error
 
     def test_load_templates(self):
         """Test loading templates"""
-        with patch('university_system.modules.shared.services.analytics.enhanced_reporting.get_reporting_db_connection'):
+        with patch('education_system.university_system.modules.shared.services.analytics.enhanced_reporting.get_reporting_db_connection'):
             templates = load_templates()
             assert isinstance(templates, (list, dict))
 
     def test_delete_template_from_db(self):
         """Test deleting a template"""
-        with patch('university_system.modules.shared.services.analytics.enhanced_reporting.get_reporting_db_connection'):
+        with patch('education_system.university_system.modules.shared.services.analytics.enhanced_reporting.get_reporting_db_connection'):
             result = delete_template_from_db("test_template")
             # Should complete without error
 
@@ -462,7 +462,7 @@ class TestReportGeneration:
 
     def test_get_section_dataframe(self):
         """Test getting section dataframe"""
-        with patch('university_system.modules.shared.services.analytics.enhanced_reporting.get_reporting_db_connection'):
+        with patch('education_system.university_system.modules.shared.services.analytics.enhanced_reporting.get_reporting_db_connection'):
             with patch('pandas.read_sql_query'):
                 df = get_section_dataframe('students', '2024-01-01', '2024-01-31')
                 # Should return DataFrame or None
@@ -471,7 +471,7 @@ class TestReportGeneration:
         """Test generating a complete report"""
         template = ReportTemplate(name="Test", sections=['students'])
 
-        with patch('university_system.modules.shared.services.analytics.enhanced_reporting.generate_enhanced_pdf_report'):
+        with patch('education_system.university_system.modules.shared.services.analytics.enhanced_reporting.generate_enhanced_pdf_report'):
             result = generate_report(
                 template,
                 start_date='2024-01-01',

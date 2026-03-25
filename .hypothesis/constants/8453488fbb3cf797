@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/ai/ai_detector/analyzers/adversarial_detector.py
+# hypothesis_version: 6.151.9
+
+[0.2, 0.3, 0.4, 0.5, 0.8, 0.9, 1.0, 100, 'NFC', '[αβγδε]', '[а-я]', '[０-９]', 'details', 'direction_marks', 'evasion_techniques', 'format_issues', 'format_manipulation', 'invisible_characters', 'invisible_chars', 'mixed_whitespace', 'multiple_spaces', 'spacing_anomalies', 'spacing_manipulation', 'substitutions', '\u200b', '\u200c', '\u200d', '\u202d', '\u202e', '\u2060', '\ufeff']

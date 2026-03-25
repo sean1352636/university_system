@@ -25,7 +25,7 @@ def show_finance_management(self):
     else:
         try:
             from education_system.university_system.modules.shared.cli.cli_main import display_finance_menu
-            from education_system.university_system.modules.finance.core.financial_core import set_finance_auth
+            from education_system.university_system.modules.domain.finance.core.financial_core import set_finance_auth
             if self.auth:
                 try:
                     set_finance_auth(self.auth)
@@ -127,8 +127,8 @@ def show_student_finance_account(self):
                         COUNT(*) as total_transactions,
                         COALESCE(SUM(CASE WHEN transaction_type IN ('top_up', 'deposit', 'refund') THEN amount ELSE 0 END), 0) as total_deposited,
                         COALESCE(SUM(CASE WHEN transaction_type IN ('use', 'withdrawal', 'payment') THEN amount ELSE 0 END), 0) as total_spent
-                    FROM student_finance_transactions
-                    WHERE student_id = ?
+                    FROM transactions
+                    WHERE source_type = 'student_finance' AND student_id = ?
                 ''', (student_id,))
                 stats = cursor.fetchone()
 
@@ -266,8 +266,8 @@ def show_student_finance_account(self):
                 cursor = conn.cursor()
                 cursor.execute('''
                     SELECT created_at, transaction_type, amount, balance_after, description
-                    FROM student_finance_transactions
-                    WHERE student_id = ?
+                    FROM transactions
+                    WHERE source_type = 'student_finance' AND student_id = ?
                     ORDER BY created_at DESC
                 ''', (student_id,))
 
@@ -322,24 +322,24 @@ def show_student_finance_account(self):
                 if filter_type == 'deposit':
                     cursor.execute('''
                         SELECT created_at, transaction_type, amount, balance_after, description
-                        FROM student_finance_transactions
-                        WHERE student_id = ? AND transaction_type IN ('top_up', 'deposit', 'refund')
+                        FROM transactions
+                        WHERE source_type = 'student_finance' AND student_id = ? AND transaction_type IN ('top_up', 'deposit', 'refund')
                         ORDER BY created_at DESC
                         LIMIT 20
                     ''', (student_id,))
                 elif filter_type == 'spend':
                     cursor.execute('''
                         SELECT created_at, transaction_type, amount, balance_after, description
-                        FROM student_finance_transactions
-                        WHERE student_id = ? AND transaction_type IN ('use', 'withdrawal', 'payment')
+                        FROM transactions
+                        WHERE source_type = 'student_finance' AND student_id = ? AND transaction_type IN ('use', 'withdrawal', 'payment')
                         ORDER BY created_at DESC
                         LIMIT 20
                     ''', (student_id,))
                 else:
                     cursor.execute('''
                         SELECT created_at, transaction_type, amount, balance_after, description
-                        FROM student_finance_transactions
-                        WHERE student_id = ?
+                        FROM transactions
+                        WHERE source_type = 'student_finance' AND student_id = ?
                         ORDER BY created_at DESC
                         LIMIT 20
                     ''', (student_id,))
@@ -453,9 +453,10 @@ def _create_payment_overview_tab_finance(self, parent):
             SELECT
                 COUNT(*) as total_payments,
                 SUM(amount) as total_amount,
-                COUNT(DISTINCT club_id) as clubs_with_payments
-            FROM club_payments
-            WHERE payment_date >= date('now', '-30 days')
+                COUNT(DISTINCT reference_id) as clubs_with_payments
+            FROM payments
+            WHERE source_type = 'club'
+              AND payment_date >= date('now', '-30 days')
         ''')
         stats = cursor.fetchone()
 
@@ -504,10 +505,11 @@ def _create_payment_history_tab_finance(self, parent):
 
         # Load recent payments
         cursor.execute('''
-            SELECT payment_date, club_name, amount, payment_type, status
-            FROM club_payments cp
-            JOIN student_clubs sc ON cp.club_id = sc.club_id
-            ORDER BY payment_date DESC
+            SELECT cp.payment_date, sc.club_name, cp.amount, cp.payment_type, cp.status
+            FROM payments cp
+            JOIN student_clubs sc ON CAST(cp.reference_id AS INTEGER) = sc.club_id
+            WHERE cp.source_type = 'club'
+            ORDER BY cp.payment_date DESC
             LIMIT 100
         ''')
         payments = cursor.fetchall()

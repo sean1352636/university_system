@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/butcher/services/__init__.py
+# hypothesis_version: 6.151.9
+
+['MEAT_CATEGORIES', 'ORDER_STATUSES', 'OrderManager', 'ProductManager', 'ReportManager', 'TransactionManager', 'UNIT_TYPES', 'init_butcher_db']

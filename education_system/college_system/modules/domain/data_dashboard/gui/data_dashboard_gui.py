@@ -5,6 +5,7 @@ from tkinter import ttk, messagebox
 
 from education_system.college_system.modules.domain.data_dashboard.services.data_dashboard_service import DataDashboardService
 from education_system.college_system.core.exceptions import DataDashboardError
+from education_system.college_system.core.i18n import t
 
 
 class _WidgetDialog(tk.Toplevel):
@@ -51,8 +52,8 @@ class _WidgetDialog(tk.Toplevel):
 
         btn_frame = tk.Frame(container)
         btn_frame.grid(row=99, column=0, columnspan=2, pady=(15, 0))
-        ttk.Button(btn_frame, text="Save", command=self._on_save).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.destroy).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text=t("common.save"), command=self._on_save).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text=t("common.cancel"), command=self.destroy).pack(side="left", padx=5)
 
     def _on_save(self):
         self.result = {k: v.get().strip() for k, v in self._vars.items()}
@@ -75,16 +76,17 @@ class DataDashboardFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Data Dashboard",
+        tk.Label(header, text=t("data_dashboard.management"),
                  font=("Helvetica", 15, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=10)
 
         toolbar = tk.Frame(self, bg="#ecf0f1", pady=8)
         toolbar.pack(fill="x", padx=15)
-        ttk.Button(toolbar, text="Add", command=self._on_add).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Edit", command=self._on_edit).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Delete", command=self._on_delete).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Refresh", command=self._load_items).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.add"), command=self._on_add).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.edit"), command=self._on_edit).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.delete"), command=self._on_delete).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.refresh"), command=self._load_items).pack(side="left", padx=4)
+        ttk.Button(toolbar, text="Export CSV", command=self._export_csv).pack(side="left", padx=4)
 
         tree_frame = tk.Frame(self)
         tree_frame.pack(fill="both", expand=True, padx=15, pady=(0, 15))
@@ -108,7 +110,7 @@ class DataDashboardFrame(tk.Frame):
         self._tree.pack(side="left", fill="both", expand=True)
         vsb.pack(side="right", fill="y")
 
-        self._status_var = tk.StringVar(value="Ready")
+        self._status_var = tk.StringVar(value=t("common.ready"))
         tk.Label(self, textvariable=self._status_var, bg="#ecf0f1", anchor="w",
                  font=("Helvetica", 9), fg="#7f8c8d").pack(fill="x", padx=15, pady=(0, 8))
 
@@ -123,14 +125,14 @@ class DataDashboardFrame(tk.Frame):
                 self._tree.insert("", "end", iid=item["id"], values=(
                     item.get("user_id", ""), item.get("widget_type", ""), item.get("config", ""), item.get("display_order", ""), item.get("is_visible", ""),
                 ))
-            self._status_var.set(f"{len(items)} item(s) loaded")
+            self._status_var.set(t("common.count_loaded", count=len(items)))
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load:\n{exc}")
+            messagebox.showerror(t("common.error"), f"Failed to load:\n{exc}")
 
     def _selected_pk(self) -> int | None:
         sel = self._tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select an item first.")
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"))
             return None
         return int(sel[0])
 
@@ -141,10 +143,10 @@ class DataDashboardFrame(tk.Frame):
             return
         try:
             self._svc.create_widget(**dlg.result)
-            messagebox.showinfo("Success", "Widget created.")
+            messagebox.showinfo(t("common.success"), t("data_dashboard.widget_created", default="Widget created."))
             self._load_items()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_edit(self):
         pk = self._selected_pk()
@@ -152,7 +154,7 @@ class DataDashboardFrame(tk.Frame):
             return
         item = self._svc.get_widget(pk)
         if not item:
-            messagebox.showerror("Error", "Widget not found.")
+            messagebox.showerror(t("common.error"), t("data_dashboard.widget_not_found", default="Widget not found."))
             return
         dlg = _WidgetDialog(self, title="Edit Widget", item=item)
         self.wait_window(dlg)
@@ -160,20 +162,24 @@ class DataDashboardFrame(tk.Frame):
             return
         try:
             self._svc.update_widget(pk, **dlg.result)
-            messagebox.showinfo("Success", "Widget updated.")
+            messagebox.showinfo(t("common.success"), t("data_dashboard.widget_updated", default="Widget updated."))
             self._load_items()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_delete(self):
         pk = self._selected_pk()
         if pk is None:
             return
-        if not messagebox.askyesno("Confirm", "Delete this widget?"):
+        if not messagebox.askyesno(t("common.confirm"), t("data_dashboard.delete_widget_confirm", default="Delete this widget?")):
             return
         try:
             self._svc.delete_widget(pk)
-            messagebox.showinfo("Success", "Widget deleted.")
+            messagebox.showinfo(t("common.success"), t("data_dashboard.widget_deleted", default="Widget deleted."))
             self._load_items()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._tree, "data_dashboard_export.csv")

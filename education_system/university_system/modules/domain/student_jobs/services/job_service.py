@@ -15,6 +15,7 @@ Features:
 
 from __future__ import annotations
 
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
@@ -280,7 +281,7 @@ class JobPostingManager:
                     params.append(filters['min_hourly_rate'])
                 if 'location' in filters:
                     query += " AND location LIKE ?"
-                    params.append(f"%{filters['location']}%")
+                    params.append(f"%{escape_like(filters['location'])}%")
 
             query += " ORDER BY posted_date DESC"
             cursor = conn.execute(query, params)

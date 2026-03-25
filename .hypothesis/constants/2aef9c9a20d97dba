@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/auth/session_manager.py
+# hypothesis_version: 6.151.9
+
+['expires_at', 'user_id', 'username']

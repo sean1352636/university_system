@@ -9,9 +9,9 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 import schedule
 
-from .constants import _t, logger, EXTERNAL_DB_CONFIG_PATH, EXTERNAL_API_CONFIG_PATH
+from education_system.university_system.modules.shared.gui.batch_operations.constants import _t, logger, EXTERNAL_DB_CONFIG_PATH, EXTERNAL_API_CONFIG_PATH
 from education_system.university_system.core.paths import CONFIG_DIR, PROJECT_ROOT
-from .progress_dialog import GUIProgressDialog
+from education_system.university_system.modules.shared.gui.batch_operations.progress_dialog import GUIProgressDialog
 
 
 class AutomationManager:

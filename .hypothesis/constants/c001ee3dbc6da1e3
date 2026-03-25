@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/college_system/modules/domain/academic_year/services/academic_year_service.py
+# hypothesis_version: 6.151.9
+
+[100, ', ', '?', 'Year created: id=%d', 'Year deleted: pk=%d', 'Year not found.', 'Year updated: pk=%d', 'cnt', 'end_date', 'id', 'is_current', 'name', 'name is required.', 'start_date', 'status', 'updated_at']

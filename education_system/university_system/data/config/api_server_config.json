@@ -5,13 +5,7 @@
   "ssl_enabled": false,
   "authentication": {
     "method": "API Key",
-    "api_key": "CHANGE_ME_SET_VIA_ENVIRONMENT"
-  },
-  "jwt": {
-    "secret_key": null,
-    "access_token_expires_minutes": 30,
-    "refresh_token_expires_days": 7,
-    "algorithm": "HS256"
+    "api_key": "sk_3d70b2f44fe687acedd53388397ba36ab0fbd89e"
   },
   "rate_limiting": {
     "enabled": true,
@@ -89,5 +83,5 @@
       "status": "Disabled"
     }
   ],
-  "started_at": "2026-02-09T18:15:58.805327"
+  "started_at": "2026-03-11T19:59:41.943880"
 }

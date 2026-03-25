@@ -3,7 +3,7 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 
-from .app import auth
+from education_system.university_system.modules.domain.finance.reporting.revenue_analytics.app import auth
 
 
 def generate_financial_dashboard():

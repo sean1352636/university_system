@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/primary_school/modules/domain/academics/assessment/services/assessment_service.py
+# hypothesis_version: 6.151.9
+
+[' AND pupil_id = ?', ' AND term = ?', ', ', 'Formative', 'Level is required', 'Pupil ID is required', 'academic_year', 'assessed_by', 'assessment_id', 'assessment_type', 'comments', 'level', 'max_score', 'pupil_id', 'score', 'subject_code', 'term', 'year_group']

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/cinema_cli/constants.py
+# hypothesis_version: 6.151.9
+
+[0.1, 2.99, 3.49, 3.99, 4.99, 5.99, 6.49, 7.0, 7.98, 7.99, 8.0, 9.0, 9.99, 10.48, 11.99, 12.0, 12.47, 12.98, 12.99, 14.99, 24.99, 25.96, 'Adult', 'Candy (M&Ms)', 'Candy (Maltesers)', 'Candy (Skittles)', 'Child', 'Family Combo', 'Hot Dog', 'Ice Cream', 'Large Combo', 'Medium Combo', 'Nachos', 'Popcorn (Large)', 'Popcorn (Medium)', 'Popcorn (Small)', 'Pretzel', 'Senior', 'Small Combo', 'Snack Pack', 'Soda (Large)', 'Soda (Medium)', 'Soda (Small)', 'Student', 'items', 'original', 'price']

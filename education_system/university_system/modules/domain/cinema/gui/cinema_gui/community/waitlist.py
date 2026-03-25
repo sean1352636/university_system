@@ -11,7 +11,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_waitlist_page(self):
     """Display waitlist management page."""
@@ -53,29 +53,31 @@ def show_waitlist_page(self):
             self.waitlist_tree.delete(item)
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        status = status_var.get()
-        sql = '''
-            SELECT w.id, m.title, s.show_time, w.customer_name, w.customer_email,
-                   w.seats_wanted, w.created_at, w.status
-            FROM waitlist w
-            JOIN screenings s ON w.screening_id = s.id
-            JOIN movies m ON s.movie_id = m.id
-        '''
-        params = []
-        if status != "all":
-            sql += " WHERE w.status = ?"
-            params.append(status)
-        sql += " ORDER BY w.created_at DESC"
+            status = status_var.get()
+            sql = '''
+                SELECT w.id, m.title, s.show_time, w.customer_name, w.customer_email,
+                       w.seats_wanted, w.created_at, w.status
+                FROM waitlist w
+                JOIN screenings s ON w.screening_id = s.id
+                JOIN movies m ON s.movie_id = m.id
+            '''
+            params = []
+            if status != "all":
+                sql += " WHERE w.status = ?"
+                params.append(status)
+            sql += " ORDER BY w.created_at DESC"
 
-        cursor.execute(sql, params)
-        for row in cursor.fetchall():
-            self.waitlist_tree.insert("", "end", values=(
-                row[0], row[1][:20], row[2], row[3], row[4],
-                row[5], row[6][:10] if row[6] else "-", row[7].upper()
-            ))
-        conn.close()
+            cursor.execute(sql, params)
+            for row in cursor.fetchall():
+                self.waitlist_tree.insert("", "end", values=(
+                    row[0], row[1][:20], row[2], row[3], row[4],
+                    row[5], row[6][:10] if row[6] else "-", row[7].upper()
+                ))
+        finally:
+            conn.close()
 
     ttk.Button(filter_frame, text=_t("cinema.btn.filter"), style="Primary.TButton",
               command=load_waitlist).pack(side="left", padx=5)
@@ -109,10 +111,12 @@ def notify_waitlist_customer(self):
     email = self.waitlist_tree.item(selected[0])['values'][4]
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("UPDATE waitlist SET status = 'notified', notified = 1 WHERE id = ?", (entry_id,))
-    conn.commit()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE waitlist SET status = 'notified', notified = 1 WHERE id = ?", (entry_id,))
+        conn.commit()
+    finally:
+        conn.close()
 
     messagebox.showinfo(_t("cinema.common.notified"), f"Customer {email} has been marked as notified.\n\n(In a real system, an email would be sent)")
     self.show_waitlist_page()
@@ -127,10 +131,12 @@ def mark_waitlist_fulfilled(self):
     entry_id = self.waitlist_tree.item(selected[0])['values'][0]
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("UPDATE waitlist SET status = 'fulfilled' WHERE id = ?", (entry_id,))
-    conn.commit()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE waitlist SET status = 'fulfilled' WHERE id = ?", (entry_id,))
+        conn.commit()
+    finally:
+        conn.close()
 
     self.show_waitlist_page()
 
@@ -147,9 +153,11 @@ def remove_waitlist_entry(self):
         return
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM waitlist WHERE id = ?", (entry_id,))
-    conn.commit()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM waitlist WHERE id = ?", (entry_id,))
+        conn.commit()
+    finally:
+        conn.close()
 
     self.show_waitlist_page()

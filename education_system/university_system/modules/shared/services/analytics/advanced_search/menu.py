@@ -1,35 +1,35 @@
 """CLI menu router for the enhanced search & analytics system."""
-from .analytics import (
+from education_system.university_system.modules.shared.services.analytics.advanced_search.analytics import (
     search_analytics_dashboard,
     student_demographics_reports,
     academic_performance_analysis,
 )
-from .search import (
+from education_system.university_system.modules.shared.services.analytics.advanced_search.search import (
     multi_criteria_search,
     fuzzy_name_search,
     module_enrollment_search,
     date_range_search,
     combined_filters_search,
 )
-from .text_search import advanced_text_search
-from .conditional import conditional_logic_search
-from .saved_searches import (
+from education_system.university_system.modules.shared.services.analytics.advanced_search.text_search import advanced_text_search
+from education_system.university_system.modules.shared.services.analytics.advanced_search.conditional import conditional_logic_search
+from education_system.university_system.modules.shared.services.analytics.advanced_search.saved_searches import (
     manage_saved_searches,
     view_search_history,
     load_saved_search,
 )
-from .bulk_ops import (
+from education_system.university_system.modules.shared.services.analytics.advanced_search.bulk_ops import (
     bulk_operations_menu,
     mass_email_students,
     batch_data_updates,
 )
-from .duplicates import duplicate_detection, data_quality_reports
-from .charts import interactive_charts
-from .reports import generate_custom_reports, manage_scheduled_reports
-from .admin import view_search_audit_trail, manage_user_permissions
-from .smart import auto_complete_search, smart_suggestions, predictive_analytics
-from .system import performance_optimization, export_system_statistics
-from .db import init_enhanced_database
+from education_system.university_system.modules.shared.services.analytics.advanced_search.duplicates import duplicate_detection, data_quality_reports
+from education_system.university_system.modules.shared.services.analytics.advanced_search.charts import interactive_charts
+from education_system.university_system.modules.shared.services.analytics.advanced_search.reports import generate_custom_reports, manage_scheduled_reports
+from education_system.university_system.modules.shared.services.analytics.advanced_search.admin import view_search_audit_trail, manage_user_permissions
+from education_system.university_system.modules.shared.services.analytics.advanced_search.smart import auto_complete_search, smart_suggestions, predictive_analytics
+from education_system.university_system.modules.shared.services.analytics.advanced_search.system import performance_optimization, export_system_statistics
+from education_system.university_system.modules.shared.services.analytics.advanced_search.db import init_enhanced_database
 
 
 def display_enhanced_menu():

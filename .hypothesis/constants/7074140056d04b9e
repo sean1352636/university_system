@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/assignment_system/assignment_manager/_base.py
+# hypothesis_version: 6.151.9
+
+['Admin', 'Error.TLabel', 'Faculty', 'Success.TLabel', 'Warning.TLabel', 'error', 'success', 'w']

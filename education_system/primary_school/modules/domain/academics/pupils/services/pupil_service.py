@@ -7,6 +7,7 @@ from education_system.primary_school.infrastructure.validation.validators import
 )
 from education_system.primary_school.core.defaults import KEY_STAGES, PUPIL_ID_PREFIX
 from education_system.primary_school.core.exceptions import PupilError
+from education_system.primary_school.core.sql_safety import escape_like
 import traceback
 
 logger = logging.getLogger(__name__)
@@ -128,7 +129,8 @@ class PupilService:
                 params.append(class_name)
             if search:
                 sql += " AND (first_name LIKE ? OR last_name LIKE ? OR pupil_id LIKE ?)"
-                term = f"%{search}%"
+                escaped = escape_like(search)
+                term = f"%{escaped}%"
                 params.extend([term, term, term])
             sql += " ORDER BY year_group, last_name, first_name"
             cursor.execute(sql, params)
@@ -158,14 +160,18 @@ class PupilService:
             if "year_group" in updates:
                 updates["key_stage"] = KEY_STAGES.get(updates["year_group"], "")
 
-            updates["updated_at"] = "datetime('now')"
-            set_clause = ", ".join(
-                f"{k} = {v}" if k == "updated_at" else f"{k} = ?"
-                for k, v in updates.items()
-            )
-            values = [v for k, v in updates.items() if k != "updated_at"]
+            set_parts = []
+            values = []
+            for k, v in updates.items():
+                if k == "updated_at":
+                    continue
+                # All keys are validated against 'allowed' set above
+                set_parts.append(f"{k} = ?")
+                values.append(v)
+            set_parts.append("updated_at = datetime('now')")
+            set_clause = ", ".join(set_parts)
             values.append(pupil_id)
-            cursor.execute(f"UPDATE pupils SET {set_clause} WHERE pupil_id = ?", values)
+            cursor.execute(f"UPDATE pupils SET {set_clause} WHERE pupil_id = ?", values)  # nosec B608 - keys validated against allowlist
             conn.commit()
             logger.info("Updated pupil: %s", pupil_id)
             return self.get_pupil(pupil_id)

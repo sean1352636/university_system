@@ -1,7 +1,8 @@
 # search.py
 # Search functionality mixin for AccommodationGUI.
 
-from ._common import (
+from education_system.university_system.core.sql_safety import escape_like
+from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import (
     tk, messagebox, sqlite3,
     CLI_AVAILABLE, get_connection,
 )
@@ -59,7 +60,7 @@ class SearchMixin:
 
                 if self.search_keyword.get().strip():
                     where_clauses.append('(a.description LIKE ? OR a.notes LIKE ?)')
-                    keyword = f"%{self.search_keyword.get().strip()}%"
+                    keyword = f"%{escape_like(self.search_keyword.get().strip())}%"
                     params.extend([keyword, keyword])
 
                 if where_clauses:

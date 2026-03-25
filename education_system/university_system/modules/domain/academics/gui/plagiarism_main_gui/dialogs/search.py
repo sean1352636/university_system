@@ -7,8 +7,8 @@ import os
 
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
-from ..config import GuiConfig
-from ..common import logger
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.config import GuiConfig
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.common import logger
 
 
 class RepositorySearchDialog:
@@ -209,6 +209,6 @@ class RepositorySearchDialog:
         doc_id = int(self.results_tree.item(item, 'tags')[0])
 
         # Show document details dialog
-        from .document_details import DocumentDetailsDialog
+        from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.dialogs.document_details import DocumentDetailsDialog
         details_dialog = DocumentDetailsDialog(self.dialog, self.checker, doc_id)
         details_dialog.show()

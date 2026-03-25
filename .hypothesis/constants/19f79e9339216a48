@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/staff_hr/services/__init__.py
+# hypothesis_version: 6.151.9
+
+['AcademicStaffManager', 'AdminToolsManager', 'AssetManager', 'CommunicationManager', 'EmployeeManager', 'LeaveManager', 'OnboardingManager', 'PerformanceManager', 'RecruitmentManager', 'StaffHRService', 'TimeManager', 'TrainingManager', 'get_staff_hr_service', 'reset_service']

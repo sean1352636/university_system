@@ -38,8 +38,8 @@ def mock_root():
 class TestInternshipGUI:
     """Test cases for InternshipGUI class"""
 
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.set_auth')
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.set_auth')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
     def test_initialization_with_auth(self, mock_init_db, mock_set_auth, mock_root, mock_auth):
         """Test GUI initialization with authentication"""
         with patch.object(InternshipGUI, 'setup_main_interface'):
@@ -49,7 +49,7 @@ class TestInternshipGUI:
             assert gui.auth == mock_auth
             mock_set_auth.assert_called_with(mock_auth)
 
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
     def test_initialization_without_auth(self, mock_init_db, mock_root):
         """Test GUI initialization without authentication"""
         with patch.object(InternshipGUI, 'setup_main_interface'):
@@ -58,15 +58,15 @@ class TestInternshipGUI:
             # Should still create GUI
             assert gui.auth is None
 
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
     def test_setup_main_interface(self, mock_init_db, mock_root, mock_auth):
         """Test main interface setup"""
         with patch.object(InternshipGUI, 'setup_main_interface', lambda self: None):
             gui = InternshipGUI(mock_root, mock_auth)
 
         # Manually call method
-        with patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.tk.Frame'), \
-             patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.tk.Label'), \
+        with patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.tk.Frame'), \
+             patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.tk.Label'), \
              patch.object(gui, 'create_navigation_buttons'), \
              patch.object(gui, 'show_welcome'):
             gui.setup_main_interface()
@@ -74,7 +74,7 @@ class TestInternshipGUI:
             # Should clear widgets and setup interface
             assert hasattr(gui, 'auth')
 
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
     def test_get_user_role_methods(self, mock_init_db, mock_root, mock_auth):
         """Test user role checking methods"""
         with patch.object(InternshipGUI, 'setup_main_interface'):
@@ -86,7 +86,7 @@ class TestInternshipGUI:
             assert gui.is_admin() == False
             assert gui.is_staff() == False
 
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
     def test_get_user_role_admin(self, mock_init_db, mock_root, mock_auth):
         """Test admin role detection"""
         mock_auth.current_user['role'] = 'admin'
@@ -97,7 +97,7 @@ class TestInternshipGUI:
             assert gui.is_admin() == True
             assert gui.is_student() == False
 
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
     def test_get_user_role_staff(self, mock_init_db, mock_root, mock_auth):
         """Test staff role detection"""
         mock_auth.current_user['role'] = 'staff'
@@ -108,8 +108,8 @@ class TestInternshipGUI:
             assert gui.is_staff() == True
             assert gui.is_student() == False
 
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.messagebox')
     def test_create_navigation_buttons_no_auth(self, mock_messagebox, mock_init_db, mock_root):
         """Test navigation button creation without auth"""
         with patch.object(InternshipGUI, 'setup_main_interface'):
@@ -121,21 +121,21 @@ class TestInternshipGUI:
             # Should show error
             mock_messagebox.showerror.assert_called_once()
 
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
     def test_create_navigation_buttons_with_permissions(self, mock_init_db, mock_root, mock_auth):
         """Test navigation button creation with permissions"""
         with patch.object(InternshipGUI, 'setup_main_interface'):
             gui = InternshipGUI(mock_root, mock_auth)
             parent = Mock()
 
-            with patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.tk.Button') as mock_button:
+            with patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.tk.Button') as mock_button:
                 gui.create_navigation_buttons(parent)
 
                 # Should create buttons
                 assert mock_button.called
 
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.get_connection')
     def test_load_placement_data(self, mock_conn, mock_init_db, mock_root, mock_auth):
         """Test loading placement data"""
         mock_auth.current_user['role'] = 'admin'
@@ -165,9 +165,9 @@ class TestInternshipGUI:
         # Should insert data
         gui.placement_tree.insert.assert_called()
 
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.get_connection')
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.messagebox')
     def test_view_placement_details(self, mock_messagebox, mock_conn, mock_init_db, mock_root, mock_auth):
         """Test viewing placement details"""
         with patch.object(InternshipGUI, 'setup_main_interface'):
@@ -182,8 +182,8 @@ class TestInternshipGUI:
         # Should show warning when no selection
         mock_messagebox.showwarning.assert_called_once()
 
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.messagebox')
     def test_update_placement_status_no_selection(self, mock_messagebox, mock_init_db, mock_root, mock_auth):
         """Test updating placement status without selection"""
         with patch.object(InternshipGUI, 'setup_main_interface'):
@@ -198,7 +198,7 @@ class TestInternshipGUI:
         # Should show warning
         mock_messagebox.showwarning.assert_called_once()
 
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
     def test_show_placement_management_permission_check(self, mock_init_db, mock_root, mock_auth):
         """Test placement management permission check"""
         mock_auth.check_permission = Mock(return_value=False)
@@ -207,13 +207,13 @@ class TestInternshipGUI:
             gui = InternshipGUI(mock_root, mock_auth)
             gui.content_frame = Mock()
 
-        with patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.messagebox') as mock_msg:
+        with patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.messagebox') as mock_msg:
             gui.show_placement_management()
 
             # Should show permission error
             mock_msg.showerror.assert_called_once()
 
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
     def test_clear_content(self, mock_init_db, mock_root, mock_auth):
         """Test content clearing"""
         with patch.object(InternshipGUI, 'setup_main_interface'):
@@ -230,7 +230,7 @@ class TestInternshipGUI:
         widget1.destroy.assert_called_once()
         widget2.destroy.assert_called_once()
 
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
     def test_navigation_features_exist(self, mock_init_db, mock_root, mock_auth):
         """Test that navigation features exist"""
         with patch.object(InternshipGUI, 'setup_main_interface'):
@@ -241,7 +241,7 @@ class TestInternshipGUI:
             assert hasattr(gui, 'show_placement_management')
             assert hasattr(gui, 'show_welcome')
 
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
     def test_integration_menu_exists(self, mock_init_db, mock_root, mock_auth):
         """Test integration services menu exists"""
         with patch.object(InternshipGUI, 'setup_main_interface'):
@@ -250,7 +250,7 @@ class TestInternshipGUI:
             # Should have integration menu method
             assert hasattr(gui, 'show_integration_menu')
 
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
     def test_cli_mode_method_exists(self, mock_init_db, mock_root, mock_auth):
         """Test CLI mode fallback exists"""
         with patch.object(InternshipGUI, 'setup_main_interface'):
@@ -259,7 +259,7 @@ class TestInternshipGUI:
             # Should have CLI mode method
             assert hasattr(gui, 'launch_cli_mode')
 
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
     def test_return_to_main_menu_exists(self, mock_init_db, mock_root, mock_auth):
         """Test return to main menu functionality exists"""
         with patch.object(InternshipGUI, 'setup_main_interface'):
@@ -268,7 +268,7 @@ class TestInternshipGUI:
             # Should have return method
             assert hasattr(gui, 'return_to_main_menu')
 
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
     def test_scrollbar_navigation(self, mock_init_db, mock_root, mock_auth):
         """Test scrollbar navigation binding"""
         with patch.object(InternshipGUI, 'setup_main_interface'):
@@ -277,9 +277,9 @@ class TestInternshipGUI:
             # Should have scrollbar binding method
             assert hasattr(gui, '_bind_nav_scroll_events')
 
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.get_connection')
-    @patch('university_system.modules.domain.student_affairs.gui.internship_management_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.init_internship_db')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.internship_management_gui.messagebox')
     def test_database_error_handling_in_load(self, mock_messagebox, mock_conn, mock_init_db,
                                              mock_root, mock_auth):
         """Test database error handling when loading data"""

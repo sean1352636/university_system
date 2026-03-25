@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/staff_hr/services/managers/travel_manager.py
+# hypothesis_version: 6.151.9
+
+[' = ?', ' AND department = ?', ' AND status = ?', ' GROUP BY department', ' GROUP BY status', ' WHERE leg_id = ?', ', ', '1=1', 'action', 'approval_id', 'approved', 'approver', 'budget', 'by_department', 'by_funding', 'by_status', 'cancelled', 'claim_id', 'cnt', 'column', 'completed', 'conference_name', 'count', 'create', 'created_at', 'delete', 'department', 'department_head', 'departure_date', 'destination', 'draft', 'estimated_budget', 'flight', 'funding_source', 'justification', 'leg_id', 'line_manager', 'purpose', 'registration_id', 'rejected', 'request_id', 'return_date', 'status', 'submitted', 'total_budget', 'total_requests', 'travel_expense', 'travel_itinerary', 'travel_request', 'update', 'updated_at = ?', 'updated_fields', 'user_id']

@@ -1,5 +1,5 @@
 """Tab creation mixin for the Student Analytics GUI."""
-from ._imports import tk, ttk, scrolledtext, _t, CONFIG
+from education_system.university_system.modules.shared.gui.student_analytics_gui._imports import tk, ttk, scrolledtext, _t, CONFIG
 
 
 class TabsMixin:

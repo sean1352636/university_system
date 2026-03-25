@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/services/directory.py
+# hypothesis_version: 6.151.9
+
+['(555) 123-4567', '(555) 234-5678', '(555) 345-6789', '(555) 456-7890', '-', 'Cardiology', 'Dermatology', 'Diabetes Center', 'Dr. Brown', 'Dr. Johnson', 'Dr. Smith', 'Dr. Williams', 'Endocrinology', 'Medical Center A', 'Mental Health Center', 'Psychiatry', 'Skin Care Clinic', 'location', 'name', 'phone', 'specialty']

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/dashboard.py
+# hypothesis_version: 6.151.9
+
+[100, '#27ae60', '#3498db', '#9b59b6', '#e74c3c', 'AUD', 'Arial', 'CAD', 'EUR', 'EXCHANGE_API_KEY', 'GBP', 'PAYPAL_CLIENT_ID', 'PAYPAL_CLIENT_SECRET', 'PAYPAL_ENVIRONMENT', 'STRIPE_PUBLIC_KEY', 'STRIPE_SECRET_KEY', 'USD', 'activity_listbox', 'analytics', 'analytics.log', 'bold', 'both', 'client_id', 'client_secret', 'conn', 'danger', 'dashboard', 'environment', 'ew', 'ignore', 'layout', 'left', 'paypal', 'public_key', 'raised', 'red', 'reports', 'right', 'sandbox', 'secondary', 'secret_key', 'show_tab', 'stripe', 'success', 'tab_frames', 'text', 'transactions', 'update_status', 'vertical', 'warning', 'webhook_secret', 'white', 'x', 'y']

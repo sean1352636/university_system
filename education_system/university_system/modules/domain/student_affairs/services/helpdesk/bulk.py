@@ -313,11 +313,11 @@ def bulk_status_change(auth, ticket_ids):
 def export_ticket_list(auth, tickets):
     """Export ticket list to file"""
     try:
-        if not os.path.exists(paths.EXPORTS_DIR):
-            os.makedirs(paths.EXPORTS_DIR)
+        if not os.path.exists(paths.EXPORTS_TICKETS_DIR):
+            os.makedirs(paths.EXPORTS_TICKETS_DIR)
 
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = paths.EXPORTS_DIR / f"ticket_list_{timestamp}.csv"
+        filename = paths.EXPORTS_TICKETS_DIR / f"ticket_list_{timestamp}.csv"
 
         with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
             import csv

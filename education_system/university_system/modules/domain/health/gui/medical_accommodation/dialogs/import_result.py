@@ -1,7 +1,7 @@
 # dialogs/import_result.py
 # Dialog for showing import results.
 
-from .._common import tk, ttk, ScrolledText
+from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import tk, ttk, ScrolledText
 
 
 class ImportResultDialog:

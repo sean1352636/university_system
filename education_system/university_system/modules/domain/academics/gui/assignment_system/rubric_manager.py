@@ -175,17 +175,19 @@ class RubricManager:
                 is_active = 1 if active_var.get() else 0
     
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-                cursor = conn.cursor()
-                cursor.execute(
-                    """
-                    UPDATE rubrics
-                    SET name = ?, description = ?, total_points = ?, is_active = ?
-                    WHERE id = ?
-                    """,
-                    (name, description, total_points, is_active, rubric_id)
-                )
-                conn.commit()
-                conn.close()
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        """
+                        UPDATE rubrics
+                        SET name = ?, description = ?, total_points = ?, is_active = ?
+                        WHERE id = ?
+                        """,
+                        (name, description, total_points, is_active, rubric_id)
+                    )
+                    conn.commit()
+                finally:
+                    conn.close()
     
                 editor.destroy()
                 self.load_rubrics_data(tree)

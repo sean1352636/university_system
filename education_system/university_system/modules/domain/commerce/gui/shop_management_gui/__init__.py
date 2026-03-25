@@ -1,7 +1,7 @@
 """
 Re-export the main GUI class for backwards compatibility.
 Importers should use direct submodule imports for other symbols, e.g.:
-    from ...shop_management_gui.discount_manager import DiscountEditDialog
+    from education_system.university_system.modules.domain.commerce.gui.shop_management_gui.discount_manager import DiscountEditDialog
 """
 
 from education_system.university_system.modules.domain.commerce.gui.shop_management_gui.main_gui import (

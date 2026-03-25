@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/billing/payment_plans.py
+# hypothesis_version: 6.151.9
+
+[100, 120, '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', '1', '2', '2. Change due dates', '3', '4', '5', '5. Add notes', '6', '=', 'AUD', 'CAD', 'EUR', 'EXCHANGE_API_KEY', 'Enter notes: ', 'Enter student ID: ', 'GBP', 'Invalid input.', 'Invalid selection.', 'PAYPAL_CLIENT_ID', 'PAYPAL_CLIENT_SECRET', 'PAYPAL_ENVIRONMENT', 'Payment Plan', 'Payment plan paused', 'Payment plan resumed', 'STRIPE_PUBLIC_KEY', 'STRIPE_SECRET_KEY', 'USD', 'analytics.log', 'cancel_payment_plan', 'cancelled_by', 'client_id', 'client_secret', 'default', 'environment', 'ignore', 'manage_finances', 'monthly', 'name', 'payment_plan_id', 'payment_plan_setup', 'paypal', 'public_key', 'quarterly', 'reason', 'sandbox', 'secret_key', 'stripe', 'student_id', 'username', 'webhook_secret', 'weekly', 'y']

@@ -4,6 +4,8 @@ Event Discovery Engine Service Layer
 Provides comprehensive event management with personalized recommendations,
 RSVP system, attendance tracking, calendar integration, and social features.
 
+Uses the unified_events table (source_type='campus') shared with Campus Events Hub.
+
 Features:
 - Personalized event recommendations based on interests and attendance history
 - Friends' event attendance tracking (opt-in social feature)
@@ -15,6 +17,7 @@ Features:
 """
 
 from education_system.university_system.infrastructure.database.db import sqlite3
+from education_system.university_system.core.sql_safety import escape_like
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Any
 from pathlib import Path
@@ -28,7 +31,12 @@ from education_system.university_system.modules.shared.utils.activity_logger imp
 logger = logging.getLogger(__name__)
 
 class EventsService:
-    """Service for managing university events, RSVPs, and recommendations"""
+    """Service for managing university events, RSVPs, and recommendations.
+
+    Uses the unified_events table (source_type='campus'). The discovery_event_* supporting
+    tables (rsvps, attendance, interests, photos, ratings, social_settings)
+    are created here for the student-facing discovery features.
+    """
 
     # Event categories
     CATEGORIES = [
@@ -45,39 +53,17 @@ class EventsService:
     RSVP_STATUS = ['Going', 'Interested', 'Not Going']
 
     def __init__(self):
-        """Initialize the events service and create database tables"""
+        """Initialize the events service and create supporting database tables"""
         self.initialize_database()
 
     def initialize_database(self):
-        """Create all necessary database tables for event management"""
+        """Create supporting tables for event discovery features.
+
+        The main unified_events table is created by campus_events_schemas.py.
+        This method only creates the discovery-specific supporting tables.
+        """
         try:
             with transaction() as conn:
-                # Events table
-                conn.execute("""
-                    CREATE TABLE IF NOT EXISTS discovery_events (
-                        event_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        title TEXT NOT NULL,
-                        description TEXT,
-                        category TEXT NOT NULL,
-                        start_datetime TEXT NOT NULL,
-                        end_datetime TEXT NOT NULL,
-                        location TEXT NOT NULL,
-                        building TEXT,
-                        room TEXT,
-                        organizer_id TEXT,
-                        organizer_name TEXT,
-                        organizer_type TEXT,
-                        max_capacity INTEGER,
-                        registration_required INTEGER DEFAULT 0,
-                        registration_deadline TEXT,
-                        event_image_url TEXT,
-                        tags TEXT,
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                        cancelled INTEGER DEFAULT 0
-                    )
-                """)
-
                 # RSVPs table
                 conn.execute("""
                     CREATE TABLE IF NOT EXISTS discovery_event_rsvps (
@@ -88,7 +74,7 @@ class EventsService:
                         rsvp_date TEXT DEFAULT CURRENT_TIMESTAMP,
                         added_to_calendar INTEGER DEFAULT 0,
                         reminder_sent INTEGER DEFAULT 0,
-                        FOREIGN KEY (event_id) REFERENCES discovery_events(event_id),
+                        FOREIGN KEY (event_id) REFERENCES unified_events(event_id),
                         UNIQUE(event_id, user_id)
                     )
                 """)
@@ -101,7 +87,7 @@ class EventsService:
                         user_id TEXT NOT NULL,
                         check_in_time TEXT NOT NULL,
                         check_out_time TEXT,
-                        FOREIGN KEY (event_id) REFERENCES discovery_events(event_id),
+                        FOREIGN KEY (event_id) REFERENCES unified_events(event_id),
                         UNIQUE(event_id, user_id)
                     )
                 """)
@@ -127,7 +113,7 @@ class EventsService:
                         photo_url TEXT NOT NULL,
                         caption TEXT,
                         uploaded_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (event_id) REFERENCES discovery_events(event_id)
+                        FOREIGN KEY (event_id) REFERENCES unified_events(event_id)
                     )
                 """)
 
@@ -140,7 +126,7 @@ class EventsService:
                         rating INTEGER NOT NULL CHECK(rating >= 1 AND rating <= 5),
                         review TEXT,
                         rated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (event_id) REFERENCES discovery_events(event_id),
+                        FOREIGN KEY (event_id) REFERENCES unified_events(event_id),
                         UNIQUE(event_id, user_id)
                     )
                 """)
@@ -157,13 +143,13 @@ class EventsService:
 
                 # Create indexes for performance
                 conn.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_events_datetime
-                    ON discovery_events(start_datetime)
+                    CREATE INDEX IF NOT EXISTS idx_unified_events_date
+                    ON unified_events(start_datetime)
                 """)
 
                 conn.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_events_category
-                    ON discovery_events(category)
+                    CREATE INDEX IF NOT EXISTS idx_unified_events_category
+                    ON unified_events(event_category)
                 """)
 
                 conn.execute("""
@@ -187,11 +173,131 @@ class EventsService:
             logger.error(f"Error initializing events database: {e}")
             raise
 
+    # ==================== Helper ====================
+
+    def _make_datetime(self, date_str, time_str):
+        """Combine date and time strings into a datetime string."""
+        if not date_str:
+            return ''
+        if not time_str:
+            return date_str
+        return f"{date_str} {time_str}"
+
+    def _add_to_academic_calendar(self, event_name, event_date, description, event_type, created_by=None):
+        """Add an event to the academic calendar automatically on creation."""
+        import uuid
+        try:
+            with transaction() as conn:
+                conn.execute('''
+                    INSERT INTO academic_calendar_events (
+                        id, name, description, event_type,
+                        date, created_by, date_added, last_modified
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    str(uuid.uuid4()), event_name, description or '',
+                    event_type, event_date, created_by or 'System',
+                    datetime.now().isoformat(), datetime.now().isoformat()
+                ))
+        except Exception:
+            pass  # Non-critical — don't block event creation if calendar insert fails
+
+    def _send_rsvp_confirmation_email(self, user_id, status, event_name,
+                                       event_date, start_time, end_time, location):
+        """Send RSVP confirmation email to user."""
+        try:
+            from education_system.university_system.infrastructure.email.email_service.core import send_email
+
+            # Look up user email — user_id may be numeric id, username, or student_id
+            with get_connection() as conn:
+                row = None
+                # Try by numeric user id
+                cursor = conn.execute(
+                    "SELECT email FROM users WHERE id = ?",
+                    (user_id,))
+                row = cursor.fetchone()
+                if not row or not row[0]:
+                    # Try by username
+                    cursor = conn.execute(
+                        "SELECT email FROM users WHERE username = ?",
+                        (user_id,))
+                    row = cursor.fetchone()
+                if not row or not row[0]:
+                    # Try students table
+                    cursor = conn.execute(
+                        "SELECT email_address FROM students WHERE student_id = ?",
+                        (user_id,))
+                    row = cursor.fetchone()
+
+            if not row or not row[0]:
+                logger.info(f"No email found for user {user_id}, skipping RSVP confirmation")
+                return
+
+            email = row[0]
+
+            status_text = {
+                'Going': "You're going!",
+                'Interested': "You're interested.",
+                'Not Going': "You've declined."
+            }.get(status, status)
+
+            subject = f"RSVP Confirmation: {event_name}"
+            body = (
+                f"Dear {user_id},\n\n"
+                f"Your RSVP has been confirmed.\n\n"
+                f"Event: {event_name}\n"
+                f"Date: {event_date}\n"
+                f"Time: {start_time or 'TBA'} - {end_time or 'TBA'}\n"
+                f"Location: {location or 'TBA'}\n"
+                f"Your RSVP: {status_text}\n\n"
+                f"You can update your RSVP at any time through the Event Discovery portal.\n\n"
+                f"Best regards,\n"
+                f"University Events Team"
+            )
+
+            send_email(email, subject, body)
+            logger.info(f"RSVP confirmation email sent to {email} for event '{event_name}'")
+
+        except Exception as e:
+            logger.warning(f"Could not send RSVP confirmation email: {e}")
+
+    def _row_to_event(self, columns, row):
+        """Convert a unified_events row to an event dict with discovery-compatible keys."""
+        event = dict(zip(columns, row))
+        # Add compatibility aliases used by the discovery GUI
+        event['event_name'] = event.get('title', '')
+        event['category'] = event.get('event_category', '')
+        # Derive event_date, start_time, end_time from start_datetime / end_datetime
+        sd = event.get('start_datetime', '')
+        ed = event.get('end_datetime', '')
+        if sd and ' ' in str(sd):
+            event['event_date'] = str(sd).split(' ', 1)[0]
+            event['start_time'] = str(sd).split(' ', 1)[1]
+        else:
+            event['event_date'] = str(sd) if sd else ''
+            event['start_time'] = ''
+        if ed and ' ' in str(ed):
+            event['end_time'] = str(ed).split(' ', 1)[1]
+        else:
+            event['end_time'] = ''
+        event['capacity'] = event.get('max_capacity', 0)
+        event['event_image_url'] = event.get('image_url', '')
+        event['room'] = event.get('room_id', '')
+        event['cancelled'] = 1 if event.get('status') == 'cancelled' else 0
+        # Parse tags
+        if event.get('tags'):
+            try:
+                event['tags'] = json.loads(event['tags'])
+            except (json.JSONDecodeError, TypeError):
+                event['tags'] = []
+        else:
+            event['tags'] = []
+        return event
+
     # ==================== Event Management ====================
 
     def create_event(self, event_data: Dict[str, Any], user_id: str) -> int:
         """
-        Create a new event
+        Create a new event in the unified_events table (source_type='campus').
 
         Args:
             event_data: Dictionary containing event details
@@ -201,42 +307,74 @@ class EventsService:
             event_id of the created event
         """
         try:
+            # Parse start/end datetime into date + time if provided as single values
+            start_dt = event_data.get('start_datetime', '')
+            end_dt = event_data.get('end_datetime', '')
+
+            # Build start_datetime and end_datetime from whatever input we have
+            if start_dt and ' ' in start_dt:
+                event_date, start_time = start_dt.split(' ', 1)
+            else:
+                event_date = event_data.get('event_date', start_dt)
+                start_time = event_data.get('start_time', '')
+
+            if end_dt and ' ' in end_dt:
+                _, end_time = end_dt.split(' ', 1)
+            else:
+                end_time = event_data.get('end_time', '')
+
+            # Compose full datetime strings for the schema columns
+            full_start_dt = f"{event_date} {start_time}".strip() if event_date else start_dt
+            full_end_dt = f"{event_date} {end_time}".strip() if event_date and end_time else end_dt
+
             with transaction() as conn:
                 cursor = conn.execute("""
-                    INSERT INTO discovery_events (
-                        title, description, category, start_datetime, end_datetime,
-                        location, building, room, organizer_id, organizer_name,
-                        organizer_type, max_capacity, registration_required,
-                        registration_deadline, event_image_url, tags
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO unified_events (
+                        title, event_type, event_category, description,
+                        organizer_id, organizer_name, organizer_type,
+                        start_datetime, end_datetime,
+                        location, building, room_id,
+                        max_capacity, registration_required,
+                        registration_deadline, image_url, tags,
+                        source_type
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'campus')
                 """, (
-                    event_data['title'],
+                    event_data.get('title', event_data.get('event_name', '')),
+                    event_data.get('event_type', event_data.get('category', 'Other')),
+                    event_data.get('category', event_data.get('event_category', 'Other')),
                     event_data.get('description', ''),
-                    event_data['category'],
-                    event_data['start_datetime'],
-                    event_data['end_datetime'],
-                    event_data['location'],
-                    event_data.get('building', ''),
-                    event_data.get('room', ''),
                     user_id,
                     event_data.get('organizer_name', ''),
                     event_data.get('organizer_type', 'Student'),
-                    event_data.get('max_capacity', 0),
+                    full_start_dt,
+                    full_end_dt,
+                    event_data.get('location', ''),
+                    event_data.get('building', ''),
+                    event_data.get('room', event_data.get('room_id', None)),
+                    event_data.get('max_capacity', event_data.get('capacity', 0)),
                     event_data.get('registration_required', 0),
                     event_data.get('registration_deadline', ''),
-                    event_data.get('event_image_url', ''),
+                    event_data.get('event_image_url', event_data.get('image_url', '')),
                     json.dumps(event_data.get('tags', []))
                 ))
 
                 event_id = cursor.lastrowid
 
                 log_activity(
-                    'create', 'event', event_id=event_id,
-                    user_id=user_id,
-                    details={'title': event_data['title']}
+                    'create', 'event', user_id=user_id,
+                    details={'event_id': event_id, 'title': event_data.get('title', event_data.get('event_name', ''))}
                 )
 
-                return event_id
+            # Also add to academic calendar
+            self._add_to_academic_calendar(
+                event_data.get('title', event_data.get('event_name', '')),
+                event_date,
+                event_data.get('description', ''),
+                event_data.get('category', event_data.get('event_category', 'Other')),
+                user_id
+            )
+
+            return event_id
 
         except Exception as e:
             logger.error(f"Error creating event: {e}")
@@ -247,7 +385,7 @@ class EventsService:
         try:
             with get_connection() as conn:
                 cursor = conn.execute("""
-                    SELECT * FROM discovery_events WHERE event_id = ?
+                    SELECT * FROM unified_events WHERE event_id = ? AND source_type = 'campus'
                 """, (event_id,))
 
                 row = cursor.fetchone()
@@ -255,13 +393,7 @@ class EventsService:
                     return None
 
                 columns = [description[0] for description in cursor.description]
-                event = dict(zip(columns, row))
-
-                # Parse tags
-                if event['tags']:
-                    event['tags'] = json.loads(event['tags'])
-                else:
-                    event['tags'] = []
+                event = self._row_to_event(columns, row)
 
                 # Get RSVP count
                 cursor = conn.execute("""
@@ -288,18 +420,49 @@ class EventsService:
     def update_event(self, event_id: int, event_data: Dict[str, Any], user_id: str) -> bool:
         """Update event details"""
         try:
+            # Map discovery field names to unified_events column names
+            field_map = {
+                'event_name': 'title',
+                'category': 'event_category',
+                'capacity': 'max_capacity',
+                'event_image_url': 'image_url',
+                'room': 'room_id',
+            }
+
             with transaction() as conn:
-                # Build update query dynamically
                 update_fields = []
                 values = []
 
-                for field in ['title', 'description', 'category', 'start_datetime',
-                             'end_datetime', 'location', 'building', 'room',
-                             'max_capacity', 'registration_required',
-                             'registration_deadline', 'event_image_url']:
+                for field in ['title', 'event_name', 'description', 'category',
+                             'event_category', 'event_type', 'location', 'building',
+                             'room', 'room_id', 'max_capacity', 'capacity',
+                             'registration_required', 'registration_deadline',
+                             'event_image_url', 'image_url']:
                     if field in event_data:
-                        update_fields.append(f"{field} = ?")
+                        col = field_map.get(field, field)
+                        update_fields.append(f"{col} = ?")
                         values.append(event_data[field])
+
+                # Handle start_datetime / end_datetime
+                if 'start_datetime' in event_data:
+                    update_fields.append("start_datetime = ?")
+                    values.append(event_data['start_datetime'])
+                elif 'event_date' in event_data or 'start_time' in event_data:
+                    ed = event_data.get('event_date', '')
+                    st = event_data.get('start_time', '')
+                    if ed or st:
+                        update_fields.append("start_datetime = ?")
+                        values.append(f"{ed} {st}".strip())
+
+                if 'end_datetime' in event_data:
+                    update_fields.append("end_datetime = ?")
+                    values.append(event_data['end_datetime'])
+                elif 'end_time' in event_data:
+                    ed = event_data.get('event_date', '')
+                    et = event_data.get('end_time', '')
+                    if ed or et:
+                        update_fields.append("end_datetime = ?")
+                        values.append(f"{ed} {et}".strip())
 
                 if 'tags' in event_data:
                     update_fields.append("tags = ?")
@@ -311,13 +474,12 @@ class EventsService:
                 update_fields.append("updated_at = CURRENT_TIMESTAMP")
                 values.append(event_id)
 
-                query = f"UPDATE discovery_events SET {', '.join(update_fields)} WHERE event_id = ?"
+                query = f"UPDATE unified_events SET {', '.join(update_fields)} WHERE event_id = ? AND source_type = 'campus'"
                 conn.execute(query, values)
 
                 log_activity(
-                    'update', 'event', event_id=event_id,
-                    user_id=user_id,
-                    details={'updated_fields': list(event_data.keys())}
+                    'update', 'event', user_id=user_id,
+                    details={'event_id': event_id, 'updated_fields': list(event_data.keys())}
                 )
 
                 return True
@@ -331,13 +493,14 @@ class EventsService:
         try:
             with transaction() as conn:
                 conn.execute("""
-                    UPDATE discovery_events SET cancelled = 1, updated_at = CURRENT_TIMESTAMP
-                    WHERE event_id = ?
+                    UPDATE unified_events SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
+                    WHERE event_id = ? AND source_type = 'campus'
                 """, (event_id,))
 
                 log_activity(
-                    'cancel', 'event', event_id=event_id,
-                    user_id=user_id
+                    'cancel', 'event',
+                    user_id=user_id,
+                    details={'event_id': event_id}
                 )
 
                 return True
@@ -367,43 +530,37 @@ class EventsService:
         """
         try:
             with get_connection() as conn:
-                query = "SELECT * FROM discovery_events WHERE cancelled = 0"
+                query = "SELECT * FROM unified_events WHERE source_type = 'campus' AND status != 'cancelled'"
                 params = []
 
                 if upcoming_only:
-                    query += " AND start_datetime >= datetime('now')"
+                    query += " AND date(start_datetime) >= date('now')"
 
                 if category:
-                    query += " AND category = ?"
+                    query += " AND event_category = ?"
                     params.append(category)
 
                 if start_date:
-                    query += " AND start_datetime >= ?"
+                    query += " AND date(start_datetime) >= ?"
                     params.append(start_date)
 
                 if end_date:
-                    query += " AND start_datetime <= ?"
+                    query += " AND date(start_datetime) <= ?"
                     params.append(end_date)
 
                 if keyword:
                     query += " AND (title LIKE ? OR description LIKE ? OR tags LIKE ?)"
-                    keyword_pattern = f"%{keyword}%"
+                    keyword_pattern = f"%{escape_like(keyword)}%"
                     params.extend([keyword_pattern, keyword_pattern, keyword_pattern])
 
                 query += " ORDER BY start_datetime ASC"
 
                 cursor = conn.execute(query, params)
                 columns = [description[0] for description in cursor.description]
-                events = [dict(zip(columns, row)) for row in cursor.fetchall()]
+                events = [self._row_to_event(columns, row) for row in cursor.fetchall()]
 
-                # Enrich with additional data
+                # Enrich with RSVP count
                 for event in events:
-                    if event['tags']:
-                        event['tags'] = json.loads(event['tags'])
-                    else:
-                        event['tags'] = []
-
-                    # Get RSVP count
                     cursor = conn.execute("""
                         SELECT COUNT(*) FROM discovery_event_rsvps
                         WHERE event_id = ? AND rsvp_status = 'Going'
@@ -421,22 +578,17 @@ class EventsService:
         try:
             with get_connection() as conn:
                 cursor = conn.execute("""
-                    SELECT * FROM discovery_events
-                    WHERE cancelled = 0 AND start_datetime >= datetime('now')
+                    SELECT * FROM unified_events
+                    WHERE source_type = 'campus' AND status != 'cancelled' AND date(start_datetime) >= date('now')
                     ORDER BY start_datetime ASC
                     LIMIT ?
                 """, (limit,))
 
                 columns = [description[0] for description in cursor.description]
-                events = [dict(zip(columns, row)) for row in cursor.fetchall()]
+                events = [self._row_to_event(columns, row) for row in cursor.fetchall()]
 
-                # Enrich with additional data
+                # Enrich with RSVP count
                 for event in events:
-                    if event['tags']:
-                        event['tags'] = json.loads(event['tags'])
-                    else:
-                        event['tags'] = []
-
                     cursor = conn.execute("""
                         SELECT COUNT(*) FROM discovery_event_rsvps
                         WHERE event_id = ? AND rsvp_status = 'Going'
@@ -472,8 +624,8 @@ class EventsService:
             with transaction() as conn:
                 # Check capacity if registration required
                 cursor = conn.execute("""
-                    SELECT max_capacity, registration_required FROM discovery_events
-                    WHERE event_id = ?
+                    SELECT max_capacity, registration_required FROM unified_events
+                    WHERE event_id = ? AND source_type = 'campus'
                 """, (event_id,))
 
                 row = cursor.fetchone()
@@ -482,7 +634,7 @@ class EventsService:
 
                 max_capacity, registration_required = row
 
-                if registration_required and max_capacity > 0:
+                if registration_required and max_capacity and max_capacity > 0:
                     cursor = conn.execute("""
                         SELECT COUNT(*) FROM discovery_event_rsvps
                         WHERE event_id = ? AND rsvp_status = 'Going'
@@ -491,6 +643,13 @@ class EventsService:
                     current_count = cursor.fetchone()[0]
                     if current_count >= max_capacity and status == 'Going':
                         raise ValueError("Event is at full capacity")
+
+                # Get event details for email before leaving transaction
+                cursor = conn.execute("""
+                    SELECT title, start_datetime, end_datetime, location
+                    FROM unified_events WHERE event_id = ? AND source_type = 'campus'
+                """, (event_id,))
+                event_details = cursor.fetchone()
 
                 # Insert or update RSVP
                 conn.execute("""
@@ -503,12 +662,24 @@ class EventsService:
                 """, (event_id, user_id, status, 1 if add_to_calendar else 0))
 
                 log_activity(
-                    'rsvp', 'event', event_id=event_id,
-                    user_id=user_id,
-                    details={'status': status, 'add_to_calendar': add_to_calendar}
+                    'rsvp', 'event', user_id=user_id,
+                    details={'event_id': event_id, 'status': status, 'add_to_calendar': add_to_calendar}
                 )
 
-                return True
+            # Send RSVP confirmation email (outside transaction, non-blocking)
+            if event_details:
+                # event_details: (title, start_datetime, end_datetime, location)
+                sd = str(event_details[1] or '')
+                ed = str(event_details[2] or '')
+                event_date = sd.split(' ', 1)[0] if ' ' in sd else sd
+                start_time = sd.split(' ', 1)[1] if ' ' in sd else ''
+                end_time = ed.split(' ', 1)[1] if ' ' in ed else ''
+                self._send_rsvp_confirmation_email(
+                    user_id, status, event_details[0], event_date,
+                    start_time, end_time, event_details[3]
+                )
+
+            return True
 
         except Exception as e:
             logger.error(f"Error RSVPing to event {event_id}: {e}")
@@ -520,27 +691,29 @@ class EventsService:
             with get_connection() as conn:
                 query = """
                     SELECT e.*, r.rsvp_status, r.rsvp_date, r.added_to_calendar
-                    FROM discovery_events e
+                    FROM unified_events e
                     JOIN discovery_event_rsvps r ON e.event_id = r.event_id
-                    WHERE r.user_id = ? AND e.cancelled = 0
+                    WHERE r.user_id = ? AND e.source_type = 'campus' AND e.status != 'cancelled'
                 """
 
                 params = [user_id]
 
                 if upcoming_only:
-                    query += " AND e.start_datetime >= datetime('now')"
+                    query += " AND date(e.start_datetime) >= date('now')"
 
                 query += " ORDER BY e.start_datetime ASC"
 
                 cursor = conn.execute(query, params)
                 columns = [description[0] for description in cursor.description]
-                events = [dict(zip(columns, row)) for row in cursor.fetchall()]
+                events = [self._row_to_event(columns, row) for row in cursor.fetchall()]
 
+                # Enrich with RSVP count
                 for event in events:
-                    if event['tags']:
-                        event['tags'] = json.loads(event['tags'])
-                    else:
-                        event['tags'] = []
+                    cursor = conn.execute("""
+                        SELECT COUNT(*) FROM discovery_event_rsvps
+                        WHERE event_id = ? AND rsvp_status = 'Going'
+                    """, (event['event_id'],))
+                    event['rsvp_count'] = cursor.fetchone()[0]
 
                 return events
 
@@ -558,8 +731,9 @@ class EventsService:
                 """, (event_id, user_id))
 
                 log_activity(
-                    'cancel_rsvp', 'event', event_id=event_id,
-                    user_id=user_id
+                    'cancel_rsvp', 'event',
+                    user_id=user_id,
+                    details={'event_id': event_id}
                 )
 
                 return True
@@ -574,24 +748,29 @@ class EventsService:
         """Check in to an event"""
         try:
             with transaction() as conn:
-                # Verify event is happening now
+                # Verify event exists
                 cursor = conn.execute("""
-                    SELECT start_datetime, end_datetime FROM discovery_events
-                    WHERE event_id = ?
+                    SELECT start_datetime, end_datetime FROM unified_events
+                    WHERE event_id = ? AND source_type = 'campus'
                 """, (event_id,))
 
                 row = cursor.fetchone()
                 if not row:
                     raise ValueError(f"Event {event_id} not found")
 
-                start_time, end_time = row
-                now = datetime.now().isoformat()
+                start_datetime_str, end_datetime_str = row
+                now = datetime.now()
 
                 # Allow check-in 30 minutes before and until event end
-                start_check = (datetime.fromisoformat(start_time) - timedelta(minutes=30)).isoformat()
+                try:
+                    start_dt = datetime.fromisoformat(start_datetime_str)
+                    end_dt = datetime.fromisoformat(end_datetime_str)
+                    start_check = start_dt - timedelta(minutes=30)
 
-                if now < start_check or now > end_time:
-                    raise ValueError("Event is not currently happening")
+                    if now < start_check or now > end_dt:
+                        raise ValueError("Event is not currently happening")
+                except (ValueError, TypeError):
+                    pass  # Allow check-in if datetime parsing fails
 
                 # Record check-in
                 conn.execute("""
@@ -599,11 +778,12 @@ class EventsService:
                     VALUES (?, ?, ?)
                     ON CONFLICT(event_id, user_id) DO UPDATE SET
                         check_in_time = excluded.check_in_time
-                """, (event_id, user_id, now))
+                """, (event_id, user_id, now.isoformat()))
 
                 log_activity(
-                    'check_in', 'event', event_id=event_id,
-                    user_id=user_id
+                    'check_in', 'event',
+                    user_id=user_id,
+                    details={'event_id': event_id}
                 )
 
                 return True
@@ -623,8 +803,9 @@ class EventsService:
                 """, (datetime.now().isoformat(), event_id, user_id))
 
                 log_activity(
-                    'check_out', 'event', event_id=event_id,
-                    user_id=user_id
+                    'check_out', 'event',
+                    user_id=user_id,
+                    details={'event_id': event_id}
                 )
 
                 return True
@@ -656,20 +837,14 @@ class EventsService:
             with get_connection() as conn:
                 cursor = conn.execute("""
                     SELECT e.*, a.check_in_time, a.check_out_time
-                    FROM discovery_events e
+                    FROM unified_events e
                     JOIN discovery_event_attendance a ON e.event_id = a.event_id
-                    WHERE a.user_id = ?
+                    WHERE a.user_id = ? AND e.source_type = 'campus'
                     ORDER BY a.check_in_time DESC
                 """, (user_id,))
 
                 columns = [description[0] for description in cursor.description]
-                events = [dict(zip(columns, row)) for row in cursor.fetchall()]
-
-                for event in events:
-                    if event['tags']:
-                        event['tags'] = json.loads(event['tags'])
-                    else:
-                        event['tags'] = []
+                events = [self._row_to_event(columns, row) for row in cursor.fetchall()]
 
                 return events
 
@@ -764,20 +939,20 @@ class EventsService:
 
                 # Get attended event categories
                 cursor = conn.execute("""
-                    SELECT e.category, COUNT(*) as count
+                    SELECT e.event_category, COUNT(*) as count
                     FROM discovery_event_attendance a
-                    JOIN discovery_events e ON a.event_id = e.event_id
-                    WHERE a.user_id = ?
-                    GROUP BY e.category
+                    JOIN unified_events e ON a.event_id = e.event_id
+                    WHERE a.user_id = ? AND e.source_type = 'campus'
+                    GROUP BY e.event_category
                 """, (user_id,))
 
                 attendance_history = {row[0]: row[1] for row in cursor.fetchall()}
 
                 # Get upcoming events not already RSVP'd to
                 cursor = conn.execute("""
-                    SELECT e.* FROM discovery_events e
-                    WHERE e.cancelled = 0
-                    AND e.start_datetime >= datetime('now')
+                    SELECT e.* FROM unified_events e
+                    WHERE e.source_type = 'campus' AND e.status != 'cancelled'
+                    AND date(e.start_datetime) >= date('now')
                     AND e.event_id NOT IN (
                         SELECT event_id FROM discovery_event_rsvps WHERE user_id = ?
                     )
@@ -785,7 +960,7 @@ class EventsService:
                 """, (user_id,))
 
                 columns = [description[0] for description in cursor.description]
-                events = [dict(zip(columns, row)) for row in cursor.fetchall()]
+                events = [self._row_to_event(columns, row) for row in cursor.fetchall()]
 
                 # Score each event
                 scored_events = []
@@ -809,17 +984,8 @@ class EventsService:
                     rsvp_count = cursor.fetchone()[0]
                     score += min(rsvp_count * 2, 20)
 
-                    # Friends attending score (0-20 points)
-                    # Note: Would need a friends table for full implementation
-                    # For now, this is a placeholder
-
                     event['recommendation_score'] = score
                     event['rsvp_count'] = rsvp_count
-
-                    if event['tags']:
-                        event['tags'] = json.loads(event['tags'])
-                    else:
-                        event['tags'] = []
 
                     scored_events.append(event)
 
@@ -872,9 +1038,8 @@ class EventsService:
                 """, (event_id, user_id, rating, review))
 
                 log_activity(
-                    'rate', 'event', event_id=event_id,
-                    user_id=user_id,
-                    details={'rating': rating}
+                    'rate', 'event', user_id=user_id,
+                    details={'event_id': event_id, 'rating': rating}
                 )
 
                 return True
@@ -915,9 +1080,8 @@ class EventsService:
                 photo_id = cursor.lastrowid
 
                 log_activity(
-                    'upload_photo', 'event', event_id=event_id,
-                    user_id=user_id,
-                    details={'photo_id': photo_id}
+                    'upload_photo', 'event', user_id=user_id,
+                    details={'event_id': event_id, 'photo_id': photo_id}
                 )
 
                 return photo_id
@@ -1068,11 +1232,11 @@ class EventsService:
 
                 # Attendance by category
                 cursor = conn.execute("""
-                    SELECT e.category, COUNT(*) as count
+                    SELECT e.event_category, COUNT(*) as count
                     FROM discovery_event_attendance a
-                    JOIN discovery_events e ON a.event_id = e.event_id
-                    WHERE a.user_id = ?
-                    GROUP BY e.category
+                    JOIN unified_events e ON a.event_id = e.event_id
+                    WHERE a.user_id = ? AND e.source_type = 'campus'
+                    GROUP BY e.event_category
                     ORDER BY count DESC
                 """, (user_id,))
 

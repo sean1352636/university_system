@@ -135,6 +135,7 @@ def get_or_create_encryption_key():
         key = Fernet.generate_key()
         with open(key_file, 'wb') as f:
             f.write(key)
+        os.chmod(key_file, 0o600)
         return key
 
 def encrypt_sensitive_data(data):

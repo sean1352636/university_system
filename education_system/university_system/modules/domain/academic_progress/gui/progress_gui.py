@@ -24,10 +24,10 @@ _t = get_translation
 class AcademicProgressGUI:
     """Graphical interface for Academic Progress Dashboard."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, auth=None):
         """Initialize the Academic Progress GUI."""
         self.service = ProgressService()
-        self.auth = get_auth()
+        self.auth = auth or get_auth()
 
         if parent:
             self.root = tk.Toplevel(parent)
@@ -703,22 +703,30 @@ class AcademicProgressGUI:
 
     def calculate_target_gpa(self):
         """Calculate target GPA requirements."""
+        gpa_str = self.target_gpa_var.get().strip()
+        if not gpa_str:
+            messagebox.showwarning("Input Required", "Please enter a target GPA.")
+            return
         try:
-            target_gpa = float(self.target_gpa_var.get())
+            target_gpa = float(gpa_str)
             if not 0.0 <= target_gpa <= 4.0:
-                raise ValueError
+                messagebox.showerror("Invalid Input", "GPA must be between 0.0 and 4.0.")
+                return
         except ValueError:
-            messagebox.showerror(_t("academic_progress.errors.invalid_input", default="Invalid Input"),
-                               _t("academic_progress.errors.invalid_gpa_range", default="Please enter a valid GPA between 0.0 and 4.0."))
+            messagebox.showerror("Invalid Input", "Please enter a valid number for GPA.")
             return
 
+        credits_str = self.target_credits_var.get().strip()
+        if not credits_str:
+            messagebox.showwarning("Input Required", "Please enter credits to take.")
+            return
         try:
-            credits_to_take = int(self.target_credits_var.get())
+            credits_to_take = int(credits_str)
             if credits_to_take <= 0:
-                raise ValueError
+                messagebox.showerror("Invalid Input", "Credits must be a positive number.")
+                return
         except ValueError:
-            messagebox.showerror(_t("academic_progress.errors.invalid_input", default="Invalid Input"),
-                               _t("academic_progress.errors.invalid_credits", default="Please enter a positive number of credits."))
+            messagebox.showerror("Invalid Input", "Please enter a valid number for credits.")
             return
 
         student_id = self.auth.get_current_user()['id']
@@ -920,10 +928,54 @@ class AcademicProgressGUI:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to run warning scan: {str(e)}")
 
+    def _get_warning_id_from_user(self, action_name):
+        """Get warning ID via a dropdown of active warnings instead of free-text entry."""
+        try:
+            student_id = self.auth.current_user.get('student_id') or self.auth.current_user.get('id') or self.auth.current_user.get('username')
+            warnings = self.service.get_active_warnings(str(student_id))
+            if not warnings:
+                messagebox.showinfo("Info", "No active warnings found.")
+                return None
+
+            dlg = tk.Toplevel(self.root)
+            dlg.title(f"{action_name} Warning")
+            dlg.geometry("400x200")
+            dlg.transient(self.root)
+            dlg.grab_set()
+
+            ttk.Label(dlg, text=f"Select warning to {action_name.lower()}:").pack(padx=10, pady=(15, 5), anchor=tk.W)
+            warning_var = tk.StringVar()
+            combo = ttk.Combobox(dlg, textvariable=warning_var, state='readonly', width=50)
+            options = [f"{w['id']} - {w.get('type', w.get('warning_type', 'Warning'))} [{w.get('severity', 'medium')}]" for w in warnings]
+            combo['values'] = options
+            if options:
+                combo.current(0)
+            combo.pack(padx=10, pady=5)
+
+            result = [None]
+
+            def on_ok():
+                sel = warning_var.get()
+                if sel:
+                    try:
+                        result[0] = int(sel.split(' - ')[0])
+                    except (ValueError, IndexError):
+                        pass
+                dlg.destroy()
+
+            btn_frame = ttk.Frame(dlg)
+            btn_frame.pack(pady=15)
+            ttk.Button(btn_frame, text="OK", command=on_ok).pack(side=tk.LEFT, padx=5)
+            ttk.Button(btn_frame, text="Cancel", command=dlg.destroy).pack(side=tk.LEFT, padx=5)
+
+            dlg.wait_window()
+            return result[0]
+        except Exception:
+            return tk.simpledialog.askinteger(f"{action_name} Warning", "Enter Warning ID:")
+
     def acknowledge_warning_gui(self):
         """Acknowledge a warning."""
-        warning_id = tk.simpledialog.askinteger("Acknowledge Warning",
-                                                "Enter Warning ID to acknowledge:")
+        warning_id = self._get_warning_id_from_user("Acknowledge")
         if warning_id is None:
             return
 
@@ -939,8 +991,7 @@ class AcademicProgressGUI:
 
     def resolve_warning_gui(self):
         """Resolve a warning."""
-        warning_id = tk.simpledialog.askinteger("Resolve Warning",
-                                               "Enter Warning ID to resolve:")
+        warning_id = self._get_warning_id_from_user("Resolve")
         if warning_id is None:
             return
 

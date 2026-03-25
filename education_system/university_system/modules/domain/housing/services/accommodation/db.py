@@ -88,18 +88,9 @@ def init_accommodation_db():
                         VALUES (?, ?, ?, ?, ?)
                     ''', (type_name, desc, req_approval, max_days, now))
 
-            # Create accommodation_documents table for attaching documentation
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS accommodation_documents (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    accommodation_id INTEGER NOT NULL,
-                    document_name TEXT NOT NULL,
-                    document_path TEXT NOT NULL,
-                    uploaded_by TEXT,
-                    uploaded_at TEXT,
-                    FOREIGN KEY (accommodation_id) REFERENCES accommodations(id)
-                )
-            ''')
+            # Accommodation documents now use the unified documents table
+            # with source_type = 'accommodation'
+            # No separate accommodation_documents table needed
 
             conn.commit()
             logging.info("Accommodation database initialized successfully")
@@ -244,25 +235,8 @@ def fix_accommodation_db_schema():
                         VALUES (?, ?, ?, ?, ?)
                     ''', (type_name, desc, req_approval, max_days, now))
 
-            # Check if accommodation_documents table exists
-            cursor.execute("""
-                SELECT name FROM sqlite_master
-                WHERE type='table' AND name='accommodation_documents'
-            """)
-
-            if not cursor.fetchone():
-                print(get_text("housing.accommodation.db.creating_table", "Creating missing {table} table...").format(table="accommodation_documents"))
-                cursor.execute('''
-                    CREATE TABLE accommodation_documents (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        accommodation_id INTEGER NOT NULL,
-                        document_name TEXT NOT NULL,
-                        document_path TEXT NOT NULL,
-                        uploaded_by TEXT,
-                        uploaded_at TEXT,
-                        FOREIGN KEY (accommodation_id) REFERENCES accommodations(id)
-                    )
-                ''')
+            # Accommodation documents now use the unified documents table
+            # with source_type = 'accommodation' — no separate table needed
 
             # Check if accommodation_templates table exists
             cursor.execute("""

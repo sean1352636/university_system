@@ -1,5 +1,6 @@
 """File preview and calendar functionality"""
 
+from education_system.university_system.core.sql_safety import escape_like
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 import os
@@ -351,7 +352,7 @@ class FilePreviewManager:
             file_type = self.preview_file_type_var.get()
             if file_type != "All":
                 query += " AND s.file_name LIKE ?"
-                params.append(f"%{file_type}")
+                params.append(f"%{escape_like(file_type)}")
             
             assignment_filter = self.preview_assignment_var.get()
             assignment_id = self.preview_assignment_map.get(assignment_filter)
@@ -588,62 +589,52 @@ class FilePreviewManager:
         """Show file preview interface with enhanced features"""
         if not self._check_permission('view_all_submissions'):
             return
-        
+
         self.gui.layout.clear_content_area()
-        
+
         title = ttk.Label(self.gui.layout.content_area, text="File Preview System", style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
-        
-        # Create main interface
-        main_frame = ttk.PanedWindow(self.gui.layout.content_area, orient='horizontal')
-        main_frame.pack(fill='both', expand=True)
-        
-        # Left panel - file list
-        left_panel = ttk.Frame(main_frame)
-        main_frame.add(left_panel, weight=1)
-        
+
         # Filter frame
-        filter_frame = ttk.LabelFrame(left_panel, text="Filters", padding=10)
+        filter_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Filters", padding=10)
         filter_frame.pack(fill='x', pady=(0, 10))
-        
-        # File type filter
+
         ttk.Label(filter_frame, text="File Type:").grid(row=0, column=0, sticky='w', padx=5)
         self.preview_file_type_var = tk.StringVar(value="All")
         file_type_combo = ttk.Combobox(filter_frame, textvariable=self.preview_file_type_var,
                                       values=["All", ".pdf", ".docx", ".txt", ".jpg", ".png"], width=10)
         file_type_combo.grid(row=0, column=1, padx=5)
-        
-        # Assignment filter
+
         ttk.Label(filter_frame, text="Assignment:").grid(row=0, column=2, sticky='w', padx=5)
         self.preview_assignment_var = tk.StringVar()
         assignment_combo = ttk.Combobox(filter_frame, textvariable=self.preview_assignment_var, width=25)
         assignment_combo.grid(row=0, column=3, padx=5)
         self.load_assignments_for_preview(assignment_combo)
-        
-        ttk.Button(filter_frame, text="Apply Filters", 
+
+        ttk.Button(filter_frame, text="Apply Filters",
                   command=self.load_preview_files).grid(row=0, column=4, padx=10)
-        
+
         # Files list
-        files_frame = ttk.LabelFrame(left_panel, text="Submission Files", padding=5)
-        files_frame.pack(fill='both', expand=True)
-        
+        files_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Submission Files", padding=5)
+        files_frame.pack(fill='x', pady=(0, 10))
+
         columns = ('ID', 'File Name', 'Student', 'Assignment', 'Type', 'Size')
-        self.preview_files_tree = ttk.Treeview(files_frame, columns=columns, show='headings')
-        
+        self.preview_files_tree = ttk.Treeview(files_frame, columns=columns, show='headings', height=6)
+
         for col in columns:
             self.preview_files_tree.heading(col, text=col)
             self.preview_files_tree.column(col, width=100)
-        
-        self.preview_files_tree.pack(fill='both', expand=True)
+
+        v_scroll = ttk.Scrollbar(files_frame, orient='vertical', command=self.preview_files_tree.yview)
+        self.preview_files_tree.configure(yscrollcommand=v_scroll.set)
+        self.preview_files_tree.pack(side='left', fill='both', expand=True)
+        v_scroll.pack(side='right', fill='y')
         self.preview_files_tree.bind('<<TreeviewSelect>>', self.on_preview_file_select)
-        
-        # Right panel - preview
-        right_panel = ttk.Frame(main_frame)
-        main_frame.add(right_panel, weight=2)
-        
-        self.preview_content_frame = ttk.LabelFrame(right_panel, text="File Preview", padding=10)
+
+        # File preview
+        self.preview_content_frame = ttk.LabelFrame(self.gui.layout.content_area, text="File Preview", padding=10)
         self.preview_content_frame.pack(fill='both', expand=True)
-        
+
         # Load initial file list
         self.load_preview_files()
     

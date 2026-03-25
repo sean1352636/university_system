@@ -36,7 +36,7 @@ class PDFExportManager:
             output_dir: Optional directory for output files.
         """
         self.db_path = db_path or str(paths.DEFAULT_DB_PATH)
-        self.output_dir = output_dir or str(paths.EXPORTS_DIR)
+        self.output_dir = output_dir or str(paths.EXPORTS_PDF_DIR)
 
         # Ensure output directory exists
         Path(self.output_dir).mkdir(parents=True, exist_ok=True)

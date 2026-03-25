@@ -1,6 +1,6 @@
 from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from .config import auth
+from education_system.university_system.modules.domain.commerce.services.shop_management.config import auth
 
 
 def init_shop_db() -> bool:
@@ -9,20 +9,8 @@ def init_shop_db() -> bool:
         conn = get_connection()
         cursor = conn.cursor()
 
-        # Create products table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS shop_products (
-            product_id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            description TEXT,
-            price REAL NOT NULL,
-            category TEXT,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL,
-            tax_rate REAL DEFAULT 0.2,
-            is_active BOOLEAN DEFAULT 1
-        )
-        ''')
+        # Note: shop products now use the unified 'products' table
+        # with source_type = 'shop'. No CREATE TABLE needed here.
 
         # Create inventory table
         cursor.execute('''
@@ -32,25 +20,12 @@ def init_shop_db() -> bool:
             quantity INTEGER NOT NULL DEFAULT 0,
             last_restock_date TEXT,
             restock_threshold INTEGER DEFAULT 5,
-            FOREIGN KEY (product_id) REFERENCES shop_products (product_id)
+            FOREIGN KEY (product_id) REFERENCES products (source_product_id)
         )
         ''')
 
-        # Create transactions table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS shop_transactions (
-            transaction_id TEXT PRIMARY KEY,
-            user_id INTEGER,
-            student_id TEXT,
-            total_amount REAL NOT NULL,
-            transaction_date TEXT NOT NULL,
-            payment_method TEXT,
-            status TEXT NOT NULL,
-            notes TEXT,
-            FOREIGN KEY (user_id) REFERENCES users (id),
-            FOREIGN KEY (student_id) REFERENCES students (student_id)
-        )
-        ''')
+        # Note: shop transactions now use the unified 'transactions' table
+        # with source_type = 'shop'. No CREATE TABLE needed here.
 
         # Create transaction items table
         cursor.execute('''
@@ -61,8 +36,8 @@ def init_shop_db() -> bool:
             quantity INTEGER NOT NULL,
             price_per_item REAL NOT NULL,
             subtotal REAL NOT NULL,
-            FOREIGN KEY (transaction_id) REFERENCES shop_transactions (transaction_id),
-            FOREIGN KEY (product_id) REFERENCES shop_products (product_id)
+            FOREIGN KEY (transaction_id) REFERENCES transactions (source_transaction_id),
+            FOREIGN KEY (product_id) REFERENCES products (source_product_id)
         )
         ''')
 
@@ -83,38 +58,26 @@ def init_shop_db() -> bool:
         )
         ''')
 
-        # Create shopping cart table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS shop_cart (
-            cart_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            product_id TEXT NOT NULL,
-            quantity INTEGER NOT NULL DEFAULT 1,
-            added_at TEXT NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES users (id),
-            FOREIGN KEY (product_id) REFERENCES shop_products (product_id),
-            UNIQUE(user_id, product_id)
-        )
-        ''')
+        # Shop cart uses unified cart table with source_type='shop'
 
         # Sample products (if no products exist)
-        cursor.execute("SELECT COUNT(*) FROM shop_products")
+        cursor.execute("SELECT COUNT(*) FROM products WHERE source_type = 'shop'")
         if cursor.fetchone()[0] == 0:
             now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             products = [
-                ('P001', 'University Hoodie', 'Comfortable hoodie with university logo', 29.99, 'Clothing', now, now, 0.2, 1),
-                ('P002', 'University T-Shirt', 'Cotton t-shirt with university logo', 19.99, 'Clothing', now, now, 0.2, 1),
-                ('P003', 'Notebook Pack', 'Set of 3 university branded notebooks', 12.99, 'Stationery', now, now, 0.2, 1),
-                ('P004', 'Water Bottle', 'Stainless steel water bottle with university logo', 14.99, 'Accessories', now, now, 0.2, 1),
-                ('P005', 'Coffee Mug', 'Ceramic mug with university logo', 9.99, 'Accessories', now, now, 0.2, 1),
-                ('P006', 'Pen Set', 'Set of 5 high-quality pens', 7.99, 'Stationery', now, now, 0.2, 1),
-                ('P007', 'Laptop Bag', 'Padded laptop bag with university logo', 34.99, 'Accessories', now, now, 0.2, 1),
-                ('P008', 'USB Drive', '32GB USB flash drive with university logo', 15.99, 'Electronics', now, now, 0.2, 1),
-                ('P009', 'Keychain', 'Metal keychain with university logo', 4.99, 'Accessories', now, now, 0.2, 1),
-                ('P010', 'Baseball Cap', 'Adjustable cap with university logo', 16.99, 'Clothing', now, now, 0.2, 1)
+                ('P001', 'shop', 'University Hoodie', 'Comfortable hoodie with university logo', 29.99, 'Clothing', now, now, 0.2, 1),
+                ('P002', 'shop', 'University T-Shirt', 'Cotton t-shirt with university logo', 19.99, 'Clothing', now, now, 0.2, 1),
+                ('P003', 'shop', 'Notebook Pack', 'Set of 3 university branded notebooks', 12.99, 'Stationery', now, now, 0.2, 1),
+                ('P004', 'shop', 'Water Bottle', 'Stainless steel water bottle with university logo', 14.99, 'Accessories', now, now, 0.2, 1),
+                ('P005', 'shop', 'Coffee Mug', 'Ceramic mug with university logo', 9.99, 'Accessories', now, now, 0.2, 1),
+                ('P006', 'shop', 'Pen Set', 'Set of 5 high-quality pens', 7.99, 'Stationery', now, now, 0.2, 1),
+                ('P007', 'shop', 'Laptop Bag', 'Padded laptop bag with university logo', 34.99, 'Accessories', now, now, 0.2, 1),
+                ('P008', 'shop', 'USB Drive', '32GB USB flash drive with university logo', 15.99, 'Electronics', now, now, 0.2, 1),
+                ('P009', 'shop', 'Keychain', 'Metal keychain with university logo', 4.99, 'Accessories', now, now, 0.2, 1),
+                ('P010', 'shop', 'Baseball Cap', 'Adjustable cap with university logo', 16.99, 'Clothing', now, now, 0.2, 1)
             ]
             cursor.executemany(
-                'INSERT INTO shop_products VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO products (source_product_id, source_type, name, description, price, category, created_at, updated_at, tax_rate, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 products
             )
 
@@ -161,7 +124,7 @@ def init_shop_db() -> bool:
 
 def setup_shop_permissions(auth_instance=None):
     """Setup permissions for the shop module"""
-    from . import config
+    from education_system.university_system.modules.domain.commerce.services.shop_management import config
 
     if auth_instance:
         config.auth = auth_instance

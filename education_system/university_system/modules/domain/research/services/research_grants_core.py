@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Any, Dict, List, Optional
-from education_system.university_system.infrastructure.database.db import get_connection, transaction
+from education_system.university_system.infrastructure.database.db import get_connection, transaction, sqlite3
 from education_system.university_system.modules.shared.feature_gui_factory import create_gui_launcher
 from education_system.university_system.modules.shared.utils.i18n import get_text
 
@@ -178,35 +178,237 @@ class EthicsReviewManager:
             raise Exception(get_text("research.grants.errors.submit_ethics_review", "Error submitting ethics review: {error}").format(error=e))
 
 
+class GrantTrackerService:
+    """Grant application tracker with deadline alerts and budget management (v8.2.0)."""
+
+    def __init__(self):
+        self._ensure_tables()
+
+    def _ensure_tables(self):
+        with transaction() as conn:
+            conn.execute("""CREATE TABLE IF NOT EXISTS grant_tracker_apps (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL,
+                funding_body TEXT, principal_investigator TEXT, co_investigators TEXT,
+                department TEXT, amount_requested REAL DEFAULT 0, amount_awarded REAL DEFAULT 0,
+                status TEXT DEFAULT 'draft', deadline TEXT, submitted_at TEXT,
+                decision_date TEXT, start_date TEXT, end_date TEXT, abstract TEXT,
+                created_by TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP)""")
+            conn.execute("""CREATE TABLE IF NOT EXISTS grant_tracker_milestones (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, grant_id INTEGER NOT NULL,
+                milestone_title TEXT NOT NULL, description TEXT, deadline TEXT,
+                status TEXT DEFAULT 'pending', completed_at TEXT, notes TEXT,
+                FOREIGN KEY (grant_id) REFERENCES grant_tracker_apps(id))""")
+            conn.execute("""CREATE TABLE IF NOT EXISTS grant_tracker_budget (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, grant_id INTEGER NOT NULL,
+                category TEXT DEFAULT 'other', description TEXT, amount REAL DEFAULT 0,
+                is_approved INTEGER DEFAULT 0,
+                FOREIGN KEY (grant_id) REFERENCES grant_tracker_apps(id))""")
+            conn.execute("""CREATE TABLE IF NOT EXISTS grant_tracker_alerts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, grant_id INTEGER NOT NULL,
+                alert_type TEXT DEFAULT 'submission', alert_date TEXT, message TEXT,
+                is_sent INTEGER DEFAULT 0, sent_at TEXT,
+                FOREIGN KEY (grant_id) REFERENCES grant_tracker_apps(id))""")
+            conn.commit()
+
+    def create_application(self, title, funding_body=None, principal_investigator=None,
+                           department=None, amount_requested=0, deadline=None, abstract=None, created_by=None):
+        with transaction() as conn:
+            cur = conn.execute("INSERT INTO grant_tracker_apps (title,funding_body,principal_investigator,department,amount_requested,deadline,abstract,created_by) VALUES (?,?,?,?,?,?,?,?)",
+                               (title, funding_body, principal_investigator, department, amount_requested, deadline, abstract, created_by))
+            conn.commit(); return cur.lastrowid
+
+    def get_application(self, gid):
+        with get_connection() as conn:
+            row = conn.execute("SELECT * FROM grant_tracker_apps WHERE id=?", (gid,)).fetchone()
+            return dict(row) if row else None
+
+    def list_applications(self, status=None):
+        with get_connection() as conn:
+            if status:
+                rows = conn.execute("SELECT * FROM grant_tracker_apps WHERE status=? ORDER BY created_at DESC", (status,)).fetchall()
+            else:
+                rows = conn.execute("SELECT * FROM grant_tracker_apps ORDER BY created_at DESC").fetchall()
+            return [dict(r) for r in rows]
+
+    def update_application_status(self, gid, status, amount_awarded=None):
+        with transaction() as conn:
+            if amount_awarded is not None:
+                conn.execute("UPDATE grant_tracker_apps SET status=?,amount_awarded=? WHERE id=?", (status, amount_awarded, gid))
+            else:
+                conn.execute("UPDATE grant_tracker_apps SET status=? WHERE id=?", (status, gid))
+            if status == 'submitted':
+                conn.execute("UPDATE grant_tracker_apps SET submitted_at=? WHERE id=?", (datetime.now().isoformat(), gid))
+            conn.commit()
+
+    def add_milestone(self, gid, title, description=None, deadline=None):
+        with transaction() as conn:
+            cur = conn.execute("INSERT INTO grant_tracker_milestones (grant_id,milestone_title,description,deadline) VALUES (?,?,?,?)", (gid, title, description, deadline))
+            conn.commit(); return cur.lastrowid
+
+    def update_milestone(self, mid, status):
+        with transaction() as conn:
+            completed = datetime.now().isoformat() if status == 'completed' else None
+            conn.execute("UPDATE grant_tracker_milestones SET status=?,completed_at=? WHERE id=?", (status, completed, mid))
+            conn.commit()
+
+    def get_milestones(self, gid):
+        with get_connection() as conn:
+            return [dict(r) for r in conn.execute("SELECT * FROM grant_tracker_milestones WHERE grant_id=? ORDER BY deadline", (gid,)).fetchall()]
+
+    def add_budget_item(self, gid, category, description=None, amount=0):
+        with transaction() as conn:
+            cur = conn.execute("INSERT INTO grant_tracker_budget (grant_id,category,description,amount) VALUES (?,?,?,?)", (gid, category, description, amount))
+            conn.commit(); return cur.lastrowid
+
+    def get_budget_summary(self, gid):
+        with get_connection() as conn:
+            items = [dict(i) for i in conn.execute("SELECT * FROM grant_tracker_budget WHERE grant_id=?", (gid,)).fetchall()]
+            total = sum(i['amount'] for i in items)
+            by_cat = {}
+            for i in items:
+                by_cat[i['category']] = by_cat.get(i['category'], 0) + i['amount']
+            return {"items": items, "total": round(total, 2), "by_category": by_cat}
+
+    def get_pipeline_summary(self):
+        with get_connection() as conn:
+            pipeline = {}
+            for row in conn.execute("SELECT status, COUNT(*) FROM grant_tracker_apps GROUP BY status").fetchall():
+                pipeline[row[0]] = row[1]
+            return pipeline
+
+    def get_success_rate(self):
+        with get_connection() as conn:
+            total = conn.execute("SELECT COUNT(*) FROM grant_tracker_apps WHERE status IN ('awarded','rejected')").fetchone()[0]
+            awarded = conn.execute("SELECT COUNT(*) FROM grant_tracker_apps WHERE status='awarded'").fetchone()[0]
+            return {"total_decided": total, "awarded": awarded, "success_rate": round(awarded / total * 100, 1) if total > 0 else 0}
+
+    def get_funding_by_department(self):
+        with get_connection() as conn:
+            return [dict(r) for r in conn.execute("""SELECT department, COUNT(*) as applications,
+                SUM(amount_requested) as total_requested,
+                SUM(CASE WHEN status='awarded' THEN amount_awarded ELSE 0 END) as total_awarded
+                FROM grant_tracker_apps WHERE department IS NOT NULL GROUP BY department ORDER BY total_awarded DESC""").fetchall()]
+
+    def get_upcoming_deadlines(self, days=30):
+        with get_connection() as conn:
+            return [dict(r) for r in conn.execute(
+                "SELECT * FROM grant_tracker_apps WHERE deadline IS NOT NULL AND deadline>=date('now') AND deadline<=date('now',?||' days') ORDER BY deadline",
+                (str(days),)).fetchall()]
+
+    def get_pending_alerts(self):
+        with get_connection() as conn:
+            return [dict(r) for r in conn.execute(
+                "SELECT a.*,g.title FROM grant_tracker_alerts a JOIN grant_tracker_apps g ON a.grant_id=g.id WHERE a.is_sent=0 ORDER BY a.alert_date").fetchall()]
+
+    def create_deadline_alert(self, gid, alert_type, alert_date, message=None):
+        with transaction() as conn:
+            cur = conn.execute("INSERT INTO grant_tracker_alerts (grant_id,alert_type,alert_date,message) VALUES (?,?,?,?)", (gid, alert_type, alert_date, message))
+            conn.commit(); return cur.lastrowid
+
+
 def display_research_grants_menu(auth):
-    """Display the Research & Grants Management CLI menu"""
-    print("\n" + "="*50)
-    print("    " + get_text("research.grants.menu.title", "RESEARCH & GRANTS MANAGEMENT"))
-    print("="*50)
-    print("1. " + get_text("research.grants.menu.research_projects", "Research Projects"))
-    print("2. " + get_text("research.grants.menu.grant_applications", "Grant Applications"))
-    print("3. " + get_text("research.grants.menu.publications_tracking", "Publications Tracking"))
-    print("4. " + get_text("research.grants.menu.milestone_management", "Milestone Management"))
-    print("5. " + get_text("research.grants.menu.equipment_inventory", "Equipment Inventory"))
-    print("6. " + get_text("research.grants.menu.ethics_review_board", "Ethics Review Board"))
-    print("7. " + get_text("research.grants.menu.research_reports", "Research Reports"))
-    print("8. " + get_text("research.grants.menu.return_to_main", "Return to Main Menu"))
-    print("="*50)
+    """Research & Grants Management CLI — fully functional with grant tracking."""
+    tracker = GrantTrackerService()
 
     while True:
-        try:
-            choice = input("\n" + get_text("research.grants.menu.enter_choice", "Enter your choice (1-8): ")).strip()
-            if choice in ['1', '2', '3', '4', '5', '6', '7']:
-                print("\n" + get_text("research.grants.menu.feature_available", "Feature available via Research managers"))
-                print(get_text("research.grants.menu.usage_instruction", "Use: from education_system.university_system.modules.domain.research.services import ResearchProjectManager"))
-            elif choice == '8':
-                break
-            else:
-                print(get_text("research.grants.menu.invalid_choice", "Invalid choice."))
-        except KeyboardInterrupt:
+        print("\033[2J\033[H", end="")
+        print("\n" + "=" * 70)
+        print("RESEARCH & GRANTS MANAGEMENT".center(70))
+        print("=" * 70)
+        print("\n  1. List Grant Applications")
+        print("  2. Create Application")
+        print("  3. Update Status")
+        print("  4. View Details")
+        print("  5. Pipeline Summary")
+        print("  6. Milestones")
+        print("  7. Budget")
+        print("  8. Upcoming Deadlines")
+        print("  9. Funding by Department")
+        print("\n  0. Back")
+        print("=" * 70)
+
+        choice = input("\nSelect: ").strip()
+        if choice == '0':
             break
-        except Exception as e:
-            print(get_text("research.grants.menu.error", "Error: {error}").format(error=e))
+        elif choice == '1':
+            apps = tracker.list_applications()
+            print(f"\n{'ID':<5} {'Title':<30} {'Funder':<20} {'Amount':<12} {'Status':<12}")
+            print("-" * 80)
+            for a in apps:
+                print(f"{a['id']:<5} {a['title'][:28]:<30} {(a.get('funding_body','') or '')[:18]:<20} £{a.get('amount_requested',0):<10,.0f} {a['status']:<12}")
+        elif choice == '2':
+            title = input("Title: ").strip()
+            funder = input("Funding body: ").strip()
+            pi = input("Principal investigator: ").strip()
+            dept = input("Department: ").strip()
+            amount = float(input("Amount requested: ").strip() or '0')
+            deadline = input("Deadline (YYYY-MM-DD): ").strip() or None
+            gid = tracker.create_application(title, funder, pi, department=dept, amount_requested=amount, deadline=deadline)
+            print(f"\nApplication created with ID: {gid}")
+        elif choice == '3':
+            gid = int(input("Grant ID: ").strip())
+            status = input("New status (draft/submitted/under_review/shortlisted/awarded/rejected): ").strip()
+            awarded = None
+            if status == 'awarded':
+                awarded = float(input("Amount awarded: ").strip() or '0')
+            tracker.update_application_status(gid, status, awarded)
+            print("Status updated.")
+        elif choice == '4':
+            gid = int(input("Grant ID: ").strip())
+            app = tracker.get_application(gid)
+            if app:
+                for k, v in app.items():
+                    print(f"  {k}: {v}")
+            else:
+                print("\nNot found.")
+        elif choice == '5':
+            pipeline = tracker.get_pipeline_summary()
+            print("\n  Application Pipeline:")
+            for s in ["draft", "submitted", "under_review", "shortlisted", "awarded", "rejected"]:
+                print(f"    {s.replace('_', ' ').title()}: {pipeline.get(s, 0)}")
+            success = tracker.get_success_rate()
+            print(f"\n  Success Rate: {success['success_rate']}% ({success['awarded']}/{success['total_decided']})")
+        elif choice == '6':
+            gid = int(input("Grant ID: ").strip())
+            milestones = tracker.get_milestones(gid)
+            for m in milestones:
+                print(f"  {m['id']}: {m['milestone_title']} | {m.get('deadline', 'No deadline')} | {m['status']}")
+            sub = input("\n(a)dd milestone, (c)omplete, or Enter: ").strip().lower()
+            if sub == 'a':
+                title = input("Title: ").strip()
+                dl = input("Deadline (YYYY-MM-DD): ").strip() or None
+                tracker.add_milestone(gid, title, deadline=dl)
+                print("Milestone added.")
+            elif sub == 'c':
+                mid = int(input("Milestone ID: ").strip())
+                tracker.update_milestone(mid, 'completed')
+                print("Milestone completed.")
+        elif choice == '7':
+            gid = int(input("Grant ID: ").strip())
+            summary = tracker.get_budget_summary(gid)
+            print(f"\n  Total budget: £{summary['total']:,.2f}")
+            for item in summary['items']:
+                print(f"    [{item['category']}] {item.get('description', '')} - £{item['amount']:,.2f}")
+            if input("\nAdd item? (y/n): ").strip().lower() == 'y':
+                cat = input("Category (personnel/equipment/travel/consumables/overheads/other): ").strip()
+                desc = input("Description: ").strip()
+                amt = float(input("Amount: ").strip())
+                tracker.add_budget_item(gid, cat, desc, amt)
+                print("Budget item added.")
+        elif choice == '8':
+            upcoming = tracker.get_upcoming_deadlines()
+            if upcoming:
+                for u in upcoming:
+                    print(f"  [{u.get('deadline', '')}] {u['title']} ({u['status']})")
+            else:
+                print("\nNo upcoming deadlines.")
+        elif choice == '9':
+            depts = tracker.get_funding_by_department()
+            print(f"\n{'Department':<20} {'Apps':<8} {'Requested':<15} {'Awarded':<15}")
+            print("-" * 60)
+            for d in depts:
+                print(f"{(d.get('department','') or ''):<20} {d['applications']:<8} £{d.get('total_requested',0):<13,.0f} £{d.get('total_awarded',0):<13,.0f}")
+        input("\nPress Enter to continue...")
 
 
 # Use factory to create GUI launcher
@@ -229,6 +431,7 @@ Features:
 __all__ = [
     'ResearchProjectManager', 'GrantApplicationManager', 'PublicationManager',
     'MilestoneManager', 'EquipmentManager', 'EthicsReviewManager',
+    'GrantTrackerService',
     'display_research_grants_menu',
     'launch_research_grants_gui',
 ]

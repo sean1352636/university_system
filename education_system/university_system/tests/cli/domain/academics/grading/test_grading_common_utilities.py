@@ -80,7 +80,7 @@ class TestCols:
 class TestFirstTable:
     """Test the _first_table function"""
 
-    @patch('university_system.modules.domain.academics.grading.common_utilities._table_exists')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._table_exists')
     def test_first_table_finds_first(self, mock_exists):
         """Test finding the first existing table"""
         mock_exists.side_effect = [True, False, False]  # First table exists
@@ -90,7 +90,7 @@ class TestFirstTable:
 
         assert result == 'assessments'
 
-    @patch('university_system.modules.domain.academics.grading.common_utilities._table_exists')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._table_exists')
     def test_first_table_finds_middle(self, mock_exists):
         """Test finding a table in the middle of the list"""
         mock_exists.side_effect = [False, True, False]  # Second table exists
@@ -100,7 +100,7 @@ class TestFirstTable:
 
         assert result == 'exams'
 
-    @patch('university_system.modules.domain.academics.grading.common_utilities._table_exists')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._table_exists')
     def test_first_table_none_exist(self, mock_exists):
         """Test when no tables exist"""
         mock_exists.return_value = False
@@ -110,7 +110,7 @@ class TestFirstTable:
 
         assert result is None
 
-    @patch('university_system.modules.domain.academics.grading.common_utilities._table_exists')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._table_exists')
     def test_first_table_empty_list(self, mock_exists):
         """Test with empty candidate list"""
         cursor = Mock()
@@ -123,7 +123,7 @@ class TestFirstTable:
 class TestFirstCol:
     """Test the _first_col function"""
 
-    @patch('university_system.modules.domain.academics.grading.common_utilities._cols')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._cols')
     def test_first_col_finds_first(self, mock_cols):
         """Test finding the first existing column"""
         mock_cols.return_value = {'assessment_id', 'name', 'date'}
@@ -133,7 +133,7 @@ class TestFirstCol:
 
         assert result == 'assessment_id'
 
-    @patch('university_system.modules.domain.academics.grading.common_utilities._cols')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._cols')
     def test_first_col_finds_middle(self, mock_cols):
         """Test finding a column in the middle of the list"""
         mock_cols.return_value = {'id', 'name', 'date'}
@@ -143,7 +143,7 @@ class TestFirstCol:
 
         assert result == 'id'
 
-    @patch('university_system.modules.domain.academics.grading.common_utilities._cols')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._cols')
     def test_first_col_none_exist(self, mock_cols):
         """Test when no columns exist"""
         mock_cols.return_value = {'other_col', 'another_col'}
@@ -153,7 +153,7 @@ class TestFirstCol:
 
         assert result is None
 
-    @patch('university_system.modules.domain.academics.grading.common_utilities._cols')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._cols')
     def test_first_col_empty_candidates(self, mock_cols):
         """Test with empty candidate list"""
         mock_cols.return_value = {'assessment_id', 'name'}
@@ -177,8 +177,8 @@ class TestSelectAssessment:
         ]
         return cursor
 
-    @patch('university_system.modules.domain.academics.grading.common_utilities._first_table')
-    @patch('university_system.modules.domain.academics.grading.common_utilities._first_col')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._first_table')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._first_col')
     @patch('builtins.input', return_value='1')
     def test_select_assessment_valid_choice(
         self, mock_input, mock_first_col, mock_first_table, mock_cursor_with_assessments
@@ -195,7 +195,7 @@ class TestSelectAssessment:
         assert result['date'] == '2025-01-15'
         assert result['table'] == 'assessments'
 
-    @patch('university_system.modules.domain.academics.grading.common_utilities._first_table')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._first_table')
     def test_select_assessment_no_table(self, mock_first_table):
         """Test when no assessments table exists"""
         mock_first_table.return_value = None
@@ -207,8 +207,8 @@ class TestSelectAssessment:
         assert result is None
         mock_print.assert_called()
 
-    @patch('university_system.modules.domain.academics.grading.common_utilities._first_table')
-    @patch('university_system.modules.domain.academics.grading.common_utilities._first_col')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._first_table')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._first_col')
     def test_select_assessment_missing_columns(
         self, mock_first_col, mock_first_table
     ):
@@ -223,8 +223,8 @@ class TestSelectAssessment:
         assert result is None
         mock_print.assert_called()
 
-    @patch('university_system.modules.domain.academics.grading.common_utilities._first_table')
-    @patch('university_system.modules.domain.academics.grading.common_utilities._first_col')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._first_table')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._first_col')
     def test_select_assessment_no_assessments(
         self, mock_first_col, mock_first_table
     ):
@@ -241,8 +241,8 @@ class TestSelectAssessment:
         assert result is None
         mock_print.assert_called_with("No assessments available.")
 
-    @patch('university_system.modules.domain.academics.grading.common_utilities._first_table')
-    @patch('university_system.modules.domain.academics.grading.common_utilities._first_col')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._first_table')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._first_col')
     @patch('builtins.input', return_value='q')
     def test_select_assessment_cancel(
         self, mock_input, mock_first_col, mock_first_table, mock_cursor_with_assessments
@@ -258,8 +258,8 @@ class TestSelectAssessment:
 
         assert result is None
 
-    @patch('university_system.modules.domain.academics.grading.common_utilities._first_table')
-    @patch('university_system.modules.domain.academics.grading.common_utilities._first_col')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._first_table')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._first_col')
     @patch('builtins.input', side_effect=['invalid', '1'])
     def test_select_assessment_invalid_then_valid(
         self, mock_input, mock_first_col, mock_first_table, mock_cursor_with_assessments
@@ -274,8 +274,8 @@ class TestSelectAssessment:
         assert result is not None
         assert result['id'] == 1
 
-    @patch('university_system.modules.domain.academics.grading.common_utilities._first_table')
-    @patch('university_system.modules.domain.academics.grading.common_utilities._first_col')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._first_table')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._first_col')
     @patch('builtins.input', side_effect=['0', '1'])
     def test_select_assessment_out_of_range(
         self, mock_input, mock_first_col, mock_first_table, mock_cursor_with_assessments
@@ -290,8 +290,8 @@ class TestSelectAssessment:
         assert result is not None
         assert result['id'] == 1
 
-    @patch('university_system.modules.domain.academics.grading.common_utilities._first_table')
-    @patch('university_system.modules.domain.academics.grading.common_utilities._first_col')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._first_table')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._first_col')
     @patch('builtins.input', return_value='3')
     def test_select_assessment_last_item(
         self, mock_input, mock_first_col, mock_first_table, mock_cursor_with_assessments
@@ -306,8 +306,8 @@ class TestSelectAssessment:
         assert result['id'] == 3
         assert result['name'] == 'Quiz 1'
 
-    @patch('university_system.modules.domain.academics.grading.common_utilities._first_table')
-    @patch('university_system.modules.domain.academics.grading.common_utilities._first_col')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._first_table')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._first_col')
     @patch('builtins.input', return_value='1')
     def test_select_assessment_without_date_column(
         self, mock_input, mock_first_col, mock_first_table
@@ -328,9 +328,9 @@ class TestSelectAssessment:
         assert result['id'] == 1
         assert result['date'] is None
 
-    @patch('university_system.modules.domain.academics.grading.common_utilities.get_connection')
-    @patch('university_system.modules.domain.academics.grading.common_utilities._first_table')
-    @patch('university_system.modules.domain.academics.grading.common_utilities._first_col')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._first_table')
+    @patch('education_system.university_system.modules.domain.academics.grading.common_utilities._first_col')
     @patch('builtins.input', return_value='1')
     def test_select_assessment_with_connection_management(
         self, mock_input, mock_first_col, mock_first_table, mock_get_conn

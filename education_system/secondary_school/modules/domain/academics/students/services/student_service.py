@@ -1,7 +1,10 @@
 """Student management service."""
 
+import json
+import sqlite3
 from datetime import datetime
 import logging
+from education_system.secondary_school.core.sql_safety import validate_identifier, escape_like
 
 from education_system.secondary_school.core.exceptions import StudentError, ValidationError
 from education_system.secondary_school.core.defaults import STUDENT_ID_PREFIX
@@ -133,7 +136,8 @@ class StudentService:
             params.append(key_stage)
         if search:
             sql += " AND (first_name LIKE ? OR last_name LIKE ? OR student_id LIKE ?)"
-            term = f"%{search}%"
+            escaped = escape_like(search)
+            term = f"%{escaped}%"
             params.extend([term, term, term])
 
         sql += " ORDER BY year_group, form_group, last_name LIMIT ? OFFSET ?"
@@ -167,7 +171,7 @@ class StudentService:
 
         updates["updated_at"] = datetime.utcnow().isoformat()
 
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [student_pk]
 
         conn = self._conn()
@@ -232,3 +236,208 @@ class StudentService:
             return row["cnt"]
         finally:
             conn.close()
+
+    # ------------------------------------------------------------------
+    # Cross-system transfer helpers
+    # ------------------------------------------------------------------
+
+    def fetch_primary_pupils(self, primary_db_path: str) -> list[dict]:
+        """Fetch active pupils from the primary school database.
+
+        Returns a list of dicts with pupil info suitable for import selection.
+        """
+        conn = sqlite3.connect(str(primary_db_path))
+        try:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                "SELECT id, pupil_id, first_name, last_name, date_of_birth, gender, "
+                "address, parent1_name, parent1_email, parent1_phone, "
+                "emergency_contact_name, emergency_contact_phone, sen_status "
+                "FROM pupils WHERE status = 'Active' ORDER BY last_name, first_name"
+            ).fetchall()
+            return [dict(r) for r in rows]
+        finally:
+            conn.close()
+
+    def import_from_primary(self, student_pk: int, imported_data: dict,
+                            primary_db_path: str) -> None:
+        """Store academic transfer history and set previous_system fields.
+
+        Args:
+            student_pk: The primary key of the newly created secondary student.
+            imported_data: Dict of the primary school pupil record
+                           (must contain 'pupil_id').
+            primary_db_path: Path to the primary school database file.
+        """
+        from education_system.shared.transfer.academic_history import extract_primary_history
+
+        # 1) Extract and store academic history
+        try:
+            history = extract_primary_history(
+                str(primary_db_path), imported_data.get('pupil_id', '')
+            )
+            if history:
+                conn = self._conn()
+                try:
+                    conn.execute(
+                        "INSERT INTO academic_transfer_history "
+                        "(student_id, source_system, data_json, transferred_at) "
+                        "VALUES (?, ?, ?, datetime('now'))",
+                        (student_pk, 'primary', json.dumps(history)),
+                    )
+                    conn.commit()
+                finally:
+                    conn.close()
+        except Exception:
+            logger.warning(
+                "Failed to extract/store academic transfer history from primary school",
+                exc_info=True,
+            )
+
+        # 2) Set previous_system fields on the student record
+        try:
+            conn = self._conn()
+            try:
+                conn.execute(
+                    "UPDATE students SET previous_system = ?, previous_system_id = ? "
+                    "WHERE id = ?",
+                    ('primary', imported_data.get('pupil_id', ''), student_pk),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+        except Exception:
+            logger.warning(
+                "Failed to set previous_system fields on transferred student",
+                exc_info=True,
+            )
+
+    def mark_primary_as_transferred(self, primary_pupil_pk: int,
+                                    primary_db_path: str) -> None:
+        """Mark a pupil as 'Transferred' in the primary school database.
+
+        Args:
+            primary_pupil_pk: The id (PK) of the pupil in the primary DB.
+            primary_db_path: Path to the primary school database file.
+        """
+        conn = sqlite3.connect(str(primary_db_path))
+        try:
+            conn.execute(
+                "UPDATE pupils SET status = 'Transferred' WHERE id = ?",
+                (primary_pupil_pk,),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    def notify_transfer(self, student_id: str, imported_data: dict,
+                        auth_info, primary_db_path: str) -> None:
+        """Send transfer notifications to primary school admins.
+
+        Sends both a cross-system notification and local notifications/emails
+        in the primary school database.
+
+        Args:
+            student_id: The new secondary student ID (e.g. SEC0002).
+            imported_data: Dict of the primary school pupil record.
+            auth_info: The auth object or dict for determining the sender.
+            primary_db_path: Path to the primary school database file.
+        """
+        imp_name = (
+            f"{imported_data.get('first_name', '')} "
+            f"{imported_data.get('last_name', '')}"
+        )
+        _transfer_title = f"Pupil Transfer: {imp_name} moved to Secondary School"
+        _transfer_msg = (
+            f"Pupil {imported_data.get('pupil_id', '')} ({imp_name}) "
+            f"has been transferred from the Primary School "
+            f"to the Secondary School System.\n\n"
+            f"New Secondary Student ID: {student_id}\n"
+            f"The pupil's primary school record has been "
+            f"marked as 'Transferred'."
+        )
+
+        # Determine sender user id
+        _sender_id = None
+        if isinstance(auth_info, dict):
+            _sender_id = auth_info.get('id') or auth_info.get('user_id')
+        elif hasattr(auth_info, 'current_user') and auth_info.current_user:
+            _sender_id = auth_info.current_user.get('user_id')
+
+        # 1) Cross-system notification
+        try:
+            from education_system.shared.notifications.service import (
+                CrossSystemNotificationService,
+            )
+            _xn_svc = CrossSystemNotificationService()
+            _xn_svc.send_to_role(
+                sender_user_id=_sender_id or 0,
+                sender_system='school',
+                target_system='primary',
+                target_role='admin',
+                title=_transfer_title,
+                message=_transfer_msg,
+                priority='high',
+            )
+        except Exception:
+            logger.warning(
+                "Failed to send cross-system transfer notification "
+                "to primary school admins",
+                exc_info=True,
+            )
+
+        # 2) Primary-local notification + email log
+        try:
+            from education_system.shared.auth.db import AUTH_DB_FILE
+            _auth_conn = sqlite3.connect(str(AUTH_DB_FILE))
+            try:
+                _auth_conn.row_factory = sqlite3.Row
+                _admins = _auth_conn.execute(
+                    "SELECT u.username, u.email FROM users u "
+                    "JOIN user_systems us ON u.id = us.user_id "
+                    "WHERE us.system_key = 'primary' AND us.role = 'admin' "
+                    "AND u.is_active = 1"
+                ).fetchall()
+            finally:
+                _auth_conn.close()
+
+            _pri_conn = sqlite3.connect(str(primary_db_path))
+            try:
+                _pri_conn.row_factory = sqlite3.Row
+                for _admin in _admins:
+                    _local = _pri_conn.execute(
+                        "SELECT id FROM users WHERE username = ?",
+                        (_admin['username'],),
+                    ).fetchone()
+                    if _local:
+                        _pri_conn.execute(
+                            "INSERT INTO notifications "
+                            "(user_id, title, message, notification_type) "
+                            "VALUES (?, ?, ?, ?)",
+                            (_local['id'], _transfer_title, _transfer_msg, 'Info'),
+                        )
+                    _admin_email = (
+                        _admin['email']
+                        or f"{_admin['username']}@primary.school.uk"
+                    )
+                    _pri_conn.execute(
+                        "INSERT INTO email_log "
+                        "(to_address, from_address, subject, body, status) "
+                        "VALUES (?, ?, ?, ?, ?)",
+                        (
+                            _admin_email,
+                            'system@secondary.school.uk',
+                            _transfer_title,
+                            _transfer_msg,
+                            'Logged',
+                        ),
+                    )
+                _pri_conn.commit()
+            finally:
+                _pri_conn.close()
+        except Exception:
+            logger.warning(
+                "Failed to send local notifications/emails "
+                "to primary school admins",
+                exc_info=True,
+            )

@@ -1,16 +1,16 @@
-from ._imports import (
+from education_system.university_system.modules.domain.student_affairs.gui.internship_management._imports import (
     _t, init_i18n, logger, messagebox, set_auth, tk, ttk,
 )
 
-from .internships import InternshipsBrowseMixin
-from .my_applications import MyApplicationsMixin
-from .admin_applications import AdminApplicationsMixin
-from .manage_internships import ManageInternshipsMixin
-from .placements import PlacementsMixin
-from .reports import ReportsMixin
-from .eligibility import EligibilityMixin
-from .notifications import NotificationsMixin
-from .integrations import IntegrationsMixin
+from education_system.university_system.modules.domain.student_affairs.gui.internship_management.internships import InternshipsBrowseMixin
+from education_system.university_system.modules.domain.student_affairs.gui.internship_management.my_applications import MyApplicationsMixin
+from education_system.university_system.modules.domain.student_affairs.gui.internship_management.admin_applications import AdminApplicationsMixin
+from education_system.university_system.modules.domain.student_affairs.gui.internship_management.manage_internships import ManageInternshipsMixin
+from education_system.university_system.modules.domain.student_affairs.gui.internship_management.placements import PlacementsMixin
+from education_system.university_system.modules.domain.student_affairs.gui.internship_management.reports import ReportsMixin
+from education_system.university_system.modules.domain.student_affairs.gui.internship_management.eligibility import EligibilityMixin
+from education_system.university_system.modules.domain.student_affairs.gui.internship_management.notifications import NotificationsMixin
+from education_system.university_system.modules.domain.student_affairs.gui.internship_management.integrations import IntegrationsMixin
 
 
 class InternshipGUI(

@@ -80,28 +80,9 @@ CREATE TABLE IF NOT EXISTS legal_consultations (
     FOREIGN KEY (case_id) REFERENCES legal_cases (case_id)
 );
 
-CREATE TABLE IF NOT EXISTS legal_documents (
-    document_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    case_id INTEGER NOT NULL,
-    document_name TEXT NOT NULL,
-    document_type TEXT,
-    file_path TEXT,
-    uploaded_by TEXT,
-    upload_date TEXT NOT NULL,
-    FOREIGN KEY (case_id) REFERENCES legal_cases (case_id)
-);
-
-CREATE TABLE IF NOT EXISTS legal_payments (
-    payment_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    case_id INTEGER NOT NULL,
-    amount REAL NOT NULL,
-    payment_method TEXT,
-    payment_status TEXT DEFAULT 'Pending',
-    payment_date TEXT,
-    created_date TEXT NOT NULL,
-    FOREIGN KEY (case_id) REFERENCES legal_cases (case_id)
-);
 """
+# Legal documents now use the unified documents table with source_type = 'legal'
+# No separate legal_documents table needed
 
 def init_legal_database():
     """Initialize legal services database tables."""

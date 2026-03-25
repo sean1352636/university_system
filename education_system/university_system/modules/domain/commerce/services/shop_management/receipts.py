@@ -3,7 +3,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from . import config
+from education_system.university_system.modules.domain.commerce.services.shop_management import config
 
 
 def generate_pdf_receipt(transaction_id):
@@ -22,9 +22,9 @@ def generate_pdf_receipt(transaction_id):
         cursor.execute(
             '''
             SELECT t.*, u.username, u.email
-            FROM shop_transactions t
-            LEFT JOIN users u ON t.user_id = u.id
-            WHERE t.transaction_id = ?
+            FROM transactions t
+            LEFT JOIN users u ON t.customer_id = u.id
+            WHERE t.source_type = 'shop' AND t.source_transaction_id = ?
             ''',
             [transaction_id]
         )
@@ -41,7 +41,7 @@ def generate_pdf_receipt(transaction_id):
             '''
             SELECT ti.*, p.name, p.category
             FROM shop_transaction_items ti
-            JOIN shop_products p ON ti.product_id = p.product_id
+            JOIN products p ON ti.product_id = p.source_product_id AND p.source_type = 'shop'
             WHERE ti.transaction_id = ?
             ''',
             [transaction_id]
@@ -65,8 +65,8 @@ def generate_pdf_receipt(transaction_id):
         story.append(Paragraph("<br/><br/>", styles['Normal']))
 
         # Transaction details
-        story.append(Paragraph(f"<b>Transaction ID:</b> {transaction['transaction_id']}", styles['Normal']))
-        story.append(Paragraph(f"<b>Date:</b> {transaction['transaction_date']}", styles['Normal']))
+        story.append(Paragraph(f"<b>Transaction ID:</b> {transaction['source_transaction_id']}", styles['Normal']))
+        story.append(Paragraph(f"<b>Date:</b> {transaction['created_at']}", styles['Normal']))
         story.append(Paragraph(f"<b>Customer:</b> {transaction['username']}", styles['Normal']))
         if transaction['student_id']:
             story.append(Paragraph(f"<b>Student ID:</b> {transaction['student_id']}", styles['Normal']))
@@ -203,8 +203,9 @@ def print_product_labels(product_ids=None):
             cursor.execute(
                 f'''
                 SELECT p.*, i.quantity
-                FROM shop_products p
-                JOIN shop_inventory i ON p.product_id = i.product_id
+                FROM products p
+                JOIN shop_inventory i ON p.source_product_id = i.product_id
+                WHERE p.source_type = 'shop'
                 WHERE p.product_id IN ({placeholders})
                 ORDER BY p.name
                 ''',
@@ -215,8 +216,9 @@ def print_product_labels(product_ids=None):
             cursor.execute(
                 '''
                 SELECT p.*, i.quantity
-                FROM shop_products p
-                JOIN shop_inventory i ON p.product_id = i.product_id
+                FROM products p
+                JOIN shop_inventory i ON p.source_product_id = i.product_id
+                WHERE p.source_type = 'shop'
                 WHERE p.is_active = 1
                 ORDER BY p.name
                 '''

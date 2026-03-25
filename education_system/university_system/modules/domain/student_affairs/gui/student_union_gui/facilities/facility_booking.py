@@ -828,9 +828,9 @@ def submit_booking_request(self):
                     'purpose': purpose
                 })
                 send_email(
-                    to_email=self.current_user['email'],
-                    subject=subject,
-                    body=email_body
+                    self.current_user['email'],
+                    subject,
+                    email_body
                 )
             except Exception as e:
                 print(f"Failed to send confirmation email: {e}")

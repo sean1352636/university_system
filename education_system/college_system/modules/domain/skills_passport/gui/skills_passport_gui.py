@@ -5,6 +5,7 @@ from tkinter import ttk, messagebox
 
 from education_system.college_system.modules.domain.skills_passport.services.skills_passport_service import SkillsPassportService
 from education_system.college_system.core.exceptions import SkillsPassportError
+from education_system.college_system.core.i18n import t
 
 
 class _CategoryDialog(tk.Toplevel):
@@ -33,12 +34,12 @@ class _CategoryDialog(tk.Toplevel):
         container.pack(fill="both", expand=True)
         self._vars: dict[str, tk.StringVar] = {}
 
-        tk.Label(container, text="Name", anchor="w",
+        tk.Label(container, text=t("common.name"), anchor="w",
                  font=("Helvetica", 9, "bold")).grid(row=0, column=0, sticky="w", **pad)
         var = tk.StringVar(value=self._item.get("name", "") if self._item else "")
         ttk.Entry(container, textvariable=var, width=36).grid(row=0, column=1, sticky="ew", **pad)
         self._vars["name"] = var
-        tk.Label(container, text="Description", anchor="w",
+        tk.Label(container, text=t("common.description"), anchor="w",
                  font=("Helvetica", 9, "bold")).grid(row=1, column=0, sticky="w", **pad)
         var = tk.StringVar(value=self._item.get("description", "") if self._item else "")
         ttk.Entry(container, textvariable=var, width=36).grid(row=1, column=1, sticky="ew", **pad)
@@ -46,8 +47,8 @@ class _CategoryDialog(tk.Toplevel):
 
         btn_frame = tk.Frame(container)
         btn_frame.grid(row=99, column=0, columnspan=2, pady=(15, 0))
-        ttk.Button(btn_frame, text="Save", command=self._on_save).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.destroy).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text=t("common.save"), command=self._on_save).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text=t("common.cancel"), command=self.destroy).pack(side="left", padx=5)
 
     def _on_save(self):
         self.result = {k: v.get().strip() for k, v in self._vars.items()}
@@ -70,16 +71,17 @@ class SkillsPassportFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Skills Passport",
+        tk.Label(header, text=t("skills_passport.management"),
                  font=("Helvetica", 15, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=10)
 
         toolbar = tk.Frame(self, bg="#ecf0f1", pady=8)
         toolbar.pack(fill="x", padx=15)
-        ttk.Button(toolbar, text="Add", command=self._on_add).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Edit", command=self._on_edit).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Delete", command=self._on_delete).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Refresh", command=self._load_items).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.add"), command=self._on_add).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.edit"), command=self._on_edit).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.delete"), command=self._on_delete).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.refresh"), command=self._load_items).pack(side="left", padx=4)
+        ttk.Button(toolbar, text="Export CSV", command=self._export_csv).pack(side="left", padx=4)
 
         tree_frame = tk.Frame(self)
         tree_frame.pack(fill="both", expand=True, padx=15, pady=(0, 15))
@@ -87,11 +89,11 @@ class SkillsPassportFrame(tk.Frame):
         columns = ('name', 'description', 'display_order')
         self._tree = ttk.Treeview(tree_frame, columns=columns, show="headings", selectmode="browse")
 
-        self._tree.heading("name", text="Name")
+        self._tree.heading("name", text=t("common.name"))
         self._tree.column("name", width=200, anchor="center")
-        self._tree.heading("description", text="Description")
+        self._tree.heading("description", text=t("common.description"))
         self._tree.column("description", width=200, anchor="center")
-        self._tree.heading("display_order", text="Order")
+        self._tree.heading("display_order", text=t("skills_passport.order"))
         self._tree.column("display_order", width=60, anchor="center")
 
         vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self._tree.yview)
@@ -99,9 +101,13 @@ class SkillsPassportFrame(tk.Frame):
         self._tree.pack(side="left", fill="both", expand=True)
         vsb.pack(side="right", fill="y")
 
-        self._status_var = tk.StringVar(value="Ready")
+        self._status_var = tk.StringVar(value=t("common.ready"))
         tk.Label(self, textvariable=self._status_var, bg="#ecf0f1", anchor="w",
                  font=("Helvetica", 9), fg="#7f8c8d").pack(fill="x", padx=15, pady=(0, 8))
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._tree, "skills_passport_export.csv")
 
     def refresh(self):
         self._load_items()
@@ -114,28 +120,28 @@ class SkillsPassportFrame(tk.Frame):
                 self._tree.insert("", "end", iid=item["id"], values=(
                     item.get("name", ""), item.get("description", ""), item.get("display_order", ""),
                 ))
-            self._status_var.set(f"{len(items)} item(s) loaded")
+            self._status_var.set(t("common.count_loaded", count=len(items)))
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load:\n{exc}")
+            messagebox.showerror(t("common.error"), f"Failed to load:\n{exc}")
 
     def _selected_pk(self) -> int | None:
         sel = self._tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select an item first.")
+            messagebox.showwarning(t("common.selection"), t("common.select_item_first"))
             return None
         return int(sel[0])
 
     def _on_add(self):
-        dlg = _CategoryDialog(self, title="Add Category")
+        dlg = _CategoryDialog(self, title=t("skills_passport.add_category"))
         self.wait_window(dlg)
         if dlg.result is None:
             return
         try:
             self._svc.create_category(**dlg.result)
-            messagebox.showinfo("Success", "Category created.")
+            messagebox.showinfo(t("common.success"), t("skills_passport.category_created"))
             self._load_items()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_edit(self):
         pk = self._selected_pk()
@@ -143,28 +149,28 @@ class SkillsPassportFrame(tk.Frame):
             return
         item = self._svc.get_category(pk)
         if not item:
-            messagebox.showerror("Error", "Category not found.")
+            messagebox.showerror(t("common.error"), t("skills_passport.category_not_found"))
             return
-        dlg = _CategoryDialog(self, title="Edit Category", item=item)
+        dlg = _CategoryDialog(self, title=t("skills_passport.edit_category"), item=item)
         self.wait_window(dlg)
         if dlg.result is None:
             return
         try:
             self._svc.update_category(pk, **dlg.result)
-            messagebox.showinfo("Success", "Category updated.")
+            messagebox.showinfo(t("common.success"), t("skills_passport.category_updated"))
             self._load_items()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_delete(self):
         pk = self._selected_pk()
         if pk is None:
             return
-        if not messagebox.askyesno("Confirm", "Delete this category?"):
+        if not messagebox.askyesno(t("common.confirm"), t("skills_passport.delete_category_confirm")):
             return
         try:
             self._svc.delete_category(pk)
-            messagebox.showinfo("Success", "Category deleted.")
+            messagebox.showinfo(t("common.success"), t("skills_passport.category_deleted"))
             self._load_items()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))

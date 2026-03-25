@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/email_service/cli.py
+# hypothesis_version: 6.151.9
+
+[100, 10000, ' (y/n): ', ', ', '-', '...', '1', '1. ', '2', '2. ', '3', '3. ', '4', '4. ', '5', '5. ', '6', '6. ', '7', '7. ', '8', '8. ', ':', ': ', '=', '==============', '=================', 'DELETE ALL', 'Day (DD): ', 'Direct', 'END', 'Hour (0-23): ', 'Minute (0-59): ', 'Month (MM): ', 'Year (YYYY): ', 'admin', 'attachment_paths', 'bcc_recipients', 'body', 'cc_recipients', 'course', 'created_date', 'database_only_mode', 'email', 'email_service.body', 'emails', 'failure', 'id', 'instructor', 'module_code', 'my_emails.csv', 'name', 'recipient_email', 'registration_year', 'related_to', 'role', 'scheduled_ids', 'sender_email', 'sender_name', 'staff', 'stored_emails.csv', 'student', 'student_id', 'subject', 'success', 'template_name', 'template_vars', 'total_count', 'utf-8', 'w', 'y']

@@ -92,6 +92,25 @@ class SENDService:
         finally:
             conn.close()
 
+    def delete_record(self, record_id: int) -> bool:
+        """Delete a SEND record by ID."""
+        conn = self._conn()
+        try:
+            result = conn.execute(
+                "DELETE FROM send_records WHERE id = ?", (record_id,)
+            )
+            conn.commit()
+            if result.rowcount == 0:
+                raise SENDError(f"SEND record {record_id} not found.")
+            return True
+        except SENDError:
+            raise
+        except Exception as e:
+            conn.rollback()
+            raise SENDError(f"Failed to delete SEND record: {e}")
+        finally:
+            conn.close()
+
     def get_student_record(self, student_id: int) -> dict | None:
         conn = self._conn()
         try:

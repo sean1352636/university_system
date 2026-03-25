@@ -204,6 +204,8 @@ class CourseEvaluationGUI:
                   command=self.calculate_results).pack(side=tk.LEFT, padx=5)
         ttk.Button(select_frame, text=_("course_evaluation.buttons.export_report"),
                   command=self.export_results).pack(side=tk.LEFT, padx=5)
+        ttk.Button(select_frame, text="Email Report to Admin",
+                  command=self.email_results_to_admin).pack(side=tk.LEFT, padx=5)
 
         # Results display
         results_frame = ttk.LabelFrame(tab, text=_("course_evaluation.labels.evaluation_results"), padding="10")
@@ -531,13 +533,39 @@ class CourseEvaluationGUI:
 
         fields = {}
 
-        ttk.Label(dialog, text=_("course_evaluation.labels.module_code")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
-        fields['module'] = ttk.Entry(dialog, width=40)
+        ttk.Label(dialog, text="Course:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        fields['module'] = ttk.Combobox(dialog, width=45, state='readonly')
         fields['module'].grid(row=0, column=1, padx=5, pady=5)
 
+        # Populate courses dropdown
+        course_codes = {}
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT COALESCE(course_code, code), COALESCE(course_name, name) "
+                    "FROM courses "
+                    "WHERE COALESCE(course_code, code) IS NOT NULL "
+                    "AND COALESCE(course_name, name) IS NOT NULL "
+                    "AND LOWER(COALESCE(status, 'active')) = 'active' "
+                    "ORDER BY COALESCE(course_code, code)"
+                )
+                course_list = []
+                for code, name in cursor.fetchall():
+                    label = f"{code} - {name}"
+                    course_list.append(label)
+                    course_codes[label] = code
+                fields['module']['values'] = course_list
+                if course_list:
+                    fields['module'].current(0)
+        except Exception as e:
+            print(f"Could not load courses: {e}")
+
         ttk.Label(dialog, text=_("course_evaluation.labels.academic_year")).grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
-        fields['year'] = ttk.Entry(dialog, width=40)
-        fields['year'].insert(0, "2024/2025")
+        current_year = datetime.now().year
+        fields['year'] = ttk.Combobox(dialog, width=38, state='readonly',
+                                      values=[f"{y}/{y+1}" for y in range(current_year - 1, current_year + 3)])
+        fields['year'].current(1)
         fields['year'].grid(row=1, column=1, padx=5, pady=5)
 
         ttk.Label(dialog, text=_("course_evaluation.labels.semester")).grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
@@ -648,8 +676,11 @@ class CourseEvaluationGUI:
                     return
                 instructor_id = instructor_data[selected_instructor]
 
+                selected_course = fields['module'].get()
+                module_code = course_codes.get(selected_course, selected_course)
+
                 eval_id = CourseEvaluationManager.create_evaluation(
-                    module_code=fields['module'].get().strip(),
+                    module_code=module_code,
                     academic_year=fields['year'].get().strip(),
                     semester=fields['semester'].get(),
                     instructor_id=instructor_id,
@@ -926,6 +957,67 @@ class CourseEvaluationGUI:
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("course_evaluation.messages.failed_export_results").format(error=e))
+
+    def email_results_to_admin(self):
+        """Email evaluation results report to admin users"""
+        try:
+            # Get report content from the results text widget
+            report_content = self.results_text.get('1.0', tk.END).strip()
+            if not report_content:
+                messagebox.showwarning(_("common.warning"),
+                                       "No results to email. Please calculate results first.")
+                return
+
+            selection = self.results_eval_combo.get()
+            eval_label = selection if selection else "Unknown"
+
+            # Get admin emails from DB
+            admin_emails = []
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT email FROM users WHERE role = 'admin' AND email IS NOT NULL AND email != ''"
+                )
+                admin_emails = [row[0] for row in cursor.fetchall()]
+
+            if not admin_emails:
+                messagebox.showerror(_("common.error"),
+                                     "No admin email addresses found in the database.")
+                return
+
+            from education_system.university_system.infrastructure.email.email_service import send_email
+
+            subject = f"Course Evaluation Results - {eval_label} - {datetime.now().strftime('%Y-%m-%d')}"
+            body = (
+                f"COURSE EVALUATION RESULTS REPORT\n"
+                f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                f"{'=' * 60}\n\n"
+                f"{report_content}\n"
+            )
+
+            success = 0
+            failed = []
+            for email_addr in admin_emails:
+                try:
+                    result = send_email(recipient_email=email_addr, subject=subject, body=body)
+                    if result is not False:
+                        success += 1
+                    else:
+                        failed.append(email_addr)
+                except Exception:
+                    failed.append(email_addr)
+
+            if success and not failed:
+                messagebox.showinfo(_("common.success"),
+                                    f"Report emailed to {success} admin(s):\n" + "\n".join(admin_emails))
+            elif success:
+                messagebox.showwarning("Partial Success",
+                                       f"Sent to {success}, failed for:\n" + "\n".join(failed))
+            else:
+                messagebox.showerror(_("common.error"), "Failed to send report to any admin address.")
+
+        except Exception as e:
+            messagebox.showerror(_("common.error"), f"Failed to email results: {e}")
 
     def view_evaluation_details(self):
         """View detailed evaluation information"""

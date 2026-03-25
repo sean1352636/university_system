@@ -68,7 +68,7 @@ class TestApiManagementWindow:
         assert hasattr(window, 'endpoints_tree')
         assert isinstance(window.endpoints_tree, ttk.Treeview)
 
-    @patch('university_system.modules.shared.gui.admin_management_windows.messagebox')
+    @patch('education_system.university_system.modules.shared.gui.admin_management_windows.messagebox')
     def test_generate_api_key(self, mock_messagebox, root_window):
         """Test API key generation"""
         from education_system.university_system.modules.shared.gui.admin_management_windows import ApiManagementWindow
@@ -81,7 +81,7 @@ class TestApiManagementWindow:
         call_args = mock_messagebox.showinfo.call_args[0]
         assert "New API Key Generated" in call_args[0]
 
-    @patch('university_system.modules.shared.gui.admin_management_windows.messagebox')
+    @patch('education_system.university_system.modules.shared.gui.admin_management_windows.messagebox')
     def test_revoke_api_key_no_selection(self, mock_messagebox, root_window):
         """Test revoking API key without selection"""
         from education_system.university_system.modules.shared.gui.admin_management_windows import ApiManagementWindow
@@ -92,7 +92,7 @@ class TestApiManagementWindow:
         # Should show warning about no selection
         assert mock_messagebox.showwarning.called
 
-    @patch('university_system.modules.shared.gui.admin_management_windows.messagebox')
+    @patch('education_system.university_system.modules.shared.gui.admin_management_windows.messagebox')
     def test_test_endpoint_no_selection(self, mock_messagebox, root_window):
         """Test endpoint testing without selection"""
         from education_system.university_system.modules.shared.gui.admin_management_windows import ApiManagementWindow
@@ -156,7 +156,7 @@ class TestAuditLogsWindow:
         children = window.logs_tree.get_children()
         assert len(children) > 0
 
-    @patch('university_system.modules.shared.gui.admin_management_windows.messagebox')
+    @patch('education_system.university_system.modules.shared.gui.admin_management_windows.messagebox')
     def test_apply_filters(self, mock_messagebox, root_window):
         """Test applying filters"""
         from education_system.university_system.modules.shared.gui.admin_management_windows import AuditLogsWindow
@@ -167,7 +167,7 @@ class TestAuditLogsWindow:
         # Should show info message about applied filters
         assert mock_messagebox.showinfo.called
 
-    @patch('university_system.modules.shared.gui.admin_management_windows.filedialog')
+    @patch('education_system.university_system.modules.shared.gui.admin_management_windows.filedialog')
     def test_export_logs(self, mock_filedialog, root_window):
         """Test exporting logs"""
         from education_system.university_system.modules.shared.gui.admin_management_windows import AuditLogsWindow
@@ -175,7 +175,7 @@ class TestAuditLogsWindow:
         mock_filedialog.asksaveasfilename.return_value = "/tmp/test.csv"
         window = AuditLogsWindow(root_window)
 
-        with patch('university_system.modules.shared.gui.admin_management_windows.messagebox'):
+        with patch('education_system.university_system.modules.shared.gui.admin_management_windows.messagebox'):
             window.export_logs()
 
         assert mock_filedialog.asksaveasfilename.called
@@ -202,7 +202,7 @@ class TestDiagnosticsWindow:
 
         assert window.window.title() == "System Diagnostics"
 
-    @patch('university_system.modules.shared.gui.admin_management_windows.messagebox')
+    @patch('education_system.university_system.modules.shared.gui.admin_management_windows.messagebox')
     def test_run_full_diagnostic(self, mock_messagebox, root_window):
         """Test running full diagnostic"""
         from education_system.university_system.modules.shared.gui.admin_management_windows import DiagnosticsWindow
@@ -214,8 +214,8 @@ class TestDiagnosticsWindow:
         call_args = mock_messagebox.showinfo.call_args[0]
         assert "Full Diagnostic" in call_args[0]
 
-    @patch('university_system.modules.shared.gui.admin_management_windows.filedialog')
-    @patch('university_system.modules.shared.gui.admin_management_windows.messagebox')
+    @patch('education_system.university_system.modules.shared.gui.admin_management_windows.filedialog')
+    @patch('education_system.university_system.modules.shared.gui.admin_management_windows.messagebox')
     def test_generate_health_report(self, mock_messagebox, mock_filedialog, root_window):
         """Test generating health report"""
         from education_system.university_system.modules.shared.gui.admin_management_windows import DiagnosticsWindow
@@ -227,7 +227,7 @@ class TestDiagnosticsWindow:
         assert mock_filedialog.asksaveasfilename.called
         assert mock_messagebox.showinfo.called
 
-    @patch('university_system.modules.shared.gui.admin_management_windows.messagebox')
+    @patch('education_system.university_system.modules.shared.gui.admin_management_windows.messagebox')
     def test_test_connectivity(self, mock_messagebox, root_window):
         """Test network connectivity test"""
         from education_system.university_system.modules.shared.gui.admin_management_windows import DiagnosticsWindow
@@ -239,7 +239,7 @@ class TestDiagnosticsWindow:
         call_args = mock_messagebox.showinfo.call_args[0]
         assert "Connectivity Test" in call_args[0]
 
-    @patch('university_system.modules.shared.gui.admin_management_windows.messagebox')
+    @patch('education_system.university_system.modules.shared.gui.admin_management_windows.messagebox')
     def test_run_speed_test(self, mock_messagebox, root_window):
         """Test network speed test"""
         from education_system.university_system.modules.shared.gui.admin_management_windows import DiagnosticsWindow
@@ -249,7 +249,7 @@ class TestDiagnosticsWindow:
 
         assert mock_messagebox.showinfo.called
 
-    @patch('university_system.modules.shared.gui.admin_management_windows.messagebox')
+    @patch('education_system.university_system.modules.shared.gui.admin_management_windows.messagebox')
     def test_disk_cleanup_with_confirmation(self, mock_messagebox, root_window):
         """Test disk cleanup with user confirmation"""
         from education_system.university_system.modules.shared.gui.admin_management_windows import DiagnosticsWindow
@@ -312,7 +312,7 @@ class TestDatabaseMaintenanceWindow:
         assert hasattr(window, 'reindex_var')
         assert hasattr(window, 'cleanup_var')
 
-    @patch('university_system.modules.shared.gui.admin_management_windows.messagebox')
+    @patch('education_system.university_system.modules.shared.gui.admin_management_windows.messagebox')
     def test_refresh_status(self, mock_messagebox, root_window):
         """Test database status refresh"""
         from education_system.university_system.modules.shared.gui.admin_management_windows import DatabaseMaintenanceWindow
@@ -322,7 +322,7 @@ class TestDatabaseMaintenanceWindow:
 
         assert mock_messagebox.showinfo.called
 
-    @patch('university_system.modules.shared.gui.admin_management_windows.messagebox')
+    @patch('education_system.university_system.modules.shared.gui.admin_management_windows.messagebox')
     def test_test_connection(self, mock_messagebox, root_window):
         """Test database connection test"""
         from education_system.university_system.modules.shared.gui.admin_management_windows import DatabaseMaintenanceWindow
@@ -334,7 +334,7 @@ class TestDatabaseMaintenanceWindow:
         call_args = mock_messagebox.showinfo.call_args[0]
         assert "Connection Test" in call_args[0]
 
-    @patch('university_system.modules.shared.gui.admin_management_windows.messagebox')
+    @patch('education_system.university_system.modules.shared.gui.admin_management_windows.messagebox')
     def test_create_backup(self, mock_messagebox, root_window):
         """Test creating database backup"""
         from education_system.university_system.modules.shared.gui.admin_management_windows import DatabaseMaintenanceWindow
@@ -346,7 +346,7 @@ class TestDatabaseMaintenanceWindow:
         call_args = mock_messagebox.showinfo.call_args[0]
         assert "Backup Started" in call_args[0]
 
-    @patch('university_system.modules.shared.gui.admin_management_windows.messagebox')
+    @patch('education_system.university_system.modules.shared.gui.admin_management_windows.messagebox')
     def test_restore_backup_no_selection(self, mock_messagebox, root_window):
         """Test restore backup without selection"""
         from education_system.university_system.modules.shared.gui.admin_management_windows import DatabaseMaintenanceWindow
@@ -357,7 +357,7 @@ class TestDatabaseMaintenanceWindow:
         # Should show warning about no selection
         assert mock_messagebox.showwarning.called
 
-    @patch('university_system.modules.shared.gui.admin_management_windows.messagebox')
+    @patch('education_system.university_system.modules.shared.gui.admin_management_windows.messagebox')
     def test_run_optimization_no_operations(self, mock_messagebox, root_window):
         """Test running optimization with no operations selected"""
         from education_system.university_system.modules.shared.gui.admin_management_windows import DatabaseMaintenanceWindow
@@ -375,7 +375,7 @@ class TestDatabaseMaintenanceWindow:
         # Should show warning about no operations selected
         assert mock_messagebox.showwarning.called
 
-    @patch('university_system.modules.shared.gui.admin_management_windows.messagebox')
+    @patch('education_system.university_system.modules.shared.gui.admin_management_windows.messagebox')
     def test_run_optimization_with_operations(self, mock_messagebox, root_window):
         """Test running optimization with operations selected"""
         from education_system.university_system.modules.shared.gui.admin_management_windows import DatabaseMaintenanceWindow
@@ -394,7 +394,7 @@ class TestDatabaseMaintenanceWindow:
         # Should show info about started optimization
         assert mock_messagebox.showinfo.called
 
-    @patch('university_system.modules.shared.gui.admin_management_windows.messagebox')
+    @patch('education_system.university_system.modules.shared.gui.admin_management_windows.messagebox')
     def test_check_integrity(self, mock_messagebox, root_window):
         """Test database integrity check"""
         from education_system.university_system.modules.shared.gui.admin_management_windows import DatabaseMaintenanceWindow
@@ -406,7 +406,7 @@ class TestDatabaseMaintenanceWindow:
         call_args = mock_messagebox.showinfo.call_args[0]
         assert "Integrity Check" in call_args[0]
 
-    @patch('university_system.modules.shared.gui.admin_management_windows.messagebox')
+    @patch('education_system.university_system.modules.shared.gui.admin_management_windows.messagebox')
     def test_start_monitoring(self, mock_messagebox, root_window):
         """Test starting database monitoring"""
         from education_system.university_system.modules.shared.gui.admin_management_windows import DatabaseMaintenanceWindow
@@ -418,7 +418,7 @@ class TestDatabaseMaintenanceWindow:
         call_args = mock_messagebox.showinfo.call_args[0]
         assert "Monitoring Started" in call_args[0]
 
-    @patch('university_system.modules.shared.gui.admin_management_windows.messagebox')
+    @patch('education_system.university_system.modules.shared.gui.admin_management_windows.messagebox')
     def test_stop_monitoring_with_confirmation(self, mock_messagebox, root_window):
         """Test stopping monitoring with confirmation"""
         from education_system.university_system.modules.shared.gui.admin_management_windows import DatabaseMaintenanceWindow

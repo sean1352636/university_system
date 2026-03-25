@@ -7,9 +7,10 @@ from education_system.college_system.modules.domain.health_safety.services.healt
     HealthSafetyService,
 )
 from education_system.college_system.core.exceptions import HealthSafetyError
+from education_system.college_system.core.i18n import t
 
 
-# ── Dialogs ───────────────────────────────────────────────────────────────────
+# -- Dialogs -------------------------------------------------------------------
 
 
 class _BaseDialog(tk.Toplevel):
@@ -55,8 +56,8 @@ class _BaseDialog(tk.Toplevel):
 
         btn_frame = tk.Frame(container)
         btn_frame.grid(row=len(self._field_defs), column=0, columnspan=2, pady=(15, 0))
-        ttk.Button(btn_frame, text="Save", command=self._on_save).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.destroy).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text=t("common.save"), command=self._on_save).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text=t("common.cancel"), command=self.destroy).pack(side="left", padx=5)
 
     def _on_save(self):
         self.result = {k: v.get().strip() for k, v in self._vars.items()}
@@ -91,7 +92,7 @@ class _CloseIncidentDialog(tk.Toplevel):
 
     def __init__(self, parent):
         super().__init__(parent)
-        self.title("Close Incident")
+        self.title(t("health_safety.close_incident"))
         self.resizable(False, False)
         self.grab_set()
         self.result: dict | None = None
@@ -105,22 +106,22 @@ class _CloseIncidentDialog(tk.Toplevel):
     def _build_ui(self):
         container = tk.Frame(self, padx=20, pady=15)
         container.pack(fill="both", expand=True)
-        tk.Label(container, text="Root Cause", font=("Helvetica", 9, "bold")).pack(anchor="w", pady=(0, 2))
+        tk.Label(container, text=t("health_safety.root_cause"), font=("Helvetica", 9, "bold")).pack(anchor="w", pady=(0, 2))
         self._root_cause = tk.Text(container, width=40, height=4)
         self._root_cause.pack(fill="x", pady=(0, 8))
-        tk.Label(container, text="Corrective Actions", font=("Helvetica", 9, "bold")).pack(anchor="w", pady=(0, 2))
+        tk.Label(container, text=t("health_safety.corrective_actions"), font=("Helvetica", 9, "bold")).pack(anchor="w", pady=(0, 2))
         self._actions = tk.Text(container, width=40, height=4)
         self._actions.pack(fill="x", pady=(0, 8))
         btn_frame = tk.Frame(container)
         btn_frame.pack()
-        ttk.Button(btn_frame, text="Close Incident", command=self._on_save).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.destroy).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text=t("health_safety.close_incident"), command=self._on_save).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text=t("common.cancel"), command=self.destroy).pack(side="left", padx=5)
 
     def _on_save(self):
         rc = self._root_cause.get("1.0", "end").strip()
         ca = self._actions.get("1.0", "end").strip()
         if not rc or not ca:
-            messagebox.showwarning("Validation", "Both root cause and corrective actions are required.")
+            messagebox.showwarning(t("common.validation"), t("common.both_required"))
             return
         self.result = {"root_cause": rc, "corrective_actions": ca}
         self.destroy()
@@ -206,7 +207,7 @@ class _DetailDialog(tk.Toplevel):
                      anchor="w").grid(row=idx, column=0, sticky="w", padx=5, pady=2)
             tk.Label(container, text=str(v or ""), anchor="w", wraplength=350).grid(
                 row=idx, column=1, sticky="w", padx=5, pady=2)
-        ttk.Button(container, text="Close", command=self.destroy).grid(
+        ttk.Button(container, text=t("common.close"), command=self.destroy).grid(
             row=len(data), column=0, columnspan=2, pady=(12, 0))
         self.update_idletasks()
         pw = parent.winfo_rootx() + parent.winfo_width() // 2
@@ -215,7 +216,7 @@ class _DetailDialog(tk.Toplevel):
         self.geometry(f"+{pw - w // 2}+{ph - h // 2}")
 
 
-# ── Main Frame ────────────────────────────────────────────────────────────────
+# -- Main Frame ----------------------------------------------------------------
 
 
 class HealthSafetyFrame(tk.Frame):
@@ -228,7 +229,7 @@ class HealthSafetyFrame(tk.Frame):
         self._svc = HealthSafetyService(db_path)
         self._build_ui()
 
-    # ── UI Construction ───────────────────────────────────────────────────
+    # -- UI Construction -------------------------------------------------------
 
     def _build_ui(self):
         self.configure(bg="#ecf0f1")
@@ -236,7 +237,7 @@ class HealthSafetyFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Health & Safety",
+        tk.Label(header, text=t("health_safety.management"),
                  font=("Helvetica", 15, "bold"), bg="#2c3e50", fg="white"
                  ).pack(side="left", padx=20, pady=10)
 
@@ -253,34 +254,35 @@ class HealthSafetyFrame(tk.Frame):
 
     def _build_incidents_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Incidents")
+        self._nb.add(tab, text=t("health_safety.incidents"))
 
         # Filters
         filt_frame = tk.Frame(tab, bg="#ecf0f1")
         filt_frame.pack(fill="x", pady=(0, 8))
 
-        tk.Label(filt_frame, text="Status:", bg="#ecf0f1").pack(side="left", padx=(0, 4))
+        tk.Label(filt_frame, text=t("common.status") + ":", bg="#ecf0f1").pack(side="left", padx=(0, 4))
         self._inc_status_var = tk.StringVar(value="")
         cb = ttk.Combobox(filt_frame, textvariable=self._inc_status_var, width=14, state="readonly",
                           values=["", "open", "investigating", "action_required", "closed"])
         cb.pack(side="left", padx=(0, 10))
 
-        tk.Label(filt_frame, text="Type:", bg="#ecf0f1").pack(side="left", padx=(0, 4))
+        tk.Label(filt_frame, text=t("common.type") + ":", bg="#ecf0f1").pack(side="left", padx=(0, 4))
         self._inc_type_var = tk.StringVar(value="")
         cb2 = ttk.Combobox(filt_frame, textvariable=self._inc_type_var, width=16, state="readonly",
                            values=["", "accident", "near_miss", "dangerous_occurrence", "violence", "illness", "fire", "environmental"])
         cb2.pack(side="left", padx=(0, 10))
 
-        ttk.Button(filt_frame, text="Filter", command=self._load_incidents).pack(side="left", padx=4)
+        ttk.Button(filt_frame, text=t("common.filter"), command=self._load_incidents).pack(side="left", padx=4)
 
         # Buttons
         btn_frame = tk.Frame(tab, bg="#ecf0f1")
         btn_frame.pack(fill="x", pady=(0, 6))
-        ttk.Button(btn_frame, text="New", command=self._on_add_incident).pack(side="left", padx=4)
-        ttk.Button(btn_frame, text="View", command=self._on_view_incident).pack(side="left", padx=4)
-        ttk.Button(btn_frame, text="Update", command=self._on_edit_incident).pack(side="left", padx=4)
-        ttk.Button(btn_frame, text="Close", command=self._on_close_incident).pack(side="left", padx=4)
-        ttk.Button(btn_frame, text="Delete", command=self._on_delete_incident).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text=t("common.create"), command=self._on_add_incident).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text=t("common.view"), command=self._on_view_incident).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text=t("common.update"), command=self._on_edit_incident).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text=t("common.close"), command=self._on_close_incident).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text=t("common.delete"), command=self._on_delete_incident).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text="Export CSV", command=self._export_incidents_csv).pack(side="left", padx=4)
 
         # Treeview
         tree_frame = tk.Frame(tab)
@@ -288,9 +290,9 @@ class HealthSafetyFrame(tk.Frame):
         cols = ("id", "date", "type", "location", "description", "riddor", "status")
         self._inc_tree = ttk.Treeview(tree_frame, columns=cols, show="headings", selectmode="browse")
         for col, heading, width in [
-            ("id", "ID", 40), ("date", "Date", 90), ("type", "Type", 100),
-            ("location", "Location", 110), ("description", "Description", 220),
-            ("riddor", "RIDDOR", 55), ("status", "Status", 100),
+            ("id", t("common.id"), 40), ("date", t("common.date"), 90), ("type", t("common.type"), 100),
+            ("location", t("health_safety.location"), 110), ("description", t("common.description"), 220),
+            ("riddor", "RIDDOR", 55), ("status", t("common.status"), 100),
         ]:
             self._inc_tree.heading(col, text=heading)
             self._inc_tree.column(col, width=width, anchor="center")
@@ -303,31 +305,32 @@ class HealthSafetyFrame(tk.Frame):
 
     def _build_inspections_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Inspections")
+        self._nb.add(tab, text=t("health_safety.inspections"))
 
         filt_frame = tk.Frame(tab, bg="#ecf0f1")
         filt_frame.pack(fill="x", pady=(0, 8))
-        tk.Label(filt_frame, text="Status:", bg="#ecf0f1").pack(side="left", padx=(0, 4))
+        tk.Label(filt_frame, text=t("common.status") + ":", bg="#ecf0f1").pack(side="left", padx=(0, 4))
         self._insp_status_var = tk.StringVar(value="")
         ttk.Combobox(filt_frame, textvariable=self._insp_status_var, width=14, state="readonly",
                      values=["", "passed", "failed", "conditional", "pending"]).pack(side="left", padx=(0, 10))
-        ttk.Button(filt_frame, text="Filter", command=self._load_inspections).pack(side="left", padx=4)
+        ttk.Button(filt_frame, text=t("common.filter"), command=self._load_inspections).pack(side="left", padx=4)
 
         btn_frame = tk.Frame(tab, bg="#ecf0f1")
         btn_frame.pack(fill="x", pady=(0, 6))
-        ttk.Button(btn_frame, text="New", command=self._on_add_inspection).pack(side="left", padx=4)
-        ttk.Button(btn_frame, text="View", command=self._on_view_inspection).pack(side="left", padx=4)
-        ttk.Button(btn_frame, text="Update", command=self._on_edit_inspection).pack(side="left", padx=4)
-        ttk.Button(btn_frame, text="Delete", command=self._on_delete_inspection).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text=t("common.create"), command=self._on_add_inspection).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text=t("common.view"), command=self._on_view_inspection).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text=t("common.update"), command=self._on_edit_inspection).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text=t("common.delete"), command=self._on_delete_inspection).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text="Export CSV", command=self._export_inspections_csv).pack(side="left", padx=4)
 
         tree_frame = tk.Frame(tab)
         tree_frame.pack(fill="both", expand=True)
         cols = ("id", "type", "area", "inspector", "date", "next_due", "status")
         self._insp_tree = ttk.Treeview(tree_frame, columns=cols, show="headings", selectmode="browse")
         for col, heading, width in [
-            ("id", "ID", 40), ("type", "Type", 120), ("area", "Area", 100),
-            ("inspector", "Inspector", 100), ("date", "Date", 90),
-            ("next_due", "Next Due", 90), ("status", "Status", 80),
+            ("id", t("common.id"), 40), ("type", t("common.type"), 120), ("area", t("health_safety.area"), 100),
+            ("inspector", t("health_safety.inspector"), 100), ("date", t("common.date"), 90),
+            ("next_due", t("health_safety.next_due"), 90), ("status", t("common.status"), 80),
         ]:
             self._insp_tree.heading(col, text=heading)
             self._insp_tree.column(col, width=width, anchor="center")
@@ -340,35 +343,38 @@ class HealthSafetyFrame(tk.Frame):
 
     def _build_risk_assessments_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Risk Assessments")
+        self._nb.add(tab, text=t("health_safety.risk_assessments"))
 
         filt_frame = tk.Frame(tab, bg="#ecf0f1")
         filt_frame.pack(fill="x", pady=(0, 8))
-        tk.Label(filt_frame, text="Rating:", bg="#ecf0f1").pack(side="left", padx=(0, 4))
+        tk.Label(filt_frame, text=t("health_safety.rating") + ":", bg="#ecf0f1").pack(side="left", padx=(0, 4))
         self._ra_rating_var = tk.StringVar(value="")
         ttk.Combobox(filt_frame, textvariable=self._ra_rating_var, width=10, state="readonly",
                      values=["", "low", "medium", "high", "very_high"]).pack(side="left", padx=(0, 10))
-        tk.Label(filt_frame, text="Status:", bg="#ecf0f1").pack(side="left", padx=(0, 4))
+        tk.Label(filt_frame, text=t("common.status") + ":", bg="#ecf0f1").pack(side="left", padx=(0, 4))
         self._ra_status_var = tk.StringVar(value="")
         ttk.Combobox(filt_frame, textvariable=self._ra_status_var, width=12, state="readonly",
                      values=["", "active", "review_due", "archived"]).pack(side="left", padx=(0, 10))
-        ttk.Button(filt_frame, text="Filter", command=self._load_risk_assessments).pack(side="left", padx=4)
+        ttk.Button(filt_frame, text=t("common.filter"), command=self._load_risk_assessments).pack(side="left", padx=4)
 
         btn_frame = tk.Frame(tab, bg="#ecf0f1")
         btn_frame.pack(fill="x", pady=(0, 6))
-        ttk.Button(btn_frame, text="New", command=self._on_add_risk_assessment).pack(side="left", padx=4)
-        ttk.Button(btn_frame, text="View", command=self._on_view_risk_assessment).pack(side="left", padx=4)
-        ttk.Button(btn_frame, text="Update", command=self._on_edit_risk_assessment).pack(side="left", padx=4)
-        ttk.Button(btn_frame, text="Delete", command=self._on_delete_risk_assessment).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text=t("common.create"), command=self._on_add_risk_assessment).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text=t("common.view"), command=self._on_view_risk_assessment).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text=t("common.update"), command=self._on_edit_risk_assessment).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text=t("common.delete"), command=self._on_delete_risk_assessment).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text="Export CSV", command=self._export_risk_assessments_csv).pack(side="left", padx=4)
 
         tree_frame = tk.Frame(tab)
         tree_frame.pack(fill="both", expand=True)
         cols = ("id", "activity", "location", "assessor", "date", "rating", "review", "status")
         self._ra_tree = ttk.Treeview(tree_frame, columns=cols, show="headings", selectmode="browse")
         for col, heading, width in [
-            ("id", "ID", 40), ("activity", "Activity", 140), ("location", "Location", 100),
-            ("assessor", "Assessor", 100), ("date", "Date", 90),
-            ("rating", "Rating", 75), ("review", "Review Date", 90), ("status", "Status", 80),
+            ("id", t("common.id"), 40), ("activity", t("health_safety.activity"), 140),
+            ("location", t("health_safety.location"), 100),
+            ("assessor", t("health_safety.assessor"), 100), ("date", t("common.date"), 90),
+            ("rating", t("health_safety.rating"), 75), ("review", t("health_safety.review_date"), 90),
+            ("status", t("common.status"), 80),
         ]:
             self._ra_tree.heading(col, text=heading)
             self._ra_tree.column(col, width=width, anchor="center")
@@ -381,31 +387,33 @@ class HealthSafetyFrame(tk.Frame):
 
     def _build_compliance_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Compliance Checks")
+        self._nb.add(tab, text=t("health_safety.compliance_checks"))
 
         filt_frame = tk.Frame(tab, bg="#ecf0f1")
         filt_frame.pack(fill="x", pady=(0, 8))
-        tk.Label(filt_frame, text="Status:", bg="#ecf0f1").pack(side="left", padx=(0, 4))
+        tk.Label(filt_frame, text=t("common.status") + ":", bg="#ecf0f1").pack(side="left", padx=(0, 4))
         self._cc_status_var = tk.StringVar(value="")
         ttk.Combobox(filt_frame, textvariable=self._cc_status_var, width=12, state="readonly",
                      values=["", "current", "due", "overdue", "expired"]).pack(side="left", padx=(0, 10))
-        ttk.Button(filt_frame, text="Filter", command=self._load_compliance_checks).pack(side="left", padx=4)
-        ttk.Button(filt_frame, text="Show Overdue", command=self._on_show_overdue).pack(side="left", padx=4)
+        ttk.Button(filt_frame, text=t("common.filter"), command=self._load_compliance_checks).pack(side="left", padx=4)
+        ttk.Button(filt_frame, text=t("health_safety.show_overdue"), command=self._on_show_overdue).pack(side="left", padx=4)
 
         btn_frame = tk.Frame(tab, bg="#ecf0f1")
         btn_frame.pack(fill="x", pady=(0, 6))
-        ttk.Button(btn_frame, text="New", command=self._on_add_compliance).pack(side="left", padx=4)
-        ttk.Button(btn_frame, text="Update", command=self._on_edit_compliance).pack(side="left", padx=4)
-        ttk.Button(btn_frame, text="Delete", command=self._on_delete_compliance).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text=t("common.create"), command=self._on_add_compliance).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text=t("common.update"), command=self._on_edit_compliance).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text=t("common.delete"), command=self._on_delete_compliance).pack(side="left", padx=4)
+        ttk.Button(btn_frame, text="Export CSV", command=self._export_compliance_csv).pack(side="left", padx=4)
 
         tree_frame = tk.Frame(tab)
         tree_frame.pack(fill="both", expand=True)
         cols = ("id", "type", "responsible", "frequency", "last_done", "next_due", "status")
         self._cc_tree = ttk.Treeview(tree_frame, columns=cols, show="headings", selectmode="browse")
         for col, heading, width in [
-            ("id", "ID", 40), ("type", "Type", 140), ("responsible", "Responsible", 110),
-            ("frequency", "Frequency", 80), ("last_done", "Last Done", 90),
-            ("next_due", "Next Due", 90), ("status", "Status", 75),
+            ("id", t("common.id"), 40), ("type", t("common.type"), 140),
+            ("responsible", t("health_safety.responsible"), 110),
+            ("frequency", t("health_safety.frequency"), 80), ("last_done", t("health_safety.last_done"), 90),
+            ("next_due", t("health_safety.next_due"), 90), ("status", t("common.status"), 75),
         ]:
             self._cc_tree.heading(col, text=heading)
             self._cc_tree.column(col, width=width, anchor="center")
@@ -418,10 +426,10 @@ class HealthSafetyFrame(tk.Frame):
 
     def _build_stats_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=20, pady=20)
-        self._nb.add(tab, text="Statistics")
+        self._nb.add(tab, text=t("common.summary"))
         self._stats_frame = tab
 
-    # ── Data Loading ──────────────────────────────────────────────────────
+    # -- Data Loading ----------------------------------------------------------
 
     def refresh(self):
         """Reload all tabs."""
@@ -438,7 +446,7 @@ class HealthSafetyFrame(tk.Frame):
             inc_type = self._inc_type_var.get() or None
             items = self._svc.list_incidents(status=status, incident_type=inc_type)
             for item in items:
-                riddor = "Yes" if item.get("riddor_reportable") else "No"
+                riddor = t("common.yes") if item.get("riddor_reportable") else t("common.no")
                 self._inc_tree.insert("", "end", iid=item["id"], values=(
                     item["id"],
                     item.get("incident_date", ""),
@@ -449,7 +457,7 @@ class HealthSafetyFrame(tk.Frame):
                     item.get("status", ""),
                 ))
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load incidents:\n{exc}")
+            messagebox.showerror(t("common.error"), f"Failed to load incidents:\n{exc}")
 
     def _load_inspections(self):
         self._insp_tree.delete(*self._insp_tree.get_children())
@@ -467,7 +475,7 @@ class HealthSafetyFrame(tk.Frame):
                     item.get("status", ""),
                 ))
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load inspections:\n{exc}")
+            messagebox.showerror(t("common.error"), f"Failed to load inspections:\n{exc}")
 
     def _load_risk_assessments(self):
         self._ra_tree.delete(*self._ra_tree.get_children())
@@ -487,7 +495,7 @@ class HealthSafetyFrame(tk.Frame):
                     item.get("status", ""),
                 ))
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load risk assessments:\n{exc}")
+            messagebox.showerror(t("common.error"), f"Failed to load risk assessments:\n{exc}")
 
     def _load_compliance_checks(self):
         self._cc_tree.delete(*self._cc_tree.get_children())
@@ -505,7 +513,7 @@ class HealthSafetyFrame(tk.Frame):
                     item.get("status", ""),
                 ))
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load compliance checks:\n{exc}")
+            messagebox.showerror(t("common.error"), f"Failed to load compliance checks:\n{exc}")
 
     def _load_stats(self):
         for widget in self._stats_frame.winfo_children():
@@ -513,25 +521,25 @@ class HealthSafetyFrame(tk.Frame):
         try:
             stats = self._svc.get_stats()
             sections = [
-                ("Incidents", [
-                    f"Total Incidents: {stats.get('total_incidents', 0)}",
-                    f"Open Incidents: {stats.get('open_incidents', 0)}",
-                    f"RIDDOR Reportable: {stats.get('riddor_count', 0)}",
+                (t("health_safety.incidents"), [
+                    f"{t('health_safety.total_incidents')}: {stats.get('total_incidents', 0)}",
+                    f"{t('health_safety.open_incidents')}: {stats.get('open_incidents', 0)}",
+                    f"{t('health_safety.riddor_reportable')}: {stats.get('riddor_count', 0)}",
                 ]),
-                ("By Incident Type", [
+                (t("health_safety.by_incident_type"), [
                     f"  {k}: {v}" for k, v in stats.get("by_type", {}).items()
                 ]),
-                ("Inspections", [
-                    f"Total Inspections: {stats.get('total_inspections', 0)}",
-                    f"Failed Inspections: {stats.get('failed_inspections', 0)}",
+                (t("health_safety.inspections"), [
+                    f"{t('health_safety.total_inspections')}: {stats.get('total_inspections', 0)}",
+                    f"{t('health_safety.failed_inspections')}: {stats.get('failed_inspections', 0)}",
                 ]),
-                ("Risk Assessments", [
-                    f"Total Risk Assessments: {stats.get('total_risk_assessments', 0)}",
-                    f"High/Very High Risk: {stats.get('high_risk_count', 0)}",
+                (t("health_safety.risk_assessments"), [
+                    f"{t('health_safety.total_risk_assessments')}: {stats.get('total_risk_assessments', 0)}",
+                    f"{t('health_safety.high_very_high_risk')}: {stats.get('high_risk_count', 0)}",
                 ]),
-                ("Compliance", [
-                    f"Total Compliance Checks: {stats.get('total_compliance', 0)}",
-                    f"Overdue Checks: {stats.get('overdue_compliance', 0)}",
+                (t("health_safety.compliance"), [
+                    f"{t('health_safety.total_compliance_checks')}: {stats.get('total_compliance', 0)}",
+                    f"{t('health_safety.overdue_checks')}: {stats.get('overdue_compliance', 0)}",
                 ]),
             ]
             row = 0
@@ -544,22 +552,22 @@ class HealthSafetyFrame(tk.Frame):
                              bg="#ecf0f1", anchor="w").grid(row=row, column=0, sticky="w", padx=10)
                     row += 1
         except Exception as exc:
-            tk.Label(self._stats_frame, text=f"Error loading stats: {exc}",
+            tk.Label(self._stats_frame, text=f"{t('common.error')}: {exc}",
                      bg="#ecf0f1", fg="red").grid(row=0, column=0)
 
-    # ── Helpers ───────────────────────────────────────────────────────────
+    # -- Helpers ---------------------------------------------------------------
 
     def _selected_pk(self, tree) -> int | None:
         sel = tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select an item first.")
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"))
             return None
         return int(sel[0])
 
-    # ── Incident Actions ──────────────────────────────────────────────────
+    # -- Incident Actions ------------------------------------------------------
 
     def _on_add_incident(self):
-        dlg = _IncidentDialog(self, title="New Incident")
+        dlg = _IncidentDialog(self, title=t("health_safety.new_incident"))
         self.wait_window(dlg)
         if dlg.result is None:
             return
@@ -568,13 +576,13 @@ class HealthSafetyFrame(tk.Frame):
             date = data.pop("incident_date", "")
             desc = data.pop("description", "")
             if not date or not desc:
-                messagebox.showwarning("Validation", "Date and description are required.")
+                messagebox.showwarning(t("common.validation"), t("common.field_required"))
                 return
             self._svc.create_incident(date, desc, **data)
-            messagebox.showinfo("Success", "Incident created.")
+            messagebox.showinfo(t("common.success"), t("common.created_success"))
             self._load_incidents()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_view_incident(self):
         pk = self._selected_pk(self._inc_tree)
@@ -582,9 +590,9 @@ class HealthSafetyFrame(tk.Frame):
             return
         item = self._svc.get_incident(pk)
         if not item:
-            messagebox.showerror("Error", "Incident not found.")
+            messagebox.showerror(t("common.error"), t("common.no_data"))
             return
-        _DetailDialog(self, "Incident Details", item)
+        _DetailDialog(self, t("health_safety.incident_details"), item)
         self.wait_window()
 
     def _on_edit_incident(self):
@@ -593,18 +601,18 @@ class HealthSafetyFrame(tk.Frame):
             return
         item = self._svc.get_incident(pk)
         if not item:
-            messagebox.showerror("Error", "Incident not found.")
+            messagebox.showerror(t("common.error"), t("common.no_data"))
             return
-        dlg = _IncidentDialog(self, title="Update Incident", item=item)
+        dlg = _IncidentDialog(self, title=t("health_safety.update_incident"), item=item)
         self.wait_window(dlg)
         if dlg.result is None:
             return
         try:
             self._svc.update_incident(pk, **dlg.result)
-            messagebox.showinfo("Success", "Incident updated.")
+            messagebox.showinfo(t("common.success"), t("common.updated_success"))
             self._load_incidents()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_close_incident(self):
         pk = self._selected_pk(self._inc_tree)
@@ -616,28 +624,28 @@ class HealthSafetyFrame(tk.Frame):
             return
         try:
             self._svc.close_incident(pk, dlg.result["root_cause"], dlg.result["corrective_actions"])
-            messagebox.showinfo("Success", "Incident closed.")
+            messagebox.showinfo(t("common.success"), t("health_safety.incident_closed"))
             self._load_incidents()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_delete_incident(self):
         pk = self._selected_pk(self._inc_tree)
         if pk is None:
             return
-        if not messagebox.askyesno("Confirm", "Delete this incident?"):
+        if not messagebox.askyesno(t("common.confirm"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_incident(pk)
-            messagebox.showinfo("Success", "Incident deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_incidents()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
-    # ── Inspection Actions ────────────────────────────────────────────────
+    # -- Inspection Actions ----------------------------------------------------
 
     def _on_add_inspection(self):
-        dlg = _InspectionDialog(self, title="New Inspection")
+        dlg = _InspectionDialog(self, title=t("health_safety.new_inspection"))
         self.wait_window(dlg)
         if dlg.result is None:
             return
@@ -646,13 +654,13 @@ class HealthSafetyFrame(tk.Frame):
             itype = data.pop("inspection_type", "")
             idate = data.pop("inspection_date", "")
             if not itype or not idate:
-                messagebox.showwarning("Validation", "Type and date are required.")
+                messagebox.showwarning(t("common.validation"), t("common.field_required"))
                 return
             self._svc.create_inspection(itype, idate, **data)
-            messagebox.showinfo("Success", "Inspection created.")
+            messagebox.showinfo(t("common.success"), t("common.created_success"))
             self._load_inspections()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_view_inspection(self):
         pk = self._selected_pk(self._insp_tree)
@@ -660,9 +668,9 @@ class HealthSafetyFrame(tk.Frame):
             return
         item = self._svc.get_inspection(pk)
         if not item:
-            messagebox.showerror("Error", "Inspection not found.")
+            messagebox.showerror(t("common.error"), t("common.no_data"))
             return
-        _DetailDialog(self, "Inspection Details", item)
+        _DetailDialog(self, t("health_safety.inspection_details"), item)
         self.wait_window()
 
     def _on_edit_inspection(self):
@@ -671,36 +679,36 @@ class HealthSafetyFrame(tk.Frame):
             return
         item = self._svc.get_inspection(pk)
         if not item:
-            messagebox.showerror("Error", "Inspection not found.")
+            messagebox.showerror(t("common.error"), t("common.no_data"))
             return
-        dlg = _InspectionDialog(self, title="Update Inspection", item=item)
+        dlg = _InspectionDialog(self, title=t("health_safety.update_inspection"), item=item)
         self.wait_window(dlg)
         if dlg.result is None:
             return
         try:
             self._svc.update_inspection(pk, **dlg.result)
-            messagebox.showinfo("Success", "Inspection updated.")
+            messagebox.showinfo(t("common.success"), t("common.updated_success"))
             self._load_inspections()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_delete_inspection(self):
         pk = self._selected_pk(self._insp_tree)
         if pk is None:
             return
-        if not messagebox.askyesno("Confirm", "Delete this inspection?"):
+        if not messagebox.askyesno(t("common.confirm"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_inspection(pk)
-            messagebox.showinfo("Success", "Inspection deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_inspections()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
-    # ── Risk Assessment Actions ───────────────────────────────────────────
+    # -- Risk Assessment Actions -----------------------------------------------
 
     def _on_add_risk_assessment(self):
-        dlg = _RiskAssessmentDialog(self, title="New Risk Assessment")
+        dlg = _RiskAssessmentDialog(self, title=t("health_safety.new_risk_assessment"))
         self.wait_window(dlg)
         if dlg.result is None:
             return
@@ -709,13 +717,13 @@ class HealthSafetyFrame(tk.Frame):
             activity = data.pop("activity", "")
             adate = data.pop("assessment_date", "")
             if not activity or not adate:
-                messagebox.showwarning("Validation", "Activity and date are required.")
+                messagebox.showwarning(t("common.validation"), t("common.field_required"))
                 return
             self._svc.create_risk_assessment(activity, adate, **data)
-            messagebox.showinfo("Success", "Risk assessment created.")
+            messagebox.showinfo(t("common.success"), t("common.created_success"))
             self._load_risk_assessments()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_view_risk_assessment(self):
         pk = self._selected_pk(self._ra_tree)
@@ -723,9 +731,9 @@ class HealthSafetyFrame(tk.Frame):
             return
         item = self._svc.get_risk_assessment(pk)
         if not item:
-            messagebox.showerror("Error", "Risk assessment not found.")
+            messagebox.showerror(t("common.error"), t("common.no_data"))
             return
-        _DetailDialog(self, "Risk Assessment Details", item)
+        _DetailDialog(self, t("health_safety.risk_assessment_details"), item)
         self.wait_window()
 
     def _on_edit_risk_assessment(self):
@@ -734,36 +742,36 @@ class HealthSafetyFrame(tk.Frame):
             return
         item = self._svc.get_risk_assessment(pk)
         if not item:
-            messagebox.showerror("Error", "Risk assessment not found.")
+            messagebox.showerror(t("common.error"), t("common.no_data"))
             return
-        dlg = _RiskAssessmentDialog(self, title="Update Risk Assessment", item=item)
+        dlg = _RiskAssessmentDialog(self, title=t("health_safety.update_risk_assessment"), item=item)
         self.wait_window(dlg)
         if dlg.result is None:
             return
         try:
             self._svc.update_risk_assessment(pk, **dlg.result)
-            messagebox.showinfo("Success", "Risk assessment updated.")
+            messagebox.showinfo(t("common.success"), t("common.updated_success"))
             self._load_risk_assessments()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_delete_risk_assessment(self):
         pk = self._selected_pk(self._ra_tree)
         if pk is None:
             return
-        if not messagebox.askyesno("Confirm", "Delete this risk assessment?"):
+        if not messagebox.askyesno(t("common.confirm"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_risk_assessment(pk)
-            messagebox.showinfo("Success", "Risk assessment deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_risk_assessments()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
-    # ── Compliance Check Actions ──────────────────────────────────────────
+    # -- Compliance Check Actions ----------------------------------------------
 
     def _on_add_compliance(self):
-        dlg = _ComplianceCheckDialog(self, title="New Compliance Check")
+        dlg = _ComplianceCheckDialog(self, title=t("health_safety.new_compliance_check"))
         self.wait_window(dlg)
         if dlg.result is None:
             return
@@ -771,13 +779,13 @@ class HealthSafetyFrame(tk.Frame):
             data = dlg.result
             ctype = data.pop("check_type", "")
             if not ctype:
-                messagebox.showwarning("Validation", "Check type is required.")
+                messagebox.showwarning(t("common.validation"), t("common.field_required"))
                 return
             self._svc.create_compliance_check(ctype, **data)
-            messagebox.showinfo("Success", "Compliance check created.")
+            messagebox.showinfo(t("common.success"), t("common.created_success"))
             self._load_compliance_checks()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_edit_compliance(self):
         pk = self._selected_pk(self._cc_tree)
@@ -785,31 +793,31 @@ class HealthSafetyFrame(tk.Frame):
             return
         item = self._svc.get_compliance_check(pk)
         if not item:
-            messagebox.showerror("Error", "Compliance check not found.")
+            messagebox.showerror(t("common.error"), t("common.no_data"))
             return
-        dlg = _ComplianceCheckDialog(self, title="Update Compliance Check", item=item)
+        dlg = _ComplianceCheckDialog(self, title=t("health_safety.update_compliance_check"), item=item)
         self.wait_window(dlg)
         if dlg.result is None:
             return
         try:
             self._svc.update_compliance_check(pk, **dlg.result)
-            messagebox.showinfo("Success", "Compliance check updated.")
+            messagebox.showinfo(t("common.success"), t("common.updated_success"))
             self._load_compliance_checks()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_delete_compliance(self):
         pk = self._selected_pk(self._cc_tree)
         if pk is None:
             return
-        if not messagebox.askyesno("Confirm", "Delete this compliance check?"):
+        if not messagebox.askyesno(t("common.confirm"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_compliance_check(pk)
-            messagebox.showinfo("Success", "Compliance check deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_compliance_checks()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_show_overdue(self):
         """Show only overdue compliance checks in the treeview."""
@@ -827,6 +835,22 @@ class HealthSafetyFrame(tk.Frame):
                     item.get("status", ""),
                 ))
             if not items:
-                messagebox.showinfo("Overdue Checks", "No overdue compliance checks found.")
+                messagebox.showinfo(t("health_safety.overdue_checks"), t("common.no_data"))
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load overdue checks:\n{exc}")
+            messagebox.showerror(t("common.error"), f"Failed to load overdue checks:\n{exc}")
+
+    def _export_incidents_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._inc_tree, "health_safety_incidents_export.csv")
+
+    def _export_inspections_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._insp_tree, "health_safety_inspections_export.csv")
+
+    def _export_risk_assessments_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._ra_tree, "health_safety_risk_assessments_export.csv")
+
+    def _export_compliance_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._cc_tree, "health_safety_compliance_export.csv")

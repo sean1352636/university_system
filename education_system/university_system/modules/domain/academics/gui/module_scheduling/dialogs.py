@@ -62,9 +62,10 @@ except ImportError:
         class ModuleScheduler: pass
 
 class AddScheduleDialog:
-    def __init__(self, parent, scheduler):
+    def __init__(self, parent, scheduler, gui=None):
         self.parent = parent
         self.scheduler = scheduler
+        self.gui = gui
         self.result = False
         
         self.dialog = tk.Toplevel(parent)
@@ -332,7 +333,7 @@ class AddScheduleDialog:
             session_type = self.session_type_var.get()
 
             if not all([module_code, day, start_time, end_time, room_str, instructor_str, session_type]):
-                messagebox.showerror("Error", "Please fill in all fields.")
+                messagebox.showerror("Error", "Please fill in all fields.", parent=self.dialog)
                 return
 
             # Extract IDs
@@ -350,7 +351,7 @@ class AddScheduleDialog:
                     "Conflicts Detected",
                     "There are scheduling conflicts:\n\n" + conflict_message + "\n\nDo you want to save anyway?",
                     icon='warning'
-                )
+                , parent=self.dialog)
                 if not response:
                     return
 
@@ -385,7 +386,8 @@ class AddScheduleDialog:
 
                         # Email all students and instructor using the new function
                         try:
-                            summary = self.parent.email_all_students_on_module(
+                            target = self.gui or self.parent
+                            summary = target.email_all_students_on_module(
                                 module_code,
                                 f"New Class Schedule: {module_code}",
                                 message,
@@ -408,7 +410,7 @@ class AddScheduleDialog:
                 self.dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save schedule: {str(e)}")
+            messagebox.showerror("Error", f"Failed to save schedule: {str(e)}", parent=self.dialog)
     
     def center_window(self):
         self.dialog.update_idletasks()
@@ -534,7 +536,7 @@ class AddRoomDialog:
             notes = self.notes_text.get(1.0, tk.END).strip()
 
             if not all([room_number, building, str(capacity), room_type]):
-                messagebox.showerror("Error", "Please fill in all required fields.")
+                messagebox.showerror("Error", "Please fill in all required fields.", parent=self.dialog)
                 return
 
             room_id = self.scheduler.add_room(room_number, building, capacity, room_type, equipment, notes)
@@ -544,9 +546,9 @@ class AddRoomDialog:
                 self.dialog.destroy()
 
         except ValueError:
-            messagebox.showerror("Error", "Capacity must be a number.")
+            messagebox.showerror("Error", "Capacity must be a number.", parent=self.dialog)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save room: {str(e)}")
+            messagebox.showerror("Error", f"Failed to save room: {str(e)}", parent=self.dialog)
     
     def center_window(self):
         self.dialog.update_idletasks()
@@ -645,14 +647,14 @@ class AddInstructorDialog:
             email = self.email_var.get().strip()
 
             if not first_name or not last_name or not email:
-                messagebox.showerror("Validation Error", "First name, last name, and email are required.")
+                messagebox.showerror("Validation Error", "First name, last name, and email are required.", parent=self.dialog)
                 return
 
             # Validate email format
             import re
             email_pattern = r'^[A-Za-z0-9._%+-]+@(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}$'
             if not re.match(email_pattern, email):
-                messagebox.showerror("Validation Error", "Please enter a valid email address.")
+                messagebox.showerror("Validation Error", "Please enter a valid email address.", parent=self.dialog)
                 return
 
             department = self.department_var.get().strip()
@@ -661,13 +663,13 @@ class AddInstructorDialog:
             try:
                 max_courses = int(self.max_courses_var.get())
             except ValueError:
-                messagebox.showerror("Validation Error", "Max courses must be a number.")
+                messagebox.showerror("Validation Error", "Max courses must be a number.", parent=self.dialog)
                 return
 
             try:
                 max_hours = int(self.max_hours_var.get())
             except ValueError:
-                messagebox.showerror("Validation Error", "Max hours must be a number.")
+                messagebox.showerror("Validation Error", "Max hours must be a number.", parent=self.dialog)
                 return
 
             preferred_days = self.preferred_days_var.get().strip()
@@ -681,7 +683,7 @@ class AddInstructorDialog:
                 # Check for duplicate email
                 cursor.execute("SELECT email FROM instructors WHERE email = ?", (email,))
                 if cursor.fetchone():
-                    messagebox.showerror("Duplicate Error", f"Email '{email}' already exists.")
+                    messagebox.showerror("Duplicate Error", f"Email '{email}' already exists.", parent=self.dialog)
                     return
 
                 from datetime import datetime
@@ -698,11 +700,11 @@ class AddInstructorDialog:
                 conn.commit()
 
             self.result = True
-            messagebox.showinfo("Success", f"Instructor {first_name} {last_name} added successfully.")
+            messagebox.showinfo("Success", f"Instructor {first_name} {last_name} added successfully.", parent=self.dialog)
             self.dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save instructor: {str(e)}")
+            messagebox.showerror("Error", f"Failed to save instructor: {str(e)}", parent=self.dialog)
     
     def center_window(self):
         self.dialog.update_idletasks()
@@ -711,9 +713,10 @@ class AddInstructorDialog:
         self.dialog.geometry(f"+{x}+{y}")
 
 class EditScheduleDialog:
-    def __init__(self, parent, scheduler, schedule_id):
+    def __init__(self, parent, scheduler, schedule_id, gui=None):
         self.parent = parent
         self.scheduler = scheduler
+        self.gui = gui
         self.schedule_id = schedule_id
         self.result = False
         
@@ -762,7 +765,7 @@ class EditScheduleDialog:
                 raise CourseNotFoundError(f"Schedule {self.schedule_id}")
 
         except (CourseNotFoundError, sqlite3.Error) as e:
-            messagebox.showerror("Error", f"Failed to load schedule data: {str(e)}")
+            messagebox.showerror("Error", f"Failed to load schedule data: {str(e)}", parent=self.dialog)
             self.dialog.destroy()
     
     def create_widgets(self):
@@ -895,7 +898,7 @@ class EditScheduleDialog:
                 updates['session_type'] = self.session_type_var.get()
 
             if not updates:
-                messagebox.showinfo("Info", "No changes detected.")
+                messagebox.showinfo("Info", "No changes detected.", parent=self.dialog)
                 return
 
             # Update schedule
@@ -943,7 +946,8 @@ class EditScheduleDialog:
 
                             # Email all students and instructor using the new function
                             try:
-                                summary = self.parent.email_all_students_on_module(
+                                target = self.gui or self.parent
+                                summary = target.email_all_students_on_module(
                                     module_code,
                                     f"Schedule Changed: {module_code}",
                                     message,
@@ -966,7 +970,7 @@ class EditScheduleDialog:
                 self.dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update schedule: {str(e)}")
+            messagebox.showerror("Error", f"Failed to update schedule: {str(e)}", parent=self.dialog)
     
     def center_window(self):
         self.dialog.update_idletasks()
@@ -1021,7 +1025,7 @@ class EditRoomDialog:
                 raise CourseNotFoundError(f"Room {self.room_id}")
 
         except (CourseNotFoundError, sqlite3.Error) as e:
-            messagebox.showerror("Error", f"Failed to load room data: {str(e)}")
+            messagebox.showerror("Error", f"Failed to load room data: {str(e)}", parent=self.dialog)
             self.dialog.destroy()
     
     def create_widgets(self):
@@ -1085,12 +1089,12 @@ class EditRoomDialog:
             
             self.result = True
             self.dialog.destroy()
-            messagebox.showinfo("Success", "Room updated successfully.")
+            messagebox.showinfo("Success", "Room updated successfully.", parent=self.dialog)
             
         except ValueError:
-            messagebox.showerror("Error", "Capacity must be a number.")
+            messagebox.showerror("Error", "Capacity must be a number.", parent=self.dialog)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update room: {str(e)}")
+            messagebox.showerror("Error", f"Failed to update room: {str(e)}", parent=self.dialog)
     
     def center_window(self):
         self.dialog.update_idletasks()
@@ -1151,7 +1155,7 @@ class EditInstructorDialog:
                 raise CourseNotFoundError(f"Instructor {self.instructor_id}")
 
         except (CourseNotFoundError, sqlite3.Error) as e:
-            messagebox.showerror("Error", f"Failed to load instructor data: {str(e)}")
+            messagebox.showerror("Error", f"Failed to load instructor data: {str(e)}", parent=self.dialog)
             self.dialog.destroy()
     
     def create_widgets(self):
@@ -1238,12 +1242,12 @@ class EditInstructorDialog:
             
             self.result = True
             self.dialog.destroy()
-            messagebox.showinfo("Success", "Instructor updated successfully.")
+            messagebox.showinfo("Success", "Instructor updated successfully.", parent=self.dialog)
             
         except ValueError:
-            messagebox.showerror("Error", "Max hours must be a number.")
+            messagebox.showerror("Error", "Max hours must be a number.", parent=self.dialog)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update instructor: {str(e)}")
+            messagebox.showerror("Error", f"Failed to update instructor: {str(e)}", parent=self.dialog)
     
     def center_window(self):
         self.dialog.update_idletasks()
@@ -1319,7 +1323,7 @@ class AddHolidayDialog:
             recurring = self.recurring_var.get()
             
             if not all([name, start_date]):
-                messagebox.showerror("Error", "Please fill in name and start date.")
+                messagebox.showerror("Error", "Please fill in name and start date.", parent=self.dialog)
                 return
             
             # Validate date format
@@ -1328,17 +1332,17 @@ class AddHolidayDialog:
                 if end_date != start_date:
                     datetime.strptime(end_date, "%Y-%m-%d")
             except ValueError:
-                messagebox.showerror("Error", "Invalid date format. Use YYYY-MM-DD.")
+                messagebox.showerror("Error", "Invalid date format. Use YYYY-MM-DD.", parent=self.dialog)
                 return
             
             self.scheduler.add_holiday(name, start_date, end_date, description, recurring)
             
             self.result = True
             self.dialog.destroy()
-            messagebox.showinfo("Success", "Holiday added successfully.")
+            messagebox.showinfo("Success", "Holiday added successfully.", parent=self.dialog)
             
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save holiday: {str(e)}")
+            messagebox.showerror("Error", f"Failed to save holiday: {str(e)}", parent=self.dialog)
     
     def center_window(self):
         self.dialog.update_idletasks()

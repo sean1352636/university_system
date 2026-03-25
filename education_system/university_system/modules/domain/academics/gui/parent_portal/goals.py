@@ -41,7 +41,7 @@ except ImportError:
 
 
 
-from .base import ParentPortalGUI
+from education_system.university_system.modules.domain.academics.gui.parent_portal.base import ParentPortalGUI
 
 def show_goals_interface(self):
     """Show academic goals interface"""

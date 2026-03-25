@@ -152,8 +152,8 @@ def test_db(tmp_path):
     conn.commit()
     conn.close()
 
-    with patch('university_system.infrastructure.database.db.get_connection', mock_get_connection):
-        with patch('university_system.modules.domain.academics.grading.predictive_analytics.get_connection', mock_get_connection):
+    with patch('education_system.university_system.infrastructure.database.db.get_connection', mock_get_connection):
+        with patch('education_system.university_system.modules.domain.academics.grading.predictive_analytics.get_connection', mock_get_connection):
             yield mock_get_connection
 
 @pytest.fixture
@@ -259,7 +259,7 @@ class TestIdentifyAtRiskStudents:
 
     @patch('builtins.input', side_effect=['2.0', 'n'])  # Threshold 2.0, don't export
     @patch('builtins.print')
-    @patch('university_system.modules.domain.academics.grading.predictive_analytics.calculate_student_gpa')
+    @patch('education_system.university_system.modules.domain.academics.grading.predictive_analytics.calculate_student_gpa')
     def test_identify_at_risk_students_no_data(self, mock_gpa, mock_print, mock_input, test_db):
         """Test identifying at-risk students with no data"""
         mock_gpa.return_value = (None, 0, [])
@@ -271,7 +271,7 @@ class TestIdentifyAtRiskStudents:
 
     @patch('builtins.input', side_effect=['2.0', 'n'])  # Threshold 2.0, don't export
     @patch('builtins.print')
-    @patch('university_system.modules.domain.academics.grading.predictive_analytics.calculate_student_gpa')
+    @patch('education_system.university_system.modules.domain.academics.grading.predictive_analytics.calculate_student_gpa')
     def test_identify_at_risk_students_with_data(self, mock_gpa, mock_print, mock_input, sample_data):
         """Test identifying at-risk students with sample data"""
         # Mock GPA to return low GPA for ST001
@@ -291,7 +291,7 @@ class TestIdentifyAtRiskStudents:
 class TestCalculateRiskFactors:
     """Tests for calculate_risk_factors function"""
 
-    @patch('university_system.modules.domain.academics.grading.predictive_analytics.calculate_student_gpa')
+    @patch('education_system.university_system.modules.domain.academics.grading.predictive_analytics.calculate_student_gpa')
     def test_calculate_risk_factors_high_risk(self, mock_gpa, sample_data):
         """Test calculating risk factors for high-risk student"""
         mock_gpa.return_value = (1.5, 6, [])
@@ -308,7 +308,7 @@ class TestCalculateRiskFactors:
 
         conn.close()
 
-    @patch('university_system.modules.domain.academics.grading.predictive_analytics.calculate_student_gpa')
+    @patch('education_system.university_system.modules.domain.academics.grading.predictive_analytics.calculate_student_gpa')
     def test_calculate_risk_factors_low_risk(self, mock_gpa, sample_data):
         """Test calculating risk factors for low-risk student"""
         mock_gpa.return_value = (3.8, 6, [])
@@ -335,7 +335,7 @@ class TestEarlyWarningSystem:
         printed_output = ' '.join(str(call) for call in mock_print.call_args_list)
         assert 'No students' in printed_output or 'Early Warning' in printed_output
 
-    @patch('university_system.modules.domain.academics.grading.predictive_analytics.calculate_student_gpa')
+    @patch('education_system.university_system.modules.domain.academics.grading.predictive_analytics.calculate_student_gpa')
     def test_generate_early_warning_alert(self, mock_gpa, sample_data):
         """Test generating early warning alert"""
         mock_gpa.return_value = (1.8, 6, [])
@@ -357,7 +357,7 @@ class TestEarlyWarningSystem:
 class TestDropoutRiskAnalysis:
     """Tests for dropout risk analysis functions"""
 
-    @patch('university_system.modules.domain.academics.grading.predictive_analytics.calculate_student_gpa')
+    @patch('education_system.university_system.modules.domain.academics.grading.predictive_analytics.calculate_student_gpa')
     def test_calculate_dropout_risk_score_high_risk(self, mock_gpa, sample_data):
         """Test calculating dropout risk score for high-risk student"""
         mock_gpa.return_value = (1.5, 6, [])
@@ -373,7 +373,7 @@ class TestDropoutRiskAnalysis:
 
         conn.close()
 
-    @patch('university_system.modules.domain.academics.grading.predictive_analytics.calculate_student_gpa')
+    @patch('education_system.university_system.modules.domain.academics.grading.predictive_analytics.calculate_student_gpa')
     def test_calculate_dropout_risk_score_low_risk(self, mock_gpa, sample_data):
         """Test calculating dropout risk score for low-risk student"""
         mock_gpa.return_value = (3.8, 6, [])
@@ -391,7 +391,7 @@ class TestDropoutRiskAnalysis:
 
     @patch('builtins.input', side_effect=['n'])  # Don't export
     @patch('builtins.print')
-    @patch('university_system.modules.domain.academics.grading.predictive_analytics.calculate_dropout_risk_score')
+    @patch('education_system.university_system.modules.domain.academics.grading.predictive_analytics.calculate_dropout_risk_score')
     def test_identify_high_dropout_risk(self, mock_risk_score, mock_print, mock_input, sample_data):
         """Test identifying high dropout risk students"""
         # Mock to return high risk for ST001
@@ -405,7 +405,7 @@ class TestDropoutRiskAnalysis:
         printed_output = ' '.join(str(call) for call in mock_print.call_args_list)
         assert 'dropout' in printed_output.lower() or 'risk' in printed_output.lower()
 
-    @patch('university_system.modules.domain.academics.grading.predictive_analytics.calculate_student_gpa')
+    @patch('education_system.university_system.modules.domain.academics.grading.predictive_analytics.calculate_student_gpa')
     def test_analyze_dropout_risk_factors(self, mock_gpa, sample_data):
         """Test analyzing dropout risk factors"""
         mock_gpa.return_value = (2.5, 6, [])
@@ -422,8 +422,8 @@ class TestDropoutRiskAnalysis:
 class TestInterventionGeneration:
     """Tests for intervention generation functions"""
 
-    @patch('university_system.modules.domain.academics.grading.predictive_analytics.calculate_student_gpa')
-    @patch('university_system.modules.domain.academics.grading.predictive_analytics.calculate_dropout_risk_score')
+    @patch('education_system.university_system.modules.domain.academics.grading.predictive_analytics.calculate_student_gpa')
+    @patch('education_system.university_system.modules.domain.academics.grading.predictive_analytics.calculate_dropout_risk_score')
     def test_generate_dropout_intervention_plan(self, mock_risk, mock_gpa, sample_data):
         """Test generating dropout intervention plan"""
         mock_gpa.return_value = (1.5, 6, [])
@@ -444,8 +444,8 @@ class TestInterventionGeneration:
         conn.close()
 
     @patch('builtins.print')
-    @patch('university_system.modules.domain.academics.grading.predictive_analytics.generate_dropout_intervention_plan')
-    @patch('university_system.modules.domain.academics.grading.predictive_analytics.calculate_dropout_risk_score')
+    @patch('education_system.university_system.modules.domain.academics.grading.predictive_analytics.generate_dropout_intervention_plan')
+    @patch('education_system.university_system.modules.domain.academics.grading.predictive_analytics.calculate_dropout_risk_score')
     def test_generate_dropout_interventions(self, mock_risk, mock_plan, mock_print, sample_data):
         """Test generating dropout interventions"""
         mock_risk.return_value = 80.0
@@ -473,7 +473,7 @@ class TestRiskReporting:
     """Tests for risk reporting functions"""
 
     @patch('builtins.print')
-    @patch('university_system.modules.domain.academics.grading.predictive_analytics.collect_comprehensive_risk_data')
+    @patch('education_system.university_system.modules.domain.academics.grading.predictive_analytics.collect_comprehensive_risk_data')
     def test_generate_risk_report(self, mock_collect, mock_print, test_db):
         """Test generating comprehensive risk report"""
         mock_collect.return_value = None  # No data
@@ -483,8 +483,8 @@ class TestRiskReporting:
         printed_output = ' '.join(str(call) for call in mock_print.call_args_list)
         assert 'risk' in printed_output.lower() or 'report' in printed_output.lower()
 
-    @patch('university_system.modules.domain.academics.grading.predictive_analytics.assess_comprehensive_student_risk')
-    @patch('university_system.modules.domain.academics.grading.predictive_analytics.generate_system_recommendations')
+    @patch('education_system.university_system.modules.domain.academics.grading.predictive_analytics.assess_comprehensive_student_risk')
+    @patch('education_system.university_system.modules.domain.academics.grading.predictive_analytics.generate_system_recommendations')
     def test_collect_comprehensive_risk_data(self, mock_recommendations, mock_assess, sample_data):
         """Test collecting comprehensive risk data"""
         mock_assess.return_value = {
@@ -617,8 +617,8 @@ class TestPredictionModels:
     """Tests for prediction model building"""
 
     @patch('builtins.print')
-    @patch('university_system.modules.domain.academics.grading.predictive_analytics.extract_comprehensive_student_features')
-    @patch('university_system.modules.domain.academics.grading.predictive_analytics.calculate_student_gpa')
+    @patch('education_system.university_system.modules.domain.academics.grading.predictive_analytics.extract_comprehensive_student_features')
+    @patch('education_system.university_system.modules.domain.academics.grading.predictive_analytics.calculate_student_gpa')
     def test_build_at_risk_prediction_model_insufficient_data(self, mock_gpa, mock_features, mock_print, test_db):
         """Test building at-risk prediction model with insufficient data"""
         mock_features.return_value = None

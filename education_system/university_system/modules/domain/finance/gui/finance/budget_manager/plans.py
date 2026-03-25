@@ -9,7 +9,7 @@ from datetime import datetime
 from education_system.university_system.infrastructure.shared_context import get_auth
 from education_system.university_system.infrastructure.database.db import get_connection
 
-from .constants import (
+from education_system.university_system.modules.domain.finance.gui.finance.budget_manager.constants import (
     budget_approval_workflow,
     budget_vs_actual_analysis,
     create_budget_plan,
@@ -495,6 +495,8 @@ Status:           {status_var.get().title()}
 
     def update_budget_data(self, budget_plans, budget_categories):
         """Update budget data in UI"""
+        if not hasattr(self, 'budget_plans_tree') or not hasattr(self, 'budget_categories_tree'):
+            return
         # Update budget plans
         for item in self.budget_plans_tree.get_children():
             self.budget_plans_tree.delete(item)
@@ -511,4 +513,4 @@ Status:           {status_var.get().title()}
             self.budget_categories_tree.delete(item)
 
         for category in budget_categories:
-            self.budget_categories_tree.insert('', 'end', values=category)
+            self.budget_categories_tree.insert('', 'end', values=tuple(category))

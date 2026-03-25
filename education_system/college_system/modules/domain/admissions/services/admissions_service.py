@@ -87,6 +87,25 @@ class AdmissionsService:
         finally:
             conn.close()
 
+    def delete_application(self, application_id: int) -> bool:
+        """Delete an application by ID."""
+        conn = self._conn()
+        try:
+            result = conn.execute(
+                "DELETE FROM applications WHERE id = ?", (application_id,)
+            )
+            conn.commit()
+            if result.rowcount == 0:
+                raise AdmissionsError(f"Application {application_id} not found.")
+            return True
+        except AdmissionsError:
+            raise
+        except Exception as e:
+            conn.rollback()
+            raise AdmissionsError(f"Failed to delete application: {e}")
+        finally:
+            conn.close()
+
     # --- Inductions ---
 
     def create_induction(self, student_id: int, emergency_contact: str = None,

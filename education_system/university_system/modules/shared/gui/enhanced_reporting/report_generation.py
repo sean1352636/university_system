@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from .core import ReportingSystemGUI
-from .core import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import ReportingSystemGUI
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import (
     generate_enhanced_pdf_report,
     generate_enhanced_section,
     generate_enhanced_excel_report as generate_enhanced_excel_report_standalone,

@@ -151,7 +151,7 @@ class TestConnectFunction:
     def test_connect_default_timeout(self, temp_db_path):
         """Test connect uses DEFAULT_DB_TIMEOUT when no timeout given."""
         from education_system.university_system.infrastructure.database.db import connect
-        with patch('university_system.infrastructure.database.db._sqlite3.connect') as mock_connect:
+        with patch('education_system.university_system.infrastructure.database.db._sqlite3.connect') as mock_connect:
             mock_conn = MagicMock()
             mock_connect.return_value = mock_conn
             connect(temp_db_path)
@@ -162,7 +162,7 @@ class TestConnectFunction:
     def test_connect_custom_timeout(self, temp_db_path):
         """Test connect passes custom timeout through."""
         from education_system.university_system.infrastructure.database.db import connect
-        with patch('university_system.infrastructure.database.db._sqlite3.connect') as mock_connect:
+        with patch('education_system.university_system.infrastructure.database.db._sqlite3.connect') as mock_connect:
             mock_conn = MagicMock()
             mock_connect.return_value = mock_conn
             connect(temp_db_path, timeout=99.0)
@@ -172,7 +172,7 @@ class TestConnectFunction:
     def test_connect_none_uses_default_path(self):
         """Test connect(None) uses DEFAULT_DB_PATH."""
         from education_system.university_system.infrastructure.database.db import connect, DEFAULT_DB_PATH
-        with patch('university_system.infrastructure.database.db._sqlite3.connect') as mock_connect:
+        with patch('education_system.university_system.infrastructure.database.db._sqlite3.connect') as mock_connect:
             mock_conn = MagicMock()
             mock_connect.return_value = mock_conn
             connect(None)
@@ -214,7 +214,7 @@ class TestGetConnection:
     def test_get_connection_custom_timeout(self, temp_db_path):
         """Test get_connection passes custom timeout."""
         from education_system.university_system.infrastructure.database.db import get_connection
-        with patch('university_system.infrastructure.database.db._sqlite3.connect') as mock_connect:
+        with patch('education_system.university_system.infrastructure.database.db._sqlite3.connect') as mock_connect:
             mock_conn = MagicMock()
             mock_connect.return_value = mock_conn
             get_connection(temp_db_path, timeout=15.0)
@@ -224,7 +224,7 @@ class TestGetConnection:
     def test_get_connection_none_uses_default_path(self):
         """Test get_connection(None) uses DEFAULT_DB_PATH."""
         from education_system.university_system.infrastructure.database.db import get_connection, DEFAULT_DB_PATH
-        with patch('university_system.infrastructure.database.db._sqlite3.connect') as mock_connect:
+        with patch('education_system.university_system.infrastructure.database.db._sqlite3.connect') as mock_connect:
             mock_conn = MagicMock()
             mock_connect.return_value = mock_conn
             get_connection(None)
@@ -249,7 +249,7 @@ class TestGetDbConnection:
     def test_get_db_connection_delegates_to_get_connection(self, temp_db_path):
         """Test get_db_connection calls get_connection internally."""
         from education_system.university_system.infrastructure.database.db import get_db_connection
-        with patch('university_system.infrastructure.database.db.get_connection') as mock_gc:
+        with patch('education_system.university_system.infrastructure.database.db.get_connection') as mock_gc:
             mock_gc.return_value = MagicMock()
             get_db_connection(temp_db_path, row_factory=False, timeout=5.0)
             mock_gc.assert_called_once_with(temp_db_path, False, 5.0)
@@ -376,7 +376,7 @@ class TestDatabaseManager:
     def test_retry_on_database_locked(self):
         """Test that DatabaseManager retries when database is locked."""
         from education_system.university_system.infrastructure.database.db import DatabaseManager
-        with patch('university_system.infrastructure.database.db.connect') as mock_connect:
+        with patch('education_system.university_system.infrastructure.database.db.connect') as mock_connect:
             # Fail first time, succeed second time
             locked_err = _sqlite3.OperationalError("database is locked")
             mock_conn = MagicMock()
@@ -390,7 +390,7 @@ class TestDatabaseManager:
     def test_non_lock_error_not_retried(self):
         """Test that non-lock OperationalError is not retried."""
         from education_system.university_system.infrastructure.database.db import DatabaseManager
-        with patch('university_system.infrastructure.database.db.connect') as mock_connect:
+        with patch('education_system.university_system.infrastructure.database.db.connect') as mock_connect:
             mock_connect.side_effect = _sqlite3.OperationalError("disk I/O error")
             dm = DatabaseManager(db_path="/tmp/fake.db", max_retries=3, retry_delay=0.01)
             with pytest.raises(_sqlite3.OperationalError, match="disk I/O error"):

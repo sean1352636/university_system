@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/library/digital_library.py
+# hypothesis_version: 6.151.9
+
+['\nAccess levels:', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', '1', '1. Public', '1. public', '2', '2. Students Only', '2. students', '3', '3. Staff Only', '3. staff', '4', '4. Restricted', '4. restricted', '5', '5. View access logs', '6', '6. Return to menu', 'Access levels:', 'Enter author: ', 'Enter category: ', 'Enter description: ', 'Enter file path: ', 'Enter title: ', 'File not found.', 'Invalid selection.', 'Resource not found.', 'Unknown', 'digital_id', 'digital_library', 'manage_books', 'public', 'restricted', 'staff', 'students', 'title', 'user_id']

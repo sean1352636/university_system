@@ -209,14 +209,14 @@ def compare_by_assessment_type(cursor):
     # Gather per-type aggregates
     cursor.execute('''
     SELECT a.assessment_type,
-           COUNT(DISTINCT a.assessment_id) AS total_assessments,
+           COUNT(DISTINCT a.id) AS total_assessments,
            AVG(CASE
                  WHEN g.score IS NOT NULL AND a.max_points IS NOT NULL AND a.max_points > 0
                  THEN (CAST(g.score AS REAL) / a.max_points) * 100
                END) AS avg_percentage,
-           COUNT(g.grade_id) AS grade_count
+           COUNT(g.id) AS grade_count
       FROM assessments a
- LEFT JOIN grades g ON a.assessment_id = g.assessment_id
+ LEFT JOIN grades g ON a.id = g.assessment_id
      GROUP BY a.assessment_type
      ORDER BY avg_percentage DESC
     ''')
@@ -232,7 +232,7 @@ def compare_by_assessment_type(cursor):
             cursor.execute('''
             SELECT g.letter_grade
               FROM assessments a
-              JOIN grades g ON a.assessment_id = g.assessment_id
+              JOIN grades g ON a.id = g.assessment_id
              WHERE a.assessment_type = ? AND g.letter_grade IS NOT NULL
             ''', (assess_type,))
             letters = [r[0] for r in cursor.fetchall()]
@@ -324,7 +324,7 @@ def compare_by_time_period(cursor):
            AVG(g.score / a.max_points * 100) as avg_percentage,
            COUNT(*) as grade_count
     FROM grades g
-    JOIN assessments a ON g.assessment_id = a.assessment_id
+    JOIN assessments a ON g.assessment_id = a.id
     WHERE g.submission_date IS NOT NULL
     GROUP BY strftime('%Y-%m', g.submission_date)
     HAVING grade_count >= 5

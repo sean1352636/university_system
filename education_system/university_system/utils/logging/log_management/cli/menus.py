@@ -1,21 +1,21 @@
 """Main menu display functions for log management CLI."""
 
-from ..manager import get_log_manager
+from education_system.university_system.utils.logging.log_management.manager import get_log_manager
 
-from .views import view_recent_logs, search_logs_basic, generate_basic_report, basic_config_menu
-from .dashboard import (
+from education_system.university_system.utils.logging.log_management.cli.views import view_recent_logs, search_logs_basic, generate_basic_report, basic_config_menu
+from education_system.university_system.utils.logging.log_management.cli.dashboard import (
     display_activity_dashboard, generate_activity_summary_menu,
     user_activity_report_menu, create_charts_menu
 )
-from .search import advanced_search_menu, saved_searches_menu
-from .realtime import real_time_monitor_menu, view_alerts_menu
-from .security_analysis import security_analysis_menu
-from .retention_ops import retention_settings_menu, integrity_check_menu, anonymize_data_menu
-from .export import enhanced_export_menu, bulk_operations_menu
-from .api_mgmt import api_management_menu
-from .db_maintenance import database_maintenance_menu
-from .performance import performance_metrics_menu
-from .scheduled_reports import scheduled_reports_menu
+from education_system.university_system.utils.logging.log_management.cli.search import advanced_search_menu, saved_searches_menu
+from education_system.university_system.utils.logging.log_management.cli.realtime import real_time_monitor_menu, view_alerts_menu
+from education_system.university_system.utils.logging.log_management.cli.security_analysis import security_analysis_menu
+from education_system.university_system.utils.logging.log_management.cli.retention_ops import retention_settings_menu, integrity_check_menu, anonymize_data_menu
+from education_system.university_system.utils.logging.log_management.cli.export import enhanced_export_menu, bulk_operations_menu
+from education_system.university_system.utils.logging.log_management.cli.api_mgmt import api_management_menu
+from education_system.university_system.utils.logging.log_management.cli.db_maintenance import database_maintenance_menu
+from education_system.university_system.utils.logging.log_management.cli.performance import performance_metrics_menu
+from education_system.university_system.utils.logging.log_management.cli.scheduled_reports import scheduled_reports_menu
 
 
 def display_log_management_menu(auth):

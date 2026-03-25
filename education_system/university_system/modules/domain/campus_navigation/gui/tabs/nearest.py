@@ -1,6 +1,6 @@
 """Find nearest tab for Campus Navigation GUI."""
 
-from .._imports import tk, ttk, messagebox, scrolledtext, _t
+from education_system.university_system.modules.domain.campus_navigation.gui._imports import tk, ttk, messagebox, scrolledtext, _t
 
 
 class NearestTabMixin:

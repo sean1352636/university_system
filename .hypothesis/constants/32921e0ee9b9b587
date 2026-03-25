@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/virtual_classroom_routes.py
+# hypothesis_version: 6.151.9
+
+[100, 201, ' AND ', ' WHERE ', '/<int:classroom_id>', '/sessions', '/study-rooms', 'GET', 'POST', 'active_only', 'classroom_id', 'classroom_id = ?', 'course_id', 'course_id = ?', 'create', 'end_time', 'features', 'instructor_id', 'is_active = 1', 'items', 'lecture', 'max_participants', 'meeting_id', 'meeting_link', 'notes', 'passcode', 'platform', 'platform = ?', 'session_name', 'session_type', 'start_time', 'status', 'status = ?', 'sub', 'total', 'true', 'view', 'virtual_classroom', 'virtual_classrooms', 'virtual_recordings', 'virtual_session', 'virtual_sessions', 'virtual_study_rooms']

@@ -55,15 +55,17 @@ def check_database_size(log_manager):
 
         # Get record counts
         conn = sqlite3.connect(str(_DB_PATH))
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute("SELECT COUNT(*) FROM logs")
-        log_count = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM logs")
+            log_count = cursor.fetchone()[0]
 
-        cursor.execute("SELECT COUNT(*) FROM alerts")
-        alert_count = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM alerts")
+            alert_count = cursor.fetchone()[0]
 
-        conn.close()
+        finally:
+            conn.close()
 
         print(f"\nRecord counts:")
         print(f"Logs: {log_count:,}")
@@ -176,12 +178,14 @@ def vacuum_database(log_manager):
         size_before = os.path.getsize(log_manager.db.db_path)
 
         conn = sqlite3.connect(str(_DB_PATH))
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        print("Running VACUUM...")
-        cursor.execute("VACUUM")
+            print("Running VACUUM...")
+            cursor.execute("VACUUM")
 
-        conn.close()
+        finally:
+            conn.close()
 
         # Get size after
         size_after = os.path.getsize(log_manager.db.db_path)

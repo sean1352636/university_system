@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/academic_calendar/managers.py
+# hypothesis_version: 6.151.9
+
+[365, '%Y-%m-%d', 'YYYY-MM-DD', 'daily', 'date', 'dependency', 'dependency_type', 'depends_on_event_id', 'description', 'end_time', 'event_dependencies', 'event_id', 'event_type', 'event_workflows', 'finish_to_start', 'lag_days', 'location', 'monthly', 'operation', 'prerequisite_date', 'recurrence', 'recurrence_pattern', 'recurring', 'start_date', 'start_time', 'table', 'title', 'weekly', 'yearly']

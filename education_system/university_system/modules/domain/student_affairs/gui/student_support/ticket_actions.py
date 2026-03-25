@@ -845,29 +845,31 @@ class TicketActionsMixin:
             
             # Update in database
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            
-            update_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            cursor.execute('''
-            UPDATE support_tickets 
-            SET assigned_to = ?, last_updated_datetime = ?
-            WHERE ticket_id = ?
-            ''', (assigned_to, update_time, ticket_id))
-            
-            # Add system response
-            cursor.execute('''
-            INSERT INTO ticket_responses (
-                ticket_id, responder_id, responder_role, response_text,
-                response_datetime, is_auto_generated
-            ) VALUES (?, ?, ?, ?, ?, ?)
-            ''', (
-                ticket_id, auth.current_user['id'], auth.current_user['role'],
-                f"Ticket assigned to {assigned_to}" if assigned_to else "Ticket unassigned",
-                update_time, 1
-            ))
-            
-            conn.commit()
-            conn.close()
+            try:
+                cursor = conn.cursor()
+
+                update_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                cursor.execute('''
+                UPDATE support_tickets 
+                SET assigned_to = ?, last_updated_datetime = ?
+                WHERE ticket_id = ?
+                ''', (assigned_to, update_time, ticket_id))
+
+                # Add system response
+                cursor.execute('''
+                INSERT INTO ticket_responses (
+                    ticket_id, responder_id, responder_role, response_text,
+                    response_datetime, is_auto_generated
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                ''', (
+                    ticket_id, auth.current_user['id'], auth.current_user['role'],
+                    f"Ticket assigned to {assigned_to}" if assigned_to else "Ticket unassigned",
+                    update_time, 1
+                ))
+
+                conn.commit()
+            finally:
+                conn.close()
 
             # Send email notification to user about assignment
             if assigned_to:
@@ -894,11 +896,13 @@ class TicketActionsMixin:
 
             # Get current status before update
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            cursor.execute('SELECT status FROM support_tickets WHERE ticket_id = ?', (ticket_id,))
-            result = cursor.fetchone()
-            old_status = result[0] if result else 'Open'
-            conn.close()
+            try:
+                cursor = conn.cursor()
+                cursor.execute('SELECT status FROM support_tickets WHERE ticket_id = ?', (ticket_id,))
+                result = cursor.fetchone()
+                old_status = result[0] if result else 'Open'
+            finally:
+                conn.close()
 
             self.support.update_ticket_status(ticket_id, new_status)
 

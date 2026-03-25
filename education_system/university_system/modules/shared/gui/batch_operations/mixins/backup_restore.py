@@ -3,7 +3,6 @@
 from education_system.university_system.modules.shared.gui.batch_operations.constants import (
     datetime, shutil, logging,
     DATA_DIR,
-    DatabaseManager,
     logger,
 )
 
@@ -138,9 +137,6 @@ class BackupRestoreMixin:
             # Restore from backup
             db_path = self.db_manager.db_path
             shutil.copy2(latest_backup, db_path)
-
-            # Reconnect
-            self.db_manager = DatabaseManager(db_path)
 
             if progress_callback:
                 progress_callback(90, "Verifying restoration...")

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/database/pool_metrics.py
+# hypothesis_version: 6.151.9
+
+[0.0, 0.5, 0.95, 0.99, -1440, -1000, 100, 1000, 1440, 'ConnectionEvent', 'Pool metrics reset', 'PoolMetrics', 'PoolMetricsCollector', 'acquire', 'active_connections', 'avg_ms', 'close', 'config', 'create', 'cumulative', 'current', 'error', 'get_pool_metrics', 'idle_connections', 'max_ms', 'max_size', 'min_size', 'p50_ms', 'p95_ms', 'p99_ms', 'pool_exhausted_count', 'release', 'timeout', 'total_acquires', 'total_closes', 'total_connections', 'total_creates', 'total_errors', 'total_releases', 'total_timeouts', 'utilization_percent', 'wait_times', 'waiting_threads']

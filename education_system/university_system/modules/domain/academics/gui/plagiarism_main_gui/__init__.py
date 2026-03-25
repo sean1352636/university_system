@@ -1,6 +1,6 @@
-from .main_gui import PlagiarismCheckerGUI
-from .config import GuiConfig
-from .common import (
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui import PlagiarismCheckerGUI
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.config import GuiConfig
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.common import (
     StatusBar,
     ScrollableFrame,
     ResultCard,
@@ -25,14 +25,14 @@ from .common import (
     NLTK_AVAILABLE,
     TEXTRACT_AVAILABLE,
 )
-from .launcher import (
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.launcher import (
     integrate_plagiarism_checker_with_main,
     launch_gui_from_main_system,
     run_gui_standalone,
     run_gui_tests,
     main,
 )
-from .dialogs import (
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.dialogs import (
     DocumentSubmissionDialog,
     PlagiarismCheckDialog,
     DocumentComparisonDialog,

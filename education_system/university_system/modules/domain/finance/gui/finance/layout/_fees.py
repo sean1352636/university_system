@@ -160,55 +160,171 @@ class FeesMixin:
                  fg='white', padx=20, pady=5).pack(side='left', padx=5)
 
     def _record_fee_payment(self):
-        """Record a payment for a selected fee"""
-        selection = self.fees_tree.selection()
-        if not selection:
-            messagebox.showwarning(_("finance_gui.messages.no_selection"), _("finance_gui.messages.select_fee_payment"))
-            return
-
-        fee_values = self.fees_tree.item(selection[0])['values']
-        fee_id = fee_values[0]
-        student_id = fee_values[1]
-        fee_name = fee_values[2]
-        fee_amount = float(fee_values[3])
-
-        # Create payment dialog
+        """Record a payment — single form with student dropdown and outstanding fees"""
         payment_dialog = tk.Toplevel(self.root)
-        payment_dialog.title(_("finance_gui.dialogs.record_payment_for_fee", fee_id=fee_id))
-        payment_dialog.geometry("500x400")
+        payment_dialog.title(_("finance_gui.dialogs.record_payment_for_fee", fee_id=""))
+        payment_dialog.geometry("550x520")
         payment_dialog.transient(self.root)
         payment_dialog.grab_set()
 
-        # Fee info frame
-        info_frame = ttk.LabelFrame(payment_dialog, text=_("finance_gui.labels.fee_information"), padding=15)
-        info_frame.pack(fill='x', padx=10, pady=10)
+        ttk.Label(payment_dialog, text="Record Fee Payment",
+                 font=('Arial', 14, 'bold')).pack(pady=(10, 5))
 
-        ttk.Label(info_frame, text=f"{_('finance_gui.labels.fee_id')}: {fee_id}", font=('Arial', 10)).pack(anchor='w')
-        ttk.Label(info_frame, text=f"{_('finance_gui.labels.student_id')}: {student_id}", font=('Arial', 10)).pack(anchor='w')
-        ttk.Label(info_frame, text=f"{_('finance_gui.labels.fee_name')}: {fee_name}", font=('Arial', 10)).pack(anchor='w')
-        ttk.Label(info_frame, text=f"{_('finance_gui.labels.amount_due')}: \u00a3{fee_amount:.2f}", font=('Arial', 10, 'bold')).pack(anchor='w')
+        form_frame = ttk.Frame(payment_dialog, padding=10)
+        form_frame.pack(fill='both', expand=True, padx=10)
 
-        # Payment details frame
-        payment_frame = ttk.LabelFrame(payment_dialog, text=_("finance_gui.labels.payment_details"), padding=15)
-        payment_frame.pack(fill='x', padx=10, pady=10)
+        # --- Row 0: Student dropdown ---
+        ttk.Label(form_frame, text=_("finance_gui.labels.student_id") + ":").grid(
+            row=0, column=0, sticky='w', pady=5, padx=5)
 
-        ttk.Label(payment_frame, text=_("finance_gui.labels.payment_amount")).pack(anchor='w')
-        amount_var = tk.StringVar(value=str(fee_amount))
-        amount_entry = ttk.Entry(payment_frame, textvariable=amount_var, font=('Arial', 12))
-        amount_entry.pack(fill='x', pady=(0, 10))
+        students = []
+        student_id_map = {}
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT student_id, first_name, last_name FROM students
+                ORDER BY last_name, first_name
+            ''')
+            for row in cursor.fetchall():
+                display = f"{row[0]} - {row[1]} {row[2]}"
+                students.append(display)
+                student_id_map[display] = row[0]
+            conn.close()
+        except Exception as e:
+            print(f"Error loading students: {e}")
 
-        ttk.Label(payment_frame, text=_("finance_gui.labels.payment_method")).pack(anchor='w')
+        student_var = tk.StringVar()
+        student_combo = ttk.Combobox(form_frame, textvariable=student_var,
+                                     values=students, state='readonly', width=35)
+        student_combo.grid(row=0, column=1, pady=5, padx=5)
+
+        # --- Row 1: Outstanding fee dropdown (populated on student select) ---
+        ttk.Label(form_frame, text=_("finance_gui.labels.fee_name") + ":").grid(
+            row=1, column=0, sticky='w', pady=5, padx=5)
+
+        fee_var = tk.StringVar()
+        fee_combo = ttk.Combobox(form_frame, textvariable=fee_var, state='readonly', width=35)
+        fee_combo.grid(row=1, column=1, pady=5, padx=5)
+
+        # Store fee data keyed by display string
+        fee_data_map = {}
+        amount_due_label = ttk.Label(form_frame, text="", font=('Arial', 10, 'bold'))
+        amount_due_label.grid(row=2, column=0, columnspan=2, sticky='w', padx=5)
+
+        def on_student_selected(event=None):
+            """Load outstanding fees for the selected student."""
+            fee_combo.set('')
+            fee_combo['values'] = []
+            fee_data_map.clear()
+            amount_due_label.config(text='')
+            amount_var.set('')
+
+            selected = student_var.get()
+            sid = student_id_map.get(selected)
+            if not sid:
+                return
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT sf.student_fee_id, ft.fee_name, sf.amount, sf.status
+                    FROM student_fees sf
+                    LEFT JOIN fee_types ft ON sf.fee_type_id = ft.fee_type_id
+                    WHERE sf.student_id = ? AND sf.status IN ('unpaid', 'partial', 'overdue')
+                    ORDER BY sf.due_date
+                ''', (sid,))
+                fee_displays = []
+                for row in cursor.fetchall():
+                    fee_id = row[0]
+                    name = row[1] or 'Fee'
+                    amt = float(row[2]) if row[2] is not None else 0.0
+                    status = row[3] or 'unpaid'
+                    display = f"#{fee_id} - {name} (\u00a3{amt:.2f}) [{status}]"
+                    fee_displays.append(display)
+                    fee_data_map[display] = {'fee_id': fee_id, 'amount': amt}
+                conn.close()
+
+                fee_combo['values'] = fee_displays
+                if fee_displays:
+                    fee_combo.current(0)
+                    on_fee_selected()
+                else:
+                    amount_due_label.config(text="No outstanding fees for this student.")
+            except Exception as e:
+                print(f"Error loading fees: {e}")
+
+        def on_fee_selected(event=None):
+            """Update amount field when a fee is selected."""
+            selected_fee = fee_var.get()
+            data = fee_data_map.get(selected_fee)
+            if data:
+                amount_due_label.config(text=f"Amount Due: \u00a3{data['amount']:.2f}")
+                amount_var.set(f"{data['amount']:.2f}")
+
+        student_combo.bind('<<ComboboxSelected>>', on_student_selected)
+        fee_combo.bind('<<ComboboxSelected>>', on_fee_selected)
+
+        # --- Row 3: Payment amount ---
+        ttk.Label(form_frame, text=_("finance_gui.labels.payment_amount") + ":").grid(
+            row=3, column=0, sticky='w', pady=5, padx=5)
+        amount_var = tk.StringVar()
+        amount_entry = ttk.Entry(form_frame, textvariable=amount_var, width=20, font=('Arial', 11))
+        amount_entry.grid(row=3, column=1, sticky='w', pady=5, padx=5)
+
+        # --- Row 4: Payment method ---
+        ttk.Label(form_frame, text=_("finance_gui.labels.payment_method") + ":").grid(
+            row=4, column=0, sticky='w', pady=5, padx=5)
         method_var = tk.StringVar(value="card")
-        method_combo = ttk.Combobox(payment_frame, textvariable=method_var,
+        method_combo = ttk.Combobox(form_frame, textvariable=method_var,
                                      values=["card", "cash", "bank_transfer", "cheque", "online"],
-                                     state='readonly', font=('Arial', 12))
-        method_combo.pack(fill='x', pady=(0, 10))
+                                     state='readonly', width=20)
+        method_combo.grid(row=4, column=1, sticky='w', pady=5, padx=5)
 
-        ttk.Label(payment_frame, text=_("finance_gui.labels.notes_optional")).pack(anchor='w')
-        notes_text = tk.Text(payment_frame, height=4, font=('Arial', 10))
-        notes_text.pack(fill='x')
+        # --- Row 5: Notes ---
+        ttk.Label(form_frame, text=_("finance_gui.labels.notes_optional") + ":").grid(
+            row=5, column=0, sticky='nw', pady=5, padx=5)
+        notes_text = tk.Text(form_frame, height=3, width=35, font=('Arial', 10))
+        notes_text.grid(row=5, column=1, pady=5, padx=5)
+
+        # Pre-select student if a fee row is selected in the main tree
+        if self.fees_tree.selection():
+            fee_values = self.fees_tree.item(self.fees_tree.selection()[0])['values']
+            preselect_sid = str(fee_values[1])
+            for display, sid in student_id_map.items():
+                if sid == preselect_sid:
+                    student_combo.set(display)
+                    on_student_selected()
+                    # Try to pre-select the specific fee
+                    preselect_fee_id = fee_values[0]
+                    for fd, data in fee_data_map.items():
+                        if data['fee_id'] == preselect_fee_id:
+                            fee_combo.set(fd)
+                            on_fee_selected()
+                            break
+                    break
 
         def save_payment():
+            selected_student = student_var.get()
+            selected_fee = fee_var.get()
+
+            if not selected_student:
+                messagebox.showwarning(_("finance_gui.messages.warning"), "Please select a student.")
+                return
+            if not selected_fee:
+                messagebox.showwarning(_("finance_gui.messages.warning"), "Please select a fee.")
+                return
+
+            student_id = student_id_map.get(selected_student)
+            data = fee_data_map.get(selected_fee)
+            if not data:
+                messagebox.showerror(_("finance_gui.messages.error"), "Invalid fee selection.")
+                return
+
+            fee_id = data['fee_id']
+            fee_amount = data['amount']
+
             try:
                 payment_amount = float(amount_var.get())
                 payment_method = method_var.get()
@@ -226,7 +342,6 @@ class FeesMixin:
                     user = auth.get_current_user()
                     username = user.get('username', 'system') if user else 'system'
 
-                # Save payment to database
                 conn = get_connection()
                 cursor = conn.cursor()
 
@@ -256,10 +371,7 @@ class FeesMixin:
                 total_paid = cursor.fetchone()[0]
 
                 # Update fee status
-                if total_paid >= fee_amount:
-                    new_status = 'paid'
-                else:
-                    new_status = 'partial'
+                new_status = 'paid' if total_paid >= fee_amount else 'partial'
 
                 cursor.execute('''
                     UPDATE student_fees SET status = ?, updated_at = ?
@@ -328,7 +440,13 @@ class FeesMixin:
             ''')
 
             for row in cursor.fetchall():
-                self.fees_tree.insert('', 'end', values=row)
+                values = list(row)
+                # Format amount (index 3) for display
+                try:
+                    values[3] = f"{float(values[3]):.2f}" if values[3] is not None else "0.00"
+                except (ValueError, TypeError):
+                    values[3] = "0.00"
+                self.fees_tree.insert('', 'end', values=values)
 
             conn.close()
         except Exception as e:

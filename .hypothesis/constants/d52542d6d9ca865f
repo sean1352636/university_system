@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/management/ticket_management.py
+# hypothesis_version: 6.151.9
+
+[120, 130, 150, ' AND b.status = ?', '#333333', '#7f8c8d', '#e74c3c', '#ecf0f1', '#ffffff', ',', '-', '.', '1.0', '500x450', '?', 'Card.TFrame', 'Cash', 'Credit Card', 'Danger.TButton', 'Date/Time', 'Debit Card', 'Email', 'Gift Card', 'Helvetica', 'ID', 'Main.TFrame', 'Movie', 'PayPal', 'Primary.TButton', 'Ref', 'Seats', 'Secondary.TButton', 'Status', 'Subtitle.TLabel', 'Success.TButton', 'Total', '_', 'active', 'all', 'bold', 'both', 'cancelled', 'cinema.common.error', 'cinema.common.info', 'cinema.tickets.title', 'end', 'headings', 'left', 'nw', 'paid', 'pending', 'refunded', 'right', 'values', 'vertical', 'w', 'x', 'y']

@@ -41,7 +41,7 @@ except ImportError:
 
 
 
-from .base import ParentPortalGUI
+from education_system.university_system.modules.domain.academics.gui.parent_portal.base import ParentPortalGUI
 
 def view_child_grades(self, child):
     """View grades for a specific child"""

@@ -1,6 +1,6 @@
 """Integration Catalog Manager"""
 
-from ._imports import Any, Dict, List, get_connection
+from education_system.university_system.modules.shared.services.integrations.integration_marketplace_core._imports import Any, Dict, List, get_connection
 
 
 class IntegrationCatalogManager:

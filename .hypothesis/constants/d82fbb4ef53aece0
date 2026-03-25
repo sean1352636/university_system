@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/college_system/modules/domain/parents_evening/services/parents_evening_service.py
+# hypothesis_version: 6.151.9
+
+[' AND ps.staff_id = ?', '16:00', '20:00', 'academic_year', 'booked', 'end_time', 'event_date', 'slot_duration', 'start_time', 'status', 'term']

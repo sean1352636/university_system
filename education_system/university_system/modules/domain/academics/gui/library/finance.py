@@ -114,7 +114,7 @@ except ImportError:
 _AUDIT_LOG_COLUMNS_CACHE: Optional[List[str]] = None
 _STUDENT_COLUMNS_CACHE: Optional[List[str]] = None
 
-from .base import LibraryGUI
+from education_system.university_system.modules.domain.academics.gui.library.base import LibraryGUI
 
 def open_library_finance(self):
     """Open the Library Finance management window directly in Library GUI"""
@@ -490,6 +490,10 @@ University Library System
 
         tk.Button(toolbar, text="Export CSV", command=self.export_revenue_csv,
                   bg=self.colors['success'], fg='white', font=('Arial', 10, 'bold'),
+                  padx=15, pady=5).pack(side='left', padx=5)
+
+        tk.Button(toolbar, text="Email Report to Admin", command=self.email_revenue_report_to_admin,
+                  bg=self.colors.get('warning', '#f39c12'), fg='white', font=('Arial', 10, 'bold'),
                   padx=15, pady=5).pack(side='left', padx=5)
 
         stats_frame = tk.LabelFrame(parent, text="Revenue Statistics", bg='white', font=('Arial', 12, 'bold'))
@@ -1054,16 +1058,21 @@ University Library System
                 conn = get_connection()
                 cursor = conn.cursor()
 
-                # Query the library_fine_payments table for actual paid fines
+                # Query the payments table for actual paid library fines
                 cursor.execute('''
-                    SELECT lfp.loan_id, lfp.book_id, lfp.book_title,
-                           lfp.payment_date,
-                           (lfp.payment_amount - COALESCE(lfp.refund_amount, 0)) as available_amount
-                    FROM library_fine_payments lfp
-                    WHERE lfp.user_id = ?
-                    AND lfp.status = 'completed'
-                    AND (lfp.payment_amount - COALESCE(lfp.refund_amount, 0)) > 0
-                    ORDER BY lfp.payment_date DESC
+                    SELECT p.reference_id as loan_id, NULL as book_id, p.notes as book_title,
+                           p.payment_date,
+                           (p.amount - COALESCE((SELECT SUM(ur.amount) FROM unified_refunds ur
+                                                  WHERE ur.source_type = 'library'
+                                                  AND ur.reference_id = CAST(p.payment_id AS TEXT)), 0)) as available_amount
+                    FROM payments p
+                    WHERE p.student_id = ?
+                    AND p.source_type = 'library'
+                    AND p.status = 'completed'
+                    AND (p.amount - COALESCE((SELECT SUM(ur.amount) FROM unified_refunds ur
+                                              WHERE ur.source_type = 'library'
+                                              AND ur.reference_id = CAST(p.payment_id AS TEXT)), 0)) > 0
+                    ORDER BY p.payment_date DESC
                 ''', (student_id,))
 
                 paid_fines = cursor.fetchall()
@@ -1324,19 +1333,14 @@ University Library System
             conn = get_connection()
             cursor = conn.cursor()
 
-            # Query from payments table (library fine payments) and fine_payments table
+            # Query from payments table for library source
             cursor.execute('''
                 SELECT COUNT(*) as payment_count,
                        SUM(amount) as total_revenue, AVG(amount) as avg_payment
-                FROM (
-                    SELECT payment_id, amount, payment_date FROM payments
-                    WHERE (notes LIKE '%Library fine%' OR notes LIKE '%[Library]%')
-                    AND DATE(payment_date) BETWEEN DATE(?) AND DATE(?)
-                    UNION ALL
-                    SELECT payment_id, amount, payment_date FROM fine_payments
-                    WHERE DATE(payment_date) BETWEEN DATE(?) AND DATE(?)
-                )
-            ''', (start_date, end_date, start_date, end_date))
+                FROM payments
+                WHERE source_type = 'library'
+                AND DATE(payment_date) BETWEEN DATE(?) AND DATE(?)
+            ''', (start_date, end_date))
 
             stats = cursor.fetchone()
             payment_count = stats[0] or 0
@@ -1344,17 +1348,13 @@ University Library System
             avg_payment = stats[2] or 0.0
 
             cursor.execute('''
-                SELECT strftime('%Y-%m', payment_date) as month, COUNT(*) as payments, SUM(amount) as revenue
-                FROM (
-                    SELECT payment_id, amount, payment_date FROM payments
-                    WHERE (notes LIKE '%Library fine%' OR notes LIKE '%[Library]%')
-                    AND DATE(payment_date) BETWEEN DATE(?) AND DATE(?)
-                    UNION ALL
-                    SELECT payment_id, amount, payment_date FROM fine_payments
-                    WHERE DATE(payment_date) BETWEEN DATE(?) AND DATE(?)
-                )
+                SELECT strftime('%Y-%m', payment_date) as month,
+                       COUNT(*) as payments, SUM(amount) as revenue
+                FROM payments
+                WHERE source_type = 'library'
+                AND DATE(payment_date) BETWEEN DATE(?) AND DATE(?)
                 GROUP BY month ORDER BY month DESC
-            ''', (start_date, end_date, start_date, end_date))
+            ''', (start_date, end_date))
 
             monthly_data = cursor.fetchall()
             conn.close()
@@ -1379,9 +1379,50 @@ Month          Payments      Revenue
                 report += f"{month}         {payments:>8}      £{revenue:>10,.2f}\n"
             report += f"{'='*60}\n"
             self.revenue_stats_text.insert('1.0', report)
+            self._last_revenue_report = report
 
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Failed to generate revenue report:\n{str(e)}")
+
+    def email_revenue_report_to_admin(self):
+        """Email the revenue report to admin users"""
+        if not hasattr(self, '_last_revenue_report') or not self._last_revenue_report:
+            messagebox.showwarning("No Report", "Please generate a report first.")
+            return
+
+        try:
+            from education_system.university_system.infrastructure.email.email_service import send_email
+            from education_system.university_system.infrastructure.database.db import get_connection
+
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT email FROM users WHERE LOWER(role) = 'admin' AND email IS NOT NULL AND email != ''")
+            admins = cursor.fetchall()
+            conn.close()
+
+            if not admins:
+                messagebox.showinfo("No Admins", "No admin email addresses found.")
+                return
+
+            sent = 0
+            for (email,) in admins:
+                try:
+                    send_email(
+                        recipient_email=email,
+                        subject="Library Fine Revenue Report",
+                        body=self._last_revenue_report
+                    )
+                    sent += 1
+                except Exception:
+                    pass
+
+            if sent > 0:
+                messagebox.showinfo("Email Sent", f"Report emailed to {sent} admin(s).")
+            else:
+                messagebox.showwarning("Email Failed", "Could not send email to any admin.")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to email report: {e}")
 
     def show_revenue_charts(self):
         """Display revenue charts"""
@@ -1405,11 +1446,10 @@ Month          Payments      Revenue
             cursor = conn.cursor()
 
             cursor.execute('''
-                SELECT strftime('%Y-%m', p.payment_date) as month, SUM(pa.amount) as revenue
-                FROM payment_allocations pa
-                JOIN payments p ON pa.payment_id = p.payment_id
-                JOIN student_fees sf ON pa.student_fee_id = sf.student_fee_id
-                WHERE sf.fee_type_id = 3 AND p.payment_date BETWEEN ? AND ?
+                SELECT strftime('%Y-%m', payment_date) as month, SUM(amount) as revenue
+                FROM payments
+                WHERE source_type = 'library'
+                AND payment_date BETWEEN ? AND ?
                 GROUP BY month ORDER BY month ASC
             ''', (start_date, end_date))
 
@@ -1751,9 +1791,9 @@ SUMMARY:
             cursor.execute('SELECT SUM(COALESCE(purchase_price, 0) * COALESCE(quantity, 1)) FROM books')
             book_investment = cursor.fetchone()[0] or 0.0
 
-            # Calculate total refunds from library_fine_payments table
+            # Calculate total refunds from unified_refunds table
             try:
-                cursor.execute('SELECT COALESCE(SUM(refund_amount), 0) FROM library_fine_payments WHERE refund_amount > 0')
+                cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM unified_refunds WHERE source_type = 'library'")
                 total_refunds = cursor.fetchone()[0] or 0.0
             except Exception:
                 total_refunds = 0.0  # Table might not exist yet

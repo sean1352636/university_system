@@ -47,10 +47,10 @@ class TestModuleConstants:
 class TestEnsureDbDirectory:
     """Test suite for ensure_db_directory() function"""
 
-    @patch('university_system.modules.shared.constants.paths.DB_DIR')
+    @patch('education_system.university_system.modules.shared.constants.paths.DB_DIR')
     @patch('os.path.exists')
     @patch('os.makedirs')
-    @patch('university_system.infrastructure.email.email_db_utilities.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.log_event')
     def test_ensure_db_directory_creates_new(self, mock_log, mock_makedirs, mock_exists, mock_db_dir):
         """Test ensure_db_directory creates directory when missing"""
         mock_db_dir.__fspath__ = Mock(return_value='/path/to/db')
@@ -62,7 +62,7 @@ class TestEnsureDbDirectory:
         assert result == '/path/to/db'
         mock_log.assert_called_once()
 
-    @patch('university_system.modules.shared.constants.paths.DB_DIR')
+    @patch('education_system.university_system.modules.shared.constants.paths.DB_DIR')
     @patch('os.path.exists')
     @patch('os.makedirs')
     def test_ensure_db_directory_exists_already(self, mock_makedirs, mock_exists, mock_db_dir):
@@ -101,8 +101,8 @@ class TestEnsureParentDir:
 class TestGetUnifiedConnection:
     """Test suite for get_unified_connection() function"""
 
-    @patch('university_system.infrastructure.email.email_db_utilities.USE_AUTH_DB', True)
-    @patch('university_system.infrastructure.email.email_db_utilities.auth_get_connection')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.USE_AUTH_DB', True)
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.auth_get_connection')
     def test_get_unified_connection_uses_auth_db(self, mock_auth_conn):
         """Test get_unified_connection uses auth DB when available"""
         mock_conn = MagicMock()
@@ -113,10 +113,10 @@ class TestGetUnifiedConnection:
         assert result == mock_conn
         mock_auth_conn.assert_called_once()
 
-    @patch('university_system.infrastructure.email.email_db_utilities.USE_AUTH_DB', True)
-    @patch('university_system.infrastructure.email.email_db_utilities.auth_get_connection')
-    @patch('university_system.infrastructure.email.email_db_utilities.sqlite3.connect')
-    @patch('university_system.infrastructure.email.email_db_utilities.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.USE_AUTH_DB', True)
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.auth_get_connection')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.sqlite3.connect')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.log_event')
     def test_get_unified_connection_fallback_on_auth_error(self, mock_log, mock_connect, mock_auth_conn):
         """Test get_unified_connection falls back to direct connection on auth error"""
         mock_auth_conn.side_effect = Exception("Auth DB error")
@@ -131,8 +131,8 @@ class TestGetUnifiedConnection:
         warning_calls = [call for call in mock_log.call_args_list if call[0][0] == 'warning']
         assert len(warning_calls) > 0
 
-    @patch('university_system.infrastructure.email.email_db_utilities.USE_AUTH_DB', False)
-    @patch('university_system.infrastructure.email.email_db_utilities.sqlite3.connect')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.USE_AUTH_DB', False)
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.sqlite3.connect')
     def test_get_unified_connection_direct_when_auth_disabled(self, mock_connect):
         """Test get_unified_connection uses direct connection when auth disabled"""
         mock_conn = MagicMock()
@@ -143,8 +143,8 @@ class TestGetUnifiedConnection:
         assert result == mock_conn
         mock_connect.assert_called_once_with(email_db_utilities.DB_PATH, timeout=30.0)
 
-    @patch('university_system.infrastructure.email.email_db_utilities.USE_AUTH_DB', False)
-    @patch('university_system.infrastructure.email.email_db_utilities.sqlite3.connect')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.USE_AUTH_DB', False)
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.sqlite3.connect')
     def test_get_unified_connection_sets_row_factory(self, mock_connect):
         """Test get_unified_connection sets row_factory"""
         mock_conn = MagicMock()
@@ -154,9 +154,9 @@ class TestGetUnifiedConnection:
 
         assert result.row_factory == sqlite3.Row
 
-    @patch('university_system.infrastructure.email.email_db_utilities.USE_AUTH_DB', False)
-    @patch('university_system.infrastructure.email.email_db_utilities.sqlite3.connect')
-    @patch('university_system.infrastructure.email.email_db_utilities.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.USE_AUTH_DB', False)
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.sqlite3.connect')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.log_event')
     def test_get_unified_connection_handles_connection_error(self, mock_log, mock_connect):
         """Test get_unified_connection handles connection errors"""
         mock_connect.side_effect = sqlite3.Error("Connection failed")
@@ -173,7 +173,7 @@ class TestSimpleDBManager:
 
     def test_simple_db_manager_init_default_path(self):
         """Test SimpleDBManager initializes with default DB path"""
-        with patch('university_system.infrastructure.email.email_db_utilities.ensure_parent_dir'):
+        with patch('education_system.university_system.infrastructure.email.email_db_utilities.ensure_parent_dir'):
             manager = email_db_utilities.SimpleDBManager()
 
             assert manager.db_path == email_db_utilities.DB_PATH
@@ -186,12 +186,12 @@ class TestSimpleDBManager:
         """Test SimpleDBManager initializes with custom DB path"""
         custom_path = '/custom/path/db.sqlite'
 
-        with patch('university_system.infrastructure.email.email_db_utilities.ensure_parent_dir'):
+        with patch('education_system.university_system.infrastructure.email.email_db_utilities.ensure_parent_dir'):
             manager = email_db_utilities.SimpleDBManager(db_path=custom_path)
 
             assert manager.db_path == custom_path
 
-    @patch('university_system.infrastructure.email.email_db_utilities.ensure_parent_dir')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.ensure_parent_dir')
     def test_simple_db_manager_ensures_parent_dir(self, mock_ensure_parent):
         """Test SimpleDBManager ensures parent directory exists"""
         test_path = '/test/path/db.sqlite'
@@ -200,8 +200,8 @@ class TestSimpleDBManager:
 
         mock_ensure_parent.assert_called_once_with(test_path)
 
-    @patch('university_system.infrastructure.email.email_db_utilities.get_unified_connection')
-    @patch('university_system.infrastructure.email.email_db_utilities.ensure_parent_dir')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_unified_connection')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.ensure_parent_dir')
     def test_simple_db_manager_get_connection_success(self, mock_ensure, mock_get_conn):
         """Test SimpleDBManager.get_connection yields cursor"""
         mock_conn = MagicMock()
@@ -223,8 +223,8 @@ class TestSimpleDBManager:
         # Should close connection
         mock_conn.close.assert_called_once()
 
-    @patch('university_system.infrastructure.email.email_db_utilities.get_unified_connection')
-    @patch('university_system.infrastructure.email.email_db_utilities.ensure_parent_dir')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_unified_connection')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.ensure_parent_dir')
     def test_simple_db_manager_get_connection_pragma_settings(self, mock_ensure, mock_get_conn):
         """Test SimpleDBManager.get_connection sets proper PRAGMA settings"""
         mock_conn = MagicMock()
@@ -243,8 +243,8 @@ class TestSimpleDBManager:
         assert any('NORMAL' in str(call) for call in pragma_calls)
         assert any('busy_timeout' in str(call) for call in pragma_calls)
 
-    @patch('university_system.infrastructure.email.email_db_utilities.get_unified_connection')
-    @patch('university_system.infrastructure.email.email_db_utilities.ensure_parent_dir')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_unified_connection')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.ensure_parent_dir')
     def test_simple_db_manager_get_connection_rollback_on_error(self, mock_ensure, mock_get_conn):
         """Test SimpleDBManager.get_connection rolls back on error"""
         mock_conn = MagicMock()
@@ -262,8 +262,8 @@ class TestSimpleDBManager:
         mock_conn.rollback.assert_called_once()
         mock_conn.commit.assert_not_called()
 
-    @patch('university_system.infrastructure.email.email_db_utilities.get_unified_connection')
-    @patch('university_system.infrastructure.email.email_db_utilities.ensure_parent_dir')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_unified_connection')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.ensure_parent_dir')
     def test_simple_db_manager_get_connection_closes_on_error(self, mock_ensure, mock_get_conn):
         """Test SimpleDBManager.get_connection closes connection on error"""
         mock_conn = MagicMock()
@@ -280,8 +280,8 @@ class TestSimpleDBManager:
         # Should still close connection
         mock_conn.close.assert_called_once()
 
-    @patch('university_system.infrastructure.email.email_db_utilities.get_unified_connection')
-    @patch('university_system.infrastructure.email.email_db_utilities.ensure_parent_dir')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_unified_connection')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.ensure_parent_dir')
     def test_simple_db_manager_get_connection_lock_timeout(self, mock_ensure, mock_get_conn):
         """Test SimpleDBManager.get_connection raises error on lock timeout"""
         manager = email_db_utilities.SimpleDBManager()
@@ -295,8 +295,8 @@ class TestSimpleDBManager:
             with manager.get_connection(timeout=1):
                 pass
 
-    @patch('university_system.infrastructure.email.email_db_utilities.get_unified_connection')
-    @patch('university_system.infrastructure.email.email_db_utilities.ensure_parent_dir')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_unified_connection')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.ensure_parent_dir')
     def test_simple_db_manager_thread_safety(self, mock_ensure, mock_get_conn):
         """Test SimpleDBManager is thread-safe (uses RLock)"""
         manager = email_db_utilities.SimpleDBManager()
@@ -316,8 +316,8 @@ class TestGetDbManager:
     def test_get_db_manager_returns_singleton(self):
         """Test get_db_manager returns same instance (singleton pattern)"""
         # Reset the global manager
-        with patch('university_system.infrastructure.email.email_db_utilities._db_manager', None):
-            with patch('university_system.infrastructure.email.email_db_utilities.ensure_parent_dir'):
+        with patch('education_system.university_system.infrastructure.email.email_db_utilities._db_manager', None):
+            with patch('education_system.university_system.infrastructure.email.email_db_utilities.ensure_parent_dir'):
                 manager1 = email_db_utilities.get_db_manager()
                 manager2 = email_db_utilities.get_db_manager()
 
@@ -331,7 +331,7 @@ class TestGetDbManager:
         managers = []
 
         def get_manager():
-            with patch('university_system.infrastructure.email.email_db_utilities.ensure_parent_dir'):
+            with patch('education_system.university_system.infrastructure.email.email_db_utilities.ensure_parent_dir'):
                 managers.append(email_db_utilities.get_db_manager())
 
         threads = [threading.Thread(target=get_manager) for _ in range(10)]
@@ -348,8 +348,8 @@ class TestGetDbManager:
     def test_get_db_manager_creates_manager(self):
         """Test get_db_manager creates SimpleDBManager instance"""
         # Reset the global manager
-        with patch('university_system.infrastructure.email.email_db_utilities._db_manager', None):
-            with patch('university_system.infrastructure.email.email_db_utilities.ensure_parent_dir'):
+        with patch('education_system.university_system.infrastructure.email.email_db_utilities._db_manager', None):
+            with patch('education_system.university_system.infrastructure.email.email_db_utilities.ensure_parent_dir'):
                 manager = email_db_utilities.get_db_manager()
 
                 assert isinstance(manager, email_db_utilities.SimpleDBManager)
@@ -357,7 +357,7 @@ class TestGetDbManager:
 class TestExecuteDbOperation:
     """Test suite for execute_db_operation() function"""
 
-    @patch('university_system.infrastructure.email.email_db_utilities.get_db_manager')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_db_manager')
     def test_execute_db_operation_success(self, mock_get_manager):
         """Test execute_db_operation executes function successfully"""
         mock_manager = MagicMock()
@@ -372,7 +372,7 @@ class TestExecuteDbOperation:
 
         assert result == "success"
 
-    @patch('university_system.infrastructure.email.email_db_utilities.get_db_manager')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_db_manager')
     def test_execute_db_operation_with_args(self, mock_get_manager):
         """Test execute_db_operation passes args to operation"""
         mock_manager = MagicMock()
@@ -387,7 +387,7 @@ class TestExecuteDbOperation:
 
         assert result == 30
 
-    @patch('university_system.infrastructure.email.email_db_utilities.get_db_manager')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_db_manager')
     def test_execute_db_operation_with_kwargs(self, mock_get_manager):
         """Test execute_db_operation passes kwargs to operation"""
         mock_manager = MagicMock()
@@ -402,7 +402,7 @@ class TestExecuteDbOperation:
 
         assert result == 30
 
-    @patch('university_system.infrastructure.email.email_db_utilities.get_db_manager')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_db_manager')
     @patch('time.sleep')
     def test_execute_db_operation_retries_on_lock(self, mock_sleep, mock_get_manager):
         """Test execute_db_operation retries on database lock"""
@@ -431,9 +431,9 @@ class TestExecuteDbOperation:
         # Should have slept twice (after first two failures)
         assert mock_sleep.call_count == 2
 
-    @patch('university_system.infrastructure.email.email_db_utilities.get_db_manager')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_db_manager')
     @patch('time.sleep')
-    @patch('university_system.infrastructure.email.email_db_utilities.logger')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.logger')
     def test_execute_db_operation_max_retries_exceeded(self, mock_logger, mock_sleep, mock_get_manager):
         """Test execute_db_operation raises error after max retries"""
         mock_manager = MagicMock()
@@ -451,9 +451,9 @@ class TestExecuteDbOperation:
         # Should have slept 2 times (not after last attempt)
         assert mock_sleep.call_count == 2
 
-    @patch('university_system.infrastructure.email.email_db_utilities.get_db_manager')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_db_manager')
     @patch('time.sleep')
-    @patch('university_system.infrastructure.email.email_db_utilities.logger')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.logger')
     def test_execute_db_operation_exponential_backoff(self, mock_logger, mock_sleep, mock_get_manager):
         """Test execute_db_operation uses exponential backoff"""
         mock_manager = MagicMock()
@@ -475,8 +475,8 @@ class TestExecuteDbOperation:
         assert len(sleep_calls) == 2
         assert sleep_calls[0] < sleep_calls[1]  # Exponential increase
 
-    @patch('university_system.infrastructure.email.email_db_utilities.get_db_manager')
-    @patch('university_system.infrastructure.email.email_db_utilities.logger')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_db_manager')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.logger')
     def test_execute_db_operation_non_lock_error_no_retry(self, mock_logger, mock_get_manager):
         """Test execute_db_operation doesn't retry on non-lock errors"""
         mock_manager = MagicMock()
@@ -493,8 +493,8 @@ class TestExecuteDbOperation:
         # Should only try once (no retries for non-lock errors)
         assert mock_manager.get_connection.call_count == 1
 
-    @patch('university_system.infrastructure.email.email_db_utilities.get_db_manager')
-    @patch('university_system.infrastructure.email.email_db_utilities.logger')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_db_manager')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.logger')
     def test_execute_db_operation_logs_info_on_lock(self, mock_logger, mock_get_manager):
         """Test execute_db_operation logs info (not warning) on lock retry"""
         mock_manager = MagicMock()
@@ -520,7 +520,7 @@ class TestExecuteDbOperation:
 class TestSafeDbOperation:
     """Test suite for safe_db_operation() function"""
 
-    @patch('university_system.infrastructure.email.email_db_utilities.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.execute_db_operation')
     def test_safe_db_operation_calls_execute(self, mock_execute):
         """Test safe_db_operation calls execute_db_operation"""
         mock_execute.return_value = "result"
@@ -533,7 +533,7 @@ class TestSafeDbOperation:
         mock_execute.assert_called_once()
         assert result == "result"
 
-    @patch('university_system.infrastructure.email.email_db_utilities.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.execute_db_operation')
     def test_safe_db_operation_passes_args(self, mock_execute):
         """Test safe_db_operation passes arguments correctly"""
         def test_op(cursor, val):
@@ -549,8 +549,8 @@ class TestSafeDbOperation:
 class TestInitializeEmailDb:
     """Test suite for initialize_email_db() function"""
 
-    @patch('university_system.infrastructure.email.email_db_utilities.execute_db_operation')
-    @patch('university_system.infrastructure.email.email_db_utilities.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.log_event')
     def test_initialize_email_db_success(self, mock_log, mock_execute):
         """Test initialize_email_db creates all tables successfully"""
         mock_execute.return_value = True
@@ -563,8 +563,8 @@ class TestInitializeEmailDb:
         info_calls = [call for call in mock_log.call_args_list if call[0][0] == 'info']
         assert any('successfully' in str(call) for call in info_calls)
 
-    @patch('university_system.infrastructure.email.email_db_utilities.execute_db_operation')
-    @patch('university_system.infrastructure.email.email_db_utilities.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.log_event')
     def test_initialize_email_db_creates_stored_emails_table(self, mock_log, mock_execute):
         """Test initialize_email_db creates stored_emails table"""
         captured_func = None
@@ -587,8 +587,8 @@ class TestInitializeEmailDb:
         create_calls = [str(call) for call in mock_cursor.execute.call_args_list]
         assert any('stored_emails' in call for call in create_calls)
 
-    @patch('university_system.infrastructure.email.email_db_utilities.execute_db_operation')
-    @patch('university_system.infrastructure.email.email_db_utilities.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.log_event')
     def test_initialize_email_db_creates_email_log_table(self, mock_log, mock_execute):
         """Test initialize_email_db creates email_log table"""
         captured_func = None
@@ -609,8 +609,8 @@ class TestInitializeEmailDb:
         create_calls = [str(call) for call in mock_cursor.execute.call_args_list]
         assert any('email_log' in call for call in create_calls)
 
-    @patch('university_system.infrastructure.email.email_db_utilities.execute_db_operation')
-    @patch('university_system.infrastructure.email.email_db_utilities.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.log_event')
     def test_initialize_email_db_creates_messages_table(self, mock_log, mock_execute):
         """Test initialize_email_db creates messages table"""
         captured_func = None
@@ -631,8 +631,8 @@ class TestInitializeEmailDb:
         create_calls = [str(call) for call in mock_cursor.execute.call_args_list]
         assert any('messages' in call and 'CREATE TABLE' in call for call in create_calls)
 
-    @patch('university_system.infrastructure.email.email_db_utilities.execute_db_operation')
-    @patch('university_system.infrastructure.email.email_db_utilities.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.log_event')
     def test_initialize_email_db_creates_email_metrics_table(self, mock_log, mock_execute):
         """Test initialize_email_db creates email_metrics table"""
         captured_func = None
@@ -653,8 +653,8 @@ class TestInitializeEmailDb:
         create_calls = [str(call) for call in mock_cursor.execute.call_args_list]
         assert any('email_metrics' in call for call in create_calls)
 
-    @patch('university_system.infrastructure.email.email_db_utilities.execute_db_operation')
-    @patch('university_system.infrastructure.email.email_db_utilities.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.log_event')
     def test_initialize_email_db_creates_scheduled_emails_table(self, mock_log, mock_execute):
         """Test initialize_email_db creates scheduled_emails table"""
         captured_func = None
@@ -678,8 +678,8 @@ class TestInitializeEmailDb:
         create_calls = [str(call) for call in mock_cursor.execute.call_args_list]
         assert any('scheduled_emails' in call for call in create_calls)
 
-    @patch('university_system.infrastructure.email.email_db_utilities.execute_db_operation')
-    @patch('university_system.infrastructure.email.email_db_utilities.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.log_event')
     def test_initialize_email_db_creates_indexes(self, mock_log, mock_execute):
         """Test initialize_email_db creates indexes"""
         captured_func = None
@@ -706,8 +706,8 @@ class TestInitializeEmailDb:
 class TestMigrateEmailLogTable:
     """Test suite for migrate_email_log_table() function"""
 
-    @patch('university_system.infrastructure.email.email_db_utilities.execute_db_operation')
-    @patch('university_system.infrastructure.email.email_db_utilities.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.log_event')
     def test_migrate_email_log_table_adds_missing_columns(self, mock_log, mock_execute):
         """Test migrate_email_log_table adds missing columns"""
         captured_func = None
@@ -723,8 +723,8 @@ class TestMigrateEmailLogTable:
 
         assert result is True
 
-    @patch('university_system.infrastructure.email.email_db_utilities.execute_db_operation')
-    @patch('university_system.infrastructure.email.email_db_utilities.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.log_event')
     def test_migrate_email_log_table_handles_existing_columns(self, mock_log, mock_execute):
         """Test migrate_email_log_table handles already-existing columns"""
         captured_func = None
@@ -758,8 +758,8 @@ class TestMigrateEmailLogTable:
 class TestOptimizeDatabase:
     """Test suite for optimize_database() function"""
 
-    @patch('university_system.infrastructure.email.email_db_utilities.execute_db_operation')
-    @patch('university_system.infrastructure.email.email_db_utilities.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.log_event')
     def test_optimize_database_success(self, mock_log, mock_execute):
         """Test optimize_database runs successfully"""
         mock_execute.return_value = True
@@ -772,8 +772,8 @@ class TestOptimizeDatabase:
         info_calls = [call for call in mock_log.call_args_list if call[0][0] == 'info']
         assert any('optimization completed' in str(call).lower() for call in info_calls)
 
-    @patch('university_system.infrastructure.email.email_db_utilities.execute_db_operation')
-    @patch('university_system.infrastructure.email.email_db_utilities.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.log_event')
     def test_optimize_database_runs_pragma_optimize(self, mock_log, mock_execute):
         """Test optimize_database runs PRAGMA optimize"""
         captured_func = None
@@ -794,8 +794,8 @@ class TestOptimizeDatabase:
         execute_calls = [str(call) for call in mock_cursor.execute.call_args_list]
         assert any('PRAGMA optimize' in call for call in execute_calls)
 
-    @patch('university_system.infrastructure.email.email_db_utilities.execute_db_operation')
-    @patch('university_system.infrastructure.email.email_db_utilities.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.log_event')
     def test_optimize_database_runs_wal_checkpoint(self, mock_log, mock_execute):
         """Test optimize_database runs WAL checkpoint"""
         captured_func = None
@@ -816,8 +816,8 @@ class TestOptimizeDatabase:
         execute_calls = [str(call) for call in mock_cursor.execute.call_args_list]
         assert any('wal_checkpoint' in call for call in execute_calls)
 
-    @patch('university_system.infrastructure.email.email_db_utilities.execute_db_operation')
-    @patch('university_system.infrastructure.email.email_db_utilities.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.log_event')
     def test_optimize_database_runs_analyze(self, mock_log, mock_execute):
         """Test optimize_database runs ANALYZE"""
         captured_func = None
@@ -838,8 +838,8 @@ class TestOptimizeDatabase:
         execute_calls = [str(call) for call in mock_cursor.execute.call_args_list]
         assert any('ANALYZE' in call for call in execute_calls)
 
-    @patch('university_system.infrastructure.email.email_db_utilities.execute_db_operation')
-    @patch('university_system.infrastructure.email.email_db_utilities.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.log_event')
     def test_optimize_database_handles_error(self, mock_log, mock_execute):
         """Test optimize_database handles errors gracefully"""
         mock_execute.side_effect = Exception("Optimization error")
@@ -875,7 +875,7 @@ class TestScheduleDatabaseMaintenance:
 class TestHelperFunctions:
     """Test suite for internal helper functions"""
 
-    @patch('university_system.infrastructure.email.email_db_utilities.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.execute_db_operation')
     def test_get_or_create_sender_id_existing_user(self, mock_execute):
         """Test _get_or_create_sender_id returns existing user ID"""
         mock_cursor = MagicMock()
@@ -890,7 +890,7 @@ class TestHelperFunctions:
 
         assert result == 123
 
-    @patch('university_system.infrastructure.email.email_db_utilities.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.execute_db_operation')
     def test_get_or_create_sender_id_creates_system_user(self, mock_execute):
         """Test _get_or_create_sender_id creates system user when needed"""
         mock_cursor = MagicMock()
@@ -910,7 +910,7 @@ class TestHelperFunctions:
         insert_calls = [call for call in mock_cursor.execute.call_args_list if 'INSERT INTO users' in str(call)]
         assert len(insert_calls) > 0
 
-    @patch('university_system.infrastructure.email.email_db_utilities.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.execute_db_operation')
     def test_get_or_create_sender_id_returns_existing_system_user(self, mock_execute):
         """Test _get_or_create_sender_id returns existing system user"""
         mock_cursor = MagicMock()
@@ -929,8 +929,8 @@ class TestHelperFunctions:
 class TestDbReadyInitialization:
     """Test suite for _ensure_db_ready() and _sync_inbox_messages()"""
 
-    @patch('university_system.infrastructure.email.email_db_utilities.initialize_email_db')
-    @patch('university_system.infrastructure.email.email_db_utilities._sync_inbox_messages')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.initialize_email_db')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities._sync_inbox_messages')
     def test_ensure_db_ready_initializes_once(self, mock_sync, mock_init):
         """Test _ensure_db_ready only initializes once"""
         # Reset the _DB_READY flag
@@ -943,8 +943,8 @@ class TestDbReadyInitialization:
         mock_init.assert_called_once()
         mock_sync.assert_called_once()
 
-    @patch('university_system.infrastructure.email.email_db_utilities.initialize_email_db')
-    @patch('university_system.infrastructure.email.email_db_utilities._sync_inbox_messages')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.initialize_email_db')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities._sync_inbox_messages')
     def test_ensure_db_ready_handles_init_error(self, mock_sync, mock_init):
         """Test _ensure_db_ready handles initialization errors"""
         email_db_utilities._DB_READY = False
@@ -953,8 +953,8 @@ class TestDbReadyInitialization:
         with pytest.raises(Exception, match="Init error"):
             email_db_utilities._ensure_db_ready()
 
-    @patch('university_system.infrastructure.email.email_db_utilities.execute_db_operation')
-    @patch('university_system.infrastructure.email.email_db_utilities.logger')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.logger')
     def test_sync_inbox_messages_no_missing_messages(self, mock_logger, mock_execute):
         """Test _sync_inbox_messages handles no missing messages"""
         mock_execute.return_value = 0
@@ -963,8 +963,8 @@ class TestDbReadyInitialization:
 
         assert result == 0
 
-    @patch('university_system.infrastructure.email.email_db_utilities.execute_db_operation')
-    @patch('university_system.infrastructure.email.email_db_utilities.logger')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.logger')
     def test_sync_inbox_messages_handles_error(self, mock_logger, mock_execute):
         """Test _sync_inbox_messages handles errors gracefully"""
         mock_execute.side_effect = Exception("Sync error")

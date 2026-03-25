@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.college_system.modules.domain.behaviour.services.behaviour_service import BehaviourService
+from education_system.college_system.core.i18n import t
 
 
 class BehaviourFrame(tk.Frame):
@@ -20,7 +21,7 @@ class BehaviourFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Behaviour & Conduct", font=("Helvetica", 14, "bold"),
+        tk.Label(header, text=t("behaviour.title"), font=("Helvetica", 14, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=10)
 
         self._nb = ttk.Notebook(self)
@@ -28,12 +29,12 @@ class BehaviourFrame(tk.Frame):
 
         # Record tab
         self._record_tab = tk.Frame(self._nb)
-        self._nb.add(self._record_tab, text="Record Incident")
+        self._nb.add(self._record_tab, text=t("behaviour.record_incident"))
         self._build_record_tab()
 
         # Log tab
         self._log_tab = tk.Frame(self._nb)
-        self._nb.add(self._log_tab, text="Behaviour Log")
+        self._nb.add(self._log_tab, text=t("behaviour.behaviour_log"))
         self._build_log_tab()
 
     def _build_record_tab(self):
@@ -42,28 +43,28 @@ class BehaviourFrame(tk.Frame):
 
         fields = {}
         row = 0
-        for label, key in [("Student ID*:", "student_id"), ("Location:", "location")]:
+        for label, key in [(t("common.student_id_required"), "student_id"), (t("common.location_colon"), "location")]:
             tk.Label(form, text=label).grid(row=row, column=0, sticky="e", padx=5, pady=5)
             e = tk.Entry(form, width=30)
             e.grid(row=row, column=1, sticky="w", padx=5, pady=5)
             fields[key] = e
             row += 1
 
-        tk.Label(form, text="Incident Type:").grid(row=row, column=0, sticky="e", padx=5, pady=5)
+        tk.Label(form, text=t("behaviour.incident_type_colon")).grid(row=row, column=0, sticky="e", padx=5, pady=5)
         self._type_var = tk.StringVar(value="negative")
         ttk.Combobox(form, textvariable=self._type_var,
                       values=["positive", "negative", "bullying", "disruption", "absence"],
                       state="readonly", width=27).grid(row=row, column=1, sticky="w", padx=5, pady=5)
         row += 1
 
-        tk.Label(form, text="Severity:").grid(row=row, column=0, sticky="e", padx=5, pady=5)
+        tk.Label(form, text=t("common.severity_colon")).grid(row=row, column=0, sticky="e", padx=5, pady=5)
         self._sev_var = tk.StringVar(value="minor")
         ttk.Combobox(form, textvariable=self._sev_var,
                       values=["minor", "moderate", "major", "critical"],
                       state="readonly", width=27).grid(row=row, column=1, sticky="w", padx=5, pady=5)
         row += 1
 
-        tk.Label(form, text="Description*:").grid(row=row, column=0, sticky="ne", padx=5, pady=5)
+        tk.Label(form, text=t("common.description_required")).grid(row=row, column=0, sticky="ne", padx=5, pady=5)
         desc_text = tk.Text(form, width=40, height=5)
         desc_text.grid(row=row, column=1, sticky="w", padx=5, pady=5)
         fields["description"] = desc_text
@@ -81,27 +82,28 @@ class BehaviourFrame(tk.Frame):
                     description=desc_text.get("1.0", "end").strip(),
                     severity=self._sev_var.get(),
                     location=fields["location"].get().strip() or None)
-                messagebox.showinfo("Success", "Incident recorded")
+                messagebox.showinfo(t("common.success"), t("behaviour.incident_recorded"))
                 fields["student_id"].delete(0, "end")
                 fields["location"].delete(0, "end")
                 desc_text.delete("1.0", "end")
                 self._load_records()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(form, text="Submit", command=submit).grid(row=row, column=0, columnspan=2, pady=15)
+        ttk.Button(form, text=t("common.submit"), command=submit).grid(row=row, column=0, columnspan=2, pady=15)
 
     def _build_log_tab(self):
         toolbar = tk.Frame(self._log_tab)
         toolbar.pack(fill="x", padx=5, pady=5)
 
-        tk.Label(toolbar, text="Type:").pack(side="left", padx=5)
+        tk.Label(toolbar, text=t("common.type_colon")).pack(side="left", padx=5)
         self._filter_type = tk.StringVar(value="All")
         ttk.Combobox(toolbar, textvariable=self._filter_type,
                       values=["All", "positive", "negative", "bullying", "disruption", "absence"],
                       state="readonly", width=15).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="Filter", command=self._load_records).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="Update Selected", command=self._update_record).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("common.filter"), command=self._load_records).pack(side="left", padx=5)
+        ttk.Button(toolbar, text="Export CSV", command=self._export_csv).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("common.update_selected"), command=self._update_record).pack(side="right", padx=5)
 
         cols = ("id", "student", "type", "severity", "date", "resolved")
         self._beh_tree = ttk.Treeview(self._log_tab, columns=cols, show="headings", height=15)
@@ -128,7 +130,7 @@ class BehaviourFrame(tk.Frame):
                     r.get("severity", ""), r.get("incident_date", ""),
                     "Yes" if r.get("resolved") else "No"))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _on_record_select(self, _event=None):
         sel = self._beh_tree.selection()
@@ -148,20 +150,20 @@ class BehaviourFrame(tk.Frame):
     def _update_record(self):
         sel = self._beh_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a record")
+            messagebox.showwarning(t("common.warning"), t("behaviour.select_record"))
             return
         record_id = int(sel[0])
         win = tk.Toplevel(self)
-        win.title("Update Record")
+        win.title(t("behaviour.update_record"))
         win.geometry("400x250")
-        tk.Label(win, text="Action Taken:").grid(row=0, column=0, padx=10, pady=5, sticky="ne")
+        tk.Label(win, text=t("behaviour.action_taken_colon")).grid(row=0, column=0, padx=10, pady=5, sticky="ne")
         action = tk.Text(win, width=30, height=3)
         action.grid(row=0, column=1, padx=10, pady=5)
-        tk.Label(win, text="Notes:").grid(row=1, column=0, padx=10, pady=5, sticky="ne")
+        tk.Label(win, text=t("common.notes_colon")).grid(row=1, column=0, padx=10, pady=5, sticky="ne")
         notes = tk.Text(win, width=30, height=3)
         notes.grid(row=1, column=1, padx=10, pady=5)
         resolved_var = tk.BooleanVar()
-        ttk.Checkbutton(win, text="Resolved", variable=resolved_var).grid(row=2, column=1, sticky="w", padx=10)
+        ttk.Checkbutton(win, text=t("behaviour.resolved"), variable=resolved_var).grid(row=2, column=1, sticky="w", padx=10)
 
         def save():
             try:
@@ -177,8 +179,12 @@ class BehaviourFrame(tk.Frame):
                 win.destroy()
                 self._load_records()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
-        ttk.Button(win, text="Save", command=save).grid(row=3, column=0, columnspan=2, pady=15)
+                messagebox.showerror(t("common.error"), str(e))
+        ttk.Button(win, text=t("common.save"), command=save).grid(row=3, column=0, columnspan=2, pady=15)
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._beh_tree, default_filename="behaviour.csv")
 
     def refresh(self):
         self._load_records()

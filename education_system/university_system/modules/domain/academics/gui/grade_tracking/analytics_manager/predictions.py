@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.university_system.infrastructure.database.db import sqlite3
-from .constants import get_connection
+from education_system.university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.constants import get_connection
 
 
 class PredictionsMixin:

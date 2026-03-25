@@ -139,7 +139,8 @@ class AssignmentService:
         finally:
             conn.close()
 
-    def list_assignments(self, course_id: int | None = None) -> list[dict]:
+    def list_assignments(self, course_id: int | None = None,
+                         limit: int = 100, offset: int = 0) -> list[dict]:
         """List assignments, optionally filtered by course."""
         conn = self._conn()
         try:
@@ -150,10 +151,25 @@ class AssignmentService:
             if course_id is not None:
                 sql += " WHERE a.course_id = ?"
                 params.append(course_id)
-            sql += " ORDER BY a.due_date DESC"
+            sql += " ORDER BY a.due_date DESC LIMIT ? OFFSET ?"
+            params.extend([limit, offset])
 
             rows = conn.execute(sql, params).fetchall()
             return [dict(r) for r in rows]
+        finally:
+            conn.close()
+
+    def count_assignments(self, course_id: int | None = None) -> int:
+        """Count total assignments, optionally filtered by course."""
+        conn = self._conn()
+        try:
+            sql = "SELECT COUNT(*) as cnt FROM assignments a JOIN courses c ON a.course_id = c.id"
+            params: list = []
+            if course_id is not None:
+                sql += " WHERE a.course_id = ?"
+                params.append(course_id)
+            row = conn.execute(sql, params).fetchone()
+            return row["cnt"]
         finally:
             conn.close()
 

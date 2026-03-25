@@ -132,7 +132,32 @@
       "no_methods_configured": "No MFA methods configured",
       "change_authentication": "Change Authentication",
       "turn_off_mfa_button": "Turn Off MFA",
-      "turn_on_mfa_button": "Turn On MFA"
+      "turn_on_mfa_button": "Turn On MFA",
+      "verification_status_disabled": "Disabled (Password Only)",
+      "verification_status_enabled": "Enabled",
+      "login_verification_label": "Login Verification: ",
+      "configured": "Configured",
+      "primary_method": "Primary",
+      "turned_off_success": "MFA has been turned off.\n\nYour settings have been saved.\nYou can restore them later from this menu.",
+      "module_not_available": "MFA module not available: {error}",
+      "error_opening_setup": "Error opening MFA setup: {error}",
+      "error_opening_wizard": "Error opening MFA wizard: {error}",
+      "reenable_email_subject": "MFA Re-enabled for Your Account",
+      "reenable_email_body": "Hello {username},\n\nMulti-Factor Authentication (MFA) has been re-enabled for your account using your previously saved settings.\n\nDetails:\n- Account: {username}\n- Email: {email}\n- Methods restored: {methods_count}\n\nIf you did not make this change, please contact support immediately and change your password.\n\nThank you,\nUniversity System Security Team",
+      "reenabled_title": "MFA Re-enabled",
+      "reenabled_with_email": "MFA has been successfully re-enabled using your saved settings.\n\nA confirmation email has been sent to:\n{email}",
+      "reenabled_no_email": "MFA has been successfully re-enabled using your saved settings.\n\n(Email notification could not be sent externally)",
+      "reenabled_email_error": "MFA has been successfully re-enabled using your saved settings.\n\n(Confirmation email could not be sent: {error})",
+      "reenabled_simple": "MFA has been successfully re-enabled using your saved settings."
+    },
+    "switch_system": {
+      "title": "Switch System",
+      "header": "Switch to another system",
+      "choose_system": "Choose a system to launch:",
+      "failed": "Failed to switch system: {error}",
+      "college": "Sixth Form College System",
+      "secondary": "Secondary School System",
+      "primary": "Primary School System"
     },
     "email_manager": {
       "title": "Communication",

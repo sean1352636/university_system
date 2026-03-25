@@ -3,8 +3,8 @@ import json
 import threading
 from typing import Dict, Any
 
-from ..models import LogEntry
-from .base import LoggerPlugin
+from education_system.university_system.modules.shared.utils.simple_activity_logger.models import LogEntry
+from education_system.university_system.modules.shared.utils.simple_activity_logger.plugins.base import LoggerPlugin
 
 
 class AuditTrailPlugin(LoggerPlugin):

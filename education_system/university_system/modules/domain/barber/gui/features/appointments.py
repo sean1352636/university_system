@@ -663,7 +663,7 @@ class AppointmentsMixin:
                         FROM barber_appointments a
                         LEFT JOIN barber_services s ON a.service_id = s.service_id
                         LEFT JOIN barber_staff st ON a.staff_id = st.staff_id
-                        LEFT JOIN barber_transactions t ON a.appointment_id = t.appointment_id
+                        LEFT JOIN transactions t ON a.appointment_id = t.reference_id AND t.reference_type = 'appointment' AND t.source_type = 'barber'
                         WHERE a.appointment_date BETWEEN ? AND ?
                     """
                     params = [from_var.get(), to_var.get()]

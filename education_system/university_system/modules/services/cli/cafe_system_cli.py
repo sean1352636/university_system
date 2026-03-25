@@ -104,91 +104,88 @@ def init_cafe_db() -> bool:
 
         cursor = conn.cursor()
 
-        # Cafe menu items table
+        # Unified products table (cafe items have source_type='cafe')
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS cafe_menu_items (
-                item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            CREATE TABLE IF NOT EXISTS products (
+                product_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source_type TEXT NOT NULL DEFAULT 'cafe',
+                source_product_id INTEGER,
                 name TEXT NOT NULL,
                 category TEXT NOT NULL,
                 description TEXT,
                 price REAL NOT NULL,
-                available INTEGER DEFAULT 1,
+                is_alcoholic INTEGER DEFAULT 0,
+                is_available INTEGER DEFAULT 1,
                 stock_quantity INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
 
-        # Cafe orders table
+        # Unified orders table (cafe orders have source_type='cafe')
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS cafe_orders (
+            CREATE TABLE IF NOT EXISTS orders (
                 order_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source_type TEXT NOT NULL DEFAULT 'cafe',
+                source_order_id INTEGER,
                 student_id TEXT,
                 customer_name TEXT,
                 order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 total_amount REAL NOT NULL,
                 payment_method TEXT,
-                status TEXT DEFAULT 'pending',
+                age_verified INTEGER DEFAULT 0,
+                order_status TEXT DEFAULT 'pending',
                 notes TEXT
             )
         ''')
 
-        # Cafe order items table
+        # Unified order_items table (cafe order items have source_type='cafe')
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS cafe_order_items (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                order_id INTEGER,
-                item_id INTEGER,
+            CREATE TABLE IF NOT EXISTS order_items (
+                item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source_type TEXT NOT NULL DEFAULT 'cafe',
+                source_order_id INTEGER,
+                product_id INTEGER,
                 item_name TEXT,
                 quantity INTEGER,
                 unit_price REAL,
                 subtotal REAL,
-                FOREIGN KEY (order_id) REFERENCES cafe_orders(order_id),
-                FOREIGN KEY (item_id) REFERENCES cafe_menu_items(item_id)
+                FOREIGN KEY (source_order_id) REFERENCES orders(order_id),
+                FOREIGN KEY (product_id) REFERENCES products(product_id)
             )
         ''')
 
-        # Cafe inventory transactions table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS cafe_inventory_transactions (
-                transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                item_id INTEGER,
-                quantity_change INTEGER,
-                transaction_type TEXT,
-                transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                notes TEXT,
-                FOREIGN KEY (item_id) REFERENCES cafe_menu_items(item_id)
-            )
-        ''')
+        # NOTE: cafe inventory transactions now use the unified 'transactions' table
+        # with source_type = 'cafe_inventory'
 
         conn.commit()
 
         # Insert sample menu items if table is empty
-        cursor.execute('SELECT COUNT(*) FROM cafe_menu_items')
+        cursor.execute("SELECT COUNT(*) FROM products WHERE source_type = 'cafe'")
         if cursor.fetchone()[0] == 0:
             sample_items = [
-                ('Espresso', 'Hot Drinks', 'Classic Italian espresso', 2.50, 1, 100),
-                ('Cappuccino', 'Hot Drinks', 'Espresso with steamed milk and foam', 3.50, 1, 100),
-                ('Latte', 'Hot Drinks', 'Espresso with steamed milk', 3.75, 1, 100),
-                ('Americano', 'Hot Drinks', 'Espresso with hot water', 2.75, 1, 100),
-                ('Hot Chocolate', 'Hot Drinks', 'Rich hot chocolate', 3.25, 1, 100),
-                ('Tea', 'Hot Drinks', 'Selection of teas', 2.25, 1, 100),
-                ('Iced Coffee', 'Cold Drinks', 'Chilled coffee over ice', 3.50, 1, 100),
-                ('Iced Tea', 'Cold Drinks', 'Refreshing iced tea', 2.75, 1, 100),
-                ('Smoothie', 'Cold Drinks', 'Fruit smoothie', 4.50, 1, 50),
-                ('Fresh Juice', 'Cold Drinks', 'Freshly squeezed juice', 3.95, 1, 50),
-                ('Croissant', 'Pastries', 'Buttery French croissant', 2.50, 1, 30),
-                ('Muffin', 'Pastries', 'Blueberry or chocolate chip', 2.75, 1, 40),
-                ('Danish', 'Pastries', 'Sweet pastry', 3.00, 1, 30),
-                ('Cookie', 'Pastries', 'Freshly baked cookie', 1.50, 1, 60),
-                ('Brownie', 'Pastries', 'Chocolate brownie', 2.95, 1, 40),
-                ('Sandwich', 'Food', 'Various sandwich options', 5.50, 1, 25),
-                ('Panini', 'Food', 'Grilled panini', 6.50, 1, 20),
-                ('Salad', 'Food', 'Fresh garden salad', 5.95, 1, 15),
-                ('Soup', 'Food', 'Soup of the day', 4.50, 1, 20),
-                ('Bagel', 'Food', 'Toasted bagel with spreads', 3.25, 1, 35)
+                ('cafe', 'Espresso', 'Hot Drinks', 'Classic Italian espresso', 2.50, 1, 100),
+                ('cafe', 'Cappuccino', 'Hot Drinks', 'Espresso with steamed milk and foam', 3.50, 1, 100),
+                ('cafe', 'Latte', 'Hot Drinks', 'Espresso with steamed milk', 3.75, 1, 100),
+                ('cafe', 'Americano', 'Hot Drinks', 'Espresso with hot water', 2.75, 1, 100),
+                ('cafe', 'Hot Chocolate', 'Hot Drinks', 'Rich hot chocolate', 3.25, 1, 100),
+                ('cafe', 'Tea', 'Hot Drinks', 'Selection of teas', 2.25, 1, 100),
+                ('cafe', 'Iced Coffee', 'Cold Drinks', 'Chilled coffee over ice', 3.50, 1, 100),
+                ('cafe', 'Iced Tea', 'Cold Drinks', 'Refreshing iced tea', 2.75, 1, 100),
+                ('cafe', 'Smoothie', 'Cold Drinks', 'Fruit smoothie', 4.50, 1, 50),
+                ('cafe', 'Fresh Juice', 'Cold Drinks', 'Freshly squeezed juice', 3.95, 1, 50),
+                ('cafe', 'Croissant', 'Pastries', 'Buttery French croissant', 2.50, 1, 30),
+                ('cafe', 'Muffin', 'Pastries', 'Blueberry or chocolate chip', 2.75, 1, 40),
+                ('cafe', 'Danish', 'Pastries', 'Sweet pastry', 3.00, 1, 30),
+                ('cafe', 'Cookie', 'Pastries', 'Freshly baked cookie', 1.50, 1, 60),
+                ('cafe', 'Brownie', 'Pastries', 'Chocolate brownie', 2.95, 1, 40),
+                ('cafe', 'Sandwich', 'Food', 'Various sandwich options', 5.50, 1, 25),
+                ('cafe', 'Panini', 'Food', 'Grilled panini', 6.50, 1, 20),
+                ('cafe', 'Salad', 'Food', 'Fresh garden salad', 5.95, 1, 15),
+                ('cafe', 'Soup', 'Food', 'Soup of the day', 4.50, 1, 20),
+                ('cafe', 'Bagel', 'Food', 'Toasted bagel with spreads', 3.25, 1, 35)
             ]
             cursor.executemany(
-                'INSERT INTO cafe_menu_items (name, category, description, price, available, stock_quantity) VALUES (?, ?, ?, ?, ?, ?)',
+                "INSERT INTO products (source_type, name, category, description, price, is_available, stock_quantity) VALUES (?, ?, ?, ?, ?, ?, ?)",
                 sample_items
             )
             conn.commit()
@@ -265,7 +262,7 @@ def get_all_menu_items(category: str = None, available_only: bool = False) -> Li
         return []
 
     cursor = conn.cursor()
-    query = "SELECT item_id, name, category, description, price, available, stock_quantity FROM cafe_menu_items"
+    query = "SELECT product_id, name, category, description, price, is_available, stock_quantity FROM products WHERE source_type = 'cafe'"
     params = []
 
     conditions = []
@@ -273,10 +270,10 @@ def get_all_menu_items(category: str = None, available_only: bool = False) -> Li
         conditions.append("category = ?")
         params.append(category)
     if available_only:
-        conditions.append("available = 1")
+        conditions.append("is_available = 1")
 
     if conditions:
-        query += " WHERE " + " AND ".join(conditions)
+        query += " AND " + " AND ".join(conditions)
 
     query += " ORDER BY category, name"
     cursor.execute(query, params)
@@ -292,7 +289,7 @@ def get_menu_item(item_id: int) -> Optional[Tuple]:
 
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT item_id, name, category, description, price, available, stock_quantity FROM cafe_menu_items WHERE item_id = ?",
+        "SELECT product_id, name, category, description, price, is_available, stock_quantity FROM products WHERE source_type = 'cafe' AND product_id = ?",
         (item_id,)
     )
     result = cursor.fetchone()
@@ -308,7 +305,7 @@ def add_menu_item(name: str, category: str, description: str, price: float, stoc
 
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO cafe_menu_items (name, category, description, price, available, stock_quantity) VALUES (?, ?, ?, ?, 1, ?)",
+            "INSERT INTO products (source_type, name, category, description, price, is_available, stock_quantity) VALUES ('cafe', ?, ?, ?, ?, 1, ?)",
             (name, category, description, price, stock)
         )
         conn.commit()
@@ -331,7 +328,7 @@ def update_menu_item(item_id: int, name: str, category: str, price: float, stock
 
         cursor = conn.cursor()
         cursor.execute(
-            "UPDATE cafe_menu_items SET name = ?, category = ?, price = ?, stock_quantity = ?, available = ? WHERE item_id = ?",
+            "UPDATE products SET name = ?, category = ?, price = ?, stock_quantity = ?, is_available = ? WHERE product_id = ? AND source_type = 'cafe'",
             (name, category, price, stock, 1 if available else 0, item_id)
         )
         conn.commit()
@@ -353,11 +350,11 @@ def delete_menu_item(item_id: int) -> bool:
             return False
 
         cursor = conn.cursor()
-        cursor.execute("SELECT name FROM cafe_menu_items WHERE item_id = ?", (item_id,))
+        cursor.execute("SELECT name FROM products WHERE source_type = 'cafe' AND product_id = ?", (item_id,))
         row = cursor.fetchone()
         item_name = row[0] if row else "Unknown"
 
-        cursor.execute("DELETE FROM cafe_menu_items WHERE item_id = ?", (item_id,))
+        cursor.execute("DELETE FROM products WHERE product_id = ? AND source_type = 'cafe'", (item_id,))
         conn.commit()
         conn.close()
 
@@ -383,7 +380,7 @@ def create_order(student_id: str, customer_name: str, items: List[Dict], payment
 
         # Insert order
         cursor.execute(
-            "INSERT INTO cafe_orders (student_id, customer_name, total_amount, payment_method, status) VALUES (?, ?, ?, ?, 'completed')",
+            "INSERT INTO orders (source_type, student_id, customer_name, total_amount, payment_method, order_status) VALUES ('cafe', ?, ?, ?, ?, 'completed')",
             (student_id or None, customer_name, total, payment_method)
         )
         order_id = cursor.lastrowid
@@ -391,19 +388,19 @@ def create_order(student_id: str, customer_name: str, items: List[Dict], payment
         # Insert order items and update inventory
         for item in items:
             cursor.execute(
-                "INSERT INTO cafe_order_items (order_id, item_id, item_name, quantity, unit_price, subtotal) VALUES (?, ?, ?, ?, ?, ?)",
+                "INSERT INTO order_items (source_type, source_order_id, product_id, item_name, quantity, unit_price, subtotal) VALUES ('cafe', ?, ?, ?, ?, ?, ?)",
                 (order_id, item['item_id'], item['name'], item['quantity'], item['price'], item['subtotal'])
             )
 
             # Update inventory
             cursor.execute(
-                "UPDATE cafe_menu_items SET stock_quantity = stock_quantity - ? WHERE item_id = ?",
+                "UPDATE products SET stock_quantity = stock_quantity - ? WHERE product_id = ? AND source_type = 'cafe'",
                 (item['quantity'], item['item_id'])
             )
 
             # Log inventory transaction
             cursor.execute(
-                "INSERT INTO cafe_inventory_transactions (item_id, quantity_change, transaction_type, notes) VALUES (?, ?, 'sale', ?)",
+                "INSERT INTO transactions (source_type, reference_id, reference_type, quantity_change, transaction_type, notes) VALUES ('cafe_inventory', ?, 'item', ?, 'sale', ?)",
                 (item['item_id'], -item['quantity'], f'Order #{order_id}')
             )
 
@@ -426,26 +423,26 @@ def get_orders(filter_type: str = "all") -> List[Tuple]:
 
     cursor = conn.cursor()
 
-    date_filter = ""
+    source_filter = "WHERE o.source_type = 'cafe'"
     if filter_type == "today":
-        date_filter = "WHERE DATE(o.order_date) = DATE('now')"
+        source_filter = "WHERE o.source_type = 'cafe' AND DATE(o.order_date) = DATE('now')"
     elif filter_type == "week":
-        date_filter = "WHERE DATE(o.order_date) >= DATE('now', '-7 days')"
+        source_filter = "WHERE o.source_type = 'cafe' AND DATE(o.order_date) >= DATE('now', '-7 days')"
     elif filter_type == "month":
-        date_filter = "WHERE DATE(o.order_date) >= DATE('now', 'start of month')"
+        source_filter = "WHERE o.source_type = 'cafe' AND DATE(o.order_date) >= DATE('now', 'start of month')"
 
     query = f'''
         SELECT
             o.order_id,
             o.order_date,
             COALESCE(o.customer_name, o.student_id, 'Walk-in'),
-            COUNT(oi.id),
+            COUNT(oi.item_id),
             o.total_amount,
             o.payment_method,
-            o.status
-        FROM cafe_orders o
-        LEFT JOIN cafe_order_items oi ON o.order_id = oi.order_id
-        {date_filter}
+            o.order_status
+        FROM orders o
+        LEFT JOIN order_items oi ON o.order_id = oi.source_order_id AND oi.source_type = 'cafe'
+        {source_filter}
         GROUP BY o.order_id
         ORDER BY o.order_date DESC
     '''
@@ -463,7 +460,7 @@ def get_order_items(order_id: int) -> List[Tuple]:
 
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT item_name, quantity, unit_price, subtotal FROM cafe_order_items WHERE order_id = ?",
+        "SELECT item_name, quantity, unit_price, subtotal FROM order_items WHERE source_type = 'cafe' AND source_order_id = ?",
         (order_id,)
     )
     results = cursor.fetchall()
@@ -479,11 +476,11 @@ def update_stock(item_id: int, quantity_change: int, transaction_type: str, note
 
         cursor = conn.cursor()
         cursor.execute(
-            "UPDATE cafe_menu_items SET stock_quantity = stock_quantity + ? WHERE item_id = ?",
+            "UPDATE products SET stock_quantity = stock_quantity + ? WHERE product_id = ? AND source_type = 'cafe'",
             (quantity_change, item_id)
         )
         cursor.execute(
-            "INSERT INTO cafe_inventory_transactions (item_id, quantity_change, transaction_type, notes) VALUES (?, ?, ?, ?)",
+            "INSERT INTO transactions (source_type, reference_id, reference_type, quantity_change, transaction_type, notes) VALUES ('cafe_inventory', ?, 'item', ?, ?, ?)",
             (item_id, quantity_change, transaction_type, notes)
         )
         conn.commit()
@@ -501,10 +498,11 @@ def get_inventory_transactions(limit: int = 100) -> List[Tuple]:
 
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT t.transaction_id, m.name, t.quantity_change, t.transaction_type, t.transaction_date, t.notes
-        FROM cafe_inventory_transactions t
-        JOIN cafe_menu_items m ON t.item_id = m.item_id
-        ORDER BY t.transaction_date DESC
+        SELECT t.transaction_id, m.name, t.quantity_change, t.transaction_type, t.created_at, t.notes
+        FROM transactions t
+        JOIN products m ON t.reference_id = m.product_id AND m.source_type = 'cafe' AND t.reference_type = 'item'
+        WHERE t.source_type = 'cafe_inventory'
+        ORDER BY t.created_at DESC
         LIMIT ?
     ''', (limit,))
     results = cursor.fetchall()
@@ -528,8 +526,8 @@ def get_sales_summary(period: str = "day") -> Dict:
 
     cursor.execute(f'''
         SELECT COUNT(*), COALESCE(SUM(total_amount), 0)
-        FROM cafe_orders
-        WHERE {date_filter}
+        FROM orders
+        WHERE source_type = 'cafe' AND {date_filter}
     ''')
     result = cursor.fetchone()
     order_count = result[0] or 0
@@ -537,8 +535,8 @@ def get_sales_summary(period: str = "day") -> Dict:
 
     cursor.execute(f'''
         SELECT payment_method, COUNT(*), COALESCE(SUM(total_amount), 0)
-        FROM cafe_orders
-        WHERE {date_filter}
+        FROM orders
+        WHERE source_type = 'cafe' AND {date_filter}
         GROUP BY payment_method
     ''')
     payment_breakdown = cursor.fetchall()
@@ -560,7 +558,8 @@ def get_popular_items(limit: int = 20) -> List[Tuple]:
     cursor = conn.cursor()
     cursor.execute('''
         SELECT item_name, SUM(quantity) as total_qty, SUM(subtotal) as total_sales
-        FROM cafe_order_items
+        FROM order_items
+        WHERE source_type = 'cafe'
         GROUP BY item_name
         ORDER BY total_qty DESC
         LIMIT ?
@@ -578,8 +577,8 @@ def get_low_stock_items(threshold: int = 20) -> List[Tuple]:
     cursor = conn.cursor()
     cursor.execute('''
         SELECT name, category, stock_quantity
-        FROM cafe_menu_items
-        WHERE stock_quantity < ?
+        FROM products
+        WHERE source_type = 'cafe' AND stock_quantity < ?
         ORDER BY stock_quantity ASC
     ''', (threshold,))
     results = cursor.fetchall()
@@ -607,7 +606,7 @@ def display_cafe_menu() -> None:
         conn = get_db_connection()
         if conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='cafe_menu_items'")
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='products'")
             if not cursor.fetchone():
                 conn.close()
                 print("Cafe database not initialized. Initializing now...")

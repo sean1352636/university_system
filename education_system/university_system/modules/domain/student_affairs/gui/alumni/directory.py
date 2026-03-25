@@ -1,3 +1,4 @@
+from education_system.university_system.core.sql_safety import escape_like
 import tkinter as tk
 from education_system.university_system.infrastructure.email.template_utils import render_template
 from tkinter import ttk, messagebox, simpledialog, filedialog
@@ -145,7 +146,7 @@ class DirectoryMixin:
                         AND a.alumni_id != ?
                         ORDER BY a.last_name
                     """
-                    cursor.execute(query, (user_id, user_id, f"%{search_term}%", f"%{search_term}%", user_id))
+                    cursor.execute(query, (user_id, user_id, f"%{escape_like(search_term)}%", f"%{escape_like(search_term)}%", user_id))
                     results = cursor.fetchall()
 
                     for alumni in results:

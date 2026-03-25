@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/legal_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/legal', '/cases', '/cases/<int:case_id>', '/consultations', 'GET', 'POST', 'assigned_lawyer', 'case_description', 'case_id', 'case_id = ?', 'case_title', 'case_type', 'case_type = ?', 'client_email', 'client_id', 'client_id = ?', 'client_name', 'consultation_type', 'create', 'duration_minutes', 'fee', 'items', 'lawyer_id', 'lawyer_name', 'legal', 'legal_cases', 'legal_consultations', 'priority', 'scheduled_date', 'scheduled_time', 'search', 'status', 'status = ?', 'sub', 'total', 'view']

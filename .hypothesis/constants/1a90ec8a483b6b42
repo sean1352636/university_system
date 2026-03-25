@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/i18n/core.py
+# hypothesis_version: 6.151.9
+
+['*.json', '.', 'Arabic', 'Chinese', 'Cymraeg', 'Deutsch', 'English', 'Español', 'Français', 'French', 'German', 'Japanese', 'Korean', 'Polish', 'Polski', 'Portuguese', 'Português', 'Russian', 'SUPPORTED_LANGUAGES', 'Spanish', 'Urdu', 'Welsh', '_', 'add_locale_dir', 'ar', 'config', 'cy', 'data', 'de', 'en', 'es', 'fr', 'get_current_language', 'get_english_name', 'get_text', 'init_i18n', 'ja', 'ko', 'language', 'language_config.json', 'load_saved_language', 'locales', 'pl', 'pt', 'r', 'reload_translations', 'ru', 'set_language', 't', 'ur', 'utf-8', 'w', 'zh', 'Русский', 'اردو', 'العربية', '中文', '日本語', '한국어']

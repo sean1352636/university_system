@@ -66,7 +66,7 @@ class TestSessionInfo:
 # ---------------------------------------------------------------------------
 
 class TestSessionManagerInit:
-    @patch("university_system.infrastructure.security.session_management.DEFAULT_DB_PATH", "/tmp/test.db")
+    @patch("education_system.university_system.infrastructure.security.session_management.DEFAULT_DB_PATH", "/tmp/test.db")
     def test_default_db_path(self):
         from education_system.university_system.infrastructure.security.session_management import SessionManager
         mgr = SessionManager()
@@ -126,7 +126,7 @@ class TestGetLocationFromIp:
         loc = mgr._get_location_from_ip("192.168.1.50")
         assert loc["city"] == "Local"
 
-    @patch("university_system.infrastructure.security.session_management.requests")
+    @patch("education_system.university_system.infrastructure.security.session_management.requests")
     def test_external_ip_calls_api(self, mock_requests):
         from education_system.university_system.infrastructure.security.session_management import SessionManager
         mock_response = MagicMock()
@@ -147,7 +147,7 @@ class TestGetLocationFromIp:
         assert loc["city"] == "London"
         assert loc["country"] == "UK"
 
-    @patch("university_system.infrastructure.security.session_management.requests")
+    @patch("education_system.university_system.infrastructure.security.session_management.requests")
     def test_api_failure_returns_unknown(self, mock_requests):
         from education_system.university_system.infrastructure.security.session_management import SessionManager
         mock_requests.get.side_effect = Exception("Network error")
@@ -216,7 +216,7 @@ class TestIsImpossibleTravel:
 # ---------------------------------------------------------------------------
 
 class TestCreateSession:
-    @patch("university_system.infrastructure.security.session_management.get_connection")
+    @patch("education_system.university_system.infrastructure.security.session_management.get_connection")
     def test_success_returns_session_id(self, mock_get_conn):
         from education_system.university_system.infrastructure.security.session_management import SessionManager
         mgr = SessionManager(db_path="/tmp/t.db")
@@ -241,7 +241,7 @@ class TestCreateSession:
         assert result["success"] is True
         assert "session_id" in result
 
-    @patch("university_system.infrastructure.security.session_management.get_connection")
+    @patch("education_system.university_system.infrastructure.security.session_management.get_connection")
     def test_error_returns_failure(self, mock_get_conn):
         from education_system.university_system.infrastructure.security.session_management import SessionManager
         mgr = SessionManager(db_path="/tmp/t.db")
@@ -267,7 +267,7 @@ class TestCreateSession:
 # ---------------------------------------------------------------------------
 
 class TestValidateSession:
-    @patch("university_system.infrastructure.security.session_management.get_connection")
+    @patch("education_system.university_system.infrastructure.security.session_management.get_connection")
     def test_not_found_returns_invalid(self, mock_get_conn):
         from education_system.university_system.infrastructure.security.session_management import SessionManager
         mgr = SessionManager(db_path="/tmp/t.db")
@@ -282,7 +282,7 @@ class TestValidateSession:
         assert result["valid"] is False
         assert "not found" in result["reason"]
 
-    @patch("university_system.infrastructure.security.session_management.get_connection")
+    @patch("education_system.university_system.infrastructure.security.session_management.get_connection")
     def test_terminated_session_invalid(self, mock_get_conn):
         from education_system.university_system.infrastructure.security.session_management import SessionManager
         mgr = SessionManager(db_path="/tmp/t.db")
@@ -302,7 +302,7 @@ class TestValidateSession:
         assert result["valid"] is False
         assert "terminated" in result["reason"].lower()
 
-    @patch("university_system.infrastructure.security.session_management.get_connection")
+    @patch("education_system.university_system.infrastructure.security.session_management.get_connection")
     def test_expired_session_invalid(self, mock_get_conn):
         from education_system.university_system.infrastructure.security.session_management import SessionManager
         mgr = SessionManager(db_path="/tmp/t.db")
@@ -328,7 +328,7 @@ class TestValidateSession:
 # ---------------------------------------------------------------------------
 
 class TestTerminateSession:
-    @patch("university_system.infrastructure.security.session_management.get_connection")
+    @patch("education_system.university_system.infrastructure.security.session_management.get_connection")
     def test_not_found_returns_failure(self, mock_get_conn):
         from education_system.university_system.infrastructure.security.session_management import SessionManager
         mgr = SessionManager(db_path="/tmp/t.db")
@@ -342,7 +342,7 @@ class TestTerminateSession:
         result = mgr.terminate_session("sess", 1)
         assert result["success"] is False
 
-    @patch("university_system.infrastructure.security.session_management.get_connection")
+    @patch("education_system.university_system.infrastructure.security.session_management.get_connection")
     def test_success_terminates(self, mock_get_conn):
         from education_system.university_system.infrastructure.security.session_management import SessionManager
         mgr = SessionManager(db_path="/tmp/t.db")
@@ -362,7 +362,7 @@ class TestTerminateSession:
 # ---------------------------------------------------------------------------
 
 class TestTerminateAllSessions:
-    @patch("university_system.infrastructure.security.session_management.get_connection")
+    @patch("education_system.university_system.infrastructure.security.session_management.get_connection")
     def test_terminates_all(self, mock_get_conn):
         from education_system.university_system.infrastructure.security.session_management import SessionManager
         mgr = SessionManager(db_path="/tmp/t.db")
@@ -377,7 +377,7 @@ class TestTerminateAllSessions:
         assert result["success"] is True
         assert result["terminated_count"] == 3
 
-    @patch("university_system.infrastructure.security.session_management.get_connection")
+    @patch("education_system.university_system.infrastructure.security.session_management.get_connection")
     def test_except_session(self, mock_get_conn):
         from education_system.university_system.infrastructure.security.session_management import SessionManager
         mgr = SessionManager(db_path="/tmp/t.db")
@@ -398,7 +398,7 @@ class TestTerminateAllSessions:
 # ---------------------------------------------------------------------------
 
 class TestCleanupExpiredSessions:
-    @patch("university_system.infrastructure.security.session_management.get_connection")
+    @patch("education_system.university_system.infrastructure.security.session_management.get_connection")
     def test_returns_count(self, mock_get_conn):
         from education_system.university_system.infrastructure.security.session_management import SessionManager
         mgr = SessionManager(db_path="/tmp/t.db")
@@ -418,7 +418,7 @@ class TestCleanupExpiredSessions:
 # ---------------------------------------------------------------------------
 
 class TestGetSessionStatistics:
-    @patch("university_system.infrastructure.security.session_management.get_connection")
+    @patch("education_system.university_system.infrastructure.security.session_management.get_connection")
     def test_returns_stats_dict(self, mock_get_conn):
         from education_system.university_system.infrastructure.security.session_management import SessionManager
         mgr = SessionManager(db_path="/tmp/t.db")
@@ -434,7 +434,7 @@ class TestGetSessionStatistics:
         assert stats["sessions_today"] == 25
         assert stats["suspicious_today"] == 2
 
-    @patch("university_system.infrastructure.security.session_management.get_connection")
+    @patch("education_system.university_system.infrastructure.security.session_management.get_connection")
     def test_with_user_id_filter(self, mock_get_conn):
         from education_system.university_system.infrastructure.security.session_management import SessionManager
         mgr = SessionManager(db_path="/tmp/t.db")

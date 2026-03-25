@@ -1,6 +1,6 @@
 """Documents mixin for the Legal Services GUI."""
 
-from ._imports import (
+from education_system.university_system.modules.domain.legal.gui._imports import (
     tk, ttk, messagebox, scrolledtext, filedialog, simpledialog, traceback,
     os, datetime,
     Dict,

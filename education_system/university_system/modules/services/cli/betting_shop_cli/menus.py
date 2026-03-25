@@ -2,13 +2,13 @@
 Betting Shop CLI - Menu systems and entry points.
 """
 
-from .constants import logger, get_connection, init_betting_db
-from .helpers import print_header, print_subheader, get_current_user, is_admin
-from .account import view_balance, deposit_funds, withdraw_funds, view_transaction_history
-from .sports import view_sports_events, place_sports_bet, view_my_bets, place_accumulator_bet
-from .casino import play_slots, play_roulette, play_blackjack, view_casino_history
-from .predictions import browse_predictions, place_prediction_bet, view_my_predictions
-from .admin import (
+from education_system.university_system.modules.services.cli.betting_shop_cli.constants import logger, get_connection, init_betting_db
+from education_system.university_system.modules.services.cli.betting_shop_cli.helpers import print_header, print_subheader, get_current_user, is_admin
+from education_system.university_system.modules.services.cli.betting_shop_cli.account import view_balance, deposit_funds, withdraw_funds, view_transaction_history
+from education_system.university_system.modules.services.cli.betting_shop_cli.sports import view_sports_events, place_sports_bet, view_my_bets, place_accumulator_bet
+from education_system.university_system.modules.services.cli.betting_shop_cli.casino import play_slots, play_roulette, play_blackjack, view_casino_history
+from education_system.university_system.modules.services.cli.betting_shop_cli.predictions import browse_predictions, place_prediction_bet, view_my_predictions
+from education_system.university_system.modules.services.cli.betting_shop_cli.admin import (
     create_sports_event, update_event_odds, settle_sports_event,
     create_prediction_market, resolve_prediction_market, view_betting_statistics
 )

@@ -153,23 +153,25 @@ class PeerReviewManager:
             
             # Save review to database
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-            UPDATE peer_reviews 
-            SET overall_score = ?, review_text = ?, status = 'completed', review_date = ?
-            WHERE id = ?
-            ''', (overall_score, comments, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), review_id))
-            
-            # Save individual criteria scores
-            for criterion, score_var in self.review_scores.items():
+            try:
+                cursor = conn.cursor()
+
                 cursor.execute('''
-                INSERT INTO peer_review_criteria (review_id, criteria_name, score, comment)
-                VALUES (?, ?, ?, ?)
-                ''', (review_id, criterion, int(score_var.get()), ''))
-            
-            conn.commit()
-            conn.close()
+                UPDATE peer_reviews 
+                SET overall_score = ?, review_text = ?, status = 'completed', review_date = ?
+                WHERE id = ?
+                ''', (overall_score, comments, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), review_id))
+
+                # Save individual criteria scores
+                for criterion, score_var in self.review_scores.items():
+                    cursor.execute('''
+                    INSERT INTO peer_review_criteria (review_id, criteria_name, score, comment)
+                    VALUES (?, ?, ?, ?)
+                    ''', (review_id, criterion, int(score_var.get()), ''))
+
+                conn.commit()
+            finally:
+                conn.close()
 
             messagebox.showinfo(_("common.success"), _("assignment_gui.messages.review_submitted"))
             window.destroy()
@@ -229,8 +231,27 @@ class PeerReviewManager:
         assignment_frame.pack(fill='x', padx=10, pady=10)
         
         self.peer_assignment_var = tk.StringVar()
-        assignment_combo = ttk.Combobox(config_window, textvariable=self.peer_assignment_var)
-        assignment_combo.pack(fill='x', padx=10, pady=5)
+        assignment_combo = ttk.Combobox(assignment_frame, textvariable=self.peer_assignment_var,
+                                        width=50, state='readonly')
+        assignment_combo.pack(fill='x', padx=5, pady=5)
+
+        # Populate assignments dropdown
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, title, module_code FROM assignments
+                WHERE is_active = 1
+                ORDER BY created_at DESC
+            ''')
+            rows = cursor.fetchall()
+            conn.close()
+            assignment_list = [f"{r[0]} - {r[1]} ({r[2]})" for r in rows]
+            assignment_combo['values'] = assignment_list
+            if assignment_list:
+                assignment_combo.current(0)
+        except Exception as e:
+            print(f"Failed to load assignments for peer review: {e}")
         
         # Review criteria
         criteria_frame = ttk.LabelFrame(config_window, text="Review Criteria", padding=10)
@@ -258,237 +279,249 @@ class PeerReviewManager:
     
 
     def setup_peer_review_assignments(self, window):
-        """Setup peer review assignments"""
+        """Setup peer review assignments using real database data"""
         try:
-            # Get configuration values
             criteria_text = self.criteria_text.get(1.0, tk.END).strip()
             criteria = [c.strip() for c in criteria_text.split('\n') if c.strip()]
             selected_assignment = self.peer_assignment_var.get()
             anonymous_reviews = self.anonymous_var.get()
-    
-            # Validate input
+
             if not criteria:
                 messagebox.showerror("Error", "Please add at least one review criterion")
                 return
-    
+
             if not selected_assignment:
                 messagebox.showerror("Error", "Please select an assignment")
                 return
-    
-            # Create peer review setup progress window
+
+            # Parse assignment ID from "3 - Title (Module)" format
+            try:
+                assignment_id = int(selected_assignment.split(' - ')[0])
+            except (ValueError, IndexError):
+                messagebox.showerror("Error", "Invalid assignment selection")
+                return
+
+            # Create progress window
             progress_window = tk.Toplevel(window)
             progress_window.title("Setting up Peer Reviews")
             progress_window.geometry("600x500")
             progress_window.transient(window)
             progress_window.grab_set()
-    
-            # Title
-            ttk.Label(progress_window, text="🤝 Setting up Peer Review Assignments",
+
+            ttk.Label(progress_window, text="Setting up Peer Review Assignments",
                      style='Title.TLabel').pack(pady=15)
-    
-            # Progress frame
-            progress_frame = ttk.LabelFrame(progress_window, text="Setup Progress", padding="15")
+
+            progress_frame = ttk.LabelFrame(progress_window, text="Setup Progress", padding=15)
             progress_frame.pack(fill='x', padx=20, pady=(0, 15))
-    
+
             progress_var = tk.DoubleVar()
-            progress_bar = ttk.Progressbar(progress_frame, variable=progress_var,
-                                         mode='determinate', length=500)
-            progress_bar.pack(pady=(0, 10))
-    
+            ttk.Progressbar(progress_frame, variable=progress_var,
+                           mode='determinate', length=500).pack(pady=(0, 10))
+
             status_label = ttk.Label(progress_frame, text="Initializing setup...")
             status_label.pack()
-    
-            # Results frame
-            results_frame = ttk.LabelFrame(progress_window, text="Setup Results", padding="15")
+
+            results_frame = ttk.LabelFrame(progress_window, text="Setup Results", padding=15)
             results_frame.pack(fill='both', expand=True, padx=20, pady=(0, 15))
-    
+
             results_text = tk.Text(results_frame, height=15, wrap='word')
-            results_text.pack(fill='both', expand=True)
-    
             scrollbar = ttk.Scrollbar(results_frame, orient='vertical', command=results_text.yview)
-            scrollbar.pack(side='right', fill='y')
             results_text.config(yscrollcommand=scrollbar.set)
-    
+            results_text.pack(side='left', fill='both', expand=True)
+            scrollbar.pack(side='right', fill='y')
+
             def run_setup():
+                import random
+
+                results_text.insert(tk.END, f"Setting up peer reviews for: {selected_assignment}\n")
+                results_text.insert(tk.END, f"Review criteria: {len(criteria)} items\n")
+                results_text.insert(tk.END, f"Anonymous reviews: {'Yes' if anonymous_reviews else 'No'}\n\n")
+
+                # Step 1: Get submissions
+                status_label.config(text="Retrieving submissions...")
+                progress_var.set(10)
+
                 try:
-                    import random
+                    conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                    cursor = conn.cursor()
 
-                    from datetime import datetime, timedelta
-    
-                    results_text.insert(tk.END, f"Setting up peer reviews for: {selected_assignment}\n")
-                    results_text.insert(tk.END, f"Review criteria: {len(criteria)} items\n")
-                    results_text.insert(tk.END, f"Anonymous reviews: {'Yes' if anonymous_reviews else 'No'}\n\n")
-                    progress_window.update()
-    
-                    # Step 1: Get submitted assignments
-                    status_label.config(text="Retrieving submitted assignments...")
-                    progress_var.set(10)
-                    progress_window.update()
-    
-                    # Simulate database connection (replace with actual database)
-                    try:
-                        from education_system.university_system.infrastructure.database.db import get_connection
-                        conn = get_connection()
-                        cursor = conn.cursor()
-    
-                        # Get submissions for the assignment
-                        cursor.execute("""
-                            SELECT DISTINCT student_id, submission_id, student_name, submitted_at
-                            FROM assignment_submissions
-                            WHERE assignment_name = ? AND status = 'submitted'
-                            ORDER BY submitted_at
-                        """, (selected_assignment,))
+                    cursor.execute('''
+                        SELECT sub.id, sub.student_id, s.first_name, s.last_name
+                        FROM assignment_submissions sub
+                        JOIN students s ON sub.student_id = s.student_id
+                        WHERE sub.assignment_id = ? AND sub.status = 'submitted'
+                        ORDER BY sub.submission_date
+                    ''', (assignment_id,))
 
-                        submissions = cursor.fetchall()
-                    except Exception:
-                        # Fallback to simulated data
-                        submissions = [
-                            (f"STU{i:03d}", f"SUB{i:03d}", f"Student {i}",
-                             (datetime.now() - timedelta(days=random.randint(1, 7))).isoformat())
-                            for i in range(1, random.randint(8, 20))
-                        ]
-    
-                    if len(submissions) < 2:
-                        results_text.insert(tk.END, "❌ Error: Need at least 2 submissions for peer review\n")
-                        status_label.config(text="Setup failed - insufficient submissions")
-                        return
-    
-                    results_text.insert(tk.END, f"Found {len(submissions)} submissions to review\n\n")
-                    progress_window.update()
-    
-                    # Step 2: Create review criteria in database
-                    status_label.config(text="Setting up review criteria...")
-                    progress_var.set(25)
-                    progress_window.update()
-    
-                    review_session_id = f"review_{int(time.time())}"
-                    results_text.insert(tk.END, f"Creating review session: {review_session_id}\n")
-    
-                    try:
-                        # Create peer review session
-                        cursor.execute("""
-                            INSERT OR IGNORE INTO peer_review_sessions
-                            (session_id, assignment_name, criteria, anonymous, created_at, status)
-                            VALUES (?, ?, ?, ?, ?, 'active')
-                        """, (review_session_id, selected_assignment,
-                              '\n'.join(criteria), anonymous_reviews,
-                              datetime.now().isoformat()))
-    
-                        # Create criteria records
-                        for i, criterion in enumerate(criteria):
-                            cursor.execute("""
-                                INSERT OR IGNORE INTO review_criteria
-                                (session_id, criterion_id, criterion_text, max_score)
-                                VALUES (?, ?, ?, 10)
-                            """, (review_session_id, i + 1, criterion))
-    
-                        conn.commit()
-                    except Exception as db_error:
-                        results_text.insert(tk.END, f"Database setup: Using simulation mode ({str(db_error)[:50]}...)\n")
-    
-                    # Step 3: Assign peer reviewers
-                    status_label.config(text="Assigning peer reviewers...")
-                    progress_var.set(50)
-                    progress_window.update()
-    
-                    # Create review assignments (each student reviews 2-3 others)
-                    review_assignments = []
-                    students = [sub[0] for sub in submissions]  # student_ids
-    
-                    results_text.insert(tk.END, "Creating review assignments:\n")
-    
-                    for i, reviewer_id in enumerate(students):
-                        # Assign 2-3 submissions to review (not their own)
-                        available_submissions = [sub for sub in submissions if sub[0] != reviewer_id]
-                        reviews_to_assign = min(3, len(available_submissions))
-    
-                        assigned_reviews = random.sample(available_submissions, reviews_to_assign)
-    
-                        for review_submission in assigned_reviews:
-                            reviewee_id, submission_id, reviewee_name, _ = review_submission
-    
-                            assignment_id = f"assign_{reviewer_id}_{submission_id}"
-                            review_assignments.append({
-                                'assignment_id': assignment_id,
-                                'session_id': review_session_id,
-                                'reviewer_id': reviewer_id,
-                                'reviewee_id': reviewee_id,
-                                'submission_id': submission_id,
-                                'due_date': (datetime.now() + timedelta(days=7)).isoformat(),
-                                'status': 'pending'
-                            })
-    
-                            reviewer_name = next((s[2] for s in submissions if s[0] == reviewer_id), reviewer_id)
-                            display_reviewee = reviewee_name if not anonymous_reviews else f"Anonymous Submission {submission_id[-3:]}"
-    
-                            results_text.insert(tk.END, f"  • {reviewer_name} → {display_reviewee}\n")
-    
-                        progress_var.set(50 + ((i + 1) / len(students)) * 30)
-                        progress_window.update()
-    
-                    # Step 4: Save assignments to database
-                    status_label.config(text="Saving review assignments...")
-                    progress_var.set(80)
-                    progress_window.update()
-    
-                    try:
-                        for assignment in review_assignments:
-                            cursor.execute("""
-                                INSERT OR REPLACE INTO peer_review_assignments
-                                (assignment_id, session_id, reviewer_id, reviewee_id,
-                                 submission_id, due_date, status, created_at)
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                            """, (assignment['assignment_id'], assignment['session_id'],
-                                  assignment['reviewer_id'], assignment['reviewee_id'],
-                                  assignment['submission_id'], assignment['due_date'],
-                                  assignment['status'], datetime.now().isoformat()))
-    
-                        conn.commit()
-                        conn.close()
-                        results_text.insert(tk.END, f"\n✅ Saved {len(review_assignments)} review assignments to database\n")
-                    except Exception as save_error:
-                        results_text.insert(tk.END, f"\n⚠️ Database save simulation mode: {len(review_assignments)} assignments created\n")
-    
-                    # Step 5: Generate notification emails (simulation)
-                    status_label.config(text="Generating notifications...")
-                    progress_var.set(90)
-                    progress_window.update()
-    
-                    unique_reviewers = len(set(a['reviewer_id'] for a in review_assignments))
-                    results_text.insert(tk.END, f"\n📧 Email notifications prepared for {unique_reviewers} reviewers\n")
-    
-                    # Final summary
-                    progress_var.set(100)
-                    status_label.config(text="Peer review setup completed!")
-    
-                    results_text.insert(tk.END, f"\n{'='*50}\n")
-                    results_text.insert(tk.END, "PEER REVIEW SETUP SUMMARY\n")
-                    results_text.insert(tk.END, f"{'='*50}\n")
-                    results_text.insert(tk.END, f"Assignment: {selected_assignment}\n")
-                    results_text.insert(tk.END, f"Review Session ID: {review_session_id}\n")
-                    results_text.insert(tk.END, f"Total Submissions: {len(submissions)}\n")
-                    results_text.insert(tk.END, f"Review Assignments Created: {len(review_assignments)}\n")
-                    results_text.insert(tk.END, f"Review Criteria: {len(criteria)}\n")
-                    results_text.insert(tk.END, f"Anonymous Reviews: {'Yes' if anonymous_reviews else 'No'}\n")
-                    results_text.insert(tk.END, f"Review Due Date: {(datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')}\n")
-                    results_text.insert(tk.END, f"\nSetup completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-    
-                    # Close configuration window
-                    window.destroy()
-    
+                    submissions = cursor.fetchall()
                 except Exception as e:
-                    results_text.insert(tk.END, f"\n❌ Error during setup: {str(e)}\n")
+                    results_text.insert(tk.END, f"Error loading submissions: {e}\n")
                     status_label.config(text="Setup failed!")
-    
-            # Control buttons
+                    return
+
+                if len(submissions) < 2:
+                    results_text.insert(tk.END,
+                        f"Need at least 2 submissions for peer review, found {len(submissions)}.\n\n"
+                        "Make sure students have submitted their work first.\n")
+                    status_label.config(text="Setup failed - insufficient submissions")
+                    conn.close()
+                    return
+
+                results_text.insert(tk.END, f"Found {len(submissions)} submissions\n\n")
+                progress_var.set(25)
+
+                # Step 2: Clear old assignments for this assignment
+                status_label.config(text="Clearing previous peer review assignments...")
+                try:
+                    cursor.execute(
+                        'DELETE FROM peer_review_assignments WHERE assignment_id = ?',
+                        (assignment_id,)
+                    )
+                except Exception:
+                    pass
+                progress_var.set(35)
+
+                # Step 3: Assign peer reviewers (each student reviews up to 3 others)
+                status_label.config(text="Assigning peer reviewers...")
+                progress_var.set(50)
+
+                review_session_id = f"review_{assignment_id}_{int(datetime.now().timestamp())}"
+                review_assignments = []
+                results_text.insert(tk.END, "Creating review assignments:\n")
+
+                for i, (sub_id, student_id, fname, lname) in enumerate(submissions):
+                    available = [s for s in submissions if s[1] != student_id]
+                    reviews_to_assign = min(3, len(available))
+                    assigned = random.sample(available, reviews_to_assign)
+
+                    for reviewee_sub_id, reviewee_student_id, r_fname, r_lname in assigned:
+                        review_assignments.append({
+                            'assignment_id': assignment_id,
+                            'session_id': review_session_id,
+                            'reviewer_id': student_id,
+                            'reviewee_id': reviewee_student_id,
+                            'submission_id': reviewee_sub_id,
+                            'due_date': (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S'),
+                        })
+
+                        reviewer_name = f"{fname} {lname}"
+                        if anonymous_reviews:
+                            display_reviewee = f"Anonymous Submission #{reviewee_sub_id}"
+                        else:
+                            display_reviewee = f"{r_fname} {r_lname}"
+
+                        results_text.insert(tk.END, f"  {reviewer_name} -> {display_reviewee}\n")
+
+                    progress_var.set(50 + ((i + 1) / len(submissions)) * 30)
+
+                # Step 4: Save to database
+                status_label.config(text="Saving review assignments...")
+                progress_var.set(85)
+
+                try:
+                    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    for ra in review_assignments:
+                        cursor.execute('''
+                            INSERT INTO peer_review_assignments
+                            (assignment_id, session_id, reviewer_id, reviewee_id,
+                             submission_id, due_date, status, created_at)
+                            VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
+                        ''', (ra['assignment_id'], ra['session_id'],
+                              ra['reviewer_id'], ra['reviewee_id'],
+                              ra['submission_id'], ra['due_date'], timestamp))
+
+                    conn.commit()
+                    results_text.insert(tk.END,
+                        f"\nSaved {len(review_assignments)} review assignments to database\n")
+                except Exception as save_error:
+                    results_text.insert(tk.END, f"\nFailed to save: {save_error}\n")
+                finally:
+                    conn.close()
+
+                # Step 5: Send email notifications
+                status_label.config(text="Sending notifications...")
+                progress_var.set(90)
+
+                emails_sent = 0
+                try:
+                    from education_system.university_system.infrastructure.email.email_service import send_email
+
+                    # Group assignments by reviewer
+                    reviewer_map = {}
+                    for ra in review_assignments:
+                        rid = ra['reviewer_id']
+                        if rid not in reviewer_map:
+                            reviewer_map[rid] = []
+                        reviewer_map[rid].append(ra)
+
+                    conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                    cursor = conn.cursor()
+
+                    for reviewer_id, assignments in reviewer_map.items():
+                        cursor.execute(
+                            'SELECT first_name, last_name, email_address FROM students WHERE student_id = ?',
+                            (reviewer_id,)
+                        )
+                        row = cursor.fetchone()
+                        if not row or not row[2]:
+                            continue
+
+                        name = f"{row[0]} {row[1]}"
+                        body = (
+                            f"Dear {name},\n\n"
+                            f"You have been assigned {len(assignments)} peer review(s) for:\n"
+                            f"{selected_assignment}\n\n"
+                            f"Review due date: {assignments[0]['due_date']}\n\n"
+                            f"Please log in to the Assignment System to complete your reviews.\n\n"
+                            f"Best regards,\nAcademic Administration"
+                        )
+                        try:
+                            send_email(
+                                recipient_email=row[2],
+                                subject=f"Peer Review Assignment: {selected_assignment}",
+                                body=body
+                            )
+                            emails_sent += 1
+                        except Exception:
+                            pass
+
+                    conn.close()
+                except ImportError:
+                    pass
+                except Exception:
+                    pass
+
+                if emails_sent > 0:
+                    results_text.insert(tk.END, f"\nEmail notifications sent to {emails_sent} reviewers\n")
+
+                # Summary
+                progress_var.set(100)
+                status_label.config(text="Peer review setup completed!")
+
+                unique_reviewers = len(set(a['reviewer_id'] for a in review_assignments))
+                results_text.insert(tk.END, f"\n{'='*50}\n")
+                results_text.insert(tk.END, "PEER REVIEW SETUP SUMMARY\n")
+                results_text.insert(tk.END, f"{'='*50}\n")
+                results_text.insert(tk.END, f"Assignment: {selected_assignment}\n")
+                results_text.insert(tk.END, f"Total Submissions: {len(submissions)}\n")
+                results_text.insert(tk.END, f"Reviewers: {unique_reviewers}\n")
+                results_text.insert(tk.END, f"Review Assignments Created: {len(review_assignments)}\n")
+                results_text.insert(tk.END, f"Review Criteria: {len(criteria)}\n")
+                results_text.insert(tk.END, f"Anonymous: {'Yes' if anonymous_reviews else 'No'}\n")
+                results_text.insert(tk.END, f"Due Date: {(datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')}\n")
+                results_text.insert(tk.END, f"\nCompleted: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+
+                window.destroy()
+
+            # Buttons
             button_frame = ttk.Frame(progress_window)
             button_frame.pack(fill='x', padx=20, pady=(0, 15))
-    
+
             ttk.Button(button_frame, text="Start Setup",
-                      command=lambda: threading.Thread(target=run_setup, daemon=True).start()).pack(side='left', padx=(0, 10))
+                      command=run_setup).pack(side='left', padx=(0, 10))
             ttk.Button(button_frame, text="Close", command=progress_window.destroy).pack(side='right')
-    
-            # Show initial message
+
+            # Initial message
             results_text.insert(tk.END, "Peer Review Configuration:\n")
             results_text.insert(tk.END, f"Assignment: {selected_assignment}\n")
             results_text.insert(tk.END, f"Criteria ({len(criteria)}):\n")
@@ -496,7 +529,7 @@ class PeerReviewManager:
                 results_text.insert(tk.END, f"  {i}. {criterion}\n")
             results_text.insert(tk.END, f"Anonymous: {'Yes' if anonymous_reviews else 'No'}\n\n")
             results_text.insert(tk.END, "Click 'Start Setup' to create peer review assignments.\n")
-    
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to setup peer reviews: {e}")
     
@@ -549,10 +582,12 @@ class PeerReviewManager:
 
             # Assignment info
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            cursor.execute('SELECT title, due_date FROM assignments WHERE id = ?', (assignment_id,))
-            assignment_info = cursor.fetchone()
-            conn.close()
+            try:
+                cursor = conn.cursor()
+                cursor.execute('SELECT title, due_date FROM assignments WHERE id = ?', (assignment_id,))
+                assignment_info = cursor.fetchone()
+            finally:
+                conn.close()
 
             if not assignment_info:
                 messagebox.showerror("Error", "Assignment not found")
@@ -628,28 +663,30 @@ class PeerReviewManager:
 
                     # Save configuration
                     conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-                    cursor = conn.cursor()
+                    try:
+                        cursor = conn.cursor()
 
-                    # Save to database
-                    cursor.execute('''
-                    INSERT OR REPLACE INTO peer_review_config
-                    (assignment_id, reviews_per_student, review_deadline_days, is_anonymous, grading_weight, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                    ''', (assignment_id, reviews_per, deadline_days, 1 if anonymous_var.get() else 0,
-                          weight, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-
-                    config_id = cursor.lastrowid or assignment_id
-
-                    # Save criteria
-                    cursor.execute('DELETE FROM peer_review_criteria_templates WHERE config_id = ?', (config_id,))
-                    for i, criterion in enumerate(criteria_list):
+                        # Save to database
                         cursor.execute('''
-                        INSERT INTO peer_review_criteria_templates (config_id, criteria_name, max_score, order_index)
-                        VALUES (?, ?, 5, ?)
-                        ''', (config_id, criterion, i))
+                        INSERT OR REPLACE INTO peer_review_config
+                        (assignment_id, reviews_per_student, review_deadline_days, is_anonymous, grading_weight, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        ''', (assignment_id, reviews_per, deadline_days, 1 if anonymous_var.get() else 0,
+                              weight, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
-                    conn.commit()
-                    conn.close()
+                        config_id = cursor.lastrowid or assignment_id
+
+                        # Save criteria
+                        cursor.execute('DELETE FROM peer_review_criteria_templates WHERE config_id = ?', (config_id,))
+                        for i, criterion in enumerate(criteria_list):
+                            cursor.execute('''
+                            INSERT INTO peer_review_criteria_templates (config_id, criteria_name, max_score, order_index)
+                            VALUES (?, ?, 5, ?)
+                            ''', (config_id, criterion, i))
+
+                        conn.commit()
+                    finally:
+                        conn.close()
 
                     messagebox.showinfo("Success", "Peer review configuration saved successfully!", parent=dialog)
                     dialog.destroy()

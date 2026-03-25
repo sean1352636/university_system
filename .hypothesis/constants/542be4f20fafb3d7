@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/analytics/advanced_search/conditional.py
+# hypothesis_version: 6.151.9
+
+['\nAdd Condition:', '\nOptions:', ' AND ', ' OR ', '%Y-%m-%d', '1', '1. Add condition', '1. Age condition', '2', '2. Course condition', '2. Remove condition', '3', '3. Execute search', '3. Gender condition', '4', '4. Cancel', '<', '<=', '=', '>', '>=', 'Age value: ', 'CS', 'Course (CS/DS): ', 'DS', 'Date (YYYY-MM-DD): ', 'Invalid age value.', 'Invalid choice.', 'Invalid course.', 'Invalid date format.', 'Invalid gender.', 'Invalid input.', 'Invalid operator.', 'Select logic (1-2): ', 'Select option: ', 'conditional_logic', 'conditions', 'course = ?', 'female', 'gender = ?', 'male', 'other']

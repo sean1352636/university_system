@@ -3,6 +3,7 @@
 from education_system.college_system.core.exceptions import AlumniError
 from education_system.college_system.infrastructure.database.db import connect
 
+from education_system.college_system.core.sql_safety import escape_like
 import logging
 
 logger = logging.getLogger(__name__)
@@ -73,7 +74,8 @@ class AlumniService:
                 params.append(willing_to_speak)
             if search:
                 sql += " AND (first_name LIKE ? OR last_name LIKE ? OR email LIKE ? OR current_employer LIKE ?)"
-                term = f"%{search}%"
+                escaped = escape_like(search)
+                term = f"%{escaped}%"
                 params.extend([term, term, term, term])
             sql += " ORDER BY last_name, first_name LIMIT ?"
             params.append(limit)

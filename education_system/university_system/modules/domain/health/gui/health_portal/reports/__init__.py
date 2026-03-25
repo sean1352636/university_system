@@ -1,7 +1,7 @@
-from .population import PopulationReportsMixin
-from .vaccination import VaccinationReportsMixin
-from .appointments import AppointmentReportsMixin
-from .student_reports import StudentReportsMixin
+from education_system.university_system.modules.domain.health.gui.health_portal.reports.population import PopulationReportsMixin
+from education_system.university_system.modules.domain.health.gui.health_portal.reports.vaccination import VaccinationReportsMixin
+from education_system.university_system.modules.domain.health.gui.health_portal.reports.appointments import AppointmentReportsMixin
+from education_system.university_system.modules.domain.health.gui.health_portal.reports.student_reports import StudentReportsMixin
 
 
 class ReportsMixin(

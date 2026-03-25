@@ -224,10 +224,10 @@ class TestAidApplicationApproval:
 
     def test_approve_full_amount(self, sample_data):
         """Test approving aid application for full amount"""
-        with patch('university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
+        with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
              patch('builtins.input', side_effect=['1', '1']), \
-             patch('university_system.modules.domain.finance.finance_misc.aid.get_current_user', return_value={'username': 'admin'}), \
-             patch('university_system.modules.domain.finance.finance_misc.aid.log_audit_action'):
+             patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_current_user', return_value={'username': 'admin'}), \
+             patch('education_system.university_system.modules.domain.finance.finance_misc.aid.log_audit_action'):
 
             conn = sqlite3.connect(sample_data)
             mock_conn.return_value = conn
@@ -243,10 +243,10 @@ class TestAidApplicationApproval:
 
     def test_approve_partial_amount(self, sample_data):
         """Test approving aid application for partial amount"""
-        with patch('university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
+        with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
              patch('builtins.input', side_effect=['1', '2', '3000.00']), \
-             patch('university_system.modules.domain.finance.finance_misc.aid.get_current_user', return_value={'username': 'admin'}), \
-             patch('university_system.modules.domain.finance.finance_misc.aid.log_audit_action'):
+             patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_current_user', return_value={'username': 'admin'}), \
+             patch('education_system.university_system.modules.domain.finance.finance_misc.aid.log_audit_action'):
 
             conn = sqlite3.connect(sample_data)
             mock_conn.return_value = conn
@@ -264,10 +264,10 @@ class TestAidApplicationApproval:
 
     def test_reject_application(self, sample_data):
         """Test rejecting aid application"""
-        with patch('university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
+        with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
              patch('builtins.input', side_effect=['1', '3', 'Insufficient documentation']), \
-             patch('university_system.modules.domain.finance.finance_misc.aid.get_current_user', return_value={'username': 'admin'}), \
-             patch('university_system.modules.domain.finance.finance_misc.aid.log_audit_action'):
+             patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_current_user', return_value={'username': 'admin'}), \
+             patch('education_system.university_system.modules.domain.finance.finance_misc.aid.log_audit_action'):
 
             conn = sqlite3.connect(sample_data)
             mock_conn.return_value = conn
@@ -288,7 +288,7 @@ class TestAidTypeManagement:
 
     def test_view_aid_types(self, sample_data):
         """Test viewing aid types"""
-        with patch('university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn:
+        with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn:
 
             conn = sqlite3.connect(sample_data)
             mock_conn.return_value = conn
@@ -299,7 +299,7 @@ class TestAidTypeManagement:
 
     def test_create_aid_type(self, sample_data):
         """Test creating a new aid type"""
-        with patch('university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
+        with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
              patch('builtins.input', side_effect=[
                  'Work Study Program', '3', 'Part-time work opportunity', '5000',
                  'Enrolled students', 'y', 'n'
@@ -319,7 +319,7 @@ class TestAidTypeManagement:
 
     def test_deactivate_aid_type(self, sample_data):
         """Test deactivating an aid type"""
-        with patch('university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
+        with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
              patch('builtins.input', side_effect=['1', 'y']):
 
             conn = sqlite3.connect(sample_data)
@@ -339,7 +339,7 @@ class TestLoanTracking:
 
     def test_track_loan_repayments(self, sample_data):
         """Test tracking loan repayments"""
-        with patch('university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn:
+        with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn:
 
             conn = sqlite3.connect(sample_data)
             mock_conn.return_value = conn
@@ -351,9 +351,9 @@ class TestLoanTracking:
 
     def test_process_loan_payment(self, sample_data):
         """Test processing a loan payment"""
-        with patch('university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
+        with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
              patch('builtins.input', side_effect=['200.00']), \
-             patch('university_system.modules.domain.finance.finance_misc.aid.get_current_user', return_value={'username': 'admin'}):
+             patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_current_user', return_value={'username': 'admin'}):
 
             conn = sqlite3.connect(sample_data)
             mock_conn.return_value = conn
@@ -386,7 +386,7 @@ class TestAidReporting:
 
     def test_aid_distribution_summary(self, sample_data):
         """Test aid distribution summary report"""
-        with patch('university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn:
+        with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn:
 
             conn = sqlite3.connect(sample_data)
             mock_conn.return_value = conn
@@ -398,7 +398,7 @@ class TestAidReporting:
 
     def test_aid_by_academic_year(self, sample_data):
         """Test aid by academic year report"""
-        with patch('university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
+        with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
              patch('builtins.input', side_effect=['2024-2025']):
 
             conn = sqlite3.connect(sample_data)
@@ -410,7 +410,7 @@ class TestAidReporting:
 
     def test_aid_effectiveness_analysis(self, sample_data):
         """Test aid effectiveness analysis"""
-        with patch('university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn:
+        with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn:
 
             conn = sqlite3.connect(sample_data)
             mock_conn.return_value = conn
@@ -425,8 +425,8 @@ class TestAidApplication:
 
     def test_apply_aid_to_fees(self, sample_data):
         """Test applying aid directly to student fees"""
-        with patch('university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
-             patch('university_system.modules.domain.finance.finance_misc.aid.get_current_user', return_value={'username': 'admin'}):
+        with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
+             patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_current_user', return_value={'username': 'admin'}):
 
             conn = sqlite3.connect(sample_data)
             mock_conn.return_value = conn
@@ -451,15 +451,15 @@ class TestPaymentArrangement:
 
     def test_create_payment_arrangement(self, sample_data):
         """Test creating payment arrangement for collection case"""
-        with patch('university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
+        with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
              patch('builtins.input', side_effect=[
                  'STU002', '500.00', '3', '6', '2025-12-01',
                  'Payment on 1st of each month'
              ]), \
-             patch('university_system.modules.domain.finance.finance_misc.aid.student_exists', return_value=True), \
-             patch('university_system.modules.domain.finance.finance_misc.aid.get_student_name', return_value='Jane Smith'), \
-             patch('university_system.modules.domain.finance.finance_misc.aid.get_current_user', return_value={'username': 'admin'}), \
-             patch('university_system.modules.domain.finance.finance_misc.aid.send_arrangement_confirmation'):
+             patch('education_system.university_system.modules.domain.finance.finance_misc.aid.student_exists', return_value=True), \
+             patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_student_name', return_value='Jane Smith'), \
+             patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_current_user', return_value={'username': 'admin'}), \
+             patch('education_system.university_system.modules.domain.finance.finance_misc.aid.send_arrangement_confirmation'):
 
             conn = sqlite3.connect(sample_data)
             mock_conn.return_value = conn
@@ -481,7 +481,7 @@ class TestEdgeCases:
 
     def test_approve_aid_no_pending_applications(self, temp_db):
         """Test approving when no pending applications exist"""
-        with patch('university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn:
+        with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn:
 
             conn = sqlite3.connect(temp_db)
             mock_conn.return_value = conn
@@ -505,7 +505,7 @@ class TestEdgeCases:
 
     def test_deactivate_nonexistent_aid_type(self, sample_data):
         """Test deactivating non-existent aid type"""
-        with patch('university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
+        with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
              patch('builtins.input', side_effect=['999']):
 
             conn = sqlite3.connect(sample_data)

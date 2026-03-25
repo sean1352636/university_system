@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/report_palette.py
+# hypothesis_version: 6.151.9
+
+['#4C78A8', '#54A24B', '#72B7B2', '#9D755D', '#B279A2', '#BAB0AC', '#E45756', '#EECA3B', '#F58518', '#FF9DA6', 'axes.prop_cycle', 'color']

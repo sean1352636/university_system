@@ -1254,18 +1254,18 @@ def analyze_query_performance():
         # Test common queries and measure execution time
         test_queries = [
             ("Daily Sales Query", '''
-                SELECT COUNT(*), SUM(total_price) 
-                FROM restaurant_orders 
-                WHERE DATE(order_time) = date('now') AND status = 'Completed'
+                SELECT COUNT(*), SUM(total_amount)
+                FROM orders
+                WHERE DATE(order_date) = date('now') AND order_status = 'Completed'
             '''),
             ("Menu Items Lookup", '''
                 SELECT * FROM menu_items WHERE available = 1 ORDER BY category, name
             '''),
             ("Customer Orders", '''
                 SELECT o.*, c.name 
-                FROM restaurant_orders o 
+                FROM orders o 
                 LEFT JOIN restaurant_customers c ON o.customer_id = c.customer_id 
-                ORDER BY o.order_time DESC LIMIT 50
+                ORDER BY o.order_date DESC LIMIT 50
             '''),
             ("Inventory Low Stock", '''
                 SELECT * FROM restaurant_inventory 
@@ -1314,7 +1314,7 @@ def analyze_query_performance():
         print("-"*40)
 
         tables = [
-            'menu_items', 'restaurant_orders', 'restaurant_customers', 
+            'menu_items', 'orders', 'restaurant_customers', 
             'restaurant_tables', 'restaurant_staff', 'restaurant_inventory',
             'restaurant_suppliers', 'restaurant_audit_logs'
         ]
@@ -1343,7 +1343,7 @@ def analyze_query_performance():
         print("-"*40)
         
         # Check for large tables without proper indexing
-        cursor.execute('SELECT COUNT(*) FROM restaurant_orders')
+        cursor.execute('SELECT COUNT(*) FROM orders')
         order_count = cursor.fetchone()[0]
         
         if order_count > 1000:

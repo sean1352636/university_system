@@ -1,6 +1,6 @@
 """Charity Shop - Reports mixin for CharityShopApp."""
 
-from ._imports import (
+from education_system.university_system.modules.services.gui.charity_shop_gui._imports import (
     tk, ttk, messagebox, filedialog,
     datetime, sqlite3,
     DEFAULT_DB_PATH,
@@ -14,7 +14,7 @@ class ReportsMixin:
 
     def show_charts(self):
         """Show the charts and analytics window."""
-        from .charts import ChartsWindow
+        from education_system.university_system.modules.services.gui.charity_shop_gui.charts import ChartsWindow
         ChartsWindow(self.root, self.db)
 
     def show_report_with_type(self, report_type):

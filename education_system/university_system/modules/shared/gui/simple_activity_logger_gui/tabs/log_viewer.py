@@ -2,13 +2,14 @@
 Real-time log viewer tab for the Activity Logger GUI.
 """
 
-from .._imports import (
+from education_system.university_system.core.sql_safety import escape_like
+from education_system.university_system.modules.shared.gui.simple_activity_logger_gui._imports import (
     tk, ttk, messagebox, filedialog, scrolledtext,
     datetime, timedelta,
     Dict, List,
     _t,
 )
-from ..theme import LoggerGUITheme
+from education_system.university_system.modules.shared.gui.simple_activity_logger_gui.theme import LoggerGUITheme
 
 
 class LogViewerTab(ttk.Frame):
@@ -167,11 +168,11 @@ class LogViewerTab(ttk.Frame):
 
                 if self.filter_user.get().strip():
                     query += " AND username LIKE ?"
-                    params.append(f"%{self.filter_user.get().strip()}%")
+                    params.append(f"%{escape_like(self.filter_user.get().strip())}%")
 
                 if self.filter_action.get().strip():
                     query += " AND action LIKE ?"
-                    params.append(f"%{self.filter_action.get().strip()}%")
+                    params.append(f"%{escape_like(self.filter_action.get().strip())}%")
 
                 query += " ORDER BY timestamp DESC LIMIT ?"
                 params.append(self.max_display_logs)

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/enhanced_reporting/standalone/data_utils.py
+# hypothesis_version: 6.151.9
+
+[' 00:00:00', ' 23:59:59', ' AND course = ?', ' WHERE course = ?', '%Y-%m-%d', 'WHERE', 'age_distribution', 'columns', 'conn', 'course', 'course_distribution', 'data', 'dtypes', 'error', 'gender_distribution', 'index', 'name', 'registration_trends', 'shape', 'student_list', 'student_overview', 'tolist']

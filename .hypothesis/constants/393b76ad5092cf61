@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/expense_manager/fee_assignment.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '1.0', '20', '500x400', '600x550', 'Arial', 'BUS', 'CS', 'DS', 'ENG', 'Examination', 'Laboratory', 'Library', 'Registration', 'Sports', 'Technology', 'Tuition', 'bold', 'common.cancel', 'common.confirm', 'common.description', 'common.error', 'common.info', 'common.not_selected', 'common.success', 'disabled', 'left', 'normal', 'readonly', 'values', 'w']

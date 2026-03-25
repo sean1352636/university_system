@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/virtual_classroom/poll_manager.py
+# hypothesis_version: 6.151.9
+
+[' AND is_active = 1', 'Poll is not active', 'accuracy', 'answer', 'correct_answer', 'count', 'multiple_choice', 'open_ended', 'options', 'poll', 'rating', 'total_responses', 'true_false']

@@ -242,7 +242,7 @@ class DentistGUI:
         ttk.Label(frame, text=_t("dentist.labels.phone") + ":").grid(row=0, column=0, sticky=tk.W, pady=2)
         phone_var = tk.StringVar()
         ttk.Entry(frame, textvariable=phone_var, width=30).grid(row=0, column=1, pady=2)
-        ttk.Label(frame, text=_t("dentist.labels.dob") + ":").grid(row=1, column=0, sticky=tk.W, pady=2)
+        ttk.Label(frame, text=_t("dentist.labels.dob") + " (YYYY-MM-DD):").grid(row=1, column=0, sticky=tk.W, pady=2)
         dob_var = tk.StringVar()
         ttk.Entry(frame, textvariable=dob_var, width=30).grid(row=1, column=1, pady=2)
         ttk.Label(frame, text=_t("dentist.labels.emergency_contact") + ":").grid(row=2, column=0, sticky=tk.W, pady=2)
@@ -1242,9 +1242,9 @@ Last Visit: {self.patient.get('last_visit', 'Never')}"""
 
                 # Record transaction with account_id
                 conn.execute('''
-                    INSERT INTO student_finance_transactions
-                    (account_id, student_id, transaction_type, amount, balance_before, balance_after, description, created_at)
-                    VALUES (?, ?, 'debit', ?, ?, ?, 'Dental Clinic Payment', CURRENT_TIMESTAMP)
+                    INSERT INTO transactions
+                    (source_type, account_id, student_id, transaction_type, amount, balance_before, balance_after, description, created_at)
+                    VALUES ('student_finance', ?, ?, 'debit', ?, ?, ?, 'Dental Clinic Payment', CURRENT_TIMESTAMP)
                 ''', (account_id, self.user_id, amount, balance_before, balance_after))
             return True
         except Exception as e:
@@ -1503,7 +1503,7 @@ University Dental Clinic"""
                     cursor = conn.execute('''
                         SELECT
                             dt.transaction_id,
-                            dt.reference,
+                            dt.reference_number,
                             dt.created_at,
                             dt.user_id,
                             COALESCE(dp.patient_number, 'N/A') as patient_number,
@@ -1511,9 +1511,9 @@ University Dental Clinic"""
                             dt.amount,
                             dt.payment_method,
                             dt.status
-                        FROM dentist_transactions dt
-                        LEFT JOIN dentist_patients dp ON dt.patient_id = dp.patient_id
-                        WHERE dt.transaction_type = 'appointment'
+                        FROM transactions dt
+                        LEFT JOIN dentist_patients dp ON dt.customer_id = dp.patient_id
+                        WHERE dt.source_type = 'dentist' AND dt.transaction_type = 'appointment'
                           AND (dt.user_id LIKE ? OR dp.patient_number LIKE ? OR dp.user_name LIKE ?)
                         ORDER BY dt.created_at DESC
                     ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%'))
@@ -1521,7 +1521,7 @@ University Dental Clinic"""
                     cursor = conn.execute('''
                         SELECT
                             dt.transaction_id,
-                            dt.reference,
+                            dt.reference_number,
                             dt.created_at,
                             dt.user_id,
                             COALESCE(dp.patient_number, 'N/A') as patient_number,
@@ -1529,9 +1529,9 @@ University Dental Clinic"""
                             dt.amount,
                             dt.payment_method,
                             dt.status
-                        FROM dentist_transactions dt
-                        LEFT JOIN dentist_patients dp ON dt.patient_id = dp.patient_id
-                        WHERE dt.transaction_type = 'appointment'
+                        FROM transactions dt
+                        LEFT JOIN dentist_patients dp ON dt.customer_id = dp.patient_id
+                        WHERE dt.source_type = 'dentist' AND dt.transaction_type = 'appointment'
                         ORDER BY dt.created_at DESC
                         LIMIT 100
                     ''')
@@ -1664,9 +1664,9 @@ Status: {values[8]}
                 from education_system.university_system.infrastructure.database.db import transaction as db_transaction
                 with db_transaction() as conn:
                     conn.execute('''
-                        UPDATE dentist_transactions
+                        UPDATE transactions
                         SET status = 'refunded'
-                        WHERE transaction_id = ?
+                        WHERE source_type = 'dentist' AND transaction_id = ?
                     ''', (transaction_id,))
 
                     # Generate refund reference
@@ -1675,11 +1675,11 @@ Status: {values[8]}
 
                     # Record refund transaction
                     conn.execute('''
-                        INSERT INTO dentist_transactions
-                        (reference, patient_id, user_id, transaction_type, amount,
+                        INSERT INTO transactions
+                        (source_type, reference_number, customer_id, user_id, transaction_type, amount,
                          payment_method, status, processed_by)
-                        SELECT ?, patient_id, user_id, ?, ?, ?, 'completed', ?
-                        FROM dentist_transactions WHERE transaction_id = ?
+                        SELECT 'dentist', ?, customer_id, user_id, ?, ?, ?, 'completed', ?
+                        FROM transactions WHERE source_type = 'dentist' AND transaction_id = ?
                     ''', (refund_ref, f'refund_{transaction_type}', amount,
                           refund_method.lower().replace(' ', '_'), self.user_id, transaction_id))
 
@@ -1805,10 +1805,10 @@ Status: {values[8]}
 
                 # Record transaction
                 conn.execute('''
-                    INSERT INTO student_finance_transactions
-                    (account_id, student_id, transaction_type, amount, balance_before,
+                    INSERT INTO transactions
+                    (source_type, account_id, student_id, transaction_type, amount, balance_before,
                      balance_after, description, created_at)
-                    VALUES (?, ?, 'credit', ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, CURRENT_TIMESTAMP)
                 ''', (account_id, user_id, amount, balance_before, balance_after,
                       f'Dental Clinic Refund - Payment: {payment_ref}'))
 
@@ -1885,24 +1885,20 @@ University Dental Clinic"""
             from education_system.university_system.infrastructure.database.db import transaction as db_transaction
             from datetime import datetime
             with db_transaction() as conn:
-                # Insert into finance refunds table with correct column names
+                # Record refund in unified_refunds table
                 try:
                     conn.execute('''
-                        INSERT INTO finance_refunds
-                        (student_id, refund_reference, department, transaction_id,
-                         amount, refund_method, refund_date, refund_time, processed_by, notes)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO unified_refunds
+                        (source_type, student_id, refund_reference, department,
+                         amount, refund_method, refund_date, processed_by, notes, reference_type)
+                        VALUES ('dentist', ?, ?, 'Dentist', ?, ?, ?, ?, 'Dental Clinic Payment Refund', 'payment')
                     ''', (
                         user_id,
                         refund_ref,
-                        'Dentist',
-                        None,  # transaction_id
                         amount,
                         method.lower().replace(' ', '_'),
                         datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                        datetime.now().strftime('%H:%M:%S'),
                         self.user_id,
-                        'Dental Clinic Payment Refund'
                     ))
                     print(f"[Dentist] Refund recorded in finance system: {refund_ref}")
                 except Exception as e:

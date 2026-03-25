@@ -8,8 +8,8 @@ import threading
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 
-from .constants import _t, logger, sqlite3, DEFAULT_DB_PATH
-from .progress_dialog import GUIProgressDialog
+from education_system.university_system.modules.shared.gui.batch_operations.constants import _t, logger, sqlite3, DEFAULT_DB_PATH
+from education_system.university_system.modules.shared.gui.batch_operations.progress_dialog import GUIProgressDialog
 
 
 class ExportManager:
@@ -130,7 +130,7 @@ class ExportManager:
                         filter_params['start_date'] = start_date_value
                         filter_params['end_date'] = end_date_value
 
-                    self.gui.backend.export_students_to_file(
+                    self.gui.report_mgr.export_students_to_file(
                         output_file, export_format, filter_params, include_modules,
                         progress_callback=progress_dialog.update_progress
                     )

@@ -4,6 +4,7 @@ import logging
 from datetime import date as date_type
 from education_system.primary_school.infrastructure.database.db import connect
 from education_system.primary_school.core.exceptions import HomeworkError
+from education_system.primary_school.core.sql_safety import validate_identifier
 import traceback
 
 logger = logging.getLogger(__name__)
@@ -94,7 +95,7 @@ class HomeworkService:
             if not updates:
                 return None
 
-            set_clause = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
             values = list(updates.values())
             values.append(homework_id)
             cursor.execute(
@@ -114,6 +115,12 @@ class HomeworkService:
         conn = self._conn()
         try:
             cursor = conn.cursor()
+            # Clean up feedback linked to submissions for this homework
+            cursor.execute(
+                """DELETE FROM homework_feedback WHERE submission_id IN
+                   (SELECT id FROM homework_submissions WHERE homework_id = ?)""",
+                (homework_id,),
+            )
             cursor.execute(
                 "DELETE FROM homework_submissions WHERE homework_id = ?",
                 (homework_id,),
@@ -175,6 +182,181 @@ class HomeworkService:
                    ORDER BY p.last_name, p.first_name""",
                 (homework_id,),
             )
+            return [dict(r) for r in cursor.fetchall()]
+        finally:
+            conn.close()
+
+    # ---- Teacher feedback with stickers ----
+
+    VALID_STICKERS = ("gold_star", "well_done", "good_effort", "keep_trying")
+
+    def add_teacher_feedback(self, submission_id, feedback, sticker=None):
+        """Add teacher feedback and an optional sticker to a submission.
+
+        Args:
+            submission_id: ID of the homework submission.
+            feedback: Teacher's written feedback text.
+            sticker: Optional motivational sticker - one of
+                     gold_star, well_done, good_effort, keep_trying.
+        Returns:
+            dict with the feedback record.
+        """
+        if not feedback or not str(feedback).strip():
+            raise HomeworkError("Feedback text is required")
+        if sticker and sticker not in self.VALID_STICKERS:
+            raise HomeworkError(
+                f"Invalid sticker. Choose from: {', '.join(self.VALID_STICKERS)}")
+
+        conn = self._conn()
+        try:
+            cursor = conn.cursor()
+            sub = cursor.execute(
+                "SELECT id FROM homework_submissions WHERE id = ?",
+                (submission_id,)).fetchone()
+            if not sub:
+                raise HomeworkError("Submission not found")
+
+            # Check for existing feedback row to update
+            existing = cursor.execute(
+                "SELECT id FROM homework_feedback WHERE submission_id = ? AND teacher_feedback IS NOT NULL",
+                (submission_id,)).fetchone()
+            if existing:
+                cursor.execute(
+                    "UPDATE homework_feedback SET teacher_feedback = ?, sticker = ? WHERE id = ?",
+                    (str(feedback).strip(), sticker, existing["id"]))
+            else:
+                cursor.execute(
+                    """INSERT INTO homework_feedback
+                       (submission_id, teacher_feedback, sticker)
+                       VALUES (?, ?, ?)""",
+                    (submission_id, str(feedback).strip(), sticker))
+
+            # Also mark the submission as 'Marked'
+            cursor.execute(
+                "UPDATE homework_submissions SET status = 'Marked' WHERE id = ?",
+                (submission_id,))
+            conn.commit()
+            fb_id = existing["id"] if existing else cursor.lastrowid
+            row = cursor.execute(
+                "SELECT * FROM homework_feedback WHERE id = ?",
+                (fb_id,)).fetchone()
+            logger.info("Teacher feedback added for submission %d", submission_id)
+            return dict(row)
+        except HomeworkError:
+            conn.rollback()
+            raise
+        except Exception as e:
+            traceback.print_exc()
+            conn.rollback()
+            raise HomeworkError(f"Failed to add feedback: {e}") from e
+        finally:
+            conn.close()
+
+    # ---- Parent comments ----
+
+    def add_parent_comment(self, submission_id, comment, parent_id):
+        """Add a parent comment to a homework submission.
+
+        Args:
+            submission_id: ID of the homework submission.
+            comment: The parent's comment text.
+            parent_id: Identifier of the parent leaving the comment.
+        Returns:
+            dict with the feedback record.
+        """
+        if not comment or not str(comment).strip():
+            raise HomeworkError("Comment text is required")
+        if not parent_id:
+            raise HomeworkError("Parent ID is required")
+
+        conn = self._conn()
+        try:
+            cursor = conn.cursor()
+            sub = cursor.execute(
+                "SELECT id FROM homework_submissions WHERE id = ?",
+                (submission_id,)).fetchone()
+            if not sub:
+                raise HomeworkError("Submission not found")
+
+            # Check for existing feedback row to update parent comment
+            existing = cursor.execute(
+                "SELECT id FROM homework_feedback WHERE submission_id = ?",
+                (submission_id,)).fetchone()
+            if existing:
+                cursor.execute(
+                    "UPDATE homework_feedback SET parent_comment = ?, parent_id = ? WHERE id = ?",
+                    (str(comment).strip(), parent_id, existing["id"]))
+            else:
+                cursor.execute(
+                    """INSERT INTO homework_feedback
+                       (submission_id, parent_comment, parent_id)
+                       VALUES (?, ?, ?)""",
+                    (submission_id, str(comment).strip(), parent_id))
+            conn.commit()
+            fb_id = existing["id"] if existing else cursor.lastrowid
+            row = cursor.execute(
+                "SELECT * FROM homework_feedback WHERE id = ?",
+                (fb_id,)).fetchone()
+            logger.info("Parent comment added for submission %d by %s",
+                        submission_id, parent_id)
+            return dict(row)
+        except HomeworkError:
+            conn.rollback()
+            raise
+        except Exception as e:
+            traceback.print_exc()
+            conn.rollback()
+            raise HomeworkError(f"Failed to add parent comment: {e}") from e
+        finally:
+            conn.close()
+
+    # ---- Submission with feedback ----
+
+    def get_submission_with_feedback(self, submission_id):
+        """Return a submission joined with its feedback record (if any).
+
+        Returns a single dict combining submission fields with feedback fields.
+        """
+        conn = self._conn()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                """SELECT hs.*, p.first_name, p.last_name,
+                          hf.teacher_feedback, hf.sticker,
+                          hf.parent_comment, hf.parent_id
+                   FROM homework_submissions hs
+                   JOIN pupils p ON hs.pupil_id = p.pupil_id
+                   LEFT JOIN homework_feedback hf ON hf.submission_id = hs.id
+                   WHERE hs.id = ?""",
+                (submission_id,))
+            row = cursor.fetchone()
+            return dict(row) if row else None
+        finally:
+            conn.close()
+
+    # ---- Outstanding homework ----
+
+    def list_outstanding(self, pupil_id):
+        """List homework not yet submitted by the given pupil.
+
+        Returns active homework where no submission exists for this pupil.
+        """
+        if not pupil_id:
+            raise HomeworkError("Pupil ID is required")
+
+        conn = self._conn()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                """SELECT h.*
+                   FROM homework h
+                   WHERE h.status = 'Active'
+                     AND NOT EXISTS (
+                         SELECT 1 FROM homework_submissions hs
+                         WHERE hs.homework_id = h.id AND hs.pupil_id = ?
+                     )
+                   ORDER BY h.due_date ASC""",
+                (pupil_id,))
             return [dict(r) for r in cursor.fetchall()]
         finally:
             conn.close()

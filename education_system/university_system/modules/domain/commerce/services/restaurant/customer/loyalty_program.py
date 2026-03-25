@@ -346,10 +346,10 @@ def view_customer_details(customer_id):
 
         # Get order history
         cursor.execute('''
-            SELECT order_id, order_time, total_price, status
-            FROM restaurant_orders
+            SELECT order_id, order_date, total_amount, order_status
+            FROM orders
             WHERE customer_id = ?
-            ORDER BY order_time DESC
+            ORDER BY order_date DESC
             LIMIT 10
         ''', (customer_id,))
 

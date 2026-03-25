@@ -10,14 +10,25 @@ import os
 import logging
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t, get_current_language
 
-# Check for GUI language selector availability
-try:
-    from education_system.university_system.modules.shared.utils.gui_language_selector import show_gui_language_selector
-    GUI_LANG_SELECTOR_AVAILABLE = True
-except ImportError:
-    GUI_LANG_SELECTOR_AVAILABLE = False
+# Language selection is now handled at startup via education_system.shared.i18n
 
 logger = logging.getLogger(__name__)
+
+
+def _is_superadmin_user(gui_self):
+    """Check if current user has admin access to all 4 systems."""
+    user_info = getattr(gui_self, "_shared_user_info", None) or {}
+    if not user_info:
+        # Try auth current_user
+        try:
+            user_info = gui_self.auth.current_user or {}
+        except Exception:
+            return False
+    systems = user_info.get("systems", [])
+    if not systems:
+        return False
+    admin_keys = {s["system_key"] for s in systems if s.get("role") == "admin"}
+    return admin_keys >= {"university", "college", "school", "primary"}
 
 
 # ---------------------------------------------------------------------------
@@ -195,9 +206,24 @@ def switch_to_cli(self):
             time.sleep(0.2)
 
             from education_system.university_system.modules.shared.cli.cli_main import main as cli_main
+            # Pass current user info so CLI skips the login prompt
+            user_info = None
+            role = None
+            shared_auth = None
+            if hasattr(self, 'auth') and self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
+                cu = self.auth.current_user
+                user_info = {
+                    "user_id": cu.get("user_id") or cu.get("id"),
+                    "username": cu.get("username"),
+                    "display_name": cu.get("display_name"),
+                    "email": cu.get("email", ""),
+                    "systems": cu.get("systems", []),
+                }
+                role = cu.get("role")
+                shared_auth = self.auth
             self.root.withdraw()
             self.root.quit()
-            cli_main()
+            cli_main(user_info=user_info, role=role, shared_auth=shared_auth)
         except Exception as e:
             messagebox.showerror(_t("common.error"), _t("gui.errors.failed_switch_cli", error=str(e)))
             self.root.deiconify()
@@ -206,8 +232,8 @@ def switch_to_cli(self):
 def switch_system(self):
     """Show a dialog to switch to another education system."""
     dlg = tk.Toplevel(self.root)
-    dlg.title("Switch System")
-    dlg.geometry("400x350")
+    dlg.title(_t("gui.switch_system.title"))
+    dlg.geometry("400x420")
     dlg.resizable(False, False)
     dlg.transient(self.root)
     dlg.grab_set()
@@ -218,12 +244,12 @@ def switch_system(self):
     dlg.geometry(f"+{x}+{y}")
 
     tk.Label(
-        dlg, text="Switch to another system",
+        dlg, text=_t("gui.switch_system.header"),
         font=("Helvetica", 14, "bold"), pady=16,
     ).pack()
 
     tk.Label(
-        dlg, text="Choose a system to launch:",
+        dlg, text=_t("gui.switch_system.choose_system"),
         font=("Helvetica", 11), pady=4,
     ).pack()
 
@@ -246,28 +272,37 @@ def switch_system(self):
             self.root.quit()
             self.root.destroy()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to switch system: {e}")
+            messagebox.showerror(_t("common.error"), _t("gui.switch_system.failed", error=str(e)))
 
     tk.Button(
-        btn_frame, text="Sixth Form College System",
+        btn_frame, text=_t("gui.switch_system.college"),
         bg="#27ae60", fg="white", activebackground="#2ecc71", activeforeground="white",
         command=lambda: _pick("college"), **btn_style,
     ).pack(pady=6)
 
     tk.Button(
-        btn_frame, text="Secondary School System",
+        btn_frame, text=_t("gui.switch_system.secondary"),
         bg="#8e44ad", fg="white", activebackground="#9b59b6", activeforeground="white",
         command=lambda: _pick("school"), **btn_style,
     ).pack(pady=6)
 
     tk.Button(
-        btn_frame, text="Primary School System",
+        btn_frame, text=_t("gui.switch_system.primary"),
         bg="#e67e22", fg="white", activebackground="#f39c12", activeforeground="white",
         command=lambda: _pick("primary"), **btn_style,
     ).pack(pady=6)
 
+    # Super Admin Dashboard button (only for superadmin users)
+    if _is_superadmin_user(self):
+        ttk.Separator(btn_frame, orient="horizontal").pack(fill="x", pady=6)
+        tk.Button(
+            btn_frame, text="Super Admin Dashboard",
+            bg="#2c3e50", fg="white", activebackground="#34495e", activeforeground="white",
+            command=lambda: _pick("__superadmin__"), **btn_style,
+        ).pack(pady=6)
+
     tk.Button(
-        btn_frame, text="Cancel",
+        btn_frame, text=_t("common.cancel"),
         bg="#95a5a6", fg="white", activebackground="#bdc3c7", activeforeground="white",
         command=dlg.destroy, **btn_style,
     ).pack(pady=6)
@@ -303,17 +338,11 @@ def shutdown_system(self):
 # ---------------------------------------------------------------------------
 
 def show_language_selector(self):
-    """Show language selection dialog using centralized selector"""
-    old_lang = get_current_language()
+    """Show language selection dialog using the shared i18n selector."""
+    from education_system.shared.i18n.selector_gui import show_language_selector as _show
 
-    if GUI_LANG_SELECTOR_AVAILABLE:
-        new_lang = show_gui_language_selector(self.root)
-    else:
-        messagebox.showwarning(
-            _t("common.warning"),
-            _t("gui.language_selector_unavailable")
-        )
-        return
+    old_lang = get_current_language()
+    new_lang = _show(self.root)
 
     if new_lang != old_lang:
         messagebox.showinfo(
@@ -412,13 +441,13 @@ def show_mfa_setup(self):
         tk.Label(status_frame, text=_t("gui.mfa.current_setup_details"), font=('Arial', 11, 'bold')).pack(pady=(10, 5))
 
         if is_verification_disabled:
-            verification_status = "Disabled (Password Only)"
+            verification_status = _t("gui.mfa.verification_status_disabled")
             verification_color = "red"
         else:
-            verification_status = "Enabled"
+            verification_status = _t("gui.mfa.verification_status_enabled")
             verification_color = "green"
 
-        status_text = f"Login Verification: "
+        status_text = _t("gui.mfa.login_verification_label")
         status_line = tk.Frame(status_frame)
         status_line.pack(pady=2)
         tk.Label(status_line, text=status_text).pack(side=tk.LEFT)
@@ -426,14 +455,14 @@ def show_mfa_setup(self):
 
         def mask_identifier(identifier):
             if not identifier:
-                return 'Configured'
+                return _t("gui.mfa.configured")
             if '@' in str(identifier):
                 parts = str(identifier).split('@')
                 return parts[0][:2] + '***@' + parts[1]
             elif identifier:
                 identifier = str(identifier)
                 return identifier[:3] + '****' + identifier[-2:] if len(identifier) > 5 else '****'
-            return 'Configured'
+            return _t("gui.mfa.configured")
 
         if active_methods and len(active_methods) > 0:
             tk.Label(status_frame, text="", font=('Arial', 2)).pack()
@@ -442,7 +471,7 @@ def show_mfa_setup(self):
                 if method and isinstance(method, dict):
                     method_type = str(method.get('type', 'Unknown')).upper()
                     identifier = method.get('identifier', '')
-                    is_primary = " (Primary)" if method.get('is_primary') else ""
+                    is_primary = f" ({_t('gui.mfa.primary_method')})" if method.get('is_primary') else ""
                     masked = mask_identifier(identifier)
                     method_text = f"  • {method_type}: {masked}{is_primary}"
                     tk.Label(status_frame, text=method_text, fg="dark green").pack(pady=1)
@@ -522,10 +551,8 @@ def show_mfa_setup(self):
                     result = mfa_service.set_verification_disabled(user_id, True)
                     if result.get('success'):
                         messagebox.showinfo(
-                            "Success",
-                            "MFA has been turned off.\n\n"
-                            "Your settings have been saved.\n"
-                            "You can restore them later from this menu."
+                            _t("common.success"),
+                            _t("gui.mfa.turned_off_success")
                         )
                         dialog.destroy()
                     else:
@@ -567,9 +594,9 @@ def show_mfa_setup(self):
         dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
 
     except ImportError as e:
-        messagebox.showerror(_t("common.error"), f"MFA module not available: {e}")
+        messagebox.showerror(_t("common.error"), _t("gui.mfa.module_not_available", error=str(e)))
     except Exception as e:
-        messagebox.showerror(_t("common.error"), f"Error opening MFA setup: {e}")
+        messagebox.showerror(_t("common.error"), _t("gui.mfa.error_opening_setup", error=str(e)))
 
 
 def _reenable_mfa_with_confirmation(self, user_id, username, user_email, mfa_service, saved_methods):
@@ -598,20 +625,8 @@ def _reenable_mfa_with_confirmation(self, user_id, username, user_email, mfa_ser
                 if result and isinstance(result, dict):
                     methods_count = result.get('methods_count', 1) or 1
 
-                subject = "MFA Re-enabled for Your Account"
-                body = f"""Hello {username or 'User'},
-
-Multi-Factor Authentication (MFA) has been re-enabled for your account using your previously saved settings.
-
-Details:
-- Account: {username}
-- Email: {email_to_notify}
-- Methods restored: {methods_count}
-
-If you did not make this change, please contact support immediately and change your password.
-
-Thank you,
-University System Security Team"""
+                subject = _t("gui.mfa.reenable_email_subject")
+                body = _t("gui.mfa.reenable_email_body", username=username or 'User', email=email_to_notify, methods_count=methods_count)
 
                 email_sent = False
                 try:
@@ -637,26 +652,23 @@ University System Security Team"""
 
                 if email_sent:
                     messagebox.showinfo(
-                        "MFA Re-enabled",
-                        f"MFA has been successfully re-enabled using your saved settings.\n\n"
-                        f"A confirmation email has been sent to:\n{email_to_notify}"
+                        _t("gui.mfa.reenabled_title"),
+                        _t("gui.mfa.reenabled_with_email", email=email_to_notify)
                     )
                 else:
                     messagebox.showinfo(
-                        "MFA Re-enabled",
-                        f"MFA has been successfully re-enabled using your saved settings.\n\n"
-                        f"(Email notification could not be sent externally)"
+                        _t("gui.mfa.reenabled_title"),
+                        _t("gui.mfa.reenabled_no_email")
                     )
             except Exception as email_error:
                 messagebox.showinfo(
-                    "MFA Re-enabled",
-                    f"MFA has been successfully re-enabled using your saved settings.\n\n"
-                    f"(Confirmation email could not be sent: {email_error})"
+                    _t("gui.mfa.reenabled_title"),
+                    _t("gui.mfa.reenabled_email_error", error=str(email_error))
                 )
         else:
             messagebox.showinfo(
-                "MFA Re-enabled",
-                "MFA has been successfully re-enabled using your saved settings."
+                _t("gui.mfa.reenabled_title"),
+                _t("gui.mfa.reenabled_simple")
             )
 
     except Exception as e:
@@ -677,9 +689,9 @@ def _open_mfa_wizard(self, user_id, username):
 
         mfa_setup_wizard(self.root, user_id, username, on_complete=on_mfa_complete)
     except ImportError as e:
-        messagebox.showerror(_t("common.error"), f"MFA module not available: {e}")
+        messagebox.showerror(_t("common.error"), _t("gui.mfa.module_not_available", error=str(e)))
     except Exception as e:
-        messagebox.showerror(_t("common.error"), f"Error opening MFA wizard: {e}")
+        messagebox.showerror(_t("common.error"), _t("gui.mfa.error_opening_wizard", error=str(e)))
 
 
 def toggle_login_verification(self):

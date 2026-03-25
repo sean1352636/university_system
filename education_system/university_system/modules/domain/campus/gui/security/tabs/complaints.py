@@ -6,8 +6,8 @@ from datetime import datetime
 
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
-from ..dialogs.complaint_form import ComplaintFormDialog
-from ..utils import send_notification_email
+from education_system.university_system.modules.domain.campus.gui.security.dialogs.complaint_form import ComplaintFormDialog
+from education_system.university_system.modules.domain.campus.gui.security.utils import send_notification_email
 
 
 class ComplaintsMixin:

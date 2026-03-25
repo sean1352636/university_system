@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/localization.py
+# hypothesis_version: 6.151.9
+
+['*.json', '.', 'data', 'en', 'locales', 'r', 'utf-8']

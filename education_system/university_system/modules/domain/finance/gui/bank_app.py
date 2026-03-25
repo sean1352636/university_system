@@ -315,11 +315,11 @@ class BankApp:
             conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
-            # Get transactions from student_finance_transactions table
+            # Get transactions from transactions table
             cursor.execute('''
                 SELECT created_at, transaction_type, amount, balance_after, description
-                FROM student_finance_transactions
-                WHERE student_id = ?
+                FROM transactions
+                WHERE source_type = 'student_finance' AND student_id = ?
                 ORDER BY created_at DESC
                 LIMIT 50
             ''', (self.student_id,))

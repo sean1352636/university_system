@@ -4,11 +4,11 @@ import os
 import secrets
 from datetime import datetime, timedelta
 
-from ._compat import Flask, request, jsonify
-from .config import CONFIG, AVAILABLE_SECTIONS, get_reporting_db_connection, serialize_dataframe, logger
-from .models import ReportTemplate
-from .data_quality import DataQualityMonitor
-from .predictive import PredictiveAnalytics
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting._compat import Flask, request, jsonify
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.config import CONFIG, AVAILABLE_SECTIONS, get_reporting_db_connection, serialize_dataframe, logger
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.models import ReportTemplate
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.data_quality import DataQualityMonitor
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.predictive import PredictiveAnalytics
 
 # Flask app for REST API
 app = Flask(__name__)
@@ -59,7 +59,7 @@ def api_health():
 @app.route('/api/data/<section>', methods=['GET'])
 def api_get_section_data(section):
     """Get data for a specific section"""
-    from .data_retrieval import get_section_dataframe
+    from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.data_retrieval import get_section_dataframe
 
     try:
         if section not in AVAILABLE_SECTIONS:
@@ -94,14 +94,14 @@ def api_get_section_data(section):
 
 @app.route('/api/templates', methods=['GET'])
 def api_get_templates():
-    from .templates_db import load_templates
+    from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.templates_db import load_templates
     templates = load_templates()
     return jsonify(templates)
 
 
 @app.route('/api/templates', methods=['POST'])
 def api_create_template():
-    from .templates_db import save_template
+    from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.templates_db import save_template
     data = request.get_json()
 
     template = ReportTemplate(
@@ -119,8 +119,8 @@ def api_create_template():
 
 @app.route('/api/reports/generate', methods=['POST'])
 def api_generate_report():
-    from .templates_db import get_template
-    from .report_generation import generate_report
+    from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.templates_db import get_template
+    from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.report_generation import generate_report
 
     try:
         data = request.get_json()

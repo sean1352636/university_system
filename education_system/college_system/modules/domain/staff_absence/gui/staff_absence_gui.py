@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.college_system.modules.domain.staff_absence.services.staff_absence_service import StaffAbsenceService
+from education_system.college_system.core.i18n import t
 
 
 class StaffAbsenceFrame(tk.Frame):
@@ -22,7 +23,7 @@ class StaffAbsenceFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Staff Absence",
+        tk.Label(header, text=t("staff_absence.management"),
                  font=("Helvetica", 15, "bold"), bg="#2c3e50", fg="white"
                  ).pack(side="left", padx=20, pady=10)
 
@@ -39,40 +40,41 @@ class StaffAbsenceFrame(tk.Frame):
 
     def _build_absences_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(tab, text="Absences")
+        self._nb.add(tab, text=t("staff_absence.management"))
 
         # Toolbar
         toolbar = tk.Frame(tab, bg="#ecf0f1")
         toolbar.pack(fill="x", padx=5, pady=5)
 
-        ttk.Button(toolbar, text="New", command=self._new_absence).pack(side="left", padx=2)
-        ttk.Button(toolbar, text="View", command=self._view_absence).pack(side="left", padx=2)
-        ttk.Button(toolbar, text="Edit", command=self._edit_absence).pack(side="left", padx=2)
-        ttk.Button(toolbar, text="Close", command=self._close_absence).pack(side="left", padx=2)
-        ttk.Button(toolbar, text="Delete", command=self._delete_absence).pack(side="left", padx=2)
+        ttk.Button(toolbar, text=t("common.create"), command=self._new_absence).pack(side="left", padx=2)
+        ttk.Button(toolbar, text=t("common.view"), command=self._view_absence).pack(side="left", padx=2)
+        ttk.Button(toolbar, text=t("common.edit"), command=self._edit_absence).pack(side="left", padx=2)
+        ttk.Button(toolbar, text=t("common.close"), command=self._close_absence).pack(side="left", padx=2)
+        ttk.Button(toolbar, text=t("common.delete"), command=self._delete_absence).pack(side="left", padx=2)
+        ttk.Button(toolbar, text="Export CSV", command=self._export_absences_csv).pack(side="left", padx=2)
 
         # Filters
         filter_frame = tk.Frame(tab, bg="#ecf0f1")
         filter_frame.pack(fill="x", padx=5, pady=2)
 
-        tk.Label(filter_frame, text="Type:", bg="#ecf0f1").pack(side="left", padx=2)
+        tk.Label(filter_frame, text=t("common.type"), bg="#ecf0f1").pack(side="left", padx=2)
         self._abs_type_var = tk.StringVar(value="All")
         ttk.Combobox(filter_frame, textvariable=self._abs_type_var,
                      values=["All", "sickness", "personal", "compassionate",
                              "maternity", "paternity", "unauthorised", "other"],
                      state="readonly", width=14).pack(side="left", padx=2)
 
-        tk.Label(filter_frame, text="Status:", bg="#ecf0f1").pack(side="left", padx=2)
+        tk.Label(filter_frame, text=t("common.status"), bg="#ecf0f1").pack(side="left", padx=2)
         self._abs_status_var = tk.StringVar(value="All")
         ttk.Combobox(filter_frame, textvariable=self._abs_status_var,
                      values=["All", "current", "closed"],
                      state="readonly", width=10).pack(side="left", padx=2)
 
-        tk.Label(filter_frame, text="Search:", bg="#ecf0f1").pack(side="left", padx=2)
+        tk.Label(filter_frame, text=t("common.search_colon"), bg="#ecf0f1").pack(side="left", padx=2)
         self._abs_search_var = tk.StringVar()
         tk.Entry(filter_frame, textvariable=self._abs_search_var, width=18).pack(side="left", padx=2)
 
-        ttk.Button(filter_frame, text="Filter", command=self._load_absences).pack(side="left", padx=5)
+        ttk.Button(filter_frame, text=t("common.filter"), command=self._load_absences).pack(side="left", padx=5)
 
         # Treeview
         cols = ("id", "staff", "type", "start", "end", "days_lost", "status")
@@ -114,11 +116,11 @@ class StaffAbsenceFrame(tk.Frame):
                     r.get("status", ""),
                 ))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _new_absence(self):
         win = tk.Toplevel(self)
-        win.title("New Absence")
+        win.title(t("staff_absence.log_absence"))
         win.geometry("420x480")
         win.resizable(False, False)
 
@@ -172,7 +174,7 @@ class StaffAbsenceFrame(tk.Frame):
                 staff_id = int(entries["staff_id"].get().strip())
                 start_date = entries["start_date"].get().strip()
                 if not start_date:
-                    messagebox.showwarning("Warning", "Start date is required.")
+                    messagebox.showwarning(t("common.warning"), t("common.field_required"))
                     return
                 kwargs = {"absence_type": type_var.get()}
                 end = entries["end_date"].get().strip()
@@ -190,26 +192,26 @@ class StaffAbsenceFrame(tk.Frame):
                 for k, var in bool_vars.items():
                     kwargs[k] = var.get()
                 self._svc.create_absence(staff_id, start_date, **kwargs)
-                messagebox.showinfo("Success", "Absence created.")
+                messagebox.showinfo(t("common.success"), t("common.created_success"))
                 win.destroy()
                 self._load_absences()
             except ValueError:
-                messagebox.showerror("Error", "Staff ID must be a number.")
+                messagebox.showerror(t("common.error"), t("common.invalid_input"))
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(win, text="Save", command=save).grid(
+        ttk.Button(win, text=t("common.save"), command=save).grid(
             row=row, column=0, columnspan=2, pady=15
         )
 
     def _view_absence(self):
         sel = self._abs_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select an absence to view.")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return
         absence = self._svc.get_absence(int(sel[0]))
         if not absence:
-            messagebox.showerror("Error", "Absence not found.")
+            messagebox.showerror(t("common.error"), t("common.no_data"))
             return
 
         win = tk.Toplevel(self)
@@ -245,19 +247,19 @@ class StaffAbsenceFrame(tk.Frame):
             tk.Label(win, text=str(val), wraplength=280,
                      anchor="w").grid(row=i, column=1, padx=10, pady=2, sticky="w")
 
-        ttk.Button(win, text="Close", command=win.destroy).grid(
+        ttk.Button(win, text=t("common.close"), command=win.destroy).grid(
             row=len(details), column=0, columnspan=2, pady=10
         )
 
     def _edit_absence(self):
         sel = self._abs_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select an absence to edit.")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return
         absence_id = int(sel[0])
         absence = self._svc.get_absence(absence_id)
         if not absence:
-            messagebox.showerror("Error", "Absence not found.")
+            messagebox.showerror(t("common.error"), t("common.no_data"))
             return
 
         win = tk.Toplevel(self)
@@ -332,28 +334,28 @@ class StaffAbsenceFrame(tk.Frame):
                 for k, var in bool_vars.items():
                     kwargs[k] = var.get()
                 self._svc.update_absence(absence_id, **kwargs)
-                messagebox.showinfo("Success", "Absence updated.")
+                messagebox.showinfo(t("common.success"), t("common.updated_success"))
                 win.destroy()
                 self._load_absences()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(win, text="Save", command=save).grid(
+        ttk.Button(win, text=t("common.save"), command=save).grid(
             row=row, column=0, columnspan=2, pady=15
         )
 
     def _close_absence(self):
         sel = self._abs_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select an absence to close.")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return
         absence_id = int(sel[0])
         absence = self._svc.get_absence(absence_id)
         if not absence:
-            messagebox.showerror("Error", "Absence not found.")
+            messagebox.showerror(t("common.error"), t("common.no_data"))
             return
         if absence.get("status") == "closed":
-            messagebox.showinfo("Info", "This absence is already closed.")
+            messagebox.showinfo(t("common.info"), "This absence is already closed.")
             return
 
         win = tk.Toplevel(self)
@@ -378,34 +380,34 @@ class StaffAbsenceFrame(tk.Frame):
             try:
                 end_date = end_entry.get().strip()
                 if not end_date:
-                    messagebox.showwarning("Warning", "End date is required.")
+                    messagebox.showwarning(t("common.warning"), t("common.field_required"))
                     return
                 days_lost = float(days_entry.get().strip())
                 rtw_notes = rtw_text.get("1.0", "end").strip() or None
                 self._svc.close_absence(absence_id, end_date, days_lost, rtw_notes)
-                messagebox.showinfo("Success", "Absence closed.")
+                messagebox.showinfo(t("common.success"), t("common.updated_success"))
                 win.destroy()
                 self._load_absences()
             except ValueError:
-                messagebox.showerror("Error", "Days lost must be a number.")
+                messagebox.showerror(t("common.error"), t("common.invalid_input"))
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(win, text="Close Absence", command=save).grid(
+        ttk.Button(win, text=t("common.close"), command=save).grid(
             row=3, column=0, columnspan=2, pady=15
         )
 
     def _delete_absence(self):
         sel = self._abs_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select an absence to delete.")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return
-        if messagebox.askyesno("Confirm", "Delete this absence record?"):
+        if messagebox.askyesno(t("common.confirm"), t("common.delete_confirm_msg")):
             try:
                 self._svc.delete_absence(int(sel[0]))
                 self._load_absences()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
     # ------------------------------------------------------------------ #
     #  Tab 2: Triggers                                                    #
@@ -417,9 +419,10 @@ class StaffAbsenceFrame(tk.Frame):
 
         toolbar = tk.Frame(tab, bg="#ecf0f1")
         toolbar.pack(fill="x", padx=5, pady=5)
-        ttk.Button(toolbar, text="New", command=self._new_trigger).pack(side="left", padx=2)
-        ttk.Button(toolbar, text="Edit", command=self._edit_trigger).pack(side="left", padx=2)
-        ttk.Button(toolbar, text="Delete", command=self._delete_trigger).pack(side="left", padx=2)
+        ttk.Button(toolbar, text=t("common.create"), command=self._new_trigger).pack(side="left", padx=2)
+        ttk.Button(toolbar, text=t("common.edit"), command=self._edit_trigger).pack(side="left", padx=2)
+        ttk.Button(toolbar, text=t("common.delete"), command=self._delete_trigger).pack(side="left", padx=2)
+        ttk.Button(toolbar, text="Export CSV", command=self._export_triggers_csv).pack(side="left", padx=2)
 
         cols = ("id", "name", "type", "threshold", "period", "action", "status")
         self._trig_tree = ttk.Treeview(tab, columns=cols, show="headings", height=12)
@@ -448,7 +451,7 @@ class StaffAbsenceFrame(tk.Frame):
                     r.get("status", ""),
                 ))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _new_trigger(self):
         win = tk.Toplevel(self)
@@ -489,7 +492,7 @@ class StaffAbsenceFrame(tk.Frame):
                 name = entries["trigger_name"].get().strip()
                 threshold = entries["threshold"].get().strip()
                 if not name or not threshold:
-                    messagebox.showwarning("Warning", "Name and threshold are required.")
+                    messagebox.showwarning(t("common.warning"), t("common.both_required"))
                     return
                 kwargs = {"trigger_type": type_var.get(), "status": status_var.get()}
                 pm = entries["period_months"].get().strip()
@@ -499,27 +502,27 @@ class StaffAbsenceFrame(tk.Frame):
                 if action:
                     kwargs["action_required"] = action
                 self._svc.create_trigger(name, int(threshold), **kwargs)
-                messagebox.showinfo("Success", "Trigger created.")
+                messagebox.showinfo(t("common.success"), t("common.created_success"))
                 win.destroy()
                 self._load_triggers()
             except ValueError:
-                messagebox.showerror("Error", "Threshold and period must be numbers.")
+                messagebox.showerror(t("common.error"), t("common.invalid_input"))
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(win, text="Save", command=save).grid(
+        ttk.Button(win, text=t("common.save"), command=save).grid(
             row=row, column=0, columnspan=2, pady=15
         )
 
     def _edit_trigger(self):
         sel = self._trig_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a trigger to edit.")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return
         trigger_id = int(sel[0])
         trigger = self._svc.get_trigger(trigger_id)
         if not trigger:
-            messagebox.showerror("Error", "Trigger not found.")
+            messagebox.showerror(t("common.error"), t("common.no_data"))
             return
 
         win = tk.Toplevel(self)
@@ -567,29 +570,29 @@ class StaffAbsenceFrame(tk.Frame):
                     "status": status_var.get(),
                 }
                 self._svc.update_trigger(trigger_id, **kwargs)
-                messagebox.showinfo("Success", "Trigger updated.")
+                messagebox.showinfo(t("common.success"), t("common.updated_success"))
                 win.destroy()
                 self._load_triggers()
             except ValueError:
-                messagebox.showerror("Error", "Threshold and period must be numbers.")
+                messagebox.showerror(t("common.error"), t("common.invalid_input"))
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(win, text="Save", command=save).grid(
+        ttk.Button(win, text=t("common.save"), command=save).grid(
             row=row, column=0, columnspan=2, pady=15
         )
 
     def _delete_trigger(self):
         sel = self._trig_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a trigger to delete.")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return
-        if messagebox.askyesno("Confirm", "Delete this trigger?"):
+        if messagebox.askyesno(t("common.confirm"), t("common.delete_confirm_msg")):
             try:
                 self._svc.delete_trigger(int(sel[0]))
                 self._load_triggers()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
     # ------------------------------------------------------------------ #
     #  Tab 3: Statistics                                                  #
@@ -597,7 +600,7 @@ class StaffAbsenceFrame(tk.Frame):
 
     def _build_stats_tab(self):
         self._stats_tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(self._stats_tab, text="Statistics")
+        self._nb.add(self._stats_tab, text=t("common.summary"))
 
         self._stats_container = tk.Frame(self._stats_tab, bg="#ecf0f1")
         self._stats_container.pack(fill="both", expand=True, padx=20, pady=20)
@@ -609,7 +612,7 @@ class StaffAbsenceFrame(tk.Frame):
             stats = self._svc.get_stats()
 
             # Summary cards
-            summary_frame = tk.LabelFrame(self._stats_container, text="Summary",
+            summary_frame = tk.LabelFrame(self._stats_container, text=t("common.summary"),
                                           bg="#ecf0f1", font=("Helvetica", 11, "bold"))
             summary_frame.pack(fill="x", pady=5)
 
@@ -649,11 +652,19 @@ class StaffAbsenceFrame(tk.Frame):
                     tk.Label(type_frame, text=str(bt.get("days", 0)),
                              bg="#ecf0f1").grid(row=i, column=2, padx=10, pady=2)
             else:
-                tk.Label(type_frame, text="No absence data.",
+                tk.Label(type_frame, text=t("common.no_data"),
                          bg="#ecf0f1").pack(padx=10, pady=10)
         except Exception as e:
-            tk.Label(self._stats_container, text=f"Error loading stats: {e}",
+            tk.Label(self._stats_container, text=f"{t('common.error')}: {e}",
                      bg="#ecf0f1", fg="red").pack(pady=20)
+
+    def _export_absences_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._abs_tree, "staff_absences_export.csv")
+
+    def _export_triggers_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._trig_tree, "staff_absence_triggers_export.csv")
 
     # ------------------------------------------------------------------ #
     #  Refresh                                                            #

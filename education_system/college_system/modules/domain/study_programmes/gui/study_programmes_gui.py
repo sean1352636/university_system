@@ -3,6 +3,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
+from education_system.college_system.core.i18n import t
 from education_system.college_system.modules.domain.study_programmes.services.study_programmes_service import (
     StudyProgrammesService,
 )
@@ -36,7 +37,7 @@ class StudyProgrammesFrame(tk.Frame):
         header.pack(fill="x")
         header.pack_propagate(False)
         tk.Label(
-            header, text="Study Programmes",
+            header, text=t("study_programmes.management"),
             font=("Helvetica", 15, "bold"), bg="#2c3e50", fg="white",
         ).pack(side="left", padx=20, pady=10)
 
@@ -52,29 +53,29 @@ class StudyProgrammesFrame(tk.Frame):
 
     def _build_programmes_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Programmes")
+        self._nb.add(tab, text=t("study_programmes.programmes"))
 
         # Filters
         filt = tk.Frame(tab, bg="#ecf0f1")
         filt.pack(fill="x", pady=(0, 5))
 
-        tk.Label(filt, text="Status:", bg="#ecf0f1").pack(side="left")
+        tk.Label(filt, text=t("common.status") + ":", bg="#ecf0f1").pack(side="left")
         self._prog_status_var = tk.StringVar()
         ttk.Combobox(filt, textvariable=self._prog_status_var,
                      values=self.STATUSES, width=12, state="readonly"
                      ).pack(side="left", padx=(2, 10))
 
-        tk.Label(filt, text="Type:", bg="#ecf0f1").pack(side="left")
+        tk.Label(filt, text=t("common.type") + ":", bg="#ecf0f1").pack(side="left")
         self._prog_type_var = tk.StringVar()
         ttk.Combobox(filt, textvariable=self._prog_type_var,
                      values=self.PROG_TYPES, width=12, state="readonly"
                      ).pack(side="left", padx=(2, 10))
 
-        tk.Label(filt, text="Academic Year:", bg="#ecf0f1").pack(side="left")
+        tk.Label(filt, text=t("study_programmes.academic_year") + ":", bg="#ecf0f1").pack(side="left")
         self._prog_year_var = tk.StringVar()
         tk.Entry(filt, textvariable=self._prog_year_var, width=12).pack(side="left", padx=(2, 10))
 
-        tk.Button(filt, text="Filter", command=self._load_programmes).pack(side="left", padx=5)
+        tk.Button(filt, text=t("common.filter"), command=self._load_programmes).pack(side="left", padx=5)
 
         # Treeview
         cols = ("id", "student_id", "academic_year", "type", "subst_qual",
@@ -83,12 +84,16 @@ class StudyProgrammesFrame(tk.Frame):
         tree_frame.pack(fill="both", expand=True)
         self._prog_tree = ttk.Treeview(tree_frame, columns=cols, show="headings", selectmode="browse")
         for c, h, w in [
-            ("id", "ID", 40), ("student_id", "Student ID", 75),
-            ("academic_year", "Acad Year", 80), ("type", "Type", 80),
-            ("subst_qual", "Substantive Qual", 150),
-            ("maths", "Maths Req", 75), ("english", "English Req", 75),
-            ("planned", "Planned Hrs", 80), ("delivered", "Delivered Hrs", 85),
-            ("valid", "Valid", 45), ("status", "Status", 80),
+            ("id", t("common.id"), 40), ("student_id", t("common.student_id"), 75),
+            ("academic_year", t("study_programmes.acad_year"), 80),
+            ("type", t("common.type"), 80),
+            ("subst_qual", t("study_programmes.substantive_qual"), 150),
+            ("maths", t("study_programmes.maths_req"), 75),
+            ("english", t("study_programmes.english_req"), 75),
+            ("planned", t("study_programmes.planned_hrs"), 80),
+            ("delivered", t("study_programmes.delivered_hrs"), 85),
+            ("valid", t("study_programmes.valid"), 45),
+            ("status", t("common.status"), 80),
         ]:
             self._prog_tree.heading(c, text=h)
             self._prog_tree.column(c, width=w, anchor="center")
@@ -100,34 +105,36 @@ class StudyProgrammesFrame(tk.Frame):
         # Buttons
         btn_frame = tk.Frame(tab, bg="#ecf0f1")
         btn_frame.pack(fill="x", pady=(5, 0))
-        for text, cmd in [
-            ("New", self._new_programme), ("View", self._view_programme),
-            ("Update", self._update_programme), ("Validate", self._validate_programme),
-            ("Delete", self._delete_programme),
+        for txt, cmd in [
+            (t("common.new"), self._new_programme), (t("common.view"), self._view_programme),
+            (t("common.update"), self._update_programme),
+            (t("study_programmes.validate"), self._validate_programme),
+            (t("common.delete"), self._delete_programme),
         ]:
-            tk.Button(btn_frame, text=text, command=cmd, width=10).pack(side="left", padx=3)
+            tk.Button(btn_frame, text=txt, command=cmd, width=10).pack(side="left", padx=3)
+        ttk.Button(btn_frame, text="Export CSV", command=self._export_programmes_csv).pack(side="left", padx=3)
 
     # -- Tab 2: Components -----------------------------------------------
 
     def _build_components_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Components")
+        self._nb.add(tab, text=t("study_programmes.components"))
 
         # Filters
         filt = tk.Frame(tab, bg="#ecf0f1")
         filt.pack(fill="x", pady=(0, 5))
 
-        tk.Label(filt, text="Programme ID:", bg="#ecf0f1").pack(side="left")
+        tk.Label(filt, text=t("study_programmes.programme_id") + ":", bg="#ecf0f1").pack(side="left")
         self._comp_prog_var = tk.StringVar()
         tk.Entry(filt, textvariable=self._comp_prog_var, width=8).pack(side="left", padx=(2, 10))
 
-        tk.Label(filt, text="Type:", bg="#ecf0f1").pack(side="left")
+        tk.Label(filt, text=t("common.type") + ":", bg="#ecf0f1").pack(side="left")
         self._comp_type_var = tk.StringVar()
         ttk.Combobox(filt, textvariable=self._comp_type_var,
                      values=self.COMP_TYPES, width=16, state="readonly"
                      ).pack(side="left", padx=(2, 10))
 
-        tk.Button(filt, text="Filter", command=self._load_components).pack(side="left", padx=5)
+        tk.Button(filt, text=t("common.filter"), command=self._load_components).pack(side="left", padx=5)
 
         # Treeview
         cols = ("id", "programme_id", "type", "name", "planned", "delivered", "status")
@@ -135,10 +142,12 @@ class StudyProgrammesFrame(tk.Frame):
         tree_frame.pack(fill="both", expand=True)
         self._comp_tree = ttk.Treeview(tree_frame, columns=cols, show="headings", selectmode="browse")
         for c, h, w in [
-            ("id", "ID", 40), ("programme_id", "Programme ID", 90),
-            ("type", "Type", 120), ("name", "Name", 200),
-            ("planned", "Planned Hrs", 85), ("delivered", "Delivered Hrs", 85),
-            ("status", "Status", 80),
+            ("id", t("common.id"), 40),
+            ("programme_id", t("study_programmes.programme_id"), 90),
+            ("type", t("common.type"), 120), ("name", t("common.name"), 200),
+            ("planned", t("study_programmes.planned_hrs"), 85),
+            ("delivered", t("study_programmes.delivered_hrs"), 85),
+            ("status", t("common.status"), 80),
         ]:
             self._comp_tree.heading(c, text=h)
             self._comp_tree.column(c, width=w, anchor="center")
@@ -150,23 +159,24 @@ class StudyProgrammesFrame(tk.Frame):
         # Buttons
         btn_frame = tk.Frame(tab, bg="#ecf0f1")
         btn_frame.pack(fill="x", pady=(5, 0))
-        for text, cmd in [
-            ("New", self._new_component), ("Update", self._update_component),
-            ("Delete", self._delete_component),
+        for txt, cmd in [
+            (t("common.new"), self._new_component), (t("common.update"), self._update_component),
+            (t("common.delete"), self._delete_component),
         ]:
-            tk.Button(btn_frame, text=text, command=cmd, width=10).pack(side="left", padx=3)
+            tk.Button(btn_frame, text=txt, command=cmd, width=10).pack(side="left", padx=3)
+        ttk.Button(btn_frame, text="Export CSV", command=self._export_components_csv).pack(side="left", padx=3)
 
     # -- Tab 3: Reports --------------------------------------------------
 
     def _build_reports_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Reports")
+        self._nb.add(tab, text=t("study_programmes.reports"))
 
         btn_frame = tk.Frame(tab, bg="#ecf0f1")
         btn_frame.pack(fill="x", pady=(0, 5))
-        tk.Button(btn_frame, text="Condition of Funding Check",
+        tk.Button(btn_frame, text=t("study_programmes.cof_check"),
                   command=self._report_cof, width=25).pack(side="left", padx=3)
-        tk.Button(btn_frame, text="Funding Hours Report",
+        tk.Button(btn_frame, text=t("study_programmes.funding_hours_report"),
                   command=self._report_hours, width=25).pack(side="left", padx=3)
 
         self._report_text = tk.Text(tab, wrap="word", height=25, font=("Courier", 10))
@@ -179,16 +189,24 @@ class StudyProgrammesFrame(tk.Frame):
 
     def _build_stats_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Statistics")
+        self._nb.add(tab, text=t("common.summary"))
 
         self._stats_frame = tk.Frame(tab, bg="#ecf0f1")
         self._stats_frame.pack(fill="both", expand=True)
 
-        tk.Button(tab, text="Refresh Statistics", command=self._load_stats).pack(pady=5)
+        tk.Button(tab, text=t("common.refresh"), command=self._load_stats).pack(pady=5)
 
     # ================================================================
     # Data Loading
     # ================================================================
+
+    def _export_programmes_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._prog_tree, "study_programmes_export.csv")
+
+    def _export_components_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._comp_tree, "study_programme_components_export.csv")
 
     def refresh(self):
         self._load_programmes()
@@ -212,11 +230,11 @@ class StudyProgrammesFrame(tk.Frame):
                     r.get("english_requirement") or "-",
                     r.get("total_planned_hours", 0),
                     r.get("total_delivered_hours", 0),
-                    "Yes" if r.get("is_valid") else "No",
+                    t("common.yes") if r.get("is_valid") else t("common.no"),
                     r.get("status") or "-",
                 ))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _load_components(self):
         self._comp_tree.delete(*self._comp_tree.get_children())
@@ -234,7 +252,7 @@ class StudyProgrammesFrame(tk.Frame):
                     c.get("status") or "-",
                 ))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _load_stats(self):
         for w in self._stats_frame.winfo_children():
@@ -242,14 +260,14 @@ class StudyProgrammesFrame(tk.Frame):
         try:
             stats = self.svc.get_stats()
             labels = [
-                ("Total Programmes", stats["total_programmes"]),
-                ("Active Programmes", stats["active_programmes"]),
-                ("Valid Programmes", stats["valid_programmes"]),
-                ("Invalid Programmes", stats["invalid_programmes"]),
-                ("Avg Planned Hours", stats["avg_planned_hours"]),
-                ("Avg Delivered Hours", stats["avg_delivered_hours"]),
-                ("Maths Met %", f"{stats['maths_met_pct']}%"),
-                ("English Met %", f"{stats['english_met_pct']}%"),
+                (t("study_programmes.total_programmes"), stats["total_programmes"]),
+                (t("study_programmes.active_programmes"), stats["active_programmes"]),
+                (t("study_programmes.valid_programmes"), stats["valid_programmes"]),
+                (t("study_programmes.invalid_programmes"), stats["invalid_programmes"]),
+                (t("study_programmes.avg_planned_hours"), stats["avg_planned_hours"]),
+                (t("study_programmes.avg_delivered_hours"), stats["avg_delivered_hours"]),
+                (t("study_programmes.maths_met_pct"), f"{stats['maths_met_pct']}%"),
+                (t("study_programmes.english_met_pct"), f"{stats['english_met_pct']}%"),
             ]
             for i, (label, value) in enumerate(labels):
                 row = i // 2
@@ -263,7 +281,7 @@ class StudyProgrammesFrame(tk.Frame):
 
             # By type breakdown
             row_offset = len(labels) // 2 + 1
-            tk.Label(self._stats_frame, text="By Programme Type:", bg="#ecf0f1",
+            tk.Label(self._stats_frame, text=t("study_programmes.by_type") + ":", bg="#ecf0f1",
                      font=("Helvetica", 11, "bold")).grid(
                 row=row_offset, column=0, columnspan=2, sticky="w", padx=10, pady=(10, 2))
             for i, (ptype, cnt) in enumerate(stats.get("by_type", {}).items()):
@@ -273,7 +291,7 @@ class StudyProgrammesFrame(tk.Frame):
 
             # By status breakdown
             status_offset = row_offset + 1 + len(stats.get("by_type", {}))
-            tk.Label(self._stats_frame, text="By Status:", bg="#ecf0f1",
+            tk.Label(self._stats_frame, text=t("study_programmes.by_status") + ":", bg="#ecf0f1",
                      font=("Helvetica", 11, "bold")).grid(
                 row=status_offset, column=0, columnspan=2, sticky="w", padx=10, pady=(10, 2))
             for i, (st, cnt) in enumerate(stats.get("by_status", {}).items()):
@@ -281,7 +299,7 @@ class StudyProgrammesFrame(tk.Frame):
                          font=("Helvetica", 10)).grid(
                     row=status_offset + 1 + i, column=0, columnspan=2, sticky="w", padx=20)
         except Exception as e:
-            tk.Label(self._stats_frame, text=f"Error loading stats: {e}",
+            tk.Label(self._stats_frame, text=f"{t('common.error')}: {e}",
                      bg="#ecf0f1", fg="red").pack()
 
     # ================================================================
@@ -291,13 +309,13 @@ class StudyProgrammesFrame(tk.Frame):
     def _get_selected_prog_id(self):
         sel = self._prog_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "No programme selected.")
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"))
             return None
         return self._prog_tree.item(sel[0], "values")[0]
 
     def _new_programme(self):
         dlg = tk.Toplevel(self)
-        dlg.title("New Study Programme")
+        dlg.title(t("study_programmes.new_programme"))
         dlg.geometry("420x480")
         dlg.configure(bg="#ecf0f1")
         dlg.transient(self)
@@ -306,19 +324,19 @@ class StudyProgrammesFrame(tk.Frame):
         fields = {}
         row = 0
         for label, key, default, widget_type in [
-            ("Student ID (PK):", "student_id", "", "entry"),
-            ("Academic Year:", "academic_year", "", "entry"),
-            ("Programme Type:", "programme_type", "level3", "combo"),
-            ("Substantive Qualification:", "substantive_qualification", "", "entry"),
-            ("Maths Requirement:", "maths_requirement", "not_met", "reqcombo"),
-            ("English Requirement:", "english_requirement", "not_met", "reqcombo"),
-            ("Maths Enrollment ID:", "maths_enrollment_id", "", "entry"),
-            ("English Enrollment ID:", "english_enrollment_id", "", "entry"),
-            ("Work Exp Completed:", "work_experience_completed", "0", "entry"),
-            ("Work Exp Hours:", "work_experience_hours", "0", "entry"),
-            ("Enrichment Hours:", "enrichment_hours", "0", "entry"),
-            ("Tutorial Hours:", "tutorial_hours", "0", "entry"),
-            ("Total Planned Hours:", "total_planned_hours", "0", "entry"),
+            (t("common.student_id") + ":", "student_id", "", "entry"),
+            (t("study_programmes.academic_year") + ":", "academic_year", "", "entry"),
+            (t("study_programmes.programme_type") + ":", "programme_type", "level3", "combo"),
+            (t("study_programmes.substantive_qual") + ":", "substantive_qualification", "", "entry"),
+            (t("study_programmes.maths_req") + ":", "maths_requirement", "not_met", "reqcombo"),
+            (t("study_programmes.english_req") + ":", "english_requirement", "not_met", "reqcombo"),
+            (t("study_programmes.maths_enrollment_id") + ":", "maths_enrollment_id", "", "entry"),
+            (t("study_programmes.english_enrollment_id") + ":", "english_enrollment_id", "", "entry"),
+            (t("study_programmes.work_exp_completed") + ":", "work_experience_completed", "0", "entry"),
+            (t("study_programmes.work_exp_hours") + ":", "work_experience_hours", "0", "entry"),
+            (t("study_programmes.enrichment_hours") + ":", "enrichment_hours", "0", "entry"),
+            (t("study_programmes.tutorial_hours") + ":", "tutorial_hours", "0", "entry"),
+            (t("study_programmes.total_planned_hours") + ":", "total_planned_hours", "0", "entry"),
         ]:
             tk.Label(dlg, text=label, bg="#ecf0f1").grid(row=row, column=0, sticky="e", padx=5, pady=3)
             var = tk.StringVar(value=default)
@@ -351,13 +369,13 @@ class StudyProgrammesFrame(tk.Frame):
                     else:
                         kwargs[k] = val
                 self.svc.create_programme(sid, **kwargs)
-                messagebox.showinfo("Success", "Programme created.")
+                messagebox.showinfo(t("common.success"), t("common.created_success"))
                 dlg.destroy()
                 self._load_programmes()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        tk.Button(dlg, text="Save", command=_save, width=12).grid(
+        tk.Button(dlg, text=t("common.save"), command=_save, width=12).grid(
             row=row, column=0, columnspan=2, pady=10)
 
     def _view_programme(self):
@@ -367,52 +385,52 @@ class StudyProgrammesFrame(tk.Frame):
         try:
             prog = self.svc.get_programme(int(pid))
             if not prog:
-                messagebox.showwarning("Warning", "Programme not found.")
+                messagebox.showwarning(t("common.warning"), t("common.no_data"))
                 return
 
             dlg = tk.Toplevel(self)
-            dlg.title(f"Programme #{pid}")
+            dlg.title(f"{t('study_programmes.programme')} #{pid}")
             dlg.geometry("500x520")
             dlg.configure(bg="#ecf0f1")
             dlg.transient(self)
 
-            text = tk.Text(dlg, wrap="word", font=("Courier", 10))
-            text.pack(fill="both", expand=True, padx=10, pady=10)
+            text_widget = tk.Text(dlg, wrap="word", font=("Courier", 10))
+            text_widget.pack(fill="both", expand=True, padx=10, pady=10)
 
-            text.insert("end", f"Programme ID: {prog['id']}\n")
-            text.insert("end", f"Student ID: {prog['student_id']}\n")
-            text.insert("end", f"Student: {prog.get('first_name', '')} {prog.get('last_name', '')}\n")
-            text.insert("end", f"Academic Year: {prog.get('academic_year') or '-'}\n")
-            text.insert("end", f"Programme Type: {prog.get('programme_type') or '-'}\n")
-            text.insert("end", f"Substantive Qual: {prog.get('substantive_qualification') or '-'}\n")
-            text.insert("end", f"Maths Requirement: {prog.get('maths_requirement') or '-'}\n")
-            text.insert("end", f"English Requirement: {prog.get('english_requirement') or '-'}\n")
-            text.insert("end", f"Work Exp Completed: {'Yes' if prog.get('work_experience_completed') else 'No'}\n")
-            text.insert("end", f"Work Exp Hours: {prog.get('work_experience_hours', 0)}\n")
-            text.insert("end", f"Enrichment Hours: {prog.get('enrichment_hours', 0)}\n")
-            text.insert("end", f"Tutorial Hours: {prog.get('tutorial_hours', 0)}\n")
-            text.insert("end", f"Total Planned Hours: {prog.get('total_planned_hours', 0)}\n")
-            text.insert("end", f"Total Delivered Hours: {prog.get('total_delivered_hours', 0)}\n")
-            text.insert("end", f"Valid: {'Yes' if prog.get('is_valid') else 'No'}\n")
-            text.insert("end", f"Validation Notes: {prog.get('validation_notes') or '-'}\n")
-            text.insert("end", f"Status: {prog.get('status') or '-'}\n")
-            text.insert("end", f"\nCreated: {prog.get('created_at') or '-'}\n")
-            text.insert("end", f"Updated: {prog.get('updated_at') or '-'}\n")
+            text_widget.insert("end", f"{t('study_programmes.programme_id')}: {prog['id']}\n")
+            text_widget.insert("end", f"{t('common.student_id')}: {prog['student_id']}\n")
+            text_widget.insert("end", f"{t('tutorial.student')}: {prog.get('first_name', '')} {prog.get('last_name', '')}\n")
+            text_widget.insert("end", f"{t('study_programmes.academic_year')}: {prog.get('academic_year') or '-'}\n")
+            text_widget.insert("end", f"{t('study_programmes.programme_type')}: {prog.get('programme_type') or '-'}\n")
+            text_widget.insert("end", f"{t('study_programmes.substantive_qual')}: {prog.get('substantive_qualification') or '-'}\n")
+            text_widget.insert("end", f"{t('study_programmes.maths_req')}: {prog.get('maths_requirement') or '-'}\n")
+            text_widget.insert("end", f"{t('study_programmes.english_req')}: {prog.get('english_requirement') or '-'}\n")
+            text_widget.insert("end", f"{t('study_programmes.work_exp_completed')}: {t('common.yes') if prog.get('work_experience_completed') else t('common.no')}\n")
+            text_widget.insert("end", f"{t('study_programmes.work_exp_hours')}: {prog.get('work_experience_hours', 0)}\n")
+            text_widget.insert("end", f"{t('study_programmes.enrichment_hours')}: {prog.get('enrichment_hours', 0)}\n")
+            text_widget.insert("end", f"{t('study_programmes.tutorial_hours')}: {prog.get('tutorial_hours', 0)}\n")
+            text_widget.insert("end", f"{t('study_programmes.total_planned_hours')}: {prog.get('total_planned_hours', 0)}\n")
+            text_widget.insert("end", f"{t('study_programmes.total_delivered_hours')}: {prog.get('total_delivered_hours', 0)}\n")
+            text_widget.insert("end", f"{t('study_programmes.valid')}: {t('common.yes') if prog.get('is_valid') else t('common.no')}\n")
+            text_widget.insert("end", f"{t('study_programmes.validation_notes')}: {prog.get('validation_notes') or '-'}\n")
+            text_widget.insert("end", f"{t('common.status')}: {prog.get('status') or '-'}\n")
+            text_widget.insert("end", f"\n{t('common.created_at')}: {prog.get('created_at') or '-'}\n")
+            text_widget.insert("end", f"{t('common.updated_at')}: {prog.get('updated_at') or '-'}\n")
 
             # Show components
             comps = self.svc.list_components(programme_id=int(pid))
             if comps:
-                text.insert("end", f"\n--- Components ({len(comps)}) ---\n")
+                text_widget.insert("end", f"\n--- {t('study_programmes.components')} ({len(comps)}) ---\n")
                 for c in comps:
-                    text.insert("end",
+                    text_widget.insert("end",
                                 f"  [{c['id']}] {c['component_type']}: {c['component_name']} "
-                                f"({c.get('planned_hours', 0)}h planned, "
-                                f"{c.get('delivered_hours', 0)}h delivered, "
+                                f"({c.get('planned_hours', 0)}h {t('study_programmes.planned')}, "
+                                f"{c.get('delivered_hours', 0)}h {t('study_programmes.delivered')}, "
                                 f"{c.get('status', '-')})\n")
 
-            text.configure(state="disabled")
+            text_widget.configure(state="disabled")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _update_programme(self):
         pid = self._get_selected_prog_id()
@@ -421,14 +439,14 @@ class StudyProgrammesFrame(tk.Frame):
         try:
             prog = self.svc.get_programme(int(pid))
             if not prog:
-                messagebox.showwarning("Warning", "Programme not found.")
+                messagebox.showwarning(t("common.warning"), t("common.no_data"))
                 return
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
             return
 
         dlg = tk.Toplevel(self)
-        dlg.title(f"Update Programme #{pid}")
+        dlg.title(f"{t('study_programmes.update_programme')} #{pid}")
         dlg.geometry("420x520")
         dlg.configure(bg="#ecf0f1")
         dlg.transient(self)
@@ -437,19 +455,19 @@ class StudyProgrammesFrame(tk.Frame):
         fields = {}
         row = 0
         for label, key, widget_type in [
-            ("Academic Year:", "academic_year", "entry"),
-            ("Programme Type:", "programme_type", "combo"),
-            ("Substantive Qualification:", "substantive_qualification", "entry"),
-            ("Maths Requirement:", "maths_requirement", "reqcombo"),
-            ("English Requirement:", "english_requirement", "reqcombo"),
-            ("Maths Enrollment ID:", "maths_enrollment_id", "entry"),
-            ("English Enrollment ID:", "english_enrollment_id", "entry"),
-            ("Work Exp Completed (0/1):", "work_experience_completed", "entry"),
-            ("Work Exp Hours:", "work_experience_hours", "entry"),
-            ("Enrichment Hours:", "enrichment_hours", "entry"),
-            ("Tutorial Hours:", "tutorial_hours", "entry"),
-            ("Total Planned Hours:", "total_planned_hours", "entry"),
-            ("Status:", "status", "statuscombo"),
+            (t("study_programmes.academic_year") + ":", "academic_year", "entry"),
+            (t("study_programmes.programme_type") + ":", "programme_type", "combo"),
+            (t("study_programmes.substantive_qual") + ":", "substantive_qualification", "entry"),
+            (t("study_programmes.maths_req") + ":", "maths_requirement", "reqcombo"),
+            (t("study_programmes.english_req") + ":", "english_requirement", "reqcombo"),
+            (t("study_programmes.maths_enrollment_id") + ":", "maths_enrollment_id", "entry"),
+            (t("study_programmes.english_enrollment_id") + ":", "english_enrollment_id", "entry"),
+            (t("study_programmes.work_exp_completed") + " (0/1):", "work_experience_completed", "entry"),
+            (t("study_programmes.work_exp_hours") + ":", "work_experience_hours", "entry"),
+            (t("study_programmes.enrichment_hours") + ":", "enrichment_hours", "entry"),
+            (t("study_programmes.tutorial_hours") + ":", "tutorial_hours", "entry"),
+            (t("study_programmes.total_planned_hours") + ":", "total_planned_hours", "entry"),
+            (t("common.status") + ":", "status", "statuscombo"),
         ]:
             tk.Label(dlg, text=label, bg="#ecf0f1").grid(row=row, column=0, sticky="e", padx=5, pady=3)
             current = prog.get(key) or ""
@@ -483,16 +501,16 @@ class StudyProgrammesFrame(tk.Frame):
                     else:
                         kwargs[k] = val
                 if not kwargs:
-                    messagebox.showwarning("Warning", "No changes to save.")
+                    messagebox.showwarning(t("common.warning"), t("study_programmes.no_changes"))
                     return
                 self.svc.update_programme(int(pid), **kwargs)
-                messagebox.showinfo("Success", "Programme updated.")
+                messagebox.showinfo(t("common.success"), t("common.updated_success"))
                 dlg.destroy()
                 self._load_programmes()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        tk.Button(dlg, text="Save", command=_save, width=12).grid(
+        tk.Button(dlg, text=t("common.save"), command=_save, width=12).grid(
             row=row, column=0, columnspan=2, pady=10)
 
     def _validate_programme(self):
@@ -501,26 +519,26 @@ class StudyProgrammesFrame(tk.Frame):
             return
         try:
             result = self.svc.validate_programme(int(pid))
-            valid = "VALID" if result.get("is_valid") else "INVALID"
+            valid = t("study_programmes.valid_result") if result.get("is_valid") else t("study_programmes.invalid_result")
             notes = result.get("validation_notes") or "-"
-            messagebox.showinfo("Validation Result",
-                                f"Programme #{pid}: {valid}\n\n{notes}")
+            messagebox.showinfo(t("study_programmes.validation_result"),
+                                f"{t('study_programmes.programme')} #{pid}: {valid}\n\n{notes}")
             self._load_programmes()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _delete_programme(self):
         pid = self._get_selected_prog_id()
         if pid is None:
             return
-        if not messagebox.askyesno("Confirm", f"Delete programme #{pid} and all its components?"):
+        if not messagebox.askyesno(t("common.confirm"), t("common.delete_confirm_msg")):
             return
         try:
             self.svc.delete_programme(int(pid))
-            messagebox.showinfo("Success", "Programme deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_programmes()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ================================================================
     # Component Actions
@@ -529,13 +547,13 @@ class StudyProgrammesFrame(tk.Frame):
     def _get_selected_comp_id(self):
         sel = self._comp_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "No component selected.")
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"))
             return None
         return self._comp_tree.item(sel[0], "values")[0]
 
     def _new_component(self):
         dlg = tk.Toplevel(self)
-        dlg.title("New Component")
+        dlg.title(t("study_programmes.new_component"))
         dlg.geometry("400x280")
         dlg.configure(bg="#ecf0f1")
         dlg.transient(self)
@@ -544,12 +562,12 @@ class StudyProgrammesFrame(tk.Frame):
         fields = {}
         row = 0
         for label, key, default, widget_type in [
-            ("Programme ID:", "programme_id", "", "entry"),
-            ("Component Type:", "component_type", "qualification", "typecombo"),
-            ("Component Name:", "component_name", "", "entry"),
-            ("Planned Hours:", "planned_hours", "0", "entry"),
-            ("Delivered Hours:", "delivered_hours", "0", "entry"),
-            ("Status:", "status", "active", "statuscombo"),
+            (t("study_programmes.programme_id") + ":", "programme_id", "", "entry"),
+            (t("study_programmes.component_type") + ":", "component_type", "qualification", "typecombo"),
+            (t("study_programmes.component_name") + ":", "component_name", "", "entry"),
+            (t("study_programmes.planned_hrs") + ":", "planned_hours", "0", "entry"),
+            (t("study_programmes.delivered_hrs") + ":", "delivered_hours", "0", "entry"),
+            (t("common.status") + ":", "status", "active", "statuscombo"),
         ]:
             tk.Label(dlg, text=label, bg="#ecf0f1").grid(row=row, column=0, sticky="e", padx=5, pady=3)
             var = tk.StringVar(value=default)
@@ -571,7 +589,7 @@ class StudyProgrammesFrame(tk.Frame):
                 ctype = fields["component_type"].get().strip()
                 cname = fields["component_name"].get().strip()
                 if not ctype or not cname:
-                    messagebox.showwarning("Warning", "Type and Name are required.")
+                    messagebox.showwarning(t("common.validation"), t("common.both_required"))
                     return
                 kwargs = {}
                 ph = fields["planned_hours"].get().strip()
@@ -584,13 +602,13 @@ class StudyProgrammesFrame(tk.Frame):
                 if st:
                     kwargs["status"] = st
                 self.svc.create_component(prog_id, ctype, cname, **kwargs)
-                messagebox.showinfo("Success", "Component created.")
+                messagebox.showinfo(t("common.success"), t("common.created_success"))
                 dlg.destroy()
                 self._load_components()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        tk.Button(dlg, text="Save", command=_save, width=12).grid(
+        tk.Button(dlg, text=t("common.save"), command=_save, width=12).grid(
             row=row, column=0, columnspan=2, pady=10)
 
     def _update_component(self):
@@ -600,14 +618,14 @@ class StudyProgrammesFrame(tk.Frame):
         try:
             comp = self.svc.get_component(int(cid))
             if not comp:
-                messagebox.showwarning("Warning", "Component not found.")
+                messagebox.showwarning(t("common.warning"), t("common.no_data"))
                 return
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
             return
 
         dlg = tk.Toplevel(self)
-        dlg.title(f"Update Component #{cid}")
+        dlg.title(f"{t('study_programmes.update_component')} #{cid}")
         dlg.geometry("400x250")
         dlg.configure(bg="#ecf0f1")
         dlg.transient(self)
@@ -616,11 +634,11 @@ class StudyProgrammesFrame(tk.Frame):
         fields = {}
         row = 0
         for label, key, widget_type in [
-            ("Component Type:", "component_type", "typecombo"),
-            ("Component Name:", "component_name", "entry"),
-            ("Planned Hours:", "planned_hours", "entry"),
-            ("Delivered Hours:", "delivered_hours", "entry"),
-            ("Status:", "status", "statuscombo"),
+            (t("study_programmes.component_type") + ":", "component_type", "typecombo"),
+            (t("study_programmes.component_name") + ":", "component_name", "entry"),
+            (t("study_programmes.planned_hrs") + ":", "planned_hours", "entry"),
+            (t("study_programmes.delivered_hrs") + ":", "delivered_hours", "entry"),
+            (t("common.status") + ":", "status", "statuscombo"),
         ]:
             tk.Label(dlg, text=label, bg="#ecf0f1").grid(row=row, column=0, sticky="e", padx=5, pady=3)
             current = comp.get(key) or ""
@@ -649,30 +667,30 @@ class StudyProgrammesFrame(tk.Frame):
                     else:
                         kwargs[k] = val
                 if not kwargs:
-                    messagebox.showwarning("Warning", "No changes to save.")
+                    messagebox.showwarning(t("common.warning"), t("study_programmes.no_changes"))
                     return
                 self.svc.update_component(int(cid), **kwargs)
-                messagebox.showinfo("Success", "Component updated.")
+                messagebox.showinfo(t("common.success"), t("common.updated_success"))
                 dlg.destroy()
                 self._load_components()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        tk.Button(dlg, text="Save", command=_save, width=12).grid(
+        tk.Button(dlg, text=t("common.save"), command=_save, width=12).grid(
             row=row, column=0, columnspan=2, pady=10)
 
     def _delete_component(self):
         cid = self._get_selected_comp_id()
         if cid is None:
             return
-        if not messagebox.askyesno("Confirm", f"Delete component #{cid}?"):
+        if not messagebox.askyesno(t("common.confirm"), t("common.delete_confirm_msg")):
             return
         try:
             self.svc.delete_component(int(cid))
-            messagebox.showinfo("Success", "Component deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_components()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ================================================================
     # Reports
@@ -683,13 +701,15 @@ class StudyProgrammesFrame(tk.Frame):
         try:
             rows = self.svc.condition_of_funding_check()
             if not rows:
-                self._report_text.insert("end", "All active programmes meet maths/english requirements.\n")
+                self._report_text.insert("end", t("study_programmes.cof_all_met") + "\n")
                 return
             self._report_text.insert("end",
-                f"Condition of Funding Check - {len(rows)} programme(s) with unmet requirements\n")
+                f"{t('study_programmes.cof_check')} - {len(rows)} {t('study_programmes.programmes_unmet')}\n")
             self._report_text.insert("end", "=" * 80 + "\n\n")
             self._report_text.insert("end",
-                f"{'ID':<6}{'Student':<25}{'Type':<12}{'Maths':<12}{'English':<12}{'Year'}\n")
+                f"{t('common.id'):<6}{t('tutorial.student'):<25}{t('common.type'):<12}"
+                f"{t('study_programmes.maths_req'):<12}{t('study_programmes.english_req'):<12}"
+                f"{t('study_programmes.acad_year')}\n")
             self._report_text.insert("end", "-" * 80 + "\n")
             for r in rows:
                 name = f"{r.get('first_name', '')} {r.get('last_name', '')}".strip() or "-"
@@ -699,21 +719,23 @@ class StudyProgrammesFrame(tk.Frame):
                     f"{r.get('english_requirement', '-'):<12}"
                     f"{r.get('academic_year') or '-'}\n")
         except Exception as e:
-            self._report_text.insert("end", f"Error: {e}\n")
+            self._report_text.insert("end", f"{t('common.error')}: {e}\n")
 
     def _report_hours(self):
         self._report_text.delete("1.0", "end")
         try:
             rows = self.svc.funding_hours_report()
             if not rows:
-                self._report_text.insert("end", "No programmes found.\n")
+                self._report_text.insert("end", t("common.no_data") + "\n")
                 return
             self._report_text.insert("end",
-                f"Funding Hours Report - {len(rows)} programme(s)\n")
+                f"{t('study_programmes.funding_hours_report')} - {len(rows)} {t('study_programmes.programme_count')}\n")
             self._report_text.insert("end", "=" * 90 + "\n\n")
             self._report_text.insert("end",
-                f"{'ID':<6}{'Student':<25}{'Type':<12}{'Year':<10}"
-                f"{'Planned':<10}{'Delivered':<10}{'Valid':<8}{'Status'}\n")
+                f"{t('common.id'):<6}{t('tutorial.student'):<25}{t('common.type'):<12}"
+                f"{t('study_programmes.acad_year'):<10}"
+                f"{t('study_programmes.planned'):<10}{t('study_programmes.delivered'):<10}"
+                f"{t('study_programmes.valid'):<8}{t('common.status')}\n")
             self._report_text.insert("end", "-" * 90 + "\n")
             total_planned = 0
             total_delivered = 0
@@ -727,13 +749,13 @@ class StudyProgrammesFrame(tk.Frame):
                     f"{r['id']:<6}{name:<25}{r.get('programme_type', '-'):<12}"
                     f"{(r.get('academic_year') or '-'):<10}"
                     f"{planned:<10}{delivered:<10}"
-                    f"{'Yes' if r.get('is_valid') else 'No':<8}"
+                    f"{t('common.yes') if r.get('is_valid') else t('common.no'):<8}"
                     f"{r.get('status') or '-'}\n")
             self._report_text.insert("end", "-" * 90 + "\n")
             self._report_text.insert("end",
-                f"{'TOTALS':<53}{total_planned:<10}{total_delivered}\n")
+                f"{t('common.total').upper():<53}{total_planned:<10}{total_delivered}\n")
         except Exception as e:
-            self._report_text.insert("end", f"Error: {e}\n")
+            self._report_text.insert("end", f"{t('common.error')}: {e}\n")
 
 
 # Backward-compatible alias for existing imports

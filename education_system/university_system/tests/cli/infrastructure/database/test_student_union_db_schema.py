@@ -22,7 +22,7 @@ class TestUnionDbSchemaImports:
         assert hasattr(union_db_schema, '__all__')
         assert 'init_student_union_db' in union_db_schema.__all__
 
-    @patch('university_system.infrastructure.database.schemas.init_student_union_db')
+    @patch('education_system.university_system.infrastructure.database.schemas.init_student_union_db')
     def test_init_student_union_db_delegates(self, mock_init_db):
         """Test that init_student_union_db properly delegates to centralized function."""
         mock_conn = Mock()
@@ -56,7 +56,7 @@ class TestCompatibilityShim:
         assert 'init_student_union_db' in namespace
         assert callable(namespace['init_student_union_db'])
 
-    @patch('university_system.infrastructure.database.schemas.init_student_union_db')
+    @patch('education_system.university_system.infrastructure.database.schemas.init_student_union_db')
     def test_function_signature_preserved(self, mock_init_db):
         """Test that the function signature is preserved through the import."""
         # The function should accept a connection object
@@ -92,7 +92,7 @@ class TestModuleDocstring:
 class TestIntegrationDbSchema:
     """Integration tests for database schema initialization."""
 
-    @patch('university_system.infrastructure.database.schemas.init_student_union_db')
+    @patch('education_system.university_system.infrastructure.database.schemas.init_student_union_db')
     def test_init_db_can_be_called_multiple_times(self, mock_init_db):
         """Test that init_student_union_db can be called multiple times safely."""
         mock_conn = Mock()
@@ -105,7 +105,7 @@ class TestIntegrationDbSchema:
         # Should have been called 3 times
         assert mock_init_db.call_count == 3
 
-    @patch('university_system.infrastructure.database.schemas.init_student_union_db')
+    @patch('education_system.university_system.infrastructure.database.schemas.init_student_union_db')
     def test_init_db_passes_connection_correctly(self, mock_init_db):
         """Test that connection object is passed correctly."""
         mock_conn = Mock()

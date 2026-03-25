@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/staff_hr/services/managers/equipment_manager.py
+# hypothesis_version: 6.151.9
+
+[' = ?', ' AND category_id = ?', ' AND location = ?', ' AND status = ?', ' GROUP BY status', ' ORDER BY name', ' ORDER BY start_time', ', ', '1=1', 'approve', 'approved', 'approved_by', 'booking_count', 'booking_date', 'booking_id', 'building', 'by_status', 'cancel', 'category_id', 'check_in', 'check_out', 'cnt', 'column', 'complete', 'count', 'create', 'description', 'eb.booking_date', 'eb.equipment_id', 'equipment', 'equipment_booking', 'equipment_category', 'equipment_id', 'location', 'maintenance_id', 'maintenance_type', 'max_booking_hours', 'min_booking_hours', 'name', 'pending', 'performed_by', 'reject', 'requires_approval', 'requires_training', 'room_number', 'routine', 'status', 'total_bookings', 'update', 'updated_at = ?', 'updated_fields', 'user_id', 'utilization']

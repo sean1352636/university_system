@@ -10,7 +10,7 @@ class ServicesMixin:
             print("You must be logged in to view transportation information.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         
@@ -85,7 +85,7 @@ class ServicesMixin:
             print("You must be logged in to view library information.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         
@@ -196,7 +196,7 @@ class ServicesMixin:
             print("You must be logged in to view extracurricular activities.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         

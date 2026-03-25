@@ -294,7 +294,7 @@ class TestParkingCompatibility(unittest.TestCase):
         self.assertFalse(result['success'])
         self.assertIn("Test error", result['error'])
 
-    @patch('university_system.infrastructure.database.db.get_connection')
+    @patch('education_system.university_system.infrastructure.database.db.get_connection')
     def test_validate_database_schema(self, mock_conn):
         """Test database schema validation"""
         from education_system.university_system.modules.domain.mobility.services.parking_compatibility import (
@@ -315,7 +315,7 @@ class TestParkingCompatibility(unittest.TestCase):
         result = validate_database_schema()
         self.assertTrue(result)
 
-    @patch('university_system.infrastructure.database.db.get_connection')
+    @patch('education_system.university_system.infrastructure.database.db.get_connection')
     def test_validate_database_schema_missing_tables(self, mock_conn):
         """Test database schema validation with missing tables"""
         from education_system.university_system.modules.domain.mobility.services.parking_compatibility import (

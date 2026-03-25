@@ -1,5 +1,5 @@
 """Results display, reports, email, and export mixin for the Student Analytics GUI."""
-from ._imports import (
+from education_system.university_system.modules.shared.gui.student_analytics_gui._imports import (
     tk, ttk, messagebox, filedialog, scrolledtext,
     plt, pd, json, datetime, _t, CONFIG,
 )

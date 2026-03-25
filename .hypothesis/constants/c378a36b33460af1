@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/plagiarism/cli/menu.py
+# hypothesis_version: 6.151.9
+
+['\nEnter your choice: ', 'check_document', 'check_plagiarism', 'manage_repository', 'search_repository', 'submit_document', 'view_my_documents', 'view_results', 'view_statistics']

@@ -4,7 +4,7 @@ Theme configuration for the Activity Logger GUI.
 
 from tkinter import ttk
 
-from ._imports import tk
+from education_system.university_system.modules.shared.gui.simple_activity_logger_gui._imports import tk
 
 
 class LoggerGUITheme:

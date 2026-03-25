@@ -1,6 +1,7 @@
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.modules.shared.utils.simple_activity_logger import log_read
-from .courses import view_course_details
+from education_system.university_system.modules.domain.academics.services.course_management.courses import view_course_details
 
 
 @log_read(module="course_management", description="Searching courses")
@@ -28,22 +29,22 @@ def search_courses(auth):
         keyword = input("Enter keyword (search in name/description): ").strip()
         if keyword:
             conditions.append("(course_name LIKE ? OR description LIKE ?)")
-            params.extend([f"%{keyword}%", f"%{keyword}%"])
+            params.extend([f"%{escape_like(keyword)}%", f"%{escape_like(keyword)}%"])
 
         department = input("Enter department: ").strip()
         if department:
             conditions.append("department LIKE ?")
-            params.append(f"%{department}%")
+            params.append(f"%{escape_like(department)}%")
 
         level = input("Enter level: ").strip()
         if level:
             conditions.append("level LIKE ?")
-            params.append(f"%{level}%")
+            params.append(f"%{escape_like(level)}%")
 
         course_type = input("Enter course type: ").strip()
         if course_type:
             conditions.append("course_type LIKE ?")
-            params.append(f"%{course_type}%")
+            params.append(f"%{escape_like(course_type)}%")
 
         status = input("Enter status (Active/Inactive): ").strip()
         if status:

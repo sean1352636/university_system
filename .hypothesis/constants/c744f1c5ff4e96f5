@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/admissions_crm_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/admissions-crm', '/prospects', '/tours', '/tours/<int:tour_id>', 'GET', 'POST', 'admission_prospects', 'admissions_crm', 'campus_tours', 'city', 'country', 'create', 'date_of_birth', 'duration_minutes', 'email', 'first_name', 'high_school', 'intended_major', 'intended_major = ?', 'items', 'last_name', 'max_attendees', 'meeting_point', 'phone', 'search', 'source', 'state', 'status', 'status = ?', 'sub', 'total', 'tour_date', 'tour_guide', 'tour_guide = ?', 'tour_time', 'view']

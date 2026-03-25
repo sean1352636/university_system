@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/plagiarism_main_gui/dialogs/backup_restore.py
+# hypothesis_version: 6.151.9
+
+[100, '*.*', '*.backup', '*.zip', '-', '.', '.backup', '2.0', 'All files', 'Backup completed', 'Backup failed', 'Backup files', 'Browse...', 'Close', 'Confirm Restore', 'Creating backup...', 'Error', 'No File', 'Ready', 'Repository Search', 'Restore completed', 'Restore failed', 'Save Backup', 'Select Backup File', 'Success', 'ZIP files', '_', 'backup_date', 'config.json', 'include_documents', 'include_results', 'r', 'readonly', 'utf-8', 'version', 'w']

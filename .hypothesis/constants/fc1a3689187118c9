@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance_reporting/archive_backup/archive_management.py
+# hypothesis_version: 6.151.9
+
+[1.0, 100, 730, 1095, 1825, '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '10', '500x300', '600x400', '800x600', '=', 'Archive Operations', 'Archive Statistics', 'Arial', 'Close', 'Confirm', 'Create Backup', 'Error', 'Run Archive Process', 'System', 'Title.TLabel', 'VACUUM', '](payment_date)', '](student_id)', '](transaction_date)', 'all_tables', 'archive', 'archive_metadata', 'archive_tables', 'archived_payments', 'bold', 'create', 'disabled', 'financial_data', 'get_current_user', 'records_archived', 'red', 'tables_created', 'username']

@@ -16,6 +16,10 @@ from education_system.primary_school.infrastructure.database.schema import (
     initialise_database,
     seed_default_users,
 )
+from education_system.shared.testing.conftest_helpers import (
+    make_template_db_fixture,
+    make_db_path_fixture,
+)
 from education_system.primary_school.modules.domain.academics.pupils.services.pupil_service import (
     PupilService,
 )
@@ -37,17 +41,83 @@ from education_system.primary_school.modules.domain.pastoral_care.behaviour.serv
 from education_system.primary_school.modules.domain.pastoral_care.rewards.services.rewards_service import (
     RewardsService,
 )
+from education_system.primary_school.modules.domain.academics.homework.services.homework_service import (
+    HomeworkService,
+)
+from education_system.primary_school.modules.domain.academics.sats.services.sats_service import (
+    SATsService,
+)
+from education_system.primary_school.modules.domain.academics.phonics.services.phonics_service import (
+    PhonicsService,
+)
+from education_system.primary_school.modules.domain.academics.reading_records.services.reading_record_service import (
+    ReadingRecordService,
+)
+from education_system.primary_school.modules.domain.academics.progress.services.progress_service import (
+    ProgressService,
+)
+from education_system.primary_school.modules.domain.academics.timetable.services.timetable_service import (
+    TimetableService,
+)
+from education_system.primary_school.modules.domain.pastoral_care.pastoral.services.pastoral_service import (
+    PastoralService,
+)
+from education_system.primary_school.modules.domain.pastoral_care.safeguarding.services.safeguarding_service import (
+    SafeguardingService,
+)
+from education_system.primary_school.modules.domain.pastoral_care.send.services.send_service import (
+    SENDService,
+)
+from education_system.primary_school.modules.domain.admin.admissions.services.admissions_service import (
+    AdmissionsService,
+)
+from education_system.primary_school.modules.domain.admin.finance.services.finance_service import (
+    FinanceService,
+)
+from education_system.primary_school.modules.domain.communication.announcements.services.announcement_service import (
+    AnnouncementService,
+)
+from education_system.primary_school.modules.domain.communication.calendar.services.calendar_service import (
+    CalendarService,
+)
+from education_system.primary_school.modules.domain.communication.parents_evening.services.parents_evening_service import (
+    ParentsEveningService,
+)
+from education_system.primary_school.modules.domain.pupil_life.clubs.services.club_service import (
+    ClubService,
+)
+from education_system.primary_school.modules.domain.pupil_life.library.services.library_service import (
+    LibraryService,
+)
+from education_system.primary_school.modules.domain.pupil_life.meals.services.meal_service import (
+    MealService,
+)
+from education_system.primary_school.modules.domain.pupil_life.transport.services.transport_service import (
+    TransportService,
+)
+from education_system.primary_school.modules.domain.pupil_life.medical.services.medical_service import (
+    MedicalService,
+)
+from education_system.primary_school.modules.domain.facilities.assets.services.asset_service import (
+    AssetService,
+)
+from education_system.primary_school.modules.domain.facilities.room_booking.services.room_booking_service import (
+    RoomBookingService,
+)
+from education_system.primary_school.modules.domain.staff.hr.services.hr_service import (
+    HRService,
+)
+from education_system.primary_school.modules.domain.staff.cpd.services.cpd_service import (
+    CPDService,
+)
 
 
-@pytest.fixture
-def db_path(tmp_path):
-    """Create a temporary database for each test."""
-    path = str(tmp_path / "test_primary_school.db")
-    set_db_path(path)
-    initialise_database(path)
-    yield path
-    set_db_path(None)
+# ── Template and per-test DB fixtures (shared boilerplate) ───────────────
+_template_db = make_template_db_fixture(initialise_database)
+db_path = make_db_path_fixture(set_db_path, "test_primary_school.db")
 
+
+# ── Service fixtures ─────────────────────────────────────────────────────
 
 @pytest.fixture
 def pupil_service(db_path):
@@ -166,3 +236,162 @@ def sample_class(class_service):
         room="Room 3",
         capacity=30,
     )
+
+
+# ── Academic service fixtures ─────────────────────────────────────────────
+
+
+@pytest.fixture
+def homework_service(db_path):
+    """Create a HomeworkService instance with the test database."""
+    return HomeworkService(db_path)
+
+
+@pytest.fixture
+def sats_service(db_path):
+    """Create a SATsService instance with the test database."""
+    return SATsService(db_path)
+
+
+@pytest.fixture
+def phonics_service(db_path):
+    """Create a PhonicsService instance with the test database."""
+    return PhonicsService(db_path)
+
+
+@pytest.fixture
+def reading_record_service(db_path):
+    """Create a ReadingRecordService instance with the test database."""
+    return ReadingRecordService(db_path)
+
+
+@pytest.fixture
+def progress_service(db_path):
+    """Create a ProgressService instance with the test database."""
+    return ProgressService(db_path)
+
+
+@pytest.fixture
+def timetable_service(db_path):
+    """Create a TimetableService instance with the test database."""
+    return TimetableService(db_path)
+
+
+# ── Pastoral service fixtures ─────────────────────────────────────────────
+
+
+@pytest.fixture
+def pastoral_service(db_path):
+    """Create a PastoralService instance with the test database."""
+    return PastoralService(db_path)
+
+
+@pytest.fixture
+def safeguarding_service(db_path):
+    """Create a SafeguardingService instance with the test database."""
+    return SafeguardingService(db_path)
+
+
+@pytest.fixture
+def send_service(db_path):
+    """Create a SENDService instance with the test database."""
+    return SENDService(db_path)
+
+
+# ── Admin service fixtures ────────────────────────────────────────────────
+
+
+@pytest.fixture
+def admissions_service(db_path):
+    """Create an AdmissionsService instance with the test database."""
+    return AdmissionsService(db_path)
+
+
+@pytest.fixture
+def finance_service(db_path):
+    """Create a FinanceService instance with the test database."""
+    return FinanceService(db_path)
+
+
+# ── Communication service fixtures ────────────────────────────────────────
+
+
+@pytest.fixture
+def announcement_service(db_path):
+    """Create an AnnouncementService instance with the test database."""
+    return AnnouncementService(db_path)
+
+
+@pytest.fixture
+def calendar_service(db_path):
+    """Create a CalendarService instance with the test database."""
+    return CalendarService(db_path)
+
+
+@pytest.fixture
+def parents_evening_service(db_path):
+    """Create a ParentsEveningService instance with the test database."""
+    return ParentsEveningService(db_path)
+
+
+# ── Pupil Life service fixtures ───────────────────────────────────────────
+
+
+@pytest.fixture
+def club_service(db_path):
+    """Create a ClubService instance with the test database."""
+    return ClubService(db_path)
+
+
+@pytest.fixture
+def library_service(db_path):
+    """Create a LibraryService instance with the test database."""
+    return LibraryService(db_path)
+
+
+@pytest.fixture
+def meal_service(db_path):
+    """Create a MealService instance with the test database."""
+    return MealService(db_path)
+
+
+@pytest.fixture
+def transport_service(db_path):
+    """Create a TransportService instance with the test database."""
+    return TransportService(db_path)
+
+
+@pytest.fixture
+def medical_service(db_path):
+    """Create a MedicalService instance with the test database."""
+    return MedicalService(db_path)
+
+
+# ── Facilities service fixtures ───────────────────────────────────────────
+
+
+@pytest.fixture
+def asset_service(db_path):
+    """Create an AssetService instance with the test database."""
+    return AssetService(db_path)
+
+
+@pytest.fixture
+def room_booking_service(db_path):
+    """Create a RoomBookingService instance with the test database."""
+    return RoomBookingService(db_path)
+
+
+# ── Staff service fixtures ────────────────────────────────────────────────
+
+
+@pytest.fixture
+def hr_service(db_path):
+    """Create an HRService instance with the test database."""
+    return HRService(db_path)
+
+
+@pytest.fixture
+def cpd_service(db_path):
+    """Create a CPDService instance with the test database."""
+    return CPDService(db_path)

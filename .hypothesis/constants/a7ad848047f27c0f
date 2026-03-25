@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/settings/notifications.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d %H:%M:%S', '*', '1.0', '400x300', '500x350', '500x400', '587', '600x500', 'Courier', 'GBP', 'N/A', 'No', 'Yes', 'aws_sns', 'both', 'end', 'first_name', 'last_name', 'left', 'overdue_count', 'readonly', 'smtp.gmail.com', 'student_id', 'total_amount', 'twilio', 'w', 'x']

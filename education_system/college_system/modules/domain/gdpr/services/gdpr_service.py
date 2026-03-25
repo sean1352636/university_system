@@ -3,6 +3,7 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import GDPRError, ValidationError
 from education_system.college_system.infrastructure.database.db import connect
+from education_system.college_system.core.sql_safety import validate_identifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -23,10 +24,20 @@ class GDPRService:
             raise ValidationError("user_id is required.")
         conn = self._conn()
         try:
+            # Build INSERT with only non-None values so DB defaults apply
+            fields = {k: v for k, v in {
+                'user_id': kwargs.get('user_id'),
+                'consent_marketing': kwargs.get('consent_marketing'),
+                'consent_analytics': kwargs.get('consent_analytics'),
+                'consent_third_party': kwargs.get('consent_third_party'),
+                'erasure_requested': kwargs.get('erasure_requested'),
+                'erasure_completed_at': kwargs.get('erasure_completed_at'),
+            }.items() if v is not None}
+            cols = ", ".join(fields.keys())
+            placeholders = ", ".join("?" for _ in fields)
             conn.execute(
-                """INSERT INTO data_subjects (user_id, consent_marketing, consent_analytics, consent_third_party, erasure_requested, erasure_completed_at)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
-                (kwargs.get('user_id'), kwargs.get('consent_marketing'), kwargs.get('consent_analytics'), kwargs.get('consent_third_party'), kwargs.get('erasure_requested'), kwargs.get('erasure_completed_at'),),
+                f"INSERT INTO data_subjects ({cols}) VALUES ({placeholders})",
+                list(fields.values()),
             )
             conn.commit()
             row = conn.execute(
@@ -58,7 +69,7 @@ class GDPRService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -76,7 +87,7 @@ class GDPRService:
         if not updates:
             raise ValidationError("No valid fields to update.")
         updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [pk]
         conn = self._conn()
         try:
@@ -114,7 +125,7 @@ class GDPRService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         conn = self._conn()
         try:

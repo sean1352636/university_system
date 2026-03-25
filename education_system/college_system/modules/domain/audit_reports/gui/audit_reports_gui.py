@@ -5,6 +5,7 @@ from tkinter import ttk, messagebox
 
 from education_system.college_system.modules.domain.audit_reports.services.audit_reports_service import AuditReportService
 from education_system.college_system.core.exceptions import AuditReportError
+from education_system.college_system.core.i18n import t
 
 
 class _ReportDialog(tk.Toplevel):
@@ -61,8 +62,8 @@ class _ReportDialog(tk.Toplevel):
 
         btn_frame = tk.Frame(container)
         btn_frame.grid(row=99, column=0, columnspan=2, pady=(15, 0))
-        ttk.Button(btn_frame, text="Save", command=self._on_save).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.destroy).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text=t("common.save"), command=self._on_save).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text=t("common.cancel"), command=self.destroy).pack(side="left", padx=5)
 
     def _on_save(self):
         self.result = {k: v.get().strip() for k, v in self._vars.items()}
@@ -85,16 +86,17 @@ class AuditReportFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Audit & Compliance Reports",
+        tk.Label(header, text=t("audit_reports.management"),
                  font=("Helvetica", 15, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=10)
 
         toolbar = tk.Frame(self, bg="#ecf0f1", pady=8)
         toolbar.pack(fill="x", padx=15)
-        ttk.Button(toolbar, text="Add", command=self._on_add).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Edit", command=self._on_edit).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Delete", command=self._on_delete).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Refresh", command=self._load_items).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.add"), command=self._on_add).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.edit"), command=self._on_edit).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.delete"), command=self._on_delete).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.refresh"), command=self._load_items).pack(side="left", padx=4)
+        ttk.Button(toolbar, text="Export CSV", command=self._export_csv).pack(side="left", padx=4)
 
         tree_frame = tk.Frame(self)
         tree_frame.pack(fill="both", expand=True, padx=15, pady=(0, 15))
@@ -120,7 +122,7 @@ class AuditReportFrame(tk.Frame):
         self._tree.pack(side="left", fill="both", expand=True)
         vsb.pack(side="right", fill="y")
 
-        self._status_var = tk.StringVar(value="Ready")
+        self._status_var = tk.StringVar(value=t("common.ready"))
         tk.Label(self, textvariable=self._status_var, bg="#ecf0f1", anchor="w",
                  font=("Helvetica", 9), fg="#7f8c8d").pack(fill="x", padx=15, pady=(0, 8))
 
@@ -135,16 +137,20 @@ class AuditReportFrame(tk.Frame):
                 self._tree.insert("", "end", iid=item["id"], values=(
                     item.get("report_type", ""), item.get("title", ""), item.get("generated_by", ""), item.get("result_summary", ""), item.get("findings", ""), item.get("status", ""),
                 ))
-            self._status_var.set(f"{len(items)} item(s) loaded")
+            self._status_var.set(t("common.count_loaded", count=len(items)))
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load:\n{exc}")
+            messagebox.showerror(t("common.error"), f"Failed to load:\n{exc}")
 
     def _selected_pk(self) -> int | None:
         sel = self._tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select an item first.")
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"))
             return None
         return int(sel[0])
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._tree, "audit_reports.csv")
 
     def _on_add(self):
         dlg = _ReportDialog(self, title="Add Report")
@@ -153,10 +159,10 @@ class AuditReportFrame(tk.Frame):
             return
         try:
             self._svc.create_report(**dlg.result)
-            messagebox.showinfo("Success", "Report created.")
+            messagebox.showinfo(t("common.success"), t("audit_reports.report_created", default="Report created."))
             self._load_items()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_edit(self):
         pk = self._selected_pk()
@@ -164,7 +170,7 @@ class AuditReportFrame(tk.Frame):
             return
         item = self._svc.get_report(pk)
         if not item:
-            messagebox.showerror("Error", "Report not found.")
+            messagebox.showerror(t("common.error"), t("audit_reports.report_not_found", default="Report not found."))
             return
         dlg = _ReportDialog(self, title="Edit Report", item=item)
         self.wait_window(dlg)
@@ -172,20 +178,20 @@ class AuditReportFrame(tk.Frame):
             return
         try:
             self._svc.update_report(pk, **dlg.result)
-            messagebox.showinfo("Success", "Report updated.")
+            messagebox.showinfo(t("common.success"), t("audit_reports.report_updated", default="Report updated."))
             self._load_items()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_delete(self):
         pk = self._selected_pk()
         if pk is None:
             return
-        if not messagebox.askyesno("Confirm", "Delete this report?"):
+        if not messagebox.askyesno(t("common.confirm"), t("audit_reports.delete_report_confirm", default="Delete this report?")):
             return
         try:
             self._svc.delete_report(pk)
-            messagebox.showinfo("Success", "Report deleted.")
+            messagebox.showinfo(t("common.success"), t("audit_reports.report_deleted", default="Report deleted."))
             self._load_items()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/gui/trip_management_gui/registration_dialogs.py
+# hypothesis_version: 6.151.9
+
+[1.0, '%Y-%m-%d %H:%M:%S', 'Already Registered', 'Arial', 'Error', 'Refund Information', 'Register for Trip', 'Registration Details', 'Success', 'Trip Information', 'Trip not found.', 'Validation Error', 'already_registered', 'attended', 'bold', 'cancelled', 'id', 'not_found', 'orange', 'paid', 'partial', 'pending', 'refunded', 'registered', 'role', 'student', 'success', 'waitlist', '£0.00']

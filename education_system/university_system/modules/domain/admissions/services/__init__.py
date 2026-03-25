@@ -2,7 +2,7 @@
 Admissions & Recruitment CRM Service Module
 """
 
-from .admissions_crm_core import (
+from education_system.university_system.modules.domain.admissions.services.admissions_crm_core import (
     ProspectManager, ApplicationManager, ReviewWorkflowManager,
     CampaignManager, TourManager, YieldPredictionManager
 )

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/student_support/core/__init__.py
+# hypothesis_version: 6.151.9
+
+['add_internal_note', 'add_ticket_response', 'download_attachment', 'get_student_tickets', 'get_ticket_details', 'get_ticket_history', 'update_ticket_status', 'use_ticket_template', 'view_ticket_history']

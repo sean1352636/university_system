@@ -1,6 +1,6 @@
 """System operations functions for the enhanced reporting GUI."""
 
-from .constants import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.standalone.constants import (
     logging, os, json, datetime, timedelta, time,
     schedule, smtplib, threading,
     MIMEText, MIMEMultipart, MIMEBase, encoders,

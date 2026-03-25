@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/managers/biometric_manager.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d %H:%M:%S', 'BiometricManager', 'admin', 'biometric_type', 'created_at', 'enrollment_id', 'error', 'face', 'fingerprint', 'id', 'is_active', 'manage_users', 'message', 'permissions', 'revoked_at', 'role', 'success', 'system', 'user_id', 'username']

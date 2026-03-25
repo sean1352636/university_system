@@ -1531,31 +1531,17 @@ TaxiGo - {_t("taxi.subtitle")}
                 WHERE id = ?
             ''', ('Refunded', ticket_id))
 
-            # Create refund record in central database
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS taxi_refunds (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    ticket_id INTEGER,
-                    ticket_number TEXT,
-                    refund_reference TEXT,
-                    amount REAL,
-                    refund_method TEXT,
-                    refund_date TEXT,
-                    refund_time TEXT,
-                    processed_by TEXT,
-                    student_id TEXT
-                )
-            ''')
-
+            # Record refund in unified_refunds table
             now = datetime.now()
             processed_by = self.current_user.get('username', 'System') if self.current_user else 'System'
 
             cursor.execute('''
-                INSERT INTO taxi_refunds (ticket_id, ticket_number, refund_reference, amount,
-                                         refund_method, refund_date, refund_time, processed_by, student_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (ticket_id, ticket_number, refund_ref, amount, refund_method,
-                  now.strftime("%Y-%m-%d"), now.strftime("%H:%M:%S"), processed_by, student_id))
+                INSERT INTO unified_refunds
+                (source_type, reference_id, reference_type, refund_reference, amount,
+                 refund_method, refund_date, processed_by, student_id)
+                VALUES ('taxi', ?, 'ticket', ?, ?, ?, ?, ?, ?)
+            ''', (ticket_number, refund_ref, amount, refund_method,
+                  now.strftime("%Y-%m-%d %H:%M:%S"), processed_by, student_id))
 
             conn.commit()
             conn.close()
@@ -1630,10 +1616,10 @@ TaxiGo - {_t("taxi.subtitle")}
 
             # Log transaction
             cursor.execute('''
-                INSERT INTO student_finance_transactions
-                (account_id, student_id, transaction_type, amount, balance_after, description,
+                INSERT INTO transactions
+                (source_type, account_id, student_id, transaction_type, amount, balance_after, description,
                  reference_id, processed_by, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES ('student_finance', ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (account_id, student_id, 'credit', amount, new_balance,
                   f'Taxi booking refund - {refund_ref}',
                   refund_ref,
@@ -1647,31 +1633,17 @@ TaxiGo - {_t("taxi.subtitle")}
                 WHERE id = ?
             ''', ('Refunded', ticket_id))
 
-            # Create refund record
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS taxi_refunds (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    ticket_id INTEGER,
-                    ticket_number TEXT,
-                    refund_reference TEXT,
-                    amount REAL,
-                    refund_method TEXT,
-                    refund_date TEXT,
-                    refund_time TEXT,
-                    processed_by TEXT,
-                    student_id TEXT
-                )
-            ''')
-
+            # Record refund in unified_refunds table
             now = datetime.now()
             processed_by = self.current_user.get('username', 'System') if self.current_user else 'System'
 
             cursor.execute('''
-                INSERT INTO taxi_refunds (ticket_id, ticket_number, refund_reference, amount,
-                                         refund_method, refund_date, refund_time, processed_by, student_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (ticket_id, ticket_number, refund_ref, amount, 'Student Account',
-                  now.strftime("%Y-%m-%d"), now.strftime("%H:%M:%S"), processed_by, student_id))
+                INSERT INTO unified_refunds
+                (source_type, reference_id, reference_type, refund_reference, amount,
+                 refund_method, refund_date, processed_by, student_id)
+                VALUES ('taxi', ?, 'ticket', ?, ?, 'Student Account', ?, ?, ?)
+            ''', (ticket_number, refund_ref, amount,
+                  now.strftime("%Y-%m-%d %H:%M:%S"), processed_by, student_id))
 
             conn.commit()
             conn.close()
@@ -1789,35 +1761,7 @@ TaxiGo - {_t("taxi.subtitle", default="Your Campus Ride")}
             conn = self.db.get_connection()
             cursor = conn.cursor()
 
-            # Create finance_refunds table if not exists (matching actual schema)
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS finance_refunds (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    refund_reference TEXT,
-                    department TEXT,
-                    transaction_id TEXT,
-                    amount DECIMAL(10,2),
-                    refund_method TEXT,
-                    refund_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    processed_by TEXT,
-                    notes TEXT
-                )
-            ''')
-
-            now = datetime.now()
-            processed_by = self.current_user.get('username', 'System') if self.current_user else 'System'
-
-            cursor.execute('''
-                INSERT INTO finance_refunds (refund_reference, department, transaction_id, amount,
-                                            refund_method, refund_date, processed_by, notes)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (refund_ref, 'Taxi Booking', ticket_number, amount,
-                  refund_method, now.strftime("%Y-%m-%d %H:%M:%S"),
-                  processed_by, f'Taxi booking refund for ticket {ticket_number}'))
-
-            conn.commit()
-            conn.close()
-
+            # Refund already recorded in unified_refunds table
             logger.info(f"Finance GUI notified about refund: {refund_ref}")
             return True
 

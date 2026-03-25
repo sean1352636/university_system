@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/communication_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/communication', '/email-templates', '/emails', '/group-messages', '/messages', '/newsletters', '/sms', 'GET', 'POST', 'PUT', 'SELECT * FROM emails', 'communication', 'content', 'create', 'email_templates', 'emails', 'group_id', 'group_id = ?', 'group_messages', 'group_type', 'group_type = ?', 'items', 'message', 'message_read', 'messages', 'newsletter', 'newsletters', 'recipient_id', 'recipient_id = ?', 'reply_to', 'sender_id', 'sender_id = ?', 'sms_messages', 'status', 'status = ?', 'sub', 'subject', 'target_audience', 'template_type', 'template_type = ?', 'title', 'total', 'update', 'user_id', 'view']

@@ -52,7 +52,7 @@ class TestLibraryFinanceManagerInit:
 class TestEmailHelpers:
     """Test email notification helper methods"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
     def test_get_user_email_success(self, mock_get_conn, library_manager):
         """Test getting user email"""
         mock_conn = MagicMock()
@@ -70,7 +70,7 @@ class TestEmailHelpers:
         assert result['last_name'] == 'Doe'
         assert result['full_name'] == 'John Doe'
 
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
     def test_get_user_email_not_found(self, mock_get_conn, library_manager):
         """Test getting user email when user not found"""
         mock_conn = MagicMock()
@@ -84,7 +84,7 @@ class TestEmailHelpers:
 
         assert result is None
 
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.send_email_as_system')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.send_email_as_system')
     def test_send_fine_notification_email(self, mock_send_email, library_manager):
         """Test sending fine notification email"""
         user_info = {
@@ -103,7 +103,7 @@ class TestEmailHelpers:
         mock_send_email.assert_called_once()
         assert result is True
 
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.send_email_as_system')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.send_email_as_system')
     def test_send_payment_receipt_email(self, mock_send_email, library_manager):
         """Test sending payment receipt email"""
         user_info = {
@@ -124,7 +124,7 @@ class TestEmailHelpers:
         mock_send_email.assert_called_once()
         assert result is True
 
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.send_email_as_system')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.send_email_as_system')
     def test_send_fine_waived_email(self, mock_send_email, library_manager):
         """Test sending fine waived email"""
         user_info = {
@@ -146,7 +146,7 @@ class TestEmailHelpers:
 class TestFineManagement:
     """Test fine management operations"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
     def test_load_all_fines(self, mock_get_conn, library_manager):
         """Test loading all fines"""
         mock_conn = MagicMock()
@@ -169,7 +169,7 @@ class TestFineManagement:
         library_manager.fines_tree.insert.assert_called_once()
         mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
     def test_search_fines(self, mock_get_conn, library_manager):
         """Test searching fines"""
         mock_conn = MagicMock()
@@ -190,15 +190,15 @@ class TestFineManagement:
 
         library_manager.fines_tree.insert.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.messagebox')
     def test_create_fine_dialog(self, mock_msgbox, mock_get_conn, library_manager):
         """Test creating fine dialog"""
         library_manager.create_fine_dialog()
         # Dialog created without errors
 
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.messagebox')
     def test_delete_fine_cancelled(self, mock_msgbox, mock_get_conn, library_manager):
         """Test deleting fine cancelled by user"""
         library_manager.fines_tree = Mock()
@@ -208,8 +208,8 @@ class TestFineManagement:
 
         mock_msgbox.showwarning.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.messagebox')
     def test_delete_fine_confirmed(self, mock_msgbox, mock_get_conn, library_manager):
         """Test deleting fine confirmed"""
         mock_conn = MagicMock()
@@ -237,8 +237,8 @@ class TestFineManagement:
 class TestPaymentProcessing:
     """Test payment processing"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.messagebox')
     def test_process_payment_dialog_no_selection(self, mock_msgbox, mock_get_conn, library_manager):
         """Test process payment with no selection"""
         library_manager.fines_tree = Mock()
@@ -248,7 +248,7 @@ class TestPaymentProcessing:
 
         mock_msgbox.showwarning.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
     def test_process_payment_dialog_with_selection(self, mock_get_conn, library_manager):
         """Test process payment dialog with selection"""
         library_manager.fines_tree = Mock()
@@ -264,8 +264,8 @@ class TestPaymentProcessing:
 class TestRevenueAnalytics:
     """Test revenue analytics"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.messagebox')
     def test_generate_revenue_report_no_dates(self, mock_msgbox, mock_get_conn, library_manager):
         """Test revenue report with missing dates"""
         library_manager.start_date_var = tk.StringVar(value='')
@@ -275,7 +275,7 @@ class TestRevenueAnalytics:
 
         mock_msgbox.showwarning.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
     def test_generate_revenue_report_success(self, mock_get_conn, library_manager):
         """Test successful revenue report generation"""
         mock_conn = MagicMock()
@@ -300,9 +300,9 @@ class TestRevenueAnalytics:
         library_manager.revenue_stats_text.delete.assert_called_once()
         library_manager.revenue_stats_text.insert.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.filedialog')
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.filedialog')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.messagebox')
     def test_export_revenue_csv(self, mock_msgbox, mock_get_conn, mock_filedialog, library_manager):
         """Test exporting revenue to CSV"""
         mock_conn = MagicMock()
@@ -327,7 +327,7 @@ class TestRevenueAnalytics:
 class TestBookCosts:
     """Test book costs management"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
     def test_load_book_costs(self, mock_get_conn, library_manager):
         """Test loading book costs"""
         mock_conn = MagicMock()
@@ -349,14 +349,14 @@ class TestBookCosts:
 
         library_manager.costs_tree.insert.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
     def test_add_book_cost_dialog(self, mock_get_conn, library_manager):
         """Test add book cost dialog"""
         library_manager.add_book_cost_dialog()
         # Dialog created without errors
 
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.messagebox')
     def test_show_cost_analysis(self, mock_msgbox, mock_get_conn, library_manager):
         """Test showing cost analysis"""
         mock_conn = MagicMock()
@@ -374,7 +374,7 @@ class TestBookCosts:
 class TestOverviewDashboard:
     """Test overview dashboard"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
     def test_refresh_overview(self, mock_get_conn, library_manager):
         """Test refreshing overview dashboard"""
         mock_conn = MagicMock()
@@ -436,7 +436,7 @@ class TestTabCreation:
 class TestFineEditing:
     """Test fine editing operations"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.messagebox')
     def test_edit_fine_dialog_no_selection(self, mock_msgbox, library_manager):
         """Test edit fine with no selection"""
         library_manager.fines_tree = Mock()
@@ -461,8 +461,8 @@ class TestFineEditing:
 class TestChartGeneration:
     """Test chart generation"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.messagebox')
     def test_show_revenue_charts_no_dates(self, mock_msgbox, mock_get_conn, library_manager):
         """Test showing charts with no dates"""
         library_manager.start_date_var = tk.StringVar(value='')
@@ -472,8 +472,8 @@ class TestChartGeneration:
 
         mock_msgbox.showwarning.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
-    @patch('university_system.modules.domain.finance.gui.finance.library_finance_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.library_finance_manager.messagebox')
     def test_show_revenue_charts_no_data(self, mock_msgbox, mock_get_conn, library_manager):
         """Test showing charts with no data"""
         mock_conn = MagicMock()

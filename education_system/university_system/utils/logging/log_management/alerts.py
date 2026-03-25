@@ -6,8 +6,8 @@ from collections import defaultdict
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH as _DB_PATH
 from education_system.university_system.infrastructure.database.db import sqlite3
 
-from .database import LogDatabase
-from .config import LogConfig
+from education_system.university_system.utils.logging.log_management.database import LogDatabase
+from education_system.university_system.utils.logging.log_management.config import LogConfig
 
 
 class LogAlerts:
@@ -124,12 +124,14 @@ class LogAlerts:
     def store_alert(self, alert):
         """Store alert in database"""
         conn = sqlite3.connect(str(_DB_PATH))
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('''
-            INSERT INTO alerts (alert_type, message, severity)
-            VALUES (?, ?, ?)
-        ''', (alert['type'], alert['message'], alert['severity']))
+            cursor.execute('''
+                INSERT INTO alerts (alert_type, message, severity)
+                VALUES (?, ?, ?)
+            ''', (alert['type'], alert['message'], alert['severity']))
 
-        conn.commit()
-        conn.close()
+            conn.commit()
+        finally:
+            conn.close()

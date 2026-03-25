@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/staff_hr/services/managers/workload_manager.py
+# hypothesis_version: 6.151.9
+
+[1.0, 100, ' = ?', ' AND ', ' AND semester = ?', ' ORDER BY name', ' WHERE ', ' WHERE norm_id = ?', ', ', 'activity_name', 'activity_type', 'actual_hours', 'actual_pct', 'admin', 'admin_pct', 'allocation_count', 'allocation_id', 'column', 'comparison', 'create', 'delete', 'department', 'department = ?', 'difference', 'hours_per_week', 'is_default', 'is_imbalanced', 'name', 'norm', 'norm_id', 'norm_pct', 'notes', 'research', 'research_pct', 'role', 'role = ?', 'semester', 'service', 'service_pct', 'summary', 'teaching', 'teaching_pct', 'total_hours', 'total_hours_per_week', 'type_count', 'type_hours', 'update', 'updated_at = ?', 'updated_fields', 'user_id', 'weighted_hours = ?', 'weighting_factor', 'workload_allocation', 'workload_norm']

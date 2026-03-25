@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/musicshop_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/musicshop', '/orders', '/products', 'GET', 'POST', 'artist', 'category', 'category = ?', 'condition', 'cost_price', 'create', 'customer_email', 'customer_id', 'customer_id = ?', 'customer_name', 'customer_phone', 'description', 'format', 'format = ?', 'genre', 'is_active', 'is_active = ?', 'items', 'label', 'musicshop', 'musicshop_orders', 'musicshop_products', 'notes', 'payment_method', 'price', 'release_year', 'search', 'shipping_address', 'sku', 'status', 'status = ?', 'stock_quantity', 'sub', 'title', 'total', 'total_amount', 'view']

@@ -11,7 +11,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_reviews_page(self):
     """Display movie reviews management page."""
@@ -27,10 +27,12 @@ def show_reviews_page(self):
     tk.Label(filter_frame, text=_t("cinema.screenings.filter_by_movie"), bg="#ffffff", fg="#333333").pack(side="left")
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, title FROM movies WHERE status = 'active' OR status IS NULL")
-    movies = [("all", "All Movies")] + [(str(m[0]), m[1]) for m in cursor.fetchall()]
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, title FROM movies WHERE status = 'active' OR status IS NULL")
+        movies = [("all", "All Movies")] + [(str(m[0]), m[1]) for m in cursor.fetchall()]
+    finally:
+        conn.close()
 
     movie_var = tk.StringVar(value="all")
     movie_combo = ttk.Combobox(filter_frame, textvariable=movie_var, width=30,
@@ -62,31 +64,33 @@ def show_reviews_page(self):
             self.review_tree.delete(item)
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        selected_movie = movie_combo.get()
-        sql = '''
-            SELECT r.id, m.title, r.customer_name, r.rating, r.review_text, r.created_at, r.status
-            FROM reviews r
-            JOIN movies m ON r.movie_id = m.id
-        '''
-        params = []
-        if selected_movie != "All Movies":
-            movie_id = next((m[0] for m in movies if m[1] == selected_movie), None)
-            if movie_id and movie_id != "all":
-                sql += " WHERE r.movie_id = ?"
-                params.append(movie_id)
-        sql += " ORDER BY r.created_at DESC"
+            selected_movie = movie_combo.get()
+            sql = '''
+                SELECT r.id, m.title, r.customer_name, r.rating, r.review_text, r.created_at, r.status
+                FROM reviews r
+                JOIN movies m ON r.movie_id = m.id
+            '''
+            params = []
+            if selected_movie != "All Movies":
+                movie_id = next((m[0] for m in movies if m[1] == selected_movie), None)
+                if movie_id and movie_id != "all":
+                    sql += " WHERE r.movie_id = ?"
+                    params.append(movie_id)
+            sql += " ORDER BY r.created_at DESC"
 
-        cursor.execute(sql, params)
-        for row in cursor.fetchall():
-            stars = "\u2605" * row[3] + "\u2606" * (5 - row[3])
-            review_preview = (row[4][:40] + "...") if row[4] and len(row[4]) > 40 else (row[4] or "-")
-            self.review_tree.insert("", "end", values=(
-                row[0], row[1][:20], row[2] or "Anonymous", stars,
-                review_preview, row[5][:10] if row[5] else "-", row[6].upper()
-            ))
-        conn.close()
+            cursor.execute(sql, params)
+            for row in cursor.fetchall():
+                stars = "\u2605" * row[3] + "\u2606" * (5 - row[3])
+                review_preview = (row[4][:40] + "...") if row[4] and len(row[4]) > 40 else (row[4] or "-")
+                self.review_tree.insert("", "end", values=(
+                    row[0], row[1][:20], row[2] or "Anonymous", stars,
+                    review_preview, row[5][:10] if row[5] else "-", row[6].upper()
+                ))
+        finally:
+            conn.close()
 
     ttk.Button(filter_frame, text=_t("cinema.btn.filter"), style="Primary.TButton",
               command=load_reviews).pack(side="left", padx=5)
@@ -102,17 +106,19 @@ def show_reviews_page(self):
 
     # Get average ratings per movie
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT m.title, AVG(r.rating), COUNT(r.id)
-        FROM movies m
-        LEFT JOIN reviews r ON m.id = r.movie_id AND r.status = 'active'
-        GROUP BY m.id
-        HAVING COUNT(r.id) > 0
-        ORDER BY AVG(r.rating) DESC LIMIT 5
-    ''')
-    top_rated = cursor.fetchall()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT m.title, AVG(r.rating), COUNT(r.id)
+            FROM movies m
+            LEFT JOIN reviews r ON m.id = r.movie_id AND r.status = 'active'
+            GROUP BY m.id
+            HAVING COUNT(r.id) > 0
+            ORDER BY AVG(r.rating) DESC LIMIT 5
+        ''')
+        top_rated = cursor.fetchall()
+    finally:
+        conn.close()
 
     tk.Label(stats_frame, text=_t("cinema.labels.top_rated_movies"), font=("Helvetica", 11, "bold"),
             bg="#ffffff", fg="#e74c3c").pack(anchor="w")
@@ -155,10 +161,12 @@ def add_review(self):
     tk.Label(fields_frame, text=_t("cinema.screenings.fields.movie_required"), bg="#ffffff", fg="#333333").grid(row=1, column=0, sticky="w", pady=5)
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, title FROM movies WHERE status = 'active' OR status IS NULL")
-    movies = cursor.fetchall()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, title FROM movies WHERE status = 'active' OR status IS NULL")
+        movies = cursor.fetchall()
+    finally:
+        conn.close()
 
     movie_var = tk.StringVar()
     movie_combo = ttk.Combobox(fields_frame, textvariable=movie_var, width=32,
@@ -195,14 +203,16 @@ def add_review(self):
         review = review_text.get("1.0", tk.END).strip()
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('''
-            INSERT INTO reviews (movie_id, customer_name, rating, review_text)
-            VALUES (?, ?, ?, ?)
-        ''', (movie_id, name, rating, review))
-        conn.commit()
-        conn.close()
+            cursor.execute('''
+                INSERT INTO reviews (movie_id, customer_name, rating, review_text)
+                VALUES (?, ?, ?, ?)
+            ''', (movie_id, name, rating, review))
+            conn.commit()
+        finally:
+            conn.close()
 
         messagebox.showinfo(_t("cinema.common.success"), "Review submitted successfully!")
         form_window.destroy()
@@ -226,14 +236,16 @@ def view_full_review(self):
     review_id = self.review_tree.item(selected[0])['values'][0]
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT r.*, m.title FROM reviews r
-        JOIN movies m ON r.movie_id = m.id
-        WHERE r.id = ?
-    ''', (review_id,))
-    review = cursor.fetchone()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT r.*, m.title FROM reviews r
+            JOIN movies m ON r.movie_id = m.id
+            WHERE r.id = ?
+        ''', (review_id,))
+        review = cursor.fetchone()
+    finally:
+        conn.close()
 
     if not review:
         return
@@ -273,9 +285,11 @@ def update_review_status(self, new_status):
     review_id = self.review_tree.item(selected[0])['values'][0]
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("UPDATE reviews SET status = ? WHERE id = ?", (new_status, review_id))
-    conn.commit()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE reviews SET status = ? WHERE id = ?", (new_status, review_id))
+        conn.commit()
+    finally:
+        conn.close()
 
     self.show_reviews_page()

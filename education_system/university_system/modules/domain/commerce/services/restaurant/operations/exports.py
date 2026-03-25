@@ -96,11 +96,11 @@ def generate_annual_tax_summary():
         # Annual sales and VAT
         cursor.execute('''
             SELECT 
-                SUM(total_price) as total_sales,
+                SUM(total_amount) as total_sales,
                 SUM(tax_amount) as total_tax,
                 COUNT(*) as total_orders
-            FROM restaurant_orders
-            WHERE strftime('%Y', order_time) = ? AND status = 'Completed'
+            FROM orders
+            WHERE strftime('%Y', order_date) = ? AND order_status = 'Completed'
         ''', (str(year),))
 
         sales_data = cursor.fetchone()
@@ -119,12 +119,12 @@ def generate_annual_tax_summary():
         # Monthly breakdown
         cursor.execute('''
             SELECT 
-                strftime('%m', order_time) as month,
-                SUM(total_price) as monthly_sales,
+                strftime('%m', order_date) as month,
+                SUM(total_amount) as monthly_sales,
                 SUM(tax_amount) as monthly_tax
-            FROM restaurant_orders
-            WHERE strftime('%Y', order_time) = ? AND status = 'Completed'
-            GROUP BY strftime('%m', order_time)
+            FROM orders
+            WHERE strftime('%Y', order_date) = ? AND order_status = 'Completed'
+            GROUP BY strftime('%m', order_date)
             ORDER BY month
         ''', (str(year),))
 
@@ -192,10 +192,10 @@ def export_tax_data():
 
         # Export sales data with tax
         cursor.execute('''
-            SELECT order_id, order_time, total_price, tax_amount, payment_method, customer_id
-            FROM restaurant_orders
-            WHERE DATE(order_time) BETWEEN ? AND ? AND status = 'Completed'
-            ORDER BY order_time
+            SELECT order_id, order_date, total_amount, tax_amount, payment_method, customer_id
+            FROM orders
+            WHERE DATE(order_date) BETWEEN ? AND ? AND order_status = 'Completed'
+            ORDER BY order_date
         ''', (start_date, end_date))
 
         sales_data = cursor.fetchall()
@@ -309,9 +309,9 @@ def export_profit_loss_data(start_date, end_date):
 
         # Get revenue data
         cursor.execute('''
-            SELECT SUM(total_price) as total_revenue, COUNT(*) as order_count
-            FROM restaurant_orders
-            WHERE DATE(order_time) BETWEEN ? AND ? AND status = 'Completed'
+            SELECT SUM(total_amount) as total_revenue, COUNT(*) as order_count
+            FROM orders
+            WHERE DATE(order_date) BETWEEN ? AND ? AND order_status = 'Completed'
         ''', (start_date, end_date))
 
         revenue_data = cursor.fetchone()
@@ -330,10 +330,10 @@ def export_profit_loss_data(start_date, end_date):
         # Get cost of goods sold
         cursor.execute('''
             SELECT SUM(oi.quantity * mi.cost_price) as cogs
-            FROM restaurant_order_items oi
+            FROM order_items oi
             JOIN menu_items mi ON oi.item_id = mi.item_id
-            JOIN restaurant_orders o ON oi.order_id = o.order_id
-            WHERE DATE(o.order_time) BETWEEN ? AND ? AND o.status = 'Completed'
+            JOIN orders o ON oi.order_id = o.order_id
+            WHERE DATE(o.order_date) BETWEEN ? AND ? AND o.order_status = 'Completed'
             AND mi.cost_price IS NOT NULL
         ''', (start_date, end_date))
 

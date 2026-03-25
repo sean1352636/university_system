@@ -1,0 +1,121 @@
+{
+    "app": {
+        "title": "تعلیمی نظام",
+        "language_selector": {
+            "title": "زبان منتخب کریں",
+            "subtitle": "اپنی پسندیدہ زبان منتخب کریں",
+            "confirm": "ٹھیک ہے",
+            "cancel": "منسوخ"
+        }
+    },
+    "login": {
+        "title": "تعلیمی نظام - لاگ ان",
+        "sign_in": "جاری رکھنے کے لیے لاگ ان کریں",
+        "username": "صارف نام",
+        "password": "پاس ورڈ",
+        "login_button": "لاگ ان",
+        "enter_both": "براہ کرم صارف نام اور پاس ورڈ دونوں درج کریں۔",
+        "no_access": "آپ کے اکاؤنٹ کو کسی بھی نظام تک رسائی نہیں ہے۔",
+        "contact_admin": "براہ کرم منتظم سے رابطہ کریں۔",
+        "default_hint": "پہلے سے طے شدہ: superadmin / SuperAdmin@123"
+    },
+    "mfa": {
+        "title": "دو عنصری تصدیق",
+        "enter_code": "اپنا تصدیقی کوڈ درج کریں:",
+        "code_sent": "{email} پر تصدیقی کوڈ بھیج دیا گیا ہے",
+        "code_failed": "ای میل بھیجنے میں ناکامی۔ آپ کا کوڈ نیچے دکھایا گیا ہے:",
+        "verify": "تصدیق کریں",
+        "back_to_login": "لاگ ان پر واپس جائیں",
+        "enter_code_prompt": "براہ کرم ایک کوڈ درج کریں۔"
+    },
+    "system_picker": {
+        "welcome": "خوش آمدید، {name}",
+        "choose_system": "شروع کرنے کے لیے نظام منتخب کریں:",
+        "university": "یونیورسٹی انتظامی نظام",
+        "college": "سکستھ فارم کالج سسٹم",
+        "secondary": "ثانوی اسکول کا نظام",
+        "primary": "پرائمری اسکول کا نظام",
+        "logout": "لاگ آؤٹ",
+        "superadmin_dashboard": "سپر ایڈمن ڈیش بورڈ"
+    },
+    "common": {
+        "ok": "ٹھیک ہے",
+        "cancel": "منسوخ",
+        "save": "محفوظ کریں",
+        "delete": "حذف کریں",
+        "edit": "ترمیم کریں",
+        "add": "شامل کریں",
+        "search": "تلاش",
+        "refresh": "تازہ کریں",
+        "close": "بند کریں",
+        "back": "واپس",
+        "next": "اگلا",
+        "yes": "ہاں",
+        "no": "نہیں",
+        "confirm": "تصدیق",
+        "error": "خرابی",
+        "success": "کامیابی",
+        "warning": "انتباہ",
+        "loading": "لوڈ ہو رہا ہے...",
+        "no_results": "کوئی نتائج نہیں ملے",
+        "actions": "اقدامات",
+        "status": "حالت",
+        "name": "نام",
+        "email": "ای میل",
+        "date": "تاریخ",
+        "type": "قسم",
+        "description": "تفصیل",
+        "submit": "جمع کرائیں",
+        "export": "برآمد",
+        "import": "درآمد",
+        "filter": "فلٹر",
+        "clear": "صاف کریں",
+        "select_all": "سب منتخب کریں",
+        "deselect_all": "سب غیر منتخب کریں",
+        "active": "فعال",
+        "inactive": "غیر فعال",
+        "transferred": "منتقل شدہ"
+    },
+    "shared_modules": {
+        "cross_system_notifications": "بین النظام اطلاعات",
+        "student_journey": "طالب علم کا سفر",
+        "analytics_dashboard": "تجزیاتی ڈیش بورڈ",
+        "outcome_tracking": "نتائج کی نگرانی",
+        "predictive_alerts": "پیش گوئی انتباہات",
+        "bulk_transfer": "بڑے پیمانے پر منتقلی",
+        "transfer_documents": "منتقلی کے دستاویزات",
+        "reverse_lookup": "الٹی تلاش",
+        "parent_continuity": "والدین کا تسلسل",
+        "cross_system_calendar": "بین النظام کیلنڈر",
+        "inter_system_messaging": "بین النظام پیغام رسانی",
+        "central_admin_portal": "مرکزی انتظامی پورٹل",
+        "gdpr_compliance": "جی ڈی پی آر تعمیل",
+        "shared_documents": "مشترکہ دستاویزات",
+        "student_self_service": "طالب علم سیلف سروس",
+        "digital_transcript": "ڈیجیٹل نقل نمبرات"
+    },
+    "switch_system": {
+        "title": "نظام تبدیل کریں",
+        "switch_to": "تبدیل کریں بہ:",
+        "switching": "{system} میں تبدیل ہو رہا ہے..."
+    },
+    "superadmin": {
+        "title": "سپر ایڈمن ڈیش بورڈ",
+        "overview": "ڈیش بورڈ",
+        "system_health": "نظام کی صحت",
+        "user_management": "صارف انتظام",
+        "student_analytics": "طالب علم تجزیات",
+        "notifications": "اطلاعات",
+        "student_search": "طالب علم تلاش",
+        "audit_log": "آڈٹ لاگ",
+        "quick_launch": "فوری آغاز"
+    },
+    "roles": {
+        "admin": "منتظم",
+        "staff": "عملہ",
+        "teacher": "استاد",
+        "student": "طالب علم",
+        "parent": "والدین",
+        "superadmin": "سپر منتظم"
+    }
+}

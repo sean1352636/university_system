@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/library/reading_lists.py
+# hypothesis_version: 6.151.9
+
+[' + Collab', ' + Collaborative', '%Y-%m-%d %H:%M:%S', '-', '...', '/', '1', '1. Add book to list', '1. Make Public', '2', '2. Make Private', '3', '4', '4. Add notes to book', '4. Manage List Items', '5', '6', '6. Return to menu', '7', '7. Return to menu', '=', '===================', 'Any', 'Available Lists:', 'Available lists:', 'Book not found.', 'Enter list name: ', 'Enter new notes: ', 'Enter share link: ', 'File not found.', 'General', 'Invalid selection.', 'Items in your lists:', 'No items found.', 'No notes', 'Private', 'Public', 'Select list number: ', 'Select list: ', 'Your Reading Lists:', 'Your reading lists:', 'author', 'book_id', 'title', 'y', '✅ Notes updated.']

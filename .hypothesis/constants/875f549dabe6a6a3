@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/barber/gui/tabs/customers_tab.py
+# hypothesis_version: 6.151.9
+
+[100, 120, 150, 180, '10', '5', 'Add Notes', 'Create Profile', 'Customer List', 'Customers', 'Email', 'Export List', 'Favorite', 'ID', 'Import Customers', 'Last Visit', 'Merge Profiles', 'Name', 'Phone', 'Search', 'Search Customers', 'Search:', 'Send Message', 'Show All', 'View Details', 'View Favorites', 'View Feedback', 'Visits', 'email', 'favorite', 'headings', 'id', 'last_visit', 'name', 'phone', 'visits']

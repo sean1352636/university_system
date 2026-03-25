@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.college_system.modules.domain.student_support.services.student_support_service import StudentSupportService
+from education_system.college_system.core.i18n import t
 
 
 class StudentSupportFrame(tk.Frame):
@@ -22,7 +23,7 @@ class StudentSupportFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Student Support",
+        tk.Label(header, text=t("student_support.management"),
                  font=("Helvetica", 15, "bold"), bg="#2c3e50", fg="white"
                  ).pack(side="left", padx=20, pady=10)
 
@@ -35,42 +36,64 @@ class StudentSupportFrame(tk.Frame):
 
     def _build_interventions_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Interventions")
+        self._nb.add(tab, text=t("student_support.interventions", default="Interventions"))
+
+        toolbar = tk.Frame(tab, bg="#ecf0f1")
+        toolbar.pack(fill="x", pady=(0, 5))
+        ttk.Button(toolbar, text="Export CSV", command=self._export_interventions_csv).pack(side="left", padx=4)
 
         cols = ("id", "student_id", "type", "status", "sessions", "impact")
         self._int_tree = ttk.Treeview(tab, columns=cols, show="headings", selectmode="browse")
-        for c, h, w in [("id", "ID", 40), ("student_id", "Student", 60),
-                         ("type", "Type", 100), ("status", "Status", 80),
-                         ("sessions", "Sessions", 80), ("impact", "Impact", 80)]:
+        for c, h, w in [("id", t("common.id"), 40), ("student_id", t("student_support.student"), 60),
+                         ("type", t("common.type"), 100), ("status", t("common.status"), 80),
+                         ("sessions", t("student_support.sessions", default="Sessions"), 80), ("impact", t("student_support.impact", default="Impact"), 80)]:
             self._int_tree.heading(c, text=h)
             self._int_tree.column(c, width=w, anchor="center")
         self._int_tree.pack(fill="both", expand=True)
 
     def _build_risks_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Risk Register")
+        self._nb.add(tab, text=t("student_support.risk_register", default="Risk Register"))
 
         cols = ("id", "student_id", "risk_type", "risk_level", "status")
         self._risk_tree = ttk.Treeview(tab, columns=cols, show="headings", selectmode="browse")
-        for c, h, w in [("id", "ID", 40), ("student_id", "Student", 60),
-                         ("risk_type", "Type", 120), ("risk_level", "Level", 80),
-                         ("status", "Status", 80)]:
+        for c, h, w in [("id", t("common.id"), 40), ("student_id", t("student_support.student"), 60),
+                         ("risk_type", t("common.type"), 120), ("risk_level", t("student_support.level", default="Level"), 80),
+                         ("status", t("common.status"), 80)]:
             self._risk_tree.heading(c, text=h)
             self._risk_tree.column(c, width=w, anchor="center")
         self._risk_tree.pack(fill="both", expand=True)
+        btn = tk.Frame(tab, bg="#ecf0f1")
+        btn.pack(fill="x", pady=(5, 0))
+        ttk.Button(btn, text="Export CSV", command=self._export_risks_csv).pack(side="left", padx=2)
 
     def _build_documents_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Documents")
+        self._nb.add(tab, text=t("student_support.documents", default="Documents"))
 
         cols = ("id", "student_id", "document_type", "title", "verified")
         self._doc_tree = ttk.Treeview(tab, columns=cols, show="headings", selectmode="browse")
-        for c, h, w in [("id", "ID", 40), ("student_id", "Student", 60),
-                         ("document_type", "Type", 120), ("title", "Title", 180),
-                         ("verified", "Verified", 60)]:
+        for c, h, w in [("id", t("common.id"), 40), ("student_id", t("student_support.student"), 60),
+                         ("document_type", t("common.type"), 120), ("title", t("common.title"), 180),
+                         ("verified", t("student_support.verified", default="Verified"), 60)]:
             self._doc_tree.heading(c, text=h)
             self._doc_tree.column(c, width=w, anchor="center")
         self._doc_tree.pack(fill="both", expand=True)
+        btn = tk.Frame(tab, bg="#ecf0f1")
+        btn.pack(fill="x", pady=(5, 0))
+        ttk.Button(btn, text="Export CSV", command=self._export_documents_csv).pack(side="left", padx=2)
+
+    def _export_interventions_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._int_tree, "student_support.csv")
+
+    def _export_risks_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._risk_tree, "student_support_risks.csv")
+
+    def _export_documents_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._doc_tree, "student_support_documents.csv")
 
     def refresh(self):
         self._load_interventions()
@@ -86,7 +109,7 @@ class StudentSupportFrame(tk.Frame):
                     i["id"], i["student_id"], i["intervention_type"],
                     i["status"], sessions, i.get("impact_rating") or "-"))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _load_risks(self):
         self._risk_tree.delete(*self._risk_tree.get_children())
@@ -96,7 +119,7 @@ class StudentSupportFrame(tk.Frame):
                     r["id"], r["student_id"], r["risk_type"],
                     r["risk_level"], r["status"]))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _load_documents(self):
         self._doc_tree.delete(*self._doc_tree.get_children())
@@ -104,6 +127,6 @@ class StudentSupportFrame(tk.Frame):
             for d in self._svc.list_documents():
                 self._doc_tree.insert("", "end", values=(
                     d["id"], d["student_id"], d["document_type"],
-                    d["title"], "Yes" if d["verified"] else "No"))
+                    d["title"], t("common.yes") if d["verified"] else t("common.no")))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))

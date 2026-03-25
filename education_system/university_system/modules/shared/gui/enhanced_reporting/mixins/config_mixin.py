@@ -1,6 +1,6 @@
 """Configuration, cache, and status methods mixin for the enhanced reporting GUI."""
 
-from ..standalone.constants import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.standalone.constants import (
     tk, ttk, messagebox,
     os, json, logging,
     datetime,

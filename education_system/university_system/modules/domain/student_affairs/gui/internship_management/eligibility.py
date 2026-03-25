@@ -1,4 +1,5 @@
-from ._imports import tk, messagebox, scrolledtext, get_connection
+from education_system.university_system.core.sql_safety import escape_like
+from education_system.university_system.modules.domain.student_affairs.gui.internship_management._imports import tk, messagebox, scrolledtext, get_connection
 
 
 class EligibilityMixin:
@@ -65,7 +66,7 @@ class EligibilityMixin:
                         JOIN course_modules cm ON sg.module_id = cm.module_id
                         WHERE sg.student_id = ? AND cm.module_name LIKE ?
                         AND sg.grade NOT IN ('F', 'Fail')
-                    ''', (student_id, f"%{course}%"))
+                    ''', (student_id, f"%{escape_like(course)}%"))
 
                     if not cursor.fetchone():
                         courses_met = False
@@ -299,7 +300,7 @@ Course Requirements:
     def open_grade_report(self, student_id):
         """Open the grade management GUI for detailed grade view"""
         try:
-            from education_system.university_system.modules.domain.academics.gui.grade_management_gui import GradeManagementGUI
+            from education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui import GradeTrackingManagementGUI as GradeManagementGUI
 
             grade_window = tk.Toplevel(self.root)
             grade_window.title("Student Grade Report")

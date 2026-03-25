@@ -127,7 +127,7 @@ def temp_db():
 @pytest.fixture
 def mock_auth(temp_db):
     """Create a mock auth manager"""
-    with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+    with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
         auth = UserAuth(db_path=temp_db)
         auth.current_user = {
             'id': 1,
@@ -143,28 +143,28 @@ class TestSearchUsers:
 
     def test_search_users_by_username(self, temp_db, mock_auth):
         """Test searching users by username"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             results = admin.search_users(mock_auth, 'john')
             assert len(results) > 0
             assert any('john' in user['username'].lower() for user in results)
 
     def test_search_users_by_email(self, temp_db, mock_auth):
         """Test searching users by email"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             results = admin.search_users(mock_auth, 'admin@example.com')
             assert len(results) > 0
             assert any('admin@example.com' in user.get('email', '') for user in results)
 
     def test_search_users_no_auth(self, temp_db):
         """Test search without authentication"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             results = admin.search_users(None, 'test')
             assert isinstance(results, list)
             # Should still work but may have limited results
 
     def test_search_users_empty_term(self, temp_db, mock_auth):
         """Test search with empty search term"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             results = admin.search_users(mock_auth, '')
             assert isinstance(results, list)
 
@@ -173,21 +173,21 @@ class TestListAllUsers:
 
     def test_list_all_users_default_pagination(self, temp_db, mock_auth):
         """Test listing users with default pagination"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             results = admin.list_all_users(mock_auth)
             assert isinstance(results, list)
             assert len(results) <= 10  # Default limit
 
     def test_list_all_users_custom_pagination(self, temp_db, mock_auth):
         """Test listing users with custom pagination"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             results = admin.list_all_users(mock_auth, page=1, limit=2)
             assert isinstance(results, list)
             assert len(results) <= 2
 
     def test_list_all_users_with_role_filter(self, temp_db, mock_auth):
         """Test listing users filtered by role"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             results = admin.list_all_users(mock_auth, role_filter='admin')
             assert isinstance(results, list)
             if results:
@@ -195,7 +195,7 @@ class TestListAllUsers:
 
     def test_list_all_users_second_page(self, temp_db, mock_auth):
         """Test pagination - second page"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             results = admin.list_all_users(mock_auth, page=2, limit=1)
             assert isinstance(results, list)
 
@@ -204,23 +204,23 @@ class TestCommunicationDashboard:
 
     def test_dashboard_initialization(self, temp_db, mock_auth):
         """Test dashboard initialization"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             dashboard = admin.CommunicationDashboard(auth=mock_auth, db_path=temp_db)
             assert dashboard.auth == mock_auth
             assert dashboard.db_path == temp_db
 
     def test_dashboard_get_current_user(self, temp_db, mock_auth):
         """Test getting current user from dashboard"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             dashboard = admin.CommunicationDashboard(auth=mock_auth, db_path=temp_db)
             user = dashboard.auth.current_user
             assert user is not None
             assert user['username'] == 'testuser'
 
-    @patch('university_system.infrastructure.email.email_service.send_email_as_user')
+    @patch('education_system.university_system.infrastructure.email.email_service.send_email_as_user')
     def test_dashboard_send_message(self, mock_send, temp_db, mock_auth):
         """Test sending message through dashboard"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             dashboard = admin.CommunicationDashboard(auth=mock_auth, db_path=temp_db)
             # Call a method that would send a message
             # This test structure depends on actual dashboard methods
@@ -230,7 +230,7 @@ class TestSystemNotifications:
 
     def test_send_system_notification_success(self, temp_db, mock_auth):
         """Test sending system notification"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             dashboard = admin.CommunicationDashboard(auth=mock_auth, db_path=temp_db)
             result = admin.send_system_notification(
                 dashboard,
@@ -244,7 +244,7 @@ class TestSystemNotifications:
 
     def test_send_system_notification_different_types(self, temp_db, mock_auth):
         """Test sending different notification types"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             dashboard = admin.CommunicationDashboard(auth=mock_auth, db_path=temp_db)
 
             for notif_type in ['info', 'warning', 'error', 'success']:
@@ -259,31 +259,30 @@ class TestSystemNotifications:
 class TestDisplayMenus:
     """Test menu display functions"""
 
-    @patch('builtins.input', return_value='q')
+    @patch('builtins.input', return_value='6')
     def test_display_messages_menu(self, mock_input, temp_db, mock_auth):
         """Test displaying messages menu"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             dashboard = admin.CommunicationDashboard(auth=mock_auth, db_path=temp_db)
-            # This would normally display a menu and wait for input
             try:
                 admin.display_messages_menu(dashboard)
             except Exception:
-                pass  # Menu display may exit or loop
+                pass
 
-    @patch('builtins.input', return_value='q')
+    @patch('builtins.input', return_value='8')
     def test_display_preferences_menu(self, mock_input, temp_db, mock_auth):
         """Test displaying preferences menu"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             dashboard = admin.CommunicationDashboard(auth=mock_auth, db_path=temp_db)
             try:
                 admin.display_preferences_menu(dashboard)
             except Exception:
                 pass
 
-    @patch('builtins.input', return_value='q')
+    @patch('builtins.input', return_value='6')
     def test_display_admin_message_management_menu(self, mock_input, temp_db, mock_auth):
         """Test displaying admin message management menu"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             # Update auth to have admin permissions
             mock_auth.current_user['role'] = 'admin'
             dashboard = admin.CommunicationDashboard(auth=mock_auth, db_path=temp_db)
@@ -307,7 +306,7 @@ class TestCommunicationIntegration:
 
     def test_initialize_integrated_system(self, temp_db, mock_auth):
         """Test initializing integrated system"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             result = admin.initialize_integrated_system(auth=mock_auth)
             # System should initialize without errors
 
@@ -320,7 +319,7 @@ class TestCommunicationIntegration:
 
     def test_initialize_communication_system(self, temp_db):
         """Test initializing communication system"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             result = admin.initialize_communication_system()
 
     def test_cleanup_communication_system(self):
@@ -333,10 +332,10 @@ class TestCommunicationIntegration:
 class TestEmailSystem:
     """Test email system functions"""
 
-    @patch('university_system.infrastructure.email.email_service.send_email')
+    @patch('education_system.university_system.infrastructure.email.email_service.send_email')
     def test_email_system(self, mock_send_email, temp_db):
         """Test email system"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             mock_send_email.return_value = True
             result = admin.test_email_system()
             # Should run test without crashing
@@ -346,7 +345,7 @@ class TestCommunicationDashboardMethods:
 
     def test_communication_dashboard_methods(self, temp_db, mock_auth):
         """Test dashboard methods"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             result = admin.test_communication_dashboard_methods(auth=mock_auth)
 
 class TestIntegration:
@@ -354,7 +353,7 @@ class TestIntegration:
 
     def test_full_dashboard_workflow(self, temp_db, mock_auth):
         """Test complete dashboard workflow"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             # Initialize system
             admin.initialize_integrated_system(auth=mock_auth)
 
@@ -375,7 +374,7 @@ class TestIntegration:
 
     def test_user_search_and_list(self, temp_db, mock_auth):
         """Test searching and listing users together"""
-        with patch('university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             # Search for users
             search_results = admin.search_users(mock_auth, 'test')
 

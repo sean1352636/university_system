@@ -1,13 +1,13 @@
 # trip_management package - split from trip_management.py
 # All public names are re-exported here for backwards compatibility.
 
-from ._common import set_auth, PDF_AVAILABLE, CALENDAR_AVAILABLE, HAS_AUTH
+from education_system.university_system.modules.domain.mobility.services.trip_management._common import set_auth, PDF_AVAILABLE, CALENDAR_AVAILABLE, HAS_AUTH
 
-from .database import get_db_connection, safe_db_operation, init_trip_db
+from education_system.university_system.modules.domain.mobility.services.trip_management.database import get_db_connection, safe_db_operation, init_trip_db
 
-from .permissions import setup_trip_permissions, setup_report_permissions
+from education_system.university_system.modules.domain.mobility.services.trip_management.permissions import setup_trip_permissions, setup_report_permissions
 
-from .trips import (
+from education_system.university_system.modules.domain.mobility.services.trip_management.trips import (
     view_trips_with_calendar,
     create_trip,
     view_trips,
@@ -16,7 +16,7 @@ from .trips import (
     delete_trip,
 )
 
-from .registrations import (
+from education_system.university_system.modules.domain.mobility.services.trip_management.registrations import (
     register_for_trip,
     view_my_trip_registrations,
     manage_trip_participants,
@@ -26,25 +26,25 @@ from .registrations import (
     cancel_trip_registration,
 )
 
-from .calendar_integration import (
+from education_system.university_system.modules.domain.mobility.services.trip_management.calendar_integration import (
     create_trip_calendar_event,
     view_trip_events_in_calendar,
 )
 
-from .reports import TripReportGenerator, generate_trip_report
+from education_system.university_system.modules.domain.mobility.services.trip_management.reports import TripReportGenerator, generate_trip_report
 
-from .itinerary import add_trip_itinerary, view_trip_itinerary
+from education_system.university_system.modules.domain.mobility.services.trip_management.itinerary import add_trip_itinerary, view_trip_itinerary
 
-from .expenses import (
+from education_system.university_system.modules.domain.mobility.services.trip_management.expenses import (
     manage_trip_expenses,
     add_expense,
     edit_expense,
     delete_expense,
 )
 
-from .staff import assign_trip_staff
+from education_system.university_system.modules.domain.mobility.services.trip_management.staff import assign_trip_staff
 
-from .menu import (
+from education_system.university_system.modules.domain.mobility.services.trip_management.menu import (
     display_trip_management_menu,
     integrate_trip_management_with_main,
     test_report_generation,

@@ -6,8 +6,8 @@ from datetime import datetime
 
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
-from ..constants import CAMPUS_COMPLAINT_TYPES
-from ..widgets import ScrollableFrame
+from education_system.university_system.modules.domain.campus.gui.security.constants import CAMPUS_COMPLAINT_TYPES
+from education_system.university_system.modules.domain.campus.gui.security.widgets import ScrollableFrame
 
 
 class ComplaintFormDialog(tk.Toplevel):

@@ -4,7 +4,9 @@ import sqlite3
 from contextlib import contextmanager
 
 from education_system.primary_school.core.paths import DB_FILE
-
+from education_system.primary_school.infrastructure.database.constants import (
+    PRAGMAS, CONNECTION_TIMEOUT,
+)
 
 _db_path_override = None
 
@@ -23,12 +25,10 @@ def get_db_path():
 def connect(db_path=None):
     """Create and return a database connection with standard pragmas."""
     path = db_path or get_db_path()
-    conn = sqlite3.connect(path, timeout=30)
+    conn = sqlite3.connect(path, timeout=CONNECTION_TIMEOUT)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA foreign_keys=ON")
-    conn.execute("PRAGMA synchronous=NORMAL")
-    conn.execute("PRAGMA busy_timeout=5000")
+    for pragma, value in PRAGMAS.items():
+        conn.execute(f"PRAGMA {pragma} = {value}")
     return conn
 
 

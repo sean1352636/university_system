@@ -11,20 +11,44 @@ from unittest.mock import Mock, patch, MagicMock, call
 from pathlib import Path
 
 
-# Mock tkinter before importing MFA GUI
+_MFA_MOD = 'education_system.university_system.modules.shared.gui.auth.mfa_gui'
+
+
+# Prevent real tkinter widget creation in MFA GUI classes
 @pytest.fixture(autouse=True)
 def mock_tkinter():
-    """Mock tkinter modules for testing"""
-    with patch.dict('sys.modules', {
-        'tkinter': MagicMock(),
-        'tkinter.ttk': MagicMock(),
-        'tkinter.messagebox': MagicMock(),
-        'tkinter.scrolledtext': MagicMock(),
-        'tkinter.filedialog': MagicMock(),
-        'PIL': MagicMock(),
-        'PIL.Image': MagicMock(),
-        'PIL.ImageTk': MagicMock(),
-    }):
+    """Patch tk.Toplevel.__init__ so MFASetupWizard/MFAVerificationDialog
+    can be instantiated without a real Tk display."""
+    import tkinter as tk
+    def _noop_init(self, *a, **kw):
+        # Set minimal attrs that tk.Misc/Toplevel methods expect
+        self.children = {}
+        self.tk = MagicMock()
+        self._w = '.'
+        self._name = 'mock'
+        self._tclCommands = {}
+        self._mock_methods = None
+
+    with patch.object(tk.Toplevel, '__init__', _noop_init), \
+         patch.object(tk.Toplevel, 'title', MagicMock()), \
+         patch.object(tk.Toplevel, 'geometry', MagicMock()), \
+         patch.object(tk.Toplevel, 'resizable', MagicMock()), \
+         patch.object(tk.Toplevel, 'minsize', MagicMock()), \
+         patch.object(tk.Toplevel, 'transient', MagicMock()), \
+         patch.object(tk.Toplevel, 'grab_set', MagicMock()), \
+         patch.object(tk.Toplevel, 'update_idletasks', MagicMock()), \
+         patch.object(tk.Toplevel, 'winfo_screenwidth', MagicMock(return_value=1920)), \
+         patch.object(tk.Toplevel, 'winfo_screenheight', MagicMock(return_value=1080)), \
+         patch.object(tk.Toplevel, 'winfo_width', MagicMock(return_value=700)), \
+         patch.object(tk.Toplevel, 'winfo_height', MagicMock(return_value=850)), \
+         patch.object(tk.Toplevel, 'wait_window', MagicMock()), \
+         patch.object(tk.Toplevel, 'destroy', MagicMock()), \
+         patch(f'{_MFA_MOD}.tk', MagicMock()), \
+         patch(f'{_MFA_MOD}.ttk', MagicMock()), \
+         patch(f'{_MFA_MOD}.messagebox', MagicMock()), \
+         patch(f'{_MFA_MOD}.scrolledtext', MagicMock()), \
+         patch(f'{_MFA_MOD}.Image', MagicMock()), \
+         patch(f'{_MFA_MOD}.ImageTk', MagicMock()):
         yield
 
 
@@ -58,14 +82,14 @@ def mock_mfa_service():
 class TestMFASetupWizard:
     """Test MFA Setup Wizard"""
 
-    @patch('university_system.infrastructure.auth.mfa_gui.MFAService')
-    @patch('university_system.infrastructure.auth.mfa_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.MFAService')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.tk.Toplevel')
     def test_wizard_initialization(self, mock_toplevel, mock_service_class, mock_mfa_service):
         """Test wizard initialization"""
         mock_service_class.return_value = mock_mfa_service
         mock_parent = MagicMock()
 
-        from education_system.university_system.infrastructure.auth.mfa_gui import MFASetupWizard
+        from education_system.university_system.modules.shared.gui.auth.mfa_gui import MFASetupWizard
 
         wizard = MFASetupWizard(mock_parent, user_id=1, username='testuser')
 
@@ -74,31 +98,29 @@ class TestMFASetupWizard:
         assert wizard.current_step == 0
         assert wizard.setup_data == {}
 
-    @patch('university_system.infrastructure.auth.mfa_gui.MFAService')
-    @patch('university_system.infrastructure.auth.mfa_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.MFAService')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.tk.Toplevel')
     def test_wizard_title_and_geometry(self, mock_toplevel, mock_service_class, mock_mfa_service):
         """Test wizard window configuration"""
         mock_service_class.return_value = mock_mfa_service
         mock_parent = MagicMock()
-        mock_instance = MagicMock()
-        mock_toplevel.return_value = mock_instance
 
-        from education_system.university_system.infrastructure.auth.mfa_gui import MFASetupWizard
+        from education_system.university_system.modules.shared.gui.auth.mfa_gui import MFASetupWizard
 
         wizard = MFASetupWizard(mock_parent, user_id=1, username='testuser')
 
-        # Verify window configuration methods were called
-        mock_instance.title.assert_called()
-        mock_instance.geometry.assert_called()
+        # Verify window configuration methods were called on the wizard itself
+        wizard.title.assert_called()
+        wizard.geometry.assert_called()
 
-    @patch('university_system.infrastructure.auth.mfa_gui.MFAService')
-    @patch('university_system.infrastructure.auth.mfa_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.MFAService')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.tk.Toplevel')
     def test_method_selection_validation(self, mock_toplevel, mock_service_class, mock_mfa_service):
         """Test method selection validation"""
         mock_service_class.return_value = mock_mfa_service
         mock_parent = MagicMock()
 
-        from education_system.university_system.infrastructure.auth.mfa_gui import MFASetupWizard
+        from education_system.university_system.modules.shared.gui.auth.mfa_gui import MFASetupWizard
 
         wizard = MFASetupWizard(mock_parent, user_id=1, username='testuser')
 
@@ -114,14 +136,14 @@ class TestMFASetupWizard:
             # Expected if messagebox is not fully mocked
             pass
 
-    @patch('university_system.infrastructure.auth.mfa_gui.MFAService')
-    @patch('university_system.infrastructure.auth.mfa_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.MFAService')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.tk.Toplevel')
     def test_totp_setup_flow(self, mock_toplevel, mock_service_class, mock_mfa_service):
         """Test TOTP setup flow"""
         mock_service_class.return_value = mock_mfa_service
         mock_parent = MagicMock()
 
-        from education_system.university_system.infrastructure.auth.mfa_gui import MFASetupWizard
+        from education_system.university_system.modules.shared.gui.auth.mfa_gui import MFASetupWizard
 
         wizard = MFASetupWizard(mock_parent, user_id=1, username='testuser')
 
@@ -135,14 +157,14 @@ class TestMFASetupWizard:
         # Verify setup_totp was called
         mock_mfa_service.setup_totp.assert_called_once_with(1, 'testuser')
 
-    @patch('university_system.infrastructure.auth.mfa_gui.MFAService')
-    @patch('university_system.infrastructure.auth.mfa_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.MFAService')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.tk.Toplevel')
     def test_verify_totp_success(self, mock_toplevel, mock_service_class, mock_mfa_service):
         """Test TOTP verification success"""
         mock_service_class.return_value = mock_mfa_service
         mock_parent = MagicMock()
 
-        from education_system.university_system.infrastructure.auth.mfa_gui import MFASetupWizard
+        from education_system.university_system.modules.shared.gui.auth.mfa_gui import MFASetupWizard
 
         wizard = MFASetupWizard(mock_parent, user_id=1, username='testuser')
         wizard.totp_code_var = MagicMock(get=lambda: '123456')
@@ -157,14 +179,14 @@ class TestMFASetupWizard:
         # Verify verify_totp was called
         mock_mfa_service.verify_totp.assert_called()
 
-    @patch('university_system.infrastructure.auth.mfa_gui.MFAService')
-    @patch('university_system.infrastructure.auth.mfa_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.MFAService')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.tk.Toplevel')
     def test_sms_setup_flow(self, mock_toplevel, mock_service_class, mock_mfa_service):
         """Test SMS setup flow"""
         mock_service_class.return_value = mock_mfa_service
         mock_parent = MagicMock()
 
-        from education_system.university_system.infrastructure.auth.mfa_gui import MFASetupWizard
+        from education_system.university_system.modules.shared.gui.auth.mfa_gui import MFASetupWizard
 
         wizard = MFASetupWizard(mock_parent, user_id=1, username='testuser')
         wizard.setup_data = {'phone': '+15551234567'}
@@ -177,14 +199,14 @@ class TestMFASetupWizard:
         # Verify generate_sms_otp was called
         mock_mfa_service.generate_sms_otp.assert_called()
 
-    @patch('university_system.infrastructure.auth.mfa_gui.MFAService')
-    @patch('university_system.infrastructure.auth.mfa_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.MFAService')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.tk.Toplevel')
     def test_email_setup_flow(self, mock_toplevel, mock_service_class, mock_mfa_service):
         """Test Email setup flow"""
         mock_service_class.return_value = mock_mfa_service
         mock_parent = MagicMock()
 
-        from education_system.university_system.infrastructure.auth.mfa_gui import MFASetupWizard
+        from education_system.university_system.modules.shared.gui.auth.mfa_gui import MFASetupWizard
 
         wizard = MFASetupWizard(mock_parent, user_id=1, username='testuser')
         wizard.setup_data = {'email': 'test@example.com'}
@@ -197,14 +219,14 @@ class TestMFASetupWizard:
         # Verify generate_email_otp was called
         mock_mfa_service.generate_email_otp.assert_called()
 
-    @patch('university_system.infrastructure.auth.mfa_gui.MFAService')
-    @patch('university_system.infrastructure.auth.mfa_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.MFAService')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.tk.Toplevel')
     def test_recovery_codes_display(self, mock_toplevel, mock_service_class, mock_mfa_service):
         """Test recovery codes display"""
         mock_service_class.return_value = mock_mfa_service
         mock_parent = MagicMock()
 
-        from education_system.university_system.infrastructure.auth.mfa_gui import MFASetupWizard
+        from education_system.university_system.modules.shared.gui.auth.mfa_gui import MFASetupWizard
 
         wizard = MFASetupWizard(mock_parent, user_id=1, username='testuser')
         wizard.setup_data = {'recovery_codes': [f'CODE-{i:04d}' for i in range(10)]}
@@ -218,14 +240,14 @@ class TestMFASetupWizard:
         # Should have recovery codes in setup_data
         assert 'recovery_codes' in wizard.setup_data
 
-    @patch('university_system.infrastructure.auth.mfa_gui.MFAService')
-    @patch('university_system.infrastructure.auth.mfa_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.MFAService')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.tk.Toplevel')
     def test_complete_setup(self, mock_toplevel, mock_service_class, mock_mfa_service):
         """Test completing MFA setup"""
         mock_service_class.return_value = mock_mfa_service
         mock_parent = MagicMock()
 
-        from education_system.university_system.infrastructure.auth.mfa_gui import MFASetupWizard
+        from education_system.university_system.modules.shared.gui.auth.mfa_gui import MFASetupWizard
 
         wizard = MFASetupWizard(mock_parent, user_id=1, username='testuser')
         wizard.confirm_var = MagicMock(get=lambda: True)
@@ -243,14 +265,14 @@ class TestMFASetupWizard:
 class TestMFAVerificationDialog:
     """Test MFA Verification Dialog"""
 
-    @patch('university_system.infrastructure.auth.mfa_gui.MFAService')
-    @patch('university_system.infrastructure.auth.mfa_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.MFAService')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.tk.Toplevel')
     def test_dialog_initialization(self, mock_toplevel, mock_service_class, mock_mfa_service):
         """Test verification dialog initialization"""
         mock_service_class.return_value = mock_mfa_service
         mock_parent = MagicMock()
 
-        from education_system.university_system.infrastructure.auth.mfa_gui import MFAVerificationDialog
+        from education_system.university_system.modules.shared.gui.auth.mfa_gui import MFAVerificationDialog
 
         dialog = MFAVerificationDialog(mock_parent, user_id=1, username='testuser')
 
@@ -258,14 +280,14 @@ class TestMFAVerificationDialog:
         assert dialog.username == 'testuser'
         assert dialog.verified is False
 
-    @patch('university_system.infrastructure.auth.mfa_gui.MFAService')
-    @patch('university_system.infrastructure.auth.mfa_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.MFAService')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.tk.Toplevel')
     def test_totp_verification(self, mock_toplevel, mock_service_class, mock_mfa_service):
         """Test TOTP verification in dialog"""
         mock_service_class.return_value = mock_mfa_service
         mock_parent = MagicMock()
 
-        from education_system.university_system.infrastructure.auth.mfa_gui import MFAVerificationDialog
+        from education_system.university_system.modules.shared.gui.auth.mfa_gui import MFAVerificationDialog
 
         dialog = MFAVerificationDialog(mock_parent, user_id=1, username='testuser')
         dialog.totp_code_var = MagicMock(get=lambda: '123456')
@@ -279,14 +301,14 @@ class TestMFAVerificationDialog:
         # Verify verify_totp was called
         mock_mfa_service.verify_totp.assert_called()
 
-    @patch('university_system.infrastructure.auth.mfa_gui.MFAService')
-    @patch('university_system.infrastructure.auth.mfa_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.MFAService')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.tk.Toplevel')
     def test_sms_verification(self, mock_toplevel, mock_service_class, mock_mfa_service):
         """Test SMS verification in dialog"""
         mock_service_class.return_value = mock_mfa_service
         mock_parent = MagicMock()
 
-        from education_system.university_system.infrastructure.auth.mfa_gui import MFAVerificationDialog
+        from education_system.university_system.modules.shared.gui.auth.mfa_gui import MFAVerificationDialog
 
         dialog = MFAVerificationDialog(mock_parent, user_id=1, username='testuser')
         dialog.sms_code_var = MagicMock(get=lambda: '123456')
@@ -300,14 +322,14 @@ class TestMFAVerificationDialog:
         # Verify verify_sms_otp was called
         mock_mfa_service.verify_sms_otp.assert_called()
 
-    @patch('university_system.infrastructure.auth.mfa_gui.MFAService')
-    @patch('university_system.infrastructure.auth.mfa_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.MFAService')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.tk.Toplevel')
     def test_email_verification(self, mock_toplevel, mock_service_class, mock_mfa_service):
         """Test Email verification in dialog"""
         mock_service_class.return_value = mock_mfa_service
         mock_parent = MagicMock()
 
-        from education_system.university_system.infrastructure.auth.mfa_gui import MFAVerificationDialog
+        from education_system.university_system.modules.shared.gui.auth.mfa_gui import MFAVerificationDialog
 
         dialog = MFAVerificationDialog(mock_parent, user_id=1, username='testuser')
         dialog.email_code_var = MagicMock(get=lambda: '654321')
@@ -321,14 +343,14 @@ class TestMFAVerificationDialog:
         # Verify verify_email_otp was called
         mock_mfa_service.verify_email_otp.assert_called()
 
-    @patch('university_system.infrastructure.auth.mfa_gui.MFAService')
-    @patch('university_system.infrastructure.auth.mfa_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.MFAService')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.tk.Toplevel')
     def test_recovery_code_verification(self, mock_toplevel, mock_service_class, mock_mfa_service):
         """Test recovery code verification in dialog"""
         mock_service_class.return_value = mock_mfa_service
         mock_parent = MagicMock()
 
-        from education_system.university_system.infrastructure.auth.mfa_gui import MFAVerificationDialog
+        from education_system.university_system.modules.shared.gui.auth.mfa_gui import MFAVerificationDialog
 
         dialog = MFAVerificationDialog(mock_parent, user_id=1, username='testuser')
         dialog.recovery_code_var = MagicMock(get=lambda: 'CODE-0001')
@@ -342,15 +364,15 @@ class TestMFAVerificationDialog:
         # Verify verify_recovery_code was called
         mock_mfa_service.verify_recovery_code.assert_called()
 
-    @patch('university_system.infrastructure.auth.mfa_gui.MFAService')
-    @patch('university_system.infrastructure.auth.mfa_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.MFAService')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.tk.Toplevel')
     def test_successful_verification_callback(self, mock_toplevel, mock_service_class, mock_mfa_service):
         """Test callback after successful verification"""
         mock_service_class.return_value = mock_mfa_service
         mock_parent = MagicMock()
         mock_callback = MagicMock()
 
-        from education_system.university_system.infrastructure.auth.mfa_gui import MFAVerificationDialog
+        from education_system.university_system.modules.shared.gui.auth.mfa_gui import MFAVerificationDialog
 
         dialog = MFAVerificationDialog(mock_parent, user_id=1, username='testuser', on_success=mock_callback)
 
@@ -360,14 +382,14 @@ class TestMFAVerificationDialog:
         assert dialog.verified is True
         mock_callback.assert_called_once_with(result)
 
-    @patch('university_system.infrastructure.auth.mfa_gui.MFAService')
-    @patch('university_system.infrastructure.auth.mfa_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.MFAService')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.tk.Toplevel')
     def test_device_fingerprinting(self, mock_toplevel, mock_service_class, mock_mfa_service):
         """Test device ID generation"""
         mock_service_class.return_value = mock_mfa_service
         mock_parent = MagicMock()
 
-        from education_system.university_system.infrastructure.auth.mfa_gui import MFAVerificationDialog
+        from education_system.university_system.modules.shared.gui.auth.mfa_gui import MFAVerificationDialog
 
         dialog = MFAVerificationDialog(mock_parent, user_id=1, username='testuser')
 
@@ -380,21 +402,21 @@ class TestMFAVerificationDialog:
 class TestConvenienceFunctions:
     """Test convenience functions"""
 
-    @patch('university_system.infrastructure.auth.mfa_gui.MFASetupWizard')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.MFASetupWizard')
     def test_show_mfa_setup(self, mock_wizard_class):
         """Test show_mfa_setup convenience function"""
         mock_parent = MagicMock()
         mock_wizard = MagicMock()
         mock_wizard_class.return_value = mock_wizard
 
-        from education_system.university_system.infrastructure.auth.mfa_gui import show_mfa_setup
+        from education_system.university_system.modules.shared.gui.auth.mfa_gui import show_mfa_setup
 
         show_mfa_setup(mock_parent, user_id=1, username='testuser')
 
         # Verify wizard was created
         mock_wizard_class.assert_called_once()
 
-    @patch('university_system.infrastructure.auth.mfa_gui.MFAVerificationDialog')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.MFAVerificationDialog')
     def test_show_mfa_verification(self, mock_dialog_class):
         """Test show_mfa_verification convenience function"""
         mock_parent = MagicMock()
@@ -402,7 +424,7 @@ class TestConvenienceFunctions:
         mock_dialog.verified = True
         mock_dialog_class.return_value = mock_dialog
 
-        from education_system.university_system.infrastructure.auth.mfa_gui import show_mfa_verification
+        from education_system.university_system.modules.shared.gui.auth.mfa_gui import show_mfa_verification
 
         verified = show_mfa_verification(mock_parent, user_id=1, username='testuser')
 
@@ -414,15 +436,15 @@ class TestConvenienceFunctions:
 class TestRecoveryCodesSaving:
     """Test recovery codes file saving"""
 
-    @patch('university_system.infrastructure.auth.mfa_gui.MFAService')
-    @patch('university_system.infrastructure.auth.mfa_gui.tk.Toplevel')
-    @patch('university_system.infrastructure.auth.mfa_gui.filedialog.asksaveasfilename')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.MFAService')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.tk.Toplevel')
+    @patch('tkinter.filedialog.asksaveasfilename')
     def test_save_recovery_codes(self, mock_filedialog, mock_toplevel, mock_service_class, mock_mfa_service, tmp_path):
         """Test saving recovery codes to file"""
         mock_service_class.return_value = mock_mfa_service
         mock_parent = MagicMock()
 
-        from education_system.university_system.infrastructure.auth.mfa_gui import MFASetupWizard
+        from education_system.university_system.modules.shared.gui.auth.mfa_gui import MFASetupWizard
 
         wizard = MFASetupWizard(mock_parent, user_id=1, username='testuser')
 
@@ -442,21 +464,21 @@ class TestRecoveryCodesSaving:
         if temp_file.exists():
             content = temp_file.read_text()
             assert 'CODE-0000' in content
-            assert 'University System' in content
+            assert 'Recovery Codes' in content
 
 
 class TestGUIValidation:
     """Test GUI input validation"""
 
-    @patch('university_system.infrastructure.auth.mfa_gui.MFAService')
-    @patch('university_system.infrastructure.auth.mfa_gui.tk.Toplevel')
-    @patch('university_system.infrastructure.auth.mfa_gui.messagebox.showerror')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.MFAService')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.messagebox.showerror')
     def test_invalid_totp_code_length(self, mock_messagebox, mock_toplevel, mock_service_class, mock_mfa_service):
         """Test TOTP code validation for length"""
         mock_service_class.return_value = mock_mfa_service
         mock_parent = MagicMock()
 
-        from education_system.university_system.infrastructure.auth.mfa_gui import MFAVerificationDialog
+        from education_system.university_system.modules.shared.gui.auth.mfa_gui import MFAVerificationDialog
 
         dialog = MFAVerificationDialog(mock_parent, user_id=1, username='testuser')
         dialog.totp_code_var = MagicMock(get=lambda: '12')  # Too short
@@ -466,15 +488,15 @@ class TestGUIValidation:
         # Should show error for invalid code length
         mock_messagebox.assert_called()
 
-    @patch('university_system.infrastructure.auth.mfa_gui.MFAService')
-    @patch('university_system.infrastructure.auth.mfa_gui.tk.Toplevel')
-    @patch('university_system.infrastructure.auth.mfa_gui.messagebox.showerror')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.MFAService')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.shared.gui.auth.mfa_gui.messagebox.showerror')
     def test_empty_recovery_code(self, mock_messagebox, mock_toplevel, mock_service_class, mock_mfa_service):
         """Test recovery code validation for empty input"""
         mock_service_class.return_value = mock_mfa_service
         mock_parent = MagicMock()
 
-        from education_system.university_system.infrastructure.auth.mfa_gui import MFAVerificationDialog
+        from education_system.university_system.modules.shared.gui.auth.mfa_gui import MFAVerificationDialog
 
         dialog = MFAVerificationDialog(mock_parent, user_id=1, username='testuser')
         dialog.recovery_code_var = MagicMock(get=lambda: '')

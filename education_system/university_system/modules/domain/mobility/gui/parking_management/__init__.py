@@ -81,14 +81,14 @@ except ImportError as e:
     VEHICLE_TYPES = ['Sedan', 'SUV', 'Truck', 'Motorcycle', 'Compact', 'Van']
 
 # Public API
-from .main_gui import ParkingManagementGUI, run_console_interface, main
-from .dialogs.permit_dialog import PermitDialog
-from .dialogs.vehicle_dialog import VehicleDialog
-from .dialogs.violation_dialog import ViolationDialog
-from .dialogs.lot_dialog import LotDialog
-from .dialogs.export_dialog import ExportDialog
-from .dialogs.payment_dialog import PaymentDialog
-from .dialogs.refund_dialog import RefundDialog
+from education_system.university_system.modules.domain.mobility.gui.parking_management.main_gui import ParkingManagementGUI, run_console_interface, main
+from education_system.university_system.modules.domain.mobility.gui.parking_management.dialogs.permit_dialog import PermitDialog
+from education_system.university_system.modules.domain.mobility.gui.parking_management.dialogs.vehicle_dialog import VehicleDialog
+from education_system.university_system.modules.domain.mobility.gui.parking_management.dialogs.violation_dialog import ViolationDialog
+from education_system.university_system.modules.domain.mobility.gui.parking_management.dialogs.lot_dialog import LotDialog
+from education_system.university_system.modules.domain.mobility.gui.parking_management.dialogs.export_dialog import ExportDialog
+from education_system.university_system.modules.domain.mobility.gui.parking_management.dialogs.payment_dialog import PaymentDialog
+from education_system.university_system.modules.domain.mobility.gui.parking_management.dialogs.refund_dialog import RefundDialog
 
 __all__ = [
     'ParkingManagementGUI', 'run_console_interface', 'main',

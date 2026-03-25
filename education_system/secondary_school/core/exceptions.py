@@ -210,3 +210,7 @@ class ConsentError(SchoolSystemError):
 
 class IncidentError(SchoolSystemError):
     """Incident log errors."""
+
+
+class PayrollError(SchoolSystemError):
+    """Payroll management errors."""

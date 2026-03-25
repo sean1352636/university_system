@@ -16,7 +16,7 @@ sys.path.insert(
     0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 )
 
-from education_system.university_system.api.pagination import get_pagination_params, paginated_response
+from education_system.shared.api.university.pagination import get_pagination_params, paginated_response
 
 
 # ============================================================================

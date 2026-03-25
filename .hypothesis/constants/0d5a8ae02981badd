@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/enhanced_reporting/standalone/constants.py
+# hypothesis_version: 6.151.9
+
+[587, 'cache_dir', 'database', 'email', 'enabled', 'from_address', 'localhost', 'reporting_system.log', 'reports@company.com', 'reports_dir', 'smtp_port', 'smtp_server', 'templates_dir', 'use_tls']

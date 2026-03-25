@@ -250,6 +250,14 @@ def create_config_tab(self, parent):
   {_t("system_admin_gui.config.database")}: {paths.DEFAULT_DB_PATH}
   {_t("system_admin_gui.config.logs")}: {paths.LOG_DIR}
   {_t("system_admin_gui.config.backups")}: {paths.BACKUP_DIR}
+    Database backups: {paths.BACKUP_DATABASE_DIR}
+    File backups: {paths.BACKUP_FILES_DIR}
+    Attendance: {paths.BACKUP_ATTENDANCE_DIR}
+    Finance: {paths.BACKUP_FINANCE_DIR}
+    Library: {paths.BACKUP_LIBRARY_DIR}
+    Health: {paths.BACKUP_HEALTH_DIR}
+    Settings: {paths.BACKUP_SETTINGS_DIR}
+    Calendar: {paths.BACKUP_CALENDAR_DIR}
   {_t("system_admin_gui.config.uploads")}: {paths.UPLOAD_DIR}
 
 {_t("system_admin_gui.config.system_settings")}:

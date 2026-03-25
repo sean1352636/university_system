@@ -4,7 +4,7 @@ from education_system.university_system.infrastructure.shared_context import get
 import csv
 import json
 
-from .app import auth
+from education_system.university_system.modules.domain.finance.reporting.revenue_analytics.app import auth
 
 
 def generate_financial_reports():
@@ -41,16 +41,16 @@ def generate_financial_reports():
         elif choice == '3':
             generate_payment_collection_report()
         elif choice == '4':
-            from .dashboard import student_account_summary_report
+            from education_system.university_system.modules.domain.finance.reporting.revenue_analytics.dashboard import student_account_summary_report
             student_account_summary_report()
         elif choice == '5':
-            from .dashboard import fee_type_analysis_report
+            from education_system.university_system.modules.domain.finance.reporting.revenue_analytics.dashboard import fee_type_analysis_report
             fee_type_analysis_report()
         elif choice == '6':
-            from .dashboard import payment_method_analysis_report
+            from education_system.university_system.modules.domain.finance.reporting.revenue_analytics.dashboard import payment_method_analysis_report
             payment_method_analysis_report()
         elif choice == '7':
-            from .dashboard import monthly_revenue_trend_report
+            from education_system.university_system.modules.domain.finance.reporting.revenue_analytics.dashboard import monthly_revenue_trend_report
             monthly_revenue_trend_report()
         elif choice == '8':
             return

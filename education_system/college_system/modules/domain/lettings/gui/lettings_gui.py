@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import date
 
+from education_system.college_system.core.i18n import t
 from education_system.college_system.modules.domain.lettings.services.lettings_service import LettingsService
 
 
@@ -25,7 +26,7 @@ class LettingsFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Facility Lettings",
+        tk.Label(header, text=t("lettings.management"),
                  font=("Helvetica", 15, "bold"), bg="#2c3e50", fg="white"
                  ).pack(side="left", padx=20, pady=10)
 
@@ -40,24 +41,25 @@ class LettingsFrame(tk.Frame):
 
     def _build_bookings_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(tab, text="Bookings")
+        self._nb.add(tab, text=t("lettings.bookings"))
 
         # Toolbar
         toolbar = tk.Frame(tab, bg="#ecf0f1")
         toolbar.pack(fill="x", padx=10, pady=5)
 
-        ttk.Button(toolbar, text="New", command=self._new_booking).pack(side="left", padx=2)
-        ttk.Button(toolbar, text="View", command=self._view_booking).pack(side="left", padx=2)
-        ttk.Button(toolbar, text="Edit", command=self._edit_booking).pack(side="left", padx=2)
-        ttk.Button(toolbar, text="Confirm", command=self._confirm_booking).pack(side="left", padx=2)
-        ttk.Button(toolbar, text="Cancel", command=self._cancel_booking).pack(side="left", padx=2)
-        ttk.Button(toolbar, text="Delete", command=self._delete_booking).pack(side="left", padx=2)
+        ttk.Button(toolbar, text=t("common.create"), command=self._new_booking).pack(side="left", padx=2)
+        ttk.Button(toolbar, text=t("common.view"), command=self._view_booking).pack(side="left", padx=2)
+        ttk.Button(toolbar, text=t("common.edit"), command=self._edit_booking).pack(side="left", padx=2)
+        ttk.Button(toolbar, text=t("lettings.confirm"), command=self._confirm_booking).pack(side="left", padx=2)
+        ttk.Button(toolbar, text=t("common.cancel"), command=self._cancel_booking).pack(side="left", padx=2)
+        ttk.Button(toolbar, text=t("common.delete"), command=self._delete_booking).pack(side="left", padx=2)
+        ttk.Button(toolbar, text=t("common.export_csv", default="Export CSV"), command=self._export_bookings_csv).pack(side="right", padx=2)
 
         # Filters
         filter_frame = tk.Frame(tab, bg="#ecf0f1")
         filter_frame.pack(fill="x", padx=10, pady=2)
 
-        tk.Label(filter_frame, text="Facility:", bg="#ecf0f1").pack(side="left", padx=2)
+        tk.Label(filter_frame, text=t("lettings.facility") + ":", bg="#ecf0f1").pack(side="left", padx=2)
         self._bk_facility_var = tk.StringVar(value="All")
         ttk.Combobox(filter_frame, textvariable=self._bk_facility_var,
                      values=["All", "Sports Hall", "Main Hall", "Drama Studio",
@@ -65,31 +67,34 @@ class LettingsFrame(tk.Frame):
                              "Playing Field", "Other"],
                      state="readonly", width=14).pack(side="left", padx=2)
 
-        tk.Label(filter_frame, text="Status:", bg="#ecf0f1").pack(side="left", padx=2)
+        tk.Label(filter_frame, text=t("common.status") + ":", bg="#ecf0f1").pack(side="left", padx=2)
         self._bk_status_var = tk.StringVar(value="All")
         ttk.Combobox(filter_frame, textvariable=self._bk_status_var,
                      values=["All", "pending", "confirmed", "cancelled"],
                      state="readonly", width=12).pack(side="left", padx=2)
 
-        tk.Label(filter_frame, text="Payment:", bg="#ecf0f1").pack(side="left", padx=2)
+        tk.Label(filter_frame, text=t("lettings.payment") + ":", bg="#ecf0f1").pack(side="left", padx=2)
         self._bk_pay_var = tk.StringVar(value="All")
         ttk.Combobox(filter_frame, textvariable=self._bk_pay_var,
                      values=["All", "unpaid", "paid", "invoiced", "waived"],
                      state="readonly", width=10).pack(side="left", padx=2)
 
-        tk.Label(filter_frame, text="Search:", bg="#ecf0f1").pack(side="left", padx=5)
+        tk.Label(filter_frame, text=t("common.search") + ":", bg="#ecf0f1").pack(side="left", padx=5)
         self._bk_search_var = tk.StringVar()
         tk.Entry(filter_frame, textvariable=self._bk_search_var, width=18).pack(side="left", padx=2)
 
-        ttk.Button(filter_frame, text="Filter", command=self._load_bookings).pack(side="left", padx=5)
+        ttk.Button(filter_frame, text=t("common.search"), command=self._load_bookings).pack(side="left", padx=5)
 
         # Treeview
         cols = ("id", "hirer", "facility", "date", "time", "fee", "payment", "status")
         self._bk_tree = ttk.Treeview(tab, columns=cols, show="headings",
                                      selectmode="browse", height=16)
+        headings = (t("common.id"), t("lettings.hirer"), t("lettings.facility"),
+                    t("lettings.date"), t("lettings.time"), t("lettings.fee"),
+                    t("lettings.payment"), t("common.status"))
         widths = (40, 160, 120, 90, 110, 70, 80, 80)
-        for c, w in zip(cols, widths):
-            self._bk_tree.heading(c, text=c.replace("_", " ").title())
+        for c, h, w in zip(cols, headings, widths):
+            self._bk_tree.heading(c, text=h)
             self._bk_tree.column(c, width=w, anchor="center" if w < 100 else "w")
         vsb = ttk.Scrollbar(tab, orient="vertical", command=self._bk_tree.yview)
         self._bk_tree.configure(yscrollcommand=vsb.set)
@@ -100,32 +105,36 @@ class LettingsFrame(tk.Frame):
 
     def _build_contracts_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(tab, text="Contracts")
+        self._nb.add(tab, text=t("lettings.contracts"))
 
         toolbar = tk.Frame(tab, bg="#ecf0f1")
         toolbar.pack(fill="x", padx=10, pady=5)
 
-        ttk.Button(toolbar, text="New", command=self._new_contract).pack(side="left", padx=2)
-        ttk.Button(toolbar, text="Edit", command=self._edit_contract).pack(side="left", padx=2)
-        ttk.Button(toolbar, text="Sign", command=self._sign_contract).pack(side="left", padx=2)
-        ttk.Button(toolbar, text="Delete", command=self._delete_contract).pack(side="left", padx=2)
+        ttk.Button(toolbar, text=t("common.create"), command=self._new_contract).pack(side="left", padx=2)
+        ttk.Button(toolbar, text=t("common.edit"), command=self._edit_contract).pack(side="left", padx=2)
+        ttk.Button(toolbar, text=t("lettings.sign"), command=self._sign_contract).pack(side="left", padx=2)
+        ttk.Button(toolbar, text=t("common.delete"), command=self._delete_contract).pack(side="left", padx=2)
+        ttk.Button(toolbar, text=t("common.export_csv", default="Export CSV"), command=self._export_contracts_csv).pack(side="right", padx=2)
 
         filter_frame = tk.Frame(tab, bg="#ecf0f1")
         filter_frame.pack(fill="x", padx=10, pady=2)
 
-        tk.Label(filter_frame, text="Status:", bg="#ecf0f1").pack(side="left", padx=2)
+        tk.Label(filter_frame, text=t("common.status") + ":", bg="#ecf0f1").pack(side="left", padx=2)
         self._ct_status_var = tk.StringVar(value="All")
         ttk.Combobox(filter_frame, textvariable=self._ct_status_var,
                      values=["All", "draft", "signed", "expired", "cancelled"],
                      state="readonly", width=12).pack(side="left", padx=2)
-        ttk.Button(filter_frame, text="Filter", command=self._load_contracts).pack(side="left", padx=5)
+        ttk.Button(filter_frame, text=t("common.search"), command=self._load_contracts).pack(side="left", padx=5)
 
         cols = ("id", "hirer", "organisation", "start", "end", "fee", "signed", "status")
         self._ct_tree = ttk.Treeview(tab, columns=cols, show="headings",
                                      selectmode="browse", height=16)
+        headings = (t("common.id"), t("lettings.hirer"), t("lettings.organisation"),
+                    t("lettings.start_date"), t("lettings.end_date"),
+                    t("lettings.fee"), t("lettings.signed_date"), t("common.status"))
         widths = (40, 160, 140, 90, 90, 80, 90, 80)
-        for c, w in zip(cols, widths):
-            self._ct_tree.heading(c, text=c.replace("_", " ").title())
+        for c, h, w in zip(cols, headings, widths):
+            self._ct_tree.heading(c, text=h)
             self._ct_tree.column(c, width=w, anchor="center" if w < 100 else "w")
         vsb = ttk.Scrollbar(tab, orient="vertical", command=self._ct_tree.yview)
         self._ct_tree.configure(yscrollcommand=vsb.set)
@@ -136,9 +145,9 @@ class LettingsFrame(tk.Frame):
 
     def _build_stats_tab(self):
         self._stats_tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(self._stats_tab, text="Statistics")
+        self._nb.add(self._stats_tab, text=t("common.summary"))
 
-        ttk.Button(self._stats_tab, text="Refresh Statistics",
+        ttk.Button(self._stats_tab, text=t("common.refresh"),
                    command=self._load_stats).pack(pady=10)
 
         self._stats_text = tk.Text(self._stats_tab, width=60, height=20,
@@ -176,7 +185,7 @@ class LettingsFrame(tk.Frame):
                     b.get("status", ""),
                 ))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _load_contracts(self):
         for item in self._ct_tree.get_children():
@@ -199,32 +208,32 @@ class LettingsFrame(tk.Frame):
                     c.get("status", ""),
                 ))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _load_stats(self):
         try:
             stats = self._svc.get_stats()
             lines = [
                 "=" * 45,
-                "  FACILITY LETTINGS STATISTICS",
+                f"  {t('lettings.management').upper()} - {t('common.summary').upper()}",
                 "=" * 45,
                 "",
-                f"  Total Bookings:       {stats.get('total_bookings', 0)}",
+                f"  {t('lettings.total_bookings')}:       {stats.get('total_bookings', 0)}",
                 "",
-                "  Bookings by Status:",
+                f"  {t('lettings.bookings_by_status')}:",
             ]
             for st, cnt in stats.get("by_status", {}).items():
                 lines.append(f"    {st:<18} {cnt}")
             lines += [
                 "",
-                f"  Total Revenue:        {stats.get('total_revenue', 0):,.2f}",
-                f"  Pending Payments:     {stats.get('pending_payments', 0)}",
+                f"  {t('lettings.total_revenue')}:        {stats.get('total_revenue', 0):,.2f}",
+                f"  {t('lettings.pending_payments')}:     {stats.get('pending_payments', 0)}",
                 "",
                 "-" * 45,
                 "",
-                f"  Total Contracts:      {stats.get('total_contracts', 0)}",
-                f"  Active Contracts:     {stats.get('active_contracts', 0)}",
-                f"  Total Contract Value: {stats.get('total_contract_value', 0):,.2f}",
+                f"  {t('lettings.total_contracts')}:      {stats.get('total_contracts', 0)}",
+                f"  {t('lettings.active_contracts')}:     {stats.get('active_contracts', 0)}",
+                f"  {t('lettings.total_contract_value')}: {stats.get('total_contract_value', 0):,.2f}",
                 "",
                 "=" * 45,
             ]
@@ -233,30 +242,40 @@ class LettingsFrame(tk.Frame):
             self._stats_text.insert("1.0", "\n".join(lines))
             self._stats_text.configure(state="disabled")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
+
+    # ── CSV export ──────────────────────────────────────────
+
+    def _export_bookings_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._bk_tree, "lettings_bookings.csv")
+
+    def _export_contracts_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._ct_tree, "lettings_contracts.csv")
 
     # ── Booking actions ─────────────────────────────────────────
 
     def _new_booking(self):
         win = tk.Toplevel(self)
-        win.title("New Booking")
+        win.title(t("lettings.new_booking"))
         win.geometry("450x520")
         win.resizable(False, False)
 
         fields = {}
         row = 0
         for label, key, default in [
-            ("Hirer Name*:", "hirer_name", ""),
-            ("Organisation:", "organisation", ""),
-            ("Contact Email:", "contact_email", ""),
-            ("Contact Phone:", "contact_phone", ""),
-            ("Facility*:", "facility", ""),
-            ("Date* (YYYY-MM-DD):", "booking_date", str(date.today())),
-            ("Start Time* (HH:MM):", "start_time", "18:00"),
-            ("End Time* (HH:MM):", "end_time", "21:00"),
-            ("Purpose:", "purpose", ""),
-            ("Attendee Count:", "attendee_count", "0"),
-            ("Fee:", "fee", "0.00"),
+            (t("lettings.hirer") + "*:", "hirer_name", ""),
+            (t("lettings.organisation") + ":", "organisation", ""),
+            (t("lettings.contact_email") + ":", "contact_email", ""),
+            (t("lettings.contact_phone") + ":", "contact_phone", ""),
+            (t("lettings.facility") + "*:", "facility", ""),
+            (t("lettings.date") + "* (YYYY-MM-DD):", "booking_date", str(date.today())),
+            (t("lettings.start_time") + "* (HH:MM):", "start_time", "18:00"),
+            (t("lettings.end_time") + "* (HH:MM):", "end_time", "21:00"),
+            (t("lettings.purpose") + ":", "purpose", ""),
+            (t("lettings.attendee_count") + ":", "attendee_count", "0"),
+            (t("lettings.fee") + ":", "fee", "0.00"),
         ]:
             tk.Label(win, text=label).grid(row=row, column=0, padx=10, pady=3, sticky="e")
             e = tk.Entry(win, width=28)
@@ -266,7 +285,7 @@ class LettingsFrame(tk.Frame):
             fields[key] = e
             row += 1
 
-        tk.Label(win, text="Recurrence:").grid(row=row, column=0, padx=10, pady=3, sticky="e")
+        tk.Label(win, text=t("lettings.recurrence") + ":").grid(row=row, column=0, padx=10, pady=3, sticky="e")
         rec_var = tk.StringVar(value="one-off")
         ttk.Combobox(win, textvariable=rec_var,
                      values=["one-off", "weekly", "fortnightly", "monthly"],
@@ -275,7 +294,7 @@ class LettingsFrame(tk.Frame):
 
         # Checkboxes
         dbs_var = tk.IntVar()
-        tk.Checkbutton(win, text="DBS Required", variable=dbs_var).grid(
+        tk.Checkbutton(win, text=t("lettings.dbs_required"), variable=dbs_var).grid(
             row=row, column=0, columnspan=2, padx=10, pady=2, sticky="w")
         row += 1
 
@@ -287,7 +306,7 @@ class LettingsFrame(tk.Frame):
                 stime = fields["start_time"].get().strip()
                 etime = fields["end_time"].get().strip()
                 if not hirer or not facility or not bdate or not stime or not etime:
-                    messagebox.showwarning("Validation", "Please fill all required fields.")
+                    messagebox.showwarning(t("common.validation"), t("common.field_required"))
                     return
                 fee_val = float(fields["fee"].get().strip() or 0)
                 att_val = int(fields["attendee_count"].get().strip() or 0)
@@ -306,28 +325,28 @@ class LettingsFrame(tk.Frame):
                     recurrence=rec_var.get(),
                     dbs_required=dbs_var.get(),
                 )
-                messagebox.showinfo("Success", "Booking created.")
+                messagebox.showinfo(t("common.success"), t("common.created_success"))
                 win.destroy()
                 self._load_bookings()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(win, text="Save", command=save).grid(
+        ttk.Button(win, text=t("common.save"), command=save).grid(
             row=row, column=0, columnspan=2, pady=15)
 
     def _view_booking(self):
         sel = self._bk_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a booking to view.")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return
         try:
             b = self._svc.get_booking(int(sel[0]))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
             return
 
         win = tk.Toplevel(self)
-        win.title(f"Booking #{b['id']}")
+        win.title(f"{t('lettings.booking')} #{b['id']}")
         win.geometry("420x500")
         win.resizable(False, False)
 
@@ -335,17 +354,22 @@ class LettingsFrame(tk.Frame):
         txt.pack(fill="both", expand=True, padx=10, pady=10)
 
         display_fields = [
-            ("ID", "id"), ("Hirer", "hirer_name"), ("Organisation", "organisation"),
-            ("Email", "contact_email"), ("Phone", "contact_phone"),
-            ("Facility", "facility"), ("Date", "booking_date"),
-            ("Start", "start_time"), ("End", "end_time"),
-            ("Recurrence", "recurrence"), ("Purpose", "purpose"),
-            ("Attendees", "attendee_count"),
-            ("DBS Required", "dbs_required"), ("DBS Verified", "dbs_verified"),
-            ("Insurance", "insurance_verified"), ("Risk Assessment", "risk_assessment_done"),
-            ("Fee", "fee"), ("Payment", "payment_status"),
-            ("Invoice", "invoice_number"), ("Status", "status"),
-            ("Notes", "notes"), ("Created", "created_at"), ("Updated", "updated_at"),
+            (t("common.id"), "id"), (t("lettings.hirer"), "hirer_name"),
+            (t("lettings.organisation"), "organisation"),
+            (t("lettings.contact_email"), "contact_email"),
+            (t("lettings.contact_phone"), "contact_phone"),
+            (t("lettings.facility"), "facility"), (t("lettings.date"), "booking_date"),
+            (t("lettings.start_time"), "start_time"), (t("lettings.end_time"), "end_time"),
+            (t("lettings.recurrence"), "recurrence"), (t("lettings.purpose"), "purpose"),
+            (t("lettings.attendee_count"), "attendee_count"),
+            (t("lettings.dbs_required"), "dbs_required"),
+            (t("lettings.dbs_verified"), "dbs_verified"),
+            (t("lettings.insurance"), "insurance_verified"),
+            (t("lettings.risk_assessment"), "risk_assessment_done"),
+            (t("lettings.fee"), "fee"), (t("lettings.payment"), "payment_status"),
+            (t("lettings.invoice"), "invoice_number"), (t("common.status"), "status"),
+            (t("common.notes"), "notes"), (t("common.created"), "created_at"),
+            (t("common.updated"), "updated_at"),
         ]
         for label, key in display_fields:
             val = b.get(key, "")
@@ -355,35 +379,35 @@ class LettingsFrame(tk.Frame):
     def _edit_booking(self):
         sel = self._bk_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a booking to edit.")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return
         try:
             b = self._svc.get_booking(int(sel[0]))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
             return
 
         win = tk.Toplevel(self)
-        win.title(f"Edit Booking #{b['id']}")
+        win.title(t("common.edit") + f" {t('lettings.booking')} #{b['id']}")
         win.geometry("450x560")
         win.resizable(False, False)
 
         fields = {}
         row = 0
         editable = [
-            ("Hirer Name:", "hirer_name"),
-            ("Organisation:", "organisation"),
-            ("Contact Email:", "contact_email"),
-            ("Contact Phone:", "contact_phone"),
-            ("Facility:", "facility"),
-            ("Date (YYYY-MM-DD):", "booking_date"),
-            ("Start Time:", "start_time"),
-            ("End Time:", "end_time"),
-            ("Purpose:", "purpose"),
-            ("Attendee Count:", "attendee_count"),
-            ("Fee:", "fee"),
-            ("Invoice Number:", "invoice_number"),
-            ("Notes:", "notes"),
+            (t("lettings.hirer") + ":", "hirer_name"),
+            (t("lettings.organisation") + ":", "organisation"),
+            (t("lettings.contact_email") + ":", "contact_email"),
+            (t("lettings.contact_phone") + ":", "contact_phone"),
+            (t("lettings.facility") + ":", "facility"),
+            (t("lettings.date") + " (YYYY-MM-DD):", "booking_date"),
+            (t("lettings.start_time") + ":", "start_time"),
+            (t("lettings.end_time") + ":", "end_time"),
+            (t("lettings.purpose") + ":", "purpose"),
+            (t("lettings.attendee_count") + ":", "attendee_count"),
+            (t("lettings.fee") + ":", "fee"),
+            (t("lettings.invoice") + ":", "invoice_number"),
+            (t("common.notes") + ":", "notes"),
         ]
         for label, key in editable:
             tk.Label(win, text=label).grid(row=row, column=0, padx=10, pady=3, sticky="e")
@@ -394,7 +418,7 @@ class LettingsFrame(tk.Frame):
             fields[key] = e
             row += 1
 
-        tk.Label(win, text="Payment Status:").grid(row=row, column=0, padx=10, pady=3, sticky="e")
+        tk.Label(win, text=t("lettings.payment_status") + ":").grid(row=row, column=0, padx=10, pady=3, sticky="e")
         pay_var = tk.StringVar(value=b.get("payment_status", "unpaid"))
         ttk.Combobox(win, textvariable=pay_var,
                      values=["unpaid", "paid", "invoiced", "waived"],
@@ -409,10 +433,10 @@ class LettingsFrame(tk.Frame):
 
         chk_frame = tk.Frame(win)
         chk_frame.grid(row=row, column=0, columnspan=2, padx=10, pady=3)
-        tk.Checkbutton(chk_frame, text="DBS Required", variable=dbs_req_var).pack(side="left", padx=5)
-        tk.Checkbutton(chk_frame, text="DBS Verified", variable=dbs_ver_var).pack(side="left", padx=5)
-        tk.Checkbutton(chk_frame, text="Insurance", variable=ins_var).pack(side="left", padx=5)
-        tk.Checkbutton(chk_frame, text="Risk Assessed", variable=risk_var).pack(side="left", padx=5)
+        tk.Checkbutton(chk_frame, text=t("lettings.dbs_required"), variable=dbs_req_var).pack(side="left", padx=5)
+        tk.Checkbutton(chk_frame, text=t("lettings.dbs_verified"), variable=dbs_ver_var).pack(side="left", padx=5)
+        tk.Checkbutton(chk_frame, text=t("lettings.insurance"), variable=ins_var).pack(side="left", padx=5)
+        tk.Checkbutton(chk_frame, text=t("lettings.risk_assessment"), variable=risk_var).pack(side="left", padx=5)
         row += 1
 
         def save():
@@ -431,74 +455,74 @@ class LettingsFrame(tk.Frame):
                 updates["insurance_verified"] = ins_var.get()
                 updates["risk_assessment_done"] = risk_var.get()
                 self._svc.update_booking(b["id"], **updates)
-                messagebox.showinfo("Success", "Booking updated.")
+                messagebox.showinfo(t("common.success"), t("common.updated_success"))
                 win.destroy()
                 self._load_bookings()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(win, text="Save", command=save).grid(
+        ttk.Button(win, text=t("common.save"), command=save).grid(
             row=row, column=0, columnspan=2, pady=15)
 
     def _confirm_booking(self):
         sel = self._bk_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a booking to confirm.")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return
-        if not messagebox.askyesno("Confirm", "Confirm this booking?"):
+        if not messagebox.askyesno(t("common.confirm"), t("lettings.confirm_booking")):
             return
         try:
             self._svc.confirm_booking(int(sel[0]))
-            messagebox.showinfo("Success", "Booking confirmed.")
+            messagebox.showinfo(t("common.success"), t("lettings.booking_confirmed"))
             self._load_bookings()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _cancel_booking(self):
         sel = self._bk_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a booking to cancel.")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return
-        if not messagebox.askyesno("Cancel", "Cancel this booking?"):
+        if not messagebox.askyesno(t("common.confirm"), t("lettings.cancel_booking")):
             return
         try:
             self._svc.cancel_booking(int(sel[0]))
-            messagebox.showinfo("Success", "Booking cancelled.")
+            messagebox.showinfo(t("common.success"), t("lettings.booking_cancelled"))
             self._load_bookings()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _delete_booking(self):
         sel = self._bk_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a booking to delete.")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return
-        if not messagebox.askyesno("Delete", "Permanently delete this booking?"):
+        if not messagebox.askyesno(t("common.confirm_delete"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_booking(int(sel[0]))
-            messagebox.showinfo("Success", "Booking deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_bookings()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ── Contract actions ────────────────────────────────────────
 
     def _new_contract(self):
         win = tk.Toplevel(self)
-        win.title("New Contract")
+        win.title(t("lettings.new_contract"))
         win.geometry("420x350")
         win.resizable(False, False)
 
         fields = {}
         row = 0
         for label, key, default in [
-            ("Hirer Name*:", "hirer_name", ""),
-            ("Organisation:", "organisation", ""),
-            ("Start Date:", "contract_start", str(date.today())),
-            ("End Date:", "contract_end", ""),
-            ("Agreed Fee:", "agreed_fee", "0.00"),
-            ("Terms:", "terms", ""),
+            (t("lettings.hirer") + "*:", "hirer_name", ""),
+            (t("lettings.organisation") + ":", "organisation", ""),
+            (t("lettings.start_date") + ":", "contract_start", str(date.today())),
+            (t("lettings.end_date") + ":", "contract_end", ""),
+            (t("lettings.agreed_fee") + ":", "agreed_fee", "0.00"),
+            (t("lettings.terms") + ":", "terms", ""),
         ]:
             tk.Label(win, text=label).grid(row=row, column=0, padx=10, pady=5, sticky="e")
             e = tk.Entry(win, width=28)
@@ -512,7 +536,7 @@ class LettingsFrame(tk.Frame):
             try:
                 hirer = fields["hirer_name"].get().strip()
                 if not hirer:
-                    messagebox.showwarning("Validation", "Hirer name is required.")
+                    messagebox.showwarning(t("common.validation"), t("common.field_required"))
                     return
                 fee_val = float(fields["agreed_fee"].get().strip() or 0)
                 self._svc.create_contract(
@@ -523,40 +547,40 @@ class LettingsFrame(tk.Frame):
                     agreed_fee=fee_val,
                     terms=fields["terms"].get().strip() or None,
                 )
-                messagebox.showinfo("Success", "Contract created.")
+                messagebox.showinfo(t("common.success"), t("common.created_success"))
                 win.destroy()
                 self._load_contracts()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(win, text="Save", command=save).grid(
+        ttk.Button(win, text=t("common.save"), command=save).grid(
             row=row, column=0, columnspan=2, pady=15)
 
     def _edit_contract(self):
         sel = self._ct_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a contract to edit.")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return
         try:
             c = self._svc.get_contract(int(sel[0]))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
             return
 
         win = tk.Toplevel(self)
-        win.title(f"Edit Contract #{c['id']}")
+        win.title(t("common.edit") + f" {t('lettings.contract')} #{c['id']}")
         win.geometry("420x380")
         win.resizable(False, False)
 
         fields = {}
         row = 0
         for label, key in [
-            ("Hirer Name:", "hirer_name"),
-            ("Organisation:", "organisation"),
-            ("Start Date:", "contract_start"),
-            ("End Date:", "contract_end"),
-            ("Agreed Fee:", "agreed_fee"),
-            ("Terms:", "terms"),
+            (t("lettings.hirer") + ":", "hirer_name"),
+            (t("lettings.organisation") + ":", "organisation"),
+            (t("lettings.start_date") + ":", "contract_start"),
+            (t("lettings.end_date") + ":", "contract_end"),
+            (t("lettings.agreed_fee") + ":", "agreed_fee"),
+            (t("lettings.terms") + ":", "terms"),
         ]:
             tk.Label(win, text=label).grid(row=row, column=0, padx=10, pady=5, sticky="e")
             e = tk.Entry(win, width=28)
@@ -566,7 +590,7 @@ class LettingsFrame(tk.Frame):
             fields[key] = e
             row += 1
 
-        tk.Label(win, text="Status:").grid(row=row, column=0, padx=10, pady=5, sticky="e")
+        tk.Label(win, text=t("common.status") + ":").grid(row=row, column=0, padx=10, pady=5, sticky="e")
         st_var = tk.StringVar(value=c.get("status", "draft"))
         ttk.Combobox(win, textvariable=st_var,
                      values=["draft", "signed", "expired", "cancelled"],
@@ -583,42 +607,42 @@ class LettingsFrame(tk.Frame):
                     updates[key] = val if val != "" else None
                 updates["status"] = st_var.get()
                 self._svc.update_contract(c["id"], **updates)
-                messagebox.showinfo("Success", "Contract updated.")
+                messagebox.showinfo(t("common.success"), t("common.updated_success"))
                 win.destroy()
                 self._load_contracts()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(win, text="Save", command=save).grid(
+        ttk.Button(win, text=t("common.save"), command=save).grid(
             row=row, column=0, columnspan=2, pady=15)
 
     def _sign_contract(self):
         sel = self._ct_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a contract to sign.")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return
-        if not messagebox.askyesno("Sign", "Mark this contract as signed today?"):
+        if not messagebox.askyesno(t("common.confirm"), t("lettings.confirm_sign")):
             return
         try:
             self._svc.sign_contract(int(sel[0]), signed_date=str(date.today()))
-            messagebox.showinfo("Success", "Contract signed.")
+            messagebox.showinfo(t("common.success"), t("lettings.contract_signed"))
             self._load_contracts()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _delete_contract(self):
         sel = self._ct_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a contract to delete.")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return
-        if not messagebox.askyesno("Delete", "Permanently delete this contract?"):
+        if not messagebox.askyesno(t("common.confirm_delete"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_contract(int(sel[0]))
-            messagebox.showinfo("Success", "Contract deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_contracts()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ── Refresh ─────────────────────────────────────────────────
 

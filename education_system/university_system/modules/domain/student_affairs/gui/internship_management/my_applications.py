@@ -1,4 +1,4 @@
-from ._imports import (
+from education_system.university_system.modules.domain.student_affairs.gui.internship_management._imports import (
     _t, messagebox, scrolledtext, tk, ttk, sqlite3, get_connection,
 )
 

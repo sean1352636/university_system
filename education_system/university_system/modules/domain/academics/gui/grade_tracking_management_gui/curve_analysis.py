@@ -3,7 +3,7 @@ import threading
 
 from education_system.university_system.modules.shared.utils.i18n import get_text as _
 
-from ._imports import (
+from education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui._imports import (
     CURVE_ANALYSIS_AVAILABLE,
     apply_grading_curve,
     comparative_performance_analysis,

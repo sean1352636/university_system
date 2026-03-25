@@ -45,8 +45,8 @@ project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(c
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from .email_manager_main import EmailManagerGUI
-from .chat_dialogs import ComposeMessageDialog, ReplyMessageDialog
+from education_system.university_system.modules.shared.gui.email.email_gui.email_manager_main import EmailManagerGUI
+from education_system.university_system.modules.shared.gui.email.email_gui.chat_dialogs import ComposeMessageDialog, ReplyMessageDialog
 
 # Import notifications service
 try:

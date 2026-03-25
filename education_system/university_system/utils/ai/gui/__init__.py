@@ -12,10 +12,10 @@ Public API (backward-compatible):
     test_gui_integration        - Integration test
 """
 
-from .chatbot_gui import ChatbotGUI
-from .manager import ChatbotManager
-from .compat import BackwardCompatibilityWrapper
-from .entry import (
+from education_system.university_system.utils.ai.gui.chatbot_gui import ChatbotGUI
+from education_system.university_system.utils.ai.gui.manager import ChatbotManager
+from education_system.university_system.utils.ai.gui.compat import BackwardCompatibilityWrapper
+from education_system.university_system.utils.ai.gui.entry import (
     create_chatbot_with_gui,
     run_enhanced_chatbot,
     test_gui_integration,

@@ -1404,10 +1404,10 @@ class NailBarGUI:
 
                 if search_term:
                     query = '''
-                        SELECT transaction_id, appointment_id, created_at, customer_id,
+                        SELECT transaction_id, reference_id as appointment_id, created_at, customer_id,
                                amount, payment_method, status
-                        FROM nailbar_transactions
-                        WHERE transaction_id LIKE ? OR appointment_id LIKE ? OR customer_id LIKE ?
+                        FROM transactions
+                        WHERE source_type = 'nail_bar' AND (transaction_id LIKE ? OR reference_id LIKE ? OR customer_id LIKE ?)
                         ORDER BY created_at DESC
                         LIMIT 500
                     '''
@@ -1415,9 +1415,10 @@ class NailBarGUI:
                     cursor = conn.execute(query, (search_pattern, search_pattern, search_pattern))
                 else:
                     query = '''
-                        SELECT transaction_id, appointment_id, created_at, customer_id,
+                        SELECT transaction_id, reference_id as appointment_id, created_at, customer_id,
                                amount, payment_method, status
-                        FROM nailbar_transactions
+                        FROM transactions
+                        WHERE source_type = 'nail_bar'
                         ORDER BY created_at DESC
                         LIMIT 500
                     '''
@@ -1487,8 +1488,8 @@ class NailBarGUI:
             with get_db_connection() as conn:
                 cursor = conn.execute('''
                     SELECT customer_id, payment_method
-                    FROM nailbar_transactions
-                    WHERE transaction_id = ?
+                    FROM transactions
+                    WHERE transaction_id = ? AND source_type = 'nail_bar'
                 ''', (transaction_id,))
 
                 trans_data = cursor.fetchone()
@@ -1515,40 +1516,27 @@ class NailBarGUI:
             with get_db_connection() as conn:
                 # Update transaction status to refunded
                 conn.execute('''
-                    UPDATE nailbar_transactions
+                    UPDATE transactions
                     SET status = 'refunded'
-                    WHERE transaction_id = ?
+                    WHERE transaction_id = ? AND source_type = 'nail_bar'
                 ''', (transaction_id,))
 
                 # Generate refund reference
                 refund_ref = f"NAILBAR-REFUND-{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-                # Create refunds table if it doesn't exist
-                conn.execute('''
-                    CREATE TABLE IF NOT EXISTS nailbar_refunds (
-                        refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        transaction_id INTEGER NOT NULL,
-                        appointment_id INTEGER,
-                        refund_date TEXT NOT NULL,
-                        refund_amount REAL NOT NULL,
-                        refund_method TEXT NOT NULL,
-                        refund_reference TEXT UNIQUE,
-                        customer_id TEXT,
-                        processed_by TEXT,
-                        notes TEXT,
-                        FOREIGN KEY (transaction_id) REFERENCES nailbar_transactions (transaction_id)
-                    )
-                ''')
-
-                # Insert refund record
+                # Insert refund record into unified refunds table
                 processed_by = self.current_user.get('username', 'System')
+                refund_notes = f"Nail Bar/Salon service refund (transaction_id={transaction_id})"
                 conn.execute('''
-                    INSERT INTO nailbar_refunds
-                    (transaction_id, appointment_id, refund_date, refund_amount, refund_method, refund_reference, customer_id, processed_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (transaction_id, appointment_id if appointment_id != 'N/A' else None,
+                    INSERT INTO unified_refunds
+                    (source_type, reference_id, reference_type, refund_date, amount,
+                     refund_method, refund_reference, student_id, processed_by, notes)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', ('nail_bar',
+                      str(appointment_id) if appointment_id != 'N/A' else None,
+                      'appointment',
                       datetime.now().strftime('%Y-%m-%d %H:%M:%S'), amount, refund_method,
-                      refund_ref, customer_id, processed_by))
+                      refund_ref, customer_id, processed_by, refund_notes))
 
                 conn.commit()
 
@@ -1681,10 +1669,10 @@ class NailBarGUI:
                 # Record transaction
                 processed_by = self.current_user.get('username', 'System')
                 conn.execute('''
-                    INSERT INTO student_finance_transactions
-                    (account_id, student_id, transaction_type, amount, balance_before,
+                    INSERT INTO transactions
+                    (source_type, account_id, student_id, transaction_type, amount, balance_before,
                      balance_after, description, reference_id, processed_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES ('student_finance', ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (account_id, customer_id, 'credit', amount, balance_before, balance_after,
                       'Nail Bar/Salon Service Refund', refund_ref, processed_by))
 
@@ -1746,20 +1734,9 @@ class NailBarGUI:
     def notify_nailbar_finance_gui(self, transaction_id, amount, method, refund_ref, customer_id):
         """Notify finance GUI about the refund"""
         try:
-            with get_db_connection() as conn:
-                # Insert into finance_refunds table (table already exists)
-                processed_by = self.current_user.get('username', 'System')
-                conn.execute('''
-                    INSERT INTO finance_refunds
-                    (transaction_id, refund_reference, department, amount, refund_method,
-                     refund_date, student_id, processed_by, notes)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (str(transaction_id), refund_ref, 'Nail Bar/Salon', amount, method,
-                      datetime.now().strftime('%Y-%m-%d %H:%M:%S'), customer_id, processed_by,
-                      'Nail Bar/Salon service refund'))
-
-                conn.commit()
-
+            # Finance refund is now recorded via unified_refunds table;
+            # no separate finance_refunds insert needed.
+            logger.info(f"Finance notified of nail bar refund: ref={refund_ref}, amount={amount}")
         except Exception as e:
             logger.error(f"Error notifying finance GUI: {e}")
 
@@ -1785,9 +1762,9 @@ class NailBarGUI:
                 # Get transaction details
                 cursor = conn.execute('''
                     SELECT t.*, a.appointment_date, a.appointment_time, a.technician_id, a.status as appt_status
-                    FROM nailbar_transactions t
-                    LEFT JOIN nailbar_appointments a ON t.appointment_id = a.appointment_id
-                    WHERE t.transaction_id = ?
+                    FROM transactions t
+                    LEFT JOIN nailbar_appointments a ON t.reference_id = a.appointment_id AND t.reference_type = 'appointment'
+                    WHERE t.source_type = 'nail_bar' AND t.transaction_id = ?
                 ''', (transaction_id,))
 
                 trans = cursor.fetchone()

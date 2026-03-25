@@ -1,8 +1,13 @@
 """Database constants for the Primary School Management System."""
 
-# ── Connection settings ───────────────────────────────────────────────────
-CONNECTION_TIMEOUT = 30
-BUSY_TIMEOUT = 5000
+from education_system.shared.database.constants import (
+    CONNECTION_TIMEOUT,
+    BUSY_TIMEOUT,
+    POOL_MIN_SIZE,
+    POOL_MAX_SIZE,
+    PRAGMAS,
+    TERMS,
+)
 
 # ── Key stages ────────────────────────────────────────────────────────────
 KEY_STAGES = {

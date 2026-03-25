@@ -177,16 +177,18 @@ class PeerReviewMixin:
                 reviewer_id = self._get_student_id()
 
             conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('''
-                SELECT * FROM peer_review_assignments
-                WHERE reviewer_id = ?
-                ORDER BY assigned_at DESC
-            ''', (reviewer_id,))
+                cursor.execute('''
+                    SELECT * FROM peer_review_assignments
+                    WHERE reviewer_id = ?
+                    ORDER BY assigned_at DESC
+                ''', (reviewer_id,))
 
-            assignments = cursor.fetchall()
-            conn.close()
+                assignments = cursor.fetchall()
+            finally:
+                conn.close()
             return assignments
 
         except Exception as e:

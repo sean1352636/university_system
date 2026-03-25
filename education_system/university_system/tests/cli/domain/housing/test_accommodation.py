@@ -33,7 +33,7 @@ def temp_db():
 @pytest.fixture
 def mock_db_connection(temp_db):
     """Mock database connection"""
-    with patch('university_system.modules.domain.housing.services.accommodation.DB_PATH', temp_db):
+    with patch('education_system.university_system.modules.domain.housing.services.accommodation.DB_PATH', temp_db):
         yield temp_db
 
 class TestDatabaseInitialization:
@@ -121,7 +121,7 @@ class TestValidationFunctions:
         conn.commit()
         conn.close()
 
-        with patch('university_system.modules.domain.housing.services.accommodation.DB_PATH', mock_db_connection):
+        with patch('education_system.university_system.modules.domain.housing.services.accommodation.DB_PATH', mock_db_connection):
             is_valid, error = validate_student_id('S12345')
             assert is_valid is True
             assert error is None
@@ -141,7 +141,7 @@ class TestValidationFunctions:
         conn.commit()
         conn.close()
 
-        with patch('university_system.modules.domain.housing.services.accommodation.DB_PATH', mock_db_connection):
+        with patch('education_system.university_system.modules.domain.housing.services.accommodation.DB_PATH', mock_db_connection):
             is_valid, error = validate_student_id('S99999')
             assert is_valid is False
             assert error is not None
@@ -157,7 +157,7 @@ class TestAuditLogging:
 
         init_accommodation_db()
 
-        with patch('university_system.modules.domain.housing.services.accommodation.get_current_user', return_value='test_user'):
+        with patch('education_system.university_system.modules.domain.housing.services.accommodation.get_current_user', return_value='test_user'):
             log_action('TEST_ACTION', accommodation_id=123, details='Test details')
 
         # Verify log entry was created
@@ -177,7 +177,7 @@ class TestAuditLogging:
 
         init_accommodation_db()
 
-        with patch('university_system.modules.domain.housing.services.accommodation.get_current_user', return_value='system'):
+        with patch('education_system.university_system.modules.domain.housing.services.accommodation.get_current_user', return_value='system'):
             log_action('SYSTEM_ACTION', details='System action')
 
         # Verify log entry
@@ -302,7 +302,7 @@ class TestTemplateManagement:
 class TestStatisticsReporting:
     """Test statistics and reporting functions"""
 
-    @patch('university_system.modules.domain.housing.services.accommodation.get_current_user')
+    @patch('education_system.university_system.modules.domain.housing.services.accommodation.get_current_user')
     def test_generate_statistics_report(self, mock_user, mock_db_connection):
         """Test generate_statistics_report returns data"""
         from education_system.university_system.modules.domain.housing.services.accommodation import (
@@ -347,7 +347,7 @@ S002,Apartment,Two bedroom,2024-02-01,2024-12-31"""
 
         csv_file.write_text(csv_content)
 
-        with patch('university_system.modules.domain.housing.services.accommodation.validate_student_id', return_value=(True, None)):
+        with patch('education_system.university_system.modules.domain.housing.services.accommodation.validate_student_id', return_value=(True, None)):
             success, error = bulk_import_from_csv(str(csv_file))
 
             # Should succeed or return reasonable error
@@ -365,7 +365,7 @@ S002,Apartment,Two bedroom,2024-02-01,2024-12-31"""
 class TestNotificationSystem:
     """Test notification functions"""
 
-    @patch('university_system.modules.domain.housing.services.accommodation.email_manager')
+    @patch('education_system.university_system.modules.domain.housing.services.accommodation.email_manager')
     def test_notify_student_sends_email(self, mock_email, mock_db_connection):
         """Test notify_student sends email notification"""
         from education_system.university_system.modules.domain.housing.services.accommodation import notify_student
@@ -417,7 +417,7 @@ class TestAuthIntegration:
         # Should not raise error
         assert True
 
-    @patch('university_system.modules.domain.housing.services.accommodation.get_current_user')
+    @patch('education_system.university_system.modules.domain.housing.services.accommodation.get_current_user')
     def test_operations_use_current_user(self, mock_user, mock_db_connection):
         """Test operations retrieve current user"""
         from education_system.university_system.modules.domain.housing.services.accommodation import (
@@ -435,7 +435,7 @@ class TestAuthIntegration:
 class TestDatabaseBackup:
     """Test database backup integration"""
 
-    @patch('university_system.modules.domain.housing.services.accommodation.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.housing.services.accommodation.backup_before_operation')
     def test_backup_before_operation_called(self, mock_backup):
         """Test backup_before_operation is called for critical operations"""
         from education_system.university_system.modules.domain.housing.services.accommodation import backup_before_operation
@@ -453,7 +453,7 @@ class TestErrorHandling:
         from education_system.university_system.modules.domain.housing.services.accommodation import log_action
 
         # Try to log without initialized database
-        with patch('university_system.modules.domain.housing.services.accommodation.DB_PATH', '/invalid/path.db'):
+        with patch('education_system.university_system.modules.domain.housing.services.accommodation.DB_PATH', '/invalid/path.db'):
             # Should not raise exception
             try:
                 log_action('TEST', accommodation_id=1)

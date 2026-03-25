@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/security_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' = ?', ' AND ', ' WHERE ', ' WHERE id = ?', '%Y-%m-%d %H:%M:%S', ', ', '/api/security', '/tickets', '/tickets/<ticket_id>', 'GET', 'Normal', 'POST', 'PUT', 'admin_notes', 'category', 'create', 'description', 'location', 'priority', 'priority = ?', 'security', 'security_ticket', 'security_tickets', 'status', 'status = ?', 'sub', 'subject', 'type', 'type = ?', 'update', 'updated_at = ?', 'user_email', 'user_id', 'user_name', 'view']

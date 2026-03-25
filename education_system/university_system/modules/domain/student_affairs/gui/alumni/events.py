@@ -1,3 +1,4 @@
+from education_system.university_system.core.sql_safety import escape_like
 import tkinter as tk
 from education_system.university_system.infrastructure.email.template_utils import render_template
 from tkinter import ttk, messagebox, simpledialog, filedialog
@@ -82,9 +83,10 @@ class EventsMixin:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                SELECT event_id, event_name
-                FROM alumni_events
-                ORDER BY COALESCE(event_date, event_name)
+                SELECT event_id, title
+                FROM unified_events
+                WHERE source_type = 'alumni'
+                ORDER BY COALESCE(start_datetime, title)
                 """
             )
             rows = cursor.fetchall()
@@ -102,14 +104,14 @@ class EventsMixin:
                     cursor = conn.cursor()
 
                     # Build query
-                    query = "SELECT event_name, event_date, location, event_type, fee, capacity, status FROM events WHERE 1=1"
+                    query = "SELECT title, start_datetime, location, event_type, fee, capacity, status FROM unified_events WHERE 1=1"
                     params = []
 
                     # Add keyword filter
                     keyword = self.event_search_keyword.get().strip()
                     if keyword:
-                        query += " AND (event_name LIKE ? OR description LIKE ?)"
-                        params.extend([f"%{keyword}%", f"%{keyword}%"])
+                        query += " AND (title LIKE ? OR description LIKE ?)"
+                        params.extend([f"%{escape_like(keyword)}%", f"%{escape_like(keyword)}%"])
 
                     # Add type filter
                     event_type = self.event_search_type.get()
@@ -121,26 +123,26 @@ class EventsMixin:
                     location = self.event_search_location.get().strip()
                     if location:
                         query += " AND location LIKE ?"
-                        params.append(f"%{location}%")
+                        params.append(f"%{escape_like(location)}%")
 
                     # Add date range filter
                     date_range = self.event_date_range.get()
                     if date_range == "Next 7 Days":
-                        query += " AND event_date BETWEEN datetime('now') AND datetime('now', '+7 days')"
+                        query += " AND start_datetime BETWEEN datetime('now') AND datetime('now', '+7 days')"
                     elif date_range == "Next 30 Days":
-                        query += " AND event_date BETWEEN datetime('now') AND datetime('now', '+30 days')"
+                        query += " AND start_datetime BETWEEN datetime('now') AND datetime('now', '+30 days')"
                     elif date_range == "Next 3 Months":
-                        query += " AND event_date BETWEEN datetime('now') AND datetime('now', '+3 months')"
+                        query += " AND start_datetime BETWEEN datetime('now') AND datetime('now', '+3 months')"
                     elif date_range == "This Year":
-                        query += " AND strftime('%Y', event_date) = strftime('%Y', 'now')"
+                        query += " AND strftime('%Y', start_datetime) = strftime('%Y', 'now')"
                     elif date_range == "Past Events":
-                        query += " AND event_date < datetime('now')"
+                        query += " AND start_datetime < datetime('now')"
 
                     # Add free events filter
                     if self.event_free_only.get():
                         query += " AND (fee = 0 OR fee IS NULL)"
 
-                    query += " ORDER BY event_date ASC"
+                    query += " ORDER BY start_datetime ASC"
 
                     cursor.execute(query, params)
                     results = cursor.fetchall()
@@ -710,12 +712,12 @@ class EventsMixin:
                     user_id = self._current_user_id()
 
                     query = """
-                        SELECT e.event_name, e.event_date, e.location,
+                        SELECT e.title, e.start_datetime, e.location,
                                r.status, r.payment_status, r.registration_date
-                        FROM event_registrations r
-                        JOIN events e ON r.event_id = e.event_id
-                        WHERE r.user_id = ? OR r.alumni_id = ?
-                        ORDER BY e.event_date DESC
+                        FROM unified_event_registrations r
+                        JOIN unified_events e ON r.event_id = e.event_id
+                        WHERE (r.user_id = ? OR r.alumni_id = ?) AND e.source_type = 'alumni'
+                        ORDER BY e.start_datetime DESC
                     """
                     cursor.execute(query, (user_id, user_id))
                     registrations = cursor.fetchall()

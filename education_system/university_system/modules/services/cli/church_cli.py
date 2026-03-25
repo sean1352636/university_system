@@ -47,17 +47,6 @@ CREATE TABLE IF NOT EXISTS church_donations (
     notes TEXT
 );
 
-CREATE TABLE IF NOT EXISTS church_events (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    description TEXT,
-    event_date TEXT,
-    event_time TEXT,
-    location TEXT,
-    organizer TEXT,
-    status TEXT DEFAULT 'Scheduled'
-);
-
 CREATE TABLE IF NOT EXISTS church_prayer_requests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     requester_name TEXT,
@@ -216,14 +205,22 @@ def get_donation_stats():
 # ==================== Events ====================
 
 def create_event(title, event_date, event_time='', location='', description=''):
-    """Create a church event."""
+    """Create a church event in the unified_events table."""
     try:
+        # Combine date + time into start_datetime
+        if event_date and event_time:
+            start_datetime = f"{event_date} {event_time}"
+        elif event_date:
+            start_datetime = f"{event_date} 00:00"
+        else:
+            start_datetime = ''
+
         with get_connection() as conn:
             conn.execute("""
-                INSERT INTO church_events
-                (title, description, event_date, event_time, location, status)
-                VALUES (?, ?, ?, ?, ?, 'Scheduled')
-            """, (title, description, event_date, event_time, location))
+                INSERT INTO unified_events
+                (title, description, start_datetime, location, source_type)
+                VALUES (?, ?, ?, ?, 'church')
+            """, (title, description, start_datetime, location))
             conn.commit()
         return True
     except Exception as e:
@@ -231,12 +228,15 @@ def create_event(title, event_date, event_time='', location='', description=''):
         return False
 
 def list_events():
-    """List upcoming events."""
+    """List upcoming church events from unified_events."""
     try:
         with get_connection() as conn:
             cursor = conn.execute("""
-                SELECT id, title, event_date, event_time, location, status
-                FROM church_events ORDER BY event_date DESC
+                SELECT id, title, DATE(start_datetime) as event_date,
+                       TIME(start_datetime) as event_time, location, 'Scheduled' as status
+                FROM unified_events
+                WHERE source_type = 'church'
+                ORDER BY start_datetime DESC
             """)
             return cursor.fetchall()
     except Exception as e:

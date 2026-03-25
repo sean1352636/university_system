@@ -580,9 +580,9 @@ def view_waste_reports():
             total_waste_cost = cursor.fetchone()[0] or 0
 
             cursor.execute('''
-                SELECT SUM(total_price) as total_revenue
-                FROM restaurant_orders
-                WHERE DATE(order_time) >= date('now', '-30 days') AND status = 'Completed'
+                SELECT SUM(total_amount) as total_revenue
+                FROM orders
+                WHERE DATE(order_date) >= date('now', '-30 days') AND order_status = 'Completed'
             ''')
 
             total_revenue = cursor.fetchone()[0] or 0

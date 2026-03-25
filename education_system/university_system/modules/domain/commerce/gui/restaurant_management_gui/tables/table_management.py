@@ -348,10 +348,10 @@ def optimize_table_structure(self):
         utilization_data = cursor.fetchall()
         # Get revenue per table (if order data exists)
         cursor.execute('''
-            SELECT t.table_id, SUM(o.total_price) as total_revenue
+            SELECT t.table_id, SUM(o.total_amount) as total_revenue
             FROM restaurant_tables t
-            LEFT JOIN restaurant_orders o ON t.table_id = o.table_id
-            WHERE o.order_time >= datetime('now', '-30 days')
+            LEFT JOIN orders o ON t.table_id = o.table_id
+            WHERE o.order_date >= datetime('now', '-30 days')
             GROUP BY t.table_id
         ''')
         revenue_data = dict(cursor.fetchall())

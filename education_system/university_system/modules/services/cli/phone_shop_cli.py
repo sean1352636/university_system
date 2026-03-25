@@ -38,8 +38,10 @@ PHONE_CATEGORIES = ["Smartphone", "Feature Phone", "Accessories", "Cases", "Char
 ORDER_STATUSES = ["Pending", "Processing", "Shipped", "Delivered", "Cancelled"]
 
 PHONE_SHOP_SCHEMA = """
-CREATE TABLE IF NOT EXISTS phoneshop_products (
+CREATE TABLE IF NOT EXISTS products (
     product_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_type TEXT NOT NULL DEFAULT 'phone_shop',
+    source_product_id TEXT,
     sku TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
     brand TEXT,
@@ -50,8 +52,10 @@ CREATE TABLE IF NOT EXISTS phoneshop_products (
     created_date TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS phoneshop_orders (
+CREATE TABLE IF NOT EXISTS orders (
     order_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_type TEXT NOT NULL DEFAULT 'phone_shop',
+    source_order_id TEXT,
     order_number TEXT UNIQUE NOT NULL,
     customer_name TEXT NOT NULL,
     customer_email TEXT,
@@ -64,15 +68,17 @@ CREATE TABLE IF NOT EXISTS phoneshop_orders (
     order_date TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS phoneshop_order_items (
+CREATE TABLE IF NOT EXISTS order_items (
     item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_type TEXT NOT NULL DEFAULT 'phone_shop',
     order_id INTEGER NOT NULL,
     product_id INTEGER NOT NULL,
+    item_name TEXT,
     quantity INTEGER NOT NULL,
     unit_price REAL NOT NULL,
     subtotal REAL NOT NULL,
-    FOREIGN KEY (order_id) REFERENCES phoneshop_orders (order_id),
-    FOREIGN KEY (product_id) REFERENCES phoneshop_products (product_id)
+    FOREIGN KEY (order_id) REFERENCES orders (order_id),
+    FOREIGN KEY (product_id) REFERENCES products (product_id)
 );
 """
 
@@ -83,7 +89,7 @@ def init_phoneshop_database():
             conn.executescript(PHONE_SHOP_SCHEMA)
 
             # Insert sample products if none exist
-            cursor = conn.execute("SELECT COUNT(*) FROM phoneshop_products")
+            cursor = conn.execute("SELECT COUNT(*) FROM products WHERE source_type = 'phone_shop'")
             if cursor.fetchone()[0] == 0:
                 sample_products = [
                     ("PHN001", "iPhone 15 Pro", "Apple", "Smartphone", 999.00, 15, "Latest flagship phone"),
@@ -101,9 +107,9 @@ def init_phoneshop_database():
                 ]
                 for product in sample_products:
                     conn.execute("""
-                        INSERT INTO phoneshop_products
-                        (sku, name, brand, category, price, stock, description, created_date)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO products
+                        (source_type, sku, name, brand, category, price, stock, description, created_date)
+                        VALUES ('phone_shop', ?, ?, ?, ?, ?, ?, ?, ?)
                     """, (*product, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
             conn.commit()
@@ -133,20 +139,21 @@ def get_all_products(category=None, search=None):
             if category and category != 'All':
                 cursor = conn.execute("""
                     SELECT product_id, sku, name, brand, category, price, stock
-                    FROM phoneshop_products WHERE category = ?
+                    FROM products WHERE source_type = 'phone_shop' AND category = ?
                     ORDER BY category, name
                 """, (category,))
             elif search:
                 cursor = conn.execute("""
                     SELECT product_id, sku, name, brand, category, price, stock
-                    FROM phoneshop_products
-                    WHERE name LIKE ? OR brand LIKE ?
+                    FROM products
+                    WHERE source_type = 'phone_shop' AND (name LIKE ? OR brand LIKE ?)
                     ORDER BY category, name
                 """, (f'%{search}%', f'%{search}%'))
             else:
                 cursor = conn.execute("""
                     SELECT product_id, sku, name, brand, category, price, stock
-                    FROM phoneshop_products
+                    FROM products
+                    WHERE source_type = 'phone_shop'
                     ORDER BY category, name
                 """)
 
@@ -167,7 +174,7 @@ def get_product_by_id(product_id):
         with get_connection() as conn:
             cursor = conn.execute("""
                 SELECT product_id, sku, name, brand, category, price, stock, description
-                FROM phoneshop_products WHERE product_id = ?
+                FROM products WHERE source_type = 'phone_shop' AND product_id = ?
             """, (product_id,))
             row = cursor.fetchone()
             if row:
@@ -188,10 +195,10 @@ def create_order(order_data, cart_items):
         with get_connection() as conn:
             # Create order
             conn.execute("""
-                INSERT INTO phoneshop_orders
-                (order_number, customer_name, customer_email, customer_phone, student_id,
+                INSERT INTO orders
+                (source_type, order_number, customer_name, customer_email, customer_phone, student_id,
                  total_amount, payment_method, payment_status, order_status, order_date)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES ('phone_shop', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 order_data['order_number'], order_data['customer_name'],
                 order_data.get('customer_email', ''), order_data.get('customer_phone', ''),
@@ -206,17 +213,17 @@ def create_order(order_data, cart_items):
             # Add order items
             for item in cart_items:
                 conn.execute("""
-                    INSERT INTO phoneshop_order_items
-                    (order_id, product_id, quantity, unit_price, subtotal)
-                    VALUES (?, ?, ?, ?, ?)
-                """, (order_id, item['product_id'], item['quantity'],
-                      item['price'], item['quantity'] * item['price']))
+                    INSERT INTO order_items
+                    (source_type, order_id, product_id, item_name, quantity, unit_price, subtotal)
+                    VALUES ('phone_shop', ?, ?, ?, ?, ?, ?)
+                """, (order_id, item['product_id'], item['name'],
+                      item['quantity'], item['price'], item['quantity'] * item['price']))
 
                 # Update stock
                 conn.execute("""
-                    UPDATE phoneshop_products
+                    UPDATE products
                     SET stock = stock - ?
-                    WHERE product_id = ?
+                    WHERE source_type = 'phone_shop' AND product_id = ?
                 """, (item['quantity'], item['product_id']))
 
             conn.commit()
@@ -232,7 +239,8 @@ def get_all_orders():
             cursor = conn.execute("""
                 SELECT order_id, order_number, customer_name, total_amount,
                        payment_status, order_status, order_date
-                FROM phoneshop_orders
+                FROM orders
+                WHERE source_type = 'phone_shop'
                 ORDER BY order_date DESC
             """)
             orders = []

@@ -1,5 +1,5 @@
 """Wellness CLI package."""
 
-from .wellness_cli import WellnessCLI
+from education_system.university_system.modules.domain.wellness.cli.wellness_cli import WellnessCLI
 
 __all__ = ['WellnessCLI']

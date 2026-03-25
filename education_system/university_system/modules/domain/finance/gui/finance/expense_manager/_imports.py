@@ -46,7 +46,7 @@ except ImportError:
         return True
 
 try:
-    from education_system.university_system.infrastructure.logging.log_config import configure_logging, get_log_file
+    from education_system.university_system.utils.logging.log_config import configure_logging, get_log_file
 except ImportError:
     def configure_logging(name=None):
         """Fallback logging configuration."""
@@ -88,14 +88,14 @@ cipher_suite = Fernet(ENCRYPTION_KEY)
 # Payment gateway configurations (from original file)
 PAYMENT_GATEWAYS = {
     'stripe': {
-        'public_key': 'pk_test_...',
-        'secret_key': 'sk_test_...',
-        'webhook_secret': 'whsec_...'
+        'public_key': os.getenv('STRIPE_PUBLIC_KEY', ''),
+        'secret_key': os.getenv('STRIPE_SECRET_KEY', ''),
+        'webhook_secret': os.getenv('STRIPE_WEBHOOK_SECRET', '')
     },
     'paypal': {
-        'client_id': 'your_paypal_client_id',
-        'client_secret': 'your_paypal_client_secret',
-        'environment': 'sandbox'
+        'client_id': os.getenv('PAYPAL_CLIENT_ID', ''),
+        'client_secret': os.getenv('PAYPAL_CLIENT_SECRET', ''),
+        'environment': os.getenv('PAYPAL_ENVIRONMENT', 'sandbox')
     }
 }
 

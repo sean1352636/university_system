@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/logging/log_management/cli/api_mgmt.py
+# hypothesis_version: 6.151.9
+
+['\n📚 API DOCUMENTATION', '\n🔌 API MANAGEMENT', '1', '2', '2. Generate API Key', '3', '4', '4. API Documentation', '5. Return', '=', 'Choose option: ', 'api_enabled', 'api_secret_key', 'disabled', 'enabled']

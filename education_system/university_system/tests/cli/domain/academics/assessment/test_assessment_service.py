@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from education_system.university_system.modules.domain.academics.services.assessment_service import (
     AssessmentAssignmentService
 )
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 
 @pytest.fixture

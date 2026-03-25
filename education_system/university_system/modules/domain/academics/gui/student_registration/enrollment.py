@@ -5,7 +5,10 @@ Handles enrolling in modules, dropping modules, and displaying the
 student's current enrollment list.
 """
 
-from .common_imports import *
+from datetime import date
+from tkinter import ttk, messagebox
+
+from education_system.university_system.modules.domain.academics.gui.student_registration.common_imports import get_connection, logger
 
 
 class EnrollmentMixin:
@@ -30,23 +33,41 @@ class EnrollmentMixin:
             conn = get_connection()
             cursor = conn.cursor()
 
-            # Check if already enrolled
+            # Check if already enrolled or previously enrolled (dropped)
             cursor.execute(
-                "SELECT COUNT(*) FROM student_modules "
-                "WHERE student_id = ? AND module_code = ? AND status = 'Enrolled'",
+                "SELECT status FROM student_modules "
+                "WHERE student_id = ? AND module_code = ?",
                 (self.student_id, module_code),
             )
-            if cursor.fetchone()[0] > 0:
-                messagebox.showwarning(
-                    "Already Enrolled",
-                    f"You are already enrolled in {module_code}.",
-                )
-                conn.close()
-                return
+            existing = cursor.fetchone()
+            if existing:
+                if existing[0] == 'Enrolled':
+                    messagebox.showwarning(
+                        "Already Enrolled",
+                        f"You are already enrolled in {module_code}.",
+                    )
+                    conn.close()
+                    return
+                else:
+                    # Re-enroll: update existing row back to Enrolled
+                    enrollment_date = date.today().isoformat()
+                    cursor.execute(
+                        "UPDATE student_modules SET status = 'Enrolled', enrollment_date = ? "
+                        "WHERE student_id = ? AND module_code = ?",
+                        (enrollment_date, self.student_id, module_code),
+                    )
+                    conn.commit()
+                    conn.close()
+                    messagebox.showinfo("Success", f"Re-enrolled in {module_code}.")
+                    if hasattr(self, '_refresh_enrollment_tree'):
+                        self._refresh_enrollment_tree()
+                    if hasattr(self, '_refresh_available_modules'):
+                        self._refresh_available_modules()
+                    return
 
-            # Check capacity
+            # Check module exists
             cursor.execute(
-                "SELECT max_capacity FROM modules WHERE module_code = ?",
+                "SELECT module_code FROM modules WHERE module_code = ?",
                 (module_code,),
             )
             row = cursor.fetchone()
@@ -55,7 +76,8 @@ class EnrollmentMixin:
                 conn.close()
                 return
 
-            max_capacity = row[0]
+            # Capacity check (no limit if column doesn't exist)
+            max_capacity = None
             if max_capacity:
                 cursor.execute(
                     "SELECT COUNT(*) FROM student_modules "
@@ -211,7 +233,7 @@ class EnrollmentMixin:
                 (self.student_id,),
             )
             for row in cursor.fetchall():
-                self.enrollment_tree.insert('', 'end', values=row)
+                self.enrollment_tree.insert('', 'end', values=tuple(row))
             conn.close()
         except Exception as exc:
             logger.error("Refresh enrollment error: %s", exc)

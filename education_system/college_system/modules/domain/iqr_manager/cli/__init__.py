@@ -1,0 +1,1 @@
+"""IQR Manager CLI package."""

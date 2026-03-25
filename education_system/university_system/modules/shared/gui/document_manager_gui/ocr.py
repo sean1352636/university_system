@@ -61,10 +61,10 @@ class OCRManager:
 
             cursor.execute('''
             SELECT sd.file_path, sd.original_filename, dt.type_name, s.first_name, s.last_name
-            FROM student_documents sd
+            FROM documents sd
             JOIN document_types dt ON sd.type_id = dt.type_id
-            JOIN students s ON sd.student_id = s.student_id
-            WHERE sd.document_id = ?
+            JOIN students s ON sd.owner_id = s.student_id
+            WHERE sd.source_type = 'student' AND sd.document_id = ?
             ''', (doc_id,))
 
             doc = cursor.fetchone()
@@ -143,7 +143,7 @@ class OCRManager:
                     extracted_text TEXT,
                     confidence_score REAL,
                     processing_date TEXT,
-                    FOREIGN KEY (document_id) REFERENCES student_documents (document_id)
+                    FOREIGN KEY (document_id) REFERENCES documents (document_id)
                 )
                 ''')
 
@@ -252,7 +252,7 @@ class OCRManager:
                 file_path = filedialog.askopenfilename(
                     title="Select Document for OCR",
                     filetypes=[
-                        ("Image files", "*.jpg;*.jpeg;*.png;*.tiff;*.bmp"),
+                        ("Image files", "*.jpg *.jpeg *.png *.tiff *.bmp"),
                         ("PDF files", "*.pdf"),
                         ("All files", "*.*")
                     ]
@@ -527,7 +527,7 @@ Processing Time: 1.23 seconds
                 files = filedialog.askopenfilenames(
                     title="Select Files for Batch OCR",
                     filetypes=[
-                        ("Image files", "*.jpg;*.jpeg;*.png;*.tiff;*.bmp"),
+                        ("Image files", "*.jpg *.jpeg *.png *.tiff *.bmp"),
                         ("PDF files", "*.pdf"),
                         ("All files", "*.*")
                     ]

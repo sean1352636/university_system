@@ -139,7 +139,7 @@ def mock_auth():
 class TestViewAllStaff:
     """Test viewing staff members"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
     def test_view_all_staff_all(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test viewing all staff"""
         staff_administration.set_auth(mock_auth)
@@ -155,7 +155,7 @@ class TestViewAllStaff:
         assert 'John Doe' in captured.out
         assert 'Jane Smith' in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
     def test_view_all_staff_by_role(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test viewing staff filtered by role"""
         staff_administration.set_auth(mock_auth)
@@ -172,9 +172,9 @@ class TestViewAllStaff:
 class TestAddNewStaff:
     """Test adding staff members"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.log_audit_action')
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
     def test_add_new_staff_success(self, mock_get_conn, mock_backup, mock_log, test_db, mock_auth, capsys):
         """Test successfully adding a new staff member"""
         staff_administration.set_auth(mock_auth)
@@ -212,9 +212,9 @@ class TestAddNewStaff:
 class TestUpdateStaffInfo:
     """Test updating staff information"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.log_audit_action')
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
     def test_update_staff_name(self, mock_get_conn, mock_backup, mock_log, test_db, mock_auth, capsys):
         """Test updating staff name"""
         staff_administration.set_auth(mock_auth)
@@ -228,8 +228,8 @@ class TestUpdateStaffInfo:
         captured = capsys.readouterr()
         assert 'updated successfully' in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
     def test_update_staff_not_found(self, mock_get_conn, mock_backup, test_db, mock_auth, capsys):
         """Test updating non-existent staff"""
         staff_administration.set_auth(mock_auth)
@@ -246,9 +246,9 @@ class TestUpdateStaffInfo:
 class TestDeleteStaff:
     """Test deleting/terminating staff"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.log_audit_action')
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
     def test_delete_staff_confirm(self, mock_get_conn, mock_backup, mock_log, test_db, mock_auth, capsys):
         """Test terminating staff with confirmation"""
         staff_administration.set_auth(mock_auth)
@@ -262,8 +262,8 @@ class TestDeleteStaff:
         captured = capsys.readouterr()
         assert 'terminated successfully' in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
     def test_delete_staff_cancel(self, mock_get_conn, mock_backup, test_db, mock_auth, capsys):
         """Test cancelling staff deletion"""
         staff_administration.set_auth(mock_auth)
@@ -280,7 +280,7 @@ class TestDeleteStaff:
 class TestViewStaffSchedules:
     """Test viewing staff schedules"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
     def test_view_staff_schedules_today(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test viewing today's schedules"""
         staff_administration.set_auth(mock_auth)
@@ -297,9 +297,9 @@ class TestViewStaffSchedules:
 class TestCreateStaffSchedule:
     """Test creating staff schedules"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.log_audit_action')
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
     def test_create_staff_schedule(self, mock_get_conn, mock_backup, mock_log, test_db, mock_auth, capsys):
         """Test creating a new schedule"""
         staff_administration.set_auth(mock_auth)
@@ -326,9 +326,9 @@ class TestCreateStaffSchedule:
 class TestUpdateStaffSchedule:
     """Test updating staff schedules"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.log_audit_action')
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
     def test_update_schedule_start_time(self, mock_get_conn, mock_backup, mock_log, test_db, mock_auth, capsys):
         """Test updating schedule start time"""
         staff_administration.set_auth(mock_auth)
@@ -345,9 +345,9 @@ class TestUpdateStaffSchedule:
 class TestDeleteStaffSchedule:
     """Test deleting staff schedules"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.log_audit_action')
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
     def test_delete_schedule_confirm(self, mock_get_conn, mock_backup, mock_log, test_db, mock_auth, capsys):
         """Test deleting schedule with confirmation"""
         staff_administration.set_auth(mock_auth)
@@ -364,7 +364,7 @@ class TestDeleteStaffSchedule:
 class TestViewScheduleConflicts:
     """Test viewing schedule conflicts"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
     def test_view_schedule_conflicts_none(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test when there are no conflicts"""
         staff_administration.set_auth(mock_auth)
@@ -380,7 +380,7 @@ class TestViewScheduleConflicts:
 class TestPerformanceManagement:
     """Test performance tracking functions"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
     def test_view_performance_rankings(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test viewing performance rankings"""
         staff_administration.set_auth(mock_auth)
@@ -393,9 +393,9 @@ class TestPerformanceManagement:
         captured = capsys.readouterr()
         assert 'PERFORMANCE RANKINGS' in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.log_audit_action')
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
     def test_update_performance_scores(self, mock_get_conn, mock_backup, mock_log, test_db, mock_auth, capsys):
         """Test updating performance scores"""
         staff_administration.set_auth(mock_auth)
@@ -412,7 +412,7 @@ class TestPerformanceManagement:
 class TestExportPerformanceReport:
     """Test performance report export"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
     def test_export_performance_report(self, mock_get_conn, test_db, mock_auth, capsys, tmp_path):
         """Test exporting performance report"""
         staff_administration.set_auth(mock_auth)
@@ -434,7 +434,7 @@ class TestExportPerformanceReport:
 class TestSupplierPerformance:
     """Test supplier performance tracking"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
     def test_supplier_performance(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test viewing supplier performance"""
         staff_administration.set_auth(mock_auth)
@@ -457,7 +457,7 @@ class TestStaffAnalytics:
 class TestQueryPerformance:
     """Test query performance analysis"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.staff.staff_administration.get_db_connection')
     def test_analyze_query_performance(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test query performance analysis"""
         staff_administration.set_auth(mock_auth)

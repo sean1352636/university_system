@@ -76,18 +76,20 @@ def view_alerts_menu(log_manager, auth):
 
     # Show recent alerts from database
     conn = sqlite3.connect(str(_DB_PATH))
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    try:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
 
-    cursor.execute('''
-        SELECT * FROM alerts
-        WHERE triggered_at > datetime('now', '-24 hours')
-        ORDER BY triggered_at DESC
-        LIMIT 20
-    ''')
+        cursor.execute('''
+            SELECT * FROM alerts
+            WHERE triggered_at > datetime('now', '-24 hours')
+            ORDER BY triggered_at DESC
+            LIMIT 20
+        ''')
 
-    recent_alerts = cursor.fetchall()
-    conn.close()
+        recent_alerts = cursor.fetchall()
+    finally:
+        conn.close()
 
     if recent_alerts:
         print(f"\nRecent alerts (last 24 hours):")

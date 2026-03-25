@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/ai_detector/history_view.py
+# hypothesis_version: 6.151.9
+
+[100, 150, '%Y-%m-%d %H:%M', '+00:00', '1.0', '800x600', '<Configure>', '<Double-1>', '<Return>', 'AI Score', 'Card.TFrame', 'Course', 'Date', 'ID', 'N/A', 'Status', 'Student ID', 'Title', 'Title.TLabel', 'Unknown', 'Untitled', 'Z', 'ai_score', 'all', 'bg_primary', 'bg_secondary', 'both', 'center', 'common.clear', 'common.date', 'common.error', 'common.filter', 'common.id', 'common.refresh', 'common.status', 'common.user_id', 'course_code', 'detailed_results', 'disabled', 'end', 'ew', 'headings', 'horizontal', 'id', 'is_ai_generated', 'left', 'ns', 'nsew', 'nw', 'right', 'student_id', 'submission_date', 'submission_text', 'submissions', 'table_headers.title', 'text_primary', 'title', 'values', 'vertical', 'w', 'x', 'y']

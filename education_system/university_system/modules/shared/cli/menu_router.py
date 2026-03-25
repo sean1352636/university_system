@@ -4,7 +4,7 @@ Menu router for CLI system.
 Routes user choices to appropriate handlers and manages menu navigation.
 """
 
-from .imports import (
+from education_system.university_system.modules.shared.cli.imports import (
     logging, datetime, logger, _t, get_text, get_auth, UserAuth, set_auth,
     display_assignment_menu, display_course_management_menu,
     display_academic_calendar_menu, display_trip_management_menu,
@@ -46,11 +46,11 @@ from .imports import (
 )
 
 # Import additional functions from database_manager
-from .database_manager import cleanup_database_on_startup, init_all_databases, init_auth_for_modules, cleanup_database_connections
+from education_system.university_system.modules.shared.cli.database_manager import cleanup_database_on_startup, init_all_databases, init_auth_for_modules, cleanup_database_connections
 
 # Import menu functions
-from .student_operations import display_student_records_menu, set_auth as set_student_ops_auth
-from .integration_manager import display_integrated_academic_menu, set_auth as set_integration_auth
+from education_system.university_system.modules.shared.cli.student_operations import display_student_records_menu, set_auth as set_student_ops_auth
+from education_system.university_system.modules.shared.cli.integration_manager import display_integrated_academic_menu, set_auth as set_integration_auth
 from education_system.university_system.modules.domain.academics.services.lms.lms_core import display_lms_menu
 from education_system.university_system.modules.domain.academics.services.evaluation.course_evaluation_core import display_course_evaluation_menu
 from education_system.university_system.modules.domain.health.services.health_portal import display_health_portal_menu
@@ -83,7 +83,7 @@ from education_system.university_system.modules.domain.academics.services.timeta
 from education_system.university_system.modules.domain.student_affairs.services.alumni_management import display_alumni_menu as display_alumni_relations_menu
 
 # Import utility functions
-from .utils import safe_auth_check
+from education_system.university_system.modules.shared.cli.utils import safe_auth_check
 
 # Import exceptions
 from education_system.university_system.infrastructure.exceptions import (
@@ -127,16 +127,16 @@ except ImportError:
 from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui import integrate_plagiarism_checker_with_main
 
 # Import auth linking
-from .auth_manager import _link_auth_to_student_union
+from education_system.university_system.modules.shared.cli.auth_manager import _link_auth_to_student_union
 
 # Import admin tools menus
-from .admin_tools import display_analytics_menu, display_batch_menu, display_admin_tools_menu
+from education_system.university_system.modules.shared.cli.admin_tools import display_analytics_menu, display_batch_menu, display_admin_tools_menu
 
 # Import export menu
-from .export_manager import display_export_menu, display_pdf_export_menu
+from education_system.university_system.modules.shared.cli.export_manager import display_export_menu, display_pdf_export_menu
 
 # Import system monitoring
-from .system_monitoring import display_system_monitoring_menu
+from education_system.university_system.modules.shared.cli.system_monitoring import display_system_monitoring_menu
 
 # Import service menus
 from education_system.university_system.modules.shared.services.analytics.analytics_dashboard_core import display_predictive_analytics_menu
@@ -158,6 +158,44 @@ from education_system.university_system.modules.domain.academics.services.virtua
 from education_system.university_system.modules.domain.finance.services.financial_aid.aid_manager import FinancialAidManager
 
 auth = None
+
+
+_CROSS_SYSTEM_MODULES = {
+    "cross_analytics": ("education_system.shared.analytics.analytics_cli", "Analytics Dashboard"),
+    "cross_outcomes": ("education_system.shared.outcomes.outcomes_cli", "Outcome Tracking"),
+    "cross_predictive": ("education_system.shared.predictive.predictive_cli", "Predictive Alerts"),
+    "cross_bulk_transfer": ("education_system.shared.bulk_transfer.bulk_transfer_cli", "Bulk Transfer"),
+    "cross_transfer_docs": ("education_system.shared.transfer_docs.transfer_docs_cli", "Transfer Documents"),
+    "cross_reverse_lookup": ("education_system.shared.reverse_lookup.reverse_lookup_cli", "Reverse Lookup"),
+    "cross_parent_continuity": ("education_system.shared.parent_continuity.parent_cli", "Parent Continuity"),
+    "cross_calendar": ("education_system.shared.calendar.calendar_cli", "Cross-System Calendar"),
+    "cross_messaging": ("education_system.shared.messaging.messaging_cli", "Inter-System Messaging"),
+    "cross_admin_portal": ("education_system.shared.admin_portal.admin_cli", "Central Admin Portal"),
+    "cross_gdpr": ("education_system.shared.gdpr.gdpr_cli", "GDPR Compliance"),
+    "cross_documents": ("education_system.shared.documents.document_cli", "Shared Documents"),
+    "cross_student_portal": ("education_system.shared.student_portal.portal_cli", "Student Self-Service"),
+    "cross_transcript": ("education_system.shared.transcript.transcript_cli", "Digital Transcript"),
+}
+
+
+def _handle_cross_system_tool(option, auth):
+    """Lazily import and run a cross-system shared CLI module."""
+    if option not in _CROSS_SYSTEM_MODULES:
+        print(f"\nUnknown cross-system tool: {option}")
+        input("Press Enter to continue...")
+        return
+
+    module_path, label = _CROSS_SYSTEM_MODULES[option]
+    try:
+        import importlib
+        mod = importlib.import_module(module_path)
+        mod.run(db_path=None, auth=auth)
+    except ImportError:
+        print(f"\n  {label} module is not available.")
+        input("Press Enter to continue...")
+    except Exception as e:
+        print(f"\n  Error running {label}: {e}")
+        input("Press Enter to continue...")
 
 
 def display_menu():
@@ -456,6 +494,58 @@ def display_menu():
             add_option(get_text('cli.menu.pdf_export', default='PDF Export'), "pdf_database_export"),
         ]
         print_row(items)
+        items = [
+            add_option(get_text('cli.menu.authentication', default='Authentication'), "authentication"),
+        ]
+        print_row(items)
+
+        # 🎓 NEW UNIVERSITY FEATURES
+        print(f"\n🎓 NEW UNIVERSITY FEATURES")
+        items = [
+            add_option("HESA Export", "hesa_export"),
+            add_option("External Examiners", "external_examiners"),
+        ]
+        print_row(items)
+        items = [
+            add_option("Student App", "student_app"),
+            add_option("Achievement Badges", "achievement_badges"),
+            add_option("Study Recommend.", "study_recommendations"),
+            add_option("Clearing/Adjust.", "clearing_adjustment"),
+        ]
+        print_row(items)
+        items = [
+        ]
+        print_row(items)
+
+        # 🔗 CROSS-SYSTEM TOOLS (admin only)
+        if auth.current_user and auth.current_user.get('role', '').lower() in ('admin', 'administrator'):
+            print(f"\n🔗 {get_text('cli.menu.cross_system_tools', default='CROSS-SYSTEM TOOLS')}")
+            items = [
+                add_option("Analytics Dashboard", "cross_analytics"),
+                add_option("Outcome Tracking", "cross_outcomes"),
+                add_option("Predictive Alerts", "cross_predictive"),
+                add_option("Bulk Transfer", "cross_bulk_transfer"),
+            ]
+            print_row(items)
+            items = [
+                add_option("Transfer Documents", "cross_transfer_docs"),
+                add_option("Reverse Lookup", "cross_reverse_lookup"),
+                add_option("Parent Continuity", "cross_parent_continuity"),
+                add_option("Cross-System Calendar", "cross_calendar"),
+            ]
+            print_row(items)
+            items = [
+                add_option("Inter-System Messaging", "cross_messaging"),
+                add_option("Central Admin Portal", "cross_admin_portal"),
+                add_option("GDPR Compliance", "cross_gdpr"),
+                add_option("Shared Documents", "cross_documents"),
+            ]
+            print_row(items)
+            items = [
+                add_option("Student Self-Service", "cross_student_portal"),
+                add_option("Digital Transcript", "cross_transcript"),
+            ]
+            print_row(items)
 
         # 📱 INFRASTRUCTURE & ⚙️ SYSTEM
         print(f"\n📱 {get_text('cli.menu.infrastructure_system', default='INFRASTRUCTURE & SYSTEM')}")
@@ -468,12 +558,18 @@ def display_menu():
         if auth.current_user and auth.current_user.get('role') == 'admin':
             items.append(add_option(get_text('cli.menu.system_monitoring', default='System Monitoring'), "system_monitoring"))
         print_row(items)
-        items = [
-            add_option("Switch to College", "switch_college"),
-            add_option("Switch to Secondary School", "switch_school"),
-            add_option("Switch to Primary School", "switch_primary"),
-        ]
-        print_row(items)
+        # Switch system options for superadmin users
+        if auth.current_user and auth.current_user.get('systems'):
+            admin_keys = {s["system_key"] for s in auth.current_user["systems"] if s.get("role") == "admin"}
+            if admin_keys >= {"university", "college", "school", "primary"}:
+                print(f"\n🔀 SWITCH SYSTEM")
+                items = [
+                    add_option("Super Admin Dashboard", "switch_superadmin"),
+                    add_option("College System", "switch_college"),
+                    add_option("Secondary School", "switch_school"),
+                    add_option("Primary School", "switch_primary"),
+                ]
+                print_row(items)
         items = [
             add_option(get_text('cli.menu.logout', default='Logout'), "logout"),
         ]
@@ -555,6 +651,11 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "student_union_portal":
                 if display_student_union_menu:
+                    try:
+                        from education_system.university_system.modules.domain.student_affairs.student_union import set_auth as _su_set_auth
+                        _su_set_auth(auth)
+                    except ImportError:
+                        pass
                     display_student_union_menu()
                 else:
                     print("\n❌ Student Union menu is not available")
@@ -763,19 +864,70 @@ def display_menu():
                 display_blockchain_credentials_menu(auth)
             elif option == "pdf_database_export":
                 display_pdf_export_menu(auth)
+            elif option == "authentication":
+                display_auth_menu(auth)
             elif option == "mobile_app_pwa":
                 display_mobile_app_pwa_menu(auth)
             elif option == "system_monitoring":
                 display_system_monitoring_menu(auth)
             elif option == "switch_to_gui":
                 switch_to_gui(auth)
-            elif option in ("switch_college", "switch_school", "switch_primary"):
+            elif option in ("switch_superadmin", "switch_college", "switch_school", "switch_primary"):
                 from education_system.switch import request_switch
-                target = {"switch_college": "college", "switch_school": "school", "switch_primary": "primary"}[option]
+                target = {
+                    "switch_superadmin": "__superadmin__",
+                    "switch_college": "college",
+                    "switch_school": "school",
+                    "switch_primary": "primary",
+                }[option]
                 request_switch(target, "cli")
                 return
             elif option == "change_language":
                 display_language_menu_option()
+            elif option == "hesa_export":
+                try:
+                    from education_system.university_system.modules.domain.hesa_export.cli.hesa_export_cli import display_hesa_export_menu
+                    display_hesa_export_menu(auth)
+                except ImportError as e:
+                    print(f"\n❌ HESA Export CLI is not available: {e}")
+                    input("Press Enter to continue...")
+            elif option == "external_examiners":
+                try:
+                    from education_system.university_system.modules.domain.external_examiners.cli.external_examiner_cli import display_external_examiner_menu
+                    display_external_examiner_menu(auth)
+                except ImportError as e:
+                    print(f"\n❌ External Examiners CLI is not available: {e}")
+                    input("Press Enter to continue...")
+            elif option == "student_app":
+                try:
+                    from education_system.university_system.modules.domain.student_app.cli.student_app_cli import display_student_app_menu
+                    display_student_app_menu(auth)
+                except ImportError as e:
+                    print(f"\n❌ Student App CLI is not available: {e}")
+                    input("Press Enter to continue...")
+            elif option == "achievement_badges":
+                try:
+                    from education_system.university_system.modules.domain.achievement_badges.cli.achievement_badge_cli import display_achievement_badge_menu
+                    display_achievement_badge_menu(auth)
+                except ImportError as e:
+                    print(f"\n❌ Achievement Badges CLI is not available: {e}")
+                    input("Press Enter to continue...")
+            elif option == "study_recommendations":
+                try:
+                    from education_system.university_system.modules.domain.study_recommendations.cli.study_recommendation_cli import display_study_recommendation_menu
+                    display_study_recommendation_menu(auth)
+                except ImportError as e:
+                    print(f"\n❌ Study Recommendations CLI is not available: {e}")
+                    input("Press Enter to continue...")
+            elif option == "clearing_adjustment":
+                try:
+                    from education_system.university_system.modules.domain.clearing_adjustment.cli.clearing_adjustment_cli import display_clearing_adjustment_menu
+                    display_clearing_adjustment_menu(auth)
+                except ImportError as e:
+                    print(f"\n❌ Clearing & Adjustment CLI is not available: {e}")
+                    input("Press Enter to continue...")
+            elif option.startswith("cross_"):
+                _handle_cross_system_tool(option, auth)
             elif option == "logout":
                 cleanup_database_connections()
                 auth.logout()
@@ -1753,7 +1905,7 @@ def display_administrative_tools_menu(auth):
             display_user_management_menu(auth)
         elif choice == '2':
             # Enhanced Reporting
-            from education_system.university_system.modules.shared.services.enhanced_reporting import display_enhanced_reporting_menu
+            from education_system.university_system.modules.shared.services.analytics.enhanced_reporting import display_enhanced_reporting_menu
             display_enhanced_reporting_menu()
         elif choice == '3':
             # Student Analytics Dashboard

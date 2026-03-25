@@ -121,7 +121,7 @@ class TestEmailManagerManagementGUIInitialization:
     def test_gui_initializes_theme_manager(self, root_window, mock_auth):
         """Test that GUI initializes theme manager"""
         try:
-            with patch('university_system.modules.shared.gui.theme_config.get_theme_manager'):
+            with patch('education_system.university_system.modules.shared.gui.theme_config.get_theme_manager'):
                 gui = email_manager_management_gui.EmailManagerManagementGUI(
                     root_window,
                     mock_auth
@@ -132,7 +132,7 @@ class TestEmailManagerManagementGUIInitialization:
 
     def test_gui_handles_missing_theme_manager(self, root_window, mock_auth):
         """Test that GUI handles missing theme manager gracefully"""
-        with patch('university_system.modules.shared.gui.theme_config.get_theme_manager',
+        with patch('education_system.university_system.modules.shared.gui.theme_config.get_theme_manager',
                    side_effect=Exception('Theme manager not available')):
             try:
                 gui = email_manager_management_gui.EmailManagerManagementGUI(

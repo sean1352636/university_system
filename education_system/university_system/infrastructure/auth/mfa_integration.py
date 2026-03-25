@@ -297,7 +297,7 @@ def show_mfa_for_login(parent, user_id: int, username: str) -> Tuple[bool, Optio
 
     # Show verification dialog
     try:
-        from .mfa_gui import show_mfa_verification
+        from education_system.university_system.infrastructure.auth.mfa_gui import show_mfa_verification
 
         trust_token = None
 
@@ -328,7 +328,7 @@ def show_mfa_setup_for_login(parent, user_id: int, username: str, required: bool
         bool: True if setup was completed
     """
     try:
-        from .mfa_gui import show_mfa_setup
+        from education_system.university_system.infrastructure.auth.mfa_gui import show_mfa_setup
 
         setup_completed = False
 

@@ -1,0 +1,348 @@
+{
+  "api": {
+    "student": {
+      "not_found": "Student not found.",
+      "created": "Student created.",
+      "updated": "Student updated.",
+      "deleted": "Student deactivated."
+    },
+    "course": {
+      "not_found": "Course not found.",
+      "created": "Course created.",
+      "updated": "Course updated.",
+      "deleted": "Course deactivated.",
+      "prereq_added": "Prerequisite added."
+    },
+    "enrollment": {
+      "enrolled": "Student enrolled.",
+      "waitlisted": "Student waitlisted.",
+      "dropped": "Student dropped."
+    },
+    "grade": {
+      "recorded": "Grade recorded.",
+      "predicted_recorded": "Predicted grade recorded.",
+      "access_denied": "Access denied",
+      "own_records_only": "You can only view your own records."
+    },
+    "attendance": {
+      "session_created": "Attendance session created.",
+      "recorded": "Attendance recorded.",
+      "bulk_recorded": "Bulk attendance recorded for {count} students.",
+      "not_found": "Attendance record not found.",
+      "pre_populated": "Pre Populated",
+      "registers_generated": "Registers Generated"
+    },
+    "timetable": {
+      "slot_created": "Timetable slot created.",
+      "slot_updated": "Timetable slot updated.",
+      "slot_deleted": "Timetable slot deleted.",
+      "conflict": "Scheduling conflict detected."
+    },
+    "assignment": {
+      "created": "Assignment created.",
+      "updated": "Assignment updated.",
+      "deleted": "Assignment deleted.",
+      "submitted": "Assignment submitted.",
+      "graded": "Submission graded."
+    },
+    "notification": {
+      "sent": "Notification sent.",
+      "marked_read": "Notification marked as read.",
+      "all_marked_read": "All notifications marked as read."
+    },
+    "auth": {
+      "login_success": "Login successful.",
+      "login_failed": "Invalid credentials.",
+      "token_missing": "Authentication token is missing.",
+      "token_invalid": "Invalid or expired token.",
+      "access_denied": "Access denied. Insufficient permissions.",
+      "password_changed": "Password changed successfully.",
+      "mfa_required": "MFA verification required.",
+      "mfa_verified": "MFA verified successfully.",
+      "mfa_invalid": "Invalid MFA code.",
+      "mfa_disabled": "MFA Disabled",
+      "mfa_setup_complete": "MFA Setup Complete",
+      "rate_limit_login": "Rate Limit Login",
+      "rate_limit_register": "Rate Limit Register",
+      "user_created": "User Created"
+    },
+    "common": {
+      "not_found": "Resource not found.",
+      "created": "Created successfully.",
+      "updated": "Updated successfully.",
+      "deleted": "Deleted successfully.",
+      "bad_request": "Bad request.",
+      "server_error": "Internal server error.",
+      "validation_error": "Validation error: {message}",
+      "missing_fields": "Missing required fields: {fields}"
+    },
+    "department": {
+      "not_found": "Department not found.",
+      "created": "Department created.",
+      "updated": "Department updated.",
+      "deleted": "Department deleted."
+    },
+    "group": {
+      "not_found": "Group not found.",
+      "created": "Group created.",
+      "updated": "Group updated.",
+      "deleted": "Group deleted.",
+      "member_added": "Member added to group.",
+      "member_removed": "Member removed from group."
+    },
+    "finance": {
+      "not_found": "Transaction not found.",
+      "created": "Transaction created.",
+      "updated": "Transaction updated.",
+      "deleted": "Transaction deleted."
+    },
+    "student_support": {
+      "not_found": "Referral not found.",
+      "created": "Referral created.",
+      "updated": "Referral updated.",
+      "deleted": "Referral deleted."
+    },
+    "funding": {
+      "not_found": "Funding record not found.",
+      "created": "Funding record created.",
+      "updated": "Funding record updated.",
+      "deleted": "Funding record deleted."
+    },
+    "destination": {
+      "not_found": "Destination record not found.",
+      "created": "Destination record created.",
+      "updated": "Destination record updated.",
+      "deleted": "Destination record deleted."
+    },
+    "room": {
+      "not_found": "Room not found.",
+      "created": "Room created.",
+      "updated": "Room updated.",
+      "deleted": "Room deleted."
+    },
+    "cpd": {
+      "not_found": "CPD record not found.",
+      "created": "CPD record created.",
+      "updated": "CPD record updated.",
+      "deleted": "CPD record deleted."
+    },
+    "observations": {
+      "not_found": "Observation not found.",
+      "created": "Observation created.",
+      "updated": "Observation updated.",
+      "deleted": "Observation deleted."
+    },
+    "appraisals": {
+      "not_found": "Appraisal not found.",
+      "created": "Appraisal created.",
+      "updated": "Appraisal updated.",
+      "deleted": "Appraisal deleted."
+    },
+    "resource_booking": {
+      "not_found": "Booking not found.",
+      "created": "Booking created.",
+      "updated": "Booking updated.",
+      "deleted": "Booking deleted.",
+      "conflict": "Booking conflict detected."
+    },
+    "markbook": {
+      "not_found": "Markbook entry not found.",
+      "created": "Markbook entry created.",
+      "updated": "Markbook entry updated.",
+      "deleted": "Markbook entry deleted."
+    },
+    "staff_wellbeing": {
+      "not_found": "Record not found.",
+      "created": "Record created.",
+      "updated": "Record updated.",
+      "deleted": "Record deleted."
+    },
+    "lesson_plans": {
+      "not_found": "Lesson plan not found.",
+      "created": "Lesson plan created.",
+      "updated": "Lesson plan updated.",
+      "deleted": "Lesson plan deleted."
+    },
+    "data_dashboard": {
+      "stats_loaded": "Dashboard statistics loaded."
+    },
+    "absence_requests": {
+      "not_found": "Request not found.",
+      "created": "Request created.",
+      "updated": "Request updated.",
+      "approved": "Request approved.",
+      "rejected": "Request rejected."
+    },
+    "intervention_tracking": {
+      "not_found": "Intervention not found.",
+      "created": "Intervention created.",
+      "updated": "Intervention updated.",
+      "deleted": "Intervention deleted."
+    },
+    "visitors": {
+      "not_found": "Visitor record not found.",
+      "signed_in": "Visitor signed in.",
+      "signed_out": "Visitor signed out.",
+      "created": "Visitor record created.",
+      "updated": "Visitor record updated."
+    },
+    "policies": {
+      "not_found": "Policy not found.",
+      "created": "Policy created.",
+      "updated": "Policy updated.",
+      "deleted": "Policy deleted."
+    },
+    "gdpr": {
+      "not_found": "Record not found.",
+      "created": "Record created.",
+      "updated": "Record updated.",
+      "deleted": "Record deleted.",
+      "request_submitted": "Data request submitted."
+    },
+    "quality_assurance": {
+      "not_found": "Review not found.",
+      "created": "Review created.",
+      "updated": "Review updated.",
+      "deleted": "Review deleted."
+    },
+    "bulk_operations": {
+      "import_success": "Import completed: {count} records processed.",
+      "export_success": "Export completed.",
+      "update_success": "Bulk update completed: {count} records updated."
+    },
+    "emergency": {
+      "not_found": "Record not found.",
+      "created": "Emergency record created.",
+      "updated": "Emergency record updated.",
+      "alert_sent": "Emergency alert sent."
+    },
+    "academic_year": {
+      "not_found": "Academic year not found.",
+      "created": "Academic year created.",
+      "updated": "Academic year updated.",
+      "deleted": "Academic year deleted."
+    },
+    "kpi_dashboard": {
+      "stats_loaded": "KPI statistics loaded."
+    },
+    "audit_reports": {
+      "generated": "Audit report generated.",
+      "not_found": "Report not found."
+    },
+    "user_management": {
+      "not_found": "User not found.",
+      "created": "User created.",
+      "updated": "User updated.",
+      "deleted": "User deleted.",
+      "password_reset": "Password reset successfully."
+    },
+    "portfolio": {
+      "not_found": "Portfolio item not found.",
+      "created": "Portfolio item created.",
+      "updated": "Portfolio item updated.",
+      "deleted": "Portfolio item deleted."
+    },
+    "study_planner": {
+      "not_found": "Session not found.",
+      "created": "Study session created.",
+      "updated": "Study session updated.",
+      "deleted": "Study session deleted."
+    },
+    "enrichment": {
+      "not_found": "Activity not found.",
+      "created": "Activity created.",
+      "updated": "Activity updated.",
+      "deleted": "Activity deleted.",
+      "enrolled": "Enrolled in activity.",
+      "withdrawn": "Withdrawn from activity."
+    },
+    "peer_mentoring": {
+      "not_found": "Pair not found.",
+      "created": "Mentoring pair created.",
+      "updated": "Mentoring pair updated.",
+      "deleted": "Mentoring pair deleted."
+    },
+    "surveys": {
+      "not_found": "Survey not found.",
+      "created": "Survey created.",
+      "updated": "Survey updated.",
+      "deleted": "Survey deleted.",
+      "response_submitted": "Survey response submitted."
+    },
+    "skills_passport": {
+      "not_found": "Skill not found.",
+      "created": "Skill created.",
+      "updated": "Skill updated.",
+      "deleted": "Skill deleted."
+    },
+    "progress_dashboard": {
+      "stats_loaded": "Progress statistics loaded."
+    },
+    "meal_ordering": {
+      "not_found": "Order not found.",
+      "placed": "Order placed.",
+      "cancelled": "Order cancelled.",
+      "updated": "Order updated."
+    },
+    "print_credits": {
+      "not_found": "Record not found.",
+      "added": "Credits added.",
+      "deducted": "Credits deducted."
+    },
+    "work_journal": {
+      "not_found": "Entry not found.",
+      "created": "Entry created.",
+      "updated": "Entry updated.",
+      "deleted": "Entry deleted."
+    },
+    "announcements": {
+      "not_found": "Announcement not found.",
+      "created": "Announcement created.",
+      "updated": "Announcement updated.",
+      "deleted": "Announcement deleted.",
+      "published": "Announcement published."
+    },
+    "document_hub": {
+      "not_found": "Document not found.",
+      "uploaded": "Document uploaded.",
+      "updated": "Document updated.",
+      "deleted": "Document deleted."
+    },
+    "advanced_search": {
+      "no_results": "No results found."
+    },
+    "feedback": {
+      "not_found": "Feedback not found.",
+      "submitted": "Feedback submitted.",
+      "updated": "Feedback updated.",
+      "deleted": "Feedback deleted."
+    },
+    "accessibility": {
+      "settings_saved": "Accessibility settings saved."
+    },
+    "mobile_dashboard": {
+      "stats_loaded": "Dashboard loaded."
+    },
+    "attachments": {
+      "not_found": "Attachment not found.",
+      "uploaded": "Attachment uploaded.",
+      "deleted": "Attachment deleted."
+    },
+    "activity_feed": {
+      "loaded": "Activity feed loaded."
+    },
+    "sms_email": {
+      "sent": "Message sent.",
+      "failed": "Message delivery failed.",
+      "template_not_found": "Template not found."
+    },
+    "multi_language": {
+      "language_changed": "Language changed successfully.",
+      "not_supported": "Language not supported."
+    },
+    "system": {
+      "health_ok": "System is healthy.",
+      "version": "Version: {version}"
+    }
+  }
+}

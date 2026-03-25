@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/student_grades/dashboard.py
+# hypothesis_version: 6.151.9
+
+['Arial', 'GPA', 'Grades Dashboard', 'Highest Grade', 'Modules Completed', 'N/A', 'Quick Actions', 'View Grades', 'View Transcript', 'bold', 'ew', 'info', 'left', 'primary', 'success', 'w', 'warning', 'x']

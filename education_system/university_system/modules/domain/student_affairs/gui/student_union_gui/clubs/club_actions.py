@@ -80,7 +80,7 @@ def join_selected_club(self):
             if club:
                 club_id = club[0]
                 # Get current user's student_id
-                cursor.execute('SELECT student_id FROM students s JOIN users u ON s.user_id = u.id WHERE u.id = ?', (self.current_user['id'],))
+                cursor.execute('SELECT s.student_id FROM students s JOIN users u ON s.student_id = u.username WHERE u.id = ?', (self.current_user['id'],))
                 student = cursor.fetchone()
                 
                 if student:

@@ -52,8 +52,8 @@ def mock_db_connection():
 class TestAccessibilityToolsGUI:
     """Test cases for AccessibilityToolsGUI class"""
 
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.log_activity')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.log_activity')
     def test_initialization_with_auth(self, mock_log, mock_toplevel, mock_root, mock_auth):
         """Test GUI initialization with authentication"""
         gui = AccessibilityToolsGUI(mock_root, mock_auth)
@@ -65,7 +65,7 @@ class TestAccessibilityToolsGUI:
         assert gui.current_user == mock_auth.current_user
         assert gui.auth == mock_auth
 
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.messagebox')
     def test_initialization_without_auth(self, mock_messagebox, mock_root):
         """Test GUI initialization without authentication"""
         auth = Mock()
@@ -77,8 +77,8 @@ class TestAccessibilityToolsGUI:
         mock_messagebox.showerror.assert_called_once()
         assert "must be logged in" in mock_messagebox.showerror.call_args[0][1]
 
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.ttk')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.ttk')
     def test_create_main_window(self, mock_ttk, mock_toplevel, mock_root, mock_auth):
         """Test main window creation"""
         gui = AccessibilityToolsGUI(mock_root, mock_auth)
@@ -89,8 +89,8 @@ class TestAccessibilityToolsGUI:
         window.geometry.assert_called_with("1400x900")
         window.minsize.assert_called_with(1200, 700)
 
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.get_connection')
     def test_load_profiles_admin(self, mock_conn, mock_toplevel, mock_root, mock_auth):
         """Test loading profiles as admin user"""
         # Setup mock data
@@ -119,8 +119,8 @@ class TestAccessibilityToolsGUI:
         assert "SELECT * FROM accessibility_profiles" in sql
         assert "ORDER BY updated_at DESC" in sql
 
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.get_connection')
     def test_load_profiles_student(self, mock_conn, mock_toplevel, mock_root, mock_auth):
         """Test loading profiles as student user"""
         # Change role to student
@@ -141,8 +141,8 @@ class TestAccessibilityToolsGUI:
         assert "WHERE user_id = ?" in args[0]
         assert args[1] == (1,)
 
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.get_connection')
     def test_load_requests_with_filter(self, mock_conn, mock_toplevel, mock_root, mock_auth):
         """Test loading accommodation requests with status filter"""
         # Setup mock data
@@ -172,8 +172,8 @@ class TestAccessibilityToolsGUI:
         assert "WHERE status = ?" in args[0]
         assert args[1] == ('pending',)
 
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.get_connection')
     def test_load_exam_accommodations(self, mock_conn, mock_toplevel, mock_root, mock_auth):
         """Test loading exam accommodations"""
         # Setup mock data
@@ -202,8 +202,8 @@ class TestAccessibilityToolsGUI:
         sql = mock_cursor.execute.call_args[0][0]
         assert "WHERE status = 'active'" in sql
 
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.get_connection')
     def test_load_assistive_tech_requests(self, mock_conn, mock_toplevel, mock_root, mock_auth):
         """Test loading assistive technology requests"""
         # Setup mock data
@@ -229,9 +229,9 @@ class TestAccessibilityToolsGUI:
         # Should query tech requests
         mock_cursor.execute.assert_called_once()
 
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.get_connection')
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.transaction')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.transaction')
     def test_save_accessibility_settings_new(self, mock_transaction, mock_conn, mock_toplevel,
                                             mock_root, mock_auth):
         """Test saving new accessibility settings"""
@@ -254,16 +254,16 @@ class TestAccessibilityToolsGUI:
         gui.keyboard_nav_var = Mock()
         gui.keyboard_nav_var.get.return_value = True
 
-        with patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.messagebox'):
+        with patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.messagebox'):
             gui.save_accessibility_settings()
 
         # Should insert new settings
         calls = mock_cursor.execute.call_args_list
         assert any('INSERT INTO accessibility_settings' in str(call) for call in calls)
 
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.get_connection')
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.transaction')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.transaction')
     def test_save_accessibility_settings_update(self, mock_transaction, mock_conn, mock_toplevel,
                                                mock_root, mock_auth):
         """Test updating existing accessibility settings"""
@@ -286,15 +286,15 @@ class TestAccessibilityToolsGUI:
         gui.keyboard_nav_var = Mock()
         gui.keyboard_nav_var.get.return_value = True
 
-        with patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.messagebox'):
+        with patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.messagebox'):
             gui.save_accessibility_settings()
 
         # Should update existing settings
         calls = mock_cursor.execute.call_args_list
         assert any('UPDATE accessibility_settings' in str(call) for call in calls)
 
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.messagebox')
     def test_action_methods_show_dialogs(self, mock_messagebox, mock_toplevel, mock_root, mock_auth):
         """Test that action methods show appropriate dialogs"""
         gui = AccessibilityToolsGUI(mock_root, mock_auth)
@@ -315,7 +315,7 @@ class TestAccessibilityToolsGUI:
         gui.request_assistive_tech()
         assert mock_messagebox.showinfo.called
 
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
     def test_update_status(self, mock_toplevel, mock_root, mock_auth):
         """Test status bar update"""
         gui = AccessibilityToolsGUI(mock_root, mock_auth)
@@ -325,8 +325,8 @@ class TestAccessibilityToolsGUI:
 
         gui.status_bar.config.assert_called_with(text="Test message")
 
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.AccessibilityToolsGUI')
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.AccessibilityToolsGUI')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.messagebox')
     def test_launch_function_success(self, mock_messagebox, mock_gui_class, mock_root, mock_auth):
         """Test successful launch of GUI"""
         launch_accessibility_tools_gui(mock_root, mock_auth)
@@ -334,8 +334,8 @@ class TestAccessibilityToolsGUI:
         # Should create GUI instance
         mock_gui_class.assert_called_once_with(mock_root, mock_auth)
 
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.AccessibilityToolsGUI')
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.AccessibilityToolsGUI')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.messagebox')
     def test_launch_function_error(self, mock_messagebox, mock_gui_class, mock_root, mock_auth):
         """Test error handling in launch function"""
         mock_gui_class.side_effect = Exception("Test error")
@@ -346,29 +346,29 @@ class TestAccessibilityToolsGUI:
         mock_messagebox.showerror.assert_called_once()
         assert "Test error" in str(mock_messagebox.showerror.call_args)
 
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.get_connection')
     def test_error_handling_load_profiles(self, mock_conn, mock_toplevel, mock_root, mock_auth):
         """Test error handling when loading profiles"""
         mock_conn.side_effect = Exception("Database error")
 
         gui = AccessibilityToolsGUI(mock_root, mock_auth)
 
-        with patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.messagebox') as mock_msg:
+        with patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.messagebox') as mock_msg:
             gui.load_profiles()
             # Should show error message
             mock_msg.showerror.assert_called_once()
 
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
     def test_notebook_tabs_created(self, mock_toplevel, mock_root, mock_auth):
         """Test that all notebook tabs are created"""
-        with patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.ttk') as mock_ttk:
+        with patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.ttk') as mock_ttk:
             gui = AccessibilityToolsGUI(mock_root, mock_auth)
 
             # Should create notebook with multiple tabs
             assert hasattr(gui, 'notebook')
 
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
     def test_treeview_configuration(self, mock_toplevel, mock_root, mock_auth):
         """Test that treeviews are properly configured"""
         gui = AccessibilityToolsGUI(mock_root, mock_auth)
@@ -379,8 +379,8 @@ class TestAccessibilityToolsGUI:
         assert hasattr(gui, 'exam_tree')
         assert hasattr(gui, 'tech_tree')
 
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.get_connection')
     def test_json_parsing_in_profiles(self, mock_conn, mock_toplevel, mock_root, mock_auth):
         """Test JSON parsing in profile data"""
         mock_db = Mock()
@@ -405,8 +405,8 @@ class TestAccessibilityToolsGUI:
 
         # Should successfully parse and display
 
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
-    @patch('university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.log_activity')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.log_activity')
     def test_activity_logging(self, mock_log, mock_toplevel, mock_root, mock_auth):
         """Test that user actions are logged"""
         gui = AccessibilityToolsGUI(mock_root, mock_auth)

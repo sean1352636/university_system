@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/ai_study_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/ai-study', '/plans', '/plans/<int:plan_id>', 'GET', 'POST', 'ai_study', 'concept_explanations', 'concept_name', 'course_id', 'course_id = ?', 'create', 'difficulty_level', 'end_date', 'explanation', 'items', 'plan_name', 'search', 'start_date', 'status', 'status = ?', 'student_id', 'student_id = ?', 'study_plans', 'sub', 'total', 'total_hours', 'view']

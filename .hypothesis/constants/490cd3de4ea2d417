@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/services/trip_management/calendar_integration.py
+# hypothesis_version: 6.151.9
+
+[365, '\nEnter Trip ID: ', '%Y-%m-%d', '-', '=', 'Event ID: {event_id}', 'Invalid trip ID.', 'TBD', 'Trip', 'date', 'date_end', 'date_start', 'description', 'event_id', 'message', 'success']

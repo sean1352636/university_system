@@ -6,12 +6,12 @@ Features: Stock tracking, sold status, revenue calculation, and data visualizati
 Integrated with the University Management System.
 """
 
-from .charity_shop_gui import CharityShopApp, main
-from .database import Database
-from .dialogs import ItemDialog, SellDialog, CheckoutDialog
-from .charts import ChartsWindow
-from .basket import BasketWindow
-from ._imports import load_email_template, render_email_template
+from education_system.university_system.modules.services.gui.charity_shop_gui.charity_shop_gui import CharityShopApp, main
+from education_system.university_system.modules.services.gui.charity_shop_gui.database import Database
+from education_system.university_system.modules.services.gui.charity_shop_gui.dialogs import ItemDialog, SellDialog, CheckoutDialog
+from education_system.university_system.modules.services.gui.charity_shop_gui.charts import ChartsWindow
+from education_system.university_system.modules.services.gui.charity_shop_gui.basket import BasketWindow
+from education_system.university_system.modules.services.gui.charity_shop_gui._imports import load_email_template, render_email_template
 
 __all__ = [
     "CharityShopApp",

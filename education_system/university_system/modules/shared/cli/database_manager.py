@@ -6,7 +6,7 @@ Handles database initialization, schema fixes, migrations, and connection manage
 
 from typing import Optional, Callable, Any
 
-from .imports import (
+from education_system.university_system.modules.shared.cli.imports import (
     logging, sqlite3, datetime, time, DB_PATH, logger, _t,
     log_activity, validate_table_name, validate_column_definition,
     safe_alter_table_add_column, SQLIdentifierError, get_auth, set_auth,
@@ -50,16 +50,16 @@ from education_system.university_system.infrastructure.exceptions import (
 )
 
 # Import from auth_manager (avoid circular import by doing it here)
-from . import auth_manager
+from education_system.university_system.modules.shared.cli import auth_manager
 
 # Import from integration_manager
-from .integration_manager import ensure_communication_integration_on_startup
+from education_system.university_system.modules.shared.cli.integration_manager import ensure_communication_integration_on_startup
 
 # Import from chatbot_integration
-from .chatbot_integration import initialize_chatbot_integration, setup_chatbot_permissions
+from education_system.university_system.modules.shared.cli.chatbot_integration import initialize_chatbot_integration, setup_chatbot_permissions
 
 # Import from ai_tools_integration
-from .ai_tools_integration import integrate_ai_detector_with_main
+from education_system.university_system.modules.shared.cli.ai_tools_integration import integrate_ai_detector_with_main
 
 # Global auth instance
 auth = None

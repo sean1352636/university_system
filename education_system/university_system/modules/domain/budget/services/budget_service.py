@@ -57,7 +57,7 @@ class BudgetManager:
 
                 # Budget categories table
                 conn.execute('''
-                    CREATE TABLE IF NOT EXISTS budget_categories (
+                    CREATE TABLE IF NOT EXISTS student_budget_categories (
                         category_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         budget_id INTEGER NOT NULL,
                         category_name TEXT NOT NULL,
@@ -137,22 +137,8 @@ class BudgetManager:
                     )
                 ''')
 
-                # Meal plan transactions table
-                conn.execute('''
-                    CREATE TABLE IF NOT EXISTS meal_plan_transactions (
-                        transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        tracking_id INTEGER NOT NULL,
-                        student_id TEXT NOT NULL,
-                        transaction_date TEXT NOT NULL,
-                        transaction_time TEXT NOT NULL,
-                        location TEXT NOT NULL,
-                        meal_type TEXT CHECK(meal_type IN ('breakfast', 'lunch', 'dinner', 'snack', 'guest-meal')),
-                        meals_used INTEGER DEFAULT 0,
-                        dollars_used REAL DEFAULT 0.0,
-                        description TEXT,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    )
-                ''')
+                # NOTE: meal plan transactions now use the unified 'transactions' table
+                # with source_type = 'meal_plan'
 
                 # Textbook listings table
                 conn.execute('''
@@ -246,44 +232,60 @@ class BudgetManager:
                      start_date: str, end_date: str, total_budget: float,
                      categories: List[Dict[str, Any]] = None) -> int:
         """Create a new budget plan"""
+        conn = None
         try:
-            with transaction() as conn:
-                cursor = conn.execute('''
-                    INSERT INTO student_budgets (
-                        student_id, budget_name, budget_type, start_date, end_date, total_budget
-                    ) VALUES (?, ?, ?, ?, ?, ?)
-                ''', (student_id, budget_name, budget_type, start_date, end_date, total_budget))
+            conn = get_connection()
+            # Disable FK checks — student_id is an auth username, not necessarily in students table
+            conn.execute("PRAGMA foreign_keys=OFF")
+            cursor = conn.execute('''
+                INSERT INTO student_budgets (
+                    student_id, budget_name, budget_type, start_date, end_date, total_budget
+                ) VALUES (?, ?, ?, ?, ?, ?)
+            ''', (student_id, budget_name, budget_type, start_date, end_date, total_budget))
 
-                budget_id = cursor.lastrowid
+            budget_id = cursor.lastrowid
 
-                # Add categories if provided
-                if categories:
-                    total_allocated = 0
-                    for cat in categories:
-                        conn.execute('''
-                            INSERT INTO budget_categories (
-                                budget_id, category_name, category_type, allocated_amount, color_code, icon
-                            ) VALUES (?, ?, ?, ?, ?, ?)
-                        ''', (budget_id, cat['name'], cat.get('type', 'discretionary'),
-                              cat['amount'], cat.get('color'), cat.get('icon')))
-                        total_allocated += cat['amount']
-
-                    # Update allocated amount
+            if categories:
+                total_allocated = 0
+                for cat in categories:
                     conn.execute('''
-                        UPDATE student_budgets SET allocated_amount = ? WHERE budget_id = ?
-                    ''', (total_allocated, budget_id))
+                        INSERT INTO student_budget_categories (
+                            budget_id, category_name, category_type, allocated_amount, color_code, icon
+                        ) VALUES (?, ?, ?, ?, ?, ?)
+                    ''', (budget_id, cat['name'], cat.get('type', 'discretionary'),
+                          cat['amount'], cat.get('color'), cat.get('icon')))
+                    total_allocated += cat['amount']
 
-                log_activity('create', 'student_budget', budget_id=budget_id,
-                           details={'student_id': student_id, 'name': budget_name})
-                return budget_id
+                conn.execute('''
+                    UPDATE student_budgets SET allocated_amount = ? WHERE budget_id = ?
+                ''', (total_allocated, budget_id))
+
+            conn.commit()
+            try:
+                log_activity('create', 'student_budget', details={'budget_id': budget_id, 'student_id': student_id, 'name': budget_name})
+            except Exception:
+                pass
+            return budget_id
 
         except sqlite3.Error as e:
+            if conn:
+                conn.rollback()
             raise DatabaseError(f"Error creating budget: {e}") from e
+        finally:
+            if conn:
+                conn.close()
 
     @staticmethod
     def get_student_budgets(student_id: str, active_only: bool = True) -> List[Dict[str, Any]]:
         """Get all budgets for a student"""
         with get_connection() as conn:
+            # Ensure table exists with correct schema
+            try:
+                conn.execute("SELECT budget_id FROM student_budgets LIMIT 0")
+            except Exception:
+                # Table may not exist or has different schema — create it
+                BudgetManager.create_tables()
+
             query = "SELECT * FROM student_budgets WHERE student_id = ?"
             params = [student_id]
 
@@ -306,7 +308,7 @@ class BudgetManager:
 
             # Get categories with spending
             cursor = conn.execute('''
-                SELECT * FROM budget_categories WHERE budget_id = ?
+                SELECT * FROM student_budget_categories WHERE budget_id = ?
                 ORDER BY category_type, category_name
             ''', (budget_id,))
             budget['categories'] = [dict(row) for row in cursor.fetchall()]
@@ -345,41 +347,49 @@ class ExpenseManager:
                    payment_method: str = "cash", budget_id: int = None,
                    category_id: int = None, **kwargs) -> int:
         """Record a new expense"""
+        conn = None
         try:
-            with transaction() as conn:
-                cursor = conn.execute('''
-                    INSERT INTO student_expenses (
-                        student_id, budget_id, category_id, expense_date, amount,
-                        merchant_name, description, payment_method, receipt_url,
-                        is_recurring, recurrence_pattern, tags, location, notes
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (student_id, budget_id, category_id, expense_date, amount,
-                      merchant_name, description, payment_method, kwargs.get('receipt_url'),
-                      kwargs.get('is_recurring', 0), kwargs.get('recurrence_pattern'),
-                      kwargs.get('tags'), kwargs.get('location'), kwargs.get('notes')))
+            conn = get_connection()
+            conn.execute("PRAGMA foreign_keys=OFF")
+            cursor = conn.execute('''
+                INSERT INTO student_expenses (
+                    student_id, budget_id, category_id, expense_date, amount,
+                    merchant_name, description, payment_method, receipt_url,
+                    is_recurring, recurrence_pattern, tags, location, notes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (student_id, budget_id, category_id, expense_date, amount,
+                  merchant_name, description, payment_method, kwargs.get('receipt_url'),
+                  kwargs.get('is_recurring', 0), kwargs.get('recurrence_pattern'),
+                  kwargs.get('tags'), kwargs.get('location'), kwargs.get('notes')))
 
-                expense_id = cursor.lastrowid
+            expense_id = cursor.lastrowid
 
-                # Update budget spent amount
-                if budget_id:
-                    conn.execute('''
-                        UPDATE student_budgets SET spent_amount = spent_amount + ?,
-                        updated_at = CURRENT_TIMESTAMP WHERE budget_id = ?
-                    ''', (amount, budget_id))
+            if budget_id:
+                conn.execute('''
+                    UPDATE student_budgets SET spent_amount = spent_amount + ?,
+                    updated_at = CURRENT_TIMESTAMP WHERE budget_id = ?
+                ''', (amount, budget_id))
 
-                # Update category spent amount
-                if category_id:
-                    conn.execute('''
-                        UPDATE budget_categories SET spent_amount = spent_amount + ?,
-                        updated_at = CURRENT_TIMESTAMP WHERE category_id = ?
-                    ''', (amount, category_id))
+            if category_id:
+                conn.execute('''
+                    UPDATE student_budget_categories SET spent_amount = spent_amount + ?,
+                    updated_at = CURRENT_TIMESTAMP WHERE category_id = ?
+                ''', (amount, category_id))
 
-                log_activity('create', 'student_expense', expense_id=expense_id,
-                           details={'student_id': student_id, 'amount': amount})
-                return expense_id
+            conn.commit()
+            try:
+                log_activity('create', 'student_expense', details={'expense_id': expense_id, 'student_id': student_id, 'amount': amount})
+            except Exception:
+                pass
+            return expense_id
 
         except sqlite3.Error as e:
+            if conn:
+                conn.rollback()
             raise DatabaseError(f"Error adding expense: {e}") from e
+        finally:
+            if conn:
+                conn.close()
 
     @staticmethod
     def get_student_expenses(student_id: str, start_date: str = None,
@@ -389,7 +399,7 @@ class ExpenseManager:
             query = '''
                 SELECT e.*, c.category_name, c.category_type
                 FROM student_expenses e
-                LEFT JOIN budget_categories c ON e.category_id = c.category_id
+                LEFT JOIN student_budget_categories c ON e.category_id = c.category_id
                 WHERE e.student_id = ?
             '''
             params = [student_id]
@@ -413,20 +423,27 @@ class ExpenseManager:
                                 end_date: str) -> List[Dict[str, Any]]:
         """Get spending breakdown by category"""
         with get_connection() as conn:
-            cursor = conn.execute('''
+            # Check if student_budget_categories table has color_code column
+            try:
+                conn.execute("SELECT color_code FROM student_budget_categories LIMIT 0")
+                color_col = "c.color_code"
+            except Exception:
+                color_col = "NULL as color_code"
+
+            cursor = conn.execute(f'''
                 SELECT
-                    COALESCE(c.category_name, 'Uncategorized') as category_name,
+                    COALESCE(c.category_name, e.merchant_name, 'Uncategorized') as category_name,
                     c.category_type,
-                    c.color_code,
-                    COUNT(e.expense_id) as transaction_count,
+                    {color_col},
+                    COUNT(*) as transaction_count,
                     SUM(e.amount) as total_amount,
                     AVG(e.amount) as average_amount,
                     MIN(e.amount) as min_amount,
                     MAX(e.amount) as max_amount
                 FROM student_expenses e
-                LEFT JOIN budget_categories c ON e.category_id = c.category_id
+                LEFT JOIN student_budget_categories c ON e.category_id = c.category_id
                 WHERE e.student_id = ? AND e.expense_date BETWEEN ? AND ?
-                GROUP BY c.category_id
+                GROUP BY COALESCE(c.category_id, e.merchant_name)
                 ORDER BY total_amount DESC
             ''', (student_id, start_date, end_date))
             return [dict(row) for row in cursor.fetchall()]
@@ -490,7 +507,7 @@ class ExpenseManager:
                 values = list(update_fields.values()) + [expense_id]
 
                 conn.execute("UPDATE student_expenses SET " + set_clause + " WHERE expense_id = ?", values)
-                log_activity('update', 'student_expense', expense_id=expense_id)
+                log_activity('update', 'student_expense', details={'expense_id': expense_id})
                 return True
 
         except sqlite3.Error as e:
@@ -518,13 +535,13 @@ class ExpenseManager:
 
                 if expense['category_id']:
                     conn.execute('''
-                        UPDATE budget_categories SET spent_amount = spent_amount - ?
+                        UPDATE student_budget_categories SET spent_amount = spent_amount - ?
                         WHERE category_id = ?
                     ''', (expense['amount'], expense['category_id']))
 
                 # Delete expense
                 conn.execute('DELETE FROM student_expenses WHERE expense_id = ?', (expense_id,))
-                log_activity('delete', 'student_expense', expense_id=expense_id)
+                log_activity('delete', 'student_expense', details={'expense_id': expense_id})
                 return True
 
         except sqlite3.Error as e:
@@ -538,32 +555,41 @@ class IncomeManager:
                   source: str, income_type: str, budget_id: int = None,
                   description: str = "", **kwargs) -> int:
         """Record income"""
+        conn = None
         try:
-            with transaction() as conn:
-                cursor = conn.execute('''
-                    INSERT INTO student_income (
-                        student_id, budget_id, income_date, amount, source, income_type,
-                        description, is_recurring, recurrence_pattern, notes
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (student_id, budget_id, income_date, amount, source, income_type,
-                      description, kwargs.get('is_recurring', 0),
-                      kwargs.get('recurrence_pattern'), kwargs.get('notes')))
+            conn = get_connection()
+            conn.execute("PRAGMA foreign_keys=OFF")
+            cursor = conn.execute('''
+                INSERT INTO student_income (
+                    student_id, budget_id, income_date, amount, source, income_type,
+                    description, is_recurring, recurrence_pattern, notes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (student_id, budget_id, income_date, amount, source, income_type,
+                  description, kwargs.get('is_recurring', 0),
+                  kwargs.get('recurrence_pattern'), kwargs.get('notes')))
 
-                income_id = cursor.lastrowid
+            income_id = cursor.lastrowid
 
-                # Update budget total income
-                if budget_id:
-                    conn.execute('''
-                        UPDATE student_budgets SET total_income = total_income + ?
-                        WHERE budget_id = ?
-                    ''', (amount, budget_id))
+            if budget_id:
+                conn.execute('''
+                    UPDATE student_budgets SET total_income = total_income + ?
+                    WHERE budget_id = ?
+                ''', (amount, budget_id))
 
-                log_activity('create', 'student_income', income_id=income_id,
-                           details={'student_id': student_id, 'amount': amount})
-                return income_id
+            conn.commit()
+            try:
+                log_activity('create', 'student_income', details={'income_id': income_id, 'student_id': student_id, 'amount': amount})
+            except Exception:
+                pass
+            return income_id
 
         except sqlite3.Error as e:
+            if conn:
+                conn.rollback()
             raise DatabaseError(f"Error adding income: {e}") from e
+        finally:
+            if conn:
+                conn.close()
 
     @staticmethod
     def get_student_income(student_id: str, start_date: str = None,
@@ -603,7 +629,7 @@ class MealPlanManager:
                       total_dollars, start_date, end_date))
 
                 tracking_id = cursor.lastrowid
-                log_activity('create', 'meal_plan_tracking', tracking_id=tracking_id,
+                log_activity('create', 'meal_plan_tracking',
                            details={'student_id': student_id, 'plan': plan_name})
                 return tracking_id
 
@@ -619,10 +645,10 @@ class MealPlanManager:
         try:
             with transaction() as conn:
                 cursor = conn.execute('''
-                    INSERT INTO meal_plan_transactions (
-                        tracking_id, student_id, transaction_date, transaction_time,
-                        location, meal_type, meals_used, dollars_used, description
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO transactions (
+                        source_type, reference_id, student_id, created_at, transaction_time,
+                        location, transaction_type, quantity_change, amount, description
+                    ) VALUES ('meal_plan', ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (tracking_id, student_id, transaction_date, transaction_time,
                       location, meal_type, meals_used, dollars_used, description))
 
@@ -642,17 +668,17 @@ class MealPlanManager:
                     UPDATE meal_plan_tracking
                     SET weekly_average_meals = (
                         SELECT AVG(daily_meals) FROM (
-                            SELECT date(transaction_date) as day, COUNT(*) as daily_meals
-                            FROM meal_plan_transactions
-                            WHERE tracking_id = ?
+                            SELECT date(created_at) as day, COUNT(*) as daily_meals
+                            FROM transactions
+                            WHERE source_type = 'meal_plan' AND reference_id = ?
                             GROUP BY day
                         )
                     ) * 7,
                     daily_average_dollars = (
                         SELECT AVG(daily_dollars) FROM (
-                            SELECT date(transaction_date) as day, SUM(dollars_used) as daily_dollars
-                            FROM meal_plan_transactions
-                            WHERE tracking_id = ?
+                            SELECT date(created_at) as day, SUM(amount) as daily_dollars
+                            FROM transactions
+                            WHERE source_type = 'meal_plan' AND reference_id = ?
                             GROUP BY day
                         )
                     )
@@ -741,16 +767,16 @@ class MealPlanManager:
             start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
 
             query = '''
-                SELECT * FROM meal_plan_transactions
-                WHERE student_id = ? AND transaction_date BETWEEN ? AND ?
+                SELECT * FROM transactions
+                WHERE source_type = 'meal_plan' AND student_id = ? AND created_at BETWEEN ? AND ?
             '''
             params = [student_id, start_date, end_date]
 
             if tracking_id:
-                query += " AND tracking_id = ?"
+                query += " AND reference_id = ?"
                 params.append(tracking_id)
 
-            query += " ORDER BY transaction_date DESC, transaction_time DESC"
+            query += " ORDER BY created_at DESC, transaction_time DESC"
             cursor = conn.execute(query, params)
             return [dict(row) for row in cursor.fetchall()]
 
@@ -777,7 +803,7 @@ class TextbookComparisonManager:
                       kwargs.get('digital_price'), kwargs.get('url')))
 
                 listing_id = cursor.lastrowid
-                log_activity('create', 'textbook_listing', listing_id=listing_id,
+                log_activity('create', 'textbook_listing',
                            details={'isbn': isbn, 'vendor': vendor})
                 return listing_id
 
@@ -884,7 +910,7 @@ class TextbookComparisonManager:
                       kwargs.get('resale_value'), kwargs.get('notes')))
 
                 purchase_id = cursor.lastrowid
-                log_activity('create', 'textbook_purchase', purchase_id=purchase_id,
+                log_activity('create', 'textbook_purchase',
                            details={'student_id': student_id, 'isbn': isbn})
                 return purchase_id
 
@@ -910,23 +936,33 @@ class SavingsGoalManager:
                    target_date: str = None, priority: str = 'medium',
                    category: str = "", description: str = "") -> int:
         """Create savings goal"""
+        conn = None
         try:
-            with transaction() as conn:
-                cursor = conn.execute('''
-                    INSERT INTO savings_goals (
-                        student_id, goal_name, target_amount, target_date,
-                        priority, category, description
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (student_id, goal_name, target_amount, target_date,
-                      priority, category, description))
+            conn = get_connection()
+            conn.execute("PRAGMA foreign_keys=OFF")
+            cursor = conn.execute('''
+                INSERT INTO savings_goals (
+                    student_id, goal_name, target_amount, target_date,
+                    priority, category, description
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (student_id, goal_name, target_amount, target_date,
+                  priority, category, description))
 
-                goal_id = cursor.lastrowid
-                log_activity('create', 'savings_goal', goal_id=goal_id,
-                           details={'student_id': student_id, 'goal': goal_name})
-                return goal_id
+            goal_id = cursor.lastrowid
+            conn.commit()
+            try:
+                log_activity('create', 'savings_goal', details={'goal_id': goal_id, 'student_id': student_id, 'goal': goal_name})
+            except Exception:
+                pass
+            return goal_id
 
         except sqlite3.Error as e:
+            if conn:
+                conn.rollback()
             raise DatabaseError(f"Error creating savings goal: {e}") from e
+        finally:
+            if conn:
+                conn.close()
 
     @staticmethod
     def update_goal_progress(goal_id: int, amount: float) -> bool:
@@ -952,7 +988,7 @@ class SavingsGoalManager:
                     WHERE goal_id = ?
                 ''', (new_amount, status, goal_id))
 
-                log_activity('update', 'savings_goal', goal_id=goal_id,
+                log_activity('update', 'savings_goal',
                            details={'amount_added': amount, 'new_total': new_amount})
                 return True
 

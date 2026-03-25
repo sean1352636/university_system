@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/module_scheduling/viewing.py
+# hypothesis_version: 6.151.9
+
+[100, '\nRoom Schedules:', '-', '=', 'Invalid room ID.', 'No rooms found.', 'No schedules found.', 'TBA', 'Unknown', 'n']

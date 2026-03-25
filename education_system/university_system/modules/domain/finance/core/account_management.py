@@ -84,14 +84,14 @@ cipher_suite = Fernet(ENCRYPTION_KEY)
 # Payment gateway configurations
 PAYMENT_GATEWAYS = {
     'stripe': {
-        'public_key': 'pk_test_...',
-        'secret_key': 'sk_test_...',
-        'webhook_secret': 'whsec_...'
+        'public_key': os.getenv('STRIPE_PUBLIC_KEY', ''),
+        'secret_key': os.getenv('STRIPE_SECRET_KEY', ''),
+        'webhook_secret': os.getenv('STRIPE_WEBHOOK_SECRET', '')
     },
     'paypal': {
-        'client_id': 'your_paypal_client_id',
-        'client_secret': 'your_paypal_client_secret',
-        'environment': 'sandbox'  # or 'live'
+        'client_id': os.getenv('PAYPAL_CLIENT_ID', ''),
+        'client_secret': os.getenv('PAYPAL_CLIENT_SECRET', ''),
+        'environment': os.getenv('PAYPAL_ENVIRONMENT', 'sandbox')
     }
 }
 
@@ -696,12 +696,14 @@ def process_refund():
         request_date = datetime.now().strftime('%Y-%m-%d')
         
         cursor.execute('''
-        INSERT INTO refunds 
-        (student_id, original_payment_id, refund_amount, refund_reason, refund_type, 
-         refund_method, status, requested_by, request_date, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (student_id, original_payment_id, refund_amount, reason, refund_type,
-              refund_method, 'pending', auth.current_user['username'], request_date, now))
+        INSERT INTO unified_refunds
+        (source_type, reference_type, reference_id, student_id, amount, original_amount,
+         currency, refund_type, refund_method, reason, status, department,
+         requested_by, request_date, created_at)
+        VALUES ('general', 'payment', ?, ?, ?, ?, 'GBP', ?, ?, ?, 'pending', 'finance',
+                ?, ?, ?)
+        ''', (original_payment_id, student_id, refund_amount, refund_amount,
+              refund_type, refund_method, reason, auth.current_user['username'], request_date, now))
         
         refund_id = cursor.lastrowid
         
@@ -710,7 +712,7 @@ def process_refund():
             approve_now = input("\nApprove this refund now? (y/n): ").strip().lower()
             if approve_now == 'y':
                 cursor.execute('''
-                UPDATE refunds 
+                UPDATE unified_refunds
                 SET status = 'approved', approved_by = ?, approval_date = ?
                 WHERE refund_id = ?
                 ''', (auth.current_user['username'], request_date, refund_id))
@@ -742,7 +744,7 @@ def process_refund():
         print(f"Status: {'Approved' if auth.check_permission('approve_refunds') and approve_now == 'y' else 'Pending Approval'}")
 
         # Log the action
-        log_audit_action('create_refund', 'refunds', str(refund_id),
+        log_audit_action('create_refund', 'unified_refunds', str(refund_id),
                         {'student_id': student_id, 'amount': refund_amount, 'type': refund_type})
 
         conn.close()

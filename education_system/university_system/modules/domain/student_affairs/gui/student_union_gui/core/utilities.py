@@ -824,13 +824,15 @@ Student Union Finance Team
 
             # Fallback: Legacy method - add to student_fees without balance deduction
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            # Get student details
-            cursor.execute('SELECT first_name, last_name, email FROM students WHERE student_id = ?', (student_id,))
-            student_result = cursor.fetchone()
-            if not student_result:
-                messagebox.showerror("Error", f"Student ID {student_id} not found")
+                # Get student details
+                cursor.execute('SELECT first_name, last_name, email FROM students WHERE student_id = ?', (student_id,))
+                student_result = cursor.fetchone()
+                if not student_result:
+                    messagebox.showerror("Error", f"Student ID {student_id} not found")
+            finally:
                 conn.close()
                 return False
 
@@ -1075,36 +1077,38 @@ Student Union Finance Team
 
                     # Create trip in database (simplified)
                     conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-                    cursor = conn.cursor()
+                    try:
+                        cursor = conn.cursor()
 
-                    # Create trips table if it doesn't exist
-                    cursor.execute('''
-                        CREATE TABLE IF NOT EXISTS student_trips (
-                            trip_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            trip_name TEXT NOT NULL,
-                            destination TEXT NOT NULL,
-                            trip_date TEXT NOT NULL,
-                            cost REAL NOT NULL,
-                            max_participants INTEGER,
-                            description TEXT,
-                            organizing_club TEXT,
-                            created_by INTEGER,
-                            created_date TEXT DEFAULT CURRENT_TIMESTAMP
-                        )
-                    ''')
+                        # Create trips table if it doesn't exist
+                        cursor.execute('''
+                            CREATE TABLE IF NOT EXISTS student_trips (
+                                trip_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                trip_name TEXT NOT NULL,
+                                destination TEXT NOT NULL,
+                                trip_date TEXT NOT NULL,
+                                cost REAL NOT NULL,
+                                max_participants INTEGER,
+                                description TEXT,
+                                organizing_club TEXT,
+                                created_by INTEGER,
+                                created_date TEXT DEFAULT CURRENT_TIMESTAMP
+                            )
+                        ''')
 
-                    cursor.execute('''
-                        INSERT INTO student_trips
-                        (trip_name, destination, trip_date, cost, max_participants, description, organizing_club, created_by)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    ''', (
-                        trip_data['name'], trip_data['destination'], trip_data['date'],
-                        trip_data['cost'], trip_data['max_participants'], trip_data['description'],
-                        club_name, self.current_user.get('id', 0)
-                    ))
+                        cursor.execute('''
+                            INSERT INTO student_trips
+                            (trip_name, destination, trip_date, cost, max_participants, description, organizing_club, created_by)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        ''', (
+                            trip_data['name'], trip_data['destination'], trip_data['date'],
+                            trip_data['cost'], trip_data['max_participants'], trip_data['description'],
+                            club_name, self.current_user.get('id', 0)
+                        ))
 
-                    conn.commit()
-                    conn.close()
+                        conn.commit()
+                    finally:
+                        conn.close()
 
                     # Send trip announcement
                     self.send_trip_announcement(

@@ -397,6 +397,8 @@ class CoursePlanningGUI:
                   command=self._export_plan_pdf).pack(side=tk.RIGHT, padx=5)
         ttk.Button(control_frame, text="Email to Advisor",
                   command=self._email_plan_to_advisor).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(control_frame, text="Email Report to Admin",
+                  command=self._email_report_to_admin).pack(side=tk.RIGHT, padx=5)
         ttk.Button(control_frame, text="Save Changes",
                   command=self._save_plan_changes).pack(side=tk.RIGHT, padx=5)
 
@@ -1577,9 +1579,9 @@ class CoursePlanningGUI:
         # Get staff and admin users
         with get_connection() as conn:
             staff_users = conn.execute("""
-                SELECT user_id, username, email, role
+                SELECT id, username, email, role
                 FROM users
-                WHERE role IN ('Staff', 'Admin', 'Instructor')
+                WHERE LOWER(role) IN ('staff', 'admin', 'instructor')
                 AND email IS NOT NULL AND email != ''
                 ORDER BY role, username
             """).fetchall()
@@ -1721,6 +1723,69 @@ SEMESTER BREAKDOWN
         except Exception as e:
             messagebox.showerror("Error", f"Failed to email plan: {e}")
 
+    def _email_report_to_admin(self):
+        """Email the current plan report to all admin users."""
+        if not self.current_plan_id or not self.current_plan_data:
+            messagebox.showwarning("Warning", "Please load a plan first.")
+            return
+
+        try:
+            from education_system.university_system.infrastructure.email.email_service import send_email
+
+            plan = self.current_plan_data['plan']
+            semesters = self.current_plan_data['semesters']
+
+            # Build report text
+            report = f"COURSE PLAN REPORT\n{'='*60}\n\n"
+            report += f"Student ID: {self.student_id}\n"
+            report += f"Plan: {plan['plan_name']}\n"
+            report += f"Program: {plan.get('program_code', 'N/A')}\n"
+            report += f"Status: {plan.get('status', 'N/A')}\n\n"
+
+            for sem_num in sorted(semesters.keys()):
+                courses = semesters[sem_num]
+                if not courses:
+                    continue
+                total_cr = sum(c['credits'] for c in courses)
+                sem_name = courses[0].get('semester_name', f'Semester {sem_num}')
+                report += f"--- {sem_name} ({total_cr} credits) ---\n"
+                for c in courses:
+                    report += f"  {c['course_id']}: {c['course_name']} ({c['credits']} cr)\n"
+                report += "\n"
+
+            report += f"{'='*60}\n"
+
+            # Get admin emails
+            with get_connection() as conn:
+                admins = conn.execute(
+                    "SELECT email FROM users WHERE LOWER(role) = 'admin' "
+                    "AND email IS NOT NULL AND email != ''"
+                ).fetchall()
+
+            if not admins:
+                messagebox.showinfo("No Admins", "No admin email addresses found.")
+                return
+
+            sent = 0
+            for row in admins:
+                try:
+                    send_email(
+                        recipient_email=row['email'] if hasattr(row, '__getitem__') and not isinstance(row, tuple) else row[0],
+                        subject=f"Course Plan Report: {plan['plan_name']} ({self.student_id})",
+                        body=report
+                    )
+                    sent += 1
+                except Exception:
+                    pass
+
+            if sent > 0:
+                messagebox.showinfo("Email Sent", f"Report emailed to {sent} admin(s).")
+            else:
+                messagebox.showwarning("Email Failed", "Could not send email to any admin.")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to email report: {e}")
+
     def _create_tools_tab(self):
         """Create the tools tab with GPA calculator, progress tracker, and plan comparison."""
         tab = ttk.Frame(self.notebook)
@@ -1852,16 +1917,41 @@ SEMESTER BREAKDOWN
         program_frame.pack(fill=tk.X, padx=20, pady=10)
 
         ttk.Label(program_frame, text="Program:").pack(side=tk.LEFT, padx=5)
-        self.progress_program_entry = ttk.Entry(program_frame, width=30)
+        self.progress_program_var = tk.StringVar()
+        self.progress_program_entry = ttk.Combobox(program_frame, textvariable=self.progress_program_var,
+                                                    width=30, state='readonly')
 
-        # Get student's major
-        with get_connection() as conn:
-            student = conn.execute("""
-                SELECT course FROM students WHERE student_id = ?
-            """, (self.student_id,)).fetchone()
+        # Load courses from DB and get student's major
+        try:
+            with get_connection() as conn:
+                student = conn.execute(
+                    "SELECT course FROM students WHERE student_id = ?",
+                    (self.student_id,)
+                ).fetchone()
 
-        if student and student['course']:
-            self.progress_program_entry.insert(0, student['course'])
+                courses = conn.execute(
+                    "SELECT DISTINCT code, name FROM courses ORDER BY code"
+                ).fetchall()
+
+            course_list = [f"{c['code']} - {c['name']}" if hasattr(c, '__getitem__') and not isinstance(c, tuple) else f"{c[0]} - {c[1]}" for c in courses]
+
+            # Also add student's enrolled course if not already in the list
+            student_course = student['course'] if student and student['course'] else None
+            if student_course and not any(student_course in c for c in course_list):
+                course_list.insert(0, student_course)
+
+            self.progress_program_entry['values'] = course_list
+
+            # Pre-select student's course
+            if student_course:
+                for i, c in enumerate(course_list):
+                    if c.startswith(student_course) or c == student_course:
+                        self.progress_program_entry.current(i)
+                        break
+                else:
+                    self.progress_program_var.set(student_course)
+        except Exception:
+            pass
 
         self.progress_program_entry.pack(side=tk.LEFT, padx=5)
 
@@ -1948,49 +2038,115 @@ SEMESTER BREAKDOWN
     # ===== Tools Tab Business Logic =====
 
     def _calculate_current_gpa(self):
-        """Calculate student's current GPA from completed courses."""
+        """Calculate student's current GPA from completed modules."""
         try:
             with get_connection() as conn:
-                # Get all graded courses from module_grades (final course grades)
-                grades = conn.execute("""
-                    SELECT m.credits, mg.final_grade as grade
+                # Get grades from module_grades
+                module_grades = conn.execute("""
+                    SELECT m.module_code, m.module_name, COALESCE(m.credits, 1) as credits,
+                           mg.final_grade as grade
                     FROM module_grades mg
-                    LEFT JOIN modules m ON mg.module_code = m.module_code
+                    JOIN modules m ON mg.module_code = m.module_code
                     WHERE mg.student_id = ? AND mg.final_grade IS NOT NULL
-                    UNION ALL
-                    SELECT c.credits, sg.grade
-                    FROM student_grades sg
-                    LEFT JOIN courses c ON sg.module_code = c.code
-                    WHERE sg.student_id = ? AND sg.grade IS NOT NULL
-                    AND sg.assessment_name LIKE '%Final%'
-                """, (self.student_id, self.student_id)).fetchall()
+                """, (self.student_id,)).fetchall()
 
-            if not grades:
-                messagebox.showinfo("Info", "No graded courses found.")
-                return
+                # Get grades from assignment_submissions (averaged per module)
+                assignment_grades = conn.execute("""
+                    SELECT a.module_code, m.module_name, COALESCE(m.credits, 1) as credits,
+                           ROUND(AVG(sub.grade), 2) as grade
+                    FROM assignment_submissions sub
+                    JOIN assignments a ON sub.assignment_id = a.id
+                    JOIN modules m ON a.module_code = m.module_code
+                    WHERE sub.student_id = ? AND sub.grade IS NOT NULL
+                    GROUP BY a.module_code
+                """, (self.student_id,)).fetchall()
+
+                # Also try grades table
+                direct_grades = conn.execute("""
+                    SELECT a.module_code, m.module_name, COALESCE(m.credits, 1) as credits,
+                           ROUND((g.score / a.max_points) * 100, 2) as grade
+                    FROM grades g
+                    JOIN assessments a ON g.assessment_id = a.assessment_id
+                    JOIN modules m ON a.module_code = m.module_code
+                    WHERE g.student_id = ?
+                    GROUP BY a.module_code
+                """, (self.student_id,)).fetchall()
 
             # GPA scale
             grade_points = {
-                'A': 4.0, 'A-': 3.7,
+                'A+': 4.3, 'A': 4.0, 'A-': 3.7,
                 'B+': 3.3, 'B': 3.0, 'B-': 2.7,
                 'C+': 2.3, 'C': 2.0, 'C-': 1.7,
                 'D+': 1.3, 'D': 1.0, 'D-': 0.7,
                 'F': 0.0
             }
 
+            def percentage_to_letter(pct):
+                if pct >= 93: return 'A+'
+                if pct >= 90: return 'A'
+                if pct >= 87: return 'A-'
+                if pct >= 83: return 'B+'
+                if pct >= 80: return 'B'
+                if pct >= 77: return 'B-'
+                if pct >= 73: return 'C+'
+                if pct >= 70: return 'C'
+                if pct >= 67: return 'C-'
+                if pct >= 63: return 'D+'
+                if pct >= 60: return 'D'
+                if pct >= 57: return 'D-'
+                return 'F'
+
+            def to_letter(grade_val):
+                """Convert a grade value (letter or numeric) to a letter grade."""
+                if grade_val is None:
+                    return None
+                if isinstance(grade_val, (int, float)):
+                    return percentage_to_letter(grade_val)
+                grade_str = str(grade_val).strip().upper()
+                if grade_str in grade_points:
+                    return grade_str
+                try:
+                    return percentage_to_letter(float(grade_str))
+                except (ValueError, TypeError):
+                    return None
+
+            # Merge all sources, module_grades takes priority
+            seen_modules = set()
+            all_entries = []
+
+            for row in module_grades:
+                code = row['module_code']
+                if code not in seen_modules:
+                    seen_modules.add(code)
+                    letter = to_letter(row['grade'])
+                    if letter:
+                        all_entries.append((code, row['module_name'], row['credits'], letter))
+
+            for row in list(assignment_grades) + list(direct_grades):
+                code = row['module_code']
+                if code not in seen_modules:
+                    seen_modules.add(code)
+                    letter = to_letter(row['grade'])
+                    if letter:
+                        all_entries.append((code, row['module_name'], row['credits'], letter))
+
+            if not all_entries:
+                messagebox.showinfo("Info", "No graded modules found.")
+                return
+
             total_points = 0.0
             total_credits = 0
+            details = []
 
-            for grade_row in grades:
-                credits = grade_row['credits']
-                grade = grade_row['grade'].strip().upper()
-
-                if grade in grade_points:
-                    total_points += grade_points[grade] * credits
-                    total_credits += credits
+            for code, name, credits, letter in all_entries:
+                cr = credits if credits and credits > 0 else 1
+                pts = grade_points.get(letter, 0.0)
+                total_points += pts * cr
+                total_credits += cr
+                details.append(f"  {code}: {name} - {letter} ({pts:.1f} x {cr} cr)")
 
             if total_credits == 0:
-                messagebox.showinfo("Info", "No valid graded courses for GPA calculation.")
+                messagebox.showinfo("Info", "No valid graded modules for GPA calculation.")
                 return
 
             gpa = total_points / total_credits
@@ -1998,6 +2154,21 @@ SEMESTER BREAKDOWN
             # Update labels
             self.gpa_current_label.config(text=f"Current GPA: {gpa:.2f}")
             self.gpa_credits_label.config(text=f"Total Credits: {total_credits}")
+
+            # Show breakdown in the GPA text area if available
+            if hasattr(self, 'gpa_projection_text'):
+                self.gpa_projection_text.delete(1.0, tk.END)
+                self.gpa_projection_text.insert(tk.END, f"=== Current GPA Breakdown ===\n\n")
+                self.gpa_projection_text.insert(tk.END, f"Student: {self.student_id}\n")
+                self.gpa_projection_text.insert(tk.END, f"Modules graded: {len(all_entries)}\n")
+                self.gpa_projection_text.insert(tk.END, f"Total credits: {total_credits}\n")
+                self.gpa_projection_text.insert(tk.END, f"GPA: {gpa:.2f}\n\n")
+                self.gpa_projection_text.insert(tk.END, "Module Grades:\n")
+                self.gpa_projection_text.insert(tk.END, "-" * 60 + "\n")
+                for line in details:
+                    self.gpa_projection_text.insert(tk.END, line + "\n")
+                self.gpa_projection_text.insert(tk.END, "-" * 60 + "\n")
+                self.gpa_projection_text.insert(tk.END, f"\nWeighted Total: {total_points:.2f} / {total_credits} credits = {gpa:.2f} GPA\n")
 
             log_activity('view', 'gpa_calculation', user_id=self.student_id,
                         details={'gpa': gpa, 'credits': total_credits})
@@ -2132,11 +2303,14 @@ SEMESTER BREAKDOWN
 
     def _analyze_progress(self):
         """Analyze degree completion progress."""
-        program_code = self.progress_program_entry.get().strip()
+        raw_value = self.progress_program_entry.get().strip()
 
-        if not program_code:
-            messagebox.showwarning("Warning", "Please enter a program code.")
+        if not raw_value:
+            messagebox.showwarning("Warning", "Please select a program.")
             return
+
+        # Extract code from "CS - Computer Science" format
+        program_code = raw_value.split(' - ')[0].strip() if ' - ' in raw_value else raw_value
 
         try:
             # Get program requirements
@@ -2149,7 +2323,7 @@ SEMESTER BREAKDOWN
                     WHERE dp.program_code = ?
                 """, (program_code,)).fetchall()
 
-                # Get completed courses
+                # Get completed modules (from module_grades and assignment_submissions)
                 completed = conn.execute("""
                     SELECT mg.module_code as course_id, mg.final_grade as grade,
                            m.module_name as name, m.credits
@@ -2158,13 +2332,21 @@ SEMESTER BREAKDOWN
                     WHERE mg.student_id = ? AND mg.final_grade IS NOT NULL
                     AND mg.final_grade NOT IN ('F', 'W', 'I')
                     UNION
-                    SELECT sg.module_code as course_id, sg.grade,
-                           c.name, c.credits
-                    FROM student_grades sg
-                    LEFT JOIN courses c ON sg.module_code = c.code
-                    WHERE sg.student_id = ? AND sg.grade IS NOT NULL
-                    AND sg.grade NOT IN ('F', 'W', 'I')
-                    AND sg.assessment_name LIKE '%Final%'
+                    SELECT a.module_code as course_id,
+                           CASE
+                               WHEN AVG(sub.grade) >= 93 THEN 'A'
+                               WHEN AVG(sub.grade) >= 83 THEN 'B'
+                               WHEN AVG(sub.grade) >= 73 THEN 'C'
+                               WHEN AVG(sub.grade) >= 63 THEN 'D'
+                               ELSE 'F'
+                           END as grade,
+                           m.module_name as name, m.credits
+                    FROM assignment_submissions sub
+                    JOIN assignments a ON sub.assignment_id = a.id
+                    LEFT JOIN modules m ON a.module_code = m.module_code
+                    WHERE sub.student_id = ? AND sub.grade IS NOT NULL
+                    GROUP BY a.module_code
+                    HAVING AVG(sub.grade) >= 63
                 """, (self.student_id, self.student_id)).fetchall()
 
             if not program_courses:

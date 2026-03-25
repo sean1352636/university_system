@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/course_management_gui/core/data_io.py
+# hypothesis_version: 6.151.9
+
+[3.0, 30.0, '%Y-%m-%d %H:%M:%S', '%s\n', '*.*', '*.csv', '*.db', '*.sql', ', ', '.csv', '.sql', '600x700', 'All files', 'COURSE SCHEDULES:\n\n', 'CSV files', 'Core', 'PREREQUISITES:\n\n', 'Recommended', 'Required', 'SQL files', 'SQLite files', 'Save CSV file', 'Save database backup', 'common.close', 'common.error', 'common.export_error', 'common.import_error', 'course_code', 'course_name', 'course_type', 'credit_hours', 'department', 'description', 'level', 'max_enrollment', 'r', 'utf-8', 'w']

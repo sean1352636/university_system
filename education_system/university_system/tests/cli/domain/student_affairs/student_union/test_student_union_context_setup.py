@@ -13,7 +13,7 @@ from education_system.university_system.infrastructure.auth import UserAuth
 class TestSetAuth:
     """Tests for set_auth function."""
 
-    @patch('university_system.modules.core.services.student_union_misc.union_context')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.union_context')
     def test_set_auth_basic(self, mock_union_context):
         """Test setting auth instance."""
         # Create mock auth object
@@ -25,9 +25,9 @@ class TestSetAuth:
         # Verify auth was set in union_context
         assert mock_union_context.auth == mock_auth
 
-    @patch('university_system.modules.core.services.student_union_misc.context_setup.HAS_AUTH', True)
-    @patch('university_system.modules.core.services.student_union_misc.context_setup.set_auth_instance')
-    @patch('university_system.modules.core.services.student_union_misc.union_context')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.context_setup.HAS_AUTH', True)
+    @patch('education_system.university_system.modules.core.services.student_union_misc.context_setup.set_auth_instance')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.union_context')
     def test_set_auth_with_global_instance(self, mock_union_context, mock_set_auth_instance):
         """Test setting auth when global auth instance is available."""
         # Create mock auth object
@@ -40,8 +40,8 @@ class TestSetAuth:
         assert mock_union_context.auth == mock_auth
         mock_set_auth_instance.assert_called_once_with(mock_auth)
 
-    @patch('university_system.modules.core.services.student_union_misc.context_setup.HAS_AUTH', False)
-    @patch('university_system.modules.core.services.student_union_misc.union_context')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.context_setup.HAS_AUTH', False)
+    @patch('education_system.university_system.modules.core.services.student_union_misc.union_context')
     def test_set_auth_without_global_instance(self, mock_union_context):
         """Test setting auth when global auth instance is not available."""
         # Create mock auth object
@@ -53,7 +53,7 @@ class TestSetAuth:
         # Verify auth was set in union_context
         assert mock_union_context.auth == mock_auth
 
-    @patch('university_system.modules.core.services.student_union_misc.union_context')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.union_context')
     def test_set_auth_with_none(self, mock_union_context):
         """Test setting auth to None."""
         # Call function with None
@@ -62,7 +62,7 @@ class TestSetAuth:
         # Verify auth was set to None
         assert mock_union_context.auth is None
 
-    @patch('university_system.modules.core.services.student_union_misc.union_context')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.union_context')
     def test_set_auth_multiple_times(self, mock_union_context):
         """Test setting auth multiple times."""
         # Create multiple mock auth objects
@@ -80,9 +80,9 @@ class TestSetAuth:
         context_setup.set_auth(mock_auth3)
         assert mock_union_context.auth == mock_auth3
 
-    @patch('university_system.modules.core.services.student_union_misc.context_setup.HAS_AUTH', True)
-    @patch('university_system.modules.core.services.student_union_misc.context_setup.set_auth_instance')
-    @patch('university_system.modules.core.services.student_union_misc.union_context')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.context_setup.HAS_AUTH', True)
+    @patch('education_system.university_system.modules.core.services.student_union_misc.context_setup.set_auth_instance')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.union_context')
     def test_set_auth_with_configured_user(self, mock_union_context, mock_set_auth_instance):
         """Test setting auth with a configured UserAuth object."""
         # Create mock auth with some attributes
@@ -136,7 +136,7 @@ class TestModuleConstants:
 class TestIntegrationContextSetup:
     """Integration tests for context setup."""
 
-    @patch('university_system.modules.core.services.student_union_misc.union_context')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.union_context')
     def test_set_auth_integration_workflow(self, mock_union_context):
         """Test complete workflow of setting and using auth."""
         # Create realistic auth mock

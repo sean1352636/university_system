@@ -88,7 +88,7 @@ def test_db():
 class TestSessionCreation:
     """Test session creation with security features"""
 
-    @patch('university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
+    @patch('education_system.university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
     def test_create_session_success(self, mock_location, test_db):
         """Test successful session creation"""
         mock_location.return_value = {'city': 'TestCity', 'country': 'TestCountry', 'latitude': 0, 'longitude': 0}
@@ -108,7 +108,7 @@ class TestSessionCreation:
         assert 'expires_at' in result
         assert len(result['session_id']) > 20
 
-    @patch('university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
+    @patch('education_system.university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
     def test_create_session_timeout_by_role(self, mock_location, test_db):
         """Test session timeout varies by role"""
         mock_location.return_value = {'city': 'Test', 'country': 'Test', 'latitude': 0, 'longitude': 0}
@@ -126,7 +126,7 @@ class TestSessionCreation:
         # Student session should expire much later than admin
         assert student_expires > admin_expires
 
-    @patch('university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
+    @patch('education_system.university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
     def test_create_session_concurrent_limit(self, mock_location, test_db):
         """Test concurrent session limiting"""
         mock_location.return_value = {'city': 'Test', 'country': 'Test', 'latitude': 0, 'longitude': 0}
@@ -141,8 +141,8 @@ class TestSessionCreation:
         assert result3['success'] is True
         assert any('terminated oldest' in w.lower() for w in result3.get('warnings', []))
 
-    @patch('university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
-    @patch('university_system.infrastructure.security.session_management.SessionManager._detect_suspicious_login')
+    @patch('education_system.university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
+    @patch('education_system.university_system.infrastructure.security.session_management.SessionManager._detect_suspicious_login')
     def test_create_session_suspicious_activity(self, mock_suspicious, mock_location, test_db):
         """Test suspicious activity detection during login"""
         mock_location.return_value = {'city': 'Test', 'country': 'Test', 'latitude': 0, 'longitude': 0}
@@ -163,7 +163,7 @@ class TestSessionCreation:
 class TestSessionValidation:
     """Test session validation"""
 
-    @patch('university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
+    @patch('education_system.university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
     def test_validate_session_valid(self, mock_location, test_db):
         """Test validation of valid session"""
         mock_location.return_value = {'city': 'Test', 'country': 'Test', 'latitude': 0, 'longitude': 0}
@@ -180,7 +180,7 @@ class TestSessionValidation:
         assert validate_result['valid'] is True
         assert validate_result['user_id'] == 1
 
-    @patch('university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
+    @patch('education_system.university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
     def test_validate_session_invalid_id(self, mock_location, test_db):
         """Test validation of invalid session ID"""
         mock_location.return_value = {'city': 'Test', 'country': 'Test', 'latitude': 0, 'longitude': 0}
@@ -192,7 +192,7 @@ class TestSessionValidation:
         assert result['valid'] is False
         assert result['reason'] == 'Session not found'
 
-    @patch('university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
+    @patch('education_system.university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
     def test_validate_session_expired(self, mock_location, test_db):
         """Test validation of expired session"""
         mock_location.return_value = {'city': 'Test', 'country': 'Test', 'latitude': 0, 'longitude': 0}
@@ -222,7 +222,7 @@ class TestSessionValidation:
         assert result['valid'] is False
         assert result['reason'] == 'Session expired'
 
-    @patch('university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
+    @patch('education_system.university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
     def test_validate_session_ip_change_warning(self, mock_location, test_db):
         """Test IP change generates warning"""
         mock_location.return_value = {'city': 'Test', 'country': 'Test', 'latitude': 0, 'longitude': 0}
@@ -246,7 +246,7 @@ class TestSessionValidation:
 class TestSessionTermination:
     """Test session termination"""
 
-    @patch('university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
+    @patch('education_system.university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
     def test_terminate_session_success(self, mock_location, test_db):
         """Test successful session termination"""
         mock_location.return_value = {'city': 'Test', 'country': 'Test', 'latitude': 0, 'longitude': 0}
@@ -262,7 +262,7 @@ class TestSessionTermination:
 
         assert result['success'] is True
 
-    @patch('university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
+    @patch('education_system.university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
     def test_terminate_session_already_terminated(self, mock_location, test_db):
         """Test terminating already terminated session"""
         mock_location.return_value = {'city': 'Test', 'country': 'Test', 'latitude': 0, 'longitude': 0}
@@ -279,7 +279,7 @@ class TestSessionTermination:
 
         assert result['success'] is False
 
-    @patch('university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
+    @patch('education_system.university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
     def test_terminate_all_sessions(self, mock_location, test_db):
         """Test terminating all user sessions"""
         mock_location.return_value = {'city': 'Test', 'country': 'Test', 'latitude': 0, 'longitude': 0}
@@ -297,7 +297,7 @@ class TestSessionTermination:
         assert result['success'] is True
         assert result['terminated_count'] >= 3
 
-    @patch('university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
+    @patch('education_system.university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
     def test_terminate_all_except_current(self, mock_location, test_db):
         """Test terminating all sessions except current"""
         mock_location.return_value = {'city': 'Test', 'country': 'Test', 'latitude': 0, 'longitude': 0}
@@ -325,7 +325,7 @@ class TestSessionTermination:
 class TestSuspiciousActivityDetection:
     """Test detection of suspicious login patterns"""
 
-    @patch('university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
+    @patch('education_system.university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
     def test_detect_impossible_travel(self, mock_location, test_db):
         """Test impossible travel detection"""
         manager = SessionManager(test_db)
@@ -355,7 +355,7 @@ class TestSuspiciousActivityDetection:
         # Should detect impossible travel
         assert any('travel' in w.lower() or 'country' in w.lower() for w in result.get('warnings', []))
 
-    @patch('university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
+    @patch('education_system.university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
     def test_detect_unusual_hours(self, mock_location, test_db):
         """Test unusual hours detection"""
         mock_location.return_value = {'city': 'Test', 'country': 'Test', 'latitude': 0, 'longitude': 0}
@@ -378,7 +378,7 @@ class TestSuspiciousActivityDetection:
 class TestSessionListing:
     """Test listing user sessions"""
 
-    @patch('university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
+    @patch('education_system.university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
     def test_get_user_sessions(self, mock_location, test_db):
         """Test getting all user sessions"""
         mock_location.return_value = {'city': 'Test', 'country': 'Test', 'latitude': 0, 'longitude': 0}
@@ -394,7 +394,7 @@ class TestSessionListing:
 
         assert len(sessions) >= 2
 
-    @patch('university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
+    @patch('education_system.university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
     def test_get_user_sessions_active_only(self, mock_location, test_db):
         """Test getting only active sessions"""
         mock_location.return_value = {'city': 'Test', 'country': 'Test', 'latitude': 0, 'longitude': 0}
@@ -421,7 +421,7 @@ class TestSessionListing:
 class TestSessionCleanup:
     """Test session cleanup operations"""
 
-    @patch('university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
+    @patch('education_system.university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
     def test_cleanup_expired_sessions(self, mock_location, test_db):
         """Test automatic cleanup of expired sessions"""
         mock_location.return_value = {'city': 'Test', 'country': 'Test', 'latitude': 0, 'longitude': 0}
@@ -457,7 +457,7 @@ class TestSessionCleanup:
 class TestSessionStatistics:
     """Test session statistics"""
 
-    @patch('university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
+    @patch('education_system.university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
     def test_get_session_statistics(self, mock_location, test_db):
         """Test getting session statistics"""
         mock_location.return_value = {'city': 'Test', 'country': 'Test', 'latitude': 0, 'longitude': 0}
@@ -475,7 +475,7 @@ class TestSessionStatistics:
         assert 'sessions_today' in stats
         assert stats['active_sessions'] >= 2
 
-    @patch('university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
+    @patch('education_system.university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
     def test_get_session_statistics_for_user(self, mock_location, test_db):
         """Test getting statistics for specific user"""
         mock_location.return_value = {'city': 'Test', 'country': 'Test', 'latitude': 0, 'longitude': 0}
@@ -547,7 +547,7 @@ class TestLocationServices:
 class TestSessionIntegration:
     """Test integration scenarios"""
 
-    @patch('university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
+    @patch('education_system.university_system.infrastructure.security.session_management.SessionManager._get_location_from_ip')
     def test_complete_session_lifecycle(self, mock_location, test_db):
         """Test complete session lifecycle"""
         mock_location.return_value = {'city': 'Test', 'country': 'Test', 'latitude': 0, 'longitude': 0}

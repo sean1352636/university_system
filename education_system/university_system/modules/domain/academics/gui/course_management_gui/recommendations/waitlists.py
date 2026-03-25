@@ -1,4 +1,4 @@
-from ._imports import (
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.recommendations._imports import (
     tk, ttk, messagebox, sqlite3, _, DEFAULT_DB_PATH, datetime,
 )
 
@@ -86,16 +86,18 @@ class WaitlistsMixin:
                 student_id = student_id_var.get().strip()
 
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-                cursor = conn.cursor()
+                try:
+                    cursor = conn.cursor()
 
-                # Validate student exists in database
-                cursor.execute("SELECT student_id, first_name, last_name FROM students WHERE student_id = ?", (student_id,))
-                student_record = cursor.fetchone()
+                    # Validate student exists in database
+                    cursor.execute("SELECT student_id, first_name, last_name FROM students WHERE student_id = ?", (student_id,))
+                    student_record = cursor.fetchone()
 
-                if not student_record:
-                    messagebox.showerror("Invalid Student",
-                                       f"Student ID '{student_id}' does not exist in the database.\n\n"
-                                       f"Please enter a valid student ID.")
+                    if not student_record:
+                        messagebox.showerror("Invalid Student",
+                                           f"Student ID '{student_id}' does not exist in the database.\n\n"
+                                           f"Please enter a valid student ID.")
+                finally:
                     conn.close()
                     return
 

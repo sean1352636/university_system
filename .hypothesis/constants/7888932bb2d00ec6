@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/batch_operations/update_manager.py
+# hypothesis_version: 6.151.9
+
+[100, '*.*', '*.csv', '*.txt', '*.xlsx *.xls', '+%d+%d', '10', '600x500', 'All files', 'All students', 'Arial', 'Batch Update', 'CS', 'CSV files', 'DS', 'Excel files', 'Filter by course', 'Grade Data Import', 'Grade Import', 'Importing grade data', 'Module Import', 'Module Operation', 'Text files', 'add', 'all', 'bold', 'compulsory', 'course', 'file', 'import', 'optional', 'readonly', 'remove', 'replace', 'w']

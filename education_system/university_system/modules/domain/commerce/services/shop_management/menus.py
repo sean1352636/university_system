@@ -1,15 +1,15 @@
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.modules.shared.utils.simple_activity_logger import log_menu_navigation
-from . import config
-from .database import init_shop_db, setup_shop_permissions
+from education_system.university_system.modules.domain.commerce.services.shop_management import config
+from education_system.university_system.modules.domain.commerce.services.shop_management.database import init_shop_db, setup_shop_permissions
 
 
 @log_menu_navigation(description="Displaying shop main menu")
 def display_shop_menu():
     """Display the main menu for the university shop"""
-    from .shopping import (browse_products, view_shopping_cart, checkout_process,
+    from education_system.university_system.modules.domain.commerce.services.shop_management.shopping import (browse_products, view_shopping_cart, checkout_process,
                            view_purchase_history, view_all_transactions)
-    from .products import quick_add_product, bulk_update_prices
+    from education_system.university_system.modules.domain.commerce.services.shop_management.products import quick_add_product, bulk_update_prices
 
     if not config.auth or not config.auth.current_user:
         print("You must be logged in to access the university shop.")
@@ -19,7 +19,7 @@ def display_shop_menu():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='shop_products'")
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='products'")
         if not cursor.fetchone():
             conn.close()
             print("Shop database not initialized. Initializing now...")
@@ -128,7 +128,7 @@ def display_shop_menu():
 @log_menu_navigation(description="Displaying product management menu")
 def display_product_management_menu():
     """Display the menu for product management"""
-    from .products import add_new_product, edit_product, toggle_product_status, view_all_products
+    from education_system.university_system.modules.domain.commerce.services.shop_management.products import add_new_product, edit_product, toggle_product_status, view_all_products
 
     if not config.auth or not config.auth.current_user:
         print("You must be logged in to manage products.")
@@ -164,7 +164,7 @@ def display_product_management_menu():
 @log_menu_navigation(description="Displaying inventory management menu")
 def display_inventory_management_menu():
     """Display the menu for inventory management"""
-    from .inventory import (update_stock_levels, restock_products,
+    from education_system.university_system.modules.domain.commerce.services.shop_management.inventory import (update_stock_levels, restock_products,
                             view_low_stock_products, adjust_restock_thresholds)
 
     if not config.auth or not config.auth.current_user:
@@ -201,7 +201,7 @@ def display_inventory_management_menu():
 @log_menu_navigation(description="Displaying discount management menu")
 def display_discount_management_menu():
     """Display the menu for discount management"""
-    from .discounts import (create_discount, edit_discount,
+    from education_system.university_system.modules.domain.commerce.services.shop_management.discounts import (create_discount, edit_discount,
                             toggle_discount_status, view_all_discounts)
 
     if not config.auth or not config.auth.current_user:
@@ -238,7 +238,7 @@ def display_discount_management_menu():
 @log_menu_navigation(description="Displaying sales reports menu")
 def display_sales_reports_menu():
     """Display the menu for sales reports"""
-    from .reports import (generate_daily_sales_report, generate_weekly_sales_report,
+    from education_system.university_system.modules.domain.commerce.services.shop_management.reports import (generate_daily_sales_report, generate_weekly_sales_report,
                           generate_monthly_sales_report, generate_product_sales_report,
                           generate_category_sales_report, export_sales_data)
 
@@ -471,7 +471,7 @@ def add_shop_system_to_main_menu(main_display_menu):
 
 def setup_shop_system():
     """Complete setup function for the shop system"""
-    from .discounts import cleanup_expired_discounts
+    from education_system.university_system.modules.domain.commerce.services.shop_management.discounts import cleanup_expired_discounts
 
     print("Setting up University Shop System...")
 
@@ -507,7 +507,7 @@ def integrate_shop_with_main():
     Main integration function to be called from main.py
     This sets up everything needed for the shop system
     """
-    from .utils import test_shop_system
+    from education_system.university_system.modules.domain.commerce.services.shop_management.utils import test_shop_system
 
     print("🏪 Initializing University Shop System...")
 

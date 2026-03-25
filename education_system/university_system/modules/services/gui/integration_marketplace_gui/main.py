@@ -23,20 +23,20 @@ from education_system.university_system.modules.shared.utils.gui_language_select
     show_gui_language_selector,
 )
 
-from .tabs import TabsMixin
-from .data_loading import DataLoadingMixin
-from .catalog import CatalogMixin
-from .installed import InstalledMixin
-from .credentials import CredentialsMixin
-from .sync_and_mappings import SyncAndMappingsMixin
-from .search import SearchMixin
-from .bulk_operations import BulkOperationsMixin
-from .import_export import ImportExportMixin
-from .analytics import AnalyticsMixin
-from .scheduling import SchedulingMixin
-from .testing import TestingMixin
-from .mapping_tools import MappingToolsMixin
-from .notifications import NotificationsMixin
+from education_system.university_system.modules.services.gui.integration_marketplace_gui.tabs import TabsMixin
+from education_system.university_system.modules.services.gui.integration_marketplace_gui.data_loading import DataLoadingMixin
+from education_system.university_system.modules.services.gui.integration_marketplace_gui.catalog import CatalogMixin
+from education_system.university_system.modules.services.gui.integration_marketplace_gui.installed import InstalledMixin
+from education_system.university_system.modules.services.gui.integration_marketplace_gui.credentials import CredentialsMixin
+from education_system.university_system.modules.services.gui.integration_marketplace_gui.sync_and_mappings import SyncAndMappingsMixin
+from education_system.university_system.modules.services.gui.integration_marketplace_gui.search import SearchMixin
+from education_system.university_system.modules.services.gui.integration_marketplace_gui.bulk_operations import BulkOperationsMixin
+from education_system.university_system.modules.services.gui.integration_marketplace_gui.import_export import ImportExportMixin
+from education_system.university_system.modules.services.gui.integration_marketplace_gui.analytics import AnalyticsMixin
+from education_system.university_system.modules.services.gui.integration_marketplace_gui.scheduling import SchedulingMixin
+from education_system.university_system.modules.services.gui.integration_marketplace_gui.testing import TestingMixin
+from education_system.university_system.modules.services.gui.integration_marketplace_gui.mapping_tools import MappingToolsMixin
+from education_system.university_system.modules.services.gui.integration_marketplace_gui.notifications import NotificationsMixin
 
 logger = logging.getLogger(__name__)
 

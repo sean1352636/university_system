@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/services/parking_management/core.py
+# hypothesis_version: 6.151.9
+
+[100, 150, 200, '07:00-22:00', '24/7', 'A', 'B', 'C', 'Central Campus', 'Central Campus Lot', 'East Campus', 'East Campus Lot', 'H', 'L001', 'L002', 'L003', 'L004', 'L005', 'North Campus', 'North Campus Lot', 'South Campus', 'South Campus Lot', 'V', 'West Campus', 'West Campus Lot', 'permit_system.log']

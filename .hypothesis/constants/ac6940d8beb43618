@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/gui/medical_accommodation/dialogs/document_upload.py
+# hypothesis_version: 6.151.9
+
+[384, 448, '%Y%m%d_%H%M%S', '%Y-%m-%d %H:%M:%S', '*.*', '..', '500x300', 'All files', 'Browse', 'Cancel', 'Document Name:', 'Error', 'File Path:', 'File does not exist', 'Select Document', 'Upload', 'Upload Document', 'accommodation', 'data', 'documents', 'email_address', 'ew', 'rb', 'safe_filename', 'student_id', 'upload_document', 'uploads', 'valid', 'w']

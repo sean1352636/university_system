@@ -162,7 +162,7 @@ def bulk_price_update(self):
         if 'get_connection' in globals():
             conn = get_connection()
             cursor = conn.cursor()
-            cursor.execute("SELECT DISTINCT category FROM shop_products WHERE is_active = 1 ORDER BY category")
+            cursor.execute("SELECT DISTINCT category FROM products WHERE source_type = 'shop' AND is_active = 1 ORDER BY category")
             categories = ["All"] + [row[0] for row in cursor.fetchall()]
             category_combo.configure(values=categories)
             conn.close()
@@ -190,28 +190,28 @@ def bulk_price_update(self):
             if category == "All":
                 if method == "percentage":
                     cursor.execute("""
-                        UPDATE shop_products 
+                        UPDATE products
                         SET price = price * ?, updated_at = ?
-                        WHERE is_active = 1
+                        WHERE source_type = 'shop' AND is_active = 1
                     """, [multiplier, datetime.now().strftime('%Y-%m-%d %H:%M:%S')])
                 else:
                     cursor.execute("""
-                        UPDATE shop_products 
+                        UPDATE products
                         SET price = MAX(0.01, price + ?), updated_at = ?
-                        WHERE is_active = 1
+                        WHERE source_type = 'shop' AND is_active = 1
                     """, [fixed_change, datetime.now().strftime('%Y-%m-%d %H:%M:%S')])
             else:
                 if method == "percentage":
                     cursor.execute("""
-                        UPDATE shop_products 
+                        UPDATE products
                         SET price = price * ?, updated_at = ?
-                        WHERE category = ? AND is_active = 1
+                        WHERE source_type = 'shop' AND category = ? AND is_active = 1
                     """, [multiplier, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), category])
                 else:
                     cursor.execute("""
-                        UPDATE shop_products 
+                        UPDATE products
                         SET price = MAX(0.01, price + ?), updated_at = ?
-                        WHERE category = ? AND is_active = 1
+                        WHERE source_type = 'shop' AND category = ? AND is_active = 1
                     """, [fixed_change, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), category])
             
             affected_rows = cursor.rowcount
@@ -299,7 +299,7 @@ def import_products(self):
                         continue
                     
                     # Generate product ID
-                    cursor.execute("SELECT MAX(SUBSTR(product_id, 2)) FROM shop_products WHERE product_id LIKE 'P%'")
+                    cursor.execute("SELECT MAX(SUBSTR(source_product_id, 2)) FROM products WHERE source_type = 'shop' AND source_product_id LIKE 'P%'")
                     result = cursor.fetchone()
                     
                     try:
@@ -315,9 +315,9 @@ def import_products(self):
                     
                     # Insert product
                     cursor.execute("""
-                        INSERT INTO shop_products
-                        (product_id, name, description, price, category, created_at, updated_at, tax_rate, is_active)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO products
+                        (source_product_id, source_type, name, description, price, category, created_at, updated_at, tax_rate, is_active)
+                        VALUES (?, 'shop', ?, ?, ?, ?, ?, ?, ?, ?)
                     """, [
                         product_id,
                         row['name'],
@@ -383,8 +383,9 @@ def export_products(self):
         
         cursor.execute("""
             SELECT p.*, i.quantity, i.restock_threshold
-            FROM shop_products p
-            JOIN shop_inventory i ON p.product_id = i.product_id
+            FROM products p
+            JOIN shop_inventory i ON p.source_product_id = i.product_id
+            WHERE p.source_type = 'shop'
             ORDER BY p.category, p.name
         """)
         

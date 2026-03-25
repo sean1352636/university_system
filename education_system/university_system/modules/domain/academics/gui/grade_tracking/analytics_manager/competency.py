@@ -6,8 +6,8 @@ import tkinter.scrolledtext as scrolledtext
 from datetime import datetime
 
 from education_system.university_system.infrastructure.database.db import sqlite3
-from .constants import get_connection
-from .utils import safe_grab_set
+from education_system.university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.constants import get_connection
+from education_system.university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.utils import safe_grab_set
 
 
 class CompetencyMixin:

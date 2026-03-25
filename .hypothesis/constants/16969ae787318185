@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/account_routes.py
+# hypothesis_version: 6.151.9
+
+[400, 404, 500, ', ', '/api/account', '/password', '/preferences', '/profile', '/sessions', 'GET', 'PUT', 'UTC', 'User not found', 'account', 'change_password', 'created_at', 'current_password', 'email', 'email_notifications', 'en', 'error', 'first_name', 'id', 'ip_address', 'is_active', 'language', 'last_login', 'last_name', 'light', 'login_time', 'message', 'new_password', 'phone', 'preferences', 'profile', 'role', 'sessions', 'sms_notifications', 'status', 'sub', 'success', 'theme', 'timezone', 'two_fa_enabled', 'update', 'user_agent', 'user_id', 'username']

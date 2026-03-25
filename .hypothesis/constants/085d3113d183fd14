@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/office_hours_routes.py
+# hypothesis_version: 6.151.9
+
+[201, 400, 404, 500, '/<int:id>', '/<int:id>/book', '/api/office-hours', '/bookings', 'DELETE', 'GET', 'POST', 'PUT', 'booking_date', 'booking_id', 'capacity', 'create', 'day_of_week', 'delete', 'department', 'details', 'end_time', 'error', 'instructor', 'instructor_id', 'items', 'location', 'message', 'notes', 'office_hour', 'office_hour_booking', 'office_hour_bookings', 'office_hour_id', 'office_hours', 'role', 'start_time', 'sub', 'total', 'update', 'view']

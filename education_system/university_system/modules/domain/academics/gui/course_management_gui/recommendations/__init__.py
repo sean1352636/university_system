@@ -1,8 +1,8 @@
 # recommendations subpackage
-from .recommend_dialog import RecommendCoursesDialog
-from .alternative_dialog import AlternativeCourseDialog
-from .recommendations_dialog import RecommendationsDialog
-from .standalone import (
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.recommendations.recommend_dialog import RecommendCoursesDialog
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.recommendations.alternative_dialog import AlternativeCourseDialog
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.recommendations.recommendations_dialog import RecommendationsDialog
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.recommendations.standalone import (
     show_recommend_courses,
     find_alternative_courses,
     recommend_courses_wrapper,

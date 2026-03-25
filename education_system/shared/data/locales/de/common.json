@@ -1,0 +1,121 @@
+{
+    "app": {
+        "title": "Bildungssystem",
+        "language_selector": {
+            "title": "Sprache auswählen",
+            "subtitle": "Wählen Sie Ihre bevorzugte Sprache",
+            "confirm": "OK",
+            "cancel": "Abbrechen"
+        }
+    },
+    "login": {
+        "title": "Bildungssystem - Anmeldung",
+        "sign_in": "Melden Sie sich an, um fortzufahren",
+        "username": "Benutzername",
+        "password": "Passwort",
+        "login_button": "Anmelden",
+        "enter_both": "Bitte geben Sie Benutzername und Passwort ein.",
+        "no_access": "Ihr Konto hat keinen Zugang zu einem System.",
+        "contact_admin": "Bitte wenden Sie sich an einen Administrator.",
+        "default_hint": "Standard: superadmin / SuperAdmin@123"
+    },
+    "mfa": {
+        "title": "Zwei-Faktor-Authentifizierung",
+        "enter_code": "Geben Sie Ihren Authentifizierungscode ein:",
+        "code_sent": "Ein Bestätigungscode wurde an {email} gesendet",
+        "code_failed": "E-Mail-Zustellung fehlgeschlagen. Ihr Code wird unten angezeigt:",
+        "verify": "Bestätigen",
+        "back_to_login": "Zurück zur Anmeldung",
+        "enter_code_prompt": "Bitte geben Sie einen Code ein."
+    },
+    "system_picker": {
+        "welcome": "Willkommen, {name}",
+        "choose_system": "Wählen Sie ein System zum Starten:",
+        "university": "Universitätsverwaltungssystem",
+        "college": "Sixth Form College System",
+        "secondary": "Sekundarschulsystem",
+        "primary": "Grundschulsystem",
+        "logout": "Abmelden",
+        "superadmin_dashboard": "Super-Admin-Dashboard"
+    },
+    "common": {
+        "ok": "OK",
+        "cancel": "Abbrechen",
+        "save": "Speichern",
+        "delete": "Löschen",
+        "edit": "Bearbeiten",
+        "add": "Hinzufügen",
+        "search": "Suchen",
+        "refresh": "Aktualisieren",
+        "close": "Schließen",
+        "back": "Zurück",
+        "next": "Weiter",
+        "yes": "Ja",
+        "no": "Nein",
+        "confirm": "Bestätigen",
+        "error": "Fehler",
+        "success": "Erfolg",
+        "warning": "Warnung",
+        "loading": "Wird geladen...",
+        "no_results": "Keine Ergebnisse gefunden",
+        "actions": "Aktionen",
+        "status": "Status",
+        "name": "Name",
+        "email": "E-Mail",
+        "date": "Datum",
+        "type": "Typ",
+        "description": "Beschreibung",
+        "submit": "Absenden",
+        "export": "Exportieren",
+        "import": "Importieren",
+        "filter": "Filtern",
+        "clear": "Leeren",
+        "select_all": "Alle auswählen",
+        "deselect_all": "Alle abwählen",
+        "active": "Aktiv",
+        "inactive": "Inaktiv",
+        "transferred": "Übertragen"
+    },
+    "shared_modules": {
+        "cross_system_notifications": "Systemübergreifende Benachrichtigungen",
+        "student_journey": "Bildungsweg des Studierenden",
+        "analytics_dashboard": "Analyse-Dashboard",
+        "outcome_tracking": "Ergebnisverfolgung",
+        "predictive_alerts": "Prädiktive Warnungen",
+        "bulk_transfer": "Massenübertragung",
+        "transfer_documents": "Übertragungsdokumente",
+        "reverse_lookup": "Rückwärtssuche",
+        "parent_continuity": "Elternkontinuität",
+        "cross_system_calendar": "Systemübergreifender Kalender",
+        "inter_system_messaging": "Systemübergreifende Nachrichten",
+        "central_admin_portal": "Zentrales Verwaltungsportal",
+        "gdpr_compliance": "DSGVO-Konformität",
+        "shared_documents": "Gemeinsame Dokumente",
+        "student_self_service": "Studierenden-Selbstbedienung",
+        "digital_transcript": "Digitales Zeugnis"
+    },
+    "switch_system": {
+        "title": "System wechseln",
+        "switch_to": "Wechseln zu:",
+        "switching": "Wechsel zu {system}..."
+    },
+    "superadmin": {
+        "title": "Super-Admin-Dashboard",
+        "overview": "Dashboard",
+        "system_health": "Systemzustand",
+        "user_management": "Benutzerverwaltung",
+        "student_analytics": "Studierendenanalyse",
+        "notifications": "Benachrichtigungen",
+        "student_search": "Studierendensuche",
+        "audit_log": "Prüfprotokoll",
+        "quick_launch": "Schnellstart"
+    },
+    "roles": {
+        "admin": "Administrator",
+        "staff": "Personal",
+        "teacher": "Lehrkraft",
+        "student": "Studierende/r",
+        "parent": "Elternteil",
+        "superadmin": "Super-Administrator"
+    }
+}

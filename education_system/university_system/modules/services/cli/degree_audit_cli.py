@@ -71,7 +71,7 @@ class DegreeAuditCLI:
 
     def clear_screen(self):
         """Clear the terminal screen"""
-        os.system('cls' if os.name == 'nt' else 'clear')
+        print("\033[2J\033[H", end="", flush=True)
 
     def pause(self):
         """Pause and wait for user input"""

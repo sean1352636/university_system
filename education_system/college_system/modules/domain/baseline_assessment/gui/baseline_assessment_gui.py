@@ -3,6 +3,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
+from education_system.college_system.core.i18n import t
 from education_system.college_system.modules.domain.baseline_assessment.services.baseline_assessment_service import BaselineAssessmentService
 
 
@@ -24,7 +25,7 @@ class BaselineAssessmentFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Baseline Assessment",
+        tk.Label(header, text=t("baseline_assessment.management"),
                  font=("Helvetica", 15, "bold"), bg="#2c3e50", fg="white"
                  ).pack(side="left", padx=20, pady=10)
 
@@ -39,40 +40,44 @@ class BaselineAssessmentFrame(tk.Frame):
 
     def _build_baselines_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(tab, text="Baselines")
+        self._nb.add(tab, text=t("baseline_assessment.baselines"))
 
         # Toolbar
         toolbar = tk.Frame(tab, bg="#ecf0f1")
         toolbar.pack(fill="x", padx=5, pady=5)
 
-        tk.Label(toolbar, text="Year:", bg="#ecf0f1").pack(side="left", padx=(5, 2))
+        tk.Label(toolbar, text=t("baseline_assessment.year") + ":", bg="#ecf0f1").pack(side="left", padx=(5, 2))
         self._bl_year_var = tk.StringVar()
         tk.Entry(toolbar, textvariable=self._bl_year_var, width=10).pack(side="left", padx=2)
 
-        tk.Label(toolbar, text="Type:", bg="#ecf0f1").pack(side="left", padx=(10, 2))
+        tk.Label(toolbar, text=t("baseline_assessment.type") + ":", bg="#ecf0f1").pack(side="left", padx=(10, 2))
         self._bl_type_var = tk.StringVar()
         ttk.Combobox(toolbar, textvariable=self._bl_type_var,
                      values=["", "initial", "mid-year", "end-of-year", "diagnostic"],
                      state="readonly", width=12).pack(side="left", padx=2)
 
-        tk.Label(toolbar, text="Search:", bg="#ecf0f1").pack(side="left", padx=(10, 2))
+        tk.Label(toolbar, text=t("common.search") + ":", bg="#ecf0f1").pack(side="left", padx=(10, 2))
         self._bl_search_var = tk.StringVar()
         tk.Entry(toolbar, textvariable=self._bl_search_var, width=15).pack(side="left", padx=2)
 
-        ttk.Button(toolbar, text="Filter", command=self._load_baselines).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("common.search"), command=self._load_baselines).pack(side="left", padx=5)
 
-        ttk.Button(toolbar, text="Delete", command=self._delete_baseline).pack(side="right", padx=2)
-        ttk.Button(toolbar, text="Edit", command=self._edit_baseline).pack(side="right", padx=2)
-        ttk.Button(toolbar, text="View", command=self._view_baseline).pack(side="right", padx=2)
-        ttk.Button(toolbar, text="New", command=self._new_baseline).pack(side="right", padx=2)
+        ttk.Button(toolbar, text=t("common.delete"), command=self._delete_baseline).pack(side="right", padx=2)
+        ttk.Button(toolbar, text=t("common.edit"), command=self._edit_baseline).pack(side="right", padx=2)
+        ttk.Button(toolbar, text=t("common.view"), command=self._view_baseline).pack(side="right", padx=2)
+        ttk.Button(toolbar, text=t("common.create"), command=self._new_baseline).pack(side="right", padx=2)
+        ttk.Button(toolbar, text="Export CSV", command=self._export_csv).pack(side="right", padx=2)
 
         # Treeview
         cols = ("id", "student", "year", "type", "english", "maths", "ict",
                 "overall", "date")
         self._bl_tree = ttk.Treeview(tab, columns=cols, show="headings",
                                      selectmode="browse", height=16)
-        headings = ("ID", "Student", "Year", "Type", "English", "Maths",
-                    "ICT", "Overall", "Date")
+        headings = (t("common.id"), t("baseline_assessment.student"),
+                    t("baseline_assessment.year"), t("baseline_assessment.type"),
+                    t("baseline_assessment.english"), t("baseline_assessment.maths"),
+                    t("baseline_assessment.ict"), t("baseline_assessment.overall"),
+                    t("common.date"))
         widths = (40, 150, 80, 90, 70, 70, 70, 80, 100)
         for c, h, w in zip(cols, headings, widths):
             self._bl_tree.heading(c, text=h)
@@ -88,26 +93,29 @@ class BaselineAssessmentFrame(tk.Frame):
 
     def _build_checkpoints_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(tab, text="Progress Checkpoints")
+        self._nb.add(tab, text=t("baseline_assessment.progress_checkpoints"))
 
         toolbar = tk.Frame(tab, bg="#ecf0f1")
         toolbar.pack(fill="x", padx=5, pady=5)
 
-        tk.Label(toolbar, text="Student ID:", bg="#ecf0f1").pack(side="left", padx=(5, 2))
+        tk.Label(toolbar, text=t("baseline_assessment.student_id") + ":", bg="#ecf0f1").pack(side="left", padx=(5, 2))
         self._cp_sid_var = tk.StringVar()
         tk.Entry(toolbar, textvariable=self._cp_sid_var, width=8).pack(side="left", padx=2)
-        ttk.Button(toolbar, text="Filter", command=self._load_checkpoints).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("common.search"), command=self._load_checkpoints).pack(side="left", padx=5)
 
-        ttk.Button(toolbar, text="Delete", command=self._delete_checkpoint).pack(side="right", padx=2)
-        ttk.Button(toolbar, text="Edit", command=self._edit_checkpoint).pack(side="right", padx=2)
-        ttk.Button(toolbar, text="New", command=self._new_checkpoint).pack(side="right", padx=2)
+        ttk.Button(toolbar, text=t("common.delete"), command=self._delete_checkpoint).pack(side="right", padx=2)
+        ttk.Button(toolbar, text=t("common.edit"), command=self._edit_checkpoint).pack(side="right", padx=2)
+        ttk.Button(toolbar, text=t("common.create"), command=self._new_checkpoint).pack(side="right", padx=2)
 
         cols = ("id", "student", "course_id", "cp_num", "date", "current",
                 "target", "effort", "att_pct")
         self._cp_tree = ttk.Treeview(tab, columns=cols, show="headings",
                                      selectmode="browse", height=16)
-        headings = ("ID", "Student", "Course", "CP#", "Date", "Current",
-                    "Target", "Effort", "Att%")
+        headings = (t("common.id"), t("baseline_assessment.student"),
+                    t("baseline_assessment.course"), t("baseline_assessment.checkpoint_num"),
+                    t("common.date"), t("baseline_assessment.current_grade"),
+                    t("baseline_assessment.target_grade"), t("baseline_assessment.effort"),
+                    t("baseline_assessment.attendance_pct"))
         widths = (40, 140, 70, 45, 100, 70, 70, 55, 55)
         for c, h, w in zip(cols, headings, widths):
             self._cp_tree.heading(c, text=h)
@@ -123,12 +131,12 @@ class BaselineAssessmentFrame(tk.Frame):
 
     def _build_stats_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(tab, text="Statistics")
+        self._nb.add(tab, text=t("common.summary"))
 
         self._stats_text = tk.Text(tab, font=("Consolas", 11), state="disabled",
                                    bg="white", wrap="word")
         self._stats_text.pack(fill="both", expand=True, padx=10, pady=10)
-        ttk.Button(tab, text="Refresh Statistics",
+        ttk.Button(tab, text=t("common.refresh"),
                    command=self._load_stats).pack(pady=(0, 10))
 
     # ── Data loading ───────────────────────────────────────────────────
@@ -156,7 +164,7 @@ class BaselineAssessmentFrame(tk.Frame):
                     r.get("assessment_date", ""),
                 ))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _load_checkpoints(self):
         for item in self._cp_tree.get_children():
@@ -181,7 +189,7 @@ class BaselineAssessmentFrame(tk.Frame):
                     att,
                 ))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _load_stats(self):
         try:
@@ -189,49 +197,49 @@ class BaselineAssessmentFrame(tk.Frame):
             self._stats_text.configure(state="normal")
             self._stats_text.delete("1.0", "end")
             lines = [
-                "=== Baseline Assessment Statistics ===\n",
-                f"Total Baselines:     {stats['total_baselines']}",
-                f"Total Checkpoints:   {stats['total_checkpoints']}\n",
-                "--- Average Scores ---",
-                f"  English:  {stats['avg_english'] or 'N/A'}",
-                f"  Maths:    {stats['avg_maths'] or 'N/A'}",
-                f"  ICT:      {stats['avg_ict'] or 'N/A'}\n",
-                "--- Baselines by Type ---",
+                f"=== {t('baseline_assessment.management')} - {t('common.summary')} ===\n",
+                f"{t('baseline_assessment.total_baselines')}:     {stats['total_baselines']}",
+                f"{t('baseline_assessment.total_checkpoints')}:   {stats['total_checkpoints']}\n",
+                f"--- {t('baseline_assessment.average_scores')} ---",
+                f"  {t('baseline_assessment.english')}:  {stats['avg_english'] or 'N/A'}",
+                f"  {t('baseline_assessment.maths')}:    {stats['avg_maths'] or 'N/A'}",
+                f"  {t('baseline_assessment.ict')}:      {stats['avg_ict'] or 'N/A'}\n",
+                f"--- {t('baseline_assessment.by_type')} ---",
             ]
-            for t, cnt in stats.get("by_type", {}).items():
-                lines.append(f"  {t or 'unspecified':20s} {cnt}")
+            for btype, cnt in stats.get("by_type", {}).items():
+                lines.append(f"  {btype or 'unspecified':20s} {cnt}")
             self._stats_text.insert("end", "\n".join(lines))
             self._stats_text.configure(state="disabled")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ── Baseline dialogs ──────────────────────────────────────────────
 
     def _new_baseline(self):
-        self._baseline_dialog("New Baseline Assessment")
+        self._baseline_dialog(t("baseline_assessment.new_baseline"))
 
     def _edit_baseline(self):
         sel = self._bl_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a baseline first.")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return
         record = self._svc.get_baseline(int(sel[0]))
         if not record:
-            messagebox.showerror("Error", "Baseline not found.")
+            messagebox.showerror(t("common.error"), t("common.not_found"))
             return
-        self._baseline_dialog("Edit Baseline Assessment", record)
+        self._baseline_dialog(t("baseline_assessment.edit_baseline"), record)
 
     def _view_baseline(self):
         sel = self._bl_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a baseline first.")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return
         record = self._svc.get_baseline(int(sel[0]))
         if not record:
-            messagebox.showerror("Error", "Baseline not found.")
+            messagebox.showerror(t("common.error"), t("common.not_found"))
             return
         win = tk.Toplevel(self)
-        win.title("Baseline Details")
+        win.title(t("baseline_assessment.baseline_details"))
         win.geometry("450x500")
         text = tk.Text(win, font=("Consolas", 10), state="disabled", wrap="word")
         text.pack(fill="both", expand=True, padx=10, pady=10)
@@ -239,7 +247,7 @@ class BaselineAssessmentFrame(tk.Frame):
         for k, v in record.items():
             text.insert("end", f"{k}: {v}\n")
         text.configure(state="disabled")
-        ttk.Button(win, text="Close", command=win.destroy).pack(pady=5)
+        ttk.Button(win, text=t("common.close"), command=win.destroy).pack(pady=5)
 
     def _baseline_dialog(self, title, record=None):
         win = tk.Toplevel(self)
@@ -261,23 +269,23 @@ class BaselineAssessmentFrame(tk.Frame):
         entries = {}
         row = 0
         field_defs = [
-            ("Student ID*", "student_id", "entry"),
-            ("Academic Year", "academic_year", "entry"),
-            ("Assessment Type", "assessment_type", "combo",
+            (t("baseline_assessment.student_id") + "*", "student_id", "entry"),
+            (t("baseline_assessment.year"), "academic_year", "entry"),
+            (t("baseline_assessment.type"), "assessment_type", "combo",
              ["initial", "mid-year", "end-of-year", "diagnostic"]),
-            ("Assessment Date", "assessment_date", "entry"),
-            ("English Score", "english_score", "entry"),
-            ("Maths Score", "maths_score", "entry"),
-            ("ICT Score", "ict_score", "entry"),
-            ("Learning Style", "learning_style", "combo",
+            (t("baseline_assessment.assessment_date"), "assessment_date", "entry"),
+            (t("baseline_assessment.english") + " " + t("baseline_assessment.score"), "english_score", "entry"),
+            (t("baseline_assessment.maths") + " " + t("baseline_assessment.score"), "maths_score", "entry"),
+            (t("baseline_assessment.ict") + " " + t("baseline_assessment.score"), "ict_score", "entry"),
+            (t("baseline_assessment.learning_style"), "learning_style", "combo",
              ["visual", "auditory", "kinesthetic", "read-write"]),
-            ("Prior Attainment", "prior_attainment", "entry"),
-            ("GCSE English Grade", "gcse_english_grade", "entry"),
-            ("GCSE Maths Grade", "gcse_maths_grade", "entry"),
-            ("Overall Baseline", "overall_baseline", "entry"),
-            ("Additional Needs", "additional_needs_identified", "entry"),
-            ("Assessor ID", "assessor_id", "entry"),
-            ("Notes", "notes", "text"),
+            (t("baseline_assessment.prior_attainment"), "prior_attainment", "entry"),
+            (t("baseline_assessment.gcse_english"), "gcse_english_grade", "entry"),
+            (t("baseline_assessment.gcse_maths"), "gcse_maths_grade", "entry"),
+            (t("baseline_assessment.overall"), "overall_baseline", "entry"),
+            (t("baseline_assessment.additional_needs"), "additional_needs_identified", "entry"),
+            (t("baseline_assessment.assessor_id"), "assessor_id", "entry"),
+            (t("common.notes"), "notes", "text"),
         ]
         for fdef in field_defs:
             label_text, key = fdef[0], fdef[1]
@@ -291,11 +299,11 @@ class BaselineAssessmentFrame(tk.Frame):
                 cb.grid(row=row, column=1, sticky="w", padx=5, pady=4)
                 entries[key] = var
             elif widget_type == "text":
-                t = tk.Text(form, width=30, height=4)
-                t.grid(row=row, column=1, sticky="w", padx=5, pady=4)
+                txt_widget = tk.Text(form, width=30, height=4)
+                txt_widget.grid(row=row, column=1, sticky="w", padx=5, pady=4)
                 if record and record.get(key):
-                    t.insert("1.0", str(record[key]))
-                entries[key] = t
+                    txt_widget.insert("1.0", str(record[key]))
+                entries[key] = txt_widget
             else:
                 e = tk.Entry(form, width=28)
                 e.grid(row=row, column=1, sticky="w", padx=5, pady=4)
@@ -327,50 +335,50 @@ class BaselineAssessmentFrame(tk.Frame):
                 if record:
                     kwargs.pop("student_id", None)
                     self._svc.update_baseline(record["id"], **kwargs)
-                    messagebox.showinfo("Success", "Baseline updated.")
+                    messagebox.showinfo(t("common.success"), t("common.updated_success"))
                 else:
                     if "student_id" not in kwargs:
-                        messagebox.showerror("Error", "Student ID is required.")
+                        messagebox.showerror(t("common.error"), t("common.field_required"))
                         return
                     sid = kwargs.pop("student_id")
                     self._svc.create_baseline(sid, **kwargs)
-                    messagebox.showinfo("Success", "Baseline created.")
+                    messagebox.showinfo(t("common.success"), t("common.created_success"))
                 win.destroy()
                 self._load_baselines()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(form, text="Save", command=save).grid(
+        ttk.Button(form, text=t("common.save"), command=save).grid(
             row=row, column=0, columnspan=2, pady=15)
 
     def _delete_baseline(self):
         sel = self._bl_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a baseline first.")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return
-        if not messagebox.askyesno("Confirm", "Delete selected baseline?"):
+        if not messagebox.askyesno(t("common.confirm_delete"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_baseline(int(sel[0]))
             self._load_baselines()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ── Checkpoint dialogs ────────────────────────────────────────────
 
     def _new_checkpoint(self):
-        self._checkpoint_dialog("New Progress Checkpoint")
+        self._checkpoint_dialog(t("baseline_assessment.new_checkpoint"))
 
     def _edit_checkpoint(self):
         sel = self._cp_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a checkpoint first.")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return
         record = self._svc.get_checkpoint(int(sel[0]))
         if not record:
-            messagebox.showerror("Error", "Checkpoint not found.")
+            messagebox.showerror(t("common.error"), t("common.not_found"))
             return
-        self._checkpoint_dialog("Edit Progress Checkpoint", record)
+        self._checkpoint_dialog(t("baseline_assessment.edit_checkpoint"), record)
 
     def _checkpoint_dialog(self, title, record=None):
         win = tk.Toplevel(self)
@@ -384,18 +392,18 @@ class BaselineAssessmentFrame(tk.Frame):
         entries = {}
         row = 0
         field_defs = [
-            ("Student ID*", "student_id", "entry"),
-            ("Course ID", "course_id", "entry"),
-            ("Checkpoint #", "checkpoint_number", "entry"),
-            ("Checkpoint Date*", "checkpoint_date", "entry"),
-            ("Current Grade", "current_grade", "entry"),
-            ("Target Grade", "target_grade", "entry"),
-            ("Effort Grade", "effort_grade", "combo",
+            (t("baseline_assessment.student_id") + "*", "student_id", "entry"),
+            (t("baseline_assessment.course") + " ID", "course_id", "entry"),
+            (t("baseline_assessment.checkpoint_num"), "checkpoint_number", "entry"),
+            (t("baseline_assessment.checkpoint_date") + "*", "checkpoint_date", "entry"),
+            (t("baseline_assessment.current_grade"), "current_grade", "entry"),
+            (t("baseline_assessment.target_grade"), "target_grade", "entry"),
+            (t("baseline_assessment.effort"), "effort_grade", "combo",
              ["1", "2", "3", "4", "5"]),
-            ("Attendance %", "attendance_pct", "entry"),
-            ("Concerns", "concerns", "text"),
-            ("Actions", "actions", "text"),
-            ("Reviewer ID", "reviewer_id", "entry"),
+            (t("baseline_assessment.attendance_pct"), "attendance_pct", "entry"),
+            (t("baseline_assessment.concerns"), "concerns", "text"),
+            (t("baseline_assessment.actions"), "actions", "text"),
+            (t("baseline_assessment.reviewer_id"), "reviewer_id", "entry"),
         ]
         for fdef in field_defs:
             label_text, key = fdef[0], fdef[1]
@@ -409,11 +417,11 @@ class BaselineAssessmentFrame(tk.Frame):
                 cb.grid(row=row, column=1, sticky="w", padx=5, pady=4)
                 entries[key] = var
             elif widget_type == "text":
-                t = tk.Text(form, width=30, height=3)
-                t.grid(row=row, column=1, sticky="w", padx=5, pady=4)
+                txt_widget = tk.Text(form, width=30, height=3)
+                txt_widget.grid(row=row, column=1, sticky="w", padx=5, pady=4)
                 if record and record.get(key):
-                    t.insert("1.0", str(record[key]))
-                entries[key] = t
+                    txt_widget.insert("1.0", str(record[key]))
+                entries[key] = txt_widget
             else:
                 e = tk.Entry(form, width=28)
                 e.grid(row=row, column=1, sticky="w", padx=5, pady=4)
@@ -447,38 +455,42 @@ class BaselineAssessmentFrame(tk.Frame):
                     kwargs.pop("student_id", None)
                     kwargs.pop("checkpoint_date", None)
                     self._svc.update_checkpoint(record["id"], **kwargs)
-                    messagebox.showinfo("Success", "Checkpoint updated.")
+                    messagebox.showinfo(t("common.success"), t("common.updated_success"))
                 else:
                     if "student_id" not in kwargs:
-                        messagebox.showerror("Error", "Student ID is required.")
+                        messagebox.showerror(t("common.error"), t("common.field_required"))
                         return
                     if "checkpoint_date" not in kwargs:
-                        messagebox.showerror("Error", "Checkpoint date is required.")
+                        messagebox.showerror(t("common.error"), t("common.field_required"))
                         return
                     sid = kwargs.pop("student_id")
                     cp_date = kwargs.pop("checkpoint_date")
                     self._svc.create_checkpoint(sid, cp_date, **kwargs)
-                    messagebox.showinfo("Success", "Checkpoint created.")
+                    messagebox.showinfo(t("common.success"), t("common.created_success"))
                 win.destroy()
                 self._load_checkpoints()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(form, text="Save", command=save).grid(
+        ttk.Button(form, text=t("common.save"), command=save).grid(
             row=row, column=0, columnspan=2, pady=15)
 
     def _delete_checkpoint(self):
         sel = self._cp_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a checkpoint first.")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return
-        if not messagebox.askyesno("Confirm", "Delete selected checkpoint?"):
+        if not messagebox.askyesno(t("common.confirm_delete"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_checkpoint(int(sel[0]))
             self._load_checkpoints()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._bl_tree, "baseline_assessments.csv")
 
     # ── Public refresh ─────────────────────────────────────────────────
 

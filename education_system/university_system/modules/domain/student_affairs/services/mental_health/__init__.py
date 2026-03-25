@@ -5,7 +5,7 @@ This module provides comprehensive mental health support including counseling,
 wellness resources, check-ins, peer support, and mindfulness resources.
 """
 
-from .mental_health_core import (
+from education_system.university_system.modules.domain.student_affairs.services.mental_health.mental_health_core import (
     CounselorManager,
     AppointmentManager,
     ResourceManager,

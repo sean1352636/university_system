@@ -472,7 +472,7 @@ class BlockchainCredentialsGUI:
         tree_frame = ttk.Frame(wallets_frame)
         tree_frame.pack(fill='both', expand=True, padx=10, pady=5)
 
-        columns = ('wallet_id', 'user_id', 'wallet_address', 'blockchain_type',
+        columns = ('wallet_id', 'user_id', 'wallet_address', 'public_key',
                   'created_at')
         self.wallets_tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=15)
 
@@ -480,7 +480,7 @@ class BlockchainCredentialsGUI:
         self.wallets_tree.heading('wallet_id', text=_t('blockchain.wallet_id'))
         self.wallets_tree.heading('user_id', text=_t('common.user_id'))
         self.wallets_tree.heading('wallet_address', text=_t('blockchain.wallet_address'))
-        self.wallets_tree.heading('blockchain_type', text=_t('blockchain.blockchain_type'))
+        self.wallets_tree.heading('public_key', text=_t('blockchain.public_key', default='Public Key'))
         self.wallets_tree.heading('created_at', text=_t('common.created_at'))
         for col in columns:
             self.wallets_tree.column(col, width=120)
@@ -719,7 +719,7 @@ class BlockchainCredentialsGUI:
             with get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
-                    SELECT wallet_id, user_id, wallet_address, blockchain_type, created_at
+                    SELECT wallet_id, user_id, wallet_address, public_key, created_at
                     FROM blockchain_wallets
                     ORDER BY created_at DESC
                     LIMIT 100
@@ -1381,9 +1381,9 @@ class BlockchainCredentialsGUI:
                         cursor = conn.cursor()
                         cursor.execute('''
                             INSERT INTO blockchain_wallets
-                            (user_id, wallet_address, blockchain_type, public_key)
-                            VALUES (?, ?, ?, ?)
-                        ''', (user_id, wallet_address, blockchain_type, public_key))
+                            (user_id, wallet_address, public_key)
+                            VALUES (?, ?, ?)
+                        ''', (user_id, wallet_address, public_key))
 
                         wallet_id = cursor.lastrowid
 

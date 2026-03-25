@@ -101,8 +101,8 @@ class TestJoinSupportGroup:
 
     @patch('builtins.input', side_effect=['1', 'y'])
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.support.browse_support_groups')
-    @patch('university_system.modules.core.services.student_union_misc.support.auto_award_points')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.support.browse_support_groups')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.support.auto_award_points')
     def test_join_group_success(self, mock_award, mock_browse, mock_print, mock_input,
                                 mock_cursor, mock_conn):
         """Test successfully joining a support group."""
@@ -123,7 +123,7 @@ class TestJoinSupportGroup:
 
     @patch('builtins.input', side_effect=['999'])
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.support.browse_support_groups')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.support.browse_support_groups')
     def test_join_nonexistent_group(self, mock_browse, mock_print, mock_input,
                                     mock_cursor, mock_conn):
         """Test joining a group that doesn't exist."""
@@ -137,7 +137,7 @@ class TestJoinSupportGroup:
 
     @patch('builtins.input', side_effect=['1', 'y'])
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.support.browse_support_groups')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.support.browse_support_groups')
     def test_join_full_group(self, mock_browse, mock_print, mock_input,
                             mock_cursor, mock_conn):
         """Test joining a group that is full."""
@@ -153,7 +153,7 @@ class TestJoinSupportGroup:
 
     @patch('builtins.input', side_effect=['1'])
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.support.browse_support_groups')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.support.browse_support_groups')
     def test_join_already_member(self, mock_browse, mock_print, mock_input,
                                 mock_cursor, mock_conn):
         """Test joining a group already a member of."""
@@ -170,7 +170,7 @@ class TestJoinSupportGroup:
 
     @patch('builtins.input', side_effect=['abc'])
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.support.browse_support_groups')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.support.browse_support_groups')
     def test_join_invalid_id(self, mock_browse, mock_print, mock_input,
                             mock_cursor, mock_conn):
         """Test joining with invalid group ID."""
@@ -223,7 +223,7 @@ class TestCreateSupportGroup:
         'Wednesdays 4pm'  # meeting schedule
     ])
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.support.auto_award_points')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.support.auto_award_points')
     def test_create_group_success(self, mock_award, mock_print, mock_input,
                                   mock_cursor, mock_conn):
         """Test successfully creating a support group."""
@@ -296,7 +296,7 @@ class TestManageStudyGroups:
         '5'  # exit
     ])
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.support.auto_award_points')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.support.auto_award_points')
     def test_create_study_group(self, mock_award, mock_print, mock_input,
                                 mock_cursor, mock_conn):
         """Test creating a study group."""
@@ -339,7 +339,7 @@ class TestManagePeerTutoring:
         '6'  # exit
     ])
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.support.auto_award_points')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.support.auto_award_points')
     def test_offer_tutoring(self, mock_award, mock_print, mock_input,
                            mock_cursor, mock_conn):
         """Test offering tutoring services."""
@@ -383,7 +383,7 @@ class TestManageSharedResources:
         '6'  # exit
     ])
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.support.auto_award_points')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.support.auto_award_points')
     def test_upload_resource(self, mock_award, mock_print, mock_input,
                             mock_cursor, mock_conn):
         """Test uploading a shared resource."""
@@ -398,7 +398,7 @@ class TestManageSharedResources:
 
     @patch('builtins.input', side_effect=['4', '5', '6'])
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.support.auto_award_points')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.support.auto_award_points')
     def test_download_resource(self, mock_award, mock_print, mock_input,
                                mock_cursor, mock_conn):
         """Test downloading a resource."""
@@ -434,7 +434,7 @@ class TestAnonymousPeerMatching:
 
     @patch('builtins.input', side_effect=['1', 'y'])
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.support.auto_award_points')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.support.auto_award_points')
     def test_anonymous_matching_signup(self, mock_award, mock_print, mock_input,
                                        mock_cursor, mock_conn):
         """Test signing up for anonymous peer matching."""

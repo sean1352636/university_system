@@ -2,7 +2,8 @@
 Donation and donor management: recording, receipts, drives, thank-you letters.
 """
 
-from ._imports import (
+from education_system.university_system.core.sql_safety import escape_like
+from education_system.university_system.modules.services.cli.charity_shop_cli._imports import (
     sqlite3, random, logger, datetime,
     get_connection, List, Dict, Any, Optional,
     DONATIONS_TABLE, DONORS_TABLE,
@@ -133,7 +134,7 @@ def donor_database(action: str, **kwargs) -> Any:
         cursor.execute(f"""
             SELECT * FROM {DONORS_TABLE}
             WHERE name LIKE ? OR email LIKE ?
-        """, (f"%{search_term}%", f"%{search_term}%"))
+        """, (f"%{escape_like(search_term)}%", f"%{escape_like(search_term)}%"))
 
         donors = []
         for row in cursor.fetchall():

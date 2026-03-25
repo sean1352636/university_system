@@ -130,7 +130,7 @@ class TestQRAttendanceSystem:
 
             assert result is not None
 
-    @patch('university_system.modules.domain.academics.services.attendance.attendance_tracker.update_gamification_points')
+    @patch('education_system.university_system.modules.domain.academics.services.attendance.attendance_tracker.update_gamification_points')
     def test_process_qr_checkin_success(self, mock_gamification):
         """Test successful QR code check-in"""
         self.setUp()

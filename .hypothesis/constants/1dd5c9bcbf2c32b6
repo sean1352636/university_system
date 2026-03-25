@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/module_scheduling/schedules_tab.py
+# hypothesis_version: 6.151.9
+
+[100, 120, 140, 150, 200, '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '900x400', ':', '<Double-1>', 'Close', 'Computer Lab', 'Confirm Delete', 'Data.Treeview', 'Day', 'English', 'Error', 'Friday', 'ID', 'Instructor', 'Lab', 'Lecture', 'Lecture Hall', 'Module', 'Module Name', 'Monday', 'New schedule added', 'No Schedule', 'Other', 'Room', 'Seminar', 'Seminar Room', 'Success', 'TBA', 'Thursday', 'Time', 'Tuesday', 'Tutorial', 'Tutorial Room', 'Type', 'Unknown', 'Warning', 'Wednesday', 'Workshop', 'Workshop Room', 'common.edit_selected', 'common.refresh', 'common.search', 'en', 'headings', 'values', 'w']

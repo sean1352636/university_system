@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/transaction_manager/financial_statement.py
+# hypothesis_version: 6.151.9
+
+[100, '*.*', '*.pdf', '*.txt', '-', '.pdf', '.txt', '1.0', '1000x700', '=', 'ACCOUNT SUMMARY:\n', 'All files', 'Arial', 'CREDITS:\n', 'Courier', 'Darwin', 'FEES CHARGED:\n', 'N/A', 'PAYMENTS RECEIVED:\n', 'PDF files', 'Text files', 'Windows', 'active', 'both', 'left', 'lpr', 'paid', 'partial', 'print', 'w', 'x', '×', '○', '✓']

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/grading/grade_calculation/statistics.py
+# hypothesis_version: 6.151.9
+
+[-0.5, 0.01, 0.02, 0.1, 0.2, 0.5, 0.7, 0.8, 0.95, 100, '\nCurve Methods:', '\nGrade Distribution:', '\nInterpretation:', '%Y%m%d_%H%M%S', '%Y-%m-%d %H:%M:%S', '-', '--', '-.', '1', '2', '3', ':', 'A', 'A+', 'A-', 'Agg', 'B', 'B+', 'B-', 'C', 'C+', 'C-', 'D', 'D+', 'D-', 'F', 'Frequency', 'Score', 'axes fraction', 'black', 'g', 'orange', 'r', 'round,pad=0.3', 'skyblue', 'statistics_plots', 'white', 'y']

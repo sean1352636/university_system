@@ -1,16 +1,16 @@
 # approval.py
 # Approval workflow mixin and ApprovalDialog for AccommodationGUI.
 
-from ._common import (
+from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import (
     tk, ttk, messagebox, simpledialog,
     datetime, sqlite3,
     CLI_AVAILABLE, get_connection, logger,
 )
 
 if CLI_AVAILABLE:
-    from ._common import log_action, notify_student as cli_notify_student
+    from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import log_action, cli_notify_student
 
-from .utils import resolve_user_identifier
+from education_system.university_system.modules.domain.health.gui.medical_accommodation.utils import resolve_user_identifier
 
 
 class ApprovalMixin:

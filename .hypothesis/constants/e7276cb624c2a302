@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/analytics/enhanced_reporting/models.py
+# hypothesis_version: 6.151.9
+
+['1.0', 'conditions', 'created_at', 'custom_sql', 'description', 'filters', 'is_active', 'last_run', 'name', 'next_run', 'normal', 'recipients', 'run_count', 'schedule_config', 'sections', 'security_level', 'standard', 'template_name', 'version', 'visualization_type']

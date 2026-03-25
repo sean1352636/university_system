@@ -1,7 +1,7 @@
 # Entry point
 if __name__ == "__main__":
-    from .core import ModuleScheduler
-    from .menus import display_enhanced_scheduling_menu, display_main_menu_info, handle_graceful_exit
+    from education_system.university_system.modules.domain.academics.services.module_scheduling.core import ModuleScheduler
+    from education_system.university_system.modules.domain.academics.services.module_scheduling.menus import display_enhanced_scheduling_menu, display_main_menu_info, handle_graceful_exit
 
     try:
         # Display welcome information

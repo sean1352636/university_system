@@ -2,7 +2,7 @@
 Profile mixin - student scholarship profile management.
 """
 
-from ..common_imports import (
+from education_system.university_system.modules.domain.finance.gui.financial_aid.common_imports import (
     tk,
     ttk,
     logging,

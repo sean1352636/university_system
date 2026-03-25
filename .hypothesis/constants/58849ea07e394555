@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/college_system/modules/domain/enrichment/services/enrichment_service.py
+# hypothesis_version: 6.151.9
+
+[100, ', ', '?', 'Activity not found.', 'activity_type', 'capacity', 'cnt', 'day_of_week', 'description', 'id', 'lead_staff_id', 'location', 'name', 'name is required.', 'status', 'time_slot', 'updated_at']

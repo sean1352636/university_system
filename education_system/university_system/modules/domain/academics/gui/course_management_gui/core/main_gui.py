@@ -3,17 +3,21 @@
 # Composes CourseManagementGUI from focused mixin modules.
 # Each mixin lives in its own file under this ``core`` package.
 
-from ._imports import _, tk, ttk, UserAuth, get_auth
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.core._imports import _, tk, ttk, UserAuth, get_auth
 
-from .db import DatabaseMixin
-from .ui_setup import UISetupMixin
-from .course_operations import CourseOperationsMixin
-from .search_filter import SearchFilterMixin
-from .analytics import AnalyticsMixin
-from .visualization import VisualizationMixin
-from .instructors import InstructorsMixin
-from .data_io import DataIOMixin
-from .dialogs import DialogsMixin
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.core.db import DatabaseMixin
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.core.ui_setup import UISetupMixin
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.core.course_operations import CourseOperationsMixin
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.core.search_filter import SearchFilterMixin
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.core.analytics import AnalyticsMixin
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.core.visualization import VisualizationMixin
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.core.instructors import InstructorsMixin
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.core.data_io import DataIOMixin
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.core.dialogs import DialogsMixin
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.core.lms_tab import LMSTabMixin
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.core.academic_tabs import (
+    DegreeAuditTabMixin, CourseEvalTabMixin,
+)
 
 
 # =====================================================================
@@ -31,6 +35,9 @@ class CourseManagementGUI(
     InstructorsMixin,
     DataIOMixin,
     DialogsMixin,
+    LMSTabMixin,
+    DegreeAuditTabMixin,
+    CourseEvalTabMixin,
 ):
     def __init__(self, parent, auth_system=None):
         self.root = parent

@@ -61,8 +61,8 @@ except ImportError:
     except Exception:
         class ModuleScheduler: pass
 
-from .main_gui import ModuleSchedulingGUI
-from .dialogs import AddRoomDialog, EditRoomDialog
+from education_system.university_system.modules.domain.academics.gui.module_scheduling.main_gui import ModuleSchedulingGUI
+from education_system.university_system.modules.domain.academics.gui.module_scheduling.dialogs import AddRoomDialog, EditRoomDialog
 
 def create_rooms_tab(self):
     """Create the rooms management tab"""
@@ -149,7 +149,7 @@ def refresh_rooms(self):
             ))
             
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to refresh rooms: {str(e)}")
+        messagebox.showerror("Error", f"Failed to refresh rooms: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.refresh_rooms = refresh_rooms
 
@@ -192,7 +192,7 @@ def filter_rooms(self, *args):
             ))
             
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to filter rooms: {str(e)}")
+        messagebox.showerror("Error", f"Failed to filter rooms: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.filter_rooms = filter_rooms
 
@@ -210,7 +210,7 @@ def edit_selected_room(self):
     """Edit the selected room"""
     selected = self.rooms_tree.selection()
     if not selected:
-        messagebox.showwarning("Warning", "Please select a room to edit.")
+        messagebox.showwarning("Warning", "Please select a room to edit.", parent=self.root)
         return
     
     room_data = self.rooms_tree.item(selected[0])['values']
@@ -227,7 +227,7 @@ def deactivate_selected_room(self):
     """Deactivate the selected room with session checking and reassignment"""
     selected = self.rooms_tree.selection()
     if not selected:
-        messagebox.showwarning("Warning", "Please select a room to deactivate.")
+        messagebox.showwarning("Warning", "Please select a room to deactivate.", parent=self.root)
         return
 
     room_data = self.rooms_tree.item(selected[0])['values']
@@ -259,7 +259,7 @@ def deactivate_selected_room(self):
                 message = f"Room {room_name} has {len(affected_sessions)} scheduled session(s):\n\n{session_list}\n\n"
                 message += "Do you want to proceed? The system will attempt to reassign sessions to other available rooms."
 
-                if not messagebox.askyesno("Confirm Deactivate", message):
+                if not messagebox.askyesno("Confirm Deactivate", message, parent=self.root):
                     return
 
                 # Try to reassign sessions to available rooms
@@ -340,20 +340,20 @@ def deactivate_selected_room(self):
                         result_msg += f"- {f['module']} {f['day']} {f['time']}\n"
                     result_msg += "\nThese sessions will need manual room assignment."
 
-                messagebox.showinfo("Room Deactivated", result_msg)
+                messagebox.showinfo("Room Deactivated", result_msg, parent=self.root)
             else:
                 # No sessions, just deactivate
-                if messagebox.askyesno("Confirm Deactivate", f"Are you sure you want to deactivate room {room_name}?"):
+                if messagebox.askyesno("Confirm Deactivate", f"Are you sure you want to deactivate room {room_name}?", parent=self.root):
                     cursor.execute('UPDATE rooms SET is_active = 0 WHERE id = ?', (room_id,))
                     conn.commit()
-                    messagebox.showinfo("Success", f"Room {room_name} deactivated successfully.")
+                    messagebox.showinfo("Success", f"Room {room_name} deactivated successfully.", parent=self.root)
 
         self.refresh_rooms()
         self.refresh_dashboard()
         self.update_activity_log(f"Room {room_name} deactivated")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to deactivate room: {str(e)}")
+        messagebox.showerror("Error", f"Failed to deactivate room: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.deactivate_selected_room = deactivate_selected_room
 
@@ -361,7 +361,7 @@ def reactivate_selected_room(self):
     """Reactivate the selected room"""
     selected = self.rooms_tree.selection()
     if not selected:
-        messagebox.showwarning("Warning", "Please select a room to reactivate.")
+        messagebox.showwarning("Warning", "Please select a room to reactivate.", parent=self.root)
         return
 
     room_data = self.rooms_tree.item(selected[0])['values']
@@ -371,10 +371,10 @@ def reactivate_selected_room(self):
 
     # Check if room is already active
     if room_status == "Active":
-        messagebox.showinfo("Info", f"Room {room_name} is already active.")
+        messagebox.showinfo("Info", f"Room {room_name} is already active.", parent=self.root)
         return
 
-    if messagebox.askyesno("Confirm Reactivate", f"Are you sure you want to reactivate room {room_name}?"):
+    if messagebox.askyesno("Confirm Reactivate", f"Are you sure you want to reactivate room {room_name}?", parent=self.root):
         try:
             from education_system.university_system.infrastructure.database.db import sqlite3
             with get_connection(str(DEFAULT_DB_PATH), row_factory=False) as conn:
@@ -385,10 +385,10 @@ def reactivate_selected_room(self):
             self.refresh_rooms()
             self.refresh_dashboard()
             self.update_activity_log(f"Room {room_name} reactivated")
-            messagebox.showinfo("Success", f"Room {room_name} reactivated successfully.")
+            messagebox.showinfo("Success", f"Room {room_name} reactivated successfully.", parent=self.root)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to reactivate room: {str(e)}")
+            messagebox.showerror("Error", f"Failed to reactivate room: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.reactivate_selected_room = reactivate_selected_room
 
@@ -429,7 +429,7 @@ def view_room_schedule(self, room_id=None):
         room_info = cursor.fetchone()
 
     if not schedules:
-        messagebox.showinfo("No Schedule", f"No schedule found for room ID {room_id}")
+        messagebox.showinfo("No Schedule", f"No schedule found for room ID {room_id}", parent=self.root)
         return
 
     room_name = f"{room_info[0]}-{room_info[1]}" if room_info else f"Room {room_id}"
@@ -478,7 +478,7 @@ def _select_room_dialog(self):
         rooms = cursor.fetchall()
 
     if not rooms:
-        messagebox.showinfo("No Rooms", "No rooms found in the system.")
+        messagebox.showinfo("No Rooms", "No rooms found in the system.", parent=self.root)
         return None
 
     dialog = tk.Toplevel(self.root)

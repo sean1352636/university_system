@@ -1,129 +1,50 @@
 {
-    "app": {
-        "name": "Sixth Form College Management System",
-        "version": "1.0.0"
-    },
-    "auth": {
-        "login_prompt": "Enter your username:",
-        "password_prompt": "Enter your password:",
-        "login_success": "Login successful. Welcome, {username}!",
-        "login_failed": "Invalid username or password.",
-        "logout_success": "Logged out successfully.",
-        "access_denied": "Access denied. Insufficient permissions.",
-        "session_expired": "Session expired. Please log in again.",
-        "account_locked": "Account locked due to too many failed attempts.",
-        "password_changed": "Password changed successfully.",
-        "password_weak": "Password must be at least 8 characters with uppercase, lowercase, digit, and special character.",
-        "mfa_required": "MFA verification required.",
-        "mfa_invalid": "Invalid MFA code.",
-        "mfa_setup_success": "MFA has been enabled for your account.",
-        "mfa_disabled": "MFA has been disabled."
-    },
-    "menu": {
-        "main_title": "=== Sixth Form College Management System ===",
-        "select_option": "Select an option:",
-        "invalid_option": "Invalid option. Please try again.",
-        "exit": "Exit",
-        "back": "Back",
-        "students": "Student Management",
-        "courses": "Course Management",
-        "enrollment": "Enrollment Management",
-        "grades": "Grade Management",
-        "attendance": "Attendance Management",
-        "timetable": "Timetable Management",
-        "assignments": "Assignment Management",
-        "notifications": "Notifications",
-        "mfa_settings": "MFA Settings",
-        "my_timetable": "My Timetable",
-        "my_submissions": "My Submissions",
-        "admin": "Administration",
-        "change_password": "Change Password"
-    },
-    "student": {
-        "add_success": "Student {student_id} created successfully.",
-        "update_success": "Student {student_id} updated successfully.",
-        "delete_success": "Student {student_id} deleted successfully.",
-        "not_found": "Student not found.",
-        "list_empty": "No students found.",
-        "id_exists": "Student ID already exists."
-    },
-    "course": {
-        "add_success": "Course {course_code} created successfully.",
-        "update_success": "Course {course_code} updated successfully.",
-        "delete_success": "Course {course_code} deleted successfully.",
-        "not_found": "Course not found.",
-        "list_empty": "No courses found.",
-        "code_exists": "Course code already exists.",
-        "circular_prereq": "Circular prerequisite dependency detected."
-    },
-    "enrollment": {
-        "enroll_success": "Student {student_id} enrolled in {course_code}.",
-        "drop_success": "Student {student_id} dropped from {course_code}.",
-        "already_enrolled": "Student is already enrolled in this course.",
-        "course_full": "Course is full. Student added to waitlist (position {position}).",
-        "waitlist_promoted": "Student {student_id} promoted from waitlist to enrolled.",
-        "not_enrolled": "Student is not enrolled in this course.",
-        "prereq_not_met": "Prerequisites not met for this course."
-    },
-    "grade": {
-        "record_success": "Grade recorded for student {student_id} in {course_code}.",
-        "update_success": "Grade updated for student {student_id} in {course_code}.",
-        "not_found": "No grade record found.",
-        "invalid_score": "Score must be between 0 and 100.",
-        "ucas_display": "UCAS Tariff Points: {points}"
-    },
-    "sixthform": {
-        "year_group": "Year Group",
-        "form_group": "Form Group",
-        "form_tutor": "Form Tutor",
-        "qualification_type": "Qualification Type",
-        "subject_area": "Subject Area",
-        "guided_learning_hours": "Guided Learning Hours",
-        "term": "Term",
-        "teacher": "Teacher",
-        "predicted_grade": "Predicted Grade",
-        "ucas_points": "UCAS Tariff Points"
-    },
-    "attendance": {
-        "session_created": "Attendance session created for {course_code} on {date}.",
-        "recorded": "Attendance recorded for student {student_id}.",
-        "bulk_recorded": "Bulk attendance recorded for {count} students.",
-        "no_sessions": "No attendance sessions found.",
-        "invalid_status": "Invalid attendance status. Use: present, absent, late, excused."
-    },
-    "timetable": {
-        "slot_added": "Timetable slot added (ID: {id}).",
-        "slot_updated": "Timetable slot updated.",
-        "slot_deleted": "Timetable slot deleted.",
-        "no_slots": "No timetable slots found.",
-        "conflict": "Scheduling conflict detected."
-    },
-    "assignment": {
-        "created": "Assignment created (ID: {id}).",
-        "updated": "Assignment updated.",
-        "deleted": "Assignment deleted.",
-        "no_assignments": "No assignments found.",
-        "submitted": "Assignment submitted.",
-        "graded": "Submission graded.",
-        "late_not_allowed": "Late submissions are not allowed.",
-        "not_enrolled": "Student is not enrolled in this course."
-    },
-    "notification": {
-        "sent": "Notification sent.",
-        "marked_read": "Notification marked as read.",
-        "all_marked_read": "{count} notification(s) marked as read.",
-        "no_notifications": "No notifications found."
-    },
-    "mfa": {
-        "setup_complete": "MFA setup complete. Save your recovery codes!",
-        "disabled": "MFA has been disabled.",
-        "verify_prompt": "Enter your TOTP code or recovery code.",
-        "invalid_code": "Invalid MFA code.",
-        "not_setup": "MFA is not set up for this account."
-    },
-    "errors": {
-        "generic": "An error occurred: {message}",
-        "db_error": "Database error: {message}",
-        "validation": "Validation error: {message}"
-    }
+  "app": {
+    "name": "Sixth Form College Management System",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "login_prompt": "Enter your username:",
+    "password_prompt": "Enter your password:",
+    "login_success": "Login successful. Welcome, {username}!",
+    "login_failed": "Invalid username or password.",
+    "logout_success": "Logged out successfully.",
+    "access_denied": "Access denied. Insufficient permissions.",
+    "session_expired": "Session expired. Please log in again.",
+    "account_locked": "Account locked due to too many failed attempts.",
+    "password_changed": "Password changed successfully.",
+    "password_weak": "Password must be at least 8 characters with uppercase, lowercase, digit, and special character.",
+    "mfa_required": "MFA verification required.",
+    "mfa_invalid": "Invalid MFA code.",
+    "mfa_setup_success": "MFA has been enabled for your account.",
+    "mfa_disabled": "MFA has been disabled."
+  },
+  "menu": {
+    "main_title": "=== Sixth Form College Management System ===",
+    "select_option": "Select an option:",
+    "invalid_option": "Invalid option. Please try again.",
+    "exit": "Exit",
+    "back": "Back",
+    "students": "Student Management",
+    "courses": "Course Management",
+    "enrollment": "Enrollment Management",
+    "grades": "Grade Management",
+    "attendance": "Attendance Management",
+    "timetable": "Timetable Management",
+    "assignments": "Assignment Management",
+    "notifications": "Notifications",
+    "mfa_settings": "MFA Settings",
+    "my_timetable": "My Timetable",
+    "my_submissions": "My Submissions",
+    "admin": "Administration",
+    "change_password": "Change Password"
+  },
+  "errors": {
+    "generic": "An error occurred: {message}",
+    "db_error": "Database error: {message}",
+    "validation": "Validation error: {message}",
+    "unexpected": "Unexpected error: {message}",
+    "not_found": "Not found.",
+    "unknown_frame": "Unknown frame: {name}"
+  }
 }

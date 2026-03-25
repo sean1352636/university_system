@@ -10,15 +10,15 @@ from education_system.university_system.modules.domain.mobility.services.trip_ma
     view_my_trip_registrations,
     manage_trip_participants
 )
-from .permits import create_parking_permit, view_parking_permit, update_parking_permit, delete_parking_permit
-from .vehicles import register_vehicle, view_vehicle, update_vehicle, delete_vehicle
-from .violations import record_violation, view_violations, update_violation, delete_violation
-from .lots import view_parking_lots, add_parking_lot, update_parking_lot, delete_parking_lot, update_available_spaces
-from .reports import (generate_permit_report, generate_violation_report, generate_compliance_report,
+from education_system.university_system.modules.domain.mobility.services.parking_management.permits import create_parking_permit, view_parking_permit, update_parking_permit, delete_parking_permit
+from education_system.university_system.modules.domain.mobility.services.parking_management.vehicles import register_vehicle, view_vehicle, update_vehicle, delete_vehicle
+from education_system.university_system.modules.domain.mobility.services.parking_management.violations import record_violation, view_violations, update_violation, delete_violation
+from education_system.university_system.modules.domain.mobility.services.parking_management.lots import view_parking_lots, add_parking_lot, update_parking_lot, delete_parking_lot, update_available_spaces
+from education_system.university_system.modules.domain.mobility.services.parking_management.reports import (generate_permit_report, generate_violation_report, generate_compliance_report,
                       generate_analytics_dashboard, generate_revenue_report, generate_user_activity_report)
-from .exports import export_data
-from .core import init_db
-from . import core
+from education_system.university_system.modules.domain.mobility.services.parking_management.exports import export_data
+from education_system.university_system.modules.domain.mobility.services.parking_management.core import init_db
+from education_system.university_system.modules.domain.mobility.services.parking_management import core
 
 _t = get_text
 

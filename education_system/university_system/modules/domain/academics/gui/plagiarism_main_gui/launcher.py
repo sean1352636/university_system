@@ -5,8 +5,8 @@ import logging
 
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
-from .config import GuiConfig
-from .common import (
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.config import GuiConfig
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.common import (
     logger,
     StatusBar,
     PLAGIARISM_BACKEND_AVAILABLE,
@@ -39,7 +39,7 @@ def integrate_plagiarism_checker_with_main():
 def launch_gui_from_main_system(auth=None):
     """Launch the plagiarism checker GUI from the main system."""
     try:
-        from .main_gui import PlagiarismCheckerGUI
+        from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui import PlagiarismCheckerGUI
 
         print("Launching Plagiarism Checker GUI from main system...")
         app = PlagiarismCheckerGUI(auth=auth)
@@ -52,7 +52,7 @@ def launch_gui_from_main_system(auth=None):
 def run_gui_standalone():
     """Run the GUI in standalone mode."""
     try:
-        from .main_gui import PlagiarismCheckerGUI
+        from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui import PlagiarismCheckerGUI
 
         print("Plagiarism Checker GUI - Standalone Mode")
         print("========================================")
@@ -95,7 +95,7 @@ def run_gui_tests():
         print("✓ Configuration classes successful")
 
         print("Test 4: Testing custom components...")
-        from .common import StatusBar, ScrollableFrame
+        from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.common import StatusBar, ScrollableFrame
         test_root = tk.Tk()
         test_root.withdraw()
 

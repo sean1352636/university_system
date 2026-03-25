@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/gui/internship_management/internship_gui.py
+# hypothesis_version: 6.151.9
+
+[0.0, 1.0, 120, 230, 250, '#2980b9', '#2c3e50', '#34495e', '#3498db', '#7f8c8d', '#f0f0f0', '1200x800', '<Button-4>', '<Button-5>', '<Configure>', '<Enter>', '<KeyPress>', '<Leave>', '<MouseWheel>', 'Arial', 'Custom.TButton', 'Down', 'Header.TLabel', 'Page_Down', 'Page_Up', 'Title.TLabel', 'Up', 'admin', 'all', 'apply_for_internship', 'bold', 'both', 'career_advisor', 'clam', 'common.error', 'create_internship', 'current_user', 'edit_internship', 'flat', 'hand2', 'internship.title', 'left', 'nav_canvas', 'ne', 'nw', 'raised', 'right', 'role', 'staff', 'student', 'top', 'units', 'vertical', 'view_internships', 'white', 'x', 'y']

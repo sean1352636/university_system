@@ -193,7 +193,11 @@ class CandidatesDialog:
         self.dialog.title("Candidates & Campaigns")
         self.dialog.geometry("900x650")
         self.dialog.transient(parent)
-        self.dialog.grab_set()
+        self.dialog.update_idletasks()
+        try:
+            self.dialog.grab_set()
+        except tk.TclError:
+            pass
 
         self.create_widgets()
         self.load_candidates()

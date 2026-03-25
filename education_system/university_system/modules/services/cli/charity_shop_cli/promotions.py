@@ -2,7 +2,7 @@
 Promotions, refunds, layaway, gift cards, and loyalty points.
 """
 
-from ._imports import (
+from education_system.university_system.modules.services.cli.charity_shop_cli._imports import (
     sqlite3, random, string, logger, datetime, timedelta,
     get_connection, List, Dict, Any, Optional,
     TABLE_NAME, CUSTOMERS_TABLE, SALES_TABLE, PROMOTIONS_TABLE,

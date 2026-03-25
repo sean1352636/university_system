@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/layout/_status_bar.py
+# hypothesis_version: 6.151.9
+
+[1000, '#34495e', '%Y-%m-%d %H:%M:%S', '1.0', '=', 'Arial', ']', 'bottom', 'exchange_rates', 'late_fees', 'left', 'payment_allocations', 'payments', 'right', 'root', 'scholarships', 'status_label', 'student_fees', 'student_scholarships', 'students', 'time_var', 'white', 'x']

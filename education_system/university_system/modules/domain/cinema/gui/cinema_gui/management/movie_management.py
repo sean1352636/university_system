@@ -11,7 +11,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_movie_management(self):
     """Display movie management page."""
@@ -59,14 +59,16 @@ def refresh_movie_list(self):
             self.movie_tree.delete(item)
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute('''
-            SELECT id, title, duration, genre, rating, director, COALESCE(status, 'active')
-            FROM movies ORDER BY id DESC
-        ''')
-        for movie in cursor.fetchall():
-            self.movie_tree.insert("", "end", values=movie)
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id, title, duration, genre, rating, director, COALESCE(status, 'active')
+                FROM movies ORDER BY id DESC
+            ''')
+            for movie in cursor.fetchall():
+                self.movie_tree.insert("", "end", values=movie)
+        finally:
+            conn.close()
 
 def show_add_movie_form(self):
     self.show_movie_form(None)
@@ -118,23 +120,25 @@ def show_movie_form(self, movie_data):
             return
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        if movie_data:
-            cursor.execute('''
-                UPDATE movies SET title=?, duration=?, genre=?, rating=?, director=?, description=?
-                WHERE id=?
-            ''', (title, duration, entries['genre'].get(), entries['rating'].get(),
-                  entries['director'].get(), entries['description'].get(), movie_data[0]))
-        else:
-            cursor.execute('''
-                INSERT INTO movies (title, duration, genre, rating, director, description)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (title, duration, entries['genre'].get(), entries['rating'].get(),
-                  entries['director'].get(), entries['description'].get()))
+            if movie_data:
+                cursor.execute('''
+                    UPDATE movies SET title=?, duration=?, genre=?, rating=?, director=?, description=?
+                    WHERE id=?
+                ''', (title, duration, entries['genre'].get(), entries['rating'].get(),
+                      entries['director'].get(), entries['description'].get(), movie_data[0]))
+            else:
+                cursor.execute('''
+                    INSERT INTO movies (title, duration, genre, rating, director, description)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (title, duration, entries['genre'].get(), entries['rating'].get(),
+                      entries['director'].get(), entries['description'].get()))
 
-        conn.commit()
-        conn.close()
+            conn.commit()
+        finally:
+            conn.close()
 
         messagebox.showinfo(_t("cinema.common.success"), "Movie saved!")
         form_window.destroy()
@@ -154,10 +158,12 @@ def edit_selected_movie(self):
 
     movie_id = self.movie_tree.item(selected[0])['values'][0]
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM movies WHERE id = ?", (movie_id,))
-    movie = cursor.fetchone()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM movies WHERE id = ?", (movie_id,))
+        movie = cursor.fetchone()
+    finally:
+        conn.close()
 
     if movie:
         self.show_movie_form(movie)
@@ -171,9 +177,11 @@ def delete_selected_movie(self):
     if messagebox.askyesno(_t("cinema.common.confirm"), _t("cinema.messages.confirm.delete_movie")):
         movie_id = self.movie_tree.item(selected[0])['values'][0]
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM movies WHERE id = ?", (movie_id,))
-        cursor.execute("DELETE FROM screenings WHERE movie_id = ?", (movie_id,))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM movies WHERE id = ?", (movie_id,))
+            cursor.execute("DELETE FROM screenings WHERE movie_id = ?", (movie_id,))
+            conn.commit()
+        finally:
+            conn.close()
         self.refresh_movie_list()

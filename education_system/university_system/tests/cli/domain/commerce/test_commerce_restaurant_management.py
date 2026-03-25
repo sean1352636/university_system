@@ -35,7 +35,7 @@ class TestDatabaseInitialization:
     def test_init_db_success(self, mock_db_path):
         """Test successful database initialization."""
         # Setup
-        with patch('university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
+        with patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
             # Execute
             result = restaurant_management.init_db()
 
@@ -71,7 +71,7 @@ class TestMenuManagement:
     def test_view_menu_empty(self, mock_db_path, capsys):
         """Test viewing menu when no items exist."""
         # Setup
-        with patch('university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
+        with patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
             restaurant_management.init_db()
 
             # Execute
@@ -84,7 +84,7 @@ class TestMenuManagement:
     def test_view_menu_with_items(self, mock_db_path, capsys):
         """Test viewing menu with items."""
         # Setup
-        with patch('university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
+        with patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
             restaurant_management.init_db()
 
             # Add test items
@@ -122,7 +122,7 @@ class TestMenuManagement:
     def test_add_menu_item_success(self, mock_input, mock_db_path):
         """Test adding a new menu item."""
         # Setup
-        with patch('university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
+        with patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
             restaurant_management.init_db()
 
             # Mock user inputs
@@ -154,7 +154,7 @@ class TestMenuManagement:
     def test_add_menu_item_invalid_price(self, mock_input, mock_db_path, capsys):
         """Test adding menu item with invalid price."""
         # Setup
-        with patch('university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
+        with patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
             restaurant_management.init_db()
 
             # Mock user inputs
@@ -175,7 +175,7 @@ class TestMenuManagement:
     def test_add_menu_item_negative_price(self, mock_input, mock_db_path, capsys):
         """Test adding menu item with negative price."""
         # Setup
-        with patch('university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
+        with patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
             restaurant_management.init_db()
 
             # Mock user inputs
@@ -196,7 +196,7 @@ class TestMenuManagement:
     def test_update_menu_item_success(self, mock_input, mock_db_path):
         """Test updating menu item."""
         # Setup
-        with patch('university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
+        with patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
             restaurant_management.init_db()
 
             # Add test item
@@ -236,7 +236,7 @@ class TestMenuManagement:
     def test_remove_menu_item_success(self, mock_input, mock_db_path):
         """Test removing menu item."""
         # Setup
-        with patch('university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
+        with patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
             restaurant_management.init_db()
 
             # Add test item
@@ -272,7 +272,7 @@ class TestMenuManagement:
     def test_toggle_availability_success(self, mock_input, mock_db_path):
         """Test toggling menu item availability."""
         # Setup
-        with patch('university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
+        with patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
             restaurant_management.init_db()
 
             # Add test item
@@ -307,7 +307,7 @@ class TestOrderManagement:
     def test_view_all_orders_empty(self, mock_db_path, capsys):
         """Test viewing orders when none exist."""
         # Setup
-        with patch('university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
+        with patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
             restaurant_management.init_db()
 
             # Execute
@@ -320,7 +320,7 @@ class TestOrderManagement:
     def test_view_all_orders_with_data(self, mock_db_path, capsys):
         """Test viewing orders with data."""
         # Setup
-        with patch('university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
+        with patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
             restaurant_management.init_db()
 
             # Add test orders
@@ -353,7 +353,7 @@ class TestOrderManagement:
     def test_view_pending_orders(self, mock_db_path, capsys):
         """Test viewing pending orders."""
         # Setup
-        with patch('university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
+        with patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
             restaurant_management.init_db()
 
             # Add test orders
@@ -380,7 +380,7 @@ class TestOrderManagement:
     def test_update_order_status_success(self, mock_input, mock_db_path):
         """Test updating order status."""
         # Setup
-        with patch('university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
+        with patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
             restaurant_management.init_db()
 
             # Add test order
@@ -417,7 +417,7 @@ class TestOrderManagement:
     def test_view_order_details(self, mock_input, mock_db_path, capsys):
         """Test viewing order details."""
         # Setup
-        with patch('university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
+        with patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
             restaurant_management.init_db()
 
             # Add test order
@@ -448,7 +448,7 @@ class TestOrderManagement:
     def test_daily_order_summary(self, mock_db_path, capsys):
         """Test daily order summary."""
         # Setup
-        with patch('university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
+        with patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
             restaurant_management.init_db()
 
             # Add test orders for today
@@ -477,7 +477,7 @@ class TestSalesReports:
     def test_sales_reports_with_data(self, mock_db_path, capsys):
         """Test sales reports with order data."""
         # Setup
-        with patch('university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
+        with patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
             restaurant_management.init_db()
 
             # Add test orders
@@ -523,7 +523,7 @@ class TestAuthIntegration:
         # Verify
         assert restaurant_management._auth_instance == mock_auth
 
-    @patch('university_system.modules.domain.commerce.services.restaurant_management.display_fallback_menu')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.display_fallback_menu')
     def test_display_main_menu_not_logged_in(self, mock_fallback, capsys):
         """Test main menu when not logged in."""
         # Setup

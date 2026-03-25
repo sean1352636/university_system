@@ -9,9 +9,9 @@ import jwt as pyjwt
 import pytest
 from flask import Flask
 
-from education_system.university_system.api.auth import _blacklisted_tokens
-from education_system.university_system.api.errors import register_error_handlers
-from education_system.university_system.api.routes.user_routes import user_bp, _row_to_dict, _SENSITIVE_FIELDS
+from education_system.shared.api.university.auth import _blacklisted_tokens
+from education_system.shared.api.university.errors import register_error_handlers
+from education_system.shared.api.university.routes.user_routes import user_bp, _row_to_dict, _SENSITIVE_FIELDS
 
 # ---------------------------------------------------------------------------
 # Token helpers
@@ -148,8 +148,8 @@ class TestUserAuth:
 
 class TestListUsers:
 
-    @patch("university_system.api.routes.user_routes.log_activity")
-    @patch("university_system.api.routes.user_routes.get_connection")
+    @patch("shared.api.university.routes.user_routes.log_activity")
+    @patch("shared.api.university.routes.user_routes.get_connection")
     def test_list_all_paginated(self, mock_conn, mock_log, client):
         row1 = _FakeRow({"id": 1, "username": "alice", "role": "admin"})
         conn = MagicMock()
@@ -168,7 +168,7 @@ class TestListUsers:
         assert "items" in data
         assert "pagination" in data
 
-    @patch("university_system.api.routes.user_routes.get_connection")
+    @patch("shared.api.university.routes.user_routes.get_connection")
     def test_list_search(self, mock_conn, client):
         row = _FakeRow({"id": 2, "username": "bob", "email": "bob@uni.edu"})
         conn = MagicMock()
@@ -181,8 +181,8 @@ class TestListUsers:
         data = resp.get_json()
         assert data["total"] == 1
 
-    @patch("university_system.api.routes.user_routes.log_activity")
-    @patch("university_system.api.routes.user_routes.get_connection")
+    @patch("shared.api.university.routes.user_routes.log_activity")
+    @patch("shared.api.university.routes.user_routes.get_connection")
     def test_list_filter_by_role(self, mock_conn, mock_log, client):
         conn = MagicMock()
         conn.execute.return_value.fetchall.return_value = []
@@ -202,8 +202,8 @@ class TestListUsers:
 
 class TestGetUser:
 
-    @patch("university_system.api.routes.user_routes.log_activity")
-    @patch("university_system.api.routes.user_routes.get_connection")
+    @patch("shared.api.university.routes.user_routes.log_activity")
+    @patch("shared.api.university.routes.user_routes.get_connection")
     def test_admin_can_get_any_user(self, mock_conn, mock_log, client):
         row = _FakeRow({"id": 99, "username": "student1", "role": "student"})
         conn = MagicMock()
@@ -215,8 +215,8 @@ class TestGetUser:
         assert resp.status_code == 200
         assert resp.get_json()["username"] == "student1"
 
-    @patch("university_system.api.routes.user_routes.log_activity")
-    @patch("university_system.api.routes.user_routes.get_connection")
+    @patch("shared.api.university.routes.user_routes.log_activity")
+    @patch("shared.api.university.routes.user_routes.get_connection")
     def test_user_can_get_own_profile(self, mock_conn, mock_log, client):
         row = _FakeRow({"id": 99, "username": "student1", "role": "student"})
         conn = MagicMock()
@@ -233,7 +233,7 @@ class TestGetUser:
         resp = client.get("/api/users/1", headers=_student_headers(user_id=99))
         assert resp.status_code == 403
 
-    @patch("university_system.api.routes.user_routes.get_connection")
+    @patch("shared.api.university.routes.user_routes.get_connection")
     def test_get_nonexistent_user(self, mock_conn, client):
         conn = MagicMock()
         conn.execute.return_value.fetchone.return_value = None
@@ -250,9 +250,9 @@ class TestGetUser:
 
 class TestCreateUser:
 
-    @patch("university_system.api.routes.user_routes.log_activity")
-    @patch("university_system.api.routes.user_routes.get_auth")
-    @patch("university_system.api.routes.user_routes.get_connection")
+    @patch("shared.api.university.routes.user_routes.log_activity")
+    @patch("shared.api.university.routes.user_routes.get_auth")
+    @patch("shared.api.university.routes.user_routes.get_connection")
     def test_create_success(self, mock_conn, mock_auth_fn, mock_log, client):
         conn = MagicMock()
         # First call: check existing -> None
@@ -289,7 +289,7 @@ class TestCreateUser:
         )
         assert resp.status_code == 400
 
-    @patch("university_system.api.routes.user_routes.get_connection")
+    @patch("shared.api.university.routes.user_routes.get_connection")
     def test_create_duplicate_username(self, mock_conn, client):
         conn = MagicMock()
         conn.execute.return_value.fetchone.return_value = _FakeRow({"1": 1})
@@ -304,8 +304,8 @@ class TestCreateUser:
         assert resp.status_code == 400
         assert "already exists" in resp.get_json()["error"]
 
-    @patch("university_system.api.routes.user_routes.get_auth")
-    @patch("university_system.api.routes.user_routes.get_connection")
+    @patch("shared.api.university.routes.user_routes.get_auth")
+    @patch("shared.api.university.routes.user_routes.get_connection")
     def test_create_auth_failure(self, mock_conn, mock_auth_fn, client):
         conn = MagicMock()
         conn.execute.return_value.fetchone.return_value = None
@@ -331,9 +331,9 @@ class TestCreateUser:
 
 class TestUpdateUser:
 
-    @patch("university_system.api.routes.user_routes.log_activity")
-    @patch("university_system.api.routes.user_routes.transaction")
-    @patch("university_system.api.routes.user_routes.get_connection")
+    @patch("shared.api.university.routes.user_routes.log_activity")
+    @patch("shared.api.university.routes.user_routes.transaction")
+    @patch("shared.api.university.routes.user_routes.get_connection")
     def test_update_success(self, mock_conn, mock_tx, mock_log, client):
         row = _FakeRow({"id": 1, "username": "alice", "role": "admin", "email": "a@b.com"})
         conn = MagicMock()
@@ -352,7 +352,7 @@ class TestUpdateUser:
         )
         assert resp.status_code == 200
 
-    @patch("university_system.api.routes.user_routes.get_connection")
+    @patch("shared.api.university.routes.user_routes.get_connection")
     def test_update_nonexistent(self, mock_conn, client):
         conn = MagicMock()
         conn.execute.return_value.fetchone.return_value = None
@@ -370,7 +370,7 @@ class TestUpdateUser:
         resp = client.put("/api/users/1", json={}, headers=_admin_headers())
         assert resp.status_code == 400
 
-    @patch("university_system.api.routes.user_routes.get_connection")
+    @patch("shared.api.university.routes.user_routes.get_connection")
     def test_update_no_valid_fields(self, mock_conn, client):
         row = _FakeRow({"id": 1, "username": "alice", "role": "admin"})
         conn = MagicMock()
@@ -400,9 +400,9 @@ class TestUpdateUser:
 
 class TestDeactivateUser:
 
-    @patch("university_system.api.routes.user_routes.log_activity")
-    @patch("university_system.api.routes.user_routes.transaction")
-    @patch("university_system.api.routes.user_routes.get_connection")
+    @patch("shared.api.university.routes.user_routes.log_activity")
+    @patch("shared.api.university.routes.user_routes.transaction")
+    @patch("shared.api.university.routes.user_routes.get_connection")
     def test_deactivate_success(self, mock_conn, mock_tx, mock_log, client):
         row = _FakeRow({"id": 5, "username": "victim", "role": "student"})
         conn = MagicMock()
@@ -418,7 +418,7 @@ class TestDeactivateUser:
         assert resp.status_code == 200
         assert "deactivated" in resp.get_json()["message"].lower()
 
-    @patch("university_system.api.routes.user_routes.get_connection")
+    @patch("shared.api.university.routes.user_routes.get_connection")
     def test_deactivate_nonexistent(self, mock_conn, client):
         conn = MagicMock()
         conn.execute.return_value.fetchone.return_value = None

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/special_features/theatre_layout.py
+# hypothesis_version: 6.151.9
+
+[100, 110, 115, 150, 160, 170, 175, 190, 194, 198, 200, 250, 450, 480, 500, '#1a1a1a', '#27ae60', '#2c3e50', '#333333', '#3498db', '#7f8c8d', '#c0392b', '#e74c3c', '#f1c40f', '#ffffff', ',', '.', '1', '12', '2', '3', '4', '5', '6', '7', '8', '<<ComboboxSelected>>', 'A, B', 'A1, A2', 'A1, A2, H1, H2', 'Card.TFrame', 'Helvetica', 'Primary.TButton', 'Secondary.TButton', 'Select Screen:', 'Subtitle.TLabel', 'Success.TButton', '_', 'all', 'bold', 'both', 'cinema.btn.preview', 'cinema.labels.screen', 'cinema.layout.title', 'ew', 'left', 'name', 'rows', 'seats_per_row', 'vip_rows', 'w', 'wheelchair', 'white', 'x']

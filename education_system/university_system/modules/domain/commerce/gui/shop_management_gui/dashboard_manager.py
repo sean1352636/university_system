@@ -457,21 +457,21 @@ def get_dashboard_stats(self):
             cursor = conn.cursor()
             
             # Total products
-            cursor.execute("SELECT COUNT(*) FROM shop_products WHERE is_active = 1")
+            cursor.execute("SELECT COUNT(*) FROM products WHERE source_type = 'shop' AND is_active = 1")
             stats['total_products'] = cursor.fetchone()[0]
             
             # Low stock items
             cursor.execute("""
-                SELECT COUNT(*) FROM shop_products p
-                JOIN shop_inventory i ON p.product_id = i.product_id
-                WHERE p.is_active = 1 AND i.quantity <= i.restock_threshold
+                SELECT COUNT(*) FROM products p
+                JOIN shop_inventory i ON p.source_product_id = i.product_id
+                WHERE p.source_type = 'shop' AND p.is_active = 1 AND i.quantity <= i.restock_threshold
             """)
             stats['low_stock'] = cursor.fetchone()[0]
             
             # Recent sales (30 days)
             cursor.execute("""
-                SELECT COUNT(*) FROM shop_transactions
-                WHERE transaction_date >= date('now', '-30 days')
+                SELECT COUNT(*) FROM transactions
+                WHERE source_type = 'shop' AND created_at >= date('now', '-30 days')
             """)
             stats['recent_sales'] = cursor.fetchone()[0]
             
@@ -547,8 +547,8 @@ def get_monthly_stats(self, year, month):
             SELECT COUNT(*) as transaction_count, 
                    SUM(total_amount) as total_sales,
                    AVG(total_amount) as avg_order
-            FROM shop_transactions
-            WHERE transaction_date BETWEEN ? AND ?
+            FROM transactions
+            WHERE source_type = 'shop' AND created_at BETWEEN ? AND ?
         """, [start_str, end_str])
         
         basic_stats = cursor.fetchone()
@@ -557,8 +557,8 @@ def get_monthly_stats(self, year, month):
         cursor.execute("""
             SELECT SUM(ti.quantity) as items_sold
             FROM shop_transaction_items ti
-            JOIN shop_transactions t ON ti.transaction_id = t.transaction_id
-            WHERE t.transaction_date BETWEEN ? AND ?
+            JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
+            WHERE t.created_at BETWEEN ? AND ?
         """, [start_str, end_str])
         
         items_result = cursor.fetchone()
@@ -573,8 +573,8 @@ def get_monthly_stats(self, year, month):
             
             cursor.execute("""
                 SELECT COUNT(*) as count, SUM(total_amount) as amount
-                FROM shop_transactions
-                WHERE transaction_date BETWEEN ? AND ?
+                FROM transactions
+                WHERE source_type = 'shop' AND created_at BETWEEN ? AND ?
             """, [current_week.strftime('%Y-%m-%d 00:00:00'), 
                   week_end.strftime('%Y-%m-%d 23:59:59')])
             
@@ -625,8 +625,8 @@ def get_weekly_stats(self):
             SELECT COUNT(*) as transaction_count, 
                    SUM(total_amount) as total_sales,
                    AVG(total_amount) as avg_order
-            FROM shop_transactions
-            WHERE transaction_date BETWEEN ? AND ?
+            FROM transactions
+            WHERE source_type = 'shop' AND created_at BETWEEN ? AND ?
         """, [start_str, end_str])
         
         basic_stats = cursor.fetchone()
@@ -635,8 +635,8 @@ def get_weekly_stats(self):
         cursor.execute("""
             SELECT SUM(ti.quantity) as items_sold
             FROM shop_transaction_items ti
-            JOIN shop_transactions t ON ti.transaction_id = t.transaction_id
-            WHERE t.transaction_date BETWEEN ? AND ?
+            JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
+            WHERE t.created_at BETWEEN ? AND ?
         """, [start_str, end_str])
         
         items_result = cursor.fetchone()
@@ -650,8 +650,8 @@ def get_weekly_stats(self):
             
             cursor.execute("""
                 SELECT COUNT(*) as count, SUM(total_amount) as amount
-                FROM shop_transactions
-                WHERE DATE(transaction_date) = ?
+                FROM transactions
+                WHERE source_type = 'shop' AND DATE(created_at) = ?
             """, [day_str])
             
             day_data = cursor.fetchone()
@@ -739,8 +739,8 @@ def get_sales_summary_data(self, start_date, end_date):
                 COUNT(*) AS transaction_count,
                 COALESCE(SUM(total_amount), 0) AS total_revenue,
                 COALESCE(AVG(total_amount), 0) AS avg_order_value
-            FROM shop_transactions
-            WHERE DATE(transaction_date) BETWEEN ? AND ?
+            FROM transactions
+            WHERE source_type = 'shop' AND DATE(created_at) BETWEEN ? AND ?
             """,
             (start_date, end_date),
         )
@@ -752,9 +752,9 @@ def get_sales_summary_data(self, start_date, end_date):
             """
             SELECT COALESCE(SUM(ti.quantity), 0) AS total_items
             FROM shop_transaction_items ti
-            JOIN shop_transactions t 
-              ON ti.transaction_id = t.transaction_id
-            WHERE DATE(t.transaction_date) BETWEEN ? AND ?
+            JOIN transactions t
+              ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
+            WHERE DATE(t.created_at) BETWEEN ? AND ?
             """,
             (start_date, end_date),
         )
@@ -765,11 +765,11 @@ def get_sales_summary_data(self, start_date, end_date):
         cursor.execute(
             """
             SELECT 
-                DATE(transaction_date) AS d, 
+                DATE(created_at) AS d, 
                 COALESCE(SUM(total_amount), 0) AS daily_total
-            FROM shop_transactions
-            WHERE DATE(transaction_date) BETWEEN ? AND ?
-            GROUP BY DATE(transaction_date)
+            FROM transactions
+            WHERE source_type = 'shop' AND DATE(created_at) BETWEEN ? AND ?
+            GROUP BY DATE(created_at)
             ORDER BY d
             """,
             (start_date, end_date),
@@ -825,9 +825,9 @@ def update_product_status(self, product_id, is_active):
             cursor = conn.cursor()
             
             cursor.execute("""
-                UPDATE shop_products
+                UPDATE products
                 SET is_active = ?, updated_at = ?
-                WHERE product_id = ?
+                WHERE source_type = 'shop' AND source_product_id = ?
             """, [is_active, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), product_id])
             
             conn.commit()
@@ -853,8 +853,8 @@ def get_daily_stats(self, date):
             SELECT COUNT(*) as transaction_count, 
                    SUM(total_amount) as total_sales,
                    AVG(total_amount) as avg_order
-            FROM shop_transactions
-            WHERE DATE(transaction_date) = ?
+            FROM transactions
+            WHERE source_type = 'shop' AND DATE(created_at) = ?
         """, [date])
         
         basic_stats = cursor.fetchone()
@@ -863,8 +863,8 @@ def get_daily_stats(self, date):
         cursor.execute("""
             SELECT SUM(ti.quantity) as items_sold
             FROM shop_transaction_items ti
-            JOIN shop_transactions t ON ti.transaction_id = t.transaction_id
-            WHERE DATE(t.transaction_date) = ?
+            JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
+            WHERE DATE(t.created_at) = ?
         """, [date])
         
         items_result = cursor.fetchone()
@@ -873,10 +873,10 @@ def get_daily_stats(self, date):
         cursor.execute("""
             SELECT p.name, SUM(ti.quantity) as quantity
             FROM shop_transaction_items ti
-            JOIN shop_transactions t ON ti.transaction_id = t.transaction_id
-            JOIN shop_products p ON ti.product_id = p.product_id
-            WHERE DATE(t.transaction_date) = ?
-            GROUP BY p.product_id
+            JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
+            JOIN products p ON ti.product_id = p.source_product_id AND p.source_type = 'shop'
+            WHERE DATE(t.created_at) = ?
+            GROUP BY p.source_product_id
             ORDER BY quantity DESC
             LIMIT 5
         """, [date])
@@ -952,10 +952,10 @@ def get_low_stock_items(self):
         cursor = conn.cursor()
         
         cursor.execute("""
-            SELECT p.product_id, p.name, p.category, i.quantity, i.restock_threshold
-            FROM shop_products p
-            JOIN shop_inventory i ON p.product_id = i.product_id
-            WHERE p.is_active = 1 AND i.quantity <= i.restock_threshold * 1.2
+            SELECT p.source_product_id as product_id, p.name, p.category, i.quantity, i.restock_threshold
+            FROM products p
+            JOIN shop_inventory i ON p.source_product_id = i.product_id
+            WHERE p.source_type = 'shop' AND p.is_active = 1 AND i.quantity <= i.restock_threshold * 1.2
             ORDER BY (i.quantity * 1.0 / i.restock_threshold), p.name
         """)
         
@@ -970,7 +970,8 @@ def get_low_stock_items(self):
 
 def update_status(self, message):
     """Update the status bar"""
-    self.status_label.config(text=message)
-    self.root.update_idletasks()
+    if self.status_label:
+        self.status_label.config(text=message)
+        self.root.update_idletasks()
     
 

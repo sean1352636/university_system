@@ -9,7 +9,7 @@ from tkinter import ttk, messagebox, simpledialog
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
-from .cafe_system_gui import get_db_connection
+from education_system.university_system.modules.domain.commerce.gui.cafe_system_gui import get_db_connection
 
 
 class CafeInventoryMixin:
@@ -74,8 +74,9 @@ class CafeInventoryMixin:
 
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT item_id, name, category, stock_quantity
-                FROM cafe_menu_items
+                SELECT id, name, category, stock_quantity
+                FROM products
+                WHERE source_type = 'cafe'
                 ORDER BY stock_quantity ASC, name
             ''')
 
@@ -124,14 +125,14 @@ class CafeInventoryMixin:
 
             cursor = conn.cursor()
             cursor.execute('''
-                UPDATE cafe_menu_items
+                UPDATE products
                 SET stock_quantity = stock_quantity + ?
-                WHERE item_id = ?
+                WHERE id = ? AND source_type = 'cafe'
             ''', (quantity, item_id))
 
             cursor.execute('''
-                INSERT INTO cafe_inventory_transactions (item_id, quantity_change, transaction_type, notes)
-                VALUES (?, ?, 'restock', 'Manual stock addition')
+                INSERT INTO transactions (source_type, reference_id, reference_type, quantity_change, transaction_type, notes)
+                VALUES ('cafe_inventory', ?, 'item', ?, 'restock', 'Manual stock addition')
             ''', (item_id, quantity))
 
             conn.commit()
@@ -172,14 +173,14 @@ class CafeInventoryMixin:
 
             cursor = conn.cursor()
             cursor.execute('''
-                UPDATE cafe_menu_items
+                UPDATE products
                 SET stock_quantity = stock_quantity - ?
-                WHERE item_id = ?
+                WHERE id = ? AND source_type = 'cafe'
             ''', (quantity, item_id))
 
             cursor.execute('''
-                INSERT INTO cafe_inventory_transactions (item_id, quantity_change, transaction_type, notes)
-                VALUES (?, ?, 'adjustment', 'Manual stock removal')
+                INSERT INTO transactions (source_type, reference_id, reference_type, quantity_change, transaction_type, notes)
+                VALUES ('cafe_inventory', ?, 'item', ?, 'adjustment', 'Manual stock removal')
             ''', (item_id, -quantity))
 
             conn.commit()
@@ -237,10 +238,11 @@ class CafeInventoryMixin:
 
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT t.transaction_id, m.name, t.quantity_change, t.transaction_type, t.transaction_date, t.notes
-                FROM cafe_inventory_transactions t
-                JOIN cafe_menu_items m ON t.item_id = m.item_id
-                ORDER BY t.transaction_date DESC
+                SELECT t.transaction_id, m.name, t.quantity_change, t.transaction_type, t.created_at, t.notes
+                FROM transactions t
+                JOIN products m ON t.reference_id = m.id AND m.source_type = 'cafe' AND t.reference_type = 'item'
+                WHERE t.source_type = 'cafe_inventory'
+                ORDER BY t.created_at DESC
                 LIMIT 500
             ''')
 

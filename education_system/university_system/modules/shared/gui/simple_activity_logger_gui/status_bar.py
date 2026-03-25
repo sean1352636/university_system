@@ -2,7 +2,7 @@
 Status bar widget for the Activity Logger GUI.
 """
 
-from ._imports import tk, ttk, _t
+from education_system.university_system.modules.shared.gui.simple_activity_logger_gui._imports import tk, ttk, _t
 
 
 class StatusBar(ttk.Frame):

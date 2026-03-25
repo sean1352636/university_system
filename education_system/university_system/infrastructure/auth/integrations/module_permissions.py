@@ -61,12 +61,12 @@ def initialize_complete_system():
         
         # Setup chatbot permissions
         print("2. Setting up chatbot permissions...")
-        from education_system.university_system.infrastructure.auth.chatbot_integration import setup_chatbot_permissions
+        from education_system.university_system.infrastructure.auth.integrations.chatbot_integration import setup_chatbot_permissions
         setup_chatbot_permissions(auth)
         
         # Initialize chatbot integration
         print("3. Initializing chatbot integration...")
-        from education_system.university_system.infrastructure.auth.chatbot_integration import initialize_chatbot_integration
+        from education_system.university_system.infrastructure.auth.integrations.chatbot_integration import initialize_chatbot_integration
         initialize_chatbot_integration(auth)
         
         # Test the integration

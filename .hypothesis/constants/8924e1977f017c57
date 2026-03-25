@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/gui/parking_management/dialogs/violation_dialog.py
+# hypothesis_version: 6.151.9
+
+[30.0, 40.0, 50.0, 75.0, 100.0, 250.0, '5', '550x650', '<<ComboboxSelected>>', 'Appealed', 'Arial', 'Blocking Access', 'Cancel', 'Email:', 'Error', 'Expired Permit', 'Fine Amount:', 'Fire Lane', 'Handicap Zone', 'Improper Parking', 'License Plate:', 'Location:', 'Lookup Vehicle', 'No Permit', 'No email', 'No email on file', 'No owner linked', 'Not Found', 'Not found', 'Notification:', 'Other', 'Owner:', 'Paid', 'Partial Match', 'Payment Status:', 'Save', 'Success', 'Unpaid', 'Vehicle Found', 'Vehicle Lookup', 'Vehicle:', 'Violation Details', 'Violation Type:', 'Waived', 'Warning', 'Wrong Zone', 'bold', 'ew', 'fine_amount', 'license_plate', 'location', 'payment_status', 'readonly', 'send_email', 'status_var', 'student_email', 'student_id', 'vehicle_id', 'violation_type', 'w']

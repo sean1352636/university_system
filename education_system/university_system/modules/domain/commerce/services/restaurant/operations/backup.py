@@ -5,7 +5,7 @@ import os
 import shutil
 from datetime import datetime
 
-from . import restaurant_context as ctx
+from education_system.university_system.modules.domain.commerce.services.restaurant.operations import restaurant_context as ctx
 from education_system.university_system.modules.domain.commerce.services.restaurant.operations.restaurant_context import (
     DATABASE_FILE,
     get_log_file,

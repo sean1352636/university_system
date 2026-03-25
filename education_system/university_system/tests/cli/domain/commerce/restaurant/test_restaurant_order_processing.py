@@ -12,7 +12,7 @@ import tempfile
 
 # Import the module to test
 from education_system.university_system.modules.domain.commerce.services.restaurant.operations import order_processing
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 @pytest.fixture
 def test_db():
@@ -221,7 +221,7 @@ def mock_auth():
 class TestViewOrders:
     """Test order viewing functions"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
     def test_view_orders_all(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test viewing all orders"""
         order_processing.set_auth(mock_auth)
@@ -235,7 +235,7 @@ class TestViewOrders:
         captured = capsys.readouterr()
         assert 'ORDERS' in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
     def test_view_order_details(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test viewing specific order details"""
         order_processing.set_auth(mock_auth)
@@ -252,9 +252,9 @@ class TestViewOrders:
 class TestPaymentProcessing:
     """Test payment processing functions"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.record_payment_to_finance')
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.log_audit_action')
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.record_payment_to_finance')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
     def test_process_cash_payment(self, mock_get_conn, mock_log, mock_record_payment, test_db, mock_auth, capsys):
         """Test processing cash payment"""
         order_processing.set_auth(mock_auth)
@@ -269,9 +269,9 @@ class TestPaymentProcessing:
         captured = capsys.readouterr()
         assert 'Payment processed successfully' in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.record_payment_to_finance')
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.log_audit_action')
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.record_payment_to_finance')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
     @patch('time.sleep')  # Mock sleep to speed up test
     def test_process_card_payment(self, mock_sleep, mock_get_conn, mock_log, mock_record_payment, test_db, mock_auth, capsys):
         """Test processing card payment"""
@@ -287,9 +287,9 @@ class TestPaymentProcessing:
         captured = capsys.readouterr()
         assert 'Card payment approved' in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.record_payment_to_finance')
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.log_audit_action')
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.record_payment_to_finance')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
     def test_process_meal_plan_payment(self, mock_get_conn, mock_log, mock_record_payment, test_db, mock_auth, capsys):
         """Test processing meal plan payment"""
         order_processing.set_auth(mock_auth)
@@ -307,8 +307,8 @@ class TestPaymentProcessing:
 class TestTipManagement:
     """Test tip functionality"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.log_audit_action')
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
     def test_add_tip_custom(self, mock_get_conn, mock_log, test_db, mock_auth, capsys):
         """Test adding custom tip amount"""
         order_processing.set_auth(mock_auth)
@@ -322,8 +322,8 @@ class TestTipManagement:
         captured = capsys.readouterr()
         assert 'Tip added' in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.log_audit_action')
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
     def test_add_tip_percentage(self, mock_get_conn, mock_log, test_db, mock_auth, capsys):
         """Test adding percentage-based tip"""
         order_processing.set_auth(mock_auth)
@@ -340,9 +340,9 @@ class TestTipManagement:
 class TestRefundProcessing:
     """Test refund functionality"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.log_audit_action')
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
     def test_refund_order_full(self, mock_get_conn, mock_log, mock_backup, test_db, mock_auth, capsys):
         """Test processing full refund"""
         order_processing.set_auth(mock_auth)
@@ -359,8 +359,8 @@ class TestRefundProcessing:
 class TestDiscountApplication:
     """Test discount functionality"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.log_audit_action')
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
     def test_apply_discount_percentage(self, mock_get_conn, mock_log, test_db, mock_auth, capsys):
         """Test applying percentage discount"""
         order_processing.set_auth(mock_auth)
@@ -374,8 +374,8 @@ class TestDiscountApplication:
         captured = capsys.readouterr()
         assert 'Discount applied' in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.log_audit_action')
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
     def test_apply_discount_fixed(self, mock_get_conn, mock_log, test_db, mock_auth, capsys):
         """Test applying fixed amount discount"""
         order_processing.set_auth(mock_auth)
@@ -392,9 +392,9 @@ class TestDiscountApplication:
 class TestOrderStatusUpdate:
     """Test order status management"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.log_audit_action')
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
     def test_update_order_status(self, mock_get_conn, mock_log, mock_backup, test_db, mock_auth, capsys):
         """Test updating order status"""
         order_processing.set_auth(mock_auth)
@@ -411,7 +411,7 @@ class TestOrderStatusUpdate:
 class TestPurchaseOrders:
     """Test purchase order management"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
     def test_view_purchase_orders(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test viewing purchase orders"""
         order_processing.set_auth(mock_auth)
@@ -435,9 +435,9 @@ class TestPurchaseOrders:
         captured = capsys.readouterr()
         assert 'PURCHASE ORDERS' in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.log_audit_action')
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
     def test_create_purchase_order(self, mock_get_conn, mock_log, mock_backup, test_db, mock_auth, capsys):
         """Test creating a purchase order"""
         order_processing.set_auth(mock_auth)
@@ -455,9 +455,9 @@ class TestPurchaseOrders:
         captured = capsys.readouterr()
         assert 'Purchase Order created successfully' in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.log_audit_action')
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing.get_db_connection')
     def test_update_purchase_order(self, mock_get_conn, mock_log, mock_backup, test_db, mock_auth, capsys):
         """Test updating purchase order status"""
         order_processing.set_auth(mock_auth)

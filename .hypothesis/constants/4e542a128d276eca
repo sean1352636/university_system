@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/managers/webauthn_manager.py
+# hypothesis_version: 6.151.9
+
+[-257, 60000, '%Y-%m-%d %H:%M:%S', 'Security Key', 'User not found.', 'WebAuthnManager', 'alg', 'allowCredentials', 'attestation', 'authentication', 'challenge', 'created_at', 'credential_id', 'credential_name', 'cross-platform', 'displayName', 'id', 'last_used_at', 'localhost', 'manage_users', 'message', 'name', 'none', 'options', 'permissions', 'preferred', 'pubKeyCredParams', 'public-key', 'public_key', 'registration', 'requireResidentKey', 'role', 'rp', 'rpId', 'session_id', 'sign_count', 'success', 'timeout', 'type', 'unknown', 'user', 'userVerification', 'user_id', 'username']

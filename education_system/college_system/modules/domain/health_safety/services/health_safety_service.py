@@ -4,6 +4,7 @@ from datetime import datetime
 from education_system.college_system.core.exceptions import HealthSafetyError
 from education_system.college_system.infrastructure.database.db import connect
 
+from education_system.college_system.core.sql_safety import validate_identifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -102,7 +103,7 @@ class HealthSafetyService:
         updates["updated_at"] = datetime.now().isoformat()
         conn = self._conn()
         try:
-            set_clause = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
             params = list(updates.values()) + [incident_id]
             conn.execute(f"UPDATE hs_incidents SET {set_clause} WHERE id = ?", params)
             conn.commit()
@@ -220,7 +221,7 @@ class HealthSafetyService:
             raise HealthSafetyError("No valid fields to update.")
         conn = self._conn()
         try:
-            set_clause = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
             params = list(updates.values()) + [inspection_id]
             conn.execute(f"UPDATE hs_inspections SET {set_clause} WHERE id = ?", params)
             conn.commit()
@@ -332,7 +333,7 @@ class HealthSafetyService:
         updates["updated_at"] = datetime.now().isoformat()
         conn = self._conn()
         try:
-            set_clause = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
             params = list(updates.values()) + [assessment_id]
             conn.execute(f"UPDATE hs_risk_assessments SET {set_clause} WHERE id = ?", params)
             conn.commit()
@@ -438,7 +439,7 @@ class HealthSafetyService:
             raise HealthSafetyError("No valid fields to update.")
         conn = self._conn()
         try:
-            set_clause = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
             params = list(updates.values()) + [check_id]
             conn.execute(f"UPDATE hs_compliance_checks SET {set_clause} WHERE id = ?", params)
             conn.commit()

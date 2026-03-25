@@ -526,9 +526,9 @@ def menu_analytics():
         cursor.execute('''
             SELECT mi.name, SUM(oi.quantity) as total_sold, SUM(oi.quantity * oi.unit_price) as revenue
             FROM menu_items mi
-            JOIN restaurant_order_items oi ON mi.item_id = oi.item_id
-            JOIN restaurant_orders o ON oi.order_id = o.order_id
-            WHERE o.status = 'Completed' AND o.order_time >= date('now', '-30 days')
+            JOIN order_items oi ON mi.item_id = oi.item_id
+            JOIN orders o ON oi.order_id = o.order_id
+            WHERE o.order_status = 'Completed' AND o.order_date >= date('now', '-30 days')
             GROUP BY mi.item_id, mi.name
             ORDER BY total_sold DESC
             LIMIT 10
@@ -550,9 +550,9 @@ def menu_analytics():
             SELECT mi.category, COUNT(mi.item_id) as item_count,
                    AVG(mi.price) as avg_price, SUM(COALESCE(oi.quantity, 0)) as total_sold
             FROM menu_items mi
-            LEFT JOIN restaurant_order_items oi ON mi.item_id = oi.item_id
-            LEFT JOIN restaurant_orders o ON oi.order_id = o.order_id
-                AND o.status = 'Completed' AND o.order_time >= date('now', '-30 days')
+            LEFT JOIN order_items oi ON mi.item_id = oi.item_id
+            LEFT JOIN orders o ON oi.order_id = o.order_id
+                AND o.order_status = 'Completed' AND o.order_date >= date('now', '-30 days')
             GROUP BY mi.category
         ''')
 
@@ -919,11 +919,11 @@ def order_analytics():
 
         if choice == '1':
             cursor.execute("""
-                SELECT date(order_time) as d, COUNT(*) as cnt, SUM(total_price) as revenue,
-                       AVG(total_price) as aov
-                FROM restaurant_orders
-                WHERE order_time >= date('now','-7 days')
-                GROUP BY date(order_time)
+                SELECT date(order_date) as d, COUNT(*) as cnt, SUM(total_amount) as revenue,
+                       AVG(total_amount) as aov
+                FROM orders
+                WHERE order_date >= date('now','-7 days')
+                GROUP BY date(order_date)
                 ORDER BY d DESC
             """)
             rows = cursor.fetchall()
@@ -934,9 +934,9 @@ def order_analytics():
 
         elif choice == '2':
             cursor.execute("""
-                SELECT strftime('%H', order_time) as hour, COUNT(*) as cnt
-                FROM restaurant_orders
-                WHERE order_time >= date('now','-30 days')
+                SELECT strftime('%H', order_date) as hour, COUNT(*) as cnt
+                FROM orders
+                WHERE order_date >= date('now','-30 days')
                 GROUP BY hour
                 ORDER BY cnt DESC
                 LIMIT 10
@@ -948,9 +948,9 @@ def order_analytics():
 
         elif choice == '3':
             cursor.execute("""
-                SELECT COALESCE(payment_method,'Unknown') as method, COUNT(*) as cnt, SUM(total_price) as revenue
-                FROM restaurant_orders
-                WHERE order_time >= date('now','-30 days')
+                SELECT COALESCE(payment_method,'Unknown') as method, COUNT(*) as cnt, SUM(total_amount) as revenue
+                FROM orders
+                WHERE order_date >= date('now','-30 days')
                 GROUP BY method
                 ORDER BY revenue DESC
             """)
@@ -963,10 +963,10 @@ def order_analytics():
 
         elif choice == '4':
             cursor.execute("""
-                SELECT date(order_time) as d, AVG(total_price) as aov
-                FROM restaurant_orders
-                WHERE order_time >= date('now','-30 days')
-                GROUP BY date(order_time)
+                SELECT date(order_date) as d, AVG(total_amount) as aov
+                FROM orders
+                WHERE order_date >= date('now','-30 days')
+                GROUP BY date(order_date)
                 ORDER BY d DESC
             """)
             rows = cursor.fetchall()
@@ -1650,13 +1650,13 @@ def revenue_analytics():
         # Revenue trends (last 30 days)
         cursor.execute('''
             SELECT 
-                DATE(order_time) as date,
+                DATE(order_date) as date,
                 COUNT(*) as orders,
-                SUM(total_price) as revenue,
-                AVG(total_price) as aov
-            FROM restaurant_orders
-            WHERE DATE(order_time) >= date('now', '-30 days') AND status = 'Completed'
-            GROUP BY DATE(order_time)
+                SUM(total_amount) as revenue,
+                AVG(total_amount) as aov
+            FROM orders
+            WHERE DATE(order_date) >= date('now', '-30 days') AND order_status = 'Completed'
+            GROUP BY DATE(order_date)
             ORDER BY date DESC
             LIMIT 10
         ''', )
@@ -1672,13 +1672,13 @@ def revenue_analytics():
 
         # Revenue by payment method
         cursor.execute('''
-            SELECT 
+            SELECT
                 payment_method,
                 COUNT(*) as transactions,
-                SUM(total_price) as revenue,
-                AVG(total_price) as avg_value
-            FROM restaurant_orders
-            WHERE DATE(order_time) >= date('now', '-30 days') AND status = 'Completed'
+                SUM(total_amount) as revenue,
+                AVG(total_amount) as avg_value
+            FROM orders
+            WHERE DATE(order_date) >= date('now', '-30 days') AND order_status = 'Completed'
             GROUP BY payment_method
             ORDER BY revenue DESC
         ''')
@@ -1696,11 +1696,11 @@ def revenue_analytics():
         # Peak hours analysis
         cursor.execute('''
             SELECT 
-                strftime('%H', order_time) as hour,
+                strftime('%H', order_date) as hour,
                 COUNT(*) as orders,
-                SUM(total_price) as revenue
-            FROM restaurant_orders
-            WHERE DATE(order_time) >= date('now', '-30 days') AND status = 'Completed'
+                SUM(total_amount) as revenue
+            FROM orders
+            WHERE DATE(order_date) >= date('now', '-30 days') AND order_status = 'Completed'
             GROUP BY hour
             ORDER BY revenue DESC
             LIMIT 5

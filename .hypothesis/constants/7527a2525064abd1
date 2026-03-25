@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/course_management_gui/waitlists/add_dialog.py
+# hypothesis_version: 6.151.9
+
+[10.0, 180, ' - ', '%Y-%m-%d %H:%M:%S', '420x240', '600x400', '<Double-1>', 'Add', 'Already on Waitlist', 'Arial', 'Cancel', 'Course:', 'Email', 'Enter a student ID.', 'Error', 'ID', 'Lookup', 'Lookup Student', 'Name', 'No Selection', 'Search', 'Search (ID, Name):', 'Search for Student', 'Select', 'Select a course.', 'Student', 'Student ID:', 'added_at', 'bold', 'common.success', 'common.validation', 'course_code', 'course_name', 'first_name', 'headings', 'position', 'values']

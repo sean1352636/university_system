@@ -62,7 +62,7 @@ except ImportError:
     except Exception:
         class ModuleScheduler: pass
 
-from .main_gui import ModuleSchedulingGUI
+from education_system.university_system.modules.domain.academics.gui.module_scheduling.main_gui import ModuleSchedulingGUI
 
 def create_modules_tab(self):
     """Create the modules management tab"""
@@ -436,7 +436,7 @@ def show_add_module_dialog(self):
             self.log_activity(f"Module added: {module_data['code']} - {module_data['name']}")
             dialog.destroy()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to add module: {e}")
+            messagebox.showerror("Error", f"Failed to add module: {e}", parent=self.root)
 
     ttk.Button(dialog, text="Save", command=save, style="Success.TButton").grid(
         row=len(fields), column=0, columnspan=2, pady=15
@@ -448,7 +448,7 @@ def edit_selected_module(self):
     """Edit the currently selected module"""
     selected = self.modules_tree.selection()
     if not selected:
-        messagebox.showwarning("No Selection", "Please select a module to edit.")
+        messagebox.showwarning("No Selection", "Please select a module to edit.", parent=self.root)
         return
 
     values = self.modules_tree.item(selected[0], "values")
@@ -477,7 +477,7 @@ def edit_selected_module(self):
             self.log_activity(f"Module updated: {updated_data['code']} - {updated_data['name']}")
             dialog.destroy()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update module: {e}")
+            messagebox.showerror("Error", f"Failed to update module: {e}", parent=self.root)
 
     ttk.Button(dialog, text="Save Changes", command=save, style="Success.TButton").grid(
         row=len(fields), column=0, columnspan=2, pady=15
@@ -489,7 +489,7 @@ def delete_selected_module(self):
     """Delete the selected module"""
     selected = self.modules_tree.selection()
     if not selected:
-        messagebox.showwarning("No Selection", "Please select a module to delete.")
+        messagebox.showwarning("No Selection", "Please select a module to delete.", parent=self.root)
         return
 
     values = self.modules_tree.item(selected[0], "values")
@@ -498,7 +498,7 @@ def delete_selected_module(self):
     confirm = messagebox.askyesno(
         "Confirm Delete",
         f"Are you sure you want to delete module {module_code} - {module_name}?"
-    )
+    , parent=self.root)
     if not confirm:
         return
 
@@ -507,7 +507,7 @@ def delete_selected_module(self):
         self.refresh_modules()
         self.log_activity(f"Module deleted: {module_code} - {module_name}")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to delete module: {e}")
+        messagebox.showerror("Error", f"Failed to delete module: {e}", parent=self.root)
 
 ModuleSchedulingGUI.delete_selected_module = delete_selected_module
 
@@ -528,7 +528,7 @@ def generate_module_report(self):
     try:
         modules = self.scheduler.get_all_modules()
         if not modules:
-            messagebox.showinfo("Report", "No modules available.")
+            messagebox.showinfo("Report", "No modules available.", parent=self.root)
             return
 
         report = "Module Report\n\n"
@@ -558,9 +558,9 @@ def generate_module_report(self):
             try:
                 with open(filename, "w", encoding="utf-8") as handle:
                     handle.write(report)
-                messagebox.showinfo("Report Saved", f"Report saved to {filename}")
+                messagebox.showinfo("Report Saved", f"Report saved to {filename}", parent=self.root)
             except Exception as exc:
-                messagebox.showerror("Save Error", f"Failed to save report: {exc}")
+                messagebox.showerror("Save Error", f"Failed to save report: {exc}", parent=self.root)
 
         def email_report():
             recipient_email = self._get_admin_email()
@@ -571,7 +571,7 @@ def generate_module_report(self):
                     parent=report_window,
                 )
             if not recipient_email or "@" not in recipient_email:
-                messagebox.showwarning("Invalid Email", "Please enter a valid admin email address.")
+                messagebox.showwarning("Invalid Email", "Please enter a valid admin email address.", parent=self.root)
                 return
             try:
                 from education_system.university_system.infrastructure.email.email_service import send_email
@@ -610,10 +610,10 @@ This email was sent from the Module Scheduling GUI.
                     subject=subject,
                     body=email_body,
                 )
-                messagebox.showinfo("Email Sent", f"Report sent to {recipient_email}.")
+                messagebox.showinfo("Email Sent", f"Report sent to {recipient_email}.", parent=self.root)
                 self.update_activity_log(f"Emailed module report to {recipient_email}")
             except Exception as exc:
-                messagebox.showerror("Email Error", f"Failed to send email: {exc}")
+                messagebox.showerror("Email Error", f"Failed to send email: {exc}", parent=self.root)
 
         ttk.Button(button_frame, text="Save as TXT", command=save_report).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Email to Admin", command=email_report).pack(side=tk.LEFT, padx=5)
@@ -621,7 +621,7 @@ This email was sent from the Module Scheduling GUI.
 
         self.log_activity("Module report generated")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate report: {e}")
+        messagebox.showerror("Error", f"Failed to generate report: {e}", parent=self.root)
 
 ModuleSchedulingGUI.generate_module_report = generate_module_report
 

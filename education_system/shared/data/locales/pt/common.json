@@ -1,0 +1,121 @@
+{
+    "app": {
+        "title": "Sistema Educacional",
+        "language_selector": {
+            "title": "Selecionar idioma",
+            "subtitle": "Escolha o seu idioma preferido",
+            "confirm": "OK",
+            "cancel": "Cancelar"
+        }
+    },
+    "login": {
+        "title": "Sistema Educacional - Iniciar sessão",
+        "sign_in": "Inicie sessão para continuar",
+        "username": "Nome de utilizador",
+        "password": "Palavra-passe",
+        "login_button": "Iniciar sessão",
+        "enter_both": "Por favor, introduza o nome de utilizador e a palavra-passe.",
+        "no_access": "A sua conta não tem acesso a nenhum sistema.",
+        "contact_admin": "Por favor, contacte um administrador.",
+        "default_hint": "Padrão: superadmin / SuperAdmin@123"
+    },
+    "mfa": {
+        "title": "Autenticação de dois fatores",
+        "enter_code": "Introduza o seu código de autenticação:",
+        "code_sent": "Foi enviado um código de verificação para {email}",
+        "code_failed": "Falha no envio do e-mail. O seu código é apresentado abaixo:",
+        "verify": "Verificar",
+        "back_to_login": "Voltar ao início de sessão",
+        "enter_code_prompt": "Por favor, introduza um código."
+    },
+    "system_picker": {
+        "welcome": "Bem-vindo/a, {name}",
+        "choose_system": "Escolha um sistema para iniciar:",
+        "university": "Sistema de Gestão Universitária",
+        "college": "Sistema Sixth Form College",
+        "secondary": "Sistema de Escola Secundária",
+        "primary": "Sistema de Escola Primária",
+        "logout": "Terminar sessão",
+        "superadmin_dashboard": "Painel do Super Administrador"
+    },
+    "common": {
+        "ok": "OK",
+        "cancel": "Cancelar",
+        "save": "Guardar",
+        "delete": "Eliminar",
+        "edit": "Editar",
+        "add": "Adicionar",
+        "search": "Pesquisar",
+        "refresh": "Atualizar",
+        "close": "Fechar",
+        "back": "Voltar",
+        "next": "Seguinte",
+        "yes": "Sim",
+        "no": "Não",
+        "confirm": "Confirmar",
+        "error": "Erro",
+        "success": "Sucesso",
+        "warning": "Aviso",
+        "loading": "A carregar...",
+        "no_results": "Nenhum resultado encontrado",
+        "actions": "Ações",
+        "status": "Estado",
+        "name": "Nome",
+        "email": "E-mail",
+        "date": "Data",
+        "type": "Tipo",
+        "description": "Descrição",
+        "submit": "Submeter",
+        "export": "Exportar",
+        "import": "Importar",
+        "filter": "Filtrar",
+        "clear": "Limpar",
+        "select_all": "Selecionar tudo",
+        "deselect_all": "Desselecionar tudo",
+        "active": "Ativo",
+        "inactive": "Inativo",
+        "transferred": "Transferido"
+    },
+    "shared_modules": {
+        "cross_system_notifications": "Notificações entre sistemas",
+        "student_journey": "Percurso do estudante",
+        "analytics_dashboard": "Painel de análise",
+        "outcome_tracking": "Acompanhamento de resultados",
+        "predictive_alerts": "Alertas preditivos",
+        "bulk_transfer": "Transferência em massa",
+        "transfer_documents": "Documentos de transferência",
+        "reverse_lookup": "Pesquisa inversa",
+        "parent_continuity": "Continuidade dos pais",
+        "cross_system_calendar": "Calendário entre sistemas",
+        "inter_system_messaging": "Mensagens entre sistemas",
+        "central_admin_portal": "Portal de administração central",
+        "gdpr_compliance": "Conformidade com o RGPD",
+        "shared_documents": "Documentos partilhados",
+        "student_self_service": "Autoatendimento do estudante",
+        "digital_transcript": "Certificado académico digital"
+    },
+    "switch_system": {
+        "title": "Mudar de sistema",
+        "switch_to": "Mudar para:",
+        "switching": "A mudar para {system}..."
+    },
+    "superadmin": {
+        "title": "Painel do Super Administrador",
+        "overview": "Painel",
+        "system_health": "Estado do sistema",
+        "user_management": "Gestão de utilizadores",
+        "student_analytics": "Análise de estudantes",
+        "notifications": "Notificações",
+        "student_search": "Pesquisa de estudantes",
+        "audit_log": "Registo de auditoria",
+        "quick_launch": "Acesso rápido"
+    },
+    "roles": {
+        "admin": "Administrador",
+        "staff": "Funcionário",
+        "teacher": "Professor",
+        "student": "Estudante",
+        "parent": "Encarregado de educação",
+        "superadmin": "Super Administrador"
+    }
+}

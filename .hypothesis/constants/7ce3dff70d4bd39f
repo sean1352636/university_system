@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/plugins/slack.py
+# hypothesis_version: 6.151.9
+
+[300, 500, 'Action', 'CRITICAL', 'Details', 'IP Address', 'Module', 'Status', 'Timestamp', 'User', 'attachments', 'color', 'danger', 'fields', 'footer', 'rate_limit_seconds', 'short', 'slack_webhook_url', 'text', 'title', 'value', 'warning']

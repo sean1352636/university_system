@@ -14,8 +14,8 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
-from ..constants import REFERRAL_REWARD
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.constants import REFERRAL_REWARD
 
 def show_referrals_page(self):
     self.clear_content()
@@ -42,12 +42,14 @@ def show_referrals_page(self):
         self.referral_tree.column(col, width=100)
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM cinema_referrals ORDER BY created_at DESC")
-    for row in cursor.fetchall():
-        self.referral_tree.insert("", "end", values=(row[0], row[1], row[2], row[3] or "-",
-                                                    row[4].upper(), "Yes" if row[5] else "No", row[6][:10]))
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM cinema_referrals ORDER BY created_at DESC")
+        for row in cursor.fetchall():
+            self.referral_tree.insert("", "end", values=(row[0], row[1], row[2], row[3] or "-",
+                                                        row[4].upper(), "Yes" if row[5] else "No", row[6][:10]))
+    finally:
+        conn.close()
 
     self.referral_tree.pack(fill="both", expand=True, side="left")
     scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.referral_tree.yview)
@@ -82,11 +84,13 @@ def create_referral(self):
             return
         code = 'REF' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("""INSERT INTO cinema_referrals (referral_code, referrer_email, status, created_at)
-                        VALUES (?, ?, 'pending', datetime('now'))""", (code, email_e.get().strip()))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""INSERT INTO cinema_referrals (referral_code, referrer_email, status, created_at)
+                            VALUES (?, ?, 'pending', datetime('now'))""", (code, email_e.get().strip()))
+            conn.commit()
+        finally:
+            conn.close()
         messagebox.showinfo(_t("cinema.common.success"), f"Referral code created: {code}")
         form.destroy()
         self.show_referrals_page()
@@ -103,11 +107,13 @@ def use_referral(self):
     referee_email = simpledialog.askstring("Referee", "Enter referee email:")
     if referee_email:
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("UPDATE cinema_referrals SET referee_email = ?, status = 'used' WHERE id = ?",
-                      (referee_email, ref_id))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE cinema_referrals SET referee_email = ?, status = 'used' WHERE id = ?",
+                          (referee_email, ref_id))
+            conn.commit()
+        finally:
+            conn.close()
         messagebox.showinfo(_t("cinema.common.success"), "Referral marked as used")
         self.show_referrals_page()
 
@@ -119,9 +125,11 @@ def give_referral_reward(self):
     ref_id = self.referral_tree.item(selected[0])['values'][0]
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("UPDATE cinema_referrals SET reward_given = 1, status = 'completed' WHERE id = ?", (ref_id,))
-    conn.commit()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE cinema_referrals SET reward_given = 1, status = 'completed' WHERE id = ?", (ref_id,))
+        conn.commit()
+    finally:
+        conn.close()
     messagebox.showinfo(_t("cinema.common.success"), "Reward marked as given")
     self.show_referrals_page()

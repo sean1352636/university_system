@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/printing_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/printing', '/jobs', '/jobs/<int:job_id>', '/quotas', 'GET', 'POST', 'color', 'color_pages_used', 'copies', 'cost_credits', 'create', 'double_sided', 'file_name', 'items', 'pages', 'paper_size', 'print_jobs', 'print_quotas', 'printer_location', 'printing', 'search', 'semester', 'semester = ?', 'status', 'status = ?', 'student_id', 'student_id = ?', 'sub', 'total', 'total_pages', 'used_pages', 'view']

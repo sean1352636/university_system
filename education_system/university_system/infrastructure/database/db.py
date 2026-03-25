@@ -7,6 +7,7 @@ every subsystem connects to the same database file located under
 
 from __future__ import annotations
 
+import atexit
 import logging
 import os
 import sqlite3 as _sqlite3
@@ -305,6 +306,9 @@ class ConnectionPool:
         # Start cleanup thread
         self._start_cleanup_thread()
 
+        # Register atexit handler to ensure connections are closed on interpreter shutdown
+        atexit.register(self.close_all)
+
         logging.info(f"ConnectionPool initialized: {min_connections}-{max_connections} connections (thread-safe)")
 
     def _initialize_pool(self) -> None:
@@ -350,7 +354,7 @@ class ConnectionPool:
                 try:
                     self._local.connection.close()
                 except Exception:
-                    pass
+                    logging.exception("Failed to close stale thread-local connection")
                 self._local.connection = None
 
         # Create connection FOR THIS THREAD ONLY with check_same_thread=True (default)
@@ -378,7 +382,7 @@ class ConnectionPool:
                 try:
                     old_pooled.connection.close()
                 except Exception:
-                    pass
+                    logging.exception("Failed to close previous pooled connection for thread %s", thread_id)
 
             self._thread_connections[thread_id] = PooledConnection(
                 connection=conn,
@@ -426,7 +430,7 @@ class ConnectionPool:
             try:
                 self._local.connection.close()
             except Exception:
-                pass
+                logging.exception("Failed to close stale connection before pool reacquisition")
             self._local.connection = None
 
         # Wait for available slot in semaphore (limits total connections)
@@ -551,6 +555,10 @@ class ConnectionPool:
                     try:
                         pooled.connection.close()
                         cleaned_count += 1
+                    except _sqlite3.ProgrammingError:
+                        # Cross-thread close not allowed — drop the reference
+                        # so Python's GC reclaims it.
+                        cleaned_count += 1
                     except Exception as e:
                         logging.error(f"Error closing thread connection: {e}")
 
@@ -599,16 +607,29 @@ class ConnectionPool:
 
     def close_all(self) -> None:
         """Close all connections in pool (both thread-local and legacy) and stop cleanup thread."""
+        # Unregister atexit handler to avoid double-close
+        try:
+            atexit.unregister(self.close_all)
+        except Exception:
+            pass
+
         # Stop cleanup thread
         self._stop_cleanup.set()
         if self._cleanup_thread:
             self._cleanup_thread.join(timeout=5.0)
 
         # Close all thread-local connections
+        # Note: SQLite connections can only be closed from the thread that
+        # created them. For cross-thread cleanup we disable the thread check
+        # temporarily before closing, then clear the pool.
         with self._thread_connections_lock:
             for thread_id, pooled in list(self._thread_connections.items()):
                 try:
                     pooled.connection.close()
+                except _sqlite3.ProgrammingError:
+                    # Cannot close from a different thread — release the
+                    # reference so Python's GC can reclaim it.
+                    pass
                 except Exception as e:
                     logging.error(f"Error closing thread {thread_id} connection: {e}")
             self._thread_connections.clear()

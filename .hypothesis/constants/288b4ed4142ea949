@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/loyalty/referrals.py
+# hypothesis_version: 6.151.9
+
+[100, '#27ae60', '#333333', '#7f8c8d', '#e74c3c', '#ecf0f1', '#ffffff', '-', '.', '400x300', 'Card.TFrame', 'Code', 'Created', 'Enter referee email:', 'Enter referrer email', 'Helvetica', 'ID', 'Main.TFrame', 'New Referral', 'No', 'REF', 'Referee', 'Referee Email', 'Referrer Email', 'Reward Given', 'Select a referral', 'Status', 'Subtitle.TLabel', 'Success.TButton', 'Yes', '_', 'bold', 'both', 'cinema.btn.mark_used', 'end', 'headings', 'left', 'right', 'values', 'vertical', 'w', 'x', 'y']

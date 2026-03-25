@@ -1,8 +1,9 @@
 from datetime import datetime
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.infrastructure.email.email_service import send_email
 from education_system.university_system.infrastructure.email.template_utils import load_template, render_template
-from .core import safe_execute, auth
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.core import safe_execute, auth
 
 
 def create_newsletter():
@@ -83,12 +84,12 @@ def create_newsletter():
         industry = input("Enter industry: ")
         target_audience = f"industry:{industry}"
         audience_filter = "industry LIKE ?"
-        filter_params = [f"%{industry}%"]
+        filter_params = [f"%{escape_like(industry)}%"]
     elif audience_choice == '4':
         location = input("Enter city or country: ")
         target_audience = f"location:{location}"
         audience_filter = "city LIKE ? OR country LIKE ?"
-        filter_params = [f"%{location}%", f"%{location}%"]
+        filter_params = [f"%{escape_like(location)}%", f"%{escape_like(location)}%"]
     elif audience_choice == '5':
         target_audience = "donors"
         audience_filter = "is_donor = 1"

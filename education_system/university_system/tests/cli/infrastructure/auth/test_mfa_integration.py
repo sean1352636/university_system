@@ -21,12 +21,12 @@ class TestMFAIntegration:
 
     def test_init(self):
         """Test MFAIntegration initialization"""
-        with patch('university_system.infrastructure.auth.mfa_integration.MFAService'):
+        with patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAService'):
             integration = MFAIntegration()
 
             assert integration.mfa_service is not None
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAService')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAService')
     def test_check_mfa_requirement_not_required(self, mock_service_class):
         """Test MFA check when not required"""
         mock_service = MagicMock()
@@ -44,7 +44,7 @@ class TestMFAIntegration:
         assert result['needs_setup'] is False
         assert result['must_verify'] is False
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAService')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAService')
     def test_check_mfa_requirement_bypassed(self, mock_service_class):
         """Test MFA check when bypassed"""
         mock_service = MagicMock()
@@ -61,7 +61,7 @@ class TestMFAIntegration:
         assert result['bypassed'] is True
         assert result['must_verify'] is False
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAService')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAService')
     def test_check_mfa_requirement_already_enabled(self, mock_service_class):
         """Test MFA check when already enabled"""
         mock_service = MagicMock()
@@ -78,7 +78,7 @@ class TestMFAIntegration:
         assert result['must_verify'] is True
         assert result['needs_setup'] is False
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAService')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAService')
     def test_check_mfa_requirement_grace_period(self, mock_service_class):
         """Test MFA check during grace period"""
         mock_service = MagicMock()
@@ -99,7 +99,7 @@ class TestMFAIntegration:
         assert result['must_verify'] is False
         assert result['grace_deadline'] == '2024-12-31'
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAService')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAService')
     def test_check_mfa_requirement_setup_required(self, mock_service_class):
         """Test MFA check when setup is required"""
         mock_service = MagicMock()
@@ -117,7 +117,7 @@ class TestMFAIntegration:
         assert result['needs_setup'] is True
         assert result['must_verify'] is False
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAService')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAService')
     def test_check_mfa_requirement_error(self, mock_service_class):
         """Test MFA check when service returns error"""
         mock_service = MagicMock()
@@ -136,7 +136,7 @@ class TestMFAIntegration:
         assert result['must_verify'] is False
         assert 'error' in result
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAService')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAService')
     def test_check_device_trust_trusted(self, mock_service_class):
         """Test device trust check for trusted device"""
         mock_service = MagicMock()
@@ -155,7 +155,7 @@ class TestMFAIntegration:
 
         assert is_trusted is True
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAService')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAService')
     def test_check_device_trust_not_trusted(self, mock_service_class):
         """Test device trust check for untrusted device"""
         mock_service = MagicMock()
@@ -174,7 +174,7 @@ class TestMFAIntegration:
 
         assert is_trusted is False
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAService')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAService')
     def test_check_device_trust_missing_params(self, mock_service_class):
         """Test device trust check with missing parameters"""
         integration = MFAIntegration()
@@ -191,7 +191,7 @@ class TestMFAIntegration:
         is_trusted = integration.check_device_trust(1, 'device123', None)
         assert is_trusted is False
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAService')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAService')
     def test_is_mfa_locked_true(self, mock_service_class):
         """Test MFA lock check when locked"""
         mock_service = MagicMock()
@@ -205,7 +205,7 @@ class TestMFAIntegration:
         assert reason is not None
         assert 'locked' in reason.lower()
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAService')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAService')
     def test_is_mfa_locked_false(self, mock_service_class):
         """Test MFA lock check when not locked"""
         mock_service = MagicMock()
@@ -218,7 +218,7 @@ class TestMFAIntegration:
         assert is_locked is False
         assert reason is None
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAService')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAService')
     def test_get_user_mfa_methods(self, mock_service_class):
         """Test getting user MFA methods"""
         mock_service = MagicMock()
@@ -241,7 +241,7 @@ class TestMFAIntegration:
 class TestIntegrateMFACheck:
     """Test integrate_mfa_check function"""
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAIntegration')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAIntegration')
     def test_integrate_mfa_check_locked(self, mock_integration_class):
         """Test MFA check when account is locked"""
         mock_integration = MagicMock()
@@ -253,7 +253,7 @@ class TestIntegrateMFACheck:
         assert result['action'] == 'locked'
         assert 'locked' in result['message'].lower()
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAIntegration')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAIntegration')
     def test_integrate_mfa_check_trusted_device(self, mock_integration_class):
         """Test MFA check with trusted device"""
         mock_integration = MagicMock()
@@ -272,7 +272,7 @@ class TestIntegrateMFACheck:
         assert 'trusted device' in result['message']
         assert result['data']['trusted_device'] is True
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAIntegration')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAIntegration')
     def test_integrate_mfa_check_require_mfa(self, mock_integration_class):
         """Test MFA check requiring verification"""
         mock_integration = MagicMock()
@@ -294,7 +294,7 @@ class TestIntegrateMFACheck:
         assert 'user_id' in result['data']
         assert 'methods' in result['data']
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAIntegration')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAIntegration')
     def test_integrate_mfa_check_require_setup(self, mock_integration_class):
         """Test MFA check requiring setup"""
         mock_integration = MagicMock()
@@ -311,7 +311,7 @@ class TestIntegrateMFACheck:
         assert 'required' in result['message'].lower()
         assert result['data']['required'] is True
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAIntegration')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAIntegration')
     def test_integrate_mfa_check_grace_period(self, mock_integration_class):
         """Test MFA check in grace period"""
         mock_integration = MagicMock()
@@ -331,7 +331,7 @@ class TestIntegrateMFACheck:
         assert result['data']['deadline'] == '2024-12-31'
         assert result['data']['required'] is True
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAIntegration')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAIntegration')
     def test_integrate_mfa_check_allow(self, mock_integration_class):
         """Test MFA check allowing login"""
         mock_integration = MagicMock()
@@ -345,7 +345,7 @@ class TestIntegrateMFACheck:
         assert result['action'] == 'allow'
         assert 'successful' in result['message'].lower()
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAIntegration')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAIntegration')
     def test_integrate_mfa_check_error(self, mock_integration_class):
         """Test MFA check with error"""
         mock_integration = MagicMock()
@@ -372,7 +372,7 @@ class TestCreateMFAPatch:
 
         assert callable(patch_func)
 
-    @patch('university_system.infrastructure.auth.mfa_integration.integrate_mfa_check')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.integrate_mfa_check')
     def test_mfa_patch_calls_integrate_mfa_check(self, mock_integrate):
         """Test that MFA patch calls integrate_mfa_check"""
         mock_integrate.return_value = {'action': 'allow', 'message': 'Success', 'data': {}}
@@ -383,7 +383,7 @@ class TestCreateMFAPatch:
         assert result['action'] == 'allow'
         mock_integrate.assert_called_once_with(1, 'student', None, None)
 
-    @patch('university_system.infrastructure.auth.mfa_integration.integrate_mfa_check')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.integrate_mfa_check')
     def test_mfa_patch_with_device_params(self, mock_integrate):
         """Test MFA patch with device parameters"""
         mock_integrate.return_value = {'action': 'allow', 'message': 'Success', 'data': {}}
@@ -402,8 +402,8 @@ class TestCreateMFAPatch:
 class TestGUIIntegrationHelpers:
     """Test GUI integration helper functions"""
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAIntegration')
-    @patch('university_system.infrastructure.auth.mfa_integration.show_mfa_verification')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAIntegration')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.show_mfa_verification')
     def test_show_mfa_for_login_success(self, mock_show_verification, mock_integration_class):
         """Test show_mfa_for_login with successful verification"""
         # Setup mock integration
@@ -424,7 +424,7 @@ class TestGUIIntegrationHelpers:
 
         assert verified is True
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAIntegration')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAIntegration')
     def test_show_mfa_for_login_no_methods(self, mock_integration_class):
         """Test show_mfa_for_login when no MFA methods configured"""
         # Setup mock integration
@@ -443,7 +443,7 @@ class TestGUIIntegrationHelpers:
         assert verified is False
         assert trust_token is None
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAIntegration')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAIntegration')
     def test_show_mfa_for_login_error(self, mock_integration_class):
         """Test show_mfa_for_login when service returns error"""
         # Setup mock integration
@@ -460,7 +460,7 @@ class TestGUIIntegrationHelpers:
 
         assert verified is False
 
-    @patch('university_system.infrastructure.auth.mfa_integration.show_mfa_setup')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.show_mfa_setup')
     def test_show_mfa_setup_for_login_success(self, mock_show_setup):
         """Test show_mfa_setup_for_login with successful setup"""
         # Mock setup dialog
@@ -477,7 +477,7 @@ class TestGUIIntegrationHelpers:
 
         assert completed is True
 
-    @patch('university_system.infrastructure.auth.mfa_integration.show_mfa_setup')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.show_mfa_setup')
     def test_show_mfa_setup_for_login_cancelled(self, mock_show_setup):
         """Test show_mfa_setup_for_login when user cancels"""
         # Mock setup dialog - don't call on_complete
@@ -490,7 +490,7 @@ class TestGUIIntegrationHelpers:
 
         assert completed is False
 
-    @patch('university_system.infrastructure.auth.mfa_integration.show_mfa_setup')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.show_mfa_setup')
     def test_show_mfa_setup_for_login_error(self, mock_show_setup):
         """Test show_mfa_setup_for_login when error occurs"""
         # Mock setup dialog to raise exception
@@ -519,7 +519,7 @@ class TestIntegrationExample:
 class TestEdgeCases:
     """Test edge cases and error handling"""
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAIntegration')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAIntegration')
     def test_integrate_mfa_check_none_params(self, mock_integration_class):
         """Test integrate_mfa_check with None parameters"""
         mock_integration = MagicMock()
@@ -535,7 +535,7 @@ class TestEdgeCases:
         assert 'message' in result
         assert 'data' in result
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAIntegration')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAIntegration')
     def test_device_trust_without_device_id(self, mock_integration_class):
         """Test device trust check without device_id"""
         mock_integration = MagicMock()
@@ -548,7 +548,7 @@ class TestEdgeCases:
 
         assert result['action'] == 'allow'
 
-    @patch('university_system.infrastructure.auth.mfa_integration.MFAIntegration')
+    @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAIntegration')
     def test_device_trust_without_trust_token(self, mock_integration_class):
         """Test device trust check without trust_token"""
         mock_integration = MagicMock()

@@ -5,6 +5,7 @@ Backwards compatible with existing database and auth systems
 """
 
 
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
@@ -114,7 +115,7 @@ except ImportError:
 _AUDIT_LOG_COLUMNS_CACHE: Optional[List[str]] = None
 _STUDENT_COLUMNS_CACHE: Optional[List[str]] = None
 
-from .base import LibraryGUI
+from education_system.university_system.modules.domain.academics.gui.library.base import LibraryGUI
 
 def show_search_books(self):
     """Show advanced search interface"""
@@ -279,7 +280,7 @@ def show_advanced_search(self):
     """Show advanced search dialog with multiple criteria"""
     dialog = tk.Toplevel(self.master)
     dialog.title(_("library.dialogs.advanced_book_search"))
-    dialog.geometry("600x500")
+    dialog.geometry("650x700")
     dialog.transient(self.master)
 
     # Search criteria frame
@@ -362,23 +363,23 @@ def show_advanced_search(self):
 
             if fields['title'].get():
                 query += " AND title LIKE ?"
-                params.append(f"%{fields['title'].get()}%")
+                params.append(f"%{escape_like(fields['title'].get())}%")
 
             if fields['author'].get():
                 query += " AND author LIKE ?"
-                params.append(f"%{fields['author'].get()}%")
+                params.append(f"%{escape_like(fields['author'].get())}%")
 
             if fields['isbn'].get():
                 query += " AND isbn LIKE ?"
-                params.append(f"%{fields['isbn'].get()}%")
+                params.append(f"%{escape_like(fields['isbn'].get())}%")
 
             if fields['category'].get():
                 query += " AND category LIKE ?"
-                params.append(f"%{fields['category'].get()}%")
+                params.append(f"%{escape_like(fields['category'].get())}%")
 
             if fields['publisher'].get():
                 query += " AND publisher LIKE ?"
-                params.append(f"%{fields['publisher'].get()}%")
+                params.append(f"%{escape_like(fields['publisher'].get())}%")
 
             if fields['year_from'].get():
                 query += " AND publication_year >= ?"
@@ -483,7 +484,7 @@ def show_advanced_search_gui(self):
                         params.append(int(value))
                     else:
                         query += f" AND {field} LIKE ?"
-                        params.append(f"%{value}%")
+                        params.append(f"%{escape_like(value)}%")
 
             query += " ORDER BY title LIMIT 100"
 

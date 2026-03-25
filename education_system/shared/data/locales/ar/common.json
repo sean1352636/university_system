@@ -1,0 +1,121 @@
+{
+    "app": {
+        "title": "النظام التعليمي",
+        "language_selector": {
+            "title": "اختيار اللغة",
+            "subtitle": "اختر لغتك المفضلة",
+            "confirm": "موافق",
+            "cancel": "إلغاء"
+        }
+    },
+    "login": {
+        "title": "النظام التعليمي - تسجيل الدخول",
+        "sign_in": "سجّل الدخول للمتابعة",
+        "username": "اسم المستخدم",
+        "password": "كلمة المرور",
+        "login_button": "تسجيل الدخول",
+        "enter_both": "يرجى إدخال اسم المستخدم وكلمة المرور.",
+        "no_access": "حسابك لا يملك صلاحية الوصول إلى أي نظام.",
+        "contact_admin": "يرجى التواصل مع المسؤول.",
+        "default_hint": "الافتراضي: superadmin / SuperAdmin@123"
+    },
+    "mfa": {
+        "title": "المصادقة الثنائية",
+        "enter_code": "أدخل رمز المصادقة الخاص بك:",
+        "code_sent": "تم إرسال رمز التحقق إلى {email}",
+        "code_failed": "فشل إرسال البريد الإلكتروني. رمزك معروض أدناه:",
+        "verify": "تحقق",
+        "back_to_login": "العودة لتسجيل الدخول",
+        "enter_code_prompt": "يرجى إدخال رمز."
+    },
+    "system_picker": {
+        "welcome": "مرحباً، {name}",
+        "choose_system": "اختر نظاماً لتشغيله:",
+        "university": "نظام إدارة الجامعة",
+        "college": "نظام كلية السادس فورم",
+        "secondary": "نظام المدرسة الثانوية",
+        "primary": "نظام المدرسة الابتدائية",
+        "logout": "تسجيل الخروج",
+        "superadmin_dashboard": "لوحة تحكم المسؤول الأعلى"
+    },
+    "common": {
+        "ok": "موافق",
+        "cancel": "إلغاء",
+        "save": "حفظ",
+        "delete": "حذف",
+        "edit": "تعديل",
+        "add": "إضافة",
+        "search": "بحث",
+        "refresh": "تحديث",
+        "close": "إغلاق",
+        "back": "رجوع",
+        "next": "التالي",
+        "yes": "نعم",
+        "no": "لا",
+        "confirm": "تأكيد",
+        "error": "خطأ",
+        "success": "نجاح",
+        "warning": "تحذير",
+        "loading": "جارٍ التحميل...",
+        "no_results": "لم يتم العثور على نتائج",
+        "actions": "إجراءات",
+        "status": "الحالة",
+        "name": "الاسم",
+        "email": "البريد الإلكتروني",
+        "date": "التاريخ",
+        "type": "النوع",
+        "description": "الوصف",
+        "submit": "إرسال",
+        "export": "تصدير",
+        "import": "استيراد",
+        "filter": "تصفية",
+        "clear": "مسح",
+        "select_all": "تحديد الكل",
+        "deselect_all": "إلغاء تحديد الكل",
+        "active": "نشط",
+        "inactive": "غير نشط",
+        "transferred": "محوّل"
+    },
+    "shared_modules": {
+        "cross_system_notifications": "إشعارات عبر الأنظمة",
+        "student_journey": "مسيرة الطالب",
+        "analytics_dashboard": "لوحة التحليلات",
+        "outcome_tracking": "تتبع النتائج",
+        "predictive_alerts": "تنبيهات تنبؤية",
+        "bulk_transfer": "نقل جماعي",
+        "transfer_documents": "مستندات النقل",
+        "reverse_lookup": "بحث عكسي",
+        "parent_continuity": "استمرارية أولياء الأمور",
+        "cross_system_calendar": "تقويم عبر الأنظمة",
+        "inter_system_messaging": "مراسلات بين الأنظمة",
+        "central_admin_portal": "بوابة الإدارة المركزية",
+        "gdpr_compliance": "الامتثال للائحة حماية البيانات",
+        "shared_documents": "المستندات المشتركة",
+        "student_self_service": "الخدمة الذاتية للطالب",
+        "digital_transcript": "كشف الدرجات الرقمي"
+    },
+    "switch_system": {
+        "title": "تبديل النظام",
+        "switch_to": "التبديل إلى:",
+        "switching": "جارٍ التبديل إلى {system}..."
+    },
+    "superadmin": {
+        "title": "لوحة تحكم المسؤول الأعلى",
+        "overview": "لوحة التحكم",
+        "system_health": "صحة النظام",
+        "user_management": "إدارة المستخدمين",
+        "student_analytics": "تحليلات الطلاب",
+        "notifications": "الإشعارات",
+        "student_search": "بحث الطلاب",
+        "audit_log": "سجل التدقيق",
+        "quick_launch": "تشغيل سريع"
+    },
+    "roles": {
+        "admin": "مسؤول",
+        "staff": "موظف",
+        "teacher": "معلم",
+        "student": "طالب",
+        "parent": "ولي أمر",
+        "superadmin": "المسؤول الأعلى"
+    }
+}

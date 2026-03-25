@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/attendance/notifications.py
+# hypothesis_version: 6.151.9
+
+['True', 'api_key', 'attendance_alert', 'critical', 'enable_parent_portal', 'high', 'message', 'parent_notification', 'recipient', 'sms_api_key', 'subject', 'timestamp', 'to']

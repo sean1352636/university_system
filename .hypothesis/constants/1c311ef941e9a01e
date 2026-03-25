@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/managers/permission_manager.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d %H:%M:%S', 'PermissionManager', 'User not found.', '^[a-z][a-z0-9_]*$', 'granted', 'id', 'manage_roles', 'permissions', 'revoked', 'username']

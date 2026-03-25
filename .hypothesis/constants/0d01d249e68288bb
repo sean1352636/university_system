@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/portfolio_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/portfolio', '/items', '/items/<int:item_id>', '/portfolios', '/skills', 'GET', 'POST', 'achievements', 'bio', 'category', 'category = ?', 'create', 'description', 'end_date', 'github_url', 'headline', 'is_featured', 'is_public', 'is_public = ?', 'items', 'linkedin_url', 'organization', 'personal_website', 'portfolio', 'portfolio_id', 'portfolio_id = ?', 'portfolio_items', 'portfolios', 'proficiency_level', 'profile_image_url', 'role', 'search', 'skill_category', 'skill_category = ?', 'skill_name', 'start_date', 'student_id', 'student_id = ?', 'student_skills', 'sub', 'technologies', 'title', 'total', 'url', 'view', 'years_experience']

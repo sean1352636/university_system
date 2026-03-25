@@ -4,9 +4,10 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.college_system.modules.domain.internal_verification.services.internal_verification_service import InternalVerificationService
+from education_system.college_system.core.i18n import t
 
 
-# ── Dialogs ──────────────────────────────────────────────────────
+# -- Dialogs ------------------------------------------------------------------
 
 
 class _PlanDialog(tk.Toplevel):
@@ -36,12 +37,12 @@ class _PlanDialog(tk.Toplevel):
         self._vars: dict[str, tk.StringVar] = {}
 
         fields = [
-            ("course_id", "Course ID"),
-            ("academic_year", "Academic Year"),
-            ("lead_iv_id", "Lead IV (Staff ID)"),
-            ("sampling_strategy", "Sampling Strategy"),
-            ("sample_size_pct", "Sample Size %"),
-            ("status", "Status"),
+            ("course_id", t("internal_verification.course") + " ID"),
+            ("academic_year", t("internal_verification.academic_year")),
+            ("lead_iv_id", t("internal_verification.lead_iv")),
+            ("sampling_strategy", t("internal_verification.sampling_strategy")),
+            ("sample_size_pct", t("internal_verification.sample_size") + " %"),
+            ("status", t("common.status")),
         ]
         for row, (key, label) in enumerate(fields):
             tk.Label(c, text=label, anchor="w",
@@ -52,8 +53,8 @@ class _PlanDialog(tk.Toplevel):
 
         btn = tk.Frame(c)
         btn.grid(row=len(fields), column=0, columnspan=2, pady=(15, 0))
-        ttk.Button(btn, text="Save", command=self._on_save).pack(side="left", padx=5)
-        ttk.Button(btn, text="Cancel", command=self.destroy).pack(side="left", padx=5)
+        ttk.Button(btn, text=t("common.save"), command=self._on_save).pack(side="left", padx=5)
+        ttk.Button(btn, text=t("common.cancel"), command=self.destroy).pack(side="left", padx=5)
 
     def _on_save(self):
         self.result = {k: v.get().strip() for k, v in self._vars.items()}
@@ -87,13 +88,13 @@ class _SampleDialog(tk.Toplevel):
         self._vars: dict[str, tk.StringVar] = {}
 
         fields = [
-            ("plan_id", "Plan ID"),
-            ("assignment_title", "Assignment Title"),
-            ("assessor_id", "Assessor ID"),
-            ("verifier_id", "Verifier ID"),
-            ("sample_date", "Sample Date (YYYY-MM-DD)"),
-            ("student_ids", "Student IDs (comma-sep)"),
-            ("status", "Status"),
+            ("plan_id", t("internal_verification.plan_id")),
+            ("assignment_title", t("internal_verification.assignment_title")),
+            ("assessor_id", t("internal_verification.assessor_id")),
+            ("verifier_id", t("internal_verification.verifier") + " ID"),
+            ("sample_date", t("internal_verification.sample_date")),
+            ("student_ids", t("internal_verification.student_ids")),
+            ("status", t("common.status")),
         ]
         for row, (key, label) in enumerate(fields):
             tk.Label(c, text=label, anchor="w",
@@ -104,8 +105,8 @@ class _SampleDialog(tk.Toplevel):
 
         btn = tk.Frame(c)
         btn.grid(row=len(fields), column=0, columnspan=2, pady=(15, 0))
-        ttk.Button(btn, text="Save", command=self._on_save).pack(side="left", padx=5)
-        ttk.Button(btn, text="Cancel", command=self.destroy).pack(side="left", padx=5)
+        ttk.Button(btn, text=t("common.save"), command=self._on_save).pack(side="left", padx=5)
+        ttk.Button(btn, text=t("common.cancel"), command=self.destroy).pack(side="left", padx=5)
 
     def _on_save(self):
         self.result = {k: v.get().strip() for k, v in self._vars.items()}
@@ -115,9 +116,9 @@ class _SampleDialog(tk.Toplevel):
 class _CompleteSampleDialog(tk.Toplevel):
     """Dialog for completing a sample verification."""
 
-    def __init__(self, parent, title="Complete Sample"):
+    def __init__(self, parent, title=None):
         super().__init__(parent)
-        self.title(title)
+        self.title(title or t("internal_verification.complete_sample"))
         self.resizable(False, False)
         self.grab_set()
         self.result: dict | None = None
@@ -141,29 +142,29 @@ class _CompleteSampleDialog(tk.Toplevel):
         self._quality_var = tk.StringVar()
         self._action_var = tk.StringVar()
 
-        tk.Label(c, text="Decisions Agreed?", anchor="w",
+        tk.Label(c, text=t("internal_verification.decisions_agreed"), anchor="w",
                  font=("Helvetica", 9, "bold")).grid(row=0, column=0, sticky="w", **pad)
         ttk.Checkbutton(c, variable=self._decisions_var).grid(row=0, column=1, sticky="w", **pad)
 
-        tk.Label(c, text="Grading Accurate?", anchor="w",
+        tk.Label(c, text=t("internal_verification.grading_accurate"), anchor="w",
                  font=("Helvetica", 9, "bold")).grid(row=1, column=0, sticky="w", **pad)
         ttk.Checkbutton(c, variable=self._grading_var).grid(row=1, column=1, sticky="w", **pad)
 
-        tk.Label(c, text="Feedback Quality", anchor="w",
+        tk.Label(c, text=t("internal_verification.feedback_quality"), anchor="w",
                  font=("Helvetica", 9, "bold")).grid(row=2, column=0, sticky="w", **pad)
         ttk.Combobox(c, textvariable=self._quality_var, width=33,
                      values=["excellent", "good", "adequate", "inadequate"],
                      state="readonly").grid(row=2, column=1, sticky="ew", **pad)
         self._quality_var.set("good")
 
-        tk.Label(c, text="Action Required", anchor="w",
+        tk.Label(c, text=t("internal_verification.action_required"), anchor="w",
                  font=("Helvetica", 9, "bold")).grid(row=3, column=0, sticky="w", **pad)
         ttk.Entry(c, textvariable=self._action_var, width=36).grid(row=3, column=1, sticky="ew", **pad)
 
         btn = tk.Frame(c)
         btn.grid(row=4, column=0, columnspan=2, pady=(15, 0))
-        ttk.Button(btn, text="Complete", command=self._on_save).pack(side="left", padx=5)
-        ttk.Button(btn, text="Cancel", command=self.destroy).pack(side="left", padx=5)
+        ttk.Button(btn, text=t("common.completed"), command=self._on_save).pack(side="left", padx=5)
+        ttk.Button(btn, text=t("common.cancel"), command=self.destroy).pack(side="left", padx=5)
 
     def _on_save(self):
         self.result = {
@@ -202,13 +203,13 @@ class _ObservationDialog(tk.Toplevel):
         self._vars: dict[str, tk.StringVar] = {}
 
         fields = [
-            ("plan_id", "Plan ID"),
-            ("assessor_id", "Assessor ID"),
-            ("observer_id", "Observer ID"),
-            ("observation_date", "Date (YYYY-MM-DD)"),
-            ("assessment_type", "Assessment Type"),
-            ("grade", "Grade"),
-            ("status", "Status"),
+            ("plan_id", t("internal_verification.plan_id")),
+            ("assessor_id", t("internal_verification.assessor_id")),
+            ("observer_id", t("internal_verification.observer_id")),
+            ("observation_date", t("common.date") + " (YYYY-MM-DD)"),
+            ("assessment_type", t("internal_verification.assessment_type")),
+            ("grade", t("common.grade")),
+            ("status", t("common.status")),
         ]
         for row, (key, label) in enumerate(fields):
             tk.Label(c, text=label, anchor="w",
@@ -219,8 +220,8 @@ class _ObservationDialog(tk.Toplevel):
 
         btn = tk.Frame(c)
         btn.grid(row=len(fields), column=0, columnspan=2, pady=(15, 0))
-        ttk.Button(btn, text="Save", command=self._on_save).pack(side="left", padx=5)
-        ttk.Button(btn, text="Cancel", command=self.destroy).pack(side="left", padx=5)
+        ttk.Button(btn, text=t("common.save"), command=self._on_save).pack(side="left", padx=5)
+        ttk.Button(btn, text=t("common.cancel"), command=self.destroy).pack(side="left", padx=5)
 
     def _on_save(self):
         self.result = {k: v.get().strip() for k, v in self._vars.items()}
@@ -230,9 +231,9 @@ class _ObservationDialog(tk.Toplevel):
 class _CompleteObservationDialog(tk.Toplevel):
     """Dialog for completing an observation."""
 
-    def __init__(self, parent, title="Complete Observation"):
+    def __init__(self, parent, title=None):
         super().__init__(parent)
-        self.title(title)
+        self.title(title or t("internal_verification.complete_observation"))
         self.resizable(False, False)
         self.grab_set()
         self.result: dict | None = None
@@ -255,28 +256,28 @@ class _CompleteObservationDialog(tk.Toplevel):
         self._grade_var = tk.StringVar()
         self._actions_var = tk.StringVar()
 
-        tk.Label(c, text="Feedback", anchor="w",
+        tk.Label(c, text=t("internal_verification.feedback"), anchor="w",
                  font=("Helvetica", 9, "bold")).grid(row=0, column=0, sticky="w", **pad)
         ttk.Entry(c, textvariable=self._feedback_var, width=36).grid(row=0, column=1, sticky="ew", **pad)
 
-        tk.Label(c, text="Grade", anchor="w",
+        tk.Label(c, text=t("common.grade"), anchor="w",
                  font=("Helvetica", 9, "bold")).grid(row=1, column=0, sticky="w", **pad)
         ttk.Entry(c, textvariable=self._grade_var, width=36).grid(row=1, column=1, sticky="ew", **pad)
 
-        tk.Label(c, text="Actions (optional)", anchor="w",
+        tk.Label(c, text=t("internal_verification.actions_optional"), anchor="w",
                  font=("Helvetica", 9, "bold")).grid(row=2, column=0, sticky="w", **pad)
         ttk.Entry(c, textvariable=self._actions_var, width=36).grid(row=2, column=1, sticky="ew", **pad)
 
         btn = tk.Frame(c)
         btn.grid(row=3, column=0, columnspan=2, pady=(15, 0))
-        ttk.Button(btn, text="Complete", command=self._on_save).pack(side="left", padx=5)
-        ttk.Button(btn, text="Cancel", command=self.destroy).pack(side="left", padx=5)
+        ttk.Button(btn, text=t("common.completed"), command=self._on_save).pack(side="left", padx=5)
+        ttk.Button(btn, text=t("common.cancel"), command=self.destroy).pack(side="left", padx=5)
 
     def _on_save(self):
         fb = self._feedback_var.get().strip()
         gr = self._grade_var.get().strip()
         if not fb or not gr:
-            messagebox.showwarning("Required", "Feedback and Grade are required.")
+            messagebox.showwarning(t("common.validation"), t("common.field_required"))
             return
         self.result = {
             "feedback": fb,
@@ -286,7 +287,7 @@ class _CompleteObservationDialog(tk.Toplevel):
         self.destroy()
 
 
-# ── Main Frame ───────────────────────────────────────────────────
+# -- Main Frame ----------------------------------------------------------------
 
 
 class InternalVerificationFrame(tk.Frame):
@@ -299,7 +300,7 @@ class InternalVerificationFrame(tk.Frame):
         self._svc = InternalVerificationService(db_path)
         self._build_ui()
 
-    # ── UI construction ──────────────────────────────────────────
+    # -- UI construction -------------------------------------------------------
 
     def _build_ui(self):
         self.configure(bg="#ecf0f1")
@@ -307,7 +308,7 @@ class InternalVerificationFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Internal Verification",
+        tk.Label(header, text=t("internal_verification.management"),
                  font=("Helvetica", 15, "bold"), bg="#2c3e50", fg="white"
                  ).pack(side="left", padx=20, pady=10)
 
@@ -319,33 +320,34 @@ class InternalVerificationFrame(tk.Frame):
         self._build_observations_tab()
         self._build_stats_tab()
 
-    # ── Plans tab ────────────────────────────────────────────────
+    # -- Plans tab -------------------------------------------------------------
 
     def _build_plans_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="IV Plans")
+        self._nb.add(tab, text=t("internal_verification.iv_plans"))
 
         # Filters
         filt = tk.Frame(tab, bg="#ecf0f1")
         filt.pack(fill="x", pady=(0, 8))
-        tk.Label(filt, text="Status:", bg="#ecf0f1").pack(side="left", padx=(0, 4))
+        tk.Label(filt, text=t("common.status") + ":", bg="#ecf0f1").pack(side="left", padx=(0, 4))
         self._plan_status_var = tk.StringVar(value="")
         ttk.Combobox(filt, textvariable=self._plan_status_var, width=12,
                      values=["", "active", "completed", "archived"],
                      state="readonly").pack(side="left", padx=4)
-        tk.Label(filt, text="Course ID:", bg="#ecf0f1").pack(side="left", padx=(12, 4))
+        tk.Label(filt, text=t("internal_verification.course") + " ID:", bg="#ecf0f1").pack(side="left", padx=(12, 4))
         self._plan_course_var = tk.StringVar()
         ttk.Entry(filt, textvariable=self._plan_course_var, width=8).pack(side="left", padx=4)
-        ttk.Button(filt, text="Filter", command=self._load_plans).pack(side="left", padx=8)
+        ttk.Button(filt, text=t("common.filter"), command=self._load_plans).pack(side="left", padx=8)
 
         # Buttons
         toolbar = tk.Frame(tab, bg="#ecf0f1")
         toolbar.pack(fill="x", pady=(0, 8))
-        ttk.Button(toolbar, text="New", command=self._on_plan_new).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="View", command=self._on_plan_view).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Update", command=self._on_plan_update).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Delete", command=self._on_plan_delete).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Refresh", command=self._load_plans).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.create"), command=self._on_plan_new).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.view"), command=self._on_plan_view).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.update"), command=self._on_plan_update).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.delete"), command=self._on_plan_delete).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.refresh"), command=self._load_plans).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.export_csv", default="Export CSV"), command=self._export_plans_csv).pack(side="right", padx=4)
 
         # Treeview
         cols = ("id", "course_id", "academic_year", "lead_iv_id",
@@ -353,12 +355,12 @@ class InternalVerificationFrame(tk.Frame):
         tree_frame = tk.Frame(tab)
         tree_frame.pack(fill="both", expand=True)
         self._plan_tree = ttk.Treeview(tree_frame, columns=cols, show="headings", selectmode="browse")
-        for c, h, w in [("id", "ID", 40), ("course_id", "Course ID", 70),
-                         ("academic_year", "Academic Year", 100),
-                         ("lead_iv_id", "Lead IV", 70),
-                         ("sampling_strategy", "Sampling Strategy", 140),
-                         ("sample_size_pct", "Sample %", 70),
-                         ("status", "Status", 90)]:
+        for c, h, w in [("id", t("common.id"), 40), ("course_id", t("internal_verification.course") + " ID", 70),
+                         ("academic_year", t("internal_verification.academic_year"), 100),
+                         ("lead_iv_id", t("internal_verification.lead_iv"), 70),
+                         ("sampling_strategy", t("internal_verification.sampling_strategy"), 140),
+                         ("sample_size_pct", t("internal_verification.sample_size") + " %", 70),
+                         ("status", t("common.status"), 90)]:
             self._plan_tree.heading(c, text=h)
             self._plan_tree.column(c, width=w, anchor="center")
         vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self._plan_tree.yview)
@@ -366,33 +368,34 @@ class InternalVerificationFrame(tk.Frame):
         self._plan_tree.pack(side="left", fill="both", expand=True)
         vsb.pack(side="right", fill="y")
 
-    # ── Samples tab ──────────────────────────────────────────────
+    # -- Samples tab -----------------------------------------------------------
 
     def _build_samples_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Samples")
+        self._nb.add(tab, text=t("internal_verification.samples"))
 
         # Filters
         filt = tk.Frame(tab, bg="#ecf0f1")
         filt.pack(fill="x", pady=(0, 8))
-        tk.Label(filt, text="Plan ID:", bg="#ecf0f1").pack(side="left", padx=(0, 4))
+        tk.Label(filt, text=t("internal_verification.plan_id") + ":", bg="#ecf0f1").pack(side="left", padx=(0, 4))
         self._sample_plan_var = tk.StringVar()
         ttk.Entry(filt, textvariable=self._sample_plan_var, width=8).pack(side="left", padx=4)
-        tk.Label(filt, text="Status:", bg="#ecf0f1").pack(side="left", padx=(12, 4))
+        tk.Label(filt, text=t("common.status") + ":", bg="#ecf0f1").pack(side="left", padx=(12, 4))
         self._sample_status_var = tk.StringVar(value="")
         ttk.Combobox(filt, textvariable=self._sample_status_var, width=14,
                      values=["", "pending", "in_progress", "completed", "action_required"],
                      state="readonly").pack(side="left", padx=4)
-        ttk.Button(filt, text="Filter", command=self._load_samples).pack(side="left", padx=8)
+        ttk.Button(filt, text=t("common.filter"), command=self._load_samples).pack(side="left", padx=8)
 
         # Buttons
         toolbar = tk.Frame(tab, bg="#ecf0f1")
         toolbar.pack(fill="x", pady=(0, 8))
-        ttk.Button(toolbar, text="New", command=self._on_sample_new).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Complete", command=self._on_sample_complete).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Update", command=self._on_sample_update).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Delete", command=self._on_sample_delete).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Refresh", command=self._load_samples).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.create"), command=self._on_sample_new).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.completed"), command=self._on_sample_complete).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.update"), command=self._on_sample_update).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.delete"), command=self._on_sample_delete).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.refresh"), command=self._load_samples).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.export_csv", default="Export CSV"), command=self._export_samples_csv).pack(side="right", padx=4)
 
         # Treeview
         cols = ("id", "plan_id", "assignment_title", "assessor_id", "verifier_id",
@@ -400,14 +403,14 @@ class InternalVerificationFrame(tk.Frame):
         tree_frame = tk.Frame(tab)
         tree_frame.pack(fill="both", expand=True)
         self._sample_tree = ttk.Treeview(tree_frame, columns=cols, show="headings", selectmode="browse")
-        for c, h, w in [("id", "ID", 40), ("plan_id", "Plan ID", 60),
-                         ("assignment_title", "Assignment", 160),
-                         ("assessor_id", "Assessor", 70),
-                         ("verifier_id", "Verifier", 70),
-                         ("sample_date", "Date", 90),
-                         ("assessment_decisions_agreed", "Decisions Agreed", 110),
-                         ("grading_accurate", "Grading OK", 80),
-                         ("status", "Status", 100)]:
+        for c, h, w in [("id", t("common.id"), 40), ("plan_id", t("internal_verification.plan_id"), 60),
+                         ("assignment_title", t("internal_verification.assignment_title"), 160),
+                         ("assessor_id", t("internal_verification.assessor"), 70),
+                         ("verifier_id", t("internal_verification.verifier"), 70),
+                         ("sample_date", t("common.date"), 90),
+                         ("assessment_decisions_agreed", t("internal_verification.decisions_agreed"), 110),
+                         ("grading_accurate", t("internal_verification.grading_ok"), 80),
+                         ("status", t("common.status"), 100)]:
             self._sample_tree.heading(c, text=h)
             self._sample_tree.column(c, width=w, anchor="center")
         vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self._sample_tree.yview)
@@ -415,33 +418,34 @@ class InternalVerificationFrame(tk.Frame):
         self._sample_tree.pack(side="left", fill="both", expand=True)
         vsb.pack(side="right", fill="y")
 
-    # ── Observations tab ─────────────────────────────────────────
+    # -- Observations tab ------------------------------------------------------
 
     def _build_observations_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Observations")
+        self._nb.add(tab, text=t("internal_verification.observations"))
 
         # Filters
         filt = tk.Frame(tab, bg="#ecf0f1")
         filt.pack(fill="x", pady=(0, 8))
-        tk.Label(filt, text="Plan ID:", bg="#ecf0f1").pack(side="left", padx=(0, 4))
+        tk.Label(filt, text=t("internal_verification.plan_id") + ":", bg="#ecf0f1").pack(side="left", padx=(0, 4))
         self._obs_plan_var = tk.StringVar()
         ttk.Entry(filt, textvariable=self._obs_plan_var, width=8).pack(side="left", padx=4)
-        tk.Label(filt, text="Status:", bg="#ecf0f1").pack(side="left", padx=(12, 4))
+        tk.Label(filt, text=t("common.status") + ":", bg="#ecf0f1").pack(side="left", padx=(12, 4))
         self._obs_status_var = tk.StringVar(value="")
         ttk.Combobox(filt, textvariable=self._obs_status_var, width=12,
                      values=["", "scheduled", "completed", "cancelled"],
                      state="readonly").pack(side="left", padx=4)
-        ttk.Button(filt, text="Filter", command=self._load_observations).pack(side="left", padx=8)
+        ttk.Button(filt, text=t("common.filter"), command=self._load_observations).pack(side="left", padx=8)
 
         # Buttons
         toolbar = tk.Frame(tab, bg="#ecf0f1")
         toolbar.pack(fill="x", pady=(0, 8))
-        ttk.Button(toolbar, text="New", command=self._on_obs_new).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Complete", command=self._on_obs_complete).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Update", command=self._on_obs_update).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Delete", command=self._on_obs_delete).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Refresh", command=self._load_observations).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.create"), command=self._on_obs_new).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.completed"), command=self._on_obs_complete).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.update"), command=self._on_obs_update).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.delete"), command=self._on_obs_delete).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.refresh"), command=self._load_observations).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.export_csv", default="Export CSV"), command=self._export_observations_csv).pack(side="right", padx=4)
 
         # Treeview
         cols = ("id", "plan_id", "assessor_id", "observer_id",
@@ -449,12 +453,12 @@ class InternalVerificationFrame(tk.Frame):
         tree_frame = tk.Frame(tab)
         tree_frame.pack(fill="both", expand=True)
         self._obs_tree = ttk.Treeview(tree_frame, columns=cols, show="headings", selectmode="browse")
-        for c, h, w in [("id", "ID", 40), ("plan_id", "Plan ID", 60),
-                         ("assessor_id", "Assessor", 70),
-                         ("observer_id", "Observer", 70),
-                         ("observation_date", "Date", 100),
-                         ("grade", "Grade", 60),
-                         ("status", "Status", 90)]:
+        for c, h, w in [("id", t("common.id"), 40), ("plan_id", t("internal_verification.plan_id"), 60),
+                         ("assessor_id", t("internal_verification.assessor"), 70),
+                         ("observer_id", t("internal_verification.observer"), 70),
+                         ("observation_date", t("common.date"), 100),
+                         ("grade", t("common.grade"), 60),
+                         ("status", t("common.status"), 90)]:
             self._obs_tree.heading(c, text=h)
             self._obs_tree.column(c, width=w, anchor="center")
         vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self._obs_tree.yview)
@@ -462,23 +466,23 @@ class InternalVerificationFrame(tk.Frame):
         self._obs_tree.pack(side="left", fill="both", expand=True)
         vsb.pack(side="right", fill="y")
 
-    # ── Statistics tab ───────────────────────────────────────────
+    # -- Statistics tab --------------------------------------------------------
 
     def _build_stats_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=20, pady=20)
-        self._nb.add(tab, text="Statistics")
+        self._nb.add(tab, text=t("common.summary"))
 
         self._stats_labels: dict[str, tk.StringVar] = {}
         items = [
-            ("total_plans", "Total Plans"),
-            ("active_plans", "Active Plans"),
-            ("total_samples", "Total Samples"),
-            ("samples_completed", "Samples Completed"),
-            ("samples_with_actions", "Samples With Actions"),
-            ("action_completion_rate", "Action Completion Rate (%)"),
-            ("total_observations", "Total Observations"),
-            ("observations_completed", "Observations Completed"),
-            ("grading_accuracy_rate", "Grading Accuracy Rate (%)"),
+            ("total_plans", t("internal_verification.total_plans")),
+            ("active_plans", t("internal_verification.active_plans")),
+            ("total_samples", t("internal_verification.total_samples")),
+            ("samples_completed", t("internal_verification.samples_completed")),
+            ("samples_with_actions", t("internal_verification.samples_with_actions")),
+            ("action_completion_rate", t("internal_verification.action_completion_rate")),
+            ("total_observations", t("internal_verification.total_observations")),
+            ("observations_completed", t("internal_verification.observations_completed")),
+            ("grading_accuracy_rate", t("internal_verification.grading_accuracy_rate")),
         ]
         for row, (key, label) in enumerate(items):
             tk.Label(tab, text=label + ":", bg="#ecf0f1", anchor="w",
@@ -490,11 +494,11 @@ class InternalVerificationFrame(tk.Frame):
                 row=row, column=1, sticky="w", padx=10, pady=6)
             self._stats_labels[key] = var
 
-        ttk.Button(tab, text="Refresh Statistics",
+        ttk.Button(tab, text=t("internal_verification.refresh_statistics"),
                    command=self._load_stats).grid(
             row=len(items), column=0, columnspan=2, pady=(20, 0))
 
-    # ── Data loading ─────────────────────────────────────────────
+    # -- Data loading ----------------------------------------------------------
 
     def refresh(self):
         self._load_plans()
@@ -515,7 +519,7 @@ class InternalVerificationFrame(tk.Frame):
                     r.get("sampling_strategy") or "-",
                     r.get("sample_size_pct", 25), r["status"]))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _load_samples(self):
         self._sample_tree.delete(*self._sample_tree.get_children())
@@ -524,14 +528,14 @@ class InternalVerificationFrame(tk.Frame):
             plan_id = int(pid_str) if pid_str else None
             status = self._sample_status_var.get() or None
             for r in self._svc.list_samples(plan_id=plan_id, status=status):
-                agreed = "Yes" if r.get("assessment_decisions_agreed") else "No"
-                grading = "Yes" if r.get("grading_accurate") else "No"
+                agreed = t("common.yes") if r.get("assessment_decisions_agreed") else t("common.no")
+                grading = t("common.yes") if r.get("grading_accurate") else t("common.no")
                 self._sample_tree.insert("", "end", iid=r["id"], values=(
                     r["id"], r["plan_id"], r.get("assignment_title") or "-",
                     r.get("assessor_id") or "-", r.get("verifier_id") or "-",
                     r.get("sample_date") or "-", agreed, grading, r["status"]))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _load_observations(self):
         self._obs_tree.delete(*self._obs_tree.get_children())
@@ -546,7 +550,7 @@ class InternalVerificationFrame(tk.Frame):
                     r.get("observation_date") or "-",
                     r.get("grade") or "-", r["status"]))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _load_stats(self):
         try:
@@ -554,35 +558,49 @@ class InternalVerificationFrame(tk.Frame):
             for key, var in self._stats_labels.items():
                 var.set(str(stats.get(key, "-")))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
-    # ── Selection helpers ────────────────────────────────────────
+    # -- CSV export ------------------------------------------------------------
+
+    def _export_plans_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._plan_tree, "iv_plans.csv")
+
+    def _export_samples_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._sample_tree, "iv_samples.csv")
+
+    def _export_observations_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._obs_tree, "iv_observations.csv")
+
+    # -- Selection helpers -----------------------------------------------------
 
     def _selected_plan_id(self) -> int | None:
         sel = self._plan_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select a plan first.")
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"))
             return None
         return int(sel[0])
 
     def _selected_sample_id(self) -> int | None:
         sel = self._sample_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select a sample first.")
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"))
             return None
         return int(sel[0])
 
     def _selected_obs_id(self) -> int | None:
         sel = self._obs_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select an observation first.")
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"))
             return None
         return int(sel[0])
 
-    # ── Plan actions ─────────────────────────────────────────────
+    # -- Plan actions ----------------------------------------------------------
 
     def _on_plan_new(self):
-        dlg = _PlanDialog(self, title="New IV Plan")
+        dlg = _PlanDialog(self, title=t("internal_verification.new_plan"))
         self.wait_window(dlg)
         if dlg.result is None:
             return
@@ -601,10 +619,10 @@ class InternalVerificationFrame(tk.Frame):
             # Remove empty strings
             data = {k: v for k, v in data.items() if v}
             self._svc.create_plan(course_id, **data)
-            messagebox.showinfo("Success", "IV Plan created.")
+            messagebox.showinfo(t("common.success"), t("common.created_success"))
             self._load_plans()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _on_plan_view(self):
         pk = self._selected_plan_id()
@@ -612,7 +630,7 @@ class InternalVerificationFrame(tk.Frame):
             return
         plan = self._svc.get_plan(pk)
         if not plan:
-            messagebox.showerror("Error", "Plan not found.")
+            messagebox.showerror(t("common.error"), t("common.no_data"))
             return
         info = "\n".join(f"{k}: {v}" for k, v in plan.items())
         messagebox.showinfo(f"Plan {pk}", info)
@@ -623,9 +641,9 @@ class InternalVerificationFrame(tk.Frame):
             return
         item = self._svc.get_plan(pk)
         if not item:
-            messagebox.showerror("Error", "Plan not found.")
+            messagebox.showerror(t("common.error"), t("common.no_data"))
             return
-        dlg = _PlanDialog(self, title="Update IV Plan", item=item)
+        dlg = _PlanDialog(self, title=t("internal_verification.update_plan"), item=item)
         self.wait_window(dlg)
         if dlg.result is None:
             return
@@ -639,30 +657,30 @@ class InternalVerificationFrame(tk.Frame):
                 data["sample_size_pct"] = int(data["sample_size_pct"])
             data = {k: v for k, v in data.items() if v}
             self._svc.update_plan(pk, **data)
-            messagebox.showinfo("Success", "Plan updated.")
+            messagebox.showinfo(t("common.success"), t("common.updated_success"))
             self._load_plans()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _on_plan_delete(self):
         pk = self._selected_plan_id()
         if pk is None:
             return
-        if not messagebox.askyesno("Confirm", "Delete this plan and all its samples/observations?"):
+        if not messagebox.askyesno(t("common.confirm"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_plan(pk)
-            messagebox.showinfo("Success", "Plan deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_plans()
             self._load_samples()
             self._load_observations()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
-    # ── Sample actions ───────────────────────────────────────────
+    # -- Sample actions --------------------------------------------------------
 
     def _on_sample_new(self):
-        dlg = _SampleDialog(self, title="New Sample")
+        dlg = _SampleDialog(self, title=t("internal_verification.new_sample"))
         self.wait_window(dlg)
         if dlg.result is None:
             return
@@ -671,7 +689,7 @@ class InternalVerificationFrame(tk.Frame):
             plan_id = int(data.pop("plan_id"))
             assignment_title = data.pop("assignment_title")
             if not assignment_title:
-                messagebox.showwarning("Required", "Assignment title is required.")
+                messagebox.showwarning(t("common.validation"), t("common.field_required"))
                 return
             if data.get("assessor_id"):
                 data["assessor_id"] = int(data["assessor_id"])
@@ -683,25 +701,25 @@ class InternalVerificationFrame(tk.Frame):
                 data.pop("verifier_id", None)
             data = {k: v for k, v in data.items() if v}
             self._svc.create_sample(plan_id, assignment_title, **data)
-            messagebox.showinfo("Success", "Sample created.")
+            messagebox.showinfo(t("common.success"), t("common.created_success"))
             self._load_samples()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _on_sample_complete(self):
         pk = self._selected_sample_id()
         if pk is None:
             return
-        dlg = _CompleteSampleDialog(self, title="Complete Sample")
+        dlg = _CompleteSampleDialog(self, title=t("internal_verification.complete_sample"))
         self.wait_window(dlg)
         if dlg.result is None:
             return
         try:
             self._svc.complete_sample(pk, **dlg.result)
-            messagebox.showinfo("Success", "Sample completed.")
+            messagebox.showinfo(t("common.success"), t("internal_verification.sample_completed"))
             self._load_samples()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _on_sample_update(self):
         pk = self._selected_sample_id()
@@ -709,9 +727,9 @@ class InternalVerificationFrame(tk.Frame):
             return
         item = self._svc.get_sample(pk)
         if not item:
-            messagebox.showerror("Error", "Sample not found.")
+            messagebox.showerror(t("common.error"), t("common.no_data"))
             return
-        dlg = _SampleDialog(self, title="Update Sample", item=item)
+        dlg = _SampleDialog(self, title=t("internal_verification.update_sample"), item=item)
         self.wait_window(dlg)
         if dlg.result is None:
             return
@@ -725,28 +743,28 @@ class InternalVerificationFrame(tk.Frame):
                 data["verifier_id"] = int(data["verifier_id"])
             data = {k: v for k, v in data.items() if v}
             self._svc.update_sample(pk, **data)
-            messagebox.showinfo("Success", "Sample updated.")
+            messagebox.showinfo(t("common.success"), t("common.updated_success"))
             self._load_samples()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _on_sample_delete(self):
         pk = self._selected_sample_id()
         if pk is None:
             return
-        if not messagebox.askyesno("Confirm", "Delete this sample?"):
+        if not messagebox.askyesno(t("common.confirm"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_sample(pk)
-            messagebox.showinfo("Success", "Sample deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_samples()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
-    # ── Observation actions ──────────────────────────────────────
+    # -- Observation actions ---------------------------------------------------
 
     def _on_obs_new(self):
-        dlg = _ObservationDialog(self, title="New Observation")
+        dlg = _ObservationDialog(self, title=t("internal_verification.new_observation"))
         self.wait_window(dlg)
         if dlg.result is None:
             return
@@ -763,25 +781,25 @@ class InternalVerificationFrame(tk.Frame):
                 data.pop("observer_id", None)
             data = {k: v for k, v in data.items() if v}
             self._svc.create_observation(plan_id, **data)
-            messagebox.showinfo("Success", "Observation created.")
+            messagebox.showinfo(t("common.success"), t("common.created_success"))
             self._load_observations()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _on_obs_complete(self):
         pk = self._selected_obs_id()
         if pk is None:
             return
-        dlg = _CompleteObservationDialog(self, title="Complete Observation")
+        dlg = _CompleteObservationDialog(self, title=t("internal_verification.complete_observation"))
         self.wait_window(dlg)
         if dlg.result is None:
             return
         try:
             self._svc.complete_observation(pk, **dlg.result)
-            messagebox.showinfo("Success", "Observation completed.")
+            messagebox.showinfo(t("common.success"), t("internal_verification.observation_completed"))
             self._load_observations()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _on_obs_update(self):
         pk = self._selected_obs_id()
@@ -789,9 +807,9 @@ class InternalVerificationFrame(tk.Frame):
             return
         item = self._svc.get_observation(pk)
         if not item:
-            messagebox.showerror("Error", "Observation not found.")
+            messagebox.showerror(t("common.error"), t("common.no_data"))
             return
-        dlg = _ObservationDialog(self, title="Update Observation", item=item)
+        dlg = _ObservationDialog(self, title=t("internal_verification.update_observation"), item=item)
         self.wait_window(dlg)
         if dlg.result is None:
             return
@@ -805,20 +823,20 @@ class InternalVerificationFrame(tk.Frame):
                 data["observer_id"] = int(data["observer_id"])
             data = {k: v for k, v in data.items() if v}
             self._svc.update_observation(pk, **data)
-            messagebox.showinfo("Success", "Observation updated.")
+            messagebox.showinfo(t("common.success"), t("common.updated_success"))
             self._load_observations()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _on_obs_delete(self):
         pk = self._selected_obs_id()
         if pk is None:
             return
-        if not messagebox.askyesno("Confirm", "Delete this observation?"):
+        if not messagebox.askyesno(t("common.confirm"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_observation(pk)
-            messagebox.showinfo("Success", "Observation deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_observations()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))

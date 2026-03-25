@@ -4,11 +4,12 @@ import time
 from datetime import datetime, timedelta
 from difflib import SequenceMatcher
 
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from . import _globals
-from .display import display_search_results
-from .system import log_search
-from .admin import audit_log
+from education_system.university_system.modules.shared.services.analytics.advanced_search import _globals
+from education_system.university_system.modules.shared.services.analytics.advanced_search.display import display_search_results
+from education_system.university_system.modules.shared.services.analytics.advanced_search.system import log_search
+from education_system.university_system.modules.shared.services.analytics.advanced_search.admin import audit_log
 
 
 @audit_log
@@ -61,7 +62,7 @@ def multi_criteria_search():
         if value and key not in ['age_min', 'age_max']:
             if key in ['student_id', 'first_name', 'last_name']:
                 query += f" AND LOWER({key}) LIKE LOWER(?)"
-                params.append(f"%{value}%")
+                params.append(f"%{escape_like(value)}%")
             else:
                 query += f" AND LOWER({key}) = LOWER(?)"
                 params.append(value)
@@ -521,9 +522,9 @@ def combined_filters_search():
             query = "SELECT s.* FROM students s WHERE 1=1"
             params = []
             for field, expr, val in [
-                ("student_id", "LIKE", f"%{filters['student_data'].get('student_id','')}%"),
-                ("first_name", "LIKE LOWER", f"%{filters['student_data'].get('first_name','')}%"),
-                ("last_name", "LIKE LOWER", f"%{filters['student_data'].get('last_name','')}%"),
+                ("student_id", "LIKE", f"%{escape_like(filters['student_data'].get('student_id',''))}%"),
+                ("first_name", "LIKE LOWER", f"%{escape_like(filters['student_data'].get('first_name',''))}%"),
+                ("last_name", "LIKE LOWER", f"%{escape_like(filters['student_data'].get('last_name',''))}%"),
             ]:
                 if filters["student_data"].get(field):
                     if "LOWER" in expr:
@@ -574,7 +575,7 @@ def combined_filters_search():
                     else:
                         query += f" AND s.{field} {op} ?"
                     params.append(
-                        f"%{filters['student_data'][field]}%"
+                        f"%{escape_like(filters['student_data'][field])}%"
                     )
             if "gender" in filters["student_data"]:
                 query += " AND LOWER(s.gender)=LOWER(?)"

@@ -13,7 +13,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_polls_page(self):
     self.clear_content()
@@ -28,11 +28,13 @@ def show_polls_page(self):
     for col in columns:
         self.poll_tree.heading(col, text=col)
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT p.id, p.title, p.start_date, p.end_date, (SELECT SUM(votes) FROM poll_options WHERE poll_id = p.id), p.status FROM polls p ORDER BY p.start_date DESC")
-    for row in cursor.fetchall():
-        self.poll_tree.insert("", "end", values=(row[0], row[1], row[2], row[3], row[4] or 0, row[5].upper()))
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT p.id, p.title, p.start_date, p.end_date, (SELECT SUM(votes) FROM poll_options WHERE poll_id = p.id), p.status FROM polls p ORDER BY p.start_date DESC")
+        for row in cursor.fetchall():
+            self.poll_tree.insert("", "end", values=(row[0], row[1], row[2], row[3], row[4] or 0, row[5].upper()))
+    finally:
+        conn.close()
     self.poll_tree.pack(fill="both", expand=True, side="left")
     scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.poll_tree.yview)
     self.poll_tree.configure(yscrollcommand=scrollbar.set)
@@ -70,13 +72,15 @@ def create_poll(self):
             messagebox.showwarning(_t("cinema.common.warning"), "Title and 2+ options required")
             return
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO polls (title, start_date, end_date) VALUES (?, ?, ?)", (title, datetime.now().strftime("%Y-%m-%d"), end_e.get()))
-        poll_id = cursor.lastrowid
-        for opt in opts:
-            cursor.execute("INSERT INTO poll_options (poll_id, option_text) VALUES (?, ?)", (poll_id, opt))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO polls (title, start_date, end_date) VALUES (?, ?, ?)", (title, datetime.now().strftime("%Y-%m-%d"), end_e.get()))
+            poll_id = cursor.lastrowid
+            for opt in opts:
+                cursor.execute("INSERT INTO poll_options (poll_id, option_text) VALUES (?, ?)", (poll_id, opt))
+            conn.commit()
+        finally:
+            conn.close()
         messagebox.showinfo(_t("cinema.common.success"), "Poll created!")
         form.destroy()
         self.show_polls_page()
@@ -90,10 +94,12 @@ def view_results(self):
     poll_id = self.poll_tree.item(selected[0])['values'][0]
     poll_title = self.poll_tree.item(selected[0])['values'][1]
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT option_text, votes FROM poll_options WHERE poll_id = ? ORDER BY votes DESC", (poll_id,))
-    options = cursor.fetchall()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT option_text, votes FROM poll_options WHERE poll_id = ? ORDER BY votes DESC", (poll_id,))
+        options = cursor.fetchall()
+    finally:
+        conn.close()
     result_win = tk.Toplevel(self.root)
     result_win.title(f"Results: {poll_title}")
     result_win.geometry("400x300")
@@ -113,10 +119,12 @@ def cast_vote(self):
         return
     poll_id = self.poll_tree.item(selected[0])['values'][0]
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, option_text FROM poll_options WHERE poll_id = ?", (poll_id,))
-    options = cursor.fetchall()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, option_text FROM poll_options WHERE poll_id = ?", (poll_id,))
+        options = cursor.fetchall()
+    finally:
+        conn.close()
     vote_win = tk.Toplevel(self.root)
     vote_win.title("Cast Vote")
     vote_win.geometry("350x300")
@@ -134,10 +142,12 @@ def cast_vote(self):
             messagebox.showwarning(_t("cinema.common.warning"), "Select an option")
             return
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("UPDATE poll_options SET votes = votes + 1 WHERE id = ?", (opt_id,))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE poll_options SET votes = votes + 1 WHERE id = ?", (opt_id,))
+            conn.commit()
+        finally:
+            conn.close()
         messagebox.showinfo(_t("cinema.common.success"), "Vote recorded!")
         vote_win.destroy()
         self.show_polls_page()

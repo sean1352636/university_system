@@ -4,8 +4,8 @@ from tkinter import ttk, messagebox
 from datetime import datetime
 import logging
 
-from .. import get_connection, _t
-from ..dialogs.vehicle_dialog import VehicleDialog
+from education_system.university_system.modules.domain.mobility.gui.parking_management import get_connection, _t
+from education_system.university_system.modules.domain.mobility.gui.parking_management.dialogs.vehicle_dialog import VehicleDialog
 
 
 class VehiclesMixin:

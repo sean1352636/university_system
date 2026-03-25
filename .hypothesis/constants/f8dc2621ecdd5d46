@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/ai/gui/context.py
+# hypothesis_version: 6.151.9
+
+['Unknown', 'course', 'courses', 'credits', 'date', 'default', 'en', 'grade', 'grades', 'id', 'instructor', 'message', 'name', 'notifications', 'permissions', 'points', 'role', 'schedule', 'student', 'user', 'username']

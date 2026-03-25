@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/services/parking_management/vehicles.py
+# hypothesis_version: 6.151.9
+
+[100, 1900, '!', ', ', '-', '1', '1. ', '2', '2. ', '3', '3. ', '4', '4. ', '5. ', '6. ', '7. ', '8. ', ':', '=', '?', 'Enter new color: ', 'Enter new make: ', 'Enter new model: ', 'Enter new owner ID: ', 'Enter new year: ', 'Enter owner ID: ', 'Enter vehicle ID: ', 'Enter vehicle make: ', 'Enter vehicle type: ', 'Sedan', 'delete_any_vehicle', 'delete_own_vehicle', 'delete_vehicle', 'id', 'parking.menu.color', 'parking.menu.make', 'parking.menu.model', 'parking.menu.owner', 'parking.menu.self', 'parking.menu.year', 'register_own_vehicle', 'register_vehicle', 'update_any_vehicle', 'update_own_vehicle', 'update_vehicle', 'vehicle_id', 'view_any_vehicle', 'view_own_vehicle', 'y']

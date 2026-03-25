@@ -185,19 +185,102 @@ def show_club_selection_for_trips(self):
 
 
 def open_calendar_with_club_events(self, club_name=None):
-    """Open calendar GUI with club events"""
+    """Open Student Union Events Calendar showing all union_events from the database"""
     try:
-        from education_system.university_system.modules.domain.academics.gui.academic_calendar import CalendarGUI
-        calendar_window = tk.Toplevel(self.root)
-        calendar_window.title("Student Union Calendar" + (f" - {club_name}" if club_name else ""))
-        calendar_window.geometry("900x700")
-        calendar_gui = CalendarGUI(auth_manager=self.auth_manager, parent_window=calendar_window)
-        # Add club events to calendar
-        self._add_club_events_to_calendar(calendar_gui, club_name)
-    except ImportError:
-        messagebox.showerror("Error", "Calendar system is not available")
-    except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Could not open calendar: {e}")
+        from education_system.university_system.infrastructure.database.db import get_connection
+
+        cal_win = tk.Toplevel(self.root)
+        cal_win.title("Student Union Events Calendar")
+        cal_win.geometry("1050x550")
+        cal_win.transient(self.root)
+        cal_win.grab_set()
+
+        header = tk.Label(
+            cal_win, text="Student Union Events Calendar",
+            font=("Helvetica", 16, "bold"), pady=10
+        )
+        header.pack(fill=tk.X)
+
+        columns = (
+            "event_name", "event_date", "start_time", "end_time",
+            "location", "organizer", "status", "attendees"
+        )
+        col_headings = {
+            "event_name": "Event Name",
+            "event_date": "Date",
+            "start_time": "Start Time",
+            "end_time": "End Time",
+            "location": "Location",
+            "organizer": "Organizer",
+            "status": "Status",
+            "attendees": "Attendees",
+        }
+
+        tree_frame = tk.Frame(cal_win)
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 5))
+
+        vsb = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL)
+        hsb = ttk.Scrollbar(tree_frame, orient=tk.HORIZONTAL)
+        tree = ttk.Treeview(
+            tree_frame, columns=columns, show="headings",
+            yscrollcommand=vsb.set, xscrollcommand=hsb.set
+        )
+        vsb.config(command=tree.yview)
+        hsb.config(command=tree.xview)
+
+        for col in columns:
+            tree.heading(col, text=col_headings[col])
+            tree.column(col, width=120, minwidth=80)
+
+        tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        vsb.pack(side=tk.RIGHT, fill=tk.Y)
+        hsb.pack(side=tk.BOTTOM, fill=tk.X)
+
+        def refresh_events():
+            for item in tree.get_children():
+                tree.delete(item)
+            conn = None
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT event_name, event_date, start_time, end_time, "
+                    "location, organizer_id, status, current_attendees "
+                    "FROM union_events ORDER BY event_date DESC"
+                )
+                rows = cursor.fetchall()
+                # Try to resolve organizer names from student_clubs
+                organizer_map = {}
+                try:
+                    cursor.execute("SELECT club_id, club_name FROM student_clubs")
+                    for cid, cname in cursor.fetchall():
+                        organizer_map[cid] = cname
+                except Exception:
+                    pass
+                for row in rows:
+                    organizer_name = organizer_map.get(row[5], str(row[5]) if row[5] else "")
+                    tree.insert("", tk.END, values=(
+                        row[0], row[1], row[2] or "", row[3] or "",
+                        row[4] or "", organizer_name,
+                        row[6] or "", row[7] if row[7] is not None else ""
+                    ))
+                if not rows:
+                    tree.insert("", tk.END, values=("No events found", "", "", "", "", "", "", ""))
+            except Exception as e:
+                messagebox.showerror("Database Error", f"Could not load events: {e}", parent=cal_win)
+            finally:
+                if conn:
+                    conn.close()
+
+        btn_frame = tk.Frame(cal_win)
+        btn_frame.pack(fill=tk.X, padx=10, pady=10)
+        ttk.Button(btn_frame, text="Refresh", command=refresh_events).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Close", command=cal_win.destroy).pack(side=tk.RIGHT, padx=5)
+
+        refresh_events()
+
+    except Exception as e:
+        messagebox.showerror("Error", f"Could not open events calendar: {e}")
 
 
 def _add_club_events_to_calendar(self, calendar_gui, club_name=None):
@@ -206,41 +289,21 @@ def _add_club_events_to_calendar(self, calendar_gui, club_name=None):
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
         # Check if student_events table exists
-        cursor.execute('''
-            SELECT name FROM sqlite_master
-            WHERE type='table' AND name='student_events'
-        ''')
-        table_exists = cursor.fetchone() is not None
-        if not table_exists:
-            # Create the table if it doesn't exist
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS student_events (
-                    event_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    event_name TEXT NOT NULL,
-                    event_date TEXT NOT NULL,
-                    event_description TEXT,
-                    event_location TEXT,
-                    club_id INTEGER,
-                    created_by INTEGER,
-                    created_date TEXT DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (club_id) REFERENCES student_clubs(club_id)
-                )
-            ''')
-            conn.commit()
-            print("Created student_events table")
         if club_name:
             # Get events for specific club
             cursor.execute('''
-                SELECT event_name, event_date, event_description, event_location
-                FROM student_events se
-                JOIN student_clubs sc ON se.club_id = sc.club_id
-                WHERE sc.club_name = ?
+                SELECT title AS event_name, start_datetime AS event_date, description AS event_description, location AS event_location
+                FROM unified_events ue
+                JOIN student_clubs sc ON ue.club_id = sc.club_id
+                WHERE ue.source_type = 'student'
+                AND sc.club_name = ?
             ''', (club_name,))
         else:
             # Get all student union events
             cursor.execute('''
-                SELECT event_name, event_date, event_description, event_location
-                FROM student_events
+                SELECT title AS event_name, start_datetime AS event_date, description AS event_description, location AS event_location
+                FROM unified_events
+                WHERE source_type = 'student'
             ''')
         events = cursor.fetchall()
         conn.close()

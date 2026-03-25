@@ -2,7 +2,7 @@
 # Main AccommodationGUI class that combines all mixins and provides
 # the core interface (init, menu, tab creation, status bar, refresh).
 
-from ._common import (
+from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import (
     tk, ttk, messagebox,
     ScrolledText, datetime, sqlite3,
     init_i18n, _t,
@@ -10,26 +10,26 @@ from ._common import (
 )
 
 if CLI_AVAILABLE:
-    from ._common import (
+    from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import (
         init_accommodation_db, set_auth, get_accommodation_types,
-        auth, log_action, notify_student as cli_notify_student,
+        auth, log_action, cli_notify_student,
     )
 
 # Import mixins
-from .search import SearchMixin
-from .import_export import ImportExportMixin
-from .approval import ApprovalMixin
-from .templates import TemplateMixin
-from .dashboard import DashboardMixin
-from .accommodations import AccommodationCRUDMixin
-from .cli_integration import CliIntegrationMixin
+from education_system.university_system.modules.domain.health.gui.medical_accommodation.search import SearchMixin
+from education_system.university_system.modules.domain.health.gui.medical_accommodation.import_export import ImportExportMixin
+from education_system.university_system.modules.domain.health.gui.medical_accommodation.approval import ApprovalMixin
+from education_system.university_system.modules.domain.health.gui.medical_accommodation.templates import TemplateMixin
+from education_system.university_system.modules.domain.health.gui.medical_accommodation.dashboard import DashboardMixin
+from education_system.university_system.modules.domain.health.gui.medical_accommodation.accommodations import AccommodationCRUDMixin
+from education_system.university_system.modules.domain.health.gui.medical_accommodation.cli_integration import CliIntegrationMixin
 
 # Import dialogs used directly by the main class
-from .dialogs.document_upload import DocumentUploadDialog
-from .dialogs.database_info import DatabaseInfoDialog
-from .dialogs.settings import SettingsDialog
-from .dialogs.help import HelpDialog
-from .bulk_operations import BulkOperationsDialog
+from education_system.university_system.modules.domain.health.gui.medical_accommodation.dialogs.document_upload import DocumentUploadDialog
+from education_system.university_system.modules.domain.health.gui.medical_accommodation.dialogs.database_info import DatabaseInfoDialog
+from education_system.university_system.modules.domain.health.gui.medical_accommodation.dialogs.settings import SettingsDialog
+from education_system.university_system.modules.domain.health.gui.medical_accommodation.dialogs.help import HelpDialog
+from education_system.university_system.modules.domain.health.gui.medical_accommodation.bulk_operations import BulkOperationsDialog
 
 
 class AccommodationGUI(
@@ -578,6 +578,6 @@ class AccommodationGUI(
     @staticmethod
     def launch_gui():
         """Function to launch GUI from CLI"""
-        from .cli_integration import main
+        from education_system.university_system.modules.domain.health.gui.medical_accommodation.cli_integration import main
         print("Launching GUI mode...")
         main()

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/layout/_forecasting.py
+# hypothesis_version: 6.151.9
+
+[0.25, 0.5, 0.7, 100, '-', '1.0', '900x700', '=', 'Arial', 'Assumptions:\n', 'Courier', 'Recommendations:\n', 'bold', 'both', 'danger', 'disabled', 'ew', 'forecast_stat_0', 'forecast_stat_1', 'forecast_stat_2', 'forecast_stat_3', 'forecasting', 'info', 'left', 'raised', 'right', 'secondary', 'success', 'warning', 'white', 'x']

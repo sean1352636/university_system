@@ -176,7 +176,7 @@ class TestRateLimiter:
 
     def test_limiter_allows_first_attempt(self, limiter):
         """Test first attempt is always allowed."""
-        result = limiter.check_rate_limit("user1")
+        result = limiter.is_allowed("user1")
         assert result is True
 
     def test_limiter_allows_up_to_max_attempts(self, limiter):
@@ -184,45 +184,45 @@ class TestRateLimiter:
         identifier = "user2"
 
         for i in range(3):
-            result = limiter.check_rate_limit(identifier)
+            result = limiter.is_allowed(identifier)
             assert result is True
 
     def test_limiter_blocks_after_max_attempts(self, limiter):
         """Test blocks after exceeding max_attempts."""
         identifier = "user3"
 
-        # Use up all attempts
+        # Use up all attempts via is_allowed (which records each attempt)
         for i in range(3):
-            limiter.record_attempt(identifier)
+            limiter.is_allowed(identifier)
 
         # Next should raise
         with pytest.raises(RateLimitExceeded):
             limiter.check_rate_limit(identifier)
 
     def test_limiter_reset_on_success(self, limiter):
-        """Test reset_on_success clears attempts."""
+        """Test reset clears attempts."""
         identifier = "user4"
 
         # Make some attempts
-        limiter.record_attempt(identifier)
-        limiter.record_attempt(identifier)
+        limiter.is_allowed(identifier)
+        limiter.is_allowed(identifier)
 
         # Reset
         limiter.reset(identifier)
 
         # Should be able to make attempts again
         for i in range(3):
-            result = limiter.check_rate_limit(identifier)
+            result = limiter.is_allowed(identifier)
             assert result is True
 
     def test_limiter_different_identifiers(self, limiter):
         """Test different identifiers have separate limits."""
         # Fill up user1's attempts
         for i in range(3):
-            limiter.record_attempt("user1")
+            limiter.is_allowed("user1")
 
         # user2 should still be allowed
-        result = limiter.check_rate_limit("user2")
+        result = limiter.is_allowed("user2")
         assert result is True
 
 
@@ -345,10 +345,8 @@ class TestThreadSafety:
 
         def check_limit():
             try:
-                result = limiter.check_rate_limit("check_user")
+                result = limiter.is_allowed("check_user")
                 results.append(result)
-            except RateLimitExceeded:
-                results.append(False)
             except Exception as e:
                 errors.append(e)
 
@@ -431,7 +429,7 @@ class TestRateLimiterIntegration:
             limiter.check_rate_limit(ip_address)
 
         # Different IP should be allowed
-        result = limiter.check_rate_limit("ip:192.168.1.101")
+        result = limiter.is_allowed("ip:192.168.1.101")
         assert result is True
 
 

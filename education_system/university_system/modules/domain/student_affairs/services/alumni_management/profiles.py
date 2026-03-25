@@ -2,8 +2,8 @@ from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.infrastructure.email import send_alumni_welcome_email
 from education_system.university_system.core.sql_safety import validate_identifier
-from .core import get_db_connection, safe_execute, auth
-from .gamification import award_engagement_points
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.core import get_db_connection, safe_execute, auth
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.gamification import award_engagement_points
 
 
 # ALUMNI DIRECTORY & SEARCH FEATURES
@@ -21,7 +21,7 @@ def setup_alumni_directory():
 
     # Get current user's alumni ID
     alumni_id = None
-    cursor.execute('SELECT username FROM users WHERE id = ?', (auth.current_user['id'],))
+    cursor.execute('SELECT username FROM users WHERE id = ?', (auth.current_user.get('user_id') or auth.current_user.get('id'),))
     result = cursor.fetchone()
     if result and result[0].startswith('A'):
         alumni_id = result[0]
@@ -505,7 +505,7 @@ def view_alumni_details(alumni_id, cursor):
 
         current_user_id = None
         if auth and auth.current_user:
-            cursor.execute('SELECT username FROM users WHERE id = ?', (auth.current_user['id'],))
+            cursor.execute('SELECT username FROM users WHERE id = ?', (auth.current_user.get('user_id') or auth.current_user.get('id'),))
             result = cursor.fetchone()
             if result:
                 current_user_id = result[0]

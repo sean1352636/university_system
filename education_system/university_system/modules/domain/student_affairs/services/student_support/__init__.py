@@ -31,7 +31,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Import configuration
-from .config import (
+from education_system.university_system.modules.domain.student_affairs.services.student_support.config import (
     SUPPORT_DB,
     TICKET_STATUSES,
     TICKET_PRIORITIES,
@@ -56,17 +56,17 @@ from education_system.university_system.modules.domain.student_affairs.services.
 )
 
 # Import database functions
-from .database import init_enhanced_db
+from education_system.university_system.modules.domain.student_affairs.services.student_support.database import init_enhanced_db
 
 # Import auth functions
-from .auth import set_auth, get_auth_instance
+from education_system.university_system.modules.domain.student_affairs.services.student_support.auth import set_auth, get_auth_instance
 
 # Import all submodules
-from . import core
-from . import features
-from . import operations
-from . import automation
-from . import utils
+from education_system.university_system.modules.domain.student_affairs.services.student_support import core
+from education_system.university_system.modules.domain.student_affairs.services.student_support import features
+from education_system.university_system.modules.domain.student_affairs.services.student_support import operations
+from education_system.university_system.modules.domain.student_affairs.services.student_support import automation
+from education_system.university_system.modules.domain.student_affairs.services.student_support import utils
 
 # Re-export all public functions for backward compatibility
 from education_system.university_system.modules.domain.student_affairs.services.student_support.core import (

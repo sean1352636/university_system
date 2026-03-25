@@ -1,12 +1,12 @@
 """Main AnalyticsManager class assembled from mixins."""
 
-from .tabs import TabsMixin
-from .competency import CompetencyMixin
-from .risk import RiskMixin
-from .performance import PerformanceMixin
-from .reports import ReportsMixin
-from .exports import ExportsMixin
-from .predictions import PredictionsMixin
+from education_system.university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.tabs import TabsMixin
+from education_system.university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.competency import CompetencyMixin
+from education_system.university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.risk import RiskMixin
+from education_system.university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.performance import PerformanceMixin
+from education_system.university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.reports import ReportsMixin
+from education_system.university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.exports import ExportsMixin
+from education_system.university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.predictions import PredictionsMixin
 
 
 class AnalyticsManager(

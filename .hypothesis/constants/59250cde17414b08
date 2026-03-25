@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/plagiarism_main_gui/dialogs/submission.py
+# hypothesis_version: 6.151.9
+
+[1.0, 2000, ' - ', '*.*', '*.docx', '*.pdf', '*.txt', 'All files', 'Browse...', 'Cancel', 'Database Error', 'Error', 'File:', 'Module:', 'No modules available', 'PDF files', 'Please select a file', 'Results', 'Select Document', 'Submit', 'Submit Document', 'Text files', 'UNKNOWN', 'Word documents', 'auth', 'checker', 'documents_tab', 'id', 'ignore', 'notebook', 'r', 'readonly', 'results_tab', 'submit_complete', 'submit_error', 'utf-8', 'values']

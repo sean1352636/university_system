@@ -65,17 +65,6 @@ CREATE TABLE IF NOT EXISTS train_station_receipts (
     transaction_date TEXT NOT NULL,
     FOREIGN KEY (ticket_id) REFERENCES train_station_tickets (id)
 );
-
-CREATE TABLE IF NOT EXISTS train_refunds (
-    refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ticket_number TEXT NOT NULL,
-    student_id TEXT,
-    amount DECIMAL(10,2) NOT NULL,
-    refund_method TEXT NOT NULL,
-    refund_reference TEXT,
-    refunded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    processed_by TEXT
-);
 """
 
 def init_train_database():
@@ -283,8 +272,9 @@ def process_refund(ticket_number, amount, refund_method, student_id=None):
 
         with get_connection() as conn:
             conn.execute("""
-                INSERT INTO train_refunds (ticket_number, student_id, amount, refund_method, refund_reference, processed_by)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO unified_refunds
+                (source_type, reference_id, reference_type, student_id, amount, refund_method, refund_reference, refund_date, processed_by)
+                VALUES ('train', ?, 'ticket', ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
             """, (ticket_number, student_id, amount, refund_method, refund_reference, current_user.get('name', 'System')))
             conn.commit()
         return refund_reference

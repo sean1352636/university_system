@@ -324,16 +324,30 @@ class DuplicatesMixin:
                     progress_callback(50, "Updating related records...")
 
                 # Update related records (grades, enrollments, etc.)
-                try:
-                    cursor.execute(
-                        "UPDATE grades SET student_id = ? WHERE student_id = ?",
-                        (keep_id, delete_id)
-                    )
-                except Exception:
-                    pass  # Table might not exist
+                related_tables = [
+                    ('grades', 'student_id'),
+                    ('student_modules', 'student_id'),
+                    ('attendance', 'student_id'),
+                    ('enrollments', 'student_id'),
+                ]
+                for table, col in related_tables:
+                    try:
+                        cursor.execute(
+                            f"UPDATE {table} SET {col} = ? WHERE {col} = ?",
+                            (keep_id, delete_id)
+                        )
+                    except Exception:
+                        pass  # Table might not exist
 
                 if progress_callback:
                     progress_callback(75, "Removing duplicate record...")
+
+                # Delete any remaining FK references before deleting the student
+                for table, col in related_tables:
+                    try:
+                        cursor.execute(f"DELETE FROM {table} WHERE {col} = ?", (delete_id,))
+                    except Exception:
+                        pass
 
                 # Delete the duplicate student
                 cursor.execute("DELETE FROM students WHERE student_id = ?", (delete_id,))

@@ -1,24 +1,19 @@
 """Centralized path definitions for the Secondary School Management System."""
 
-from pathlib import Path
+from education_system.shared.core.paths import get_system_paths
 
-# Root directories
-SCHOOL_SYSTEM_ROOT = Path(__file__).resolve().parent.parent
-PROJECT_ROOT = SCHOOL_SYSTEM_ROOT.parent
+_paths = get_system_paths(__file__, "secondary_school.db")
 
-# Data directories
-DATA_DIR = SCHOOL_SYSTEM_ROOT / "data"
-DB_DIR = DATA_DIR / "db_files"
-CONFIG_DIR = DATA_DIR / "config"
-
-# Logs
-LOGS_DIR = SCHOOL_SYSTEM_ROOT / "logs"
-
-# Database file
-DB_FILE = DB_DIR / "secondary_school.db"
+# Re-export standard paths for backward compatibility
+SCHOOL_SYSTEM_ROOT = _paths.system_root
+PROJECT_ROOT = _paths.project_root
+DATA_DIR = _paths.data_dir
+DB_DIR = _paths.db_dir
+DB_FILE = _paths.db_file
+CONFIG_DIR = _paths.config_dir
+LOGS_DIR = _paths.logs_dir
 
 
 def ensure_directories():
     """Create all required directories if they don't exist."""
-    for d in (DB_DIR, CONFIG_DIR, LOGS_DIR):
-        d.mkdir(parents=True, exist_ok=True)
+    _paths.ensure_directories()

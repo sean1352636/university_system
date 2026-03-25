@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/college_system/modules/domain/resource_booking/services/resource_booking_service.py
+# hypothesis_version: 6.151.9
+
+[100, ', ', '?', 'Resource not found.', 'capacity', 'cnt', 'id', 'is_available', 'location', 'name', 'name is required.', 'resource_type', 'updated_at']

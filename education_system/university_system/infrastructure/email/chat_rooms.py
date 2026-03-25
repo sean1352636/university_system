@@ -357,7 +357,7 @@ def enter_chat_room(dashboard, room_id, room_name):
                     if is_admin:
                         username = input(_t("chat_rooms.enter_username_invite") + ": ").strip()
                         if username:
-                            from .admin import search_users  # Local import to avoid circular dependency
+                            from education_system.university_system.infrastructure.email.admin import search_users  # Local import to avoid circular dependency
 
                             # Find user
                             user_list = search_users(dashboard.auth, username)
@@ -558,7 +558,7 @@ def manage_chat_room(dashboard, room_id, room_name):
             print("\n" + _t("chat_rooms.invite_user_title") + ":")
             username = input(_t("chat_rooms.enter_username_invite") + ": ").strip()
             if username:
-                from .admin import search_users  # Local import to avoid circular dependency
+                from education_system.university_system.infrastructure.email.admin import search_users  # Local import to avoid circular dependency
 
                 # Search for user
                 user_list = search_users(dashboard.auth, username)

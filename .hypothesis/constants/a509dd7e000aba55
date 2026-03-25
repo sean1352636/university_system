@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/layout/_research_grants.py
+# hypothesis_version: 6.151.9
+
+['#555', '1.0', 'Arial', 'bold', 'both', 'danger', 'disabled', 'primary', 'research_grants', 'success', 'white', 'word']

@@ -15,7 +15,7 @@ class AnalyticsMixin:
             print("You must be logged in to view grade analytics.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         
@@ -136,7 +136,7 @@ class AnalyticsMixin:
             print("You must be logged in to generate QR codes.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         
@@ -195,7 +195,7 @@ class AnalyticsMixin:
             print("You must be logged in to export data.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         
@@ -242,7 +242,7 @@ class AnalyticsMixin:
                     ('behavior', 'student_behavior', 'student_id'),
                     ('medical', 'student_medical_info', 'student_id'),
                     ('fees', 'student_fees', 'student_id'),
-                    ('meal_transactions', 'meal_transactions', 'student_id'),
+                    ('meal_transactions', 'transactions', 'student_id'),  # source_type='meal'
                     ('library', 'library_accounts', 'student_id'),
                     ('activities', 'student_activities', 'student_id')
                 ]
@@ -253,7 +253,10 @@ class AnalyticsMixin:
                         safe_id_col = validate_identifier(id_column, "column")
                         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
                         if cursor.fetchone():
-                            cursor.execute("SELECT * FROM [" + safe_table + "] WHERE [" + safe_id_col + "] = ?", (student_id,))
+                            if data_type == 'meal_transactions':
+                                cursor.execute("SELECT * FROM [" + safe_table + "] WHERE source_type = 'meal' AND [" + safe_id_col + "] = ?", (student_id,))
+                            else:
+                                cursor.execute("SELECT * FROM [" + safe_table + "] WHERE [" + safe_id_col + "] = ?", (student_id,))
                             rows = cursor.fetchall()
 
                             # Get column names

@@ -3,6 +3,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
+from education_system.college_system.core.i18n import t
 from education_system.college_system.modules.domain.marketing.services.marketing_service import MarketingService
 
 
@@ -22,7 +23,7 @@ class MarketingFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Marketing & Open Days",
+        tk.Label(header, text=t("marketing.management"),
                  font=("Helvetica", 15, "bold"), bg="#2c3e50", fg="white"
                  ).pack(side="left", padx=20, pady=10)
 
@@ -38,34 +39,36 @@ class MarketingFrame(tk.Frame):
 
     def _build_events_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Open Days")
+        self._nb.add(tab, text=t("marketing.event_name"))
 
         toolbar = tk.Frame(tab, bg="#ecf0f1")
         toolbar.pack(fill="x", pady=(0, 5))
 
-        tk.Label(toolbar, text="Status:", bg="#ecf0f1").pack(side="left")
-        self._ev_status_var = tk.StringVar(value="all")
+        tk.Label(toolbar, text=t("common.status") + ":", bg="#ecf0f1").pack(side="left")
+        self._ev_status_var = tk.StringVar(value=t("common.all").lower())
         ev_status_cb = ttk.Combobox(toolbar, textvariable=self._ev_status_var, width=12,
                                      values=["all", "planned", "confirmed", "completed", "cancelled"],
                                      state="readonly")
         ev_status_cb.pack(side="left", padx=5)
         ev_status_cb.bind("<<ComboboxSelected>>", lambda e: self._load_events())
 
-        tk.Button(toolbar, text="New Event", bg="#27ae60", fg="white",
+        tk.Button(toolbar, text=t("marketing.add_event"), bg="#27ae60", fg="white",
                   command=self._new_event_dialog).pack(side="right", padx=2)
-        tk.Button(toolbar, text="Delete", bg="#e74c3c", fg="white",
+        tk.Button(toolbar, text=t("common.delete"), bg="#e74c3c", fg="white",
                   command=self._delete_event).pack(side="right", padx=2)
-        tk.Button(toolbar, text="Edit", bg="#2980b9", fg="white",
+        tk.Button(toolbar, text=t("common.edit"), bg="#2980b9", fg="white",
                   command=self._edit_event_dialog).pack(side="right", padx=2)
-        tk.Button(toolbar, text="View", bg="#8e44ad", fg="white",
+        tk.Button(toolbar, text=t("common.view"), bg="#8e44ad", fg="white",
                   command=self._view_event).pack(side="right", padx=2)
+        ttk.Button(toolbar, text=t("common.export_csv", default="Export CSV"),
+                   command=self._export_events_csv).pack(side="right", padx=2)
 
         cols = ("id", "event_name", "event_date", "type", "capacity", "registrations", "attendees", "status")
         self._ev_tree = ttk.Treeview(tab, columns=cols, show="headings", selectmode="browse")
-        for c, h, w in [("id", "ID", 40), ("event_name", "Event Name", 180),
-                         ("event_date", "Date", 90), ("type", "Type", 80),
-                         ("capacity", "Capacity", 70), ("registrations", "Regs", 50),
-                         ("attendees", "Attended", 60), ("status", "Status", 80)]:
+        for c, h, w in [("id", t("common.id"), 40), ("event_name", t("marketing.event_name"), 180),
+                         ("event_date", t("marketing.event_date"), 90), ("type", t("common.type"), 80),
+                         ("capacity", t("common.total"), 70), ("registrations", t("common.total"), 50),
+                         ("attendees", t("marketing.attendees"), 60), ("status", t("common.status"), 80)]:
             self._ev_tree.heading(c, text=h)
             self._ev_tree.column(c, width=w, anchor="center")
         self._ev_tree.pack(fill="both", expand=True)
@@ -91,53 +94,53 @@ class MarketingFrame(tk.Frame):
                     ev.get("status", "planned"),
                 ))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _selected_event_id(self):
         sel = self._ev_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Please select an event.")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return None
         return self._ev_tree.item(sel[0])["values"][0]
 
     def _new_event_dialog(self):
         dlg = tk.Toplevel(self)
-        dlg.title("New Open Day Event")
+        dlg.title(t("marketing.add_event"))
         dlg.geometry("420x480")
         dlg.transient(self)
         dlg.grab_set()
 
         fields = {}
         for i, (label, key, default) in enumerate([
-            ("Event Name*:", "event_name", ""),
-            ("Date* (YYYY-MM-DD):", "event_date", ""),
-            ("Type:", "event_type", "open_day"),
-            ("Start Time (HH:MM):", "start_time", ""),
-            ("End Time (HH:MM):", "end_time", ""),
-            ("Capacity:", "capacity", ""),
-            ("Location:", "location", ""),
-            ("Target Audience:", "target_audience", ""),
+            (t("marketing.event_name") + "*:", "event_name", ""),
+            (t("marketing.event_date") + "* (YYYY-MM-DD):", "event_date", ""),
+            (t("common.type") + ":", "event_type", "open_day"),
+            (t("common.start_date") + " (HH:MM):", "start_time", ""),
+            (t("common.end_date") + " (HH:MM):", "end_time", ""),
+            (t("common.total") + ":", "capacity", ""),
+            (t("common.address") + ":", "location", ""),
+            (t("common.details") + ":", "target_audience", ""),
         ]):
             tk.Label(dlg, text=label).grid(row=i, column=0, sticky="e", padx=10, pady=4)
             var = tk.StringVar(value=default)
             tk.Entry(dlg, textvariable=var, width=30).grid(row=i, column=1, padx=10, pady=4)
             fields[key] = var
 
-        tk.Label(dlg, text="Description:").grid(row=8, column=0, sticky="ne", padx=10, pady=4)
+        tk.Label(dlg, text=t("common.description") + ":").grid(row=8, column=0, sticky="ne", padx=10, pady=4)
         desc_text = tk.Text(dlg, width=30, height=4)
         desc_text.grid(row=8, column=1, padx=10, pady=4)
 
         def _save():
             name = fields["event_name"].get().strip()
-            date = fields["event_date"].get().strip()
-            if not name or not date:
-                messagebox.showwarning("Validation", "Event name and date are required.", parent=dlg)
+            date_val = fields["event_date"].get().strip()
+            if not name or not date_val:
+                messagebox.showwarning(t("common.validation"), t("common.field_required"), parent=dlg)
                 return
             try:
                 cap = fields["capacity"].get().strip()
                 self._svc.create_event(
                     event_name=name,
-                    event_date=date,
+                    event_date=date_val,
                     event_type=fields["event_type"].get().strip() or "open_day",
                     start_time=fields["start_time"].get().strip() or None,
                     end_time=fields["end_time"].get().strip() or None,
@@ -146,13 +149,13 @@ class MarketingFrame(tk.Frame):
                     description=desc_text.get("1.0", "end-1c").strip() or None,
                     target_audience=fields["target_audience"].get().strip() or None,
                 )
-                messagebox.showinfo("Success", "Event created.", parent=dlg)
+                messagebox.showinfo(t("common.success"), t("common.created_success"), parent=dlg)
                 dlg.destroy()
                 self._load_events()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(t("common.error"), str(e), parent=dlg)
 
-        tk.Button(dlg, text="Save", bg="#27ae60", fg="white", command=_save
+        tk.Button(dlg, text=t("common.save"), bg="#27ae60", fg="white", command=_save
                   ).grid(row=9, column=0, columnspan=2, pady=15)
 
     def _view_event(self):
@@ -162,10 +165,10 @@ class MarketingFrame(tk.Frame):
         try:
             ev = self._svc.get_event(int(eid))
             if not ev:
-                messagebox.showwarning("Warning", "Event not found.")
+                messagebox.showwarning(t("common.warning"), t("common.no_data"))
                 return
             dlg = tk.Toplevel(self)
-            dlg.title(f"Event: {ev['event_name']}")
+            dlg.title(f"{t('marketing.event_name')}: {ev['event_name']}")
             dlg.geometry("400x400")
             dlg.transient(self)
             text = tk.Text(dlg, wrap="word", padx=10, pady=10)
@@ -174,7 +177,7 @@ class MarketingFrame(tk.Frame):
                 text.insert("end", f"{k}: {v}\n")
             text.configure(state="disabled")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _edit_event_dialog(self):
         eid = self._selected_event_id()
@@ -183,29 +186,29 @@ class MarketingFrame(tk.Frame):
         try:
             ev = self._svc.get_event(int(eid))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
             return
         if not ev:
-            messagebox.showwarning("Warning", "Event not found.")
+            messagebox.showwarning(t("common.warning"), t("common.no_data"))
             return
 
         dlg = tk.Toplevel(self)
-        dlg.title("Edit Event")
+        dlg.title(t("common.edit"))
         dlg.geometry("420x520")
         dlg.transient(self)
         dlg.grab_set()
 
         fields = {}
         edit_fields = [
-            ("Event Name:", "event_name"),
-            ("Date (YYYY-MM-DD):", "event_date"),
-            ("Type:", "event_type"),
-            ("Start Time:", "start_time"),
-            ("End Time:", "end_time"),
-            ("Capacity:", "capacity"),
-            ("Location:", "location"),
-            ("Target Audience:", "target_audience"),
-            ("Status:", "status"),
+            (t("marketing.event_name") + ":", "event_name"),
+            (t("marketing.event_date") + " (YYYY-MM-DD):", "event_date"),
+            (t("common.type") + ":", "event_type"),
+            (t("common.start_date") + ":", "start_time"),
+            (t("common.end_date") + ":", "end_time"),
+            (t("common.total") + ":", "capacity"),
+            (t("common.address") + ":", "location"),
+            (t("common.details") + ":", "target_audience"),
+            (t("common.status") + ":", "status"),
         ]
         for i, (label, key) in enumerate(edit_fields):
             tk.Label(dlg, text=label).grid(row=i, column=0, sticky="e", padx=10, pady=4)
@@ -213,7 +216,7 @@ class MarketingFrame(tk.Frame):
             tk.Entry(dlg, textvariable=var, width=30).grid(row=i, column=1, padx=10, pady=4)
             fields[key] = var
 
-        tk.Label(dlg, text="Description:").grid(row=len(edit_fields), column=0, sticky="ne", padx=10, pady=4)
+        tk.Label(dlg, text=t("common.description") + ":").grid(row=len(edit_fields), column=0, sticky="ne", padx=10, pady=4)
         desc_text = tk.Text(dlg, width=30, height=4)
         desc_text.grid(row=len(edit_fields), column=1, padx=10, pady=4)
         desc_text.insert("1.0", ev.get("description") or "")
@@ -234,65 +237,67 @@ class MarketingFrame(tk.Frame):
                     "status": fields["status"].get().strip() or None,
                 }
                 self._svc.update_event(int(eid), **updates)
-                messagebox.showinfo("Success", "Event updated.", parent=dlg)
+                messagebox.showinfo(t("common.success"), t("common.updated_success"), parent=dlg)
                 dlg.destroy()
                 self._load_events()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(t("common.error"), str(e), parent=dlg)
 
-        tk.Button(dlg, text="Save", bg="#2980b9", fg="white", command=_save
+        tk.Button(dlg, text=t("common.save"), bg="#2980b9", fg="white", command=_save
                   ).grid(row=len(edit_fields) + 1, column=0, columnspan=2, pady=15)
 
     def _delete_event(self):
         eid = self._selected_event_id()
         if eid is None:
             return
-        if not messagebox.askyesno("Confirm", "Delete this event and all its registrations?"):
+        if not messagebox.askyesno(t("common.confirm_delete"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_event(int(eid))
-            messagebox.showinfo("Success", "Event deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_events()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ── Tab 2: Registrations ──
 
     def _build_registrations_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Registrations")
+        self._nb.add(tab, text=t("common.enrolled"))
 
         toolbar = tk.Frame(tab, bg="#ecf0f1")
         toolbar.pack(fill="x", pady=(0, 5))
 
-        tk.Label(toolbar, text="Event ID:", bg="#ecf0f1").pack(side="left")
+        tk.Label(toolbar, text=t("common.id") + ":", bg="#ecf0f1").pack(side="left")
         self._reg_event_var = tk.StringVar()
         tk.Entry(toolbar, textvariable=self._reg_event_var, width=8).pack(side="left", padx=5)
 
-        tk.Label(toolbar, text="Search:", bg="#ecf0f1").pack(side="left", padx=(10, 0))
+        tk.Label(toolbar, text=t("common.search") + ":", bg="#ecf0f1").pack(side="left", padx=(10, 0))
         self._reg_search_var = tk.StringVar()
         tk.Entry(toolbar, textvariable=self._reg_search_var, width=15).pack(side="left", padx=5)
 
-        tk.Button(toolbar, text="Load", bg="#2980b9", fg="white",
+        tk.Button(toolbar, text=t("common.refresh"), bg="#2980b9", fg="white",
                   command=self._load_registrations).pack(side="left", padx=2)
 
-        tk.Button(toolbar, text="New", bg="#27ae60", fg="white",
+        tk.Button(toolbar, text=t("common.create"), bg="#27ae60", fg="white",
                   command=self._new_registration_dialog).pack(side="right", padx=2)
-        tk.Button(toolbar, text="Delete", bg="#e74c3c", fg="white",
+        tk.Button(toolbar, text=t("common.delete"), bg="#e74c3c", fg="white",
                   command=self._delete_registration).pack(side="right", padx=2)
-        tk.Button(toolbar, text="Mark Attended", bg="#f39c12", fg="white",
+        tk.Button(toolbar, text=t("common.update"), bg="#f39c12", fg="white",
                   command=self._mark_attended).pack(side="right", padx=2)
-        tk.Button(toolbar, text="Edit", bg="#2980b9", fg="white",
+        tk.Button(toolbar, text=t("common.edit"), bg="#2980b9", fg="white",
                   command=self._edit_registration_dialog).pack(side="right", padx=2)
+        ttk.Button(toolbar, text=t("common.export_csv", default="Export CSV"),
+                   command=self._export_registrations_csv).pack(side="right", padx=2)
 
         cols = ("id", "event_id", "student_name", "email", "school", "year_group",
                 "attended", "follow_up", "applied")
         self._reg_tree = ttk.Treeview(tab, columns=cols, show="headings", selectmode="browse")
-        for c, h, w in [("id", "ID", 40), ("event_id", "Event", 50),
-                         ("student_name", "Name", 140), ("email", "Email", 150),
-                         ("school", "School", 120), ("year_group", "Year", 50),
-                         ("attended", "Attended", 60), ("follow_up", "Follow-up", 65),
-                         ("applied", "Applied", 55)]:
+        for c, h, w in [("id", t("common.id"), 40), ("event_id", t("common.id"), 50),
+                         ("student_name", t("common.name"), 140), ("email", t("common.email"), 150),
+                         ("school", t("common.details"), 120), ("year_group", t("common.details"), 50),
+                         ("attended", t("marketing.attendees"), 60), ("follow_up", t("common.status"), 65),
+                         ("applied", t("common.status"), 55)]:
             self._reg_tree.heading(c, text=h)
             self._reg_tree.column(c, width=w, anchor="center")
         self._reg_tree.pack(fill="both", expand=True)
@@ -313,36 +318,36 @@ class MarketingFrame(tk.Frame):
                     r["id"], r["event_id"], r["student_name"],
                     r.get("email") or "-", r.get("school") or "-",
                     r.get("year_group") or "-",
-                    "Yes" if r["attended"] else "No",
-                    "Yes" if r["follow_up_sent"] else "No",
-                    "Yes" if r["applied"] else "No",
+                    t("common.yes") if r["attended"] else t("common.no"),
+                    t("common.yes") if r["follow_up_sent"] else t("common.no"),
+                    t("common.yes") if r["applied"] else t("common.no"),
                 ))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _selected_reg_id(self):
         sel = self._reg_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Please select a registration.")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return None
         return self._reg_tree.item(sel[0])["values"][0]
 
     def _new_registration_dialog(self):
         dlg = tk.Toplevel(self)
-        dlg.title("New Registration")
+        dlg.title(t("common.create"))
         dlg.geometry("400x360")
         dlg.transient(self)
         dlg.grab_set()
 
         fields = {}
         for i, (label, key, default) in enumerate([
-            ("Event ID*:", "event_id", self._reg_event_var.get().strip()),
-            ("Student Name*:", "student_name", ""),
-            ("Email:", "email", ""),
-            ("Phone:", "phone", ""),
-            ("School:", "school", ""),
-            ("Year Group:", "year_group", ""),
-            ("Interests:", "interests", ""),
+            (t("common.id") + "*:", "event_id", self._reg_event_var.get().strip()),
+            (t("common.name") + "*:", "student_name", ""),
+            (t("common.email") + ":", "email", ""),
+            (t("common.phone") + ":", "phone", ""),
+            (t("common.details") + ":", "school", ""),
+            (t("common.details") + ":", "year_group", ""),
+            (t("common.details") + ":", "interests", ""),
         ]):
             tk.Label(dlg, text=label).grid(row=i, column=0, sticky="e", padx=10, pady=4)
             var = tk.StringVar(value=default)
@@ -353,7 +358,7 @@ class MarketingFrame(tk.Frame):
             eid_str = fields["event_id"].get().strip()
             name = fields["student_name"].get().strip()
             if not eid_str or not name:
-                messagebox.showwarning("Validation", "Event ID and student name are required.", parent=dlg)
+                messagebox.showwarning(t("common.validation"), t("common.field_required"), parent=dlg)
                 return
             try:
                 self._svc.create_registration(
@@ -365,13 +370,13 @@ class MarketingFrame(tk.Frame):
                     year_group=fields["year_group"].get().strip() or None,
                     interests=fields["interests"].get().strip() or None,
                 )
-                messagebox.showinfo("Success", "Registration created.", parent=dlg)
+                messagebox.showinfo(t("common.success"), t("common.created_success"), parent=dlg)
                 dlg.destroy()
                 self._load_registrations()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(t("common.error"), str(e), parent=dlg)
 
-        tk.Button(dlg, text="Save", bg="#27ae60", fg="white", command=_save
+        tk.Button(dlg, text=t("common.save"), bg="#27ae60", fg="white", command=_save
                   ).grid(row=7, column=0, columnspan=2, pady=15)
 
     def _edit_registration_dialog(self):
@@ -380,20 +385,20 @@ class MarketingFrame(tk.Frame):
             return
 
         dlg = tk.Toplevel(self)
-        dlg.title("Edit Registration")
+        dlg.title(t("common.edit"))
         dlg.geometry("400x360")
         dlg.transient(self)
         dlg.grab_set()
 
         fields = {}
         for i, (label, key, default) in enumerate([
-            ("Student Name:", "student_name", ""),
-            ("Email:", "email", ""),
-            ("Phone:", "phone", ""),
-            ("School:", "school", ""),
-            ("Year Group:", "year_group", ""),
-            ("Interests:", "interests", ""),
-            ("Applied (0/1):", "applied", ""),
+            (t("common.name") + ":", "student_name", ""),
+            (t("common.email") + ":", "email", ""),
+            (t("common.phone") + ":", "phone", ""),
+            (t("common.details") + ":", "school", ""),
+            (t("common.details") + ":", "year_group", ""),
+            (t("common.details") + ":", "interests", ""),
+            (t("common.status") + " (0/1):", "applied", ""),
         ]):
             tk.Label(dlg, text=label).grid(row=i, column=0, sticky="e", padx=10, pady=4)
             var = tk.StringVar(value=default)
@@ -411,30 +416,30 @@ class MarketingFrame(tk.Frame):
                 if applied in ("0", "1"):
                     updates["applied"] = int(applied)
                 if not updates:
-                    messagebox.showwarning("Validation", "No changes to save.", parent=dlg)
+                    messagebox.showwarning(t("common.validation"), t("common.no_data"), parent=dlg)
                     return
                 self._svc.update_registration(int(rid), **updates)
-                messagebox.showinfo("Success", "Registration updated.", parent=dlg)
+                messagebox.showinfo(t("common.success"), t("common.updated_success"), parent=dlg)
                 dlg.destroy()
                 self._load_registrations()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(t("common.error"), str(e), parent=dlg)
 
-        tk.Button(dlg, text="Save", bg="#2980b9", fg="white", command=_save
+        tk.Button(dlg, text=t("common.save"), bg="#2980b9", fg="white", command=_save
                   ).grid(row=7, column=0, columnspan=2, pady=15)
 
     def _delete_registration(self):
         rid = self._selected_reg_id()
         if rid is None:
             return
-        if not messagebox.askyesno("Confirm", "Delete this registration?"):
+        if not messagebox.askyesno(t("common.confirm_delete"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_registration(int(rid))
-            messagebox.showinfo("Success", "Registration deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_registrations()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _mark_attended(self):
         rid = self._selected_reg_id()
@@ -442,21 +447,21 @@ class MarketingFrame(tk.Frame):
             return
         try:
             self._svc.mark_attended(int(rid))
-            messagebox.showinfo("Success", "Marked as attended.")
+            messagebox.showinfo(t("common.success"), t("common.updated_success"))
             self._load_registrations()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ── Tab 3: Campaigns ──
 
     def _build_campaigns_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Campaigns")
+        self._nb.add(tab, text=t("marketing.campaign"))
 
         toolbar = tk.Frame(tab, bg="#ecf0f1")
         toolbar.pack(fill="x", pady=(0, 5))
 
-        tk.Label(toolbar, text="Status:", bg="#ecf0f1").pack(side="left")
+        tk.Label(toolbar, text=t("common.status") + ":", bg="#ecf0f1").pack(side="left")
         self._camp_status_var = tk.StringVar(value="all")
         camp_cb = ttk.Combobox(toolbar, textvariable=self._camp_status_var, width=12,
                                 values=["all", "planned", "active", "completed", "cancelled"],
@@ -464,21 +469,23 @@ class MarketingFrame(tk.Frame):
         camp_cb.pack(side="left", padx=5)
         camp_cb.bind("<<ComboboxSelected>>", lambda e: self._load_campaigns())
 
-        tk.Button(toolbar, text="New Campaign", bg="#27ae60", fg="white",
+        tk.Button(toolbar, text=t("common.create"), bg="#27ae60", fg="white",
                   command=self._new_campaign_dialog).pack(side="right", padx=2)
-        tk.Button(toolbar, text="Delete", bg="#e74c3c", fg="white",
+        tk.Button(toolbar, text=t("common.delete"), bg="#e74c3c", fg="white",
                   command=self._delete_campaign).pack(side="right", padx=2)
-        tk.Button(toolbar, text="Edit", bg="#2980b9", fg="white",
+        tk.Button(toolbar, text=t("common.edit"), bg="#2980b9", fg="white",
                   command=self._edit_campaign_dialog).pack(side="right", padx=2)
+        ttk.Button(toolbar, text=t("common.export_csv", default="Export CSV"),
+                   command=self._export_campaigns_csv).pack(side="right", padx=2)
 
         cols = ("id", "campaign_name", "type", "start_date", "end_date",
                 "budget", "spend", "enquiries", "applications", "status")
         self._camp_tree = ttk.Treeview(tab, columns=cols, show="headings", selectmode="browse")
-        for c, h, w in [("id", "ID", 40), ("campaign_name", "Campaign", 160),
-                         ("type", "Type", 70), ("start_date", "Start", 85),
-                         ("end_date", "End", 85), ("budget", "Budget", 70),
-                         ("spend", "Spend", 70), ("enquiries", "Enquiries", 65),
-                         ("applications", "Apps", 50), ("status", "Status", 80)]:
+        for c, h, w in [("id", t("common.id"), 40), ("campaign_name", t("marketing.campaign"), 160),
+                         ("type", t("common.type"), 70), ("start_date", t("common.start_date"), 85),
+                         ("end_date", t("common.end_date"), 85), ("budget", t("common.total"), 70),
+                         ("spend", t("common.total"), 70), ("enquiries", t("common.total"), 65),
+                         ("applications", t("common.total"), 50), ("status", t("common.status"), 80)]:
             self._camp_tree.heading(c, text=h)
             self._camp_tree.column(c, width=w, anchor="center")
         self._camp_tree.pack(fill="both", expand=True)
@@ -505,45 +512,45 @@ class MarketingFrame(tk.Frame):
                     c.get("status", "planned"),
                 ))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _selected_campaign_id(self):
         sel = self._camp_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Please select a campaign.")
+            messagebox.showwarning(t("common.warning"), t("common.select_first"))
             return None
         return self._camp_tree.item(sel[0])["values"][0]
 
     def _new_campaign_dialog(self):
         dlg = tk.Toplevel(self)
-        dlg.title("New Campaign")
+        dlg.title(t("common.create"))
         dlg.geometry("420x440")
         dlg.transient(self)
         dlg.grab_set()
 
         fields = {}
         for i, (label, key, default) in enumerate([
-            ("Campaign Name*:", "campaign_name", ""),
-            ("Type:", "campaign_type", "digital"),
-            ("Start Date (YYYY-MM-DD):", "start_date", ""),
-            ("End Date (YYYY-MM-DD):", "end_date", ""),
-            ("Budget:", "budget", "0"),
-            ("Target Audience:", "target_audience", ""),
-            ("Channels:", "channels", ""),
+            (t("marketing.campaign") + "*:", "campaign_name", ""),
+            (t("common.type") + ":", "campaign_type", "digital"),
+            (t("common.start_date") + " (YYYY-MM-DD):", "start_date", ""),
+            (t("common.end_date") + " (YYYY-MM-DD):", "end_date", ""),
+            (t("common.total") + ":", "budget", "0"),
+            (t("common.details") + ":", "target_audience", ""),
+            (t("common.details") + ":", "channels", ""),
         ]):
             tk.Label(dlg, text=label).grid(row=i, column=0, sticky="e", padx=10, pady=4)
             var = tk.StringVar(value=default)
             tk.Entry(dlg, textvariable=var, width=30).grid(row=i, column=1, padx=10, pady=4)
             fields[key] = var
 
-        tk.Label(dlg, text="Notes:").grid(row=7, column=0, sticky="ne", padx=10, pady=4)
+        tk.Label(dlg, text=t("common.notes") + ":").grid(row=7, column=0, sticky="ne", padx=10, pady=4)
         notes_text = tk.Text(dlg, width=30, height=4)
         notes_text.grid(row=7, column=1, padx=10, pady=4)
 
         def _save():
             name = fields["campaign_name"].get().strip()
             if not name:
-                messagebox.showwarning("Validation", "Campaign name is required.", parent=dlg)
+                messagebox.showwarning(t("common.validation"), t("common.field_required"), parent=dlg)
                 return
             try:
                 budget_str = fields["budget"].get().strip()
@@ -557,13 +564,13 @@ class MarketingFrame(tk.Frame):
                     channels=fields["channels"].get().strip() or None,
                     notes=notes_text.get("1.0", "end-1c").strip() or None,
                 )
-                messagebox.showinfo("Success", "Campaign created.", parent=dlg)
+                messagebox.showinfo(t("common.success"), t("common.created_success"), parent=dlg)
                 dlg.destroy()
                 self._load_campaigns()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(t("common.error"), str(e), parent=dlg)
 
-        tk.Button(dlg, text="Save", bg="#27ae60", fg="white", command=_save
+        tk.Button(dlg, text=t("common.save"), bg="#27ae60", fg="white", command=_save
                   ).grid(row=8, column=0, columnspan=2, pady=15)
 
     def _edit_campaign_dialog(self):
@@ -573,32 +580,32 @@ class MarketingFrame(tk.Frame):
         try:
             camp = self._svc.get_campaign(int(cid))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
             return
         if not camp:
-            messagebox.showwarning("Warning", "Campaign not found.")
+            messagebox.showwarning(t("common.warning"), t("common.no_data"))
             return
 
         dlg = tk.Toplevel(self)
-        dlg.title("Edit Campaign")
+        dlg.title(t("common.edit"))
         dlg.geometry("420x520")
         dlg.transient(self)
         dlg.grab_set()
 
         fields = {}
         edit_fields = [
-            ("Campaign Name:", "campaign_name"),
-            ("Type:", "campaign_type"),
-            ("Start Date:", "start_date"),
-            ("End Date:", "end_date"),
-            ("Budget:", "budget"),
-            ("Spend:", "spend"),
-            ("Target Audience:", "target_audience"),
-            ("Channels:", "channels"),
-            ("Impressions:", "impressions"),
-            ("Enquiries:", "enquiries"),
-            ("Applications:", "applications"),
-            ("Status:", "status"),
+            (t("marketing.campaign") + ":", "campaign_name"),
+            (t("common.type") + ":", "campaign_type"),
+            (t("common.start_date") + ":", "start_date"),
+            (t("common.end_date") + ":", "end_date"),
+            (t("common.total") + ":", "budget"),
+            (t("common.total") + ":", "spend"),
+            (t("common.details") + ":", "target_audience"),
+            (t("common.details") + ":", "channels"),
+            (t("common.details") + ":", "impressions"),
+            (t("common.details") + ":", "enquiries"),
+            (t("common.details") + ":", "applications"),
+            (t("common.status") + ":", "status"),
         ]
         for i, (label, key) in enumerate(edit_fields):
             tk.Label(dlg, text=label).grid(row=i, column=0, sticky="e", padx=10, pady=3)
@@ -606,7 +613,7 @@ class MarketingFrame(tk.Frame):
             tk.Entry(dlg, textvariable=var, width=30).grid(row=i, column=1, padx=10, pady=3)
             fields[key] = var
 
-        tk.Label(dlg, text="Notes:").grid(row=len(edit_fields), column=0, sticky="ne", padx=10, pady=3)
+        tk.Label(dlg, text=t("common.notes") + ":").grid(row=len(edit_fields), column=0, sticky="ne", padx=10, pady=3)
         notes_text = tk.Text(dlg, width=30, height=3)
         notes_text.grid(row=len(edit_fields), column=1, padx=10, pady=3)
         notes_text.insert("1.0", camp.get("notes") or "")
@@ -631,41 +638,41 @@ class MarketingFrame(tk.Frame):
                 if notes_val:
                     updates["notes"] = notes_val
                 if not updates:
-                    messagebox.showwarning("Validation", "No changes to save.", parent=dlg)
+                    messagebox.showwarning(t("common.validation"), t("common.no_data"), parent=dlg)
                     return
                 self._svc.update_campaign(int(cid), **updates)
-                messagebox.showinfo("Success", "Campaign updated.", parent=dlg)
+                messagebox.showinfo(t("common.success"), t("common.updated_success"), parent=dlg)
                 dlg.destroy()
                 self._load_campaigns()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(t("common.error"), str(e), parent=dlg)
 
-        tk.Button(dlg, text="Save", bg="#2980b9", fg="white", command=_save
+        tk.Button(dlg, text=t("common.save"), bg="#2980b9", fg="white", command=_save
                   ).grid(row=len(edit_fields) + 1, column=0, columnspan=2, pady=15)
 
     def _delete_campaign(self):
         cid = self._selected_campaign_id()
         if cid is None:
             return
-        if not messagebox.askyesno("Confirm", "Delete this campaign?"):
+        if not messagebox.askyesno(t("common.confirm_delete"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_campaign(int(cid))
-            messagebox.showinfo("Success", "Campaign deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_campaigns()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ── Tab 4: Statistics ──
 
     def _build_stats_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Statistics")
+        self._nb.add(tab, text=t("common.summary"))
 
         self._stats_frame = tk.Frame(tab, bg="#ecf0f1")
         self._stats_frame.pack(fill="both", expand=True)
 
-        tk.Button(tab, text="Refresh Statistics", bg="#2980b9", fg="white",
+        tk.Button(tab, text=t("common.refresh"), bg="#2980b9", fg="white",
                   command=self._load_stats).pack(pady=10)
 
     def _load_stats(self):
@@ -675,23 +682,23 @@ class MarketingFrame(tk.Frame):
             stats = self._svc.get_stats()
 
             sections = [
-                ("Open Day Events", [
-                    ("Total Events", stats["total_events"]),
-                    ("Total Registrations", stats["total_registrations"]),
-                    ("Total Attended", stats["total_attended"]),
-                    ("Attendance Rate", f"{stats['attendance_rate']}%"),
-                    ("Follow-ups Sent", stats["total_followed_up"]),
-                    ("Applied After Visit", stats["total_applied"]),
-                    ("Application Rate", f"{stats['application_rate']}%"),
+                (t("marketing.event_name"), [
+                    (t("common.total"), stats["total_events"]),
+                    (t("common.total"), stats["total_registrations"]),
+                    (t("marketing.attendees"), stats["total_attended"]),
+                    (t("common.average"), f"{stats['attendance_rate']}%"),
+                    (t("common.status"), stats["total_followed_up"]),
+                    (t("common.status"), stats["total_applied"]),
+                    (t("common.average"), f"{stats['application_rate']}%"),
                 ]),
-                ("Marketing Campaigns", [
-                    ("Total Campaigns", stats["total_campaigns"]),
-                    ("Total Budget", f"${stats['total_budget']:,.2f}"),
-                    ("Total Spend", f"${stats['total_spend']:,.2f}"),
-                    ("Budget Utilisation", f"{stats['budget_utilisation']}%"),
-                    ("Total Impressions", f"{stats['total_impressions']:,}"),
-                    ("Total Enquiries", stats["total_enquiries"]),
-                    ("Total Applications", stats["total_applications"]),
+                (t("marketing.campaign"), [
+                    (t("common.total"), stats["total_campaigns"]),
+                    (t("common.total"), f"${stats['total_budget']:,.2f}"),
+                    (t("common.total"), f"${stats['total_spend']:,.2f}"),
+                    (t("common.average"), f"{stats['budget_utilisation']}%"),
+                    (t("common.total"), f"{stats['total_impressions']:,}"),
+                    (t("common.total"), stats["total_enquiries"]),
+                    (t("common.total"), stats["total_applications"]),
                 ]),
             ]
 
@@ -710,7 +717,21 @@ class MarketingFrame(tk.Frame):
                              font=("Helvetica", 10, "bold"), anchor="w"
                              ).pack(side="left")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
+
+    # ── CSV export ──
+
+    def _export_events_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._ev_tree, "marketing_events.csv")
+
+    def _export_registrations_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._reg_tree, "marketing_registrations.csv")
+
+    def _export_campaigns_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._camp_tree, "marketing_campaigns.csv")
 
     # ── Public refresh ──
 

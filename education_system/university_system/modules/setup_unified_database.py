@@ -305,30 +305,41 @@ def create_unified_database():
     )
     ''')
 
-    # Student documents
+    # Documents (unified)
     cursor.execute('''
-    CREATE TABLE student_documents (
+    CREATE TABLE IF NOT EXISTS documents (
         document_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        student_id TEXT NOT NULL,
-        type_id INTEGER NOT NULL,
-        file_name TEXT NOT NULL,
-        file_path TEXT NOT NULL,
+        source_type TEXT NOT NULL DEFAULT 'general',
+        source_document_id INTEGER,
+        owner_id TEXT,
+        owner_type TEXT,
+        reference_type TEXT,
+        reference_id TEXT,
+        document_type TEXT,
+        document_name TEXT,
+        file_path TEXT,
+        file_content TEXT,
         file_size INTEGER,
-        mime_type TEXT,
-        status TEXT DEFAULT 'pending',
-        upload_date TEXT DEFAULT CURRENT_TIMESTAMP,
+        file_hash TEXT,
+        original_filename TEXT,
+        upload_date TEXT,
         expiry_date TEXT,
+        issue_date TEXT,
+        status TEXT DEFAULT 'active',
+        verification_status TEXT,
+        verification_date TEXT,
+        verification_notes TEXT,
+        verified_by TEXT,
         version_number INTEGER DEFAULT 1,
-        is_current_version BOOLEAN DEFAULT 1,
+        parent_document_id INTEGER,
+        is_current_version INTEGER DEFAULT 1,
+        workflow_status TEXT,
+        priority INTEGER,
+        tags TEXT,
+        notes TEXT,
         uploaded_by TEXT,
-        reviewed_by TEXT,
-        review_date TEXT,
-        review_comments TEXT,
-        checksum TEXT,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (student_id) REFERENCES students (student_id),
-        FOREIGN KEY (type_id) REFERENCES document_types (type_id)
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT
     )
     ''')
 
@@ -445,17 +456,17 @@ def create_unified_database():
     )
     ''')
 
-    # Restaurant orders
+    # Restaurant orders - now uses unified 'orders' table with source_type='restaurant'
+    # The 'orders' table should already exist or be created with source_type column
     cursor.execute('''
-    CREATE TABLE restaurant_orders (
+    CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         customer_id TEXT NOT NULL,
         items TEXT NOT NULL,
         total_amount REAL,
-        total_price REAL NOT NULL,
-        status TEXT DEFAULT 'pending',
+        source_type TEXT DEFAULT 'restaurant',
+        order_status TEXT DEFAULT 'pending',
         order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        order_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         delivery_address TEXT,
         special_instructions TEXT,
         payment_method TEXT,
@@ -716,6 +727,63 @@ def add_initial_data(cursor):
     ''', modules)
 
     print(get_text("setup.unified_database.initial_data_added"))
+
+
+def seed_default_staff(db_path=None):
+    """Seed default staff profiles into the staff_profiles table (university)."""
+    path = str(db_path or DEFAULT_DB_PATH)
+    conn = sqlite3.connect(path)
+    try:
+        cursor = conn.cursor()
+        staff_profiles = [
+            ("staff", "STF0001", "Computer Science", "Professor of Computer Science",
+             "full-time", "2015-09-01", None, None, "Room 4.12, CS Building", "4012",
+             "Alan Turing", "01onal-000001", "Spouse",
+             "Leading researcher in artificial intelligence and machine learning.",
+             "AI, Machine Learning, Data Science",
+             "PhD Computer Science (Imperial), MSc AI (Edinburgh)"),
+            ("slecturer", "STF0002", "Mathematics", "Senior Lecturer",
+             "full-time", "2018-01-15", None, None, "Room 2.05, Maths Building", "2005",
+             "Grace Hopper", "01onal-000002", "Partner",
+             "Specialist in applied mathematics and statistics.",
+             "Statistics, Applied Mathematics, Numerical Methods",
+             "PhD Mathematics (Oxford), BSc Mathematics (Durham)"),
+            ("rfellow", "STF0003", "Engineering", "Research Fellow",
+             "full-time", "2021-06-01", None, None, "Lab 3.08, Engineering Block", "3008",
+             "Marie Curie", "01onal-000003", "Sister",
+             "Postdoctoral researcher in renewable energy systems.",
+             "Renewable Energy, Thermodynamics, Sustainability",
+             "PhD Mechanical Engineering (Manchester), MEng (Leeds)"),
+            ("labtech", "STF0004", "Computer Science", "Lab Technician",
+             "full-time", "2019-03-10", None, "STF0001",
+             "Lab G.01, CS Building", "4001",
+             "Charles Babbage", "01onal-000004", "Brother",
+             "Responsible for maintaining computer labs and equipment.",
+             "Hardware, Networking, Linux Administration",
+             "BSc Computer Networks (Liverpool John Moores)"),
+            ("acadvisor", "STF0005", "Student Services", "Academic Advisor",
+             "full-time", "2020-09-01", None, None, "Room 1.03, Student Hub", "1003",
+             "Florence Nightingale", "01onal-000005", "Mother",
+             "Providing academic guidance and pastoral support to students.",
+             "Student Welfare, Academic Planning, Career Guidance",
+             "MA Education (UCL), PGCE (Cambridge)"),
+        ]
+        for (uid, eid, dept, title, etype, hire, contract_end, mgr, office,
+             ext, ec_name, ec_phone, ec_rel, bio, expertise, quals) in staff_profiles:
+            cursor.execute(
+                """INSERT OR IGNORE INTO staff_profiles
+                   (user_id, employee_id, department, job_title, employment_type,
+                    hire_date, contract_end_date, manager_id, office_location,
+                    phone_extension, emergency_contact_name, emergency_contact_phone,
+                    emergency_contact_relationship, bio, expertise_areas, qualifications)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (uid, eid, dept, title, etype, hire, contract_end, mgr, office,
+                 ext, ec_name, ec_phone, ec_rel, bio, expertise, quals),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
 
 def migrate_existing_data():
     """Migrate data from existing databases if they exist"""

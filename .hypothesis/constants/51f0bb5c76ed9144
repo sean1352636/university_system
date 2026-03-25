@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/academics/timetable/services/timetable_service.py
+# hypothesis_version: 6.151.9
+
+[' AND ts.teacher = ?', ' AND ts.term = ?', 'Autumn', 'ENG01', 'ENG02', 'ENG03', 'ENG04', 'Friday', 'ICT01', 'KS3', 'KS4', 'MATH01', 'MATH02', 'Monday', 'PE01', 'PE02', 'PSHE01', 'RE01', 'SCI01', 'SCI02', 'Thursday', 'Tuesday', 'Wednesday', 'active', 'core_slots', 'id', 'option_slots', 'room', 'subject_code', 'subjects', 'teacher', 'term', 'title', 'total_slots', 'year_group']

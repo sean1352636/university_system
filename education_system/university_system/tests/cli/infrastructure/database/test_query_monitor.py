@@ -165,7 +165,7 @@ class TestQueryTimer:
     def test_slow_query_logging(self):
         """Test slow query triggers logging."""
         from education_system.university_system.infrastructure.database.query_monitor import QueryTimer
-        with patch('university_system.infrastructure.database.query_monitor.query_logger') as mock_logger:
+        with patch('education_system.university_system.infrastructure.database.query_monitor.query_logger') as mock_logger:
             with QueryTimer("SELECT * FROM big_table", threshold_ms=0.001, log_slow=True):
                 time.sleep(0.01)
             mock_logger.warning.assert_called()
@@ -173,7 +173,7 @@ class TestQueryTimer:
     def test_no_logging_when_disabled(self):
         """Test no logging when log_slow=False."""
         from education_system.university_system.infrastructure.database.query_monitor import QueryTimer
-        with patch('university_system.infrastructure.database.query_monitor.query_logger') as mock_logger:
+        with patch('education_system.university_system.infrastructure.database.query_monitor.query_logger') as mock_logger:
             with QueryTimer("SELECT 1", threshold_ms=0.001, log_slow=False):
                 time.sleep(0.01)
             mock_logger.warning.assert_not_called()
@@ -182,7 +182,7 @@ class TestQueryTimer:
         """Test that long queries are truncated in log messages."""
         from education_system.university_system.infrastructure.database.query_monitor import QueryTimer
         long_query = "SELECT " + "x," * 200 + " FROM t"
-        with patch('university_system.infrastructure.database.query_monitor.query_logger') as mock_logger:
+        with patch('education_system.university_system.infrastructure.database.query_monitor.query_logger') as mock_logger:
             with QueryTimer(long_query, threshold_ms=0.001, log_slow=True):
                 time.sleep(0.01)
             # The warning message should contain "..."

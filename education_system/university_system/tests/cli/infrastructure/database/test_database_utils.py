@@ -130,8 +130,8 @@ class TestDatabaseManager:
 class TestInitDB:
     """Test database initialization functions."""
 
-    @patch('university_system.modules.setup_unified_database.create_unified_database')
-    @patch('university_system.infrastructure.database.database_utils.DEFAULT_DB_PATH')
+    @patch('education_system.university_system.modules.setup_unified_database.create_unified_database')
+    @patch('education_system.university_system.infrastructure.database.database_utils.DEFAULT_DB_PATH')
     def test_init_db_creates_new_database(self, mock_path, mock_create):
         """Test init_db creates database when it doesn't exist."""
         # Setup mock
@@ -146,8 +146,8 @@ class TestInitDB:
         if temp_path.exists():
             temp_path.unlink()
 
-    @patch('university_system.infrastructure.database.database_utils.sqlite3.connect')
-    @patch('university_system.infrastructure.database.database_utils.DEFAULT_DB_PATH')
+    @patch('education_system.university_system.infrastructure.database.database_utils.sqlite3.connect')
+    @patch('education_system.university_system.infrastructure.database.database_utils.DEFAULT_DB_PATH')
     def test_init_db_with_existing_database(self, mock_path, mock_connect):
         """Test init_db with existing database."""
         # Setup mock
@@ -173,7 +173,7 @@ class TestInitDB:
         # This function creates parking-related tables
         # We test that it doesn't raise exceptions
         try:
-            with patch('university_system.infrastructure.database.database_utils.DatabaseManager') as mock_manager:
+            with patch('education_system.university_system.infrastructure.database.database_utils.DatabaseManager') as mock_manager:
                 mock_db = MagicMock()
                 mock_manager.return_value.__enter__.return_value = mock_db
                 mock_db.fetchall.return_value = []

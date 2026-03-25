@@ -1,4 +1,4 @@
-from ._common import (
+from education_system.university_system.modules.shared.utils.document_manager._common import (
     datetime, timedelta, sqlite3,
     get_connection, _t,
     EMAIL_SYSTEM_AVAILABLE,

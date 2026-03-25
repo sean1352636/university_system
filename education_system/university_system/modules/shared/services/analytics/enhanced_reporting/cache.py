@@ -5,7 +5,7 @@ import json
 import hashlib
 from datetime import datetime, timedelta
 
-from .config import CONFIG, logger
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.config import CONFIG, logger
 
 
 class CacheManager:

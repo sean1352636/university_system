@@ -111,24 +111,7 @@ def init_nailbar_db():
             )
         ''')
 
-        # Transactions table
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS nailbar_transactions (
-                transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                appointment_id INTEGER,
-                customer_id TEXT NOT NULL,
-                amount DECIMAL(10,2) NOT NULL,
-                payment_method TEXT NOT NULL,
-                transaction_type TEXT DEFAULT 'service',
-                tip_amount DECIMAL(10,2) DEFAULT 0,
-                reference_number TEXT,
-                status TEXT DEFAULT 'completed',
-                receipt_sent INTEGER DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                processed_by TEXT,
-                FOREIGN KEY (appointment_id) REFERENCES nailbar_appointments(appointment_id)
-            )
-        ''')
+        # Nail bar transactions now use unified 'transactions' table with source_type='nail_bar'
 
         # Customer preferences table
         conn.execute('''
@@ -483,10 +466,10 @@ class TransactionManager:
         """Process payment for an appointment"""
         with transaction() as conn:
             cursor = conn.execute('''
-                INSERT INTO nailbar_transactions
-                (appointment_id, customer_id, amount, payment_method, tip_amount,
+                INSERT INTO transactions
+                (source_type, reference_id, reference_type, customer_id, amount, payment_method, tip_amount,
                  reference_number, processed_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES ('nail_bar', ?, 'appointment', ?, ?, ?, ?, ?, ?)
             ''', (appointment_id, customer_id, amount, payment_method, tip_amount,
                   reference_number, processed_by))
 
@@ -531,8 +514,8 @@ class TransactionManager:
         """Get transaction by ID"""
         with get_db_connection() as conn:
             row = conn.execute(
-                'SELECT * FROM nailbar_transactions WHERE transaction_id = ?',
-                (transaction_id,)
+                'SELECT * FROM transactions WHERE transaction_id = ? AND source_type = ?',
+                (transaction_id, 'nail_bar')
             ).fetchone()
             if row:
                 return dict(row)
@@ -543,7 +526,7 @@ class TransactionManager:
         """Mark receipt as sent"""
         with transaction() as conn:
             conn.execute(
-                'UPDATE nailbar_transactions SET receipt_sent = 1 WHERE transaction_id = ?',
+                'UPDATE transactions SET receipt_sent = 1 WHERE transaction_id = ? AND source_type = \'nail_bar\'',
                 (transaction_id,)
             )
             return True
@@ -561,8 +544,8 @@ class TransactionManager:
                     SUM(amount) as service_revenue,
                     SUM(tip_amount) as tips,
                     SUM(amount + tip_amount) as total_revenue
-                FROM nailbar_transactions
-                WHERE DATE(created_at) = ? AND status = 'completed'
+                FROM transactions
+                WHERE source_type = 'nail_bar' AND DATE(created_at) = ? AND status = 'completed'
             ''', (date,)).fetchone()
 
             return {
@@ -586,8 +569,8 @@ class ReportManager:
                     SUM(amount) as service_revenue,
                     SUM(tip_amount) as total_tips,
                     AVG(amount) as avg_service_value
-                FROM nailbar_transactions
-                WHERE DATE(created_at) BETWEEN ? AND ? AND status = 'completed'
+                FROM transactions
+                WHERE source_type = 'nail_bar' AND DATE(created_at) BETWEEN ? AND ? AND status = 'completed'
             ''', (start_date, end_date)).fetchone()
 
             by_treatment = conn.execute('''
@@ -609,9 +592,9 @@ class ReportManager:
                     COUNT(*) as appointments,
                     SUM(t.amount) as revenue,
                     SUM(t.tip_amount) as tips
-                FROM nailbar_transactions t
-                JOIN nailbar_appointments a ON t.appointment_id = a.appointment_id
-                WHERE DATE(t.created_at) BETWEEN ? AND ?
+                FROM transactions t
+                JOIN nailbar_appointments a ON t.reference_id = a.appointment_id AND t.reference_type = 'appointment'
+                WHERE t.source_type = 'nail_bar' AND DATE(t.created_at) BETWEEN ? AND ?
                     AND t.status = 'completed' AND a.technician_name IS NOT NULL
                 GROUP BY a.technician_id, a.technician_name
                 ORDER BY revenue DESC

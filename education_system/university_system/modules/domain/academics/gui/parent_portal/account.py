@@ -41,7 +41,7 @@ except ImportError:
 
 
 
-from .base import ParentPortalGUI
+from education_system.university_system.modules.domain.academics.gui.parent_portal.base import ParentPortalGUI
 
 def emergency_contact_update(self):
     """Emergency contact management with full CRUD operations"""
@@ -743,33 +743,102 @@ def view_login_history(self):
         user_id = current_user.get('id')
 
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        # Check if login_history table exists
-        cursor.execute("""
-        SELECT name FROM sqlite_master
-        WHERE type='table' AND name='login_history'
-        """)
-
-        if cursor.fetchone():
-            # Fetch login history
+            # Check if login_history table exists
             cursor.execute("""
-            SELECT login_time, ip_address, login_status, device_info, location
-            FROM login_history
-            WHERE user_id = ? OR username = ?
-            ORDER BY login_time DESC
-            LIMIT 50
-            """, (user_id, username))
+            SELECT name FROM sqlite_master
+            WHERE type='table' AND name='login_history'
+            """)
 
-            history = cursor.fetchall()
+            if cursor.fetchone():
+                # Fetch login history
+                cursor.execute("""
+                SELECT login_time, ip_address, login_status, device_info, location
+                FROM login_history
+                WHERE user_id = ? OR username = ?
+                ORDER BY login_time DESC
+                LIMIT 50
+                """, (user_id, username))
 
-            if history:
+                history = cursor.fetchall()
+
+                if history:
+                    # Summary frame
+                    summary_frame = ttk.LabelFrame(main_frame, text="Summary", padding=10)
+                    summary_frame.pack(fill=tk.X, pady=(0, 10))
+
+                    total_logins = len(history)
+                    successful_logins = sum(1 for h in history if h[2] == 'success')
+                    failed_logins = total_logins - successful_logins
+
+                    ttk.Label(summary_frame, text=f"Total Login Attempts: {total_logins}",
+                             font=('Arial', 10)).pack(side=tk.LEFT, padx=20)
+                    ttk.Label(summary_frame, text=f"Successful: {successful_logins}",
+                             font=('Arial', 10), foreground='green').pack(side=tk.LEFT, padx=20)
+                    if failed_logins > 0:
+                        ttk.Label(summary_frame, text=f"Failed: {failed_logins}",
+                                 font=('Arial', 10), foreground='red').pack(side=tk.LEFT, padx=20)
+
+                    # History table
+                    history_frame = ttk.LabelFrame(main_frame, text="Login Activity", padding=10)
+                    history_frame.pack(fill=tk.BOTH, expand=True)
+
+                    columns = ("Date/Time", "Status", "IP Address", "Device", "Location")
+                    tree = ttk.Treeview(history_frame, columns=columns, show="headings", height=20)
+
+                    tree.heading("Date/Time", text="Date/Time")
+                    tree.heading("Status", text="Status")
+                    tree.heading("IP Address", text="IP Address")
+                    tree.heading("Device", text="Device")
+                    tree.heading("Location", text="Location")
+
+                    tree.column("Date/Time", width=180)
+                    tree.column("Status", width=100)
+                    tree.column("IP Address", width=150)
+                    tree.column("Device", width=200)
+                    tree.column("Location", width=150)
+
+                    for login in history:
+                        login_time = login[0]
+                        ip_address = login[1] or "N/A"
+                        status = login[2] or "unknown"
+                        device = login[3] or "Unknown Device"
+                        location = login[4] or "Unknown"
+
+                        # Apply color tags based on status
+                        tag = 'success' if status.lower() == 'success' else 'failed'
+                        tree.insert('', tk.END, values=(login_time, status.title(), ip_address, device, location), tags=(tag,))
+
+                    tree.tag_configure('success', foreground='green')
+                    tree.tag_configure('failed', foreground='red')
+
+                    scrollbar = ttk.Scrollbar(history_frame, orient=tk.VERTICAL, command=tree.yview)
+                    tree.configure(yscrollcommand=scrollbar.set)
+
+                    tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+                    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+                else:
+                    ttk.Label(main_frame, text="No login history found.",
+                             font=('Arial', 11)).pack(pady=50)
+            else:
+                # Create sample login history data for demo
+                sample_data = [
+                    (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), "192.168.1.100", "success", "Windows PC - Chrome", "Local Network"),
+                    ((datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S'), "192.168.1.100", "success", "Windows PC - Chrome", "Local Network"),
+                    ((datetime.datetime.now() - datetime.timedelta(days=2)).strftime('%Y-%m-%d %H:%M:%S'), "192.168.1.105", "success", "iPhone - Safari", "Mobile"),
+                    ((datetime.datetime.now() - datetime.timedelta(days=3)).strftime('%Y-%m-%d %H:%M:%S'), "192.168.1.100", "failed", "Windows PC - Chrome", "Local Network"),
+                    ((datetime.datetime.now() - datetime.timedelta(days=5)).strftime('%Y-%m-%d %H:%M:%S'), "192.168.1.100", "success", "Windows PC - Chrome", "Local Network"),
+                ]
+
                 # Summary frame
                 summary_frame = ttk.LabelFrame(main_frame, text="Summary", padding=10)
                 summary_frame.pack(fill=tk.X, pady=(0, 10))
 
-                total_logins = len(history)
-                successful_logins = sum(1 for h in history if h[2] == 'success')
+                total_logins = len(sample_data)
+                successful_logins = sum(1 for h in sample_data if h[2] == 'success')
                 failed_logins = total_logins - successful_logins
 
                 ttk.Label(summary_frame, text=f"Total Login Attempts: {total_logins}",
@@ -781,7 +850,7 @@ def view_login_history(self):
                              font=('Arial', 10), foreground='red').pack(side=tk.LEFT, padx=20)
 
                 # History table
-                history_frame = ttk.LabelFrame(main_frame, text="Login Activity", padding=10)
+                history_frame = ttk.LabelFrame(main_frame, text="Login Activity (Sample Data)", padding=10)
                 history_frame.pack(fill=tk.BOTH, expand=True)
 
                 columns = ("Date/Time", "Status", "IP Address", "Device", "Location")
@@ -799,16 +868,9 @@ def view_login_history(self):
                 tree.column("Device", width=200)
                 tree.column("Location", width=150)
 
-                for login in history:
-                    login_time = login[0]
-                    ip_address = login[1] or "N/A"
-                    status = login[2] or "unknown"
-                    device = login[3] or "Unknown Device"
-                    location = login[4] or "Unknown"
-
-                    # Apply color tags based on status
-                    tag = 'success' if status.lower() == 'success' else 'failed'
-                    tree.insert('', tk.END, values=(login_time, status.title(), ip_address, device, location), tags=(tag,))
+                for login in sample_data:
+                    tag = 'success' if login[2].lower() == 'success' else 'failed'
+                    tree.insert('', tk.END, values=(login[0], login[2].title(), login[1], login[3], login[4]), tags=(tag,))
 
                 tree.tag_configure('success', foreground='green')
                 tree.tag_configure('failed', foreground='red')
@@ -819,68 +881,8 @@ def view_login_history(self):
                 tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
                 scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-            else:
-                ttk.Label(main_frame, text="No login history found.",
-                         font=('Arial', 11)).pack(pady=50)
-        else:
-            # Create sample login history data for demo
-            sample_data = [
-                (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), "192.168.1.100", "success", "Windows PC - Chrome", "Local Network"),
-                ((datetime.datetime.now() - datetime.timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S'), "192.168.1.100", "success", "Windows PC - Chrome", "Local Network"),
-                ((datetime.datetime.now() - datetime.timedelta(days=2)).strftime('%Y-%m-%d %H:%M:%S'), "192.168.1.105", "success", "iPhone - Safari", "Mobile"),
-                ((datetime.datetime.now() - datetime.timedelta(days=3)).strftime('%Y-%m-%d %H:%M:%S'), "192.168.1.100", "failed", "Windows PC - Chrome", "Local Network"),
-                ((datetime.datetime.now() - datetime.timedelta(days=5)).strftime('%Y-%m-%d %H:%M:%S'), "192.168.1.100", "success", "Windows PC - Chrome", "Local Network"),
-            ]
-
-            # Summary frame
-            summary_frame = ttk.LabelFrame(main_frame, text="Summary", padding=10)
-            summary_frame.pack(fill=tk.X, pady=(0, 10))
-
-            total_logins = len(sample_data)
-            successful_logins = sum(1 for h in sample_data if h[2] == 'success')
-            failed_logins = total_logins - successful_logins
-
-            ttk.Label(summary_frame, text=f"Total Login Attempts: {total_logins}",
-                     font=('Arial', 10)).pack(side=tk.LEFT, padx=20)
-            ttk.Label(summary_frame, text=f"Successful: {successful_logins}",
-                     font=('Arial', 10), foreground='green').pack(side=tk.LEFT, padx=20)
-            if failed_logins > 0:
-                ttk.Label(summary_frame, text=f"Failed: {failed_logins}",
-                         font=('Arial', 10), foreground='red').pack(side=tk.LEFT, padx=20)
-
-            # History table
-            history_frame = ttk.LabelFrame(main_frame, text="Login Activity (Sample Data)", padding=10)
-            history_frame.pack(fill=tk.BOTH, expand=True)
-
-            columns = ("Date/Time", "Status", "IP Address", "Device", "Location")
-            tree = ttk.Treeview(history_frame, columns=columns, show="headings", height=20)
-
-            tree.heading("Date/Time", text="Date/Time")
-            tree.heading("Status", text="Status")
-            tree.heading("IP Address", text="IP Address")
-            tree.heading("Device", text="Device")
-            tree.heading("Location", text="Location")
-
-            tree.column("Date/Time", width=180)
-            tree.column("Status", width=100)
-            tree.column("IP Address", width=150)
-            tree.column("Device", width=200)
-            tree.column("Location", width=150)
-
-            for login in sample_data:
-                tag = 'success' if login[2].lower() == 'success' else 'failed'
-                tree.insert('', tk.END, values=(login[0], login[2].title(), login[1], login[3], login[4]), tags=(tag,))
-
-            tree.tag_configure('success', foreground='green')
-            tree.tag_configure('failed', foreground='red')
-
-            scrollbar = ttk.Scrollbar(history_frame, orient=tk.VERTICAL, command=tree.yview)
-            tree.configure(yscrollcommand=scrollbar.set)
-
-            tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        conn.close()
+        finally:
+            conn.close()
 
     except Exception as e:
         ttk.Label(main_frame, text=f"Error loading login history: {str(e)}",

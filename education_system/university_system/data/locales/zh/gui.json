@@ -35,7 +35,34 @@
     "language_selector_unavailable": "Language selector not available",
     "system_minimal_mode": "System running in minimal mode",
     "not_logged_in_status": "Not logged in",
-    "show_password": "Show Password"
+    "show_password": "Show Password",
+    "switch_system": {
+      "title": "切换系统",
+      "header": "切换到另一个系统",
+      "choose_system": "选择要启动的系统：",
+      "failed": "切换系统失败：{error}",
+      "college": "六年级学院系统",
+      "secondary": "中学系统",
+      "primary": "小学系统"
+    },
+    "mfa": {
+      "verification_status_disabled": "已禁用（仅密码）",
+      "verification_status_enabled": "已启用",
+      "login_verification_label": "登录验证：",
+      "configured": "已配置",
+      "primary_method": "主要",
+      "turned_off_success": "MFA已关闭。\n\n您的设置已保存。\n您可以稍后从此菜单恢复。",
+      "module_not_available": "MFA模块不可用：{error}",
+      "error_opening_setup": "打开MFA设置时出错：{error}",
+      "error_opening_wizard": "打开MFA向导时出错：{error}",
+      "reenable_email_subject": "您的账户已重新启用MFA",
+      "reenable_email_body": "您好 {username}，\n\n多因素认证（MFA）已使用您之前保存的设置重新启用。\n\n详情：\n- 账户：{username}\n- 邮箱：{email}\n- 恢复的方法：{methods_count}\n\n如果您没有进行此更改，请立即联系支持并更改密码。\n\n谢谢，\n大学系统安全团队",
+      "reenabled_title": "MFA已重新启用",
+      "reenabled_with_email": "MFA已使用您保存的设置成功重新启用。\n\n确认邮件已发送至：\n{email}",
+      "reenabled_no_email": "MFA已使用您保存的设置成功重新启用。\n\n（无法发送电子邮件通知）",
+      "reenabled_email_error": "MFA已使用您保存的设置成功重新启用。\n\n（无法发送确认邮件：{error}）",
+      "reenabled_simple": "MFA已使用您保存的设置成功重新启用。"
+    }
   },
   "nav": {
     "categories": {

@@ -1,7 +1,7 @@
 # dialogs/details_dialog.py
 # Dialog for showing accommodation details.
 
-from .._common import tk, ttk, ScrolledText, logger
+from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import tk, ttk, ScrolledText, logger
 
 
 class DetailsDialog:

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/helpdesk/data_io.py
+# hypothesis_version: 6.151.9
+
+['\nData Import/Export', '\nEnter your choice: ', '%Y%m%d_%H%M%S', '%Y-%m-%d %H:%M:%S', '1', '2', '3', '4', '==================', 'File not found.', 'assignee', 'category', 'created_at', 'department', 'detailed_stats', 'email', 'generated_at', 'generated_by', 'id', 'is_active', 'medium', 'message', 'monthly_trends', 'open', 'priority', 'r', 'resolved_at', 'role', 'status', 'subject', 'submitter', 'summary', 'ticket_id', 'tickets_by_category', 'tickets_by_status', 'total_tickets', 'username', 'utf-8', 'w']

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/plagiarism_main_gui/dialogs/check.py
+# hypothesis_version: 6.151.9
+
+[0.1, 0.9, 150, 200, 'Author', 'Cancel', 'Date', 'Error', 'Module', 'N/A', 'Refresh', 'Repository Search', 'Search', 'Search:', 'Title', 'author', 'check_complete', 'check_error', 'ew', 'headings', 'id', 'module_code', 'ns', 'nsew', 'submission_date', 'tags', 'title', 'w']

@@ -5,6 +5,7 @@ from __future__ import annotations
 from education_system.university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.email.email_db_utilities import execute_db_operation
 from education_system.university_system.core.logs import handle_exception, log_event
 
@@ -34,7 +35,7 @@ def get_stored_emails(limit=50, offset=0, recipient_filter=None, date_filter=Non
         conditions = []
         if recipient_filter:
             conditions.append("recipient_email LIKE ?")
-            params.append(f"%{recipient_filter}%")
+            params.append(f"%{escape_like(recipient_filter)}%")
 
         if date_filter:
             conditions.append("DATE(created_date) = ?")

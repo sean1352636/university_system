@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/analytics/student_analytics/engagement.py
+# hypothesis_version: 6.151.9
+
+[0.05, 0.35, 0.5, 0.6, 0.7, 0.8, 0.95, 3.0, 100, 331, 332, 333, 334, 335, 336, 337, 338, 339, '%1.1f%%', '--', '18-25', '26-35', '36-45', '46+', '=', 'Age', 'Age Group', 'Average Values', 'Course', 'Engagement Score', 'GPA', 'Gender', 'High', 'High Potential', 'Low', 'Low Engagement (≤25)', 'Low Potential', 'Medium', 'Medium Potential', 'Metrics', 'No Potential', 'Number of Students', 'RdYlGn', 'Very High', '_', 'age', 'attendance_rate', 'auto', 'black', 'center', 'colors', 'course', 'engagement_analysis', 'engagement_category', 'engagement_score', 'figure', 'gender', 'gpa', 'gray', 'green', 'left', 'lightgreen', 'mean', 'module_count', 'orange', 'red', 'right', 'round', 'std', 'student_id', 'summary', 'title', 'viridis', 'white', 'yellow']

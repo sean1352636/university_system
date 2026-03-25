@@ -4,9 +4,9 @@ import logging
 
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 
-from ..constants import ACTIVITY_LOGGING
-from ..utils import print_subheader
-from .movies import admin_view_all_movies
+from education_system.university_system.modules.services.cli.cinema_cli.constants import ACTIVITY_LOGGING
+from education_system.university_system.modules.services.cli.cinema_cli.utils import print_subheader
+from education_system.university_system.modules.services.cli.cinema_cli.admin.movies import admin_view_all_movies
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ def admin_add_screening():
             print(f"\n✅ Screening added successfully! (ID: {screening_id})")
 
             if ACTIVITY_LOGGING:
-                from ..constants import log_activity
+                from education_system.university_system.modules.services.cli.cinema_cli.constants import log_activity
                 log_activity('create', 'cinema_screening',
                            screening_id=screening_id,
                            details={'movie': movie_title, 'date': screening_date})
@@ -119,7 +119,7 @@ def admin_update_screening():
                 print(f"✅ Screening status updated to: {new_status}")
 
                 if ACTIVITY_LOGGING:
-                    from ..constants import log_activity
+                    from education_system.university_system.modules.services.cli.cinema_cli.constants import log_activity
                     log_activity('update', 'cinema_screening',
                                screening_id=screening_id,
                                details={'status': new_status})
@@ -225,7 +225,7 @@ def admin_create_exclusive_screening():
                     print(f"   Description: {description}")
 
                     if ACTIVITY_LOGGING:
-                        from ..constants import log_activity
+                        from education_system.university_system.modules.services.cli.cinema_cli.constants import log_activity
                         log_activity('create', 'cinema_exclusive_screening',
                                    screening_id=screening_id,
                                    details={'movie': movie})

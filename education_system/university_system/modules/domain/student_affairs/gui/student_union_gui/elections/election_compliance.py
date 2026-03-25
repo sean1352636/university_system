@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext, simpledialog
+from tkinter import ttk, messagebox, scrolledtext, simpledialog, filedialog
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.modules.shared.constants import paths
 from datetime import datetime, timedelta
@@ -520,51 +520,438 @@ NEXT AUDIT: 2025-04-27"""
         ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
 
     def run_scan(self):
-        messagebox.showinfo("Security Scan",
-                          "Running comprehensive security scan...\n\n" +
-                          "Checking:\n" +
-                          "✓ System vulnerabilities\n" +
-                          "✓ Access control integrity\n" +
-                          "✓ Encryption status\n" +
-                          "✓ Database security\n" +
-                          "✓ Network security\n\n" +
-                          "Scan complete: No issues detected\n" +
-                          "Security status: SECURE")
+        """Run security scan checking elections for anomalies."""
+        results = []
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Check 1: Duplicate votes (same voter_id + election_id appearing more than once)
+            cursor.execute('''
+                SELECT voter_id, election_id, COUNT(*) as cnt
+                FROM election_votes
+                GROUP BY voter_id, election_id
+                HAVING cnt > 1
+            ''')
+            duplicates = cursor.fetchall()
+            if duplicates:
+                results.append("[FAIL] Duplicate votes detected:")
+                for row in duplicates:
+                    results.append(f"  Voter {row[0]}, Election {row[1]}: {row[2]} votes")
+            else:
+                results.append("[PASS] No duplicate votes detected.")
+
+            # Check 2: Votes outside election period
+            cursor.execute('''
+                SELECT ev.id, ev.voter_id, ev.election_id, ev.vote_time,
+                       ue.voting_start, ue.voting_end
+                FROM election_votes ev
+                JOIN union_elections ue ON ev.election_id = ue.election_id
+                WHERE ev.vote_time < ue.voting_start
+                   OR ev.vote_time > ue.voting_end
+            ''')
+            outside_period = cursor.fetchall()
+            if outside_period:
+                results.append(f"\n[FAIL] {len(outside_period)} vote(s) cast outside election period:")
+                for row in outside_period[:10]:
+                    results.append(f"  Vote #{row[0]}: voter {row[1]}, election {row[2]}, "
+                                   f"time {row[3]} (period: {row[4]} - {row[5]})")
+            else:
+                results.append("[PASS] All votes cast within election periods.")
+
+            # Check 3: Votes referencing non-existent elections
+            cursor.execute('''
+                SELECT ev.id, ev.election_id
+                FROM election_votes ev
+                LEFT JOIN union_elections ue ON ev.election_id = ue.election_id
+                WHERE ue.election_id IS NULL
+            ''')
+            orphaned = cursor.fetchall()
+            if orphaned:
+                results.append(f"\n[FAIL] {len(orphaned)} orphaned vote(s) with invalid election_id.")
+            else:
+                results.append("[PASS] All votes reference valid elections.")
+
+            # Check 4: Total vote counts
+            cursor.execute('SELECT COUNT(*) FROM election_votes')
+            total_votes = cursor.fetchone()[0]
+            cursor.execute('SELECT COUNT(DISTINCT voter_id) FROM election_votes')
+            unique_voters = cursor.fetchone()[0]
+            results.append(f"\n--- Summary ---")
+            results.append(f"Total votes: {total_votes}")
+            results.append(f"Unique voters: {unique_voters}")
+
+        except Exception as e:
+            results.append(f"[ERROR] Security scan failed: {e}")
+        finally:
+            if conn:
+                conn.close()
+
+        # Display results
+        scan_win = tk.Toplevel(self.dialog)
+        scan_win.title("Security Scan Results")
+        scan_win.geometry("700x500")
+        scan_win.transient(self.dialog)
+
+        ttk.Label(scan_win, text="Security Scan Results",
+                  font=('Arial', 12, 'bold')).pack(pady=10)
+        text_widget = scrolledtext.ScrolledText(scan_win, wrap=tk.WORD)
+        text_widget.pack(fill='both', expand=True, padx=10, pady=(0, 10))
+        text_widget.insert('1.0', "\n".join(results))
+        text_widget.config(state='disabled')
+        ttk.Button(scan_win, text="Close", command=scan_win.destroy).pack(pady=(0, 10))
 
     def view_logs(self):
-        messagebox.showinfo("Security Logs",
-                          "Access comprehensive security logs:\n\n" +
-                          "- Authentication logs\n" +
-                          "- Access control logs\n" +
-                          "- Vote submission logs\n" +
-                          "- Admin action logs\n" +
-                          "- Incident logs\n" +
-                          "- System logs\n\n" +
-                          "Export options: PDF, CSV, JSON")
+        """View security logs from election-related tables."""
+        logs = []
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Gather recent election votes
+            try:
+                cursor.execute('''
+                    SELECT vote_time, 'Vote Cast', voter_id,
+                           'Election ' || election_id
+                    FROM election_votes
+                    ORDER BY vote_time DESC LIMIT 50
+                ''')
+                logs.extend(cursor.fetchall())
+            except Exception:
+                pass
+
+            # Gather recent accessibility feedback
+            try:
+                cursor.execute('''
+                    SELECT submitted_date, 'Accessibility Feedback', username,
+                           issue_type || ': ' || SUBSTR(description, 1, 60)
+                    FROM accessibility_feedback
+                    ORDER BY submitted_date DESC LIMIT 50
+                ''')
+                logs.extend(cursor.fetchall())
+            except Exception:
+                pass
+
+            # Gather recent endorsements
+            try:
+                cursor.execute('''
+                    SELECT endorsed_date, 'Endorsement', endorser_username,
+                           'Endorsed ' || candidate_name
+                    FROM candidate_endorsements
+                    ORDER BY endorsed_date DESC LIMIT 50
+                ''')
+                logs.extend(cursor.fetchall())
+            except Exception:
+                pass
+
+            # Sort all logs by timestamp descending
+            logs.sort(key=lambda x: x[0] if x[0] else '', reverse=True)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to retrieve logs: {e}", parent=self.dialog)
+            return
+        finally:
+            if conn:
+                conn.close()
+
+        # Display in Toplevel with Treeview
+        log_win = tk.Toplevel(self.dialog)
+        log_win.title("Security Logs")
+        log_win.geometry("900x550")
+        log_win.transient(self.dialog)
+
+        ttk.Label(log_win, text="Security Logs",
+                  font=('Arial', 12, 'bold')).pack(pady=10)
+
+        columns = ('Timestamp', 'Action', 'User', 'Details')
+        tree_frame = ttk.Frame(log_win)
+        tree_frame.pack(fill='both', expand=True, padx=10, pady=(0, 10))
+
+        tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=18)
+        for col in columns:
+            tree.heading(col, text=col)
+            if col == 'Details':
+                tree.column(col, width=300)
+            elif col == 'Timestamp':
+                tree.column(col, width=180)
+            else:
+                tree.column(col, width=150)
+
+        v_scroll = ttk.Scrollbar(tree_frame, orient='vertical', command=tree.yview)
+        tree.configure(yscrollcommand=v_scroll.set)
+        tree.pack(side='left', fill='both', expand=True)
+        v_scroll.pack(side='right', fill='y')
+
+        for entry in logs:
+            tree.insert('', 'end', values=entry)
+
+        if not logs:
+            tree.insert('', 'end', values=('--', 'No logs found', '--', '--'))
+
+        ttk.Button(log_win, text="Close", command=log_win.destroy).pack(pady=(0, 10))
 
     def generate_report(self):
-        messagebox.showinfo("Audit Report",
-                          "Security audit report generated:\n\n" +
-                          "reports/security_audit_2025-03-27.pdf\n\n" +
-                          "Contains:\n" +
-                          "- Executive summary\n" +
-                          "- Security status assessment\n" +
-                          "- Incident analysis\n" +
-                          "- Compliance review\n" +
-                          "- Recommendations\n" +
-                          "- Trend analysis")
+        """Generate a text-based audit report with election statistics."""
+        from education_system.university_system.infrastructure.email.email_service.core import send_email
+
+        report_lines = []
+        report_lines.append("=" * 60)
+        report_lines.append("ELECTION SECURITY AUDIT REPORT")
+        report_lines.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        report_lines.append("=" * 60)
+
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Election statistics
+            cursor.execute('SELECT COUNT(*) FROM union_elections')
+            total_elections = cursor.fetchone()[0]
+            report_lines.append(f"\nTotal Elections: {total_elections}")
+
+            cursor.execute("SELECT COUNT(*) FROM union_elections WHERE status = 'active'")
+            active = cursor.fetchone()[0]
+            report_lines.append(f"Active Elections: {active}")
+
+            cursor.execute('SELECT COUNT(*) FROM election_votes')
+            total_votes = cursor.fetchone()[0]
+            report_lines.append(f"Total Votes Cast: {total_votes}")
+
+            cursor.execute('SELECT COUNT(DISTINCT voter_id) FROM election_votes')
+            unique_voters = cursor.fetchone()[0]
+            report_lines.append(f"Unique Voters: {unique_voters}")
+
+            cursor.execute('SELECT COUNT(*) FROM election_candidates')
+            total_candidates = cursor.fetchone()[0]
+            report_lines.append(f"Total Candidates: {total_candidates}")
+
+            # Per-election breakdown
+            report_lines.append("\n--- Per-Election Vote Counts ---")
+            cursor.execute('''
+                SELECT ue.election_id, ue.position, ue.status, COUNT(ev.id) as vote_count
+                FROM union_elections ue
+                LEFT JOIN election_votes ev ON ue.election_id = ev.election_id
+                GROUP BY ue.election_id
+            ''')
+            for row in cursor.fetchall():
+                report_lines.append(f"  Election #{row[0]} ({row[1]}): {row[3]} votes [Status: {row[2]}]")
+
+            # Security checks
+            report_lines.append("\n--- Security Checks ---")
+
+            cursor.execute('''
+                SELECT voter_id, election_id, COUNT(*) as cnt
+                FROM election_votes
+                GROUP BY voter_id, election_id
+                HAVING cnt > 1
+            ''')
+            dup_count = len(cursor.fetchall())
+            report_lines.append(f"Duplicate vote instances: {dup_count} {'[FAIL]' if dup_count else '[PASS]'}")
+
+            cursor.execute('''
+                SELECT COUNT(*)
+                FROM election_votes ev
+                LEFT JOIN union_elections ue ON ev.election_id = ue.election_id
+                WHERE ue.election_id IS NULL
+            ''')
+            orphan_count = cursor.fetchone()[0]
+            report_lines.append(f"Orphaned votes: {orphan_count} {'[FAIL]' if orphan_count else '[PASS]'}")
+
+            cursor.execute('''
+                SELECT COUNT(*)
+                FROM election_votes ev
+                JOIN union_elections ue ON ev.election_id = ue.election_id
+                WHERE ev.vote_time < ue.voting_start OR ev.vote_time > ue.voting_end
+            ''')
+            out_of_period = cursor.fetchone()[0]
+            report_lines.append(f"Votes outside period: {out_of_period} {'[FAIL]' if out_of_period else '[PASS]'}")
+
+        except Exception as e:
+            report_lines.append(f"\n[ERROR] Report generation error: {e}")
+        finally:
+            if conn:
+                conn.close()
+
+        report_lines.append("\n" + "=" * 60)
+        report_lines.append("END OF REPORT")
+        report_lines.append("=" * 60)
+        report_text = "\n".join(report_lines)
+
+        # Display report
+        report_win = tk.Toplevel(self.dialog)
+        report_win.title("Audit Report")
+        report_win.geometry("750x600")
+        report_win.transient(self.dialog)
+
+        ttk.Label(report_win, text="Election Audit Report",
+                  font=('Arial', 12, 'bold')).pack(pady=10)
+
+        text_widget = scrolledtext.ScrolledText(report_win, wrap=tk.WORD)
+        text_widget.pack(fill='both', expand=True, padx=10, pady=(0, 10))
+        text_widget.insert('1.0', report_text)
+        text_widget.config(state='disabled')
+
+        btn_frame = ttk.Frame(report_win)
+        btn_frame.pack(fill='x', padx=10, pady=(0, 10))
+
+        def save_report():
+            filepath = filedialog.asksaveasfilename(
+                parent=report_win,
+                defaultextension=".txt",
+                filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+                title="Save Audit Report"
+            )
+            if filepath:
+                try:
+                    with open(filepath, 'w') as f:
+                        f.write(report_text)
+                    messagebox.showinfo("Saved", f"Report saved to:\n{filepath}", parent=report_win)
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to save: {e}", parent=report_win)
+
+        def email_to_admin():
+            conn = None
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+                cursor.execute("SELECT email FROM users WHERE role = 'admin' LIMIT 1")
+                admin_row = cursor.fetchone()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to look up admin: {e}", parent=report_win)
+                return
+            finally:
+                if conn:
+                    conn.close()
+
+            if not admin_row or not admin_row[0]:
+                messagebox.showwarning("No Admin", "No admin email found in the database.",
+                                       parent=report_win)
+                return
+
+            try:
+                send_email(
+                    admin_row[0],
+                    "Election Security Audit Report",
+                    report_text
+                )
+                messagebox.showinfo("Sent", f"Report emailed to {admin_row[0]}.",
+                                    parent=report_win)
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to send email: {e}", parent=report_win)
+
+        ttk.Button(btn_frame, text="Save as TXT", command=save_report).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text="Email to Admin", command=email_to_admin).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text="Close", command=report_win.destroy).pack(side='right')
 
     def security_settings(self):
-        messagebox.showinfo("Security Settings",
-                          "Security configuration:\n\n" +
-                          "- MFA requirements\n" +
-                          "- Password policies\n" +
-                          "- Session timeout settings\n" +
-                          "- Access control rules\n" +
-                          "- Encryption settings\n" +
-                          "- Audit log retention\n" +
-                          "- Alert thresholds\n\n" +
-                          "Requires admin privileges")
+        """Show and manage election security settings."""
+        settings_win = tk.Toplevel(self.dialog)
+        settings_win.title("Election Security Settings")
+        settings_win.geometry("500x400")
+        settings_win.transient(self.dialog)
+
+        ttk.Label(settings_win, text="Security Settings",
+                  font=('Arial', 12, 'bold')).pack(pady=10)
+
+        form_frame = ttk.Frame(settings_win)
+        form_frame.pack(fill='both', expand=True, padx=20, pady=10)
+
+        # Setting variables
+        require_mfa_var = tk.BooleanVar(value=False)
+        encryption_var = tk.BooleanVar(value=True)
+        max_attempts_var = tk.IntVar(value=5)
+        session_timeout_var = tk.IntVar(value=30)
+        ip_logging_var = tk.BooleanVar(value=True)
+
+        # Ensure table exists and load existing settings
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS election_security_settings (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL
+                )
+            ''')
+            conn.commit()
+
+            cursor.execute('SELECT key, value FROM election_security_settings')
+            for key, value in cursor.fetchall():
+                if key == 'require_mfa':
+                    require_mfa_var.set(value == '1')
+                elif key == 'encryption_enabled':
+                    encryption_var.set(value == '1')
+                elif key == 'max_login_attempts':
+                    max_attempts_var.set(int(value))
+                elif key == 'session_timeout_minutes':
+                    session_timeout_var.set(int(value))
+                elif key == 'ip_logging_enabled':
+                    ip_logging_var.set(value == '1')
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load settings: {e}", parent=settings_win)
+        finally:
+            if conn:
+                conn.close()
+
+        # Layout
+        row = 0
+        ttk.Checkbutton(form_frame, text="Require MFA for voting",
+                         variable=require_mfa_var).grid(row=row, column=0, columnspan=2, sticky='w', pady=5)
+        row += 1
+        ttk.Checkbutton(form_frame, text="Vote encryption enabled",
+                         variable=encryption_var).grid(row=row, column=0, columnspan=2, sticky='w', pady=5)
+        row += 1
+        ttk.Label(form_frame, text="Max login attempts:").grid(row=row, column=0, sticky='w', pady=5)
+        ttk.Spinbox(form_frame, from_=1, to=20, width=8,
+                     textvariable=max_attempts_var).grid(row=row, column=1, sticky='w', pady=5)
+        row += 1
+        ttk.Label(form_frame, text="Session timeout (minutes):").grid(row=row, column=0, sticky='w', pady=5)
+        ttk.Spinbox(form_frame, from_=5, to=120, width=8,
+                     textvariable=session_timeout_var).grid(row=row, column=1, sticky='w', pady=5)
+        row += 1
+        ttk.Checkbutton(form_frame, text="IP logging enabled",
+                         variable=ip_logging_var).grid(row=row, column=0, columnspan=2, sticky='w', pady=5)
+
+        def save_settings():
+            conn = None
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS election_security_settings (
+                        key TEXT PRIMARY KEY,
+                        value TEXT NOT NULL
+                    )
+                ''')
+                settings = {
+                    'require_mfa': '1' if require_mfa_var.get() else '0',
+                    'encryption_enabled': '1' if encryption_var.get() else '0',
+                    'max_login_attempts': str(max_attempts_var.get()),
+                    'session_timeout_minutes': str(session_timeout_var.get()),
+                    'ip_logging_enabled': '1' if ip_logging_var.get() else '0',
+                }
+                for key, value in settings.items():
+                    cursor.execute('''
+                        INSERT OR REPLACE INTO election_security_settings (key, value)
+                        VALUES (?, ?)
+                    ''', (key, value))
+                conn.commit()
+                messagebox.showinfo("Saved", "Security settings saved successfully.",
+                                    parent=settings_win)
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to save settings: {e}", parent=settings_win)
+            finally:
+                if conn:
+                    conn.close()
+
+        btn_frame = ttk.Frame(settings_win)
+        btn_frame.pack(fill='x', padx=20, pady=(10, 15))
+        ttk.Button(btn_frame, text="Save Settings", command=save_settings).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text="Cancel", command=settings_win.destroy).pack(side='right')
 
 
 
@@ -881,54 +1268,350 @@ Full audit available for independent verification"""
         ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
 
     def run_check(self):
-        messagebox.showinfo("Integrity Check",
-                          "Running comprehensive integrity verification...\n\n" +
-                          "✓ Authenticity checks: PASSED\n" +
-                          "✓ Statistical analysis: PASSED\n" +
-                          "✓ Duplicate detection: PASSED\n" +
-                          "✓ Audit trail verification: PASSED\n" +
-                          "✓ Cryptographic verification: PASSED\n\n" +
-                          "RESULT: All votes verified as authentic and legitimate\n" +
-                          "Integrity score: 99.8%\n\n" +
-                          "Detailed report saved to:\n" +
-                          "reports/integrity_check_2025-03-27.pdf")
+        """Run comprehensive integrity checks on election votes."""
+        results = []
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Check 1: Vote counts match registrations
+            cursor.execute('''
+                SELECT ue.election_id, ue.position,
+                       (SELECT COUNT(*) FROM election_votes ev WHERE ev.election_id = ue.election_id) as vote_count,
+                       (SELECT SUM(votes) FROM election_candidates ec WHERE ec.election_id = ue.election_id) as registered_votes
+                FROM union_elections ue
+            ''')
+            elections = cursor.fetchall()
+            mismatch = False
+            for elec in elections:
+                eid, pos, vcount, rcount = elec
+                rcount = rcount or 0
+                if vcount != rcount:
+                    results.append(f"[FAIL] Election #{eid} ({pos}): vote records={vcount}, candidate tallies={rcount}")
+                    mismatch = True
+                else:
+                    results.append(f"[PASS] Election #{eid} ({pos}): counts match ({vcount})")
+            if not elections:
+                results.append("[INFO] No elections found in database.")
+
+            # Check 2: Orphaned votes (no valid election_id)
+            cursor.execute('''
+                SELECT COUNT(*)
+                FROM election_votes ev
+                LEFT JOIN union_elections ue ON ev.election_id = ue.election_id
+                WHERE ue.election_id IS NULL
+            ''')
+            orphaned = cursor.fetchone()[0]
+            if orphaned:
+                results.append(f"\n[FAIL] {orphaned} orphaned vote(s) with no valid election.")
+            else:
+                results.append("\n[PASS] No orphaned votes detected.")
+
+            # Check 3: Duplicate votes per user per election
+            cursor.execute('''
+                SELECT voter_id, election_id, COUNT(*) as cnt
+                FROM election_votes
+                GROUP BY voter_id, election_id
+                HAVING cnt > 1
+            ''')
+            duplicates = cursor.fetchall()
+            if duplicates:
+                results.append(f"\n[FAIL] {len(duplicates)} duplicate vote instance(s):")
+                for d in duplicates[:10]:
+                    results.append(f"  Voter {d[0]}, Election {d[1]}: {d[2]} votes")
+            else:
+                results.append("\n[PASS] No duplicate votes per user per election.")
+
+        except Exception as e:
+            results.append(f"\n[ERROR] Integrity check failed: {e}")
+        finally:
+            if conn:
+                conn.close()
+
+        # Display results
+        check_win = tk.Toplevel(self.dialog)
+        check_win.title("Integrity Check Results")
+        check_win.geometry("700x500")
+        check_win.transient(self.dialog)
+
+        ttk.Label(check_win, text="Integrity Check Results",
+                  font=('Arial', 12, 'bold')).pack(pady=10)
+        text_widget = scrolledtext.ScrolledText(check_win, wrap=tk.WORD)
+        text_widget.pack(fill='both', expand=True, padx=10, pady=(0, 10))
+        text_widget.insert('1.0', "\n".join(results))
+        text_widget.config(state='disabled')
+        ttk.Button(check_win, text="Close", command=check_win.destroy).pack(pady=(0, 10))
 
     def verify_vote(self):
-        messagebox.showinfo("Verify Your Vote",
-                          "Vote verification system:\n\n" +
-                          "Enter your unique vote verification code\n" +
-                          "(received after voting)\n\n" +
-                          "The system will confirm:\n" +
-                          "✓ Your vote was received\n" +
-                          "✓ Your vote was counted\n" +
-                          "✓ Your vote integrity is maintained\n\n" +
-                          "Your vote choice remains anonymous.\n" +
-                          "Only you know how you voted.")
+        """Verify a vote by receipt ID (vote id). Shows timestamp and election but NOT the candidate chosen."""
+        receipt_id = simpledialog.askstring(
+            "Verify Vote",
+            "Enter your vote receipt ID:",
+            parent=self.dialog
+        )
+        if not receipt_id:
+            return
+
+        receipt_id = receipt_id.strip()
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT ev.id, ev.vote_time, ue.position, ue.election_id
+                FROM election_votes ev
+                JOIN union_elections ue ON ev.election_id = ue.election_id
+                WHERE ev.id = ?
+            ''', (receipt_id,))
+            row = cursor.fetchone()
+        except Exception as e:
+            messagebox.showerror("Error", f"Verification failed: {e}", parent=self.dialog)
+            return
+        finally:
+            if conn:
+                conn.close()
+
+        if row:
+            messagebox.showinfo(
+                "Vote Verified",
+                f"Vote verification successful.\n\n"
+                f"Receipt ID: {row[0]}\n"
+                f"Timestamp: {row[1]}\n"
+                f"Election: {row[2]} (ID: {row[3]})\n\n"
+                f"Your vote was recorded and counted.\n"
+                f"Your vote choice remains anonymous (secret ballot).",
+                parent=self.dialog
+            )
+        else:
+            messagebox.showwarning(
+                "Not Found",
+                f"No vote found with receipt ID: {receipt_id}\n\n"
+                f"Please check the ID and try again.",
+                parent=self.dialog
+            )
 
     def export_audit(self):
-        messagebox.showinfo("Export Audit Log",
-                          "Audit log export options:\n\n" +
-                          "Format: PDF, CSV, JSON, XML\n" +
-                          "Scope: Full audit trail or filtered\n" +
-                          "Anonymization: Voter IDs anonymized\n\n" +
-                          "Exported to:\n" +
-                          "reports/audit_log_export_2025-03-27.pdf\n\n" +
-                          "This log can be used for independent\n" +
-                          "verification by election observers.")
+        """Export election-related audit activity to CSV or TXT."""
+        filepath = filedialog.asksaveasfilename(
+            parent=self.dialog,
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv"), ("Text files", "*.txt"), ("All files", "*.*")],
+            title="Export Audit Log"
+        )
+        if not filepath:
+            return
+
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            rows = []
+            # Election votes
+            try:
+                cursor.execute('''
+                    SELECT vote_time, 'Vote Cast', voter_id, election_id,
+                           'Voted in election ' || election_id
+                    FROM election_votes
+                    ORDER BY vote_time DESC
+                ''')
+                rows.extend(cursor.fetchall())
+            except Exception:
+                pass
+
+            # Endorsements
+            try:
+                cursor.execute('''
+                    SELECT endorsed_date, 'Endorsement', endorser_username, NULL,
+                           'Endorsed ' || candidate_name
+                    FROM candidate_endorsements
+                    ORDER BY endorsed_date DESC
+                ''')
+                rows.extend(cursor.fetchall())
+            except Exception:
+                pass
+
+            # Accessibility feedback
+            try:
+                cursor.execute('''
+                    SELECT submitted_date, 'Accessibility Feedback', username, NULL,
+                           issue_type
+                    FROM accessibility_feedback
+                    ORDER BY submitted_date DESC
+                ''')
+                rows.extend(cursor.fetchall())
+            except Exception:
+                pass
+
+            # Sort by timestamp
+            rows.sort(key=lambda x: x[0] if x[0] else '', reverse=True)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to query audit data: {e}", parent=self.dialog)
+            return
+        finally:
+            if conn:
+                conn.close()
+
+        try:
+            is_csv = filepath.lower().endswith('.csv')
+            with open(filepath, 'w') as f:
+                if is_csv:
+                    f.write("Timestamp,Action,User ID,Election ID,Details\n")
+                    for r in rows:
+                        escaped = [str(v).replace('"', '""') if v else '' for v in r]
+                        f.write(','.join(f'"{v}"' for v in escaped) + '\n')
+                else:
+                    f.write(f"{'Timestamp':<25} {'Action':<25} {'User ID':<15} {'Election ID':<15} {'Details'}\n")
+                    f.write("-" * 100 + "\n")
+                    for r in rows:
+                        f.write(f"{str(r[0] or ''):<25} {str(r[1] or ''):<25} "
+                                f"{str(r[2] or ''):<15} {str(r[3] or ''):<15} {str(r[4] or '')}\n")
+
+            messagebox.showinfo("Exported",
+                                f"Audit log exported successfully.\n\n"
+                                f"File: {filepath}\n"
+                                f"Records: {len(rows)}",
+                                parent=self.dialog)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to write file: {e}", parent=self.dialog)
 
     def generate_cert(self):
-        messagebox.showinfo("Integrity Certificate",
-                          "Election Integrity Certificate Generated\n\n" +
-                          "This certificate confirms:\n\n" +
-                          "✓ All votes verified authentic\n" +
-                          "✓ No duplicate votes detected\n" +
-                          "✓ No tampering detected\n" +
-                          "✓ Statistical integrity confirmed\n" +
-                          "✓ Audit trail complete\n" +
-                          "✓ Cryptographic security verified\n\n" +
-                          "Certificate signed by Election Commission\n" +
-                          "Valid for official record\n\n" +
-                          "Saved to: certificates/integrity_cert_2025.pdf")
+        """Generate a text-based election integrity certificate with a hash-based certificate number."""
+        conn = None
+        cert_lines = []
+        check_results = []
+
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            # Get elections
+            cursor.execute('''
+                SELECT ue.election_id, ue.position, ue.voting_start, ue.voting_end, ue.status
+                FROM union_elections ue
+                ORDER BY ue.election_id DESC LIMIT 1
+            ''')
+            election = cursor.fetchone()
+
+            if not election:
+                messagebox.showwarning("No Election", "No elections found in the database.",
+                                       parent=self.dialog)
+                return
+
+            eid, position, voting_start, voting_end, status = election
+
+            cursor.execute('SELECT COUNT(*) FROM election_votes WHERE election_id = ?', (eid,))
+            total_votes = cursor.fetchone()[0]
+
+            # Integrity checks
+            cursor.execute('''
+                SELECT COUNT(*) FROM election_votes ev
+                LEFT JOIN union_elections ue ON ev.election_id = ue.election_id
+                WHERE ev.election_id = ? AND ue.election_id IS NULL
+            ''', (eid,))
+            orphaned = cursor.fetchone()[0]
+            check_results.append(("Orphaned votes", "PASS" if orphaned == 0 else "FAIL"))
+
+            cursor.execute('''
+                SELECT COUNT(*) FROM (
+                    SELECT voter_id FROM election_votes
+                    WHERE election_id = ?
+                    GROUP BY voter_id HAVING COUNT(*) > 1
+                )
+            ''', (eid,))
+            dups = cursor.fetchone()[0]
+            check_results.append(("Duplicate votes", "PASS" if dups == 0 else "FAIL"))
+
+            if voting_start and voting_end:
+                cursor.execute('''
+                    SELECT COUNT(*) FROM election_votes
+                    WHERE election_id = ? AND (vote_time < ? OR vote_time > ?)
+                ''', (eid, voting_start, voting_end))
+                out_of_period = cursor.fetchone()[0]
+                check_results.append(("Votes within period", "PASS" if out_of_period == 0 else "FAIL"))
+            else:
+                check_results.append(("Votes within period", "N/A (no period set)"))
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate certificate: {e}", parent=self.dialog)
+            return
+        finally:
+            if conn:
+                conn.close()
+
+        # Generate certificate number from election data
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        hash_input = f"{eid}:{position}:{total_votes}:{now}"
+        cert_number = hashlib.sha256(hash_input.encode()).hexdigest()[:16].upper()
+
+        all_passed = all(r[1] == "PASS" for r in check_results)
+        overall = "VERIFIED" if all_passed else "ISSUES DETECTED"
+
+        cert_lines.append("=" * 60)
+        cert_lines.append("     ELECTION INTEGRITY CERTIFICATE")
+        cert_lines.append("=" * 60)
+        cert_lines.append(f"")
+        cert_lines.append(f"  Certificate No: {cert_number}")
+        cert_lines.append(f"  Issued: {now}")
+        cert_lines.append(f"")
+        cert_lines.append(f"  Election: {position}")
+        cert_lines.append(f"  Election ID: {eid}")
+        cert_lines.append(f"  Voting Period: {voting_start or 'N/A'} - {voting_end or 'N/A'}")
+        cert_lines.append(f"  Status: {status}")
+        cert_lines.append(f"  Total Votes: {total_votes}")
+        cert_lines.append(f"")
+        cert_lines.append(f"  --- Integrity Check Results ---")
+        for check_name, result in check_results:
+            marker = "[PASS]" if result == "PASS" else "[FAIL]" if result == "FAIL" else f"[{result}]"
+            cert_lines.append(f"  {marker} {check_name}")
+        cert_lines.append(f"")
+        cert_lines.append(f"  Overall Integrity: {overall}")
+        cert_lines.append(f"")
+        cert_lines.append(f"  This certificate confirms that an integrity")
+        cert_lines.append(f"  check was performed on the above election.")
+        cert_lines.append(f"  Results are recorded for audit purposes.")
+        cert_lines.append(f"")
+        cert_lines.append("=" * 60)
+
+        cert_text = "\n".join(cert_lines)
+
+        # Display certificate
+        cert_win = tk.Toplevel(self.dialog)
+        cert_win.title("Integrity Certificate")
+        cert_win.geometry("650x500")
+        cert_win.transient(self.dialog)
+
+        ttk.Label(cert_win, text="Election Integrity Certificate",
+                  font=('Arial', 12, 'bold')).pack(pady=10)
+
+        text_widget = scrolledtext.ScrolledText(cert_win, wrap=tk.WORD, font=('Courier', 10))
+        text_widget.pack(fill='both', expand=True, padx=10, pady=(0, 10))
+        text_widget.insert('1.0', cert_text)
+        text_widget.config(state='disabled')
+
+        btn_frame = ttk.Frame(cert_win)
+        btn_frame.pack(fill='x', padx=10, pady=(0, 10))
+
+        def save_cert():
+            filepath = filedialog.asksaveasfilename(
+                parent=cert_win,
+                defaultextension=".txt",
+                filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+                title="Save Certificate",
+                initialfile=f"integrity_cert_{cert_number}.txt"
+            )
+            if filepath:
+                try:
+                    with open(filepath, 'w') as f:
+                        f.write(cert_text)
+                    messagebox.showinfo("Saved", f"Certificate saved to:\n{filepath}", parent=cert_win)
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to save: {e}", parent=cert_win)
+
+        ttk.Button(btn_frame, text="Save as TXT", command=save_cert).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text="Close", command=cert_win.destroy).pack(side='right')
 
 
 

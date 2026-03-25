@@ -7,7 +7,7 @@ class BackwardCompatibilityWrapper:
     @staticmethod
     def ensure_compatibility(chatbot_instance):
         """Ensure all original methods are still available"""
-        from .manager import ChatbotManager
+        from education_system.university_system.utils.ai.gui.manager import ChatbotManager
 
         # Add any missing methods for backward compatibility
         if not hasattr(chatbot_instance, 'run_gui'):

@@ -5,7 +5,7 @@ This module provides the main entry point for the Financial Aid & Scholarships G
 routing users to either the student portal or admin portal based on their permissions.
 """
 
-from .common_imports import (
+from education_system.university_system.modules.domain.finance.gui.financial_aid.common_imports import (
     tk,
     ttk,
     COLORS,
@@ -16,8 +16,8 @@ from .common_imports import (
     get_current_user,
     check_permission,
 )
-from .student_portal import StudentPortal
-from .admin_portal import AdminPortal
+from education_system.university_system.modules.domain.finance.gui.financial_aid.student_portal import StudentPortal
+from education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal import AdminPortal
 
 # Import i18n for language support
 from education_system.university_system.modules.shared.utils.i18n import (

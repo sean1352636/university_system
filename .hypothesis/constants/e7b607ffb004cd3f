@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/template_utils.py
+# hypothesis_version: 6.151.9
+
+[100, ' (1-5): ', ' (y/n): ', '(root - legacy)', '*.json', '-', '...', '.json', '/', '1', '2', '3', '4', '5', ': ', 'END', '[^\\w]', '_', '__init__.py', 'body', 'body_html', 'body_preview', 'body_text', 'category', 'debug', 'email_signature', 'error', 'general', 'info', 'is_default', 'name', 'path', 'r', 'signature', 'subject', 'utf-8', 'w', 'warning', 'y']

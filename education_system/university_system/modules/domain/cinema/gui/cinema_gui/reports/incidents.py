@@ -17,7 +17,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_incidents_page(self):
     """Display incident reporting and management page."""
@@ -63,27 +63,29 @@ def show_incidents_page(self):
         self.incident_tree.column(col, width=100)
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    query = "SELECT id, incident_datetime, incident_type, severity, location, description, status FROM incidents WHERE 1=1"
-    params = []
+        query = "SELECT id, incident_datetime, incident_type, severity, location, description, status FROM incidents WHERE 1=1"
+        params = []
 
-    if self.incident_filter == 'open':
-        query += " AND status = 'open'"
-    elif self.incident_filter == 'resolved':
-        query += " AND status = 'resolved'"
+        if self.incident_filter == 'open':
+            query += " AND status = 'open'"
+        elif self.incident_filter == 'resolved':
+            query += " AND status = 'resolved'"
 
-    if self.severity_filter != 'all':
-        query += " AND severity = ?"
-        params.append(self.severity_filter)
+        if self.severity_filter != 'all':
+            query += " AND severity = ?"
+            params.append(self.severity_filter)
 
-    query += " ORDER BY incident_datetime DESC"
+        query += " ORDER BY incident_datetime DESC"
 
-    cursor.execute(query, params)
-    for row in cursor.fetchall():
-        severity_colors = {"critical": "#dc3545", "high": "#f4a261", "medium": "#ffc107", "low": "#4ecca3"}
-        self.incident_tree.insert("", "end", values=(row[0], row[1], row[2], row[3].upper(), row[4] or "-", row[5][:30] if row[5] else "", row[6].upper()))
-    conn.close()
+        cursor.execute(query, params)
+        for row in cursor.fetchall():
+            severity_colors = {"critical": "#dc3545", "high": "#f4a261", "medium": "#ffc107", "low": "#4ecca3"}
+            self.incident_tree.insert("", "end", values=(row[0], row[1], row[2], row[3].upper(), row[4] or "-", row[5][:30] if row[5] else "", row[6].upper()))
+    finally:
+        conn.close()
 
     self.incident_tree.pack(fill="both", expand=True, side="left")
     scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.incident_tree.yview)
@@ -101,14 +103,16 @@ def show_incidents_page(self):
     stats_frame.pack(fill="x", pady=10)
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM incidents WHERE status = 'open'")
-    open_count = cursor.fetchone()[0]
-    cursor.execute("SELECT COUNT(*) FROM incidents WHERE status = 'open' AND severity IN ('critical', 'high')")
-    urgent_count = cursor.fetchone()[0]
-    cursor.execute("SELECT COUNT(*) FROM incidents WHERE date(incident_datetime) = date('now')")
-    today_count = cursor.fetchone()[0]
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM incidents WHERE status = 'open'")
+        open_count = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM incidents WHERE status = 'open' AND severity IN ('critical', 'high')")
+        urgent_count = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM incidents WHERE date(incident_datetime) = date('now')")
+        today_count = cursor.fetchone()[0]
+    finally:
+        conn.close()
 
     stats_text = f"Open: {open_count} | Urgent (Critical/High): {urgent_count} | Today: {today_count}"
     tk.Label(stats_frame, text=stats_text, bg="#ffffff", fg="#7f8c8d").pack(anchor="w")
@@ -202,18 +206,20 @@ def report_incident(self):
                 pass
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO incidents (incident_type, severity, description, location, screen_number,
-                                   incident_datetime, witnesses, immediate_action_taken,
-                                   customer_involved, customer_name, customer_contact)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (fields['type_var'].get(), fields['sev_var'].get(), desc, fields['location'].get(),
-              screen, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), fields['witnesses'].get(),
-              fields['action'].get("1.0", tk.END).strip(), 1 if fields['cust_var'].get() else 0,
-              fields['cust_name'].get(), fields['cust_contact'].get()))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO incidents (incident_type, severity, description, location, screen_number,
+                                       incident_datetime, witnesses, immediate_action_taken,
+                                       customer_involved, customer_name, customer_contact)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (fields['type_var'].get(), fields['sev_var'].get(), desc, fields['location'].get(),
+                  screen, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), fields['witnesses'].get(),
+                  fields['action'].get("1.0", tk.END).strip(), 1 if fields['cust_var'].get() else 0,
+                  fields['cust_name'].get(), fields['cust_contact'].get()))
+            conn.commit()
+        finally:
+            conn.close()
 
         messagebox.showinfo(_t("cinema.common.success"), "Incident reported!")
         form.destroy()
@@ -231,10 +237,12 @@ def view_incident_details(self):
     incident_id = self.incident_tree.item(selected[0])['values'][0]
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM incidents WHERE id = ?", (incident_id,))
-    incident = cursor.fetchone()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM incidents WHERE id = ?", (incident_id,))
+        incident = cursor.fetchone()
+    finally:
+        conn.close()
 
     if not incident:
         messagebox.showerror(_t("cinema.common.error"), "Incident not found")
@@ -317,10 +325,12 @@ def update_incident(self):
     incident_id = self.incident_tree.item(selected[0])['values'][0]
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM incidents WHERE id = ?", (incident_id,))
-    incident = cursor.fetchone()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM incidents WHERE id = ?", (incident_id,))
+        incident = cursor.fetchone()
+    finally:
+        conn.close()
 
     if not incident:
         messagebox.showerror(_t("cinema.common.error"), "Incident not found")
@@ -366,15 +376,17 @@ def update_incident(self):
             resolved_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute('''
-            UPDATE incidents SET resolution = ?, status = ?, resolved_datetime = ?,
-                                 follow_up_required = ?, follow_up_notes = ?
-            WHERE id = ?
-        ''', (resolution_text.get("1.0", tk.END).strip(), status_var.get(), resolved_datetime,
-              1 if follow_up_var.get() else 0, follow_notes_e.get(), incident_id))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE incidents SET resolution = ?, status = ?, resolved_datetime = ?,
+                                     follow_up_required = ?, follow_up_notes = ?
+                WHERE id = ?
+            ''', (resolution_text.get("1.0", tk.END).strip(), status_var.get(), resolved_datetime,
+                  1 if follow_up_var.get() else 0, follow_notes_e.get(), incident_id))
+            conn.commit()
+        finally:
+            conn.close()
 
         messagebox.showinfo(_t("cinema.common.success"), "Incident updated!")
         form.destroy()
@@ -397,57 +409,59 @@ def show_incident_stats(self):
     tk.Label(frame, text=_t("cinema.incidents.statistics"), font=("Helvetica", 14, "bold"), bg="#ffffff", fg="#e74c3c").pack(pady=10)
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    # By type
-    type_frame = ttk.Frame(frame, style="Card.TFrame")
-    type_frame.pack(fill="x", pady=10)
-    tk.Label(type_frame, text=_t("cinema.analytics.by_type"), font=("Helvetica", 11, "bold"), bg="#ffffff", fg="#27ae60").pack(anchor="w")
+        # By type
+        type_frame = ttk.Frame(frame, style="Card.TFrame")
+        type_frame.pack(fill="x", pady=10)
+        tk.Label(type_frame, text=_t("cinema.analytics.by_type"), font=("Helvetica", 11, "bold"), bg="#ffffff", fg="#27ae60").pack(anchor="w")
 
-    cursor.execute('''
-        SELECT incident_type, COUNT(*) FROM incidents
-        WHERE incident_datetime >= date('now', '-30 days')
-        GROUP BY incident_type ORDER BY COUNT(*) DESC
-    ''')
-    for itype, count in cursor.fetchall():
-        tk.Label(type_frame, text=f"  {itype}: {count}", bg="#ffffff", fg="#7f8c8d").pack(anchor="w")
+        cursor.execute('''
+            SELECT incident_type, COUNT(*) FROM incidents
+            WHERE incident_datetime >= date('now', '-30 days')
+            GROUP BY incident_type ORDER BY COUNT(*) DESC
+        ''')
+        for itype, count in cursor.fetchall():
+            tk.Label(type_frame, text=f"  {itype}: {count}", bg="#ffffff", fg="#7f8c8d").pack(anchor="w")
 
-    # By severity
-    sev_frame = ttk.Frame(frame, style="Card.TFrame")
-    sev_frame.pack(fill="x", pady=10)
-    tk.Label(sev_frame, text=_t("cinema.analytics.by_severity"), font=("Helvetica", 11, "bold"), bg="#ffffff", fg="#27ae60").pack(anchor="w")
+        # By severity
+        sev_frame = ttk.Frame(frame, style="Card.TFrame")
+        sev_frame.pack(fill="x", pady=10)
+        tk.Label(sev_frame, text=_t("cinema.analytics.by_severity"), font=("Helvetica", 11, "bold"), bg="#ffffff", fg="#27ae60").pack(anchor="w")
 
-    cursor.execute('''
-        SELECT severity, COUNT(*) FROM incidents
-        WHERE incident_datetime >= date('now', '-30 days')
-        GROUP BY severity ORDER BY
-        CASE severity WHEN 'critical' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 ELSE 4 END
-    ''')
-    severity_colors = {"critical": "#dc3545", "high": "#f4a261", "medium": "#ffc107", "low": "#4ecca3"}
-    for sev, count in cursor.fetchall():
-        color = severity_colors.get(sev, "#aaaaaa")
-        tk.Label(sev_frame, text=f"  {sev.upper()}: {count}", bg="#ffffff", fg=color).pack(anchor="w")
+        cursor.execute('''
+            SELECT severity, COUNT(*) FROM incidents
+            WHERE incident_datetime >= date('now', '-30 days')
+            GROUP BY severity ORDER BY
+            CASE severity WHEN 'critical' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 ELSE 4 END
+        ''')
+        severity_colors = {"critical": "#dc3545", "high": "#f4a261", "medium": "#ffc107", "low": "#4ecca3"}
+        for sev, count in cursor.fetchall():
+            color = severity_colors.get(sev, "#aaaaaa")
+            tk.Label(sev_frame, text=f"  {sev.upper()}: {count}", bg="#ffffff", fg=color).pack(anchor="w")
 
-    # Resolution stats
-    res_frame = ttk.Frame(frame, style="Card.TFrame")
-    res_frame.pack(fill="x", pady=10)
-    tk.Label(res_frame, text=_t("cinema.labels.resolution_stats"), font=("Helvetica", 11, "bold"), bg="#ffffff", fg="#27ae60").pack(anchor="w")
+        # Resolution stats
+        res_frame = ttk.Frame(frame, style="Card.TFrame")
+        res_frame.pack(fill="x", pady=10)
+        tk.Label(res_frame, text=_t("cinema.labels.resolution_stats"), font=("Helvetica", 11, "bold"), bg="#ffffff", fg="#27ae60").pack(anchor="w")
 
-    cursor.execute("SELECT COUNT(*) FROM incidents WHERE status = 'open'")
-    open_count = cursor.fetchone()[0]
-    cursor.execute("SELECT COUNT(*) FROM incidents WHERE status = 'resolved'")
-    resolved_count = cursor.fetchone()[0]
-    cursor.execute('''
-        SELECT AVG(julianday(resolved_datetime) - julianday(incident_datetime)) * 24
-        FROM incidents WHERE resolved_datetime IS NOT NULL
-    ''')
-    avg_resolution = cursor.fetchone()[0] or 0
+        cursor.execute("SELECT COUNT(*) FROM incidents WHERE status = 'open'")
+        open_count = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM incidents WHERE status = 'resolved'")
+        resolved_count = cursor.fetchone()[0]
+        cursor.execute('''
+            SELECT AVG(julianday(resolved_datetime) - julianday(incident_datetime)) * 24
+            FROM incidents WHERE resolved_datetime IS NOT NULL
+        ''')
+        avg_resolution = cursor.fetchone()[0] or 0
 
-    tk.Label(res_frame, text=f"  Open: {open_count}", bg="#ffffff", fg="#ffc107").pack(anchor="w")
-    tk.Label(res_frame, text=f"  Resolved: {resolved_count}", bg="#ffffff", fg="#27ae60").pack(anchor="w")
-    tk.Label(res_frame, text=f"  Avg Resolution Time: {avg_resolution:.1f} hours", bg="#ffffff", fg="#7f8c8d").pack(anchor="w")
+        tk.Label(res_frame, text=f"  Open: {open_count}", bg="#ffffff", fg="#ffc107").pack(anchor="w")
+        tk.Label(res_frame, text=f"  Resolved: {resolved_count}", bg="#ffffff", fg="#27ae60").pack(anchor="w")
+        tk.Label(res_frame, text=f"  Avg Resolution Time: {avg_resolution:.1f} hours", bg="#ffffff", fg="#7f8c8d").pack(anchor="w")
 
-    conn.close()
+    finally:
+        conn.close()
 
 def export_incident_report(self):
     """Export incidents to CSV."""
@@ -460,13 +474,15 @@ def export_incident_report(self):
         return
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT id, incident_datetime, incident_type, severity, location, description, status, resolution
-        FROM incidents ORDER BY incident_datetime DESC
-    ''')
-    incidents = cursor.fetchall()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT id, incident_datetime, incident_type, severity, location, description, status, resolution
+            FROM incidents ORDER BY incident_datetime DESC
+        ''')
+        incidents = cursor.fetchall()
+    finally:
+        conn.close()
 
     with open(filepath, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)

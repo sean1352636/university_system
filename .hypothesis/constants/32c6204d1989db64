@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/course_management_gui/recommendations/course_status.py
+# hypothesis_version: 6.151.9
+
+[30.0, 130, '%Y-%m-%d %H:%M:%S', ')', '-- All Courses --', '...', '10', '600x400', '900x600', '<<ComboboxSelected>>', 'Active', 'Archived', 'Arial', 'Cancel', 'Cancelled', 'Changed By', 'Close', 'Course', 'Course:', 'Current Status:', 'Date', 'Field', 'Filter by Course:', 'ID: ', 'Inactive', 'Manage Course Status', 'New Status:', 'New Value', 'No Change', 'No course selected', 'Old Value', 'Refresh', 'Select Course', 'Select New Status', 'System', 'Unknown', 'Update Status', 'View Course History', 'bold', 'common.error', 'common.success', 'course_data', 'headings', 'readonly', 'values']

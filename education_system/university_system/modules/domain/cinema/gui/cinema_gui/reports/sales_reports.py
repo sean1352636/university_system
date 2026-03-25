@@ -9,9 +9,9 @@ All functions split into focused modules:
   exports.py       - export_report_csv, save_report_txt, email_report_to_admin, open_report_in_window
 """
 
-from .reports_page import show_reports_page
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.reports.reports_page import show_reports_page
 
-from .generators import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.reports.generators import (
     generate_sales_summary,
     generate_revenue_by_movie,
     generate_daily_sales,
@@ -20,13 +20,13 @@ from .generators import (
     generate_booking_status_report,
 )
 
-from .charts import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.reports.charts import (
     create_bar_chart,
     create_line_chart,
     create_pie_chart,
 )
 
-from .exports import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.reports.exports import (
     export_report_csv,
     save_report_txt,
     email_report_to_admin,

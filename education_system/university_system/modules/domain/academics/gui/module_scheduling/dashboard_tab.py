@@ -61,7 +61,7 @@ except ImportError:
     except Exception:
         class ModuleScheduler: pass
 
-from .main_gui import ModuleSchedulingGUI
+from education_system.university_system.modules.domain.academics.gui.module_scheduling.main_gui import ModuleSchedulingGUI
 
 def create_dashboard_tab(self):
     """Create the dashboard overview tab"""
@@ -171,7 +171,7 @@ def refresh_dashboard(self):
         self.update_activity_log("Dashboard refreshed")
         
     except Exception as e:
-        messagebox.showerror(_t("common.error"), _t("scheduling.dashboard.refresh_failed", error=str(e)))
+        messagebox.showerror(_t("common.error"), _t("scheduling.dashboard.refresh_failed", error=str(e)), parent=self.root)
 
 ModuleSchedulingGUI.refresh_dashboard = refresh_dashboard
 

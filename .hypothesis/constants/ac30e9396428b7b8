@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/cinema_cli/admin/screenings.py
+# hypothesis_version: 6.151.9
+
+[100, '100', 'UPDATE SCREENING', 'available', 'cancelled', 'cinema_screening', 'create', 'date', 'movie', 'standard', 'status', 'update', '✅', '❌', '❌ Invalid movie ID', '❌ Invalid status', '❌ Movie not found']

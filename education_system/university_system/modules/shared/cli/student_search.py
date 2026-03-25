@@ -6,12 +6,12 @@ Handles student search by various criteria and advanced filtering.
 
 import re
 
-from .imports import (
+from education_system.university_system.modules.shared.cli.imports import (
     logging, sqlite3, datetime, DB_PATH, logger, _t,
     log_search, get_auth
 )
 import education_system.university_system.modules.shared.cli.student_operations as _student_ops
-from .student_operations import display_student_record
+from education_system.university_system.modules.shared.cli.student_operations import display_student_record
 
 def get_db_connection():
     """Get database connection"""

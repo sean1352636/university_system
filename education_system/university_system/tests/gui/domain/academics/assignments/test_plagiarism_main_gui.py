@@ -80,13 +80,13 @@ def mock_plagiarism_checker():
 class TestPlagiarismCheckerGUIInitialization:
     """Test GUI initialization"""
 
-    @patch('university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
     def test_init_basic(self, mock_msgbox, mock_auth, mock_plagiarism_checker):
         """Test basic initialization"""
         root = tk.Tk()
 
         try:
-            with patch('university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
+            with patch('education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
                 gui = PlagiarismCheckerGUI(root, auth=mock_auth)
 
                 # Check basic attributes exist
@@ -102,13 +102,13 @@ class TestPlagiarismCheckerGUIInitialization:
             except (OSError, IOError):
                 pass
 
-    @patch('university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
     def test_window_title(self, mock_msgbox, mock_auth, mock_plagiarism_checker):
         """Test window title is set"""
         root = tk.Tk()
 
         try:
-            with patch('university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
+            with patch('education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
                 gui = PlagiarismCheckerGUI(root, auth=mock_auth)
 
                 # Check window has plagiarism-related title
@@ -128,7 +128,7 @@ class TestPlagiarismCheckerGUIInitialization:
 class TestDialogClasses:
     """Test dialog classes"""
 
-    @patch('university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
     def test_check_result_dialog_exists(self, mock_msgbox):
         """Test CheckResultDialog class exists"""
         try:
@@ -137,7 +137,7 @@ class TestDialogClasses:
         except ImportError:
             pytest.skip("CheckResultDialog not available")
 
-    @patch('university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
     def test_statistics_dialog_exists(self, mock_msgbox):
         """Test StatisticsDialog class exists"""
         try:
@@ -146,7 +146,7 @@ class TestDialogClasses:
         except ImportError:
             pytest.skip("StatisticsDialog not available")
 
-    @patch('university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
     def test_document_comparison_dialog_exists(self, mock_msgbox):
         """Test DocumentComparisonDialog class exists"""
         try:
@@ -160,8 +160,8 @@ class TestDialogClasses:
 class TestLauncherFunctions:
     """Test launcher and utility functions"""
 
-    @patch('university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
-    @patch('university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.PlagiarismCheckerGUI')
+    @patch('education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.PlagiarismCheckerGUI')
     def test_launch_gui_from_main_system(self, mock_gui_class, mock_msgbox, mock_auth):
         """Test launching GUI from main system"""
         try:
@@ -192,8 +192,8 @@ class TestLauncherFunctions:
 class TestFileOperations:
     """Test file-related operations"""
 
-    @patch('university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
-    @patch('university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.filedialog')
+    @patch('education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.filedialog')
     def test_file_selection_mechanism(self, mock_filedialog, mock_msgbox, mock_auth, mock_plagiarism_checker):
         """Test file selection mechanism"""
         root = tk.Tk()
@@ -206,7 +206,7 @@ class TestFileOperations:
 
             mock_filedialog.askopenfilename.return_value = temp_file
 
-            with patch('university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
+            with patch('education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
                 gui = PlagiarismCheckerGUI(root, auth=mock_auth)
 
                 # File dialog mock should be usable
@@ -222,13 +222,13 @@ class TestFileOperations:
             except (OSError, IOError):
                 pass
 
-    @patch('university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
     def test_export_functionality_exists(self, mock_msgbox, mock_auth, mock_plagiarism_checker):
         """Test export functionality exists"""
         root = tk.Tk()
 
         try:
-            with patch('university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
+            with patch('education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
                 gui = PlagiarismCheckerGUI(root, auth=mock_auth)
 
                 # Export methods should exist (if GUI initialized properly)
@@ -247,13 +247,13 @@ class TestFileOperations:
 class TestDatabaseIntegration:
     """Test database integration"""
 
-    @patch('university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
     def test_database_connection_handling(self, mock_msgbox, mock_auth, mock_plagiarism_checker):
         """Test that GUI handles database connections properly"""
         root = tk.Tk()
 
         try:
-            with patch('university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
+            with patch('education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
                 gui = PlagiarismCheckerGUI(root, auth=mock_auth)
 
                 # GUI should be able to work with database
@@ -272,13 +272,13 @@ class TestDatabaseIntegration:
 class TestSearchAndFilter:
     """Test search and filter functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
     def test_search_functionality_structure(self, mock_msgbox, mock_auth, mock_plagiarism_checker):
         """Test search functionality structure exists"""
         root = tk.Tk()
 
         try:
-            with patch('university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
+            with patch('education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
                 gui = PlagiarismCheckerGUI(root, auth=mock_auth)
 
                 # Basic structural test - GUI should initialize
@@ -479,13 +479,13 @@ class TestUtilityFunctions:
 class TestIntegrationScenarios:
     """Integration tests for complete workflows"""
 
-    @patch('university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
     def test_complete_gui_lifecycle(self, mock_msgbox, mock_auth, mock_plagiarism_checker):
         """Test complete GUI lifecycle"""
         root = tk.Tk()
 
         try:
-            with patch('university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
+            with patch('education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.PlagiarismChecker', return_value=mock_plagiarism_checker):
                 # Initialize
                 gui = PlagiarismCheckerGUI(root, auth=mock_auth)
 
@@ -505,7 +505,7 @@ class TestIntegrationScenarios:
 class TestErrorHandling:
     """Test error handling in GUI"""
 
-    @patch('university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.main_gui.messagebox')
     def test_handles_missing_auth_gracefully(self, mock_msgbox):
         """Test GUI handles missing auth gracefully"""
         root = tk.Tk()

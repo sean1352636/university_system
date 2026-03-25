@@ -47,7 +47,7 @@ def mock_db():
 class TestParentPortalGUIInitialization:
     """Test ParentPortalGUI initialization"""
 
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
     def test_initialization_with_auth(self, mock_portal_class, mock_auth):
         """Test initialization with authentication"""
         from education_system.university_system.modules.domain.academics.gui.parent_portal import ParentPortalGUI
@@ -71,7 +71,7 @@ class TestParentPortalGUIInitialization:
         assert gui.auth is None
         assert gui.parent_portal is None
 
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
     @patch('tkinter.Tk')
     def test_create_main_window(self, mock_tk, mock_portal_class, mock_auth):
         """Test creating main window"""
@@ -96,7 +96,7 @@ class TestParentPortalGUIInitialization:
 class TestLayoutSetup:
     """Test layout setup functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
     @patch('tkinter.Tk')
     def test_setup_layout(self, mock_tk, mock_portal_class, mock_auth):
         """Test setting up the layout"""
@@ -119,7 +119,7 @@ class TestLayoutSetup:
 class TestChildrenManagement:
     """Test children management functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
     def test_load_children_list(self, mock_portal_class, mock_auth):
         """Test loading children list"""
         from education_system.university_system.modules.domain.academics.gui.parent_portal import ParentPortalGUI
@@ -136,7 +136,7 @@ class TestChildrenManagement:
 
         assert gui.parent_portal == portal_instance
 
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
     def test_select_child(self, mock_portal_class, mock_auth):
         """Test selecting a child"""
         from education_system.university_system.modules.domain.academics.gui.parent_portal import ParentPortalGUI
@@ -153,7 +153,7 @@ class TestChildrenManagement:
 class TestDashboardView:
     """Test dashboard view functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
     @patch('tkinter.Tk')
     def test_show_dashboard(self, mock_tk, mock_portal_class, mock_auth):
         """Test showing dashboard"""
@@ -176,7 +176,7 @@ class TestDashboardView:
 class TestGradesView:
     """Test grades viewing functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
     def test_view_child_grades(self, mock_portal_class, mock_auth):
         """Test viewing child grades"""
         from education_system.university_system.modules.domain.academics.gui.parent_portal import ParentPortalGUI
@@ -193,7 +193,7 @@ class TestGradesView:
 
         assert gui.parent_portal == portal_instance
 
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
     def test_view_grade_details(self, mock_portal_class, mock_auth):
         """Test viewing grade details"""
         from education_system.university_system.modules.domain.academics.gui.parent_portal import ParentPortalGUI
@@ -218,7 +218,7 @@ class TestGradesView:
 class TestAttendanceView:
     """Test attendance viewing functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
     def test_view_attendance(self, mock_portal_class, mock_auth):
         """Test viewing attendance"""
         from education_system.university_system.modules.domain.academics.gui.parent_portal import ParentPortalGUI
@@ -237,7 +237,7 @@ class TestAttendanceView:
 
         assert gui.parent_portal == portal_instance
 
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
     def test_view_attendance_details(self, mock_portal_class, mock_auth):
         """Test viewing detailed attendance"""
         from education_system.university_system.modules.domain.academics.gui.parent_portal import ParentPortalGUI
@@ -259,7 +259,7 @@ class TestAttendanceView:
 class TestTimetableView:
     """Test timetable viewing functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
     def test_view_timetable(self, mock_portal_class, mock_auth):
         """Test viewing timetable"""
         from education_system.university_system.modules.domain.academics.gui.parent_portal import ParentPortalGUI
@@ -280,7 +280,7 @@ class TestTimetableView:
 class TestCommunication:
     """Test communication functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
     def test_send_message_to_teacher(self, mock_portal_class, mock_auth):
         """Test sending message to teacher"""
         from education_system.university_system.modules.domain.academics.gui.parent_portal import ParentPortalGUI
@@ -294,7 +294,7 @@ class TestCommunication:
 
         assert gui.parent_portal == portal_instance
 
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
     def test_view_messages(self, mock_portal_class, mock_auth):
         """Test viewing messages"""
         from education_system.university_system.modules.domain.academics.gui.parent_portal import ParentPortalGUI
@@ -319,7 +319,7 @@ class TestCommunication:
 class TestAnnouncementsView:
     """Test announcements viewing functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
     def test_view_announcements(self, mock_portal_class, mock_auth):
         """Test viewing announcements"""
         from education_system.university_system.modules.domain.academics.gui.parent_portal import ParentPortalGUI
@@ -343,7 +343,7 @@ class TestAnnouncementsView:
 class TestFeesPayment:
     """Test fees and payment functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
     def test_view_fee_balance(self, mock_portal_class, mock_auth):
         """Test viewing fee balance"""
         from education_system.university_system.modules.domain.academics.gui.parent_portal import ParentPortalGUI
@@ -361,7 +361,7 @@ class TestFeesPayment:
 
         assert gui.parent_portal == portal_instance
 
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
     def test_view_payment_history(self, mock_portal_class, mock_auth):
         """Test viewing payment history"""
         from education_system.university_system.modules.domain.academics.gui.parent_portal import ParentPortalGUI
@@ -382,8 +382,8 @@ class TestFeesPayment:
 class TestReportsDownload:
     """Test reports download functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.filedialog')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.filedialog')
     def test_download_progress_report(self, mock_filedialog, mock_portal_class, mock_auth):
         """Test downloading progress report"""
         from education_system.university_system.modules.domain.academics.gui.parent_portal import ParentPortalGUI
@@ -399,8 +399,8 @@ class TestReportsDownload:
 
         assert gui.parent_portal == portal_instance
 
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.filedialog')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.filedialog')
     def test_download_attendance_report(self, mock_filedialog, mock_portal_class, mock_auth):
         """Test downloading attendance report"""
         from education_system.university_system.modules.domain.academics.gui.parent_portal import ParentPortalGUI
@@ -420,7 +420,7 @@ class TestReportsDownload:
 class TestProfileManagement:
     """Test profile management functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
     def test_view_parent_profile(self, mock_portal_class, mock_auth):
         """Test viewing parent profile"""
         from education_system.university_system.modules.domain.academics.gui.parent_portal import ParentPortalGUI
@@ -438,7 +438,7 @@ class TestProfileManagement:
 
         assert gui.parent_portal == portal_instance
 
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
     def test_update_contact_information(self, mock_portal_class, mock_auth):
         """Test updating contact information"""
         from education_system.university_system.modules.domain.academics.gui.parent_portal import ParentPortalGUI
@@ -456,8 +456,8 @@ class TestProfileManagement:
 class TestExportFunctionality:
     """Test export functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
-    @patch('university_system.modules.domain.academics.gui.parent_portal.base.filedialog')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.ParentPortal')
+    @patch('education_system.university_system.modules.domain.academics.gui.parent_portal.base.filedialog')
     def test_export_grades_to_csv(self, mock_filedialog, mock_portal_class, mock_auth):
         """Test exporting grades to CSV"""
         from education_system.university_system.modules.domain.academics.gui.parent_portal import ParentPortalGUI

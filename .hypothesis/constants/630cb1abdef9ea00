@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/cli/module_operations.py
+# hypothesis_version: 6.151.9
+
+['\nCreate New Module', '\nDelete Module', '\nEdit Module', '\nExisting Modules:', '\nModule Types:', '-', '1', '1. Compulsory', '1. Module Name', '2', '2. Module Type', '2. Optional', '3', '3. Both', '4', '4. Cancel', '=', 'CS', 'DS', 'Enter module name: ', 'Enter your choice: ', 'Invalid module code', '^[A-Z]{2,4}\\d{3,4}$', 'cancel', 'code', 'compulsory', 'create_module', 'delete_module', 'edit_module', 'manage_modules', 'name', 'optional', 'search_module_code', 'search_module_name', 'view_any_student', 'yes']

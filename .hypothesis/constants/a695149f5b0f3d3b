@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/assignments/assignments/crud.py
+# hypothesis_version: 6.151.9
+
+[100, '\nAssignment Type:', '\nAvailable Modules:', '%Y-%m-%d %H:%M', '%Y-%m-%d %H:%M:%S', ')', ',', '1. Individual', '2', '2. Group', '=', '?', 'Allowed types: ', 'Assignment not found', 'Assignment title: ', 'Feedback', 'Grade', 'Invalid selection.', 'Late', 'Maximum group size: ', 'Minimum group size: ', 'Permission denied', 'Status', 'Student ID', 'Submission Date', 'assignment_created', 'assignment_type', 'assignments', 'create', 'create_assignment', 'delete', 'delete_assignments', 'description', 'due_date', 'exports', 'file_types_allowed', 'group', 'id', 'individual', 'instructions', 'is_active', 'late_penalty_per_day', 'manage_assignments', 'max_file_size_mb', 'max_marks', 'module', 'new_assignment', 'title', 'update', 'updated_at = ?', 'w', 'y']

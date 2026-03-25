@@ -1,29 +1,37 @@
 """Input validation utilities for the Primary School Management System."""
 
-import re
-
 from education_system.primary_school.core.exceptions import ValidationError
+from education_system.shared.auth.exceptions import ValidationError as _SharedValidationError
+from education_system.shared.validation import validators as _shared
+
+
+def _wrap(fn):
+    """Wrap a shared validator so it raises the primary-specific ValidationError."""
+    def wrapper(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except _SharedValidationError as exc:
+            raise ValidationError(str(exc)) from exc
+    wrapper.__name__ = fn.__name__
+    wrapper.__doc__ = fn.__doc__
+    return wrapper
+
+
+validate_email = _wrap(_shared.validate_email)
+validate_non_empty = _wrap(_shared.validate_non_empty)
+validate_date = _wrap(_shared.validate_date)
+validate_grade_score = _wrap(_shared.validate_grade_score)
+validate_positive_int = _wrap(_shared.validate_positive_int)
+validate_day_of_week = _wrap(_shared.validate_day_of_week)
+validate_time = _wrap(_shared.validate_time)
+validate_time_range = _wrap(_shared.validate_time_range)
+
 from education_system.primary_school.core.defaults import YEAR_GROUPS
-
-
-def validate_non_empty(value, field_name: str) -> str:
-    """Ensure a value is a non-empty string after stripping whitespace."""
-    if not value or not str(value).strip():
-        raise ValidationError(f"{field_name} is required and cannot be empty")
-    return str(value).strip()
-
-
-def validate_email(email: str) -> str:
-    """Validate an email address format."""
-    email = email.strip()
-    pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-    if not re.match(pattern, email):
-        raise ValidationError(f"Invalid email address: {email}")
-    return email
 
 
 def validate_pupil_id(pupil_id: str) -> str:
     """Validate a pupil ID matches the expected format (PRI0001)."""
+    import re
     pupil_id = pupil_id.strip()
     if not re.match(r"^PRI\d{4}$", pupil_id):
         raise ValidationError(f"Invalid pupil ID format: {pupil_id} (expected PRI0001)")
@@ -47,11 +55,3 @@ def validate_assessment_level(level: str) -> str:
     if level not in valid:
         raise ValidationError(f"Invalid assessment level: {level}")
     return level
-
-
-def validate_date(date_str: str) -> str:
-    """Validate a date string is in YYYY-MM-DD format."""
-    date_str = date_str.strip()
-    if not re.match(r"^\d{4}-\d{2}-\d{2}$", date_str):
-        raise ValidationError(f"Invalid date format: {date_str} (expected YYYY-MM-DD)")
-    return date_str

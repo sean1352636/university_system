@@ -274,7 +274,7 @@ class TestLogging:
 class TestNotifications:
     """Test notification functionality"""
 
-    @patch('university_system.modules.domain.academics.services.assignments.assignment_submission.send_email')
+    @patch('education_system.university_system.modules.domain.academics.services.assignments.assignment_submission.send_email')
     def test_send_notification(self, mock_send_email, assignment_service):
         """Test sending in-app notification"""
         result = assignment_service._send_notification(
@@ -288,7 +288,7 @@ class TestNotifications:
         # Should return True or not raise exception
         assert result is not None
 
-    @patch('university_system.modules.domain.academics.services.assignments.assignment_submission.send_email')
+    @patch('education_system.university_system.modules.domain.academics.services.assignments.assignment_submission.send_email')
     def test_send_email_notification(self, mock_send_email, assignment_service):
         """Test sending email notification"""
         mock_send_email.return_value = True
@@ -321,7 +321,7 @@ class TestNotifications:
 class TestDueDateReminders:
     """Test due date reminder functionality"""
 
-    @patch('university_system.modules.domain.academics.services.assignments.assignment_submission.send_email')
+    @patch('education_system.university_system.modules.domain.academics.services.assignments.assignment_submission.send_email')
     def test_run_due_date_reminders(self, mock_send_email, assignment_service):
         """Test running due date reminders"""
         mock_send_email.return_value = True

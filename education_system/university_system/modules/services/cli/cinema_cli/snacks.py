@@ -3,8 +3,8 @@
 import logging
 from typing import Tuple, List, Dict
 
-from .constants import SNACKS_MENU, COMBO_DEALS
-from .utils import print_subheader
+from education_system.university_system.modules.services.cli.cinema_cli.constants import SNACKS_MENU, COMBO_DEALS
+from education_system.university_system.modules.services.cli.cinema_cli.utils import print_subheader
 
 logger = logging.getLogger(__name__)
 

@@ -3,6 +3,7 @@
 from education_system.college_system.core.exceptions import LettingsError
 from education_system.college_system.infrastructure.database.db import connect
 
+from education_system.college_system.core.sql_safety import escape_like
 import logging
 from datetime import datetime
 
@@ -80,7 +81,8 @@ class LettingsService:
             if search:
                 sql += (" AND (hirer_name LIKE ? OR organisation LIKE ?"
                         " OR facility LIKE ? OR purpose LIKE ?)")
-                term = f"%{search}%"
+                escaped = escape_like(search)
+                term = f"%{escaped}%"
                 params.extend([term, term, term, term])
             sql += " ORDER BY booking_date DESC, start_time DESC"
             rows = conn.execute(sql, params).fetchall()
@@ -188,7 +190,8 @@ class LettingsService:
             if search:
                 sql += (" AND (hirer_name LIKE ? OR organisation LIKE ?"
                         " OR terms LIKE ?)")
-                term = f"%{search}%"
+                escaped = escape_like(search)
+                term = f"%{escaped}%"
                 params.extend([term, term, term])
             sql += " ORDER BY created_at DESC"
             rows = conn.execute(sql, params).fetchall()

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/course_management/courses.py
+# hypothesis_version: 6.151.9
+
+[0.0, 3.0, 102, '\nSelect course type:', '%Y-%m-%d %H:%M:%S', '-', '...', 'Active', 'Certificate', 'Core', 'Course not found.', 'Creating new course', 'DELETE CONFIRMED', 'Delete cancelled.', 'Deleting course', 'Diploma', 'Duration: N/A', 'Elective', 'Fall,Spring', 'General Education', 'Major-specific', 'N/A', 'PhD', 'Postgraduate', 'Undergraduate', 'Update cancelled.', 'Updating course', 'Viewing all courses', 'common.na', 'conn', 'course_management', 'manage_courses', 'view_courses', 'y']

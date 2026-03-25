@@ -121,6 +121,8 @@ class UniversityShopGUI:
         # Initialize variables
         self.current_user = None
         self.cart_items = []
+        self.content_frame = None  # Set by _bind_sidebar_scroll_events in create_widgets
+        self.status_label = None   # Set by _bind_sidebar_scroll_events in create_widgets
 
         # Initialize the original CLI system
         self.initialize_backend()
@@ -648,19 +650,19 @@ class UniversityShopGUI:
 # Import and bind methods from manager modules to UniversityShopGUI class
 # This allows the refactored functions to be called as instance methods
 try:
-    from . import dashboard_manager
-    from . import product_browser
-    from . import product_manager
-    from . import cart_manager
-    from . import checkout_manager
-    from . import order_manager
-    from . import inventory_manager
-    from . import discount_manager
-    from . import refund_manager
-    from . import report_manager
-    from . import bulk_operations
-    from . import utils
-    from . import ui_components
+    from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import dashboard_manager
+    from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import product_browser
+    from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import product_manager
+    from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import cart_manager
+    from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import checkout_manager
+    from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import order_manager
+    from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import inventory_manager
+    from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import discount_manager
+    from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import refund_manager
+    from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import report_manager
+    from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import bulk_operations
+    from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import utils
+    from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import ui_components
 
     # Bind dashboard methods
     if hasattr(dashboard_manager, 'show_dashboard'):
@@ -681,6 +683,8 @@ try:
         UniversityShopGUI.get_weekly_stats = dashboard_manager.get_weekly_stats
     if hasattr(dashboard_manager, 'get_daily_stats'):
         UniversityShopGUI.get_daily_stats = dashboard_manager.get_daily_stats
+    if hasattr(dashboard_manager, 'update_status'):
+        UniversityShopGUI.update_status = dashboard_manager.update_status
 
     # Bind product browser methods
     if hasattr(product_browser, 'show_browse_products'):

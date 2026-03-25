@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/records/screening/schedules.py
+# hypothesis_version: 6.151.9
+
+[180, 365, '%Y-%m-%d', 'Annual Physical Exam', 'Diabetes Screening', 'STI Screening', 'id', 'screening', 'y', 'ℹ️ UPCOMING', '🔴 OVERDUE', '🟡 DUE SOON']

@@ -70,10 +70,12 @@ def init_grocery_db() -> bool:
         )
         ''')
 
-        # Create grocery products table
+        # Products table (unified) for grocery products
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS grocery_products (
-            product_id TEXT PRIMARY KEY,
+        CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_type TEXT NOT NULL DEFAULT 'grocery',
+            source_product_id TEXT,
             category_id TEXT NOT NULL,
             name TEXT NOT NULL,
             description TEXT,
@@ -94,25 +96,8 @@ def init_grocery_db() -> bool:
         )
         ''')
 
-        # Create grocery transactions table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS grocery_transactions (
-            transaction_id TEXT PRIMARY KEY,
-            user_id INTEGER,
-            student_id TEXT,
-            transaction_date TEXT NOT NULL,
-            subtotal REAL NOT NULL,
-            discount_amount REAL DEFAULT 0,
-            tax_amount REAL DEFAULT 0,
-            total_amount REAL NOT NULL,
-            payment_method TEXT,
-            payment_status TEXT DEFAULT 'completed',
-            cashier_id INTEGER,
-            receipt_number TEXT,
-            notes TEXT,
-            FOREIGN KEY (user_id) REFERENCES users (id)
-        )
-        ''')
+        # NOTE: grocery transactions now use the unified 'transactions' table
+        # with source_type = 'grocery'
 
         # Create grocery transaction items table
         cursor.execute('''
@@ -125,24 +110,12 @@ def init_grocery_db() -> bool:
             unit_price REAL NOT NULL,
             discount REAL DEFAULT 0,
             subtotal REAL NOT NULL,
-            FOREIGN KEY (transaction_id) REFERENCES grocery_transactions (transaction_id),
-            FOREIGN KEY (product_id) REFERENCES grocery_products (product_id)
+            FOREIGN KEY (transaction_id) REFERENCES transactions (source_transaction_id),
+            FOREIGN KEY (product_id) REFERENCES products (id)
         )
         ''')
 
-        # Create grocery cart table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS grocery_cart (
-            cart_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            product_id TEXT NOT NULL,
-            quantity INTEGER NOT NULL DEFAULT 1,
-            added_at TEXT NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES users (id),
-            FOREIGN KEY (product_id) REFERENCES grocery_products (product_id),
-            UNIQUE(user_id, product_id)
-        )
-        ''')
+        # Grocery cart uses unified cart table with source_type='grocery'
 
         # Create grocery stock movements table
         cursor.execute('''
@@ -157,7 +130,7 @@ def init_grocery_db() -> bool:
             notes TEXT,
             created_by INTEGER,
             created_at TEXT NOT NULL,
-            FOREIGN KEY (product_id) REFERENCES grocery_products (product_id)
+            FOREIGN KEY (product_id) REFERENCES products (id)
         )
         ''')
 
@@ -252,7 +225,7 @@ def init_grocery_db() -> bool:
                 ('GR042', 'CAT10', 'Tortilla Wraps (8)', 'Mexican tortillas', 'Old El Paso', '8 pack', 2.29, 1.40, 35, 10, None, 1, 0, None, 0, now, now),
             ]
             cursor.executemany(
-                '''INSERT INTO grocery_products VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                '''INSERT INTO products (source_type, source_product_id, category_id, name, description, brand, unit, price, cost_price, stock_quantity, min_stock_level, barcode, is_available, is_perishable, expiry_date, discount_percentage, created_at, updated_at) VALUES ('grocery', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                 products
             )
 
@@ -401,9 +374,9 @@ def get_products(category_id: str = None, search: str = None) -> List[Dict]:
 
         query = '''
             SELECT p.*, c.name as category_name
-            FROM grocery_products p
+            FROM products p
             JOIN grocery_categories c ON p.category_id = c.category_id
-            WHERE p.is_available = 1
+            WHERE p.source_type = 'grocery' AND p.is_available = 1
         '''
         params = []
 
@@ -434,7 +407,7 @@ def add_to_cart(user_id: int, product_id: str, quantity: int = 1) -> bool:
         cursor = conn.cursor()
 
         # Check stock availability
-        cursor.execute('SELECT stock_quantity, name FROM grocery_products WHERE product_id = ?', (product_id,))
+        cursor.execute("SELECT stock_quantity, name FROM products WHERE source_type = 'grocery' AND source_product_id = ?", (product_id,))
         result = cursor.fetchone()
         if not result:
             print("Product not found.")
@@ -448,12 +421,22 @@ def add_to_cart(user_id: int, product_id: str, quantity: int = 1) -> bool:
 
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-        cursor.execute('''
-            INSERT INTO grocery_cart (user_id, product_id, quantity, added_at)
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT(user_id, product_id) DO UPDATE SET
-                quantity = quantity + excluded.quantity
-        ''', (user_id, product_id, quantity, now))
+        # Check if item already in cart
+        cursor.execute(
+            "SELECT cart_id, quantity FROM cart WHERE source_type = 'grocery' AND user_id = ? AND product_id = ?",
+            (user_id, product_id),
+        )
+        existing = cursor.fetchone()
+        if existing:
+            cursor.execute(
+                "UPDATE cart SET quantity = quantity + ? WHERE cart_id = ?",
+                (quantity, existing[0]),
+            )
+        else:
+            cursor.execute('''
+                INSERT INTO cart (source_type, user_id, product_id, quantity, added_at)
+                VALUES ('grocery', ?, ?, ?, ?)
+            ''', (user_id, product_id, quantity, now))
 
         conn.commit()
         conn.close()
@@ -470,12 +453,12 @@ def update_cart_quantity(user_id: int, product_id: str, quantity: int) -> bool:
         cursor = conn.cursor()
 
         if quantity <= 0:
-            cursor.execute('DELETE FROM grocery_cart WHERE user_id = ? AND product_id = ?',
+            cursor.execute("DELETE FROM cart WHERE source_type = 'grocery' AND user_id = ? AND product_id = ?",
                           (user_id, product_id))
         else:
             cursor.execute('''
-                UPDATE grocery_cart SET quantity = ?
-                WHERE user_id = ? AND product_id = ?
+                UPDATE cart SET quantity = ?
+                WHERE source_type = 'grocery' AND user_id = ? AND product_id = ?
             ''', (quantity, user_id, product_id))
 
         conn.commit()
@@ -494,9 +477,9 @@ def view_cart(user_id: int) -> Tuple[List[Dict], float]:
 
         cursor.execute('''
             SELECT c.*, p.name, p.price, p.brand, p.discount_percentage, p.stock_quantity
-            FROM grocery_cart c
-            JOIN grocery_products p ON c.product_id = p.product_id
-            WHERE c.user_id = ?
+            FROM cart c
+            JOIN products p ON c.product_id = p.source_product_id AND p.source_type = 'grocery'
+            WHERE c.source_type = 'grocery' AND c.user_id = ?
         ''', (user_id,))
 
         items = [dict(row) for row in cursor.fetchall()]
@@ -520,7 +503,7 @@ def clear_cart(user_id: int) -> bool:
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute('DELETE FROM grocery_cart WHERE user_id = ?', (user_id,))
+        cursor.execute("DELETE FROM cart WHERE source_type = 'grocery' AND user_id = ?", (user_id,))
         conn.commit()
         conn.close()
         return True
@@ -543,7 +526,7 @@ def checkout(user_id: int, payment_method: str = 'card') -> Optional[str]:
 
         # Verify stock for all items
         for item in items:
-            cursor.execute('SELECT stock_quantity FROM grocery_products WHERE product_id = ?',
+            cursor.execute("SELECT stock_quantity FROM products WHERE source_type = 'grocery' AND source_product_id = ?",
                           (item['product_id'],))
             stock = cursor.fetchone()[0]
             if stock < item['quantity']:
@@ -570,11 +553,11 @@ def checkout(user_id: int, payment_method: str = 'card') -> Optional[str]:
 
         # Create transaction
         cursor.execute('''
-            INSERT INTO grocery_transactions
-            (transaction_id, user_id, student_id, transaction_date, subtotal,
+            INSERT INTO transactions
+            (source_type, source_transaction_id, customer_id, student_id, created_at, subtotal,
              discount_amount, tax_amount, total_amount, payment_method,
-             payment_status, receipt_number)
-            VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, 'completed', ?)
+             status, receipt_number)
+            VALUES ('grocery', ?, ?, ?, ?, ?, 0, ?, ?, ?, 'completed', ?)
         ''', (transaction_id, user_id, student_id, now, subtotal,
               tax_amount, total, payment_method, receipt_number))
 
@@ -597,9 +580,9 @@ def checkout(user_id: int, payment_method: str = 'card') -> Optional[str]:
 
             # Update stock
             cursor.execute('''
-                UPDATE grocery_products
+                UPDATE products
                 SET stock_quantity = stock_quantity - ?
-                WHERE product_id = ?
+                WHERE source_type = 'grocery' AND source_product_id = ?
             ''', (item['quantity'], item['product_id']))
 
             # Record stock movement
@@ -610,7 +593,7 @@ def checkout(user_id: int, payment_method: str = 'card') -> Optional[str]:
             ''', (item['product_id'], -item['quantity'], transaction_id, now))
 
         # Clear cart
-        cursor.execute('DELETE FROM grocery_cart WHERE user_id = ?', (user_id,))
+        cursor.execute("DELETE FROM cart WHERE source_type = 'grocery' AND user_id = ?", (user_id,))
 
         conn.commit()
         conn.close()
@@ -630,9 +613,9 @@ def get_purchase_history(user_id: int) -> List[Dict]:
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute('''
-            SELECT * FROM grocery_transactions
-            WHERE user_id = ?
-            ORDER BY transaction_date DESC
+            SELECT *, created_at as transaction_date FROM transactions
+            WHERE source_type = 'grocery' AND customer_id = ?
+            ORDER BY created_at DESC
         ''', (user_id,))
         transactions = [dict(row) for row in cursor.fetchall()]
         conn.close()
@@ -648,7 +631,7 @@ def get_transaction_details(transaction_id: str) -> Tuple[Optional[Dict], List[D
         conn = get_connection()
         cursor = conn.cursor()
 
-        cursor.execute('SELECT * FROM grocery_transactions WHERE transaction_id = ?', (transaction_id,))
+        cursor.execute("SELECT *, created_at as transaction_date FROM transactions WHERE source_type = 'grocery' AND source_transaction_id = ?", (transaction_id,))
         transaction = cursor.fetchone()
 
         if not transaction:
@@ -672,7 +655,7 @@ def restock_product(product_id: str, quantity: int, notes: str = "", user_id: in
         conn = get_connection()
         cursor = conn.cursor()
 
-        cursor.execute('SELECT stock_quantity FROM grocery_products WHERE product_id = ?', (product_id,))
+        cursor.execute("SELECT stock_quantity FROM products WHERE source_type = 'grocery' AND source_product_id = ?", (product_id,))
         result = cursor.fetchone()
         if not result:
             print("Product not found.")
@@ -684,9 +667,9 @@ def restock_product(product_id: str, quantity: int, notes: str = "", user_id: in
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         cursor.execute('''
-            UPDATE grocery_products
+            UPDATE products
             SET stock_quantity = ?, updated_at = ?
-            WHERE product_id = ?
+            WHERE source_type = 'grocery' AND source_product_id = ?
         ''', (new_stock, now, product_id))
 
         cursor.execute('''
@@ -713,17 +696,17 @@ def get_low_stock_products(threshold: int = None) -> List[Dict]:
         if threshold:
             cursor.execute('''
                 SELECT p.*, c.name as category_name
-                FROM grocery_products p
+                FROM products p
                 JOIN grocery_categories c ON p.category_id = c.category_id
-                WHERE p.stock_quantity <= ?
+                WHERE p.source_type = 'grocery' AND p.stock_quantity <= ?
                 ORDER BY p.stock_quantity
             ''', (threshold,))
         else:
             cursor.execute('''
                 SELECT p.*, c.name as category_name
-                FROM grocery_products p
+                FROM products p
                 JOIN grocery_categories c ON p.category_id = c.category_id
-                WHERE p.stock_quantity <= p.min_stock_level
+                WHERE p.source_type = 'grocery' AND p.stock_quantity <= p.min_stock_level
                 ORDER BY p.stock_quantity
             ''')
 
@@ -748,7 +731,7 @@ def display_grocery_menu():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='grocery_products'")
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='products'")
         if not cursor.fetchone():
             conn.close()
             print("Grocery database not initialized. Initializing now...")
@@ -1231,10 +1214,11 @@ def manage_inventory():
                 conn = get_connection()
                 cursor = conn.cursor()
                 cursor.execute('''
-                    SELECT p.product_id, p.name, p.stock_quantity, p.min_stock_level,
+                    SELECT p.source_product_id as product_id, p.name, p.stock_quantity, p.min_stock_level,
                            c.name as category
-                    FROM grocery_products p
+                    FROM products p
                     JOIN grocery_categories c ON p.category_id = c.category_id
+                    WHERE p.source_type = 'grocery'
                     ORDER BY p.stock_quantity
                 ''')
                 products = cursor.fetchall()
@@ -1263,8 +1247,9 @@ def view_all_transactions():
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute('''
-            SELECT * FROM grocery_transactions
-            ORDER BY transaction_date DESC
+            SELECT *, created_at as transaction_date, status as payment_status FROM transactions
+            WHERE source_type = 'grocery'
+            ORDER BY created_at DESC
             LIMIT 50
         ''')
         transactions = [dict(row) for row in cursor.fetchall()]
@@ -1308,12 +1293,12 @@ def generate_reports():
 
         if choice == '1':
             cursor.execute('''
-                SELECT DATE(transaction_date) as date,
+                SELECT DATE(created_at) as date,
                        COUNT(*) as transactions,
                        SUM(total_amount) as revenue
-                FROM grocery_transactions
-                WHERE payment_status = 'completed'
-                GROUP BY DATE(transaction_date)
+                FROM transactions
+                WHERE source_type = 'grocery' AND status = 'completed'
+                GROUP BY DATE(created_at)
                 ORDER BY date DESC
                 LIMIT 30
             ''')
@@ -1329,7 +1314,7 @@ def generate_reports():
                        COUNT(ti.id) as items_sold,
                        SUM(ti.subtotal) as revenue
                 FROM grocery_transaction_items ti
-                JOIN grocery_products p ON ti.product_id = p.product_id
+                JOIN products p ON ti.product_id = p.source_product_id AND p.source_type = 'grocery'
                 JOIN grocery_categories c ON p.category_id = c.category_id
                 GROUP BY c.category_id
                 ORDER BY revenue DESC
@@ -1363,8 +1348,8 @@ def generate_reports():
                     SUM(subtotal) as gross_revenue,
                     SUM(discount_amount) as total_discounts,
                     SUM(total_amount) as net_revenue
-                FROM grocery_transactions
-                WHERE payment_status = 'completed'
+                FROM transactions
+                WHERE source_type = 'grocery' AND status = 'completed'
             ''')
             result = cursor.fetchone()
             print("\nRevenue Summary:")

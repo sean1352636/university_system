@@ -134,7 +134,7 @@ class LayoutManager:
         self.notification_btn.pack(side='right', padx=(0, 10))
         
         # User info
-        user_info = f"Welcome, {self.auth.current_user['username']} ({self.auth.current_user['role']})"
+        user_info = f"Welcome, {self.auth.current_user.get('username', 'User')} ({self.auth.current_user.get('role', 'user')})"
         user_label = ttk.Label(user_frame, text=user_info)
         user_label.pack(side='right', padx=(0, 10))
     

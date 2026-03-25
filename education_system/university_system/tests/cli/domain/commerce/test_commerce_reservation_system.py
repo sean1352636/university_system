@@ -111,7 +111,7 @@ def mock_db_connection(tmp_path):
 class TestTableManagement:
     """Tests for table management functionality."""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.get_db_connection')
     def test_view_all_tables(self, mock_get_conn, mock_db_connection, capsys):
         """Test viewing all tables."""
         # Setup
@@ -144,9 +144,9 @@ class TestTableManagement:
         assert "T003" in captured.out
         assert "Total tables: 3" in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.get_db_connection')
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.log_audit_action')
     @patch('builtins.input')
     def test_add_new_table(self, mock_input, mock_audit, mock_backup,
                           mock_get_conn, mock_db_connection, mock_auth):
@@ -176,9 +176,9 @@ class TestTableManagement:
         assert table[5] == 'Standard'  # table_type
         mock_audit.assert_called_once()
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.get_db_connection')
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.log_audit_action')
     @patch('builtins.input')
     def test_update_table_status(self, mock_input, mock_audit, mock_backup,
                                  mock_get_conn, mock_db_connection, mock_auth):
@@ -212,9 +212,9 @@ class TestTableManagement:
         status = cursor.fetchone()[0]
         assert status == 'Occupied'
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.get_db_connection')
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.log_audit_action')
     @patch('builtins.input')
     def test_delete_table(self, mock_input, mock_audit, mock_backup,
                          mock_get_conn, mock_db_connection, mock_auth):
@@ -248,7 +248,7 @@ class TestTableManagement:
         assert table is None
         mock_audit.assert_called_once()
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.get_db_connection')
     @patch('builtins.input')
     def test_delete_occupied_table_fails(self, mock_input, mock_get_conn,
                                         mock_db_connection, mock_auth, capsys):
@@ -280,9 +280,9 @@ class TestTableManagement:
 class TestReservationManagement:
     """Tests for reservation management functionality."""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.get_db_connection')
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.log_audit_action')
     @patch('builtins.input')
     def test_create_reservation(self, mock_input, mock_audit, mock_backup,
                                 mock_get_conn, mock_db_connection, mock_auth):
@@ -341,9 +341,9 @@ class TestReservationManagement:
         assert status == 'Reserved'
         mock_audit.assert_called_once()
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.get_db_connection')
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.backup_before_operation')
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.log_audit_action')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.backup_before_operation')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.log_audit_action')
     @patch('builtins.input')
     def test_cancel_reservation(self, mock_input, mock_audit, mock_backup,
                                 mock_get_conn, mock_db_connection, mock_auth):
@@ -402,7 +402,7 @@ class TestReservationManagement:
         assert table_status == 'Available'
         mock_audit.assert_called_once()
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.get_db_connection')
     @patch('builtins.input')
     def test_view_table_reservations(self, mock_input, mock_get_conn,
                                     mock_db_connection, capsys):
@@ -456,8 +456,8 @@ class TestReservationManagement:
 class TestQRCodeManagement:
     """Tests for QR code generation and management."""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.get_db_connection')
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.QR_CODES_DIR')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.QR_CODES_DIR')
     @patch('builtins.input')
     def test_generate_qr_codes_for_all_tables(self, mock_input, mock_qr_dir,
                                               mock_get_conn, mock_db_connection,
@@ -485,7 +485,7 @@ class TestQRCodeManagement:
         mock_input.side_effect = ['1']  # Generate for all tables
 
         # Execute with QR_CODES_DIR patched
-        with patch('university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.QR_CODES_DIR', tmp_path / "qr_codes"):
+        with patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.QR_CODES_DIR', tmp_path / "qr_codes"):
             reservation_system.generate_qr_codes()
 
         # Verify QR code records in database
@@ -493,7 +493,7 @@ class TestQRCodeManagement:
         count = cursor.fetchone()[0]
         assert count == 3
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.get_db_connection')
     def test_scan_qr_code_usage(self, mock_get_conn, mock_db_connection):
         """Test scanning QR code and updating usage statistics."""
         # Setup
@@ -530,7 +530,7 @@ class TestQRCodeManagement:
 class TestTableAnalytics:
     """Tests for table analytics functionality."""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.get_db_connection')
     def test_table_analytics(self, mock_get_conn, mock_db_connection, capsys):
         """Test table analytics display."""
         # Setup

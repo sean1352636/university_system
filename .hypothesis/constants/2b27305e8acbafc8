@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/ai/ai_detector/cli/student_management.py
+# hypothesis_version: 6.151.9
+
+['\nFlagging student...', '\nOptions:', '1', '=', 'Enter course code: ', 'Enter student ID: ', 'ai_score_stats', 'anomalies', 'cohort_statistics', 'courses', 'critical', 'date_range', 'error', 'high', 'high_risk_students', 'low', 'medium', 'profile', 'recommendations', 'risk_distribution', 'similarity_analysis', 'statistics', 'student_1', 'student_2', 'success', 'summary', 'trends']

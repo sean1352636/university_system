@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/user_routes.py
+# hypothesis_version: 6.151.9
+
+[201, 403, ' = ?', ' WHERE id = ?', '%Y-%m-%d %H:%M:%S', ', ', '/<int:user_id>', '/api/users', 'Access denied', 'DELETE', 'GET', 'POST', 'PUT', 'UPDATE users SET ', 'admin', 'create', 'deactivate', 'email', 'error', 'first_name', 'is_active', 'items', 'last_name', 'message', 'password', 'password_hash', 'role', 'salt', 'search', 'status', 'sub', 'total', 'update', 'updated_at = ?', 'user', 'user_id', 'username', 'users', 'view']

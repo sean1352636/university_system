@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/email_scheduler.py
+# hypothesis_version: 6.151.9
+
+[0.5, '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', '08:00', '09:00', '10:00', 'EmailScheduler', '__main__', 'error', 'info', 'overdue']

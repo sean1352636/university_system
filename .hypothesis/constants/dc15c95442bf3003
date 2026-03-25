@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/facilities_mgmt_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/facilities', '/inspections', '/work-orders', 'GET', 'POST', 'assigned_to', 'category', 'create', 'description', 'facilities_mgmt', 'facility_inspections', 'facility_work_orders', 'inspection_date', 'inspector_id', 'inspector_id = ?', 'items', 'location', 'notes', 'priority', 'priority = ?', 'requested_by', 'search', 'status', 'status = ?', 'sub', 'total', 'view']

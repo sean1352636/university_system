@@ -10,7 +10,7 @@ the entire GUI framework.
 
 from __future__ import annotations
 
-from .core import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import (
     get_db_connection,
     serialize_dataframe,
     get_template,

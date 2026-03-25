@@ -92,23 +92,8 @@ def init_equipment_db():
                 )
             ''')
 
-            # Transactions table
-            conn.execute('''
-                CREATE TABLE IF NOT EXISTS equipment_transactions (
-                    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    rental_id INTEGER,
-                    borrower_id TEXT NOT NULL,
-                    amount DECIMAL(10,2) NOT NULL,
-                    transaction_type TEXT NOT NULL,
-                    payment_method TEXT,
-                    reference_number TEXT,
-                    status TEXT DEFAULT 'completed',
-                    notes TEXT,
-                    processed_by TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (rental_id) REFERENCES equipment_rentals(rental_id)
-                )
-            ''')
+            # NOTE: equipment transactions now use the unified 'transactions' table
+            # with source_type = 'equipment'
 
             # Maintenance records
             conn.execute('''
@@ -524,10 +509,10 @@ class TransactionManager:
 
             with transaction() as conn:
                 cursor = conn.execute('''
-                    INSERT INTO equipment_transactions
-                    (rental_id, borrower_id, amount, transaction_type, payment_method,
+                    INSERT INTO transactions
+                    (source_type, reference_id, reference_type, customer_id, amount, transaction_type, payment_method,
                      reference_number, status, processed_by)
-                    VALUES (?, ?, ?, 'payment', ?, ?, 'completed', ?)
+                    VALUES ('equipment', ?, 'rental', ?, ?, 'payment', ?, ?, 'completed', ?)
                 ''', (rental_id, borrower_id, amount, payment_method, ref_number, processed_by))
 
                 # Update rental payment status
@@ -561,10 +546,10 @@ class TransactionManager:
 
             with transaction() as conn:
                 cursor = conn.execute('''
-                    INSERT INTO equipment_transactions
-                    (rental_id, borrower_id, amount, transaction_type, payment_method,
+                    INSERT INTO transactions
+                    (source_type, reference_id, reference_type, customer_id, amount, transaction_type, payment_method,
                      reference_number, status, notes, processed_by)
-                    VALUES (?, ?, ?, 'deposit_refund', 'refund', ?, 'completed', 'Deposit refund', ?)
+                    VALUES ('equipment', ?, 'rental', ?, ?, 'deposit_refund', 'refund', ?, 'completed', 'Deposit refund', ?)
                 ''', (rental_id, borrower_id, amount, ref_number, processed_by))
                 return cursor.lastrowid
         except Exception as e:
@@ -579,12 +564,12 @@ class TransactionManager:
                 conn.row_factory = sqlite3.Row
                 if rental_id:
                     cursor = conn.execute(
-                        'SELECT * FROM equipment_transactions WHERE rental_id = ? ORDER BY created_at DESC',
+                        "SELECT * FROM transactions WHERE source_type = 'equipment' AND reference_id = ? AND reference_type = 'rental' ORDER BY created_at DESC",
                         (rental_id,)
                     )
                 else:
                     cursor = conn.execute(
-                        'SELECT * FROM equipment_transactions ORDER BY created_at DESC LIMIT 100'
+                        "SELECT * FROM transactions WHERE source_type = 'equipment' ORDER BY created_at DESC LIMIT 100"
                     )
                 return [dict(row) for row in cursor.fetchall()]
         except Exception as e:

@@ -61,8 +61,8 @@ class TestEmailSchedulerControlModule:
 class TestPrintStatus:
     """Test print_status function."""
 
-    @patch('university_system.utils.email_scheduler_control.is_scheduler_running')
-    @patch('university_system.utils.email_scheduler_control.get_scheduled_jobs')
+    @patch('education_system.university_system.utils.email_scheduler_control.is_scheduler_running')
+    @patch('education_system.university_system.utils.email_scheduler_control.get_scheduled_jobs')
     @patch('builtins.print')
     def test_print_status_when_running(self, mock_print, mock_jobs, mock_running):
         """Test print_status when scheduler is running."""
@@ -76,7 +76,7 @@ class TestPrintStatus:
         except ImportError:
             pytest.skip("Email scheduler control module not available")
 
-    @patch('university_system.utils.email_scheduler_control.is_scheduler_running')
+    @patch('education_system.university_system.utils.email_scheduler_control.is_scheduler_running')
     @patch('builtins.print')
     def test_print_status_when_stopped(self, mock_print, mock_running):
         """Test print_status when scheduler is stopped."""
@@ -93,8 +93,8 @@ class TestPrintStatus:
 class TestStartCommand:
     """Test start_command function."""
 
-    @patch('university_system.utils.email_scheduler_control.is_scheduler_running')
-    @patch('university_system.utils.email_scheduler_control.start_scheduler')
+    @patch('education_system.university_system.utils.email_scheduler_control.is_scheduler_running')
+    @patch('education_system.university_system.utils.email_scheduler_control.start_scheduler')
     def test_start_command_success(self, mock_start, mock_running):
         """Test successful start command."""
         mock_running.return_value = False
@@ -107,7 +107,7 @@ class TestStartCommand:
         except ImportError:
             pytest.skip("Email scheduler control module not available")
 
-    @patch('university_system.utils.email_scheduler_control.is_scheduler_running')
+    @patch('education_system.university_system.utils.email_scheduler_control.is_scheduler_running')
     def test_start_command_already_running(self, mock_running):
         """Test start command when already running."""
         mock_running.return_value = True
@@ -123,8 +123,8 @@ class TestStartCommand:
 class TestStopCommand:
     """Test stop_command function."""
 
-    @patch('university_system.utils.email_scheduler_control.is_scheduler_running')
-    @patch('university_system.utils.email_scheduler_control.stop_scheduler')
+    @patch('education_system.university_system.utils.email_scheduler_control.is_scheduler_running')
+    @patch('education_system.university_system.utils.email_scheduler_control.stop_scheduler')
     def test_stop_command_success(self, mock_stop, mock_running):
         """Test successful stop command."""
         mock_running.return_value = True
@@ -137,7 +137,7 @@ class TestStopCommand:
         except ImportError:
             pytest.skip("Email scheduler control module not available")
 
-    @patch('university_system.utils.email_scheduler_control.is_scheduler_running')
+    @patch('education_system.university_system.utils.email_scheduler_control.is_scheduler_running')
     def test_stop_command_not_running(self, mock_running):
         """Test stop command when not running."""
         mock_running.return_value = False

@@ -65,6 +65,25 @@ class PastoralService:
         finally:
             conn.close()
 
+    def delete_note(self, note_id: int) -> bool:
+        """Delete a pastoral note by ID."""
+        conn = self._conn()
+        try:
+            result = conn.execute(
+                "DELETE FROM pastoral_notes WHERE id = ?", (note_id,)
+            )
+            conn.commit()
+            if result.rowcount == 0:
+                raise PastoralError(f"Note {note_id} not found.")
+            return True
+        except PastoralError:
+            raise
+        except Exception as e:
+            conn.rollback()
+            raise PastoralError(f"Failed to delete note: {e}")
+        finally:
+            conn.close()
+
     # --- Wellbeing ---
 
     def record_wellbeing(self, student_id: int, recorded_by: int,

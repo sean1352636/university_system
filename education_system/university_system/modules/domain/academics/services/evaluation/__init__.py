@@ -2,7 +2,7 @@
 Course Evaluation System Service Module
 """
 
-from .course_evaluation_core import (
+from education_system.university_system.modules.domain.academics.services.evaluation.course_evaluation_core import (
     EvaluationTemplateManager, CourseEvaluationManager,
     ResponseManager, ResultsAnalyticsManager
 )

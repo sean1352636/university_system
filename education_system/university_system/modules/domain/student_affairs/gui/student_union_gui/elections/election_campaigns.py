@@ -287,6 +287,71 @@ class ViewCandidateProfilesDialog:
         # Store tree reference
         self.tree = tree
 
+    def _load_endorsements_from_db(self, candidate_name):
+        """Load endorsements from database for a candidate."""
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS candidate_endorsements (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    candidate_name TEXT,
+                    endorser_username TEXT,
+                    visibility TEXT,
+                    message TEXT,
+                    endorsed_date TEXT
+                )
+            ''')
+            cursor.execute('''
+                SELECT endorser_username, visibility, message, endorsed_date
+                FROM candidate_endorsements
+                WHERE candidate_name = ?
+                ORDER BY endorsed_date DESC
+            ''', (candidate_name,))
+            rows = cursor.fetchall()
+            conn.close()
+
+            if not rows:
+                return "No endorsements yet. Be the first to endorse this candidate!"
+
+            lines = [f"ENDORSEMENTS ({len(rows)} total):", "=" * 40, ""]
+            for endorser, visibility, message, date in rows:
+                if visibility == 'public':
+                    lines.append(f"- {endorser} ({date})")
+                else:
+                    lines.append(f"- Anonymous supporter ({date})")
+                if message:
+                    lines.append(f'  "{message}"')
+                lines.append("")
+            return "\n".join(lines)
+        except Exception:
+            return "Unable to load endorsements."
+
+    def _get_candidate_profiles(self):
+        """Return profile data for all candidates."""
+        return {
+            "Alice Johnson": {
+                "bio": "Alice Johnson is a third-year Political Science student with a passion for student advocacy and democratic representation.\n\nShe has served on the Student Union executive board for two years and has been instrumental in launching several successful student initiatives including the Free Breakfast Program and the Student Mental Health Support Network.\n\nAlice is known for her collaborative leadership style and her commitment to transparency in student governance.",
+                "platform": "KEY POLICIES:\n\n1. AFFORDABILITY & SUPPORT\n   - Expand hardship fund by 50%\n   - Introduce free textbook rental program\n   - Negotiate student discount partnerships\n\n2. SUSTAINABILITY\n   - Achieve carbon-neutral campus by 2027\n   - Install solar panels on all student buildings\n   - Launch campus-wide composting program\n\n3. STUDENT WELLBEING\n   - 24/7 mental health crisis support\n   - Double counseling service capacity\n   - Create peer support network across all departments\n\n4. ACADEMIC EXCELLENCE\n   - Student voice in curriculum design\n   - Increase library opening hours\n   - Fund undergraduate research opportunities",
+                "experience": "LEADERSHIP EXPERIENCE:\n\nStudent Union Executive Board (2023-2025)\n- Led 3 successful campaigns resulting in policy changes\n- Managed \u00a350,000 budget for student initiatives\n- Coordinated team of 12 student representatives\n\nPolitical Science Society - President (2024-2025)\n- Grew membership from 45 to 120 students\n- Organized 8 speaker events with MPs and policy experts\n\nCourse Representative (2023-2024)\n- Championed improvements to assessment feedback\n\nAWARDS:\n- Outstanding Student Leadership Award 2024\n- Dean's List (2023, 2024)",
+            },
+            "Bob Smith": {
+                "bio": "Bob Smith is a fourth-year Business Administration student with extensive experience in financial management and organisational leadership.\n\nAs the current President of the Entrepreneurship Club, Bob has led fundraising efforts that raised over \u00a330,000 for student startups. He is passionate about making the Student Union financially sustainable while delivering more services to students.\n\nBob brings a practical, results-oriented approach to student governance, emphasising accountability and measurable outcomes.",
+                "platform": "KEY POLICIES:\n\n1. FINANCIAL TRANSPARENCY\n   - Publish quarterly SU financial reports\n   - Student oversight committee for budget decisions\n   - Online dashboard showing how SU fees are spent\n\n2. EMPLOYABILITY\n   - Expand careers service partnerships with employers\n   - Create paid internship fund for disadvantaged students\n   - Launch alumni mentorship programme\n\n3. STUDENT ENTERPRISE\n   - \u00a320,000 startup fund for student businesses\n   - Co-working space in the SU building\n   - Business skills workshops every semester\n\n4. CAMPUS FACILITIES\n   - Extended gym opening hours\n   - Upgrade common room facilities\n   - Better Wi-Fi across campus",
+                "experience": "LEADERSHIP EXPERIENCE:\n\nEntrepreneurship Club - President (2024-2026)\n- Raised \u00a330,000+ for student startup initiatives\n- Managed club budget of \u00a315,000\n- Organised 12 networking events with industry leaders\n\nBusiness Society - Vice President (2023-2024)\n- Led team of 8 committee members\n- Doubled society membership to 200+\n\nStudent Ambassador (2023-2025)\n- Represented university at 15+ open days\n\nAWARDS:\n- Best Society Leader 2025\n- Business Faculty Prize for Excellence",
+            },
+            "Carol Davis": {
+                "bio": "Carol Davis is a third-year Education student with a deep commitment to academic quality and student support. Having served as Course Representative twice, she understands the challenges students face.\n\nCarol has been instrumental in establishing peer tutoring programmes and advocating for improved assessment feedback. She volunteers weekly at the Student Advice Centre.\n\nHer approach to leadership centres on listening to students and turning their concerns into actionable improvements.",
+                "platform": "KEY POLICIES:\n\n1. ACADEMIC QUALITY\n   - Standardise feedback turnaround times (2 weeks max)\n   - Student evaluation of teaching quality\n   - More flexible assessment options\n\n2. LEARNING SUPPORT\n   - Expand peer tutoring to all departments\n   - Free academic writing workshops\n   - Dedicated study spaces with 24/7 access during exams\n\n3. INCLUSIVITY\n   - Improved accessibility across all buildings\n   - Better support for international students\n   - Inclusive curriculum review committee\n\n4. STUDENT VOICE\n   - Monthly open forums with university leadership\n   - Online suggestion platform with guaranteed responses\n   - Student representatives on all university committees",
+                "experience": "LEADERSHIP EXPERIENCE:\n\nCourse Representative x2 (2024-2026)\n- Successfully campaigned for improved feedback policies\n- Represented 300+ Education students\n\nPeer Tutoring Coordinator (2025-2026)\n- Set up tutoring programmes across 5 departments\n- Trained 40+ peer tutors\n\nStudent Advice Centre Volunteer (2024-2026)\n- 200+ hours of volunteer service\n\nAWARDS:\n- Student Voice Champion Award 2025\n- Faculty Commendation for Student Support",
+            },
+            "David Lee": {
+                "bio": "David Lee is a second-year Accounting student who brings financial expertise and a fresh perspective to student governance. Despite being in his second year, David has already made a significant impact as Vice President of the Finance Club.\n\nHe is passionate about financial literacy and ensuring the Student Union uses its resources effectively. David has proposed innovative budgeting approaches that could save the SU thousands while improving services.\n\nDavid believes in data-driven decision making and wants to bring modern financial practices to the Student Union.",
+                "platform": "KEY POLICIES:\n\n1. SMART BUDGETING\n   - Zero-based budgeting for all SU departments\n   - Cost-benefit analysis for all new initiatives\n   - Emergency fund for student hardship cases\n\n2. STUDENT SAVINGS\n   - Negotiate bulk purchasing deals for course materials\n   - Student discount app with local businesses\n   - Transparent pricing in all SU outlets\n\n3. FINANCIAL LITERACY\n   - Free budgeting workshops for all students\n   - Tax advice sessions for working students\n   - Scholarship and bursary awareness campaigns\n\n4. ACCOUNTABILITY\n   - Monthly financial updates to all students\n   - Open budget meetings every semester\n   - Annual value-for-money audit",
+                "experience": "LEADERSHIP EXPERIENCE:\n\nFinance Club - Vice President (2025-2026)\n- Managed club investments portfolio\n- Organised financial literacy week (500+ attendees)\n- Created budgeting app used by 200+ students\n\nClass Treasurer (2024-2025)\n- Managed class social fund of \u00a35,000\n- Delivered surplus back to students\n\nCharity Fundraising Coordinator (2025)\n- Raised \u00a38,000 for local food bank\n\nAWARDS:\n- ACCA Student Excellence Award 2025\n- Best New Committee Member (Finance Club)",
+            },
+        }
+
     def show_profile_details(self, event):
         selection = self.tree.selection()
         if not selection:
@@ -296,84 +361,15 @@ class ViewCandidateProfilesDialog:
         values = item['values']
         name = values[0]
 
-        # Sample profile data
-        self.profiles = {
-            "Alice Johnson": {
-                "bio": """Alice Johnson is a third-year Political Science student with a passion for student advocacy and democratic representation.
-
-She has served on the Student Union executive board for two years and has been instrumental in launching several successful student initiatives including the Free Breakfast Program and the Student Mental Health Support Network.
-
-Alice is known for her collaborative leadership style and her commitment to transparency in student governance.""",
-                "platform": """KEY POLICIES:
-
-1. AFFORDABILITY & SUPPORT
-   - Expand hardship fund by 50%
-   - Introduce free textbook rental program
-   - Negotiate student discount partnerships with local businesses
-
-2. SUSTAINABILITY
-   - Achieve carbon-neutral campus by 2027
-   - Install solar panels on all student buildings
-   - Launch campus-wide composting program
-
-3. STUDENT WELLBEING
-   - 24/7 mental health crisis support
-   - Double counseling service capacity
-   - Create peer support network across all departments
-
-4. ACADEMIC EXCELLENCE
-   - Student voice in curriculum design
-   - Increase library opening hours
-   - Fund undergraduate research opportunities""",
-                "experience": """LEADERSHIP EXPERIENCE:
-
-Student Union Executive Board (2023-2025)
-- Led 3 successful campaigns resulting in policy changes
-- Managed £50,000 budget for student initiatives
-- Coordinated team of 12 student representatives
-
-Political Science Society - President (2024-2025)
-- Grew membership from 45 to 120 students
-- Organized 8 speaker events with MPs and policy experts
-- Established partnerships with 3 NGOs
-
-Course Representative (2023-2024)
-- Championed improvements to assessment feedback
-- Mediated between students and faculty on course issues
-
-AWARDS:
-- Outstanding Student Leadership Award 2024
-- Dean's List (2023, 2024)""",
-                "endorsements": """ENDORSED BY:
-
-15 Student Organizations including:
-- Political Science Society
-- Environmental Action Group
-- Student Mental Health Association
-- Debate Club
-- International Students Society
-
-5 Faculty Members:
-- Prof. Sarah Williams (Political Science)
-- Dr. James Brown (Sociology)
-- Dr. Emily Chen (Psychology)
-
-Student Testimonials:
-"Alice genuinely cares about every student's voice" - Mark Thompson
-
-"She turned our ideas into real change" - Jennifer Lee
-
-"A proven leader with integrity" - Michael Rodriguez"""
-            }
-        }
-
-        # Load profile data (default if not found)
+        # Load profiles and endorsements from DB
+        self.profiles = self._get_candidate_profiles()
+        endorsements_text = self._load_endorsements_from_db(name)
         profile = self.profiles.get(name, {
-            "bio": f"{name}'s biography would appear here with personal background, interests, and motivations.",
-            "platform": f"{name}'s platform and policy proposals would appear here.",
-            "experience": f"{name}'s experience and qualifications would appear here.",
-            "endorsements": f"{name}'s endorsements would appear here."
+            "bio": f"No biography available for {name}.",
+            "platform": f"No platform available for {name}.",
+            "experience": f"No experience listed for {name}.",
         })
+        profile['endorsements'] = endorsements_text
 
         # Update text widgets
         self.bio_text.config(state='normal')
@@ -566,42 +562,120 @@ Student Testimonials:
         manifesto_frame = ttk.Frame(notebook)
         notebook.add(manifesto_frame, text="Manifesto")
 
+        profiles = self._get_candidate_profiles()
+        candidate_profile = profiles.get(candidate_name, {})
+
         manifesto_text = scrolledtext.ScrolledText(manifesto_frame, height=20, wrap=tk.WORD)
         manifesto_text.pack(fill='both', expand=True, padx=10, pady=10)
-        manifesto_text.insert('1.0', f"""CAMPAIGN MANIFESTO
-{candidate_name}
 
-{self.profiles.get(candidate_name, {}).get('platform', 'Manifesto not available')}
-
-This manifesto represents my commitment to the student body.
-Vote for positive change!
-""")
+        platform = candidate_profile.get('platform', '')
+        bio = candidate_profile.get('bio', '')
+        manifesto_content = (
+            f"CAMPAIGN MANIFESTO\n"
+            f"{'=' * 40}\n"
+            f"{candidate_name}\n\n"
+            f"ABOUT ME:\n{'-' * 40}\n{bio}\n\n"
+            f"MY PLATFORM:\n{'-' * 40}\n{platform}\n\n"
+            f"This manifesto represents my commitment to the student body.\n"
+            f"Vote for positive change!"
+        )
+        manifesto_text.insert('1.0', manifesto_content)
         manifesto_text.config(state='disabled')
 
-        # Media tab
+        # Media tab - with upload and DB-backed file list
         media_frame = ttk.Frame(notebook)
         notebook.add(media_frame, text="Media & Posters")
 
-        media_list = ttk.Frame(media_frame)
-        media_list.pack(fill='both', expand=True, padx=10, pady=10)
+        media_content = ttk.Frame(media_frame)
+        media_content.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(media_list, text="Campaign Media Files:", font=('Arial', 11, 'bold')).pack(anchor='w', pady=(0, 10))
+        ttk.Label(media_content, text="Campaign Media Files:",
+                 font=('Arial', 11, 'bold')).pack(anchor='w', pady=(0, 10))
 
-        media_items = [
-            "📄 Campaign Poster 1.pdf",
-            "📄 Campaign Poster 2.pdf",
-            "🎥 Introduction Video.mp4",
-            "🎥 Policy Explanation Video.mp4",
-            "📊 Infographic - Key Policies.png",
-            "📷 Campaign Photos (12 images)"
-        ]
+        # Media treeview
+        media_columns = ('File Name', 'Type', 'Uploaded')
+        media_tree = ttk.Treeview(media_content, columns=media_columns,
+                                  show='headings', height=8)
+        for col in media_columns:
+            media_tree.heading(col, text=col)
+        media_tree.column('File Name', width=300)
+        media_tree.column('Type', width=100)
+        media_tree.column('Uploaded', width=150)
+        media_tree.pack(fill='both', expand=True, pady=(0, 10))
 
-        for item in media_items:
-            item_frame = ttk.Frame(media_list)
-            item_frame.pack(fill='x', pady=2)
-            ttk.Label(item_frame, text=item).pack(side='left')
-            ttk.Button(item_frame, text="View", width=8,
-                      command=lambda i=item: messagebox.showinfo("View", f"Viewing: {i}")).pack(side='right')
+        # Load media from DB
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS campaign_media (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    candidate_name TEXT,
+                    file_name TEXT,
+                    file_type TEXT,
+                    file_path TEXT,
+                    uploaded_by TEXT,
+                    uploaded_at TEXT
+                )
+            ''')
+            cursor.execute('''
+                SELECT file_name, file_type, uploaded_at
+                FROM campaign_media
+                WHERE candidate_name = ?
+                ORDER BY uploaded_at DESC
+            ''', (candidate_name,))
+            for row in cursor.fetchall():
+                media_tree.insert('', 'end', values=row)
+            conn.close()
+        except Exception:
+            pass
+
+        # Upload button
+        media_btn_frame = ttk.Frame(media_content)
+        media_btn_frame.pack(fill='x')
+
+        def upload_media():
+            from tkinter import filedialog
+            filepath = filedialog.askopenfilename(
+                title="Select Campaign Media",
+                filetypes=[("Images", "*.png *.jpg *.jpeg *.gif"),
+                          ("PDF", "*.pdf"), ("Videos", "*.mp4 *.avi"),
+                          ("All files", "*.*")]
+            )
+            if not filepath:
+                return
+            import os, shutil
+            filename = os.path.basename(filepath)
+            ext = os.path.splitext(filename)[1].lower()
+            file_type = 'Image' if ext in ('.png','.jpg','.jpeg','.gif') else 'PDF' if ext == '.pdf' else 'Video' if ext in ('.mp4','.avi') else 'Other'
+            now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            uploads_dir = os.path.join(str(paths.DATA_DIR), 'uploads', 'campaign_media')
+            os.makedirs(uploads_dir, exist_ok=True)
+            dest = os.path.join(uploads_dir, f"{candidate_name.replace(' ','_')}_{filename}")
+            try:
+                shutil.copy(filepath, dest)
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO campaign_media
+                    (candidate_name, file_name, file_type, file_path, uploaded_by, uploaded_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (candidate_name, filename, file_type, dest,
+                      self.auth.current_user.get('username', '') if self.auth and self.auth.current_user else '',
+                      now))
+                conn.commit()
+                conn.close()
+                media_tree.insert('', 0, values=(filename, file_type, now))
+                messagebox.showinfo("Uploaded", f"'{filename}' uploaded successfully.",
+                                   parent=materials_window)
+            except Exception as e:
+                messagebox.showerror("Error", f"Upload failed: {e}", parent=materials_window)
+
+        ttk.Button(media_btn_frame, text="Upload Media File",
+                  command=upload_media).pack(side='left', padx=(0, 10))
+        ttk.Button(media_btn_frame, text="Delete Selected",
+                  command=lambda: self._delete_media(media_tree, candidate_name, materials_window)
+                  ).pack(side='left')
 
         # Social media tab
         social_frame = ttk.Frame(notebook)
@@ -626,6 +700,47 @@ Vote for positive change!
             ttk.Label(link_frame, text=handle, foreground='blue').pack(side='left')
 
         ttk.Button(main_frame, text="Close", command=materials_window.destroy).pack()
+
+    def _delete_media(self, media_tree, candidate_name, parent_window):
+        """Delete selected media file from DB."""
+        selection = media_tree.selection()
+        if not selection:
+            messagebox.showwarning("No Selection", "Please select a file to delete.",
+                                 parent=parent_window)
+            return
+        values = media_tree.item(selection[0], 'values')
+        file_name = values[0]
+        if not messagebox.askyesno("Confirm", f"Delete '{file_name}'?", parent=parent_window):
+            return
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute('DELETE FROM campaign_media WHERE candidate_name = ? AND file_name = ?',
+                         (candidate_name, file_name))
+            conn.commit()
+            conn.close()
+            media_tree.delete(selection[0])
+        except Exception as e:
+            messagebox.showerror("Error", f"Delete failed: {e}", parent=parent_window)
+
+    def _refresh_endorsement_count(self, candidate_name):
+        """Update endorsement count in the candidates treeview."""
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute('SELECT COUNT(*) FROM candidate_endorsements WHERE candidate_name = ?',
+                         (candidate_name,))
+            count = cursor.fetchone()[0]
+            conn.close()
+
+            for item_id in self.tree.get_children():
+                values = list(self.tree.item(item_id, 'values'))
+                if values[0] == candidate_name:
+                    values[5] = str(count)
+                    self.tree.item(item_id, values=values)
+                    break
+        except Exception:
+            pass
 
     def endorse(self):
         """Endorse a candidate"""
@@ -689,6 +804,18 @@ Vote for positive change!
                     )
                 ''')
 
+                # Check for duplicate endorsement
+                cursor.execute('''
+                    SELECT id FROM candidate_endorsements
+                    WHERE candidate_name = ? AND endorser_username = ?
+                ''', (candidate_name, username))
+                if cursor.fetchone():
+                    conn.close()
+                    messagebox.showinfo("Already Endorsed",
+                                       f"You have already endorsed {candidate_name}.",
+                                       parent=endorse_window)
+                    return
+
                 cursor.execute('''
                     INSERT INTO candidate_endorsements
                     (candidate_name, endorser_username, visibility, message, endorsed_date)
@@ -698,6 +825,9 @@ Vote for positive change!
 
                 conn.commit()
                 conn.close()
+
+                # Update endorsement count in treeview
+                self._refresh_endorsement_count(candidate_name)
 
                 visibility_text = "publicly" if visibility == 'public' else "privately"
                 messagebox.showinfo("Endorsement Recorded",

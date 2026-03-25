@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/ai/gui/features/voice.py
+# hypothesis_version: 6.151.9
+
+['1.0', '5', 'Listening...', 'No speech detected', 'No test recording', 'Ready', 'Voice Error', 'Voice Unavailable', 'Voice recognized', 'blue', 'chatbot.voice_error', 'default', 'devices', 'disabled', 'en', 'error', 'green', 'message', 'normal', 'red', 'status', 'success', 'test_recording', 'voice_duration_var', '🎤 Recording...', '🎤 Voice']

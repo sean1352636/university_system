@@ -70,6 +70,25 @@ class ExamsService:
         finally:
             conn.close()
 
+    def delete_exam(self, exam_id: int) -> bool:
+        """Delete an exam entry by ID."""
+        conn = self._conn()
+        try:
+            result = conn.execute(
+                "DELETE FROM exam_entries WHERE id = ?", (exam_id,)
+            )
+            conn.commit()
+            if result.rowcount == 0:
+                raise ExamsError(f"Exam entry {exam_id} not found.")
+            return True
+        except ExamsError:
+            raise
+        except Exception as e:
+            conn.rollback()
+            raise ExamsError(f"Failed to delete exam entry: {e}")
+        finally:
+            conn.close()
+
     # --- Exam Timetable ---
 
     def create_timetable_slot(self, exam_entry_id: int, exam_date: str,

@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import ttk
 from datetime import datetime, timedelta
 
-from ._imports import _t
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.reports._imports import _t
 
 
 def show_reports_page(self):

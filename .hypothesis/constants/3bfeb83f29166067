@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/primary_school/modules/domain/staff/cpd/services/cpd_service.py
+# hypothesis_version: 6.151.9
+
+[' AND staff_id = ?', ' AND status = ?', ', ', 'Planned', 'certificate', 'completion_date', 'cpd_type', 'description', 'hours', 'impact', 'provider', 'status', 'title']

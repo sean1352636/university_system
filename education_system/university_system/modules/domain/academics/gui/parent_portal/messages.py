@@ -41,7 +41,7 @@ except ImportError:
 
 
 
-from .base import ParentPortalGUI
+from education_system.university_system.modules.domain.academics.gui.parent_portal.base import ParentPortalGUI
 
 def message_teachers(self, child):
     """Message teachers for a specific child - sends actual emails"""
@@ -155,18 +155,20 @@ This message was sent through the University Guardian Portal.
                 else:
                     # Fallback: Store in database only
                     conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
-                    cursor = conn.cursor()
-                    # Use correct schema: sender_id, recipient_id, subject, content, sent_at
-                    # Get recipient_id from users table if possible
-                    cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
-                    recipient = cursor.fetchone()
-                    recipient_id = recipient[0] if recipient else 0
-                    cursor.execute('''
-                        INSERT INTO messages (sender_id, recipient_id, subject, content, sent_at, is_read)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    ''', (self.parent_id or 0, recipient_id, subject, full_body, datetime.datetime.now().isoformat(), 0))
-                    conn.commit()
-                    conn.close()
+                    try:
+                        cursor = conn.cursor()
+                        # Use correct schema: sender_id, recipient_id, subject, content, sent_at
+                        # Get recipient_id from users table if possible
+                        cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+                        recipient = cursor.fetchone()
+                        recipient_id = recipient[0] if recipient else 0
+                        cursor.execute('''
+                            INSERT INTO messages (sender_id, recipient_id, subject, content, sent_at, is_read)
+                            VALUES (?, ?, ?, ?, ?, ?)
+                        ''', (self.parent_id or 0, recipient_id, subject, full_body, datetime.datetime.now().isoformat(), 0))
+                        conn.commit()
+                    finally:
+                        conn.close()
                     success_count += 1
             except Exception as e:
                 print(f"Error sending email to {email}: {e}")
@@ -592,23 +594,25 @@ This message was sent through the University Guardian Portal.
             else:
                 # Fallback: Store in database
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
-                cursor = conn.cursor()
-                cursor.execute("""
-                    SELECT name FROM sqlite_master WHERE type='table' AND name='messages'
-                """)
-                if cursor.fetchone():
-                    # Use correct schema: sender_id, recipient_id, subject, content, sent_at
-                    # Get recipient_id from users table if possible
-                    cursor.execute("SELECT id FROM users WHERE email = ?", (recipient_email,))
-                    recipient = cursor.fetchone()
-                    recipient_id = recipient[0] if recipient else 0
+                try:
+                    cursor = conn.cursor()
                     cursor.execute("""
-                        INSERT INTO messages (sender_id, recipient_id, subject, content, sent_at, is_read)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    """, (self.parent_id or 0, recipient_id, subject, full_body, datetime.datetime.now().isoformat(), 0))
-                    conn.commit()
-                    success = True
-                conn.close()
+                        SELECT name FROM sqlite_master WHERE type='table' AND name='messages'
+                    """)
+                    if cursor.fetchone():
+                        # Use correct schema: sender_id, recipient_id, subject, content, sent_at
+                        # Get recipient_id from users table if possible
+                        cursor.execute("SELECT id FROM users WHERE email = ?", (recipient_email,))
+                        recipient = cursor.fetchone()
+                        recipient_id = recipient[0] if recipient else 0
+                        cursor.execute("""
+                            INSERT INTO messages (sender_id, recipient_id, subject, content, sent_at, is_read)
+                            VALUES (?, ?, ?, ?, ?, ?)
+                        """, (self.parent_id or 0, recipient_id, subject, full_body, datetime.datetime.now().isoformat(), 0))
+                        conn.commit()
+                        success = True
+                finally:
+                    conn.close()
 
             if success:
                 messagebox.showinfo("Success", f"Message sent to {recipient_name}!")

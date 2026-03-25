@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/settings/scholarships.py
+# hypothesis_version: 6.151.9
+
+[100, 150, 200, ' AND is_active = ?', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '...', '1.0', '2024-2025', '600x500', '600x600', '800x600', 'Academic Year', 'Amount', 'Arial', 'Courier', 'Criteria', 'Deadline', 'ID', 'Name', 'Status', 'Year', 'active', 'all', 'both', 'bottom', 'center', 'distribution', 'e', 'end', 'headings', 'horizontal', 'inactive', 'left', 'readonly', 'right', 'scholarships', 'scholarships_tree', 'student', 'utilization', 'values', 'vertical', 'w', 'white', 'x', 'y']

@@ -10,12 +10,12 @@ Modules
 - module_permissions: Module-specific permission setup
 """
 
-from .chatbot_integration import (
+from education_system.university_system.infrastructure.auth.integrations.chatbot_integration import (
     test_chatbot_integration,
     create_sample_chatbot_data,
 )
 
-from .module_permissions import (
+from education_system.university_system.infrastructure.auth.integrations.module_permissions import (
     initialize_complete_system,
     init_trip_db,
     setup_trip_permissions,

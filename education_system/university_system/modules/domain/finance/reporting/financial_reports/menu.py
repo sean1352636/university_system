@@ -8,20 +8,20 @@ from education_system.university_system.modules.domain.finance.reporting.revenue
     generate_financial_forecasting, generate_budget_variance_report, generate_financial_dashboard as financial_dashboard
 )
 
-from . import _common
-from .alerts import FinancialAlertSystem
-from .ml import PaymentPredictionML, AnomalyDetector
-from .forecasting import CashFlowForecaster
-from .analyzers import StudentLifecycleAnalyzer, ComparativeAnalyzer
-from .reports import (
+from education_system.university_system.modules.domain.finance.reporting.financial_reports import _common
+from education_system.university_system.modules.domain.finance.reporting.financial_reports.alerts import FinancialAlertSystem
+from education_system.university_system.modules.domain.finance.reporting.financial_reports.ml import PaymentPredictionML, AnomalyDetector
+from education_system.university_system.modules.domain.finance.reporting.financial_reports.forecasting import CashFlowForecaster
+from education_system.university_system.modules.domain.finance.reporting.financial_reports.analyzers import StudentLifecycleAnalyzer, ComparativeAnalyzer
+from education_system.university_system.modules.domain.finance.reporting.financial_reports.reports import (
     generate_advanced_financial_forecasting,
     generate_comprehensive_budget_variance_report,
     real_time_financial_dashboard,
     automated_reporting_system,
 )
-from .scenario_planning import scenario_planning_tools
-from .export import advanced_export_system
-from .compliance import compliance_audit_system
+from education_system.university_system.modules.domain.finance.reporting.financial_reports.scenario_planning import scenario_planning_tools
+from education_system.university_system.modules.domain.finance.reporting.financial_reports.export import advanced_export_system
+from education_system.university_system.modules.domain.finance.reporting.financial_reports.compliance import compliance_audit_system
 
 
 def display_enhanced_finance_menu():

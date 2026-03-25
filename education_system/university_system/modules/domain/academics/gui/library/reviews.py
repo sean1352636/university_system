@@ -114,7 +114,7 @@ except ImportError:
 _AUDIT_LOG_COLUMNS_CACHE: Optional[List[str]] = None
 _STUDENT_COLUMNS_CACHE: Optional[List[str]] = None
 
-from .base import LibraryGUI
+from education_system.university_system.modules.domain.academics.gui.library.base import LibraryGUI
 
 def show_reviews(self):
     """Show reviews and ratings interface"""
@@ -136,6 +136,7 @@ def show_reviews(self):
 
     ttk.Button(control_frame, text="Write Review", command=self.write_review_dialog).pack(side=tk.LEFT, padx=5)
     ttk.Button(control_frame, text="My Reviews", command=self.show_my_reviews).pack(side=tk.LEFT, padx=5)
+    ttk.Button(control_frame, text="Publish All Reviews", command=self.publish_all_reviews).pack(side=tk.LEFT, padx=5)
     ttk.Button(control_frame, text="All Reviews", command=self.show_all_reviews).pack(side=tk.LEFT, padx=5)
     ttk.Button(control_frame, text=_("common.refresh"), command=self.refresh_reviews).pack(side=tk.LEFT, padx=5)
 
@@ -345,16 +346,118 @@ def submit_review_database(self, book_id, rating, review_text):
         return False
 
 def view_review_details(self, event=None):
-    """View review details"""
+    """View full review details in a dialog"""
     selection = self.reviews_tree.selection()
     if not selection:
-        if event:  # Called from double-click
+        if event:
             return
         messagebox.showwarning(_("common.warning"), "Please select a review first")
         return
 
-    # This would show detailed review information in a dialog
-    messagebox.showinfo("Review Details", "Review details would be displayed here")
+    item = self.reviews_tree.item(selection[0])
+    book_id = item['values'][0]
+    user_id = item['values'][2]
+
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return
+
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT br.review_id, b.title, b.author, br.user_id, br.rating,
+                   br.review_text, br.review_date, br.status,
+                   br.helpful_votes, br.moderated_by, br.moderation_date
+            FROM book_reviews br
+            JOIN books b ON br.book_id = b.book_id
+            WHERE br.book_id = ? AND br.user_id = ?
+            ORDER BY br.review_date DESC LIMIT 1
+        ''', (book_id, user_id))
+        review = cursor.fetchone()
+        conn.close()
+
+        if not review:
+            messagebox.showinfo("Review", "Review details not found.")
+            return
+
+        review_id, title, author, uid, rating, text, date, status, votes, mod_by, mod_date = review
+
+        dialog = tk.Toplevel(self.master)
+        dialog.title(f"Review - {title}")
+        dialog.geometry("550x500")
+        dialog.transient(self.master)
+
+        # Book info
+        info_frame = ttk.LabelFrame(dialog, text="Book Information", padding=10)
+        info_frame.pack(fill=tk.X, padx=10, pady=(10, 5))
+        ttk.Label(info_frame, text=f"Title: {title}").pack(anchor='w')
+        ttk.Label(info_frame, text=f"Author: {author}").pack(anchor='w')
+        ttk.Label(info_frame, text=f"Book ID: {book_id}").pack(anchor='w')
+
+        # Review info
+        review_frame = ttk.LabelFrame(dialog, text="Review", padding=10)
+        review_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+        stars = "★" * rating + "☆" * (5 - rating)
+        ttk.Label(review_frame, text=f"Rating: {stars} ({rating}/5)",
+                 font=('Arial', 12)).pack(anchor='w')
+        ttk.Label(review_frame, text=f"Reviewer: {uid}").pack(anchor='w')
+        ttk.Label(review_frame, text=f"Date: {date}").pack(anchor='w')
+        ttk.Label(review_frame, text=f"Status: {status}").pack(anchor='w')
+        ttk.Label(review_frame, text=f"Helpful votes: {votes or 0}").pack(anchor='w')
+
+        ttk.Label(review_frame, text="Review Text:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+
+        import tkinter.scrolledtext as st
+        review_text_widget = st.ScrolledText(review_frame, height=8, wrap=tk.WORD)
+        review_text_widget.pack(fill=tk.BOTH, expand=True)
+        review_text_widget.insert('1.0', text or '(No review text)')
+        review_text_widget.config(state='disabled')
+
+        if mod_by:
+            ttk.Label(review_frame, text=f"Moderated by: {mod_by} ({mod_date or ''})").pack(anchor='w', pady=(5, 0))
+
+        # Buttons
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        def publish_review():
+            try:
+                c = get_db_connection()
+                cur = c.cursor()
+                cur.execute("UPDATE book_reviews SET status = 'published' WHERE review_id = ?", (review_id,))
+                c.commit()
+                c.close()
+                messagebox.showinfo("Success", "Review published!")
+                dialog.destroy()
+                self.load_reviews()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to publish: {e}")
+
+        if status != 'published':
+            ttk.Button(btn_frame, text="Publish Review", command=publish_review).pack(side='left', padx=5)
+
+        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to load review: {e}")
+
+
+def publish_all_reviews(self):
+    """Set all pending reviews to published"""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return
+        cursor = conn.cursor()
+        cursor.execute("UPDATE book_reviews SET status = 'published' WHERE status != 'published'")
+        count = cursor.rowcount
+        conn.commit()
+        conn.close()
+        messagebox.showinfo("Reviews Published", f"Published {count} review(s).")
+        self.load_reviews()
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to publish reviews: {e}")
 
 def rate_and_review_book_gui(self, book_id=None):
     """Rate and review a book"""

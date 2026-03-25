@@ -41,7 +41,7 @@ except ImportError:
 
 
 
-from .base import ParentPortalGUI
+from education_system.university_system.modules.domain.academics.gui.parent_portal.base import ParentPortalGUI
 
 def check_meal_balance(self):
     """Check meal account balances with top-up functionality"""
@@ -206,10 +206,10 @@ def check_meal_balance(self):
 
             # Get recent transactions
             cursor.execute('''
-                SELECT transaction_date, transaction_type, amount, description, balance_after
-                FROM meal_transactions
-                WHERE student_id = ?
-                ORDER BY transaction_date DESC
+                SELECT created_at, transaction_type, amount, description, balance_after
+                FROM transactions
+                WHERE source_type = 'meal' AND student_id = ?
+                ORDER BY created_at DESC
                 LIMIT 20
             ''', (student_id,))
 
@@ -281,9 +281,9 @@ def check_meal_balance(self):
 
             # Record transaction
             cursor.execute('''
-                INSERT INTO meal_transactions
-                (student_id, transaction_type, amount, description, transaction_date, balance_after)
-                VALUES (?, 'credit', ?, 'Parent/Guardian top-up', ?, ?)
+                INSERT INTO transactions
+                (source_type, student_id, transaction_type, amount, description, created_at, balance_after)
+                VALUES ('meal', ?, 'credit', ?, 'Parent/Guardian top-up', ?, ?)
             ''', (student_id, amount, now, new_balance))
 
             conn.commit()
@@ -316,16 +316,18 @@ def check_meal_balance(self):
                         email_body = f"Dear {student_name},\n\nYour meal account has been topped up!\n\nAmount Added: £{amount:.2f}\nNew Balance: £{new_balance:.2f}\nDate: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}\n\nThis top-up was made by your parent/guardian through the Family Portal.\n\nBest regards,\nUniversity Management System"
 
                     email_conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
-                    email_cursor = email_conn.cursor()
+                    try:
+                        email_cursor = email_conn.cursor()
 
-                    email_cursor.execute('''
-                        INSERT INTO email_log
-                        (recipient, subject, message, sent_date, status, related_to, student_id)
-                        VALUES (?, ?, ?, ?, 'sent', 'meal_topup', ?)
-                    ''', (student_email, email_subject, email_body, now, student_id))
+                        email_cursor.execute('''
+                            INSERT INTO email_log
+                            (recipient, subject, message, sent_date, status, related_to, student_id)
+                            VALUES (?, ?, ?, ?, 'sent', 'meal_topup', ?)
+                        ''', (student_email, email_subject, email_body, now, student_id))
 
-                    email_conn.commit()
-                    email_conn.close()
+                        email_conn.commit()
+                    finally:
+                        email_conn.close()
 
                 except Exception as email_error:
                     print(f"Email notification error: {email_error}")
@@ -475,10 +477,10 @@ def show_meal_interface(self):
 
                     # Recent transactions
                     cursor.execute("""
-                    SELECT transaction_date, transaction_type, amount, description
-                    FROM meal_transactions
-                    WHERE student_id = ?
-                    ORDER BY transaction_date DESC
+                    SELECT created_at, transaction_type, amount, description
+                    FROM transactions
+                    WHERE source_type = 'meal' AND student_id = ?
+                    ORDER BY created_at DESC
                     LIMIT 15
                     """, (student_id,))
 
@@ -551,24 +553,8 @@ def add_meal_funds(self, student_id):
             conn.close()
             return
 
-        cursor.execute("""
-        SELECT name FROM sqlite_master
-        WHERE type='table' AND name='meal_transactions'
-        """)
-
-        if not cursor.fetchone():
-            cursor.execute("""
-            CREATE TABLE meal_transactions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                student_id TEXT NOT NULL,
-                date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                meal_type TEXT,
-                amount REAL,
-                description TEXT,
-                transaction_type TEXT
-            )
-            """)
-            conn.commit()
+        # NOTE: meal transactions now use the unified 'transactions' table
+        # with source_type = 'meal'
 
         # Update balance
         cursor.execute("""
@@ -580,8 +566,8 @@ def add_meal_funds(self, student_id):
 
         # Record transaction
         cursor.execute("""
-        INSERT INTO meal_transactions (student_id, amount, description, transaction_type)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO transactions (source_type, student_id, amount, description, transaction_type)
+        VALUES ('meal', ?, ?, ?, ?)
         """, (student_id, amount, f"Funds added: ${amount:.2f}", "Credit"))
 
         conn.commit()

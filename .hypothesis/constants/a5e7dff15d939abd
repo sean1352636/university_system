@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/course_management_gui/core/visualization.py
+# hypothesis_version: 6.151.9
+
+[0.3, 0.35, 0.8, 100, 111, '#2ecc71', '#3498db', '#95a5a6', '#e74c3c', '#ecf0f1', '#f39c12', '%1.1f%%', '%Y-%m-%d %H:%M:%S', '1.0', '10', '1000x750', '1200x800', '20', '900x700', '=', '@', 'Arial', 'Available', 'Available Spots', 'Capacity', 'Count', 'Course Code', 'Department', 'Detailed', 'Enrolled', 'Enrolled Students', 'Fill Rate (%)', 'Number of Students', 'Spots', 'Students', 'Summary', 'Total Capacity', 'Total Courses', 'Total Enrolled', 'admin@university.edu', 'bold', 'both', 'bottom', 'center', 'common.cancel', 'common.close', 'custom_message', 'disabled', 'generated_timestamp', 'last_report_data', 'left', 'report_content', 'report_type', 'right', 'separator', 'text', 'type', 'w', 'x', 'y', '🔄']

@@ -9,8 +9,8 @@ from education_system.university_system.infrastructure.database.db import DEFAUL
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.modules.shared.constants.paths import LOG_DIR
 
-from .config import LogConfig
-from .database import LogDatabase
+from education_system.university_system.utils.logging.log_management.config import LogConfig
+from education_system.university_system.utils.logging.log_management.database import LogDatabase
 
 
 class LogRetention:
@@ -60,13 +60,15 @@ class LogRetention:
 
         # Clean database entries
         conn = sqlite3.connect(str(_DB_PATH))
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('DELETE FROM logs WHERE timestamp < ?', (cutoff_date.isoformat(),))
-        deleted_db_count = cursor.rowcount
+            cursor.execute('DELETE FROM logs WHERE timestamp < ?', (cutoff_date.isoformat(),))
+            deleted_db_count = cursor.rowcount
 
-        conn.commit()
-        conn.close()
+            conn.commit()
+        finally:
+            conn.close()
 
         # Clean old log files
         deleted_files_count = 0

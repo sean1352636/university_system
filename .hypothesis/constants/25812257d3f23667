@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/cinema_cli/admin/panel.py
+# hypothesis_version: 6.151.9
+
+['\nEnter choice: ', '\n🎬 MOVIE MANAGEMENT:', '0', '1', '1. Add New Movie', '10', '11', '2', '2. Update Movie', '3', '3. View All Movies', '4', '4. Add Screening', '5', '5. Update Screening', '6', '7', '7. Booking Reports', '8', '8. Revenue Analytics', '9', '9. Occupancy Report', 'CINEMA ADMIN PANEL', '❌ Invalid choice']

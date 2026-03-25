@@ -484,20 +484,41 @@ def init_staff_hr_v2_schemas():
             )
         ''')
 
-        # Staff Documents
+        # staff_documents merged into unified documents table
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS staff_documents (
+            CREATE TABLE IF NOT EXISTS documents (
                 document_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id TEXT NOT NULL,
+                source_type TEXT NOT NULL DEFAULT 'general',
+                source_document_id INTEGER,
+                owner_id TEXT,
+                owner_type TEXT,
+                reference_type TEXT,
+                reference_id TEXT,
                 document_type TEXT,
-                document_name TEXT NOT NULL,
+                document_name TEXT,
                 file_path TEXT,
-                issue_date TEXT,
+                file_content TEXT,
+                file_size INTEGER,
+                file_hash TEXT,
+                original_filename TEXT,
+                upload_date TEXT,
                 expiry_date TEXT,
+                issue_date TEXT,
                 status TEXT DEFAULT 'active',
-                uploaded_by TEXT,
+                verification_status TEXT,
+                verification_date TEXT,
+                verification_notes TEXT,
+                verified_by TEXT,
+                version_number INTEGER DEFAULT 1,
+                parent_document_id INTEGER,
+                is_current_version INTEGER DEFAULT 1,
+                workflow_status TEXT,
+                priority INTEGER,
+                tags TEXT,
                 notes TEXT,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                uploaded_by TEXT,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT
             )
         ''')
 
@@ -1038,7 +1059,7 @@ def init_staff_hr_v2_schemas():
 
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_staff_profiles_user ON staff_profiles(user_id)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_staff_profiles_dept ON staff_profiles(department)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_staff_documents_user ON staff_documents(user_id)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_documents_owner ON documents(owner_id, owner_type)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_staff_workload_user ON staff_workload(user_id)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_supervisions_supervisor ON student_supervisions(supervisor_id)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_supervisions_student ON student_supervisions(student_id)')

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/transfer/academic_history.py
+# hypothesis_version: 6.151.9
+
+[100, 'absent_authorised', 'absent_unauthorised', 'attendance_summary', 'cnt', 'college', 'exam_results', 'grades_summary', 'percentage', 'phonics_results', 'present', 'primary', 'sats_results', 'secondary', 'source_student_id', 'source_system', 'student_id', 'total', 'total_sessions']

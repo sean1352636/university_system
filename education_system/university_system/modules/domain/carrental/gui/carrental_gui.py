@@ -1215,7 +1215,8 @@ Average Rental Value: ${avg_rental_value:.2f}
                         t.payment_method,
                         t.status,
                         t.reference_number
-                    FROM carrental_transactions t
+                    FROM transactions t
+                    WHERE t.source_type = 'car_rental'
                     ORDER BY t.created_at DESC
                 """
 
@@ -1284,8 +1285,8 @@ Average Rental Value: ${avg_rental_value:.2f}
                 cursor = conn.cursor()
                 cursor.execute("""
                     SELECT transaction_id, amount, customer_id, payment_method, status
-                    FROM carrental_transactions
-                    WHERE rental_id = ?
+                    FROM transactions
+                    WHERE source_type = 'car_rental' AND reference_id = ? AND reference_type = 'rental'
                     ORDER BY created_at DESC
                     LIMIT 1
                 """, (rental_id,))
@@ -1359,7 +1360,7 @@ Average Rental Value: ${avg_rental_value:.2f}
             # Get customer ID
             with get_db_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT customer_id FROM carrental_transactions WHERE transaction_id = ?",
+                cursor.execute("SELECT customer_id FROM transactions WHERE transaction_id = ? AND source_type = 'car_rental'",
                              (transaction_id,))
                 result = cursor.fetchone()
                 if not result:
@@ -1451,37 +1452,24 @@ Average Rental Value: ${avg_rental_value:.2f}
 
                 # Update transaction status
                 cursor.execute("""
-                    UPDATE carrental_transactions
+                    UPDATE transactions
                     SET status = 'refunded',
                         reference_number = ?
-                    WHERE transaction_id = ?
+                    WHERE transaction_id = ? AND source_type = 'car_rental'
                 """, (refund_ref, transaction_id))
 
-                # Create refund record in carrental_refunds table
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS carrental_refunds (
-                        refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        transaction_id INTEGER,
-                        customer_id TEXT,
-                        amount DECIMAL(10,2),
-                        refund_method TEXT,
-                        refund_reference TEXT,
-                        refunded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        processed_by TEXT,
-                        FOREIGN KEY (transaction_id) REFERENCES carrental_transactions(transaction_id)
-                    )
-                """)
-
+                # Create refund record in unified_refunds table
                 # Get processed_by
                 processed_by = None
                 if self.current_user:
                     processed_by = self.current_user.get('username') or self.current_user.get('user_id', '')
 
                 cursor.execute("""
-                    INSERT INTO carrental_refunds
-                    (transaction_id, customer_id, amount, refund_method, refund_reference, processed_by)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """, (transaction_id, customer_id, amount, refund_method, refund_ref, processed_by))
+                    INSERT INTO unified_refunds
+                    (source_type, reference_id, reference_type, student_id, amount,
+                     refund_method, refund_reference, refund_date, processed_by)
+                    VALUES ('car_rental', ?, 'transaction', ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+                """, (str(transaction_id), customer_id, amount, refund_method, refund_ref, processed_by))
 
             # Send receipt
             self.send_carrental_refund_receipt(customer_id, amount, refund_method, refund_ref)
@@ -1515,37 +1503,24 @@ Average Rental Value: ${avg_rental_value:.2f}
 
                 # Update transaction status
                 cursor.execute("""
-                    UPDATE carrental_transactions
+                    UPDATE transactions
                     SET status = 'refunded',
                         reference_number = ?
-                    WHERE transaction_id = ?
+                    WHERE transaction_id = ? AND source_type = 'car_rental'
                 """, (refund_ref, transaction_id))
 
-                # Create refund record
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS carrental_refunds (
-                        refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        transaction_id INTEGER,
-                        customer_id TEXT,
-                        amount DECIMAL(10,2),
-                        refund_method TEXT,
-                        refund_reference TEXT,
-                        refunded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        processed_by TEXT,
-                        FOREIGN KEY (transaction_id) REFERENCES carrental_transactions(transaction_id)
-                    )
-                """)
-
+                # Create refund record in unified_refunds table
                 # Get processed_by
                 processed_by = None
                 if self.current_user:
                     processed_by = self.current_user.get('username') or self.current_user.get('user_id', '')
 
                 cursor.execute("""
-                    INSERT INTO carrental_refunds
-                    (transaction_id, customer_id, amount, refund_method, refund_reference, processed_by)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """, (transaction_id, customer_id, amount, 'student_account', refund_ref, processed_by))
+                    INSERT INTO unified_refunds
+                    (source_type, reference_id, reference_type, student_id, amount,
+                     refund_method, refund_reference, refund_date, processed_by)
+                    VALUES ('car_rental', ?, 'transaction', ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+                """, (str(transaction_id), customer_id, amount, 'student_account', refund_ref, processed_by))
 
                 # Add to student finance account
                 cursor.execute("""
@@ -1562,12 +1537,12 @@ Average Rental Value: ${avg_rental_value:.2f}
                 else:
                     account_id, new_balance = None, amount
 
-                # Log transaction in student_finance_transactions
+                # Log transaction in transactions table
                 cursor.execute("""
-                    INSERT INTO student_finance_transactions
-                    (account_id, student_id, transaction_type, amount, balance_after, description,
+                    INSERT INTO transactions
+                    (source_type, account_id, student_id, transaction_type, amount, balance_after, description,
                      reference_id, processed_by, created_at)
-                    VALUES (?, ?, 'credit', ?, ?, ?, ?, ?, ?)
+                    VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, ?, ?)
                 """, (account_id, customer_id, amount, new_balance, f'Car rental refund - {refund_ref}',
                       refund_ref, processed_by, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
@@ -1667,37 +1642,8 @@ Average Rental Value: ${avg_rental_value:.2f}
     def notify_carrental_finance_gui(self, transaction_id, amount, refund_method, refund_ref):
         """Notify finance system about the refund"""
         try:
-            with transaction() as conn:
-                cursor = conn.cursor()
-
-                # Create finance_refunds table if not exists
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS finance_refunds (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        refund_reference TEXT UNIQUE,
-                        department TEXT,
-                        transaction_id TEXT,
-                        amount DECIMAL(10,2),
-                        refund_method TEXT,
-                        refund_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        processed_by TEXT,
-                        notes TEXT
-                    )
-                """)
-
-                # Get processed_by
-                processed_by = None
-                if self.current_user:
-                    processed_by = self.current_user.get('username') or self.current_user.get('user_id', '')
-
-                # Insert refund record
-                cursor.execute("""
-                    INSERT INTO finance_refunds
-                    (refund_reference, department, transaction_id, amount, refund_method, processed_by, notes)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                """, (refund_ref, 'Car Rental', str(transaction_id), amount, refund_method, processed_by,
-                     'Car rental service refund'))
-
+            # Finance refund data is now recorded in unified_refunds table
+            # This method retains notification logic only
             logger.info(f"Finance GUI notified of refund {refund_ref}")
 
         except Exception as e:
@@ -1734,18 +1680,18 @@ Average Rental Value: ${avg_rental_value:.2f}
                         t.reference_number,
                         t.created_at,
                         t.processed_by,
-                        t.rental_id,
+                        t.reference_id as rental_id,
                         r.start_date,
                         r.end_date,
                         r.vehicle_id,
                         v.make,
                         v.model,
                         v.registration
-                    FROM carrental_transactions t
+                    FROM transactions t
                     LEFT JOIN students s ON t.customer_id = s.student_id
-                    LEFT JOIN carrental_rentals r ON t.rental_id = r.rental_id
+                    LEFT JOIN carrental_rentals r ON t.reference_id = r.rental_id AND t.reference_type = 'rental'
                     LEFT JOIN carrental_vehicles v ON r.vehicle_id = v.vehicle_id
-                    WHERE t.transaction_id = ?
+                    WHERE t.source_type = 'car_rental' AND t.transaction_id = ?
                 """, (transaction_id,))
 
                 trans = cursor.fetchone()
@@ -1876,7 +1822,8 @@ Financial Details:
                         t.payment_method,
                         t.status,
                         t.reference_number
-                    FROM carrental_transactions t
+                    FROM transactions t
+                    WHERE t.source_type = 'car_rental'
                     ORDER BY t.created_at DESC
                 """)
 

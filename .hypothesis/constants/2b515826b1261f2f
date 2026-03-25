@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/accommodation_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' = ?', ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', ', ', '/api/accommodations', '/requests', 'GET', 'POST', 'PUT', 'accommodation', 'accommodation_type', 'accommodations', 'approved', 'create', 'description', 'review_date', 'review_notes', 'reviewed_by', 'reviewer_notes', 'status', 'status = ?', 'student_email', 'student_id', 'student_id = ?', 'student_name', 'sub', 'update', 'view']

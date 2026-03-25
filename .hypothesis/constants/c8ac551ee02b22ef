@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/records/clinical/prescriptions.py
+# hypothesis_version: 6.151.9
+
+['\nStatus Options:', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', '1', '1. Add Prescription', '2', '3', '4', '5', '6', 'Additional notes: ', 'Enter student ID: ', 'Medication name: ', 'Pharmacy: ', 'active', 'add_prescription', 'completed', 'discontinued', 'id', 'on_hold', 'prescription', 'y', '⚠️  EXPIRED', '✅ ACTIVE']

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/tutoring_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' = ?', ' AND ', ' WHERE ', ' WHERE offer_id = ?', ', ', '/api/tutoring', '/offers', 'GET', 'POST', 'PUT', 'availability', 'create', 'description', 'experience_level', 'hourly_rate', 'items', 'search', 'status', "status = 'available'", 'sub', 'subject', 'subject = ?', 'topic', 'total', 'tutor_id', 'tutor_id = ?', 'tutoring', 'tutoring_offer', 'tutoring_offers', 'update', 'view']

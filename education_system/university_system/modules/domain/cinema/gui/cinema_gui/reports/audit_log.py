@@ -19,7 +19,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def load_audit_from_logs(self, action_filter="all"):
     """Load audit entries from university system log files."""
@@ -270,10 +270,12 @@ def export_audit(self):
         else:
             # Fallback to database if no current data
             conn = sqlite3.connect(DB_FILE)
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM audit_log ORDER BY timestamp DESC")
-            data = cursor.fetchall()
-            conn.close()
+            try:
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM audit_log ORDER BY timestamp DESC")
+                data = cursor.fetchall()
+            finally:
+                conn.close()
             with open(filename, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
                 writer.writerow(["ID", "User Type", "User ID", "User Name", "Action", "Entity Type", "Entity ID", "Old Value", "New Value", "IP", "Timestamp"])

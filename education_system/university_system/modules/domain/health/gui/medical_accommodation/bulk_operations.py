@@ -1,7 +1,7 @@
 # bulk_operations.py
 # Bulk operations dialog for AccommodationGUI.
 
-from ._common import (
+from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import (
     tk, ttk, messagebox, datetime,
     get_connection,
 )

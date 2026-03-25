@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/records/student/insurance.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', 'Enter student ID: ', 'Group number: ', 'Guardian', 'Insurance provider: ', 'Other', 'Parent', 'Policy number: ', 'Self', 'Spouse', 'Subscriber name: ', 'add_insurance_info', 'admin', 'health_provider', 'id', 'insurance', 'role', 'y', '✅ CURRENT', '🟡 EXPIRES SOON']

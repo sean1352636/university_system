@@ -1,10 +1,11 @@
 """Search management: saved searches, search history, favorites."""
 import json
 
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from . import _globals
-from .display import display_search_results
-from .system import log_search
+from education_system.university_system.modules.shared.services.analytics.advanced_search import _globals
+from education_system.university_system.modules.shared.services.analytics.advanced_search.display import display_search_results
+from education_system.university_system.modules.shared.services.analytics.advanced_search.system import log_search
 
 
 def manage_saved_searches():
@@ -153,7 +154,7 @@ def execute_loaded_search(criteria):
         if value:
             if key in ['student_id', 'first_name', 'last_name']:
                 query += f" AND {key} LIKE ?"
-                params.append(f"%{value}%")
+                params.append(f"%{escape_like(value)}%")
             else:
                 query += f" AND {key} = ?"
                 params.append(value)

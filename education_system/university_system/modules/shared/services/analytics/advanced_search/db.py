@@ -7,7 +7,7 @@ from education_system.university_system.modules.shared.utils.sql_safety import (
     validate_identifier,
     validate_table_name,
 )
-from . import _globals
+from education_system.university_system.modules.shared.services.analytics.advanced_search import _globals
 
 
 def refresh_search_analytics_columns(cursor) -> List[str]:

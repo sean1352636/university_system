@@ -23,13 +23,13 @@ from education_system.university_system.core.sql_safety import validate_identifi
 from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH, TICKET_TEMPLATES_DIR, UPLOAD_DIR
 from education_system.university_system.utils.logging.log_config import get_log_file
 
-from ..config import (
+from education_system.university_system.modules.domain.student_affairs.services.student_support.config import (
     SUPPORT_DB, TICKET_STATUSES, TICKET_PRIORITIES, SUPPORT_CATEGORIES,
     NotificationType, TicketSentiment, FileType, SupportConfig
 )
-from .. import auth as _auth_mod
-from ..auth import get_current_user_safe, require_auth, has_staff_permissions
-from .audit import audit_action
+from education_system.university_system.modules.domain.student_affairs.services.student_support import auth as _auth_mod
+from education_system.university_system.modules.domain.student_affairs.services.student_support.auth import get_current_user_safe, require_auth, has_staff_permissions
+from education_system.university_system.modules.domain.student_affairs.services.student_support.utils.audit import audit_action
 
 logger = logging.getLogger(__name__)
 
@@ -528,12 +528,14 @@ def display_enhanced_faqs(support):
         
         # Get FAQ categories
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-        cursor = conn.cursor()
-        
-        # Check if faqs table exists
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='faqs'")
-        if not cursor.fetchone():
-            print("📭 No FAQs available (table not found).")
+        try:
+            cursor = conn.cursor()
+
+            # Check if faqs table exists
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='faqs'")
+            if not cursor.fetchone():
+                print("📭 No FAQs available (table not found).")
+        finally:
             conn.close()
             return
             
@@ -641,12 +643,14 @@ def display_enhanced_resources(support):
         
         # Get resource categories
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-        cursor = conn.cursor()
-        
-        # Check if support_resources table exists
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='support_resources'")
-        if not cursor.fetchone():
-            print("📭 No resources available (table not found).")
+        try:
+            cursor = conn.cursor()
+
+            # Check if support_resources table exists
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='support_resources'")
+            if not cursor.fetchone():
+                print("📭 No resources available (table not found).")
+        finally:
             conn.close()
             return
             
@@ -681,11 +685,13 @@ def display_enhanced_resources(support):
         elif choice == str(len(categories) + 1):
             # Featured resources
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM support_resources WHERE is_featured = 1 ORDER BY access_count DESC')
-            resources = [dict(row) for row in cursor.fetchall()]
-            conn.close()
+            try:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute('SELECT * FROM support_resources WHERE is_featured = 1 ORDER BY access_count DESC')
+                resources = [dict(row) for row in cursor.fetchall()]
+            finally:
+                conn.close()
             display_resource_list(resources, "Featured Resources")
         elif choice == str(len(categories) + 2):
             # Search resources

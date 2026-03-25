@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/academic_calendar/dialogs_event.py
+# hypothesis_version: 6.151.9
+
+[1.0, 120, 500, 650, '500x400', '500x600', '550x750', '<Configure>', '<MouseWheel>', 'Academic', 'Administrative', 'Arial', 'Deadline', 'Holiday', 'Social', 'Sports', 'Trip', 'all', 'bold', 'common.cancel', 'common.close', 'common.copy', 'common.error', 'common.na', 'common.success', 'created_by', 'date', 'date_added', 'date_end', 'date_start', 'description', 'event_type', 'horizontal', 'id', 'last_modified', 'message', 'name', 'nw', 'range', 'readonly', 'single', 'success', 'units', 'vertical']

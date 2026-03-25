@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/repositories/student.py
+# hypothesis_version: 6.151.9
+
+[' = ?', ' AND ', '%Y-%m-%d %H:%M:%S', 'Active', 'Student', 'StudentRepository', '__iter__', 'active', 'age', 'column', 'course', 'dob', 'email_address', 'enrollment_date', 'first_name', 'gender', 'keys', 'last_name', 'middle_name', 'sqlite', 'status', 'student_id', 'title']

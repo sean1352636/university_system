@@ -1,5 +1,5 @@
 """Data access mixin for the Student Analytics GUI."""
-from ._imports import (
+from education_system.university_system.modules.shared.gui.student_analytics_gui._imports import (
     pd, np, plt, DEFAULT_DB_PATH, datetime, CONFIG,
 )
 

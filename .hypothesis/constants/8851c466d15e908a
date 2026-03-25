@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/library/reviews.py
+# hypothesis_version: 6.151.9
+
+[0.7, '%Y-%m-%d %H:%M:%S', ': ', 'Content approved', 'approved', 'auth.login_required', 'common.yes_no_prompt', 'fake', 'inappropriate', 'offensive', 'reason', 'review.enter_book_id', 'review.enter_rating', 'review.enter_review', 'review.enter_revised', 'review.error', 'review.not_found', 'review.reviewing', 'review.title', 'review.update_prompt', 'scam', 'spam', 'true', 'y', '✅ ']

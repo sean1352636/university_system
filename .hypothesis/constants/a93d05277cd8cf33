@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/records/admin/advisories.py
+# hypothesis_version: 6.151.9
+
+['\nAdvisory Types:', '\nFilter options:', '\nPriority Levels:', '\nTarget Audience:', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', '1', '2', '2. By priority', '3', '3. By type', '4', 'Advisory content: ', 'Advisory title: ', 'All Students', 'Critical', 'Disease Outbreak', 'Emergency Notice', 'General Information', 'High', 'High Risk Students', 'Invalid choice.', 'Low', 'Medium', 'Policy Update', 'Safety Alert', 'Seasonal Health', 'Specific Groups', 'Staff Only', 'Vaccination Reminder', 'Wellness Tip', 'active', 'add_health_advisory', 'health_advisory', 'id', 'username', 'y', '🔴 HIGH PRIORITY', '🚨 CRITICAL ADVISORY', '🟡 MEDIUM PRIORITY']

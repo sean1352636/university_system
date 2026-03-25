@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/course_management_gui/wrappers/compatibility.py
+# hypothesis_version: 6.151.9
+
+['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', 'Friday', 'Lab', 'Lecture', 'Monday', 'Seminar', 'Thursday', 'TkAgg', 'Tuesday', 'Tutorial', 'Wednesday', 'Workshop', 'common.error', 'common.success', 'courses.db', 'root']

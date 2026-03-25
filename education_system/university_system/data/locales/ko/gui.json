@@ -46,7 +46,34 @@
     "export": "내보내기",
     "save_changes": "변경사항 저장",
     "create": "생성",
-    "select": "선택"
+    "select": "선택",
+    "switch_system": {
+      "title": "시스템 전환",
+      "header": "다른 시스템으로 전환",
+      "choose_system": "시작할 시스템을 선택하세요:",
+      "failed": "시스템 전환 실패: {error}",
+      "college": "식스폼 칼리지 시스템",
+      "secondary": "중등학교 시스템",
+      "primary": "초등학교 시스템"
+    },
+    "mfa": {
+      "verification_status_disabled": "비활성화 (비밀번호만)",
+      "verification_status_enabled": "활성화",
+      "login_verification_label": "로그인 인증: ",
+      "configured": "구성됨",
+      "primary_method": "기본",
+      "turned_off_success": "MFA가 비활성화되었습니다.\n\n설정이 저장되었습니다.\n나중에 이 메뉴에서 복원할 수 있습니다.",
+      "module_not_available": "MFA 모듈을 사용할 수 없습니다: {error}",
+      "error_opening_setup": "MFA 설정을 여는 중 오류 발생: {error}",
+      "error_opening_wizard": "MFA 마법사를 여는 중 오류 발생: {error}",
+      "reenable_email_subject": "귀하의 계정에 MFA가 재활성화되었습니다",
+      "reenable_email_body": "{username}님 안녕하세요,\n\n이전에 저장된 설정을 사용하여 다단계 인증(MFA)이 귀하의 계정에 재활성화되었습니다.\n\n세부사항:\n- 계정: {username}\n- 이메일: {email}\n- 복원된 방법: {methods_count}\n\n이 변경을 수행하지 않은 경우 즉시 지원팀에 연락하여 비밀번호를 변경하세요.\n\n감사합니다.\n대학 시스템 보안팀",
+      "reenabled_title": "MFA 재활성화됨",
+      "reenabled_with_email": "저장된 설정을 사용하여 MFA가 성공적으로 재활성화되었습니다.\n\n확인 이메일이 전송되었습니다:\n{email}",
+      "reenabled_no_email": "저장된 설정을 사용하여 MFA가 성공적으로 재활성화되었습니다.\n\n(이메일 알림을 보낼 수 없었습니다)",
+      "reenabled_email_error": "저장된 설정을 사용하여 MFA가 성공적으로 재활성화되었습니다.\n\n(확인 이메일을 보낼 수 없었습니다: {error})",
+      "reenabled_simple": "저장된 설정을 사용하여 MFA가 성공적으로 재활성화되었습니다."
+    }
   },
   "nav": {
     "categories": {

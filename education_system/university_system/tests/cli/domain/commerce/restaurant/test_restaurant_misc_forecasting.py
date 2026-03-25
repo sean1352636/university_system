@@ -32,7 +32,7 @@ class TestRevenueForecast:
             ('2025-01', 13000.0, 130, 100.0)
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                 forecasting.revenue_forecast()
 
@@ -53,7 +53,7 @@ class TestRevenueForecast:
             ('2025-01', 11000.0, 110, 100.0)
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                 forecasting.revenue_forecast()
 
@@ -73,7 +73,7 @@ class TestRevenueForecast:
             ('2024-12', 12000.0, 120, 100.0)
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                 forecasting.revenue_forecast()
 
@@ -87,9 +87,9 @@ class TestRevenueForecast:
         conn, cursor = mock_db_connection
         cursor.fetchall.side_effect = Exception("Database error")
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
-                with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.logging.error') as mock_log:
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.logging.error') as mock_log:
                     forecasting.revenue_forecast()
 
                     output = fake_out.getvalue()
@@ -111,7 +111,7 @@ class TestExpenseForecast:
             ]
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                 forecasting.expense_forecast()
 
@@ -132,7 +132,7 @@ class TestExpenseForecast:
             ]
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                 forecasting.expense_forecast()
 
@@ -148,7 +148,7 @@ class TestExpenseForecast:
             [('Food', '2024-12', 1000.0)]
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                 forecasting.expense_forecast()
 
@@ -161,9 +161,9 @@ class TestExpenseForecast:
         conn, cursor = mock_db_connection
         cursor.fetchall.side_effect = Exception("Database error")
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
-                with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.logging.error') as mock_log:
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.logging.error') as mock_log:
                     forecasting.expense_forecast()
 
                     output = fake_out.getvalue()
@@ -183,7 +183,7 @@ class TestCashFlowProjection:
             (6000.0,)  # avg_expenses
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                 forecasting.cash_flow_projection()
 
@@ -204,7 +204,7 @@ class TestCashFlowProjection:
             (8000.0,)  # avg_expenses (consistently high)
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                 forecasting.cash_flow_projection()
 
@@ -222,7 +222,7 @@ class TestCashFlowProjection:
             (5000.0,)  # avg_expenses
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                 forecasting.cash_flow_projection()
 
@@ -234,9 +234,9 @@ class TestCashFlowProjection:
         conn, cursor = mock_db_connection
         cursor.fetchone.side_effect = Exception("Database error")
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
-                with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.logging.error') as mock_log:
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.logging.error') as mock_log:
                     forecasting.cash_flow_projection()
 
                     output = fake_out.getvalue()
@@ -263,7 +263,7 @@ class TestSeasonalAnalysis:
             ]
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                 forecasting.seasonal_analysis()
 
@@ -283,7 +283,7 @@ class TestSeasonalAnalysis:
             []
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                 forecasting.seasonal_analysis()
 
@@ -295,7 +295,7 @@ class TestSeasonalAnalysis:
         conn, cursor = mock_db_connection
         cursor.fetchall.side_effect = [[], []]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                 forecasting.seasonal_analysis()
 
@@ -307,9 +307,9 @@ class TestSeasonalAnalysis:
         conn, cursor = mock_db_connection
         cursor.fetchall.side_effect = Exception("Database error")
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
-                with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.logging.error') as mock_log:
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.logging.error') as mock_log:
                     forecasting.seasonal_analysis()
 
                     output = fake_out.getvalue()
@@ -331,7 +331,7 @@ class TestGrowthProjections:
             ('2024-12', 10500.0, 105, 52)
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', return_value='25'):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                     forecasting.growth_projections()
@@ -351,7 +351,7 @@ class TestGrowthProjections:
             ('2024-12', 10000.0, 100, 50)
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                 forecasting.growth_projections()
 
@@ -371,7 +371,7 @@ class TestGrowthProjections:
             ('2024-12', 10000.0, 100, 50)
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', return_value='25'):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                     forecasting.growth_projections()
@@ -393,7 +393,7 @@ class TestGrowthProjections:
             ('2024-12', 10500.0, 105, 52)
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', return_value='30'):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                     forecasting.growth_projections()
@@ -409,9 +409,9 @@ class TestGrowthProjections:
         conn, cursor = mock_db_connection
         cursor.fetchall.side_effect = Exception("Database error")
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
-                with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.logging.error') as mock_log:
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.logging.error') as mock_log:
                     forecasting.growth_projections()
 
                     output = fake_out.getvalue()
@@ -430,7 +430,7 @@ class TestGrowthProjections:
             ('2024-12', 10500.0, 105, 52)
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.forecasting.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', return_value='25'):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                     forecasting.growth_projections()

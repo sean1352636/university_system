@@ -1,10 +1,11 @@
 # Standalone waitlist GUI methods (bound to the main GUI class externally)
-from ._imports import (
+from education_system.university_system.core.sql_safety import escape_like
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.waitlists._imports import (
     _, datetime, messagebox, tk, ttk, Toplevel, sqlite3, DEFAULT_DB_PATH,
 )
-from .add_dialog import AddToWaitlistDialog
-from .view_dialog import ViewWaitlistsDialog
-from .process_dialog import ProcessWaitlistDialog
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.waitlists.add_dialog import AddToWaitlistDialog
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.waitlists.view_dialog import ViewWaitlistsDialog
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.waitlists.process_dialog import ProcessWaitlistDialog
 
 
 def show_add_waitlist(self):
@@ -111,7 +112,7 @@ def add_to_waitlist_gui(self):
                         WHERE student_id LIKE ? OR first_name LIKE ? OR last_name LIKE ? OR email_address LIKE ?
                         ORDER BY student_id
                         LIMIT 100
-                    """, (f"%{search_text}%", f"%{search_text}%", f"%{search_text}%", f"%{search_text}%"))
+                    """, (f"%{escape_like(search_text)}%", f"%{escape_like(search_text)}%", f"%{escape_like(search_text)}%", f"%{escape_like(search_text)}%"))
                 else:
                     cursor.execute("""
                         SELECT student_id, first_name || ' ' || last_name, email_address

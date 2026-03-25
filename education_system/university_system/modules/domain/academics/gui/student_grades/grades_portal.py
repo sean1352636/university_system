@@ -5,9 +5,11 @@ Uses a tabbed notebook to present Dashboard, Grades, and Transcript views
 for the currently authenticated student.
 """
 
-from .common_imports import *
-from .dashboard import DashboardMixin
-from .grades import GradesMixin, TranscriptMixin
+from tkinter import ttk
+
+from education_system.university_system.modules.domain.academics.gui.student_grades.common_imports import get_auth, get_student_id
+from education_system.university_system.modules.domain.academics.gui.student_grades.dashboard import DashboardMixin
+from education_system.university_system.modules.domain.academics.gui.student_grades.grades import GradesMixin, TranscriptMixin
 
 
 class StudentGradesPortal(DashboardMixin, GradesMixin, TranscriptMixin):

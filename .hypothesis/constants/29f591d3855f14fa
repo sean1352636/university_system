@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/managers/mfa_manager.py
+# hypothesis_version: 6.151.9
+
+['$', '%Y-%m-%d %H:%M:%S', 'MFAManager', 'PNG', 'black', 'message', 'qr_code', 'recovery_codes', 'secret', 'success', 'white']

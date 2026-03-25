@@ -154,7 +154,7 @@ except ImportError:
     truncate_text = lambda x, length=100: x[:length] if len(x) > length else x
     handle_support_error = lambda *args, **kwargs: None
 
-from .base import StudentSupportGUIBase
+from education_system.university_system.modules.domain.student_affairs.gui.student_support.base import StudentSupportGUIBase
 
 def launch_student_support_gui():
     """Launch the GUI version of the student support system"""

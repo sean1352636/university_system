@@ -87,16 +87,8 @@ except ImportError:
                     )
                 ''')
 
-                conn.execute('''
-                    CREATE TABLE IF NOT EXISTS betting_transactions (
-                        transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        user_id TEXT NOT NULL,
-                        transaction_type TEXT NOT NULL,
-                        amount DECIMAL(10,2) NOT NULL,
-                        description TEXT,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    )
-                ''')
+                # NOTE: betting transactions now use the unified 'transactions' table
+                # with source_type = 'betting'
 
                 conn.execute('''
                     CREATE TABLE IF NOT EXISTS prediction_markets (

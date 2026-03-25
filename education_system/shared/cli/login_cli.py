@@ -104,8 +104,19 @@ def universal_cli_login(auth_db_path: str | None = None) -> tuple[dict, str, str
         print(f"  Role:   {sys_info['role']}")
         return user_info, sys_info["system_key"], sys_info["role"], auth
 
-    # Multiple systems — let the user pick
+    # Check if user is superadmin (admin in all 4 systems)
+    admin_keys = {s["system_key"] for s in systems if s.get("role") == "admin"}
+    is_superadmin = admin_keys >= {"university", "college", "school", "primary"}
+
     display = user_info.get("display_name", user_info.get("username", "User"))
+
+    # Superadmin — go straight to dashboard
+    if is_superadmin:
+        print(f"\n  Welcome, {display}!")
+        print("  Launching Super Admin Dashboard...")
+        return user_info, "__superadmin__", "admin", auth
+
+    # Multiple systems — let the user pick
     print(f"\n  Welcome, {display}!")
     print("\n  ── Select System ──\n")
 
@@ -122,6 +133,9 @@ def universal_cli_login(auth_db_path: str | None = None) -> tuple[dict, str, str
     if choice == "0":
         auth.logout()
         return None
+
+    if is_superadmin and choice.lower() == "s":
+        return user_info, "__superadmin__", "admin", auth
 
     try:
         idx = int(choice) - 1

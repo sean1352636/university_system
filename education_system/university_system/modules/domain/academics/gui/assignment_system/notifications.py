@@ -1,5 +1,6 @@
 """Notification management"""
 
+from education_system.university_system.core.sql_safety import escape_like
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 import os
@@ -318,7 +319,7 @@ class NotificationManager:
             # Apply search
             if search_text:
                 query += " AND (title LIKE ? OR message LIKE ?)"
-                params.extend([f"%{search_text}%", f"%{search_text}%"])
+                params.extend([f"%{escape_like(search_text)}%", f"%{escape_like(search_text)}%"])
 
             query += f" ORDER BY {date_col} DESC"
 
@@ -756,17 +757,19 @@ class NotificationManager:
 
             # Get current settings
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            user_id = self.auth.current_user.get('id') if self.auth and self.auth.current_user else None
+                user_id = self.auth.current_user.get('id') if self.auth and self.auth.current_user else None
 
-            cursor.execute('''
-            SELECT enabled, email_enabled, push_enabled FROM notification_preferences
-            WHERE user_id = ? AND notification_type = ?
-            ''', (user_id, notification_type))
+                cursor.execute('''
+                SELECT enabled, email_enabled, push_enabled FROM notification_preferences
+                WHERE user_id = ? AND notification_type = ?
+                ''', (user_id, notification_type))
 
-            settings = cursor.fetchone()
-            conn.close()
+                settings = cursor.fetchone()
+            finally:
+                conn.close()
 
             if settings:
                 enabled, email_enabled, push_enabled = settings

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/settings/_base.py
+# hypothesis_version: 6.151.9
+
+['EXCHANGE_API_KEY', 'PAYPAL_CLIENT_ID', 'PAYPAL_CLIENT_SECRET', 'PAYPAL_ENVIRONMENT', 'STRIPE_PUBLIC_KEY', 'STRIPE_SECRET_KEY', 'analytics.log', 'auth', 'client_id', 'client_secret', 'environment', 'ignore', 'layout', 'paypal', 'public_key', 'sandbox', 'secret_key', 'stripe', 'update_status', 'webhook_secret']

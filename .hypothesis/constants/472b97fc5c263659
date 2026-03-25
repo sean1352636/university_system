@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/gui/integration_marketplace_gui/installed.py
+# hypothesis_version: 6.151.9
+
+[100, '1.0', '500x400', 'Confirm Uninstall', 'action', 'common.confirm', 'common.error', 'common.success', 'common.warning', 'configured', 'daily', 'delete', 'end-1c', 'hourly', 'log_id', 'manual', 'nw', 'readonly', 'realtime', 'records_synced', 'success', 'sync', 'uninstalled', 'update', 'values', 'w', 'weekly', '{}']

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/email_service/notifications/helpdesk.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d %H:%M:%S', 'None', 'Open', 'Unassigned', 'assignee', 'category', 'closed', 'created_at', 'created_by', 'customer_name', 'department', 'description', 'due_date', 'error', 'escalation', 'failed', 'info', 'new_status', 'old_status', 'overdue', 'priority', 'replied_by', 'resolved', 'resolved_at', 'satisfaction_survey', 'sent', 'sla_alert_escalation', 'sla_alert_general', 'sla_alert_overdue', 'status', 'subject', 'submitter', 'submitter_email', 'support_ticket_reply', 'ticket_id', 'username', 'warning']

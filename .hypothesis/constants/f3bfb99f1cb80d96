@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/gui/medical_accommodation_gui.py
+# hypothesis_version: 6.151.9
+
+['--cli', '--gui', '--help', 'Usage:', '__main__']

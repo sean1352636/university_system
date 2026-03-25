@@ -1283,6 +1283,7 @@ class UserAuth:
 
                 # Look up university-specific profile data
                 student_id = None
+                legacy_user_id = None
                 email = user_info.get("email", "")
                 try:
                     with self.db_manager.get_connection() as conn:
@@ -1293,14 +1294,20 @@ class UserAuth:
                         )
                         row = cursor.fetchone()
                         if row:
+                            legacy_user_id = row[0]
                             student_id = row[1]
                             email = row[2] or email
                 except Exception:
                     pass
 
+                # Use legacy user ID if available so that existing
+                # database references (messages, etc.) still match.
+                effective_id = legacy_user_id or user_info["user_id"]
+
                 user_dict = {
-                    "id": user_info["user_id"],
-                    "user_id": user_info["user_id"],
+                    "id": effective_id,
+                    "user_id": effective_id,
+                    "shared_auth_id": user_info["user_id"],
                     "username": user_info["username"],
                     "display_name": user_info.get("display_name", username),
                     "role": role,
@@ -1355,7 +1362,7 @@ class UserAuth:
 
     def is_logged_in(self):
         """Check if a user is currently logged in"""
-        return self.session_manager.is_logged_in()
+        return self.current_user is not None
 
     def get_current_user(self):
         """Get the current logged-in user information"""
@@ -1367,7 +1374,7 @@ class UserAuth:
 
     def update_activity(self):
         """Update last activity timestamp"""
-        self.session_manager.update_activity()
+        self.session_manager.update_last_activity()
         self.last_activity = datetime.now()
 
     # ==========================================================================
@@ -1386,11 +1393,11 @@ class UserAuth:
 
     def get_user_by_username(self, username):
         """Get user information by username"""
-        return self.user_manager.get_user_by_username(username)
+        return self.user_manager.get_user(username=username)
 
     def get_user_by_id(self, user_id):
         """Get user information by user ID"""
-        return self.user_manager.get_user_by_id(user_id)
+        return self.user_manager.get_user(user_id=user_id)
 
     def update_user(self, user_id, **kwargs):
         """Update user information"""
@@ -1412,13 +1419,16 @@ class UserAuth:
         """Deactivate a user account"""
         return self.user_manager.deactivate_user(user_id)
 
-    def change_password(self, user_id, old_password, new_password):
+    def change_password(self, username, old_password, new_password):
         """Change user password"""
-        return self.user_manager.change_password(user_id, old_password, new_password)
+        from education_system.university_system.infrastructure.auth.managers.password_manager import change_user_password
+        return change_user_password(self.db_manager, username, old_password, new_password,
+                                    current_user=self.current_user)
 
-    def reset_password(self, username):
-        """Reset user password"""
-        return self.user_manager.reset_password(username)
+    def reset_password(self, username, admin_user_id=None):
+        """Reset user password (admin function)"""
+        from education_system.university_system.infrastructure.auth.managers.password_manager import reset_user_password
+        return reset_user_password(self.db_manager, username, admin_user=self.current_user)
 
     # ==========================================================================
     # PERMISSION MANAGEMENT (Delegated to PermissionManager)
@@ -1438,11 +1448,19 @@ class UserAuth:
 
     def grant_permission(self, user_id, permission_name):
         """Grant a permission to a user"""
-        return self.permission_manager.grant_permission(user_id, permission_name)
+        return self.permission_manager.set_user_permission(user_id, permission_name, granted=True)
 
     def revoke_permission(self, user_id, permission_name):
         """Revoke a permission from a user"""
-        return self.permission_manager.revoke_permission(user_id, permission_name)
+        return self.permission_manager.set_user_permission(user_id, permission_name, granted=False)
+
+    def set_user_permission(self, user_id, permission_name, granted=True):
+        """Set a user permission (grant or revoke)"""
+        return self.permission_manager.set_user_permission(user_id, permission_name, granted)
+
+    def remove_user_permission(self, user_id, permission_name):
+        """Remove a user permission entirely"""
+        return self.permission_manager.remove_user_permission(user_id, permission_name)
 
     def list_permissions(self):
         """List all available permissions"""
@@ -1452,29 +1470,44 @@ class UserAuth:
     # ROLE MANAGEMENT (Delegated to RoleManager)
     # ==========================================================================
 
-    def create_role(self, role_name, description):
+    def create_role(self, role_name, description, permissions=None):
         """Create a new role"""
-        return self.role_manager.create_role(role_name, description)
+        return self.role_manager.create_role(role_name, description, permissions)
 
-    def delete_role(self, role_name):
+    def delete_role(self, role_id):
         """Delete a role"""
-        return self.role_manager.delete_role(role_name)
+        return self.role_manager.delete_role(role_id)
 
     def list_roles(self):
         """List all roles"""
         return self.role_manager.list_roles()
 
+    def get_role(self, role_id=None, role_name=None):
+        """Get role information by ID or name"""
+        return self.role_manager.get_role(role_id=role_id, role_name=role_name)
+
     def get_role_permissions(self, role_name):
         """Get permissions for a role"""
-        return self.role_manager.get_role_permissions(role_name)
+        role = self.role_manager.get_role(role_name=role_name)
+        if role:
+            return role.get('permissions', [])
+        return []
 
-    def assign_role_permission(self, role_name, permission_name):
-        """Assign a permission to a role"""
-        return self.role_manager.assign_role_permission(role_name, permission_name)
+    def update_role(self, role_id, **kwargs):
+        """Update a role"""
+        return self.role_manager.update_role(role_id, **kwargs)
 
-    def remove_role_permission(self, role_name, permission_name):
+    def add_role_permission(self, role_id, permission_name):
+        """Add a permission to a role"""
+        return self.role_manager.add_role_permission(role_id, permission_name)
+
+    def assign_role_permission(self, role_id, permission_name):
+        """Assign a permission to a role (alias for add_role_permission)"""
+        return self.role_manager.add_role_permission(role_id, permission_name)
+
+    def remove_role_permission(self, role_id, permission_name):
         """Remove a permission from a role"""
-        return self.role_manager.remove_role_permission(role_name, permission_name)
+        return self.role_manager.remove_role_permission(role_id, permission_name)
 
     # ==========================================================================
     # MFA MANAGEMENT (Delegated to MFAManager)
@@ -1504,29 +1537,43 @@ class UserAuth:
         """Get QR code for two-factor authentication setup"""
         return self.mfa_manager.get_two_fa_qr_code(user_id)
 
+    def complete_two_fa_login(self, user_id, username, code):
+        """Complete two-factor authentication login"""
+        return self.login_manager.complete_two_fa_login(user_id, username, code)
+
     # ==========================================================================
     # ACCOUNT SECURITY (Delegated to AccountSecurityManager)
     # ==========================================================================
 
     def lock_account(self, user_id):
         """Lock a user account"""
-        return self.account_security_manager.lock_account(user_id)
+        # Deactivate the user account as a lock mechanism
+        return self.user_manager.deactivate_user(user_id)
 
     def unlock_account(self, user_id):
         """Unlock a user account"""
-        return self.account_security_manager.unlock_account(user_id)
+        return self.user_manager.activate_user(user_id)
+
+    def emergency_unlock(self, username, emergency_password):
+        """Emergency unlock a locked account"""
+        return self.account_security_manager.emergency_unlock(username, emergency_password)
 
     def is_account_locked(self, username):
         """Check if an account is locked"""
-        return self.account_security_manager.is_account_locked(username)
+        remaining = self.account_security_manager.get_remaining_login_attempts(username)
+        return remaining <= 0
 
     def get_failed_login_attempts(self, username):
-        """Get number of failed login attempts"""
-        return self.account_security_manager.get_failed_login_attempts(username)
+        """Get number of remaining login attempts"""
+        return self.account_security_manager.get_remaining_login_attempts(username)
+
+    def get_remaining_login_attempts(self, username):
+        """Get number of remaining login attempts"""
+        return self.account_security_manager.get_remaining_login_attempts(username)
 
     def clear_failed_attempts(self, username):
         """Clear failed login attempts for a user"""
-        return self.account_security_manager.clear_failed_attempts(username)
+        return self.account_security_manager.reset_login_attempts(username)
 
     # ==========================================================================
     # ACCOUNT LINKING (Delegated to AccountLinkingManager)
@@ -1551,6 +1598,16 @@ class UserAuth:
     def switch_active_role(self, linked_account_id):
         """Switch to a linked account's role"""
         return self.account_linking_manager.switch_active_role(linked_account_id)
+
+    # ==========================================================================
+    # UTILITY METHODS
+    # ==========================================================================
+
+    @staticmethod
+    def _validate_username(username):
+        """Validate username format"""
+        from education_system.university_system.infrastructure.auth.core_utils.utils import validate_username
+        return validate_username(username)
 
     def revert_role(self):
         """Revert to original role after role switch"""

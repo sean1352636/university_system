@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext, simpledialog
+from tkinter import ttk, messagebox, scrolledtext, simpledialog, filedialog
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.modules.shared.constants import paths
 from datetime import datetime, timedelta
@@ -25,6 +25,12 @@ from education_system.university_system.modules.shared.utils.i18n import (
     get_available_languages,
 )
 from education_system.university_system.modules.shared.utils.gui_language_selector import show_gui_language_selector
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.equipment.equipment_browse import (
+    BrowseAvailableEquipmentDialog, SearchEquipmentDialog
+)
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.equipment.equipment_checkout import (
+    CheckOutEquipmentDialog, ReturnEquipmentDialog, ViewMyEquipmentCheckoutsDialog
+)
 
 # Use centralized path configuration
 DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
@@ -184,13 +190,14 @@ class AddNewEquipmentDialog:
         self.dialog.transient(parent)
         self.dialog.grab_set()
 
+        self.field_widgets = {}
         self.create_widgets()
 
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="➕ Add New Equipment",
+        ttk.Label(main_frame, text="Add New Equipment",
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Scrollable form
@@ -206,47 +213,42 @@ class AddNewEquipmentDialog:
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
 
-        # Form fields
+        # Form fields - key maps to DB column or internal name
         form_frame = ttk.Frame(scrollable_frame)
         form_frame.pack(fill='both', expand=True, padx=15, pady=10)
 
         fields = [
-            ("Equipment Name:", "Entry"),
-            ("Category:", "Combo", ('Audio Equipment', 'Video Equipment', 'Lighting', 'Computers', 'Sports Equipment', 'Event Supplies', 'Other')),
-            ("Manufacturer:", "Entry"),
-            ("Model:", "Entry"),
-            ("Serial Number:", "Entry"),
-            ("Purchase Date:", "Entry"),
-            ("Purchase Cost:", "Entry"),
-            ("Condition:", "Combo", ('Excellent', 'Good', 'Fair')),
-            ("Location:", "Entry"),
-            ("Quantity:", "Entry"),
-            ("Description:", "Text"),
-            ("Included Accessories:", "Text"),
-            ("Usage Notes:", "Text"),
-            ("Training Required:", "Check"),
-            ("Maximum Loan Days:", "Entry"),
-            ("Replacement Value:", "Entry")
+            ("equipment_name", "Equipment Name:*", "Entry"),
+            ("category", "Category:*", "Combo", ('Audio Equipment', 'Video Equipment', 'Lighting', 'Computers', 'Sports Equipment', 'Event Supplies', 'Other')),
+            ("description", "Description:", "Text"),
+            ("serial_number", "Serial Number:", "Entry"),
+            ("purchase_date", "Purchase Date (YYYY-MM-DD):", "Entry"),
+            ("condition_status", "Condition:", "Combo", ('good', 'fair', 'poor')),
+            ("location", "Location:", "Entry"),
+            ("replacement_cost", "Replacement Cost:", "Entry"),
         ]
 
         for i, field_info in enumerate(fields):
-            label = field_info[0]
-            field_type = field_info[1]
+            key = field_info[0]
+            label = field_info[1]
+            field_type = field_info[2]
 
             ttk.Label(form_frame, text=label).grid(row=i, column=0, sticky='nw', pady=5)
 
             if field_type == "Entry":
-                ttk.Entry(form_frame, width=45).grid(row=i, column=1, sticky='ew', padx=10, pady=5)
+                widget = ttk.Entry(form_frame, width=45)
+                widget.grid(row=i, column=1, sticky='ew', padx=10, pady=5)
+                self.field_widgets[key] = widget
             elif field_type == "Combo":
-                combo = ttk.Combobox(form_frame, width=43, state='readonly')
-                combo['values'] = field_info[2]
-                combo.current(0)
-                combo.grid(row=i, column=1, sticky='ew', padx=10, pady=5)
+                widget = ttk.Combobox(form_frame, width=43, state='readonly')
+                widget['values'] = field_info[3]
+                widget.current(0)
+                widget.grid(row=i, column=1, sticky='ew', padx=10, pady=5)
+                self.field_widgets[key] = widget
             elif field_type == "Text":
-                text = scrolledtext.ScrolledText(form_frame, height=3, width=45)
-                text.grid(row=i, column=1, sticky='ew', padx=10, pady=5)
-            elif field_type == "Check":
-                ttk.Checkbutton(form_frame, text="Yes").grid(row=i, column=1, sticky='w', padx=10, pady=5)
+                widget = scrolledtext.ScrolledText(form_frame, height=3, width=45)
+                widget.grid(row=i, column=1, sticky='ew', padx=10, pady=5)
+                self.field_widgets[key] = widget
 
         form_frame.columnconfigure(1, weight=1)
 
@@ -260,20 +262,104 @@ class AddNewEquipmentDialog:
         ttk.Button(button_frame, text="Add Equipment", command=self.add_equipment).pack(side='left', padx=(0, 10))
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='right')
 
+    def _get_field_value(self, key):
+        """Get the value from a form field widget."""
+        widget = self.field_widgets.get(key)
+        if widget is None:
+            return ""
+        if isinstance(widget, scrolledtext.ScrolledText):
+            return widget.get("1.0", tk.END).strip()
+        return widget.get().strip()
+
     def add_equipment(self):
-        messagebox.showinfo("Equipment Added",
-                          "New equipment added successfully!\n\n" +
-                          "Equipment ID: EQ157\n" +
-                          "Name: Professional Camera (Canon EOS R5)\n" +
-                          "Category: Video Equipment\n" +
-                          "Status: Available\n\n" +
-                          "Equipment is now available for checkout.")
-        self.dialog.destroy()
+        name = self._get_field_value("equipment_name")
+        category = self._get_field_value("category")
+
+        if not name:
+            messagebox.showwarning("Validation Error", "Equipment Name is required.", parent=self.dialog)
+            return
+        if not category:
+            messagebox.showwarning("Validation Error", "Category is required.", parent=self.dialog)
+            return
+
+        description = self._get_field_value("description")
+        serial_number = self._get_field_value("serial_number")
+        purchase_date = self._get_field_value("purchase_date")
+        condition_status = self._get_field_value("condition_status") or "good"
+        location = self._get_field_value("location")
+        replacement_cost_str = self._get_field_value("replacement_cost")
+
+        # Validate purchase date if provided
+        if purchase_date:
+            try:
+                datetime.strptime(purchase_date, "%Y-%m-%d")
+            except ValueError:
+                messagebox.showwarning("Validation Error",
+                                       "Purchase Date must be in YYYY-MM-DD format.",
+                                       parent=self.dialog)
+                return
+
+        # Validate replacement cost if provided
+        replacement_cost = None
+        if replacement_cost_str:
+            try:
+                replacement_cost = float(replacement_cost_str.replace(",", "").replace("£", "").replace("$", ""))
+            except ValueError:
+                messagebox.showwarning("Validation Error",
+                                       "Replacement Cost must be a valid number.",
+                                       parent=self.dialog)
+                return
+
+        try:
+            conn = get_connection()
+            try:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO union_equipment
+                        (equipment_name, category, description, serial_number,
+                         purchase_date, condition_status, location,
+                         availability_status, replacement_cost)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'available', ?)
+                ''', (name, category, description or None, serial_number or None,
+                      purchase_date or None, condition_status, location or None,
+                      replacement_cost))
+                conn.commit()
+                new_id = cursor.lastrowid
+            finally:
+                conn.close()
+
+            messagebox.showinfo("Equipment Added",
+                                f"New equipment added successfully!\n\n"
+                                f"Equipment ID: {new_id}\n"
+                                f"Name: {name}\n"
+                                f"Category: {category}\n"
+                                f"Status: Available\n\n"
+                                f"Equipment is now available for checkout.",
+                                parent=self.dialog)
+            self.dialog.destroy()
+        except Exception as e:
+            logging.error("Failed to add equipment: %s", e)
+            messagebox.showerror("Database Error",
+                                 f"Failed to add equipment:\n{e}",
+                                 parent=self.dialog)
 
 
 
 class UpdateEquipmentStatusDialog:
     """Dialog for updating equipment status (admin)"""
+
+    STATUS_MAP = {
+        'available': 'Available',
+        'in_use': 'In Use',
+        'checked_out': 'Checked Out',
+        'maintenance': 'Maintenance',
+        'maintenance_required': 'Maintenance',
+        'damaged': 'Damaged',
+        'retired': 'Retired',
+    }
+
+    STATUS_DB_VALUES = ('available', 'in_use', 'maintenance', 'damaged', 'retired')
+    CONDITION_DB_VALUES = ('good', 'fair', 'poor')
 
     def __init__(self, parent, auth_manager):
         self.parent = parent
@@ -285,13 +371,19 @@ class UpdateEquipmentStatusDialog:
         self.dialog.transient(parent)
         self.dialog.grab_set()
 
+        self.tree = None
+        self.status_combo = None
+        self.condition_combo = None
+        self.location_entry = None
+        self.notes_text = None
         self.create_widgets()
+        self.load_equipment()
 
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="⚙️ Update Equipment Status",
+        ttk.Label(main_frame, text="Update Equipment Status",
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Equipment list
@@ -299,33 +391,22 @@ class UpdateEquipmentStatusDialog:
         list_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         columns = ('ID', 'Name', 'Category', 'Current Status', 'Condition', 'Location')
-        tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=12)
+        self.tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=12)
 
         for col in columns:
-            tree.heading(col, text=col)
+            self.tree.heading(col, text=col)
             if col == 'Name':
-                tree.column(col, width=200)
+                self.tree.column(col, width=200)
             elif col == 'Category':
-                tree.column(col, width=120)
+                self.tree.column(col, width=120)
             else:
-                tree.column(col, width=100)
+                self.tree.column(col, width=100)
 
-        scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=tree.yview)
-        tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=self.tree.yview)
+        self.tree.configure(yscrollcommand=scrollbar.set)
 
-        tree.pack(side='left', fill='both', expand=True, padx=5, pady=5)
+        self.tree.pack(side='left', fill='both', expand=True, padx=5, pady=5)
         scrollbar.pack(side='right', fill='y')
-
-        # Sample equipment
-        equipment = [
-            ("EQ001", "Professional Camera (Canon EOS R5)", "Video Equipment", "Available", "Excellent", "Media Room A"),
-            ("EQ002", "Wireless Microphone System", "Audio Equipment", "Checked Out", "Good", "Audio Store"),
-            ("EQ003", "LED Light Panel (3-pack)", "Lighting", "Maintenance", "Fair", "Repair Shop"),
-            ("EQ004", "Tripod (Manfrotto Pro)", "Video Equipment", "Available", "Good", "Media Room A")
-        ]
-
-        for item in equipment:
-            tree.insert('', 'end', values=item)
 
         # Update form
         update_frame = ttk.LabelFrame(main_frame, text="Update Status")
@@ -335,23 +416,24 @@ class UpdateEquipmentStatusDialog:
         update_content.pack(fill='x', padx=15, pady=10)
 
         ttk.Label(update_content, text="New Status:").grid(row=0, column=0, sticky='w', pady=5)
-        status_combo = ttk.Combobox(update_content, width=25, state='readonly')
-        status_combo['values'] = ('Available', 'Checked Out', 'Maintenance', 'Reserved', 'Lost', 'Retired')
-        status_combo.current(0)
-        status_combo.grid(row=0, column=1, sticky='ew', padx=10, pady=5)
+        self.status_combo = ttk.Combobox(update_content, width=25, state='readonly')
+        self.status_combo['values'] = ('available', 'in_use', 'maintenance', 'damaged', 'retired')
+        self.status_combo.current(0)
+        self.status_combo.grid(row=0, column=1, sticky='ew', padx=10, pady=5)
 
         ttk.Label(update_content, text="New Condition:").grid(row=1, column=0, sticky='w', pady=5)
-        condition_combo = ttk.Combobox(update_content, width=25, state='readonly')
-        condition_combo['values'] = ('Excellent', 'Good', 'Fair', 'Poor', 'Broken')
-        condition_combo.current(0)
-        condition_combo.grid(row=1, column=1, sticky='ew', padx=10, pady=5)
+        self.condition_combo = ttk.Combobox(update_content, width=25, state='readonly')
+        self.condition_combo['values'] = ('good', 'fair', 'poor')
+        self.condition_combo.current(0)
+        self.condition_combo.grid(row=1, column=1, sticky='ew', padx=10, pady=5)
 
         ttk.Label(update_content, text="New Location:").grid(row=2, column=0, sticky='w', pady=5)
-        ttk.Entry(update_content, width=27).grid(row=2, column=1, sticky='ew', padx=10, pady=5)
+        self.location_entry = ttk.Entry(update_content, width=27)
+        self.location_entry.grid(row=2, column=1, sticky='ew', padx=10, pady=5)
 
         ttk.Label(update_content, text="Notes:").grid(row=3, column=0, sticky='nw', pady=5)
-        notes_text = scrolledtext.ScrolledText(update_content, height=3, width=27)
-        notes_text.grid(row=3, column=1, sticky='ew', padx=10, pady=5)
+        self.notes_text = scrolledtext.ScrolledText(update_content, height=3, width=27)
+        self.notes_text.grid(row=3, column=1, sticky='ew', padx=10, pady=5)
 
         update_content.columnconfigure(1, weight=1)
 
@@ -360,37 +442,89 @@ class UpdateEquipmentStatusDialog:
         button_frame.pack(fill='x')
 
         ttk.Button(button_frame, text="Update Status", command=self.update_status).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Bulk Update", command=self.bulk_update).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="View History", command=self.view_history).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Refresh", command=self.load_equipment).pack(side='left', padx=(0, 10))
         ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
 
+    def load_equipment(self):
+        """Load equipment from the database into the treeview."""
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        try:
+            conn = get_connection()
+            try:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT equipment_id, equipment_name, category,
+                           availability_status, condition_status, location
+                    FROM union_equipment
+                    ORDER BY equipment_id
+                ''')
+                rows = cursor.fetchall()
+            finally:
+                conn.close()
+
+            for row in rows:
+                display_status = self.STATUS_MAP.get(row[3], row[3] or 'Unknown')
+                self.tree.insert('', 'end', values=(
+                    row[0], row[1] or '', row[2] or '',
+                    display_status, row[4] or '', row[5] or ''
+                ))
+        except Exception as e:
+            logging.error("Failed to load equipment: %s", e)
+            messagebox.showerror("Database Error",
+                                 f"Failed to load equipment:\n{e}",
+                                 parent=self.dialog)
+
     def update_status(self):
-        messagebox.showinfo("Status Updated",
-                          "Equipment status updated!\n\n" +
-                          "EQ003 - LED Light Panel (3-pack)\n" +
-                          "Old Status: Maintenance\n" +
-                          "New Status: Available\n" +
-                          "Condition: Excellent\n\n" +
-                          "Equipment is now available for checkout.")
+        selected = self.tree.selection()
+        if not selected:
+            messagebox.showwarning("No Selection",
+                                   "Please select an equipment item to update.",
+                                   parent=self.dialog)
+            return
 
-    def bulk_update(self):
-        messagebox.showinfo("Bulk Update",
-                          "Bulk status update:\n\n" +
-                          "Select multiple items to update:\n" +
-                          "- Change status for all\n" +
-                          "- Update location for all\n" +
-                          "- Set condition for all\n\n" +
-                          "Useful for batch operations.")
+        item_values = self.tree.item(selected[0], 'values')
+        equipment_id = item_values[0]
+        old_status = item_values[3]
+        equipment_name = item_values[1]
 
-    def view_history(self):
-        messagebox.showinfo("Status History",
-                          "Equipment Status History:\n\n" +
-                          "EQ003 - LED Light Panel (3-pack)\n\n" +
-                          "2025-03-29: Maintenance → Available\n" +
-                          "2025-03-22: Checked Out → Maintenance\n" +
-                          "2025-03-15: Available → Checked Out\n" +
-                          "2025-03-08: Checked Out → Available\n" +
-                          "2025-03-01: Available → Checked Out")
+        new_status = self.status_combo.get()
+        new_condition = self.condition_combo.get()
+        new_location = self.location_entry.get().strip()
+
+        try:
+            conn = get_connection()
+            try:
+                cursor = conn.cursor()
+                if new_location:
+                    cursor.execute('''
+                        UPDATE union_equipment
+                        SET availability_status = ?, condition_status = ?, location = ?
+                        WHERE equipment_id = ?
+                    ''', (new_status, new_condition, new_location, equipment_id))
+                else:
+                    cursor.execute('''
+                        UPDATE union_equipment
+                        SET availability_status = ?, condition_status = ?
+                        WHERE equipment_id = ?
+                    ''', (new_status, new_condition, equipment_id))
+                conn.commit()
+            finally:
+                conn.close()
+
+            messagebox.showinfo("Status Updated",
+                                f"Equipment status updated!\n\n"
+                                f"ID: {equipment_id} - {equipment_name}\n"
+                                f"Old Status: {old_status}\n"
+                                f"New Status: {self.STATUS_MAP.get(new_status, new_status)}\n"
+                                f"Condition: {new_condition}",
+                                parent=self.dialog)
+            self.load_equipment()
+        except Exception as e:
+            logging.error("Failed to update equipment status: %s", e)
+            messagebox.showerror("Database Error",
+                                 f"Failed to update status:\n{e}",
+                                 parent=self.dialog)
 
 
 
@@ -407,119 +541,59 @@ class EquipmentMaintenanceTrackingDialog:
         self.dialog.transient(parent)
         self.dialog.grab_set()
 
+        self.current_tree = None
+        self.scheduled_tree = None
         self.create_widgets()
+        self.load_maintenance_data()
 
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="🔧 Equipment Maintenance",
+        ttk.Label(main_frame, text="Equipment Maintenance",
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Create notebook
         notebook = ttk.Notebook(main_frame)
         notebook.pack(fill='both', expand=True, pady=(0, 15))
 
-        # Current Maintenance tab
+        # Current Maintenance tab - equipment with condition issues or maintenance status
         current_frame = ttk.Frame(notebook)
-        notebook.add(current_frame, text="Current Maintenance")
+        notebook.add(current_frame, text="Needs Maintenance")
 
-        current_columns = ('ID', 'Equipment', 'Issue', 'Reported', 'Priority', 'Status', 'Expected Completion')
-        current_tree = ttk.Treeview(current_frame, columns=current_columns, show='tree headings', height=10)
+        current_columns = ('ID', 'Equipment', 'Category', 'Condition', 'Status', 'Location', 'Maintenance Due')
+        self.current_tree = ttk.Treeview(current_frame, columns=current_columns, show='headings', height=10)
 
         for col in current_columns:
-            current_tree.heading(col, text=col)
+            self.current_tree.heading(col, text=col)
             if col == 'Equipment':
-                current_tree.column(col, width=180)
-            elif col == 'Issue':
-                current_tree.column(col, width=150)
+                self.current_tree.column(col, width=180)
             else:
-                current_tree.column(col, width=100)
+                self.current_tree.column(col, width=110)
 
-        current_tree.pack(fill='both', expand=True, padx=10, pady=10)
+        current_scroll = ttk.Scrollbar(current_frame, orient='vertical', command=self.current_tree.yview)
+        self.current_tree.configure(yscrollcommand=current_scroll.set)
+        self.current_tree.pack(side='left', fill='both', expand=True, padx=10, pady=10)
+        current_scroll.pack(side='right', fill='y', pady=10)
 
-        maintenance_items = [
-            ("MNT012", "LED Light Panel", "Bulb replacement needed", "2025-03-28", "High", "In Progress", "2025-04-02"),
-            ("MNT011", "Projector (Epson 4K)", "Fan making noise", "2025-03-25", "Medium", "Waiting Parts", "2025-04-10"),
-            ("MNT010", "Laptop (Dell XPS 15)", "Battery replacement", "2025-03-20", "Low", "Scheduled", "2025-04-15")
-        ]
-
-        for item in maintenance_items:
-            current_tree.insert('', 'end', values=item)
-
-        # Maintenance History tab
-        history_frame = ttk.Frame(notebook)
-        notebook.add(history_frame, text="Maintenance History")
-
-        history_columns = ('ID', 'Equipment', 'Issue', 'Completed', 'Cost', 'Performed By')
-        history_tree = ttk.Treeview(history_frame, columns=history_columns, show='tree headings', height=10)
-
-        for col in history_columns:
-            history_tree.heading(col, text=col)
-            if col == 'Equipment':
-                history_tree.column(col, width=200)
-            elif col == 'Issue':
-                history_tree.column(col, width=180)
-            else:
-                history_tree.column(col, width=120)
-
-        history_tree.pack(fill='both', expand=True, padx=10, pady=10)
-
-        history_items = [
-            ("MNT009", "Professional Camera", "Sensor cleaning", "2025-03-15", "£45.00", "Tech Services"),
-            ("MNT008", "Wireless Microphone", "Battery compartment repair", "2025-03-10", "£25.00", "Audio Tech"),
-            ("MNT007", "Tripod", "Head adjustment", "2025-03-05", "£15.00", "Equipment Manager")
-        ]
-
-        for item in history_items:
-            history_tree.insert('', 'end', values=item)
-
-        # Scheduled Maintenance tab
+        # Scheduled Maintenance tab - equipment with upcoming maintenance_due dates
         schedule_frame = ttk.Frame(notebook)
         notebook.add(schedule_frame, text="Scheduled Maintenance")
 
-        schedule_scroll = scrolledtext.ScrolledText(schedule_frame, height=18, wrap=tk.WORD, font=('Courier', 9))
-        schedule_scroll.pack(fill='both', expand=True, padx=10, pady=10)
+        sched_columns = ('ID', 'Equipment', 'Category', 'Condition', 'Maintenance Due', 'Location')
+        self.scheduled_tree = ttk.Treeview(schedule_frame, columns=sched_columns, show='headings', height=10)
 
-        schedule_text = """SCHEDULED MAINTENANCE CALENDAR
+        for col in sched_columns:
+            self.scheduled_tree.heading(col, text=col)
+            if col == 'Equipment':
+                self.scheduled_tree.column(col, width=200)
+            else:
+                self.scheduled_tree.column(col, width=120)
 
-APRIL 2025:
-────────────────────────────────────────────
-Week 1 (Apr 1-7):
-  • Professional Cameras (All) - Sensor cleaning
-  • Projectors - Filter replacement
-  • Audio Equipment - Connection check
-
-Week 2 (Apr 8-14):
-  • Laptops - System updates & antivirus
-  • Lighting Equipment - Bulb inspection
-  • Tripods - Mechanism lubrication
-
-Week 3 (Apr 15-21):
-  • Wireless Systems - Battery replacement
-  • Speakers - Driver testing
-  • Cameras - Firmware updates
-
-Week 4 (Apr 22-30):
-  • All Equipment - Safety inspection
-  • Inventory audit
-  • Equipment calibration
-
-MAY 2025:
-────────────────────────────────────────────
-Week 1 (May 1-7):
-  • Deep cleaning all equipment
-  • Cable testing & replacement
-  • Storage organization
-
-ANNUAL MAINTENANCE:
-────────────────────────────────────────────
-  • Professional calibration (June)
-  • Insurance inspection (July)
-  • Warranty reviews (August)"""
-
-        schedule_scroll.insert('1.0', schedule_text)
-        schedule_scroll.config(state='disabled')
+        sched_scroll = ttk.Scrollbar(schedule_frame, orient='vertical', command=self.scheduled_tree.yview)
+        self.scheduled_tree.configure(yscrollcommand=sched_scroll.set)
+        self.scheduled_tree.pack(side='left', fill='both', expand=True, padx=10, pady=10)
+        sched_scroll.pack(side='right', fill='y', pady=10)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
@@ -528,45 +602,358 @@ ANNUAL MAINTENANCE:
         ttk.Button(button_frame, text="Report Issue", command=self.report_issue).pack(side='left', padx=(0, 10))
         ttk.Button(button_frame, text="Complete Maintenance", command=self.complete_maintenance).pack(side='left', padx=(0, 10))
         ttk.Button(button_frame, text="Schedule Maintenance", command=self.schedule_maintenance).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text="Refresh", command=self.load_maintenance_data).pack(side='left', padx=(0, 10))
         ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
 
+    def load_maintenance_data(self):
+        """Load maintenance-related equipment data from the database."""
+        for tree in (self.current_tree, self.scheduled_tree):
+            for item in tree.get_children():
+                tree.delete(item)
+
+        try:
+            conn = get_connection()
+            try:
+                cursor = conn.cursor()
+
+                # Needs maintenance: poor/damaged condition or maintenance/maintenance_required status
+                cursor.execute('''
+                    SELECT equipment_id, equipment_name, category,
+                           condition_status, availability_status, location, maintenance_due
+                    FROM union_equipment
+                    WHERE availability_status IN ('maintenance', 'maintenance_required')
+                       OR condition_status IN ('poor', 'damaged')
+                       OR (maintenance_due IS NOT NULL AND maintenance_due <= date('now'))
+                    ORDER BY maintenance_due, condition_status
+                ''')
+                for row in cursor.fetchall():
+                    self.current_tree.insert('', 'end', values=(
+                        row[0], row[1] or '', row[2] or '',
+                        row[3] or '', row[4] or '', row[5] or '',
+                        row[6] or 'Not scheduled'
+                    ))
+
+                # Scheduled: equipment with future maintenance_due
+                cursor.execute('''
+                    SELECT equipment_id, equipment_name, category,
+                           condition_status, maintenance_due, location
+                    FROM union_equipment
+                    WHERE maintenance_due IS NOT NULL AND maintenance_due > date('now')
+                    ORDER BY maintenance_due
+                ''')
+                for row in cursor.fetchall():
+                    self.scheduled_tree.insert('', 'end', values=(
+                        row[0], row[1] or '', row[2] or '',
+                        row[3] or '', row[4] or '', row[5] or ''
+                    ))
+            finally:
+                conn.close()
+        except Exception as e:
+            logging.error("Failed to load maintenance data: %s", e)
+            messagebox.showerror("Database Error",
+                                 f"Failed to load maintenance data:\n{e}",
+                                 parent=self.dialog)
+
     def report_issue(self):
-        messagebox.showinfo("Report Issue",
-                          "Report equipment issue:\n\n" +
-                          "Equipment ID or Name:\n" +
-                          "Problem Description:\n" +
-                          "Severity: Low/Medium/High/Critical\n" +
-                          "Photos: Upload (optional)\n\n" +
-                          "Maintenance team will be notified.")
+        """Show a form dialog to report an equipment issue."""
+        report_dlg = tk.Toplevel(self.dialog)
+        report_dlg.title("Report Equipment Issue")
+        report_dlg.geometry("450x400")
+        report_dlg.transient(self.dialog)
+        report_dlg.grab_set()
+
+        frame = ttk.Frame(report_dlg)
+        frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(frame, text="Report Equipment Issue", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+
+        form = ttk.Frame(frame)
+        form.pack(fill='x')
+
+        # Equipment ID
+        ttk.Label(form, text="Equipment ID:").grid(row=0, column=0, sticky='w', pady=5)
+        eq_id_entry = ttk.Entry(form, width=30)
+        eq_id_entry.grid(row=0, column=1, sticky='ew', padx=10, pady=5)
+
+        # Pre-fill if selected in current tree
+        selected = self.current_tree.selection()
+        if selected:
+            vals = self.current_tree.item(selected[0], 'values')
+            eq_id_entry.insert(0, str(vals[0]))
+
+        # Problem description
+        ttk.Label(form, text="Problem:").grid(row=1, column=0, sticky='nw', pady=5)
+        problem_text = scrolledtext.ScrolledText(form, height=4, width=30)
+        problem_text.grid(row=1, column=1, sticky='ew', padx=10, pady=5)
+
+        # Severity
+        ttk.Label(form, text="Severity:").grid(row=2, column=0, sticky='w', pady=5)
+        severity_combo = ttk.Combobox(form, width=28, state='readonly')
+        severity_combo['values'] = ('Low', 'Medium', 'High', 'Critical')
+        severity_combo.current(1)
+        severity_combo.grid(row=2, column=1, sticky='ew', padx=10, pady=5)
+
+        form.columnconfigure(1, weight=1)
+
+        def submit_issue():
+            eid = eq_id_entry.get().strip()
+            problem = problem_text.get("1.0", tk.END).strip()
+            severity = severity_combo.get()
+
+            if not eid or not eid.isdigit():
+                messagebox.showwarning("Validation Error", "Please enter a valid Equipment ID.",
+                                       parent=report_dlg)
+                return
+            if not problem:
+                messagebox.showwarning("Validation Error", "Please describe the problem.",
+                                       parent=report_dlg)
+                return
+
+            try:
+                conn = get_connection()
+                try:
+                    cursor = conn.cursor()
+                    # Verify equipment exists
+                    cursor.execute('SELECT equipment_name FROM union_equipment WHERE equipment_id = ?', (int(eid),))
+                    eq_row = cursor.fetchone()
+                    if not eq_row:
+                        messagebox.showwarning("Not Found",
+                                               f"Equipment ID {eid} not found.",
+                                               parent=report_dlg)
+                        return
+
+                    # Update equipment condition to reflect issue
+                    new_condition = 'poor' if severity in ('Low', 'Medium') else 'damaged'
+                    cursor.execute('''
+                        UPDATE union_equipment
+                        SET condition_status = ?,
+                            availability_status = 'maintenance_required'
+                        WHERE equipment_id = ?
+                    ''', (new_condition, int(eid)))
+                    conn.commit()
+                finally:
+                    conn.close()
+
+                messagebox.showinfo("Issue Reported",
+                                    f"Issue reported for: {eq_row[0]}\n"
+                                    f"Severity: {severity}\n"
+                                    f"Equipment marked for maintenance.",
+                                    parent=report_dlg)
+                report_dlg.destroy()
+                self.load_maintenance_data()
+            except Exception as e:
+                logging.error("Failed to report issue: %s", e)
+                messagebox.showerror("Database Error",
+                                     f"Failed to report issue:\n{e}",
+                                     parent=report_dlg)
+
+        btn_frame = ttk.Frame(frame)
+        btn_frame.pack(fill='x', pady=(15, 0))
+        ttk.Button(btn_frame, text="Submit", command=submit_issue).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text="Cancel", command=report_dlg.destroy).pack(side='right')
 
     def complete_maintenance(self):
-        messagebox.showinfo("Complete Maintenance",
-                          "Mark maintenance as complete:\n\n" +
-                          "Maintenance ID: MNT012\n" +
-                          "Work performed:\n" +
-                          "Parts used:\n" +
-                          "Cost: £\n" +
-                          "Performed by:\n\n" +
-                          "Equipment will be marked available.")
+        """Mark the selected maintenance item as complete, update equipment condition."""
+        selected = self.current_tree.selection()
+        if not selected:
+            messagebox.showwarning("No Selection",
+                                   "Please select an equipment item from the 'Needs Maintenance' tab.",
+                                   parent=self.dialog)
+            return
+
+        item_values = self.current_tree.item(selected[0], 'values')
+        equipment_id = item_values[0]
+        equipment_name = item_values[1]
+
+        # Ask for post-maintenance condition
+        complete_dlg = tk.Toplevel(self.dialog)
+        complete_dlg.title("Complete Maintenance")
+        complete_dlg.geometry("400x250")
+        complete_dlg.transient(self.dialog)
+        complete_dlg.grab_set()
+
+        frame = ttk.Frame(complete_dlg)
+        frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(frame, text=f"Complete Maintenance for:\n{equipment_name} (ID: {equipment_id})",
+                  font=('Arial', 10, 'bold')).pack(pady=(0, 10))
+
+        form = ttk.Frame(frame)
+        form.pack(fill='x')
+
+        ttk.Label(form, text="Condition After:").grid(row=0, column=0, sticky='w', pady=5)
+        cond_combo = ttk.Combobox(form, width=20, state='readonly')
+        cond_combo['values'] = ('good', 'fair', 'poor')
+        cond_combo.current(0)
+        cond_combo.grid(row=0, column=1, sticky='ew', padx=10, pady=5)
+
+        ttk.Label(form, text="Next Maintenance\n(YYYY-MM-DD):").grid(row=1, column=0, sticky='w', pady=5)
+        next_maint_entry = ttk.Entry(form, width=22)
+        next_maint_entry.grid(row=1, column=1, sticky='ew', padx=10, pady=5)
+
+        form.columnconfigure(1, weight=1)
+
+        def do_complete():
+            new_condition = cond_combo.get()
+            next_date = next_maint_entry.get().strip() or None
+
+            if next_date:
+                try:
+                    datetime.strptime(next_date, '%Y-%m-%d')
+                except ValueError:
+                    messagebox.showwarning("Validation Error",
+                                           "Next maintenance date must be YYYY-MM-DD format.",
+                                           parent=complete_dlg)
+                    return
+
+            new_availability = 'available' if new_condition in ('good', 'fair') else 'maintenance_required'
+
+            try:
+                conn = get_connection()
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        UPDATE union_equipment
+                        SET condition_status = ?, availability_status = ?, maintenance_due = ?
+                        WHERE equipment_id = ?
+                    ''', (new_condition, new_availability, next_date, equipment_id))
+                    conn.commit()
+                finally:
+                    conn.close()
+
+                messagebox.showinfo("Maintenance Complete",
+                                    f"Maintenance completed for {equipment_name}.\n"
+                                    f"Condition: {new_condition}\n"
+                                    f"Status: {new_availability}",
+                                    parent=complete_dlg)
+                complete_dlg.destroy()
+                self.load_maintenance_data()
+            except Exception as e:
+                logging.error("Failed to complete maintenance: %s", e)
+                messagebox.showerror("Database Error",
+                                     f"Failed to complete maintenance:\n{e}",
+                                     parent=complete_dlg)
+
+        btn_frame = ttk.Frame(frame)
+        btn_frame.pack(fill='x', pady=(15, 0))
+        ttk.Button(btn_frame, text="Complete", command=do_complete).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text="Cancel", command=complete_dlg.destroy).pack(side='right')
 
     def schedule_maintenance(self):
-        messagebox.showinfo("Schedule Maintenance",
-                          "Schedule preventive maintenance:\n\n" +
-                          "Equipment:\n" +
-                          "Maintenance type:\n" +
-                          "Scheduled date:\n" +
-                          "Assigned to:\n" +
-                          "Estimated duration:\n\n" +
-                          "Calendar reminder will be created.")
+        """Show a form to schedule future maintenance for an equipment item."""
+        sched_dlg = tk.Toplevel(self.dialog)
+        sched_dlg.title("Schedule Maintenance")
+        sched_dlg.geometry("420x280")
+        sched_dlg.transient(self.dialog)
+        sched_dlg.grab_set()
+
+        frame = ttk.Frame(sched_dlg)
+        frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(frame, text="Schedule Maintenance", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+
+        form = ttk.Frame(frame)
+        form.pack(fill='x')
+
+        # Equipment selector
+        ttk.Label(form, text="Equipment ID:").grid(row=0, column=0, sticky='w', pady=5)
+        eq_id_entry = ttk.Entry(form, width=25)
+        eq_id_entry.grid(row=0, column=1, sticky='ew', padx=10, pady=5)
+
+        # Pre-fill from selection in either tree
+        for tree in (self.current_tree, self.scheduled_tree):
+            sel = tree.selection()
+            if sel:
+                vals = tree.item(sel[0], 'values')
+                eq_id_entry.insert(0, str(vals[0]))
+                break
+
+        ttk.Label(form, text="Maintenance Date\n(YYYY-MM-DD):").grid(row=1, column=0, sticky='w', pady=5)
+        date_entry = ttk.Entry(form, width=25)
+        date_entry.grid(row=1, column=1, sticky='ew', padx=10, pady=5)
+
+        ttk.Label(form, text="Notes:").grid(row=2, column=0, sticky='nw', pady=5)
+        notes_entry = scrolledtext.ScrolledText(form, height=3, width=25)
+        notes_entry.grid(row=2, column=1, sticky='ew', padx=10, pady=5)
+
+        form.columnconfigure(1, weight=1)
+
+        def do_schedule():
+            eid = eq_id_entry.get().strip()
+            maint_date = date_entry.get().strip()
+
+            if not eid or not eid.isdigit():
+                messagebox.showwarning("Validation Error",
+                                       "Please enter a valid Equipment ID.",
+                                       parent=sched_dlg)
+                return
+            if not maint_date:
+                messagebox.showwarning("Validation Error",
+                                       "Please enter a maintenance date.",
+                                       parent=sched_dlg)
+                return
+            try:
+                datetime.strptime(maint_date, '%Y-%m-%d')
+            except ValueError:
+                messagebox.showwarning("Validation Error",
+                                       "Date must be in YYYY-MM-DD format.",
+                                       parent=sched_dlg)
+                return
+
+            try:
+                conn = get_connection()
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute('SELECT equipment_name FROM union_equipment WHERE equipment_id = ?', (int(eid),))
+                    eq_row = cursor.fetchone()
+                    if not eq_row:
+                        messagebox.showwarning("Not Found",
+                                               f"Equipment ID {eid} not found.",
+                                               parent=sched_dlg)
+                        return
+
+                    cursor.execute('''
+                        UPDATE union_equipment
+                        SET maintenance_due = ?
+                        WHERE equipment_id = ?
+                    ''', (maint_date, int(eid)))
+                    conn.commit()
+                finally:
+                    conn.close()
+
+                messagebox.showinfo("Maintenance Scheduled",
+                                    f"Maintenance scheduled for {eq_row[0]}.\n"
+                                    f"Date: {maint_date}",
+                                    parent=sched_dlg)
+                sched_dlg.destroy()
+                self.load_maintenance_data()
+            except Exception as e:
+                logging.error("Failed to schedule maintenance: %s", e)
+                messagebox.showerror("Database Error",
+                                     f"Failed to schedule maintenance:\n{e}",
+                                     parent=sched_dlg)
+
+        btn_frame = ttk.Frame(frame)
+        btn_frame.pack(fill='x', pady=(15, 0))
+        ttk.Button(btn_frame, text="Schedule", command=do_schedule).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text="Cancel", command=sched_dlg.destroy).pack(side='right')
 
 
 
 class GenerateEquipmentReportsDialog:
-    """Dialog for generating equipment reports"""
+    """Dialog for generating equipment reports with real DB data"""
+
+    REPORT_TYPES = [
+        ("Inventory Report", "_generate_inventory"),
+        ("Status Report", "_generate_status"),
+        ("Maintenance Report", "_generate_maintenance"),
+        ("Asset Valuation Report", "_generate_valuation"),
+    ]
 
     def __init__(self, parent, auth_manager):
         self.parent = parent
         self.auth = auth_manager
+        self.current_report_text = ""
 
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Equipment Reports")
@@ -574,214 +961,394 @@ class GenerateEquipmentReportsDialog:
         self.dialog.transient(parent)
         self.dialog.grab_set()
 
+        self.report_display = None
         self.create_widgets()
 
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="📊 Equipment Reports",
+        ttk.Label(main_frame, text="Equipment Reports",
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
-        # Report types
-        reports_frame = ttk.LabelFrame(main_frame, text="Available Reports")
-        reports_frame.pack(fill='both', expand=True, pady=(0, 15))
+        # Report type buttons
+        btn_frame = ttk.LabelFrame(main_frame, text="Generate Report")
+        btn_frame.pack(fill='x', pady=(0, 10))
+        btn_inner = ttk.Frame(btn_frame)
+        btn_inner.pack(padx=10, pady=10)
 
-        # Report cards
-        cards_container = ttk.Frame(reports_frame)
-        cards_container.pack(fill='both', expand=True, padx=10, pady=10)
+        for label, method_name in self.REPORT_TYPES:
+            ttk.Button(btn_inner, text=label,
+                       command=lambda m=method_name: self._run_report(m)).pack(side='left', padx=(0, 10))
 
-        # Row 1
-        row1 = ttk.Frame(cards_container)
-        row1.pack(fill='x', pady=(0, 10))
+        # Report display area
+        display_frame = ttk.LabelFrame(main_frame, text="Report Output")
+        display_frame.pack(fill='both', expand=True, pady=(0, 10))
 
-        self.create_report_card(row1, "📋 Inventory Report", "Complete equipment inventory", self.inventory_report).pack(side='left', fill='both', expand=True, padx=(0, 10))
-        self.create_report_card(row1, "📈 Usage Statistics", "Checkout and usage stats", self.usage_report).pack(side='left', fill='both', expand=True, padx=(0, 10))
-        self.create_report_card(row1, "🔧 Maintenance Report", "Maintenance history & costs", self.maintenance_report).pack(side='left', fill='both', expand=True)
+        self.report_display = scrolledtext.ScrolledText(display_frame, wrap=tk.WORD, font=('Courier', 9))
+        self.report_display.pack(fill='both', expand=True, padx=5, pady=5)
+        self.report_display.insert('1.0', "Select a report type above to generate a report from live data.")
+        self.report_display.config(state='disabled')
 
-        # Row 2
-        row2 = ttk.Frame(cards_container)
-        row2.pack(fill='x', pady=(0, 10))
+        # Action buttons
+        action_frame = ttk.Frame(main_frame)
+        action_frame.pack(fill='x')
 
-        self.create_report_card(row2, "💰 Financial Report", "Equipment costs & value", self.financial_report).pack(side='left', fill='both', expand=True, padx=(0, 10))
-        self.create_report_card(row2, "⚠️ Issues Report", "Problems and damages", self.issues_report).pack(side='left', fill='both', expand=True, padx=(0, 10))
-        self.create_report_card(row2, "📊 Utilization Report", "Equipment utilization rates", self.utilization_report).pack(side='left', fill='both', expand=True)
+        ttk.Button(action_frame, text="Save as TXT", command=self._save_as_txt).pack(side='left', padx=(0, 10))
+        ttk.Button(action_frame, text="Email to Admin", command=self._email_to_admin).pack(side='left', padx=(0, 10))
+        ttk.Button(action_frame, text="Close", command=self.dialog.destroy).pack(side='right')
 
-        # Row 3
-        row3 = ttk.Frame(cards_container)
-        row3.pack(fill='x')
+    # ------------------------------------------------------------------
+    # Report generation helpers
+    # ------------------------------------------------------------------
 
-        self.create_report_card(row3, "👥 User Activity", "User checkout patterns", self.user_activity_report).pack(side='left', fill='both', expand=True, padx=(0, 10))
-        self.create_report_card(row3, "📅 Forecast Report", "Future needs prediction", self.forecast_report).pack(side='left', fill='both', expand=True, padx=(0, 10))
-        self.create_report_card(row3, "🎯 Custom Report", "Build your own report", self.custom_report).pack(side='left', fill='both', expand=True)
+    def _run_report(self, method_name):
+        """Dispatch to a report generator method."""
+        method = getattr(self, method_name, None)
+        if method is None:
+            return
+        try:
+            report_text = method()
+        except Exception as e:
+            logging.error("Report generation failed: %s", e)
+            report_text = f"Error generating report:\n{e}"
 
-        # Report parameters
-        params_frame = ttk.LabelFrame(main_frame, text="Report Parameters")
-        params_frame.pack(fill='x', pady=(0, 15))
+        self.current_report_text = report_text
+        self.report_display.config(state='normal')
+        self.report_display.delete('1.0', tk.END)
+        self.report_display.insert('1.0', report_text)
+        self.report_display.config(state='disabled')
 
-        params_content = ttk.Frame(params_frame)
-        params_content.pack(fill='x', padx=15, pady=10)
+    def _generate_inventory(self) -> str:
+        """Full inventory report from union_equipment table."""
+        conn = get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT equipment_id, equipment_name, category, serial_number,
+                       condition_status, availability_status, location,
+                       purchase_date, replacement_cost
+                FROM union_equipment
+                ORDER BY category, equipment_name
+            ''')
+            rows = cursor.fetchall()
+        finally:
+            conn.close()
 
-        ttk.Label(params_content, text="Date Range:").grid(row=0, column=0, sticky='w', pady=5)
-        date_combo = ttk.Combobox(params_content, width=25, state='readonly')
-        date_combo['values'] = ('Last 7 days', 'Last 30 days', 'Last 3 months', 'Last 6 months', 'Last year', 'All time', 'Custom range')
-        date_combo.current(1)
-        date_combo.grid(row=0, column=1, sticky='ew', padx=10, pady=5)
+        now = datetime.now().strftime("%Y-%m-%d %H:%M")
+        lines = [
+            "EQUIPMENT INVENTORY REPORT",
+            f"Generated: {now}",
+            "=" * 90,
+            f"Total items: {len(rows)}",
+            "",
+            f"{'ID':<6} {'Name':<30} {'Category':<18} {'Serial':<15} {'Cond.':<8} {'Status':<12} {'Location':<15}",
+            "-" * 90,
+        ]
+        for r in rows:
+            lines.append(
+                f"{r[0]:<6} {(r[1] or '')[:29]:<30} {(r[2] or '')[:17]:<18} "
+                f"{(r[3] or 'N/A')[:14]:<15} {(r[4] or '')[:7]:<8} "
+                f"{(r[5] or '')[:11]:<12} {(r[6] or '')[:14]:<15}"
+            )
+        return "\n".join(lines)
 
-        ttk.Label(params_content, text="Format:").grid(row=1, column=0, sticky='w', pady=5)
-        format_combo = ttk.Combobox(params_content, width=25, state='readonly')
-        format_combo['values'] = ('PDF', 'Excel (XLSX)', 'CSV', 'HTML')
-        format_combo.current(0)
-        format_combo.grid(row=1, column=1, sticky='ew', padx=10, pady=5)
+    def _generate_status(self) -> str:
+        """Status breakdown report."""
+        conn = get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute('SELECT COUNT(*) FROM union_equipment')
+            total = cursor.fetchone()[0]
 
-        ttk.Label(params_content, text="Group By:").grid(row=2, column=0, sticky='w', pady=5)
-        group_combo = ttk.Combobox(params_content, width=25, state='readonly')
-        group_combo['values'] = ('Category', 'Location', 'Condition', 'Status', 'None')
-        group_combo.current(0)
-        group_combo.grid(row=2, column=1, sticky='ew', padx=10, pady=5)
+            cursor.execute('''
+                SELECT availability_status, COUNT(*) as cnt
+                FROM union_equipment
+                GROUP BY availability_status
+                ORDER BY cnt DESC
+            ''')
+            status_rows = cursor.fetchall()
 
-        params_content.columnconfigure(1, weight=1)
+            cursor.execute('''
+                SELECT condition_status, COUNT(*) as cnt
+                FROM union_equipment
+                GROUP BY condition_status
+                ORDER BY cnt DESC
+            ''')
+            condition_rows = cursor.fetchall()
 
-        # Buttons
-        button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill='x')
+            cursor.execute('''
+                SELECT COUNT(*) FROM equipment_checkouts WHERE status = 'checked_out'
+            ''')
+            active_checkouts = cursor.fetchone()[0]
 
-        ttk.Button(button_frame, text="View Saved Reports", command=self.view_saved).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Schedule Report", command=self.schedule_report).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+            cursor.execute('''
+                SELECT COUNT(*) FROM equipment_checkouts
+                WHERE status = 'checked_out' AND expected_return < date('now')
+            ''')
+            overdue = cursor.fetchone()[0]
+        finally:
+            conn.close()
 
-    def create_report_card(self, parent, title, description, command):
-        card = ttk.Frame(parent, relief='raised', borderwidth=1)
+        now = datetime.now().strftime("%Y-%m-%d %H:%M")
+        lines = [
+            "EQUIPMENT STATUS REPORT",
+            f"Generated: {now}",
+            "=" * 60,
+            f"Total Equipment Items: {total}",
+            "",
+            "AVAILABILITY BREAKDOWN:",
+            "-" * 40,
+        ]
+        for row in status_rows:
+            pct = (row[1] / total * 100) if total else 0
+            lines.append(f"  {(row[0] or 'unknown'):<25} {row[1]:>4}  ({pct:.1f}%)")
 
-        ttk.Label(card, text=title, font=('Arial', 10, 'bold')).pack(pady=(8, 3), padx=8)
-        ttk.Label(card, text=description, font=('Arial', 8), wraplength=120).pack(pady=(0, 8), padx=8)
-        ttk.Button(card, text="Generate", command=command).pack(pady=(0, 8))
+        lines += [
+            "",
+            "CONDITION BREAKDOWN:",
+            "-" * 40,
+        ]
+        for row in condition_rows:
+            pct = (row[1] / total * 100) if total else 0
+            lines.append(f"  {(row[0] or 'unknown'):<25} {row[1]:>4}  ({pct:.1f}%)")
 
-        return card
+        lines += [
+            "",
+            "CHECKOUT ACTIVITY:",
+            "-" * 40,
+            f"  Active checkouts:  {active_checkouts}",
+            f"  Overdue returns:   {overdue}",
+        ]
+        return "\n".join(lines)
 
-    def inventory_report(self):
-        messagebox.showinfo("Inventory Report",
-                          "Generating inventory report...\n\n" +
-                          "Report will include:\n" +
-                          "- All equipment items (156)\n" +
-                          "- Status breakdown\n" +
-                          "- Location details\n" +
-                          "- Condition assessment\n" +
-                          "- Value calculation\n\n" +
-                          "Saved to: reports/inventory_2025-04-02.pdf")
+    def _generate_maintenance(self) -> str:
+        """Maintenance report - items needing or scheduled for maintenance."""
+        conn = get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT equipment_id, equipment_name, condition_status,
+                       availability_status, maintenance_due, location
+                FROM union_equipment
+                WHERE availability_status IN ('maintenance', 'maintenance_required')
+                   OR condition_status IN ('poor', 'damaged')
+                ORDER BY maintenance_due
+            ''')
+            needs_maint = cursor.fetchall()
 
-    def usage_report(self):
-        messagebox.showinfo("Usage Statistics",
-                          "Usage statistics report:\n\n" +
-                          "Top 5 Most Used Equipment:\n" +
-                          "1. Professional Camera - 45 checkouts\n" +
-                          "2. Laptop (Dell XPS) - 38 checkouts\n" +
-                          "3. Projector - 32 checkouts\n" +
-                          "4. Wireless Mic - 28 checkouts\n" +
-                          "5. Tripod - 25 checkouts\n\n" +
-                          "Average checkout duration: 4.2 days\n" +
-                          "Total checkouts (30 days): 234")
+            cursor.execute('''
+                SELECT equipment_id, equipment_name, maintenance_due, condition_status
+                FROM union_equipment
+                WHERE maintenance_due IS NOT NULL AND maintenance_due > date('now')
+                ORDER BY maintenance_due
+            ''')
+            scheduled = cursor.fetchall()
 
-    def maintenance_report(self):
-        messagebox.showinfo("Maintenance Report",
-                          "Maintenance summary:\n\n" +
-                          "Total maintenance tasks: 15\n" +
-                          "Completed: 12 (80%)\n" +
-                          "In progress: 3 (20%)\n\n" +
-                          "Total maintenance cost: £685.00\n" +
-                          "Average cost per task: £45.67\n\n" +
-                          "Most common issues:\n" +
-                          "1. Battery replacement (5)\n" +
-                          "2. Cleaning (4)\n" +
-                          "3. Repairs (6)")
+            cursor.execute('''
+                SELECT COUNT(*) FROM union_equipment
+                WHERE condition_status IN ('poor', 'damaged')
+            ''')
+            poor_count = cursor.fetchone()[0]
+        finally:
+            conn.close()
 
-    def financial_report(self):
-        messagebox.showinfo("Financial Report",
-                          "Financial summary:\n\n" +
-                          "Total equipment value: £125,400\n" +
-                          "Total purchases (2024): £18,500\n" +
-                          "Total maintenance costs: £2,340\n" +
-                          "Late fees collected: £450\n\n" +
-                          "Most valuable items:\n" +
-                          "1. Professional Cameras (5x): £17,500\n" +
-                          "2. Laptops (10x): £15,000\n" +
-                          "3. Projectors (3x): £9,000")
+        now = datetime.now().strftime("%Y-%m-%d %H:%M")
+        lines = [
+            "EQUIPMENT MAINTENANCE REPORT",
+            f"Generated: {now}",
+            "=" * 80,
+            f"Items needing maintenance: {len(needs_maint)}",
+            f"Items with poor/damaged condition: {poor_count}",
+            f"Scheduled future maintenance: {len(scheduled)}",
+            "",
+            "ITEMS CURRENTLY NEEDING MAINTENANCE:",
+            "-" * 80,
+            f"{'ID':<6} {'Name':<25} {'Condition':<12} {'Status':<20} {'Due':<12} {'Location':<15}",
+            "-" * 80,
+        ]
+        if needs_maint:
+            for r in needs_maint:
+                lines.append(
+                    f"{r[0]:<6} {(r[1] or '')[:24]:<25} {(r[2] or ''):<12} "
+                    f"{(r[3] or ''):<20} {(r[4] or 'N/A'):<12} {(r[5] or ''):<15}"
+                )
+        else:
+            lines.append("  No items currently need maintenance.")
 
-    def issues_report(self):
-        messagebox.showinfo("Issues Report",
-                          "Equipment issues summary:\n\n" +
-                          "Total issues reported: 8\n" +
-                          "Resolved: 6 (75%)\n" +
-                          "Pending: 2 (25%)\n\n" +
-                          "Damage reports: 3\n" +
-                          "Lost equipment: 0\n" +
-                          "Theft: 0\n\n" +
-                          "Total damage costs: £285.00")
+        lines += [
+            "",
+            "UPCOMING SCHEDULED MAINTENANCE:",
+            "-" * 60,
+        ]
+        if scheduled:
+            for r in scheduled:
+                lines.append(f"  ID {r[0]}: {r[1] or ''} - Due: {r[2]} (Condition: {r[3] or 'N/A'})")
+        else:
+            lines.append("  No upcoming maintenance scheduled.")
 
-    def utilization_report(self):
-        messagebox.showinfo("Utilization Report",
-                          "Equipment utilization rates:\n\n" +
-                          "Overall utilization: 62%\n\n" +
-                          "By category:\n" +
-                          "- Video Equipment: 85% (High)\n" +
-                          "- Audio Equipment: 72% (Good)\n" +
-                          "- Computers: 68% (Good)\n" +
-                          "- Lighting: 45% (Low)\n" +
-                          "- Sports Equipment: 38% (Low)\n\n" +
-                          "Recommendation: Consider retiring\n" +
-                          "underutilized equipment")
+        return "\n".join(lines)
 
-    def user_activity_report(self):
-        messagebox.showinfo("User Activity",
-                          "User checkout patterns:\n\n" +
-                          "Total active users: 87\n" +
-                          "Average checkouts per user: 2.7\n\n" +
-                          "Top borrowers:\n" +
-                          "1. Film Society - 23 checkouts\n" +
-                          "2. Media Club - 18 checkouts\n" +
-                          "3. John Smith - 12 checkouts\n\n" +
-                          "On-time return rate: 94%")
+    def _generate_valuation(self) -> str:
+        """Asset valuation report based on replacement_cost."""
+        conn = get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT category,
+                       COUNT(*) as cnt,
+                       SUM(COALESCE(replacement_cost, 0)) as total_value,
+                       AVG(COALESCE(replacement_cost, 0)) as avg_value
+                FROM union_equipment
+                GROUP BY category
+                ORDER BY total_value DESC
+            ''')
+            cat_rows = cursor.fetchall()
 
-    def forecast_report(self):
-        messagebox.showinfo("Forecast Report",
-                          "Equipment needs forecast:\n\n" +
-                          "Based on usage trends:\n\n" +
-                          "Recommend purchasing:\n" +
-                          "- 2 additional cameras (high demand)\n" +
-                          "- 3 more laptops (waitlist: 12)\n" +
-                          "- 1 projector (backup needed)\n\n" +
-                          "Estimated investment: £12,000\n" +
-                          "Expected ROI: 18 months")
+            cursor.execute('''
+                SELECT COUNT(*), SUM(COALESCE(replacement_cost, 0))
+                FROM union_equipment
+            ''')
+            totals = cursor.fetchone()
 
-    def custom_report(self):
-        messagebox.showinfo("Custom Report",
-                          "Build custom report:\n\n" +
-                          "Select:\n" +
-                          "- Data fields to include\n" +
-                          "- Filter criteria\n" +
-                          "- Grouping options\n" +
-                          "- Chart types\n" +
-                          "- Export format\n\n" +
-                          "Save template for future use")
+            cursor.execute('''
+                SELECT equipment_id, equipment_name, category, replacement_cost
+                FROM union_equipment
+                WHERE replacement_cost IS NOT NULL
+                ORDER BY replacement_cost DESC
+                LIMIT 10
+            ''')
+            top_items = cursor.fetchall()
+        finally:
+            conn.close()
 
-    def view_saved(self):
-        messagebox.showinfo("Saved Reports",
-                          "Previously generated reports:\n\n" +
-                          "1. Inventory Report - 2025-04-01.pdf\n" +
-                          "2. Usage Statistics - 2025-03-25.xlsx\n" +
-                          "3. Maintenance Report - 2025-03-15.pdf\n" +
-                          "4. Financial Report - 2025-03-01.pdf\n\n" +
-                          "Click to open or delete")
+        total_count = totals[0] if totals else 0
+        total_value = totals[1] if totals else 0
+        now = datetime.now().strftime("%Y-%m-%d %H:%M")
 
-    def schedule_report(self):
-        messagebox.showinfo("Schedule Report",
-                          "Schedule automatic report generation:\n\n" +
-                          "Frequency:\n" +
-                          "- Daily\n" +
-                          "- Weekly\n" +
-                          "- Monthly\n" +
-                          "- Quarterly\n\n" +
-                          "Reports will be emailed automatically")
+        lines = [
+            "ASSET VALUATION REPORT",
+            f"Generated: {now}",
+            "=" * 70,
+            f"Total Equipment Items: {total_count}",
+            f"Total Replacement Value: {total_value:,.2f}",
+            "",
+            "VALUE BY CATEGORY:",
+            "-" * 70,
+            f"{'Category':<25} {'Count':>6} {'Total Value':>15} {'Avg Value':>12}",
+            "-" * 70,
+        ]
+        for r in cat_rows:
+            cat = r[0] or 'Uncategorised'
+            lines.append(f"  {cat[:24]:<25} {r[1]:>5}  {r[2]:>14,.2f}  {r[3]:>11,.2f}")
+
+        lines += [
+            "",
+            "TOP 10 MOST VALUABLE ITEMS:",
+            "-" * 60,
+        ]
+        for r in top_items:
+            lines.append(f"  ID {r[0]}: {(r[1] or '')[:30]} ({r[2] or 'N/A'}) - Value: {r[3]:,.2f}")
+
+        return "\n".join(lines)
+
+    # ------------------------------------------------------------------
+    # Save & email actions
+    # ------------------------------------------------------------------
+
+    def _save_as_txt(self):
+        """Save the currently displayed report to a TXT file."""
+        if not self.current_report_text:
+            messagebox.showwarning("No Report",
+                                   "Please generate a report first.",
+                                   parent=self.dialog)
+            return
+
+        filepath = filedialog.asksaveasfilename(
+            parent=self.dialog,
+            title="Save Report As",
+            defaultextension=".txt",
+            filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+            initialfile=f"equipment_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        )
+        if not filepath:
+            return
+
+        try:
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(self.current_report_text)
+            messagebox.showinfo("Saved",
+                                f"Report saved to:\n{filepath}",
+                                parent=self.dialog)
+        except Exception as e:
+            logging.error("Failed to save report: %s", e)
+            messagebox.showerror("Save Error",
+                                 f"Failed to save report:\n{e}",
+                                 parent=self.dialog)
+
+    def _email_to_admin(self):
+        """Email the current report to admin users."""
+        if not self.current_report_text:
+            messagebox.showwarning("No Report",
+                                   "Please generate a report first.",
+                                   parent=self.dialog)
+            return
+
+        # Look up admin email(s)
+        admin_emails = []
+        try:
+            conn = get_connection()
+            try:
+                cursor = conn.cursor()
+                # Try multiple common table/column patterns for admin users
+                for query in [
+                    "SELECT email FROM users WHERE role = 'admin' AND email IS NOT NULL AND email != '' LIMIT 5",
+                    "SELECT email FROM user_accounts ua JOIN users u ON ua.user_id = u.id WHERE u.role = 'admin' AND u.email IS NOT NULL AND u.email != '' LIMIT 5",
+                ]:
+                    try:
+                        cursor.execute(query)
+                        rows = cursor.fetchall()
+                        if rows:
+                            admin_emails = [r[0] for r in rows]
+                            break
+                    except Exception:
+                        continue
+            finally:
+                conn.close()
+        except Exception as e:
+            logging.warning("Could not look up admin email from DB: %s", e)
+
+        # Fallback to system default
+        if not admin_emails:
+            try:
+                from education_system.university_system.core.defaults import get_admin_email
+                fallback = get_admin_email()
+                if fallback:
+                    admin_emails = [fallback]
+            except ImportError:
+                pass
+
+        if not admin_emails:
+            messagebox.showwarning("No Admin Email",
+                                   "Could not find an admin email address.\n"
+                                   "Please ensure admin accounts have email addresses configured.",
+                                   parent=self.dialog)
+            return
+
+        subject = f"Equipment Report - {datetime.now().strftime('%Y-%m-%d')}"
+
+        try:
+            from education_system.university_system.infrastructure.email.email_service.core import send_email
+            for email_addr in admin_emails:
+                send_email(email_addr, subject, self.current_report_text)
+            messagebox.showinfo("Email Sent",
+                                f"Report emailed to: {', '.join(admin_emails)}",
+                                parent=self.dialog)
+        except Exception as e:
+            logging.error("Failed to email report: %s", e)
+            messagebox.showerror("Email Error",
+                                 f"Failed to send email:\n{e}",
+                                 parent=self.dialog)
 
 
 

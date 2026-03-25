@@ -348,7 +348,7 @@ class TestEnhancedActivityLogger:
         with open(config_path, 'w') as f:
             json.dump(logger_config, f)
 
-        with patch('university_system.modules.shared.constants.paths.LOG_DIR', temp_log_dir):
+        with patch('education_system.university_system.modules.shared.constants.paths.LOG_DIR', temp_log_dir):
             logger = EnhancedActivityLogger(config_path)
             assert logger is not None
             # Give time for background thread to start
@@ -359,7 +359,7 @@ class TestEnhancedActivityLogger:
 
     def test_logger_initialization_without_config(self, temp_log_dir):
         """Test logger initialization without configuration"""
-        with patch('university_system.modules.shared.constants.paths.LOG_DIR', temp_log_dir):
+        with patch('education_system.university_system.modules.shared.constants.paths.LOG_DIR', temp_log_dir):
             logger = EnhancedActivityLogger(None)
             assert logger is not None
             # Give time for background thread to start
@@ -464,7 +464,7 @@ class TestAuditTrailPlugin:
 class TestHelperFunctions:
     """Test helper functions"""
 
-    @patch('university_system.modules.shared.utils.simple_activity_logger.get_logger_instance')
+    @patch('education_system.university_system.modules.shared.utils.simple_activity_logger.get_logger_instance')
     def test_enhanced_log_activity(self, mock_get_logger):
         """Test enhanced_log_activity function"""
         mock_logger = Mock()
@@ -477,55 +477,55 @@ class TestHelperFunctions:
         )
         # Function should call the logger
 
-    @patch('university_system.modules.shared.utils.simple_activity_logger.enhanced_log_activity')
+    @patch('education_system.university_system.modules.shared.utils.simple_activity_logger.enhanced_log_activity')
     def test_log_create(self, mock_log):
         """Test log_create function"""
         log_create('test_module', description='Created something')
         mock_log.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.simple_activity_logger.enhanced_log_activity')
+    @patch('education_system.university_system.modules.shared.utils.simple_activity_logger.enhanced_log_activity')
     def test_log_read(self, mock_log):
         """Test log_read function"""
         log_read('test_module', description='Read something')
         mock_log.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.simple_activity_logger.enhanced_log_activity')
+    @patch('education_system.university_system.modules.shared.utils.simple_activity_logger.enhanced_log_activity')
     def test_log_update(self, mock_log):
         """Test log_update function"""
         log_update('test_module', description='Updated something')
         mock_log.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.simple_activity_logger.enhanced_log_activity')
+    @patch('education_system.university_system.modules.shared.utils.simple_activity_logger.enhanced_log_activity')
     def test_log_delete(self, mock_log):
         """Test log_delete function"""
         log_delete('test_module', description='Deleted something')
         mock_log.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.simple_activity_logger.enhanced_log_activity')
+    @patch('education_system.university_system.modules.shared.utils.simple_activity_logger.enhanced_log_activity')
     def test_log_search(self, mock_log):
         """Test log_search function"""
         log_search('test_module', description='Searched something')
         mock_log.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.simple_activity_logger.enhanced_log_activity')
+    @patch('education_system.university_system.modules.shared.utils.simple_activity_logger.enhanced_log_activity')
     def test_log_export(self, mock_log):
         """Test log_export function"""
         log_export('test_module', description='Exported something')
         mock_log.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.simple_activity_logger.enhanced_log_activity')
+    @patch('education_system.university_system.modules.shared.utils.simple_activity_logger.enhanced_log_activity')
     def test_log_admin_action(self, mock_log):
         """Test log_admin_action function"""
         log_admin_action('test_module', description='Admin action')
         mock_log.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.simple_activity_logger.enhanced_log_activity')
+    @patch('education_system.university_system.modules.shared.utils.simple_activity_logger.enhanced_log_activity')
     def test_log_menu_navigation(self, mock_log):
         """Test log_menu_navigation function"""
         log_menu_navigation(description='Navigated to menu')
         mock_log.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.simple_activity_logger.get_logger_instance')
+    @patch('education_system.university_system.modules.shared.utils.simple_activity_logger.get_logger_instance')
     def test_log_activity(self, mock_get_logger):
         """Test log_activity function"""
         mock_logger = Mock()
@@ -540,21 +540,21 @@ class TestHelperFunctions:
             details='User logged in'
         )
 
-    @patch('university_system.modules.shared.utils.simple_activity_logger.logger')
+    @patch('education_system.university_system.modules.shared.utils.simple_activity_logger.logger')
     def test_log_login(self, mock_logger):
         """Test log_login function"""
         mock_logger.log_activity = Mock()
         log_login('user123', 'testuser', 'admin')
         mock_logger.log_activity.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.simple_activity_logger.logger')
+    @patch('education_system.university_system.modules.shared.utils.simple_activity_logger.logger')
     def test_log_logout(self, mock_logger):
         """Test log_logout function"""
         mock_logger.log_activity = Mock()
         log_logout('user123', 'testuser', 'admin')
         mock_logger.log_activity.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.simple_activity_logger.get_logger_instance')
+    @patch('education_system.university_system.modules.shared.utils.simple_activity_logger.get_logger_instance')
     def test_log_dynamic_activity(self, mock_get_logger):
         """Test log_dynamic_activity function"""
         mock_logger = Mock()
@@ -578,7 +578,7 @@ class TestHelperFunctions:
             with open(config_path, 'w') as f:
                 json.dump(config_data, f)
 
-            with patch('university_system.modules.shared.constants.paths.LOG_DIR', tmpdir):
+            with patch('education_system.university_system.modules.shared.constants.paths.LOG_DIR', tmpdir):
                 # load_logger_config doesn't return anything, it updates global logger
                 load_logger_config(config_path)
                 # Get the global logger instance
@@ -600,7 +600,7 @@ class TestHelperFunctions:
             if logger.processing_thread:
                 logger.processing_thread.join(timeout=2)
 
-    @patch('university_system.modules.shared.utils.simple_activity_logger.get_logger_instance')
+    @patch('education_system.university_system.modules.shared.utils.simple_activity_logger.get_logger_instance')
     def test_register_plugin(self, mock_get_logger):
         """Test register_plugin function"""
         mock_logger = Mock()
@@ -610,7 +610,7 @@ class TestHelperFunctions:
         plugin = LoggerPlugin({'enabled': True})
         register_plugin(plugin)
 
-    @patch('university_system.modules.shared.utils.simple_activity_logger.get_logger_instance')
+    @patch('education_system.university_system.modules.shared.utils.simple_activity_logger.get_logger_instance')
     def test_unregister_plugin(self, mock_get_logger):
         """Test unregister_plugin function"""
         mock_logger = Mock()
@@ -619,7 +619,7 @@ class TestHelperFunctions:
 
         unregister_plugin("TestPlugin")
 
-    @patch('university_system.modules.shared.utils.simple_activity_logger.get_logger_instance')
+    @patch('education_system.university_system.modules.shared.utils.simple_activity_logger.get_logger_instance')
     def test_get_plugin_status(self, mock_get_logger):
         """Test get_plugin_status function"""
         mock_logger = Mock()
@@ -665,7 +665,7 @@ class TestIntegration:
         with open(config_path, 'w') as f:
             json.dump(config, f)
 
-        with patch('university_system.modules.shared.constants.paths.LOG_DIR', temp_dir):
+        with patch('education_system.university_system.modules.shared.constants.paths.LOG_DIR', temp_dir):
             logger = EnhancedActivityLogger(config_path)
 
             # Give background thread time to start

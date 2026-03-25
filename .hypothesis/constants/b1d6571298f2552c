@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/document_manager/backup.py
+# hypothesis_version: 6.151.9
+
+[1024, '\nAvailable Backups:', '\nNext steps:', '\n💾 BACKUP HISTORY', '\n💾 BACKUP SYSTEM', '%Y%m%d_%H%M%S', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '.', '.zip', '1', '2', '3', '4', '=', 'DB_PATH', 'Invalid input.', 'Invalid selection.', 'Restore cancelled.', 'YES', 'r', 'settings.json', 'university_system.db', 'w', 'y']

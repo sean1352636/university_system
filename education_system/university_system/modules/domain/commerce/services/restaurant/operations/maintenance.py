@@ -5,7 +5,7 @@ import os
 import time
 from datetime import datetime, timedelta
 
-from . import restaurant_context as ctx
+from education_system.university_system.modules.domain.commerce.services.restaurant.operations import restaurant_context as ctx
 from education_system.university_system.modules.domain.commerce.services.restaurant.operations.restaurant_context import (
     DATABASE_FILE,
     get_db_connection,
@@ -75,7 +75,7 @@ def database_cleanup():
 
         # Remove old completed orders (older than 2 years)
         two_years_ago = (datetime.now() - timedelta(days=730)).strftime('%Y-%m-%d')
-        cursor.execute('DELETE FROM restaurant_orders WHERE status = ? AND order_time < ?', 
+        cursor.execute('DELETE FROM orders WHERE order_status = ? AND order_date < ?',
                       ('Completed', two_years_ago))
         deleted_orders = cursor.rowcount
 
@@ -207,9 +207,9 @@ def rebuild_indexes():
 
         # Drop and recreate indexes
         indexes = [
-            ('idx_restaurant_orders_date', 'restaurant_orders', 'order_time'),
-            ('idx_restaurant_orders_customer', 'restaurant_orders', 'customer_id'),
-            ('idx_restaurant_orders_status', 'restaurant_orders', 'status'),
+            ('idx_restaurant_orders_date', 'orders', 'order_date'),
+            ('idx_restaurant_orders_customer', 'orders', 'customer_id'),
+            ('idx_restaurant_orders_status', 'orders', 'order_status'),
             ('idx_restaurant_customer_email', 'restaurant_customers', 'email'),
             ('idx_restaurant_inventory_reorder', 'restaurant_inventory', 'reorder_level'),
             ('idx_restaurant_staff_schedules_date', 'restaurant_staff_schedules', 'date'),
@@ -267,7 +267,7 @@ def system_health_check():
 
         # Check table counts
         tables = [
-            'menu_items', 'restaurant_orders', 'restaurant_customers', 'restaurant_tables',
+            'menu_items', 'orders', 'restaurant_customers', 'restaurant_tables',
             'restaurant_staff', 'restaurant_inventory', 'restaurant_suppliers'
         ]
 
@@ -286,7 +286,7 @@ def system_health_check():
 
         # Orders without customers
         cursor.execute('''
-            SELECT COUNT(*) FROM restaurant_orders o
+            SELECT COUNT(*) FROM orders o
             LEFT JOIN restaurant_customers c ON o.customer_id = c.customer_id
             WHERE o.customer_id IS NOT NULL AND c.customer_id IS NULL
         ''')
@@ -296,7 +296,7 @@ def system_health_check():
 
         # Order items without menu items
         cursor.execute('''
-            SELECT COUNT(*) FROM restaurant_order_items oi
+            SELECT COUNT(*) FROM order_items oi
             LEFT JOIN menu_items mi ON oi.item_id = mi.item_id
             WHERE mi.item_id IS NULL
         ''')
@@ -513,18 +513,18 @@ def analyze_query_performance():
         # Test common queries and measure execution time
         test_queries = [
             ("Daily Sales Query", '''
-                SELECT COUNT(*), SUM(total_price)
-                FROM restaurant_orders
-                WHERE DATE(order_time) = date('now') AND status = 'Completed'
+                SELECT COUNT(*), SUM(total_amount)
+                FROM orders
+                WHERE DATE(order_date) = date('now') AND order_status = 'Completed'
             '''),
             ("Menu Items Lookup", '''
                 SELECT * FROM menu_items WHERE available = 1 ORDER BY category, name
             '''),
             ("Customer Orders", '''
                 SELECT o.*, c.name
-                FROM restaurant_orders o
+                FROM orders o
                 LEFT JOIN restaurant_customers c ON o.customer_id = c.customer_id
-                ORDER BY o.order_time DESC LIMIT 50
+                ORDER BY o.order_date DESC LIMIT 50
             '''),
             ("Inventory Low Stock", '''
                 SELECT * FROM restaurant_inventory
@@ -594,7 +594,7 @@ def optimize_table_structure():
 
         # Analyze table structures
         tables_to_analyze = [
-            'restaurant_orders', 'restaurant_customers', 'menu_items',
+            'orders', 'restaurant_customers', 'menu_items',
             'restaurant_inventory', 'restaurant_staff', 'restaurant_audit_logs'
         ]
 
@@ -619,10 +619,10 @@ def optimize_table_structure():
                 # Check for missing indexes
                 index_suggestions = []
 
-                if table == 'restaurant_orders':
-                    cursor.execute("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='restaurant_orders' AND name LIKE '%order_time%'")
+                if table == 'orders':
+                    cursor.execute("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='orders' AND name LIKE '%order_date%'")
                     if not cursor.fetchone():
-                        index_suggestions.append("order_time (for date queries)")
+                        index_suggestions.append("order_date (for date queries)")
 
                 if index_suggestions:
                     print(f"Suggested indexes:")

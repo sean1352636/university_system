@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/gui/medical_accommodation/approval.py
+# hypothesis_version: 6.151.9
+
+[100, 120, 150, 200, '%Y-%m-%d %H:%M:%S', '800x600', 'Approval Management', 'Approve', 'Approved', 'Arial', 'Close', 'Description', 'End Date', 'Error', 'ID', 'Invalid Status', 'More info requested', 'N/A', 'Name', 'No Selection', 'Refresh', 'Reject', 'Rejected', 'Request Info', 'Start Date', 'Student ID', 'Success', 'Type', '_', 'accommodation_type', 'action_type', 'active', 'approve', 'auth', 'bold', 'description', 'end', 'end_date', 'headings', 'id', 'message', 'pending', 'reason', 'reject', 'rejected', 'request_info', 'start_date', 'status', 'student_id', 'values']

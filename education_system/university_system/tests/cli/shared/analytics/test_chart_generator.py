@@ -39,7 +39,7 @@ def chart_generator_module(mock_matplotlib):
         del sys.modules['university_system.modules.shared.utils.chart_generator']
 
     # Mock database connection
-    with patch('university_system.infrastructure.database.db.get_connection') as mock_conn:
+    with patch('education_system.university_system.infrastructure.database.db.get_connection') as mock_conn:
         mock_conn.return_value = MagicMock()
         from education_system.university_system.modules.shared.utils import chart_generator
         return chart_generator
@@ -73,7 +73,7 @@ class TestChartGenerator:
         gen.available = False
         assert gen.is_available() is False
 
-    @patch('university_system.modules.shared.utils.chart_generator.Figure')
+    @patch('education_system.university_system.modules.shared.utils.chart_generator.Figure')
     def test_generate_bar_chart(self, mock_figure, chart_generator_module):
         """Test bar chart generation"""
         chart_generator_module.CHARTS_AVAILABLE = True
@@ -98,7 +98,7 @@ class TestChartGenerator:
         assert fig is not None
         mock_ax.bar.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.chart_generator.Figure')
+    @patch('education_system.university_system.modules.shared.utils.chart_generator.Figure')
     def test_generate_line_chart(self, mock_figure, chart_generator_module):
         """Test line chart generation"""
         chart_generator_module.CHARTS_AVAILABLE = True
@@ -122,7 +122,7 @@ class TestChartGenerator:
         assert fig is not None
         mock_ax.plot.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.chart_generator.Figure')
+    @patch('education_system.university_system.modules.shared.utils.chart_generator.Figure')
     def test_generate_pie_chart(self, mock_figure, chart_generator_module):
         """Test pie chart generation"""
         chart_generator_module.CHARTS_AVAILABLE = True
@@ -145,7 +145,7 @@ class TestChartGenerator:
         assert fig is not None
         mock_ax.pie.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.chart_generator.Figure')
+    @patch('education_system.university_system.modules.shared.utils.chart_generator.Figure')
     def test_generate_histogram(self, mock_figure, chart_generator_module):
         """Test histogram generation"""
         chart_generator_module.CHARTS_AVAILABLE = True
@@ -168,7 +168,7 @@ class TestChartGenerator:
         assert fig is not None
         mock_ax.hist.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.chart_generator.Figure')
+    @patch('education_system.university_system.modules.shared.utils.chart_generator.Figure')
     def test_generate_scatter_plot(self, mock_figure, chart_generator_module):
         """Test scatter plot generation"""
         chart_generator_module.CHARTS_AVAILABLE = True
@@ -190,7 +190,7 @@ class TestChartGenerator:
         assert fig is not None
         mock_ax.scatter.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.chart_generator.Figure')
+    @patch('education_system.university_system.modules.shared.utils.chart_generator.Figure')
     def test_generate_heatmap(self, mock_figure, chart_generator_module):
         """Test heatmap generation"""
         chart_generator_module.CHARTS_AVAILABLE = True
@@ -213,7 +213,7 @@ class TestChartGenerator:
         assert fig is not None
         mock_ax.imshow.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.chart_generator.Figure')
+    @patch('education_system.university_system.modules.shared.utils.chart_generator.Figure')
     def test_generate_box_plot(self, mock_figure, chart_generator_module):
         """Test box plot generation"""
         chart_generator_module.CHARTS_AVAILABLE = True
@@ -236,8 +236,8 @@ class TestChartGenerator:
         assert fig is not None
         mock_ax.boxplot.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.chart_generator.Figure')
-    @patch('university_system.modules.shared.utils.chart_generator.np')
+    @patch('education_system.university_system.modules.shared.utils.chart_generator.Figure')
+    @patch('education_system.university_system.modules.shared.utils.chart_generator.np')
     def test_generate_grouped_bar_chart(self, mock_np, mock_figure, chart_generator_module):
         """Test grouped bar chart generation"""
         chart_generator_module.CHARTS_AVAILABLE = True
@@ -273,7 +273,7 @@ class TestChartGenerator:
 
         assert fig is None
 
-    @patch('university_system.modules.shared.utils.chart_generator.Figure')
+    @patch('education_system.university_system.modules.shared.utils.chart_generator.Figure')
     def test_generate_chart_with_error(self, mock_figure, chart_generator_module):
         """Test chart generation with error handling"""
         chart_generator_module.CHARTS_AVAILABLE = True
@@ -288,7 +288,7 @@ class TestChartGenerator:
 
         assert fig is None
 
-    @patch('university_system.modules.shared.utils.chart_generator.Figure')
+    @patch('education_system.university_system.modules.shared.utils.chart_generator.Figure')
     def test_default_to_bar_chart(self, mock_figure, chart_generator_module):
         """Test that unknown chart types default to bar chart"""
         chart_generator_module.CHARTS_AVAILABLE = True
@@ -339,8 +339,8 @@ class TestChartGenerator:
             filename, dpi=150, bbox_inches='tight', facecolor='white'
         )
 
-    @patch('university_system.modules.shared.utils.chart_generator.send_email_as_system')
-    @patch('university_system.modules.shared.utils.chart_generator.datetime')
+    @patch('education_system.university_system.modules.shared.utils.chart_generator.send_email_as_system')
+    @patch('education_system.university_system.modules.shared.utils.chart_generator.datetime')
     def test_email_chart_success(self, mock_datetime, mock_send, chart_generator_module):
         """Test emailing chart successfully"""
         chart_generator_module.EMAIL_AVAILABLE = True
@@ -361,7 +361,7 @@ class TestChartGenerator:
         mock_send.assert_called_once()
         mock_fig.savefig.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.chart_generator.send_email_as_system')
+    @patch('education_system.university_system.modules.shared.utils.chart_generator.send_email_as_system')
     def test_email_chart_failure(self, mock_send, chart_generator_module):
         """Test emailing chart with failure"""
         chart_generator_module.EMAIL_AVAILABLE = True
@@ -389,7 +389,7 @@ class TestChartGenerator:
         captured = capsys.readouterr()
         assert "Email service not available" in captured.out
 
-    @patch('university_system.modules.shared.utils.chart_generator.send_email_as_system')
+    @patch('education_system.university_system.modules.shared.utils.chart_generator.send_email_as_system')
     def test_email_chart_with_custom_message(self, mock_send, chart_generator_module):
         """Test emailing chart with custom message"""
         chart_generator_module.EMAIL_AVAILABLE = True
@@ -412,7 +412,7 @@ class TestChartGenerator:
 class TestDatabaseChartGenerator:
     """Test DatabaseChartGenerator class"""
 
-    @patch('university_system.infrastructure.database.db.get_connection')
+    @patch('education_system.university_system.infrastructure.database.db.get_connection')
     def test_generate_age_distribution(self, mock_get_conn, chart_generator_module):
         """Test age distribution chart generation"""
         # Mock database connection and cursor
@@ -439,7 +439,7 @@ class TestDatabaseChartGenerator:
                 'color': 'steelblue'
             }, 'Student Age Distribution')
 
-    @patch('university_system.infrastructure.database.db.get_connection')
+    @patch('education_system.university_system.infrastructure.database.db.get_connection')
     def test_generate_age_distribution_no_data(self, mock_get_conn, chart_generator_module):
         """Test age distribution with no data"""
         mock_conn = MagicMock()
@@ -453,7 +453,7 @@ class TestDatabaseChartGenerator:
 
         assert fig is None
 
-    @patch('university_system.infrastructure.database.db.get_connection')
+    @patch('education_system.university_system.infrastructure.database.db.get_connection')
     def test_generate_course_distribution(self, mock_get_conn, chart_generator_module):
         """Test course distribution chart generation"""
         mock_conn = MagicMock()
@@ -478,7 +478,7 @@ class TestDatabaseChartGenerator:
                 'sizes': [100, 80, 60]
             }, 'Course Distribution')
 
-    @patch('university_system.infrastructure.database.db.get_connection')
+    @patch('education_system.university_system.infrastructure.database.db.get_connection')
     def test_generate_registration_timeline(self, mock_get_conn, chart_generator_module):
         """Test registration timeline chart generation"""
         mock_conn = MagicMock()
@@ -505,7 +505,7 @@ class TestDatabaseChartGenerator:
             mock_ax.set_xticks.assert_called_once()
             mock_ax.set_xticklabels.assert_called_once()
 
-    @patch('university_system.infrastructure.database.db.get_connection')
+    @patch('education_system.university_system.infrastructure.database.db.get_connection')
     def test_generate_gender_course_distribution(self, mock_get_conn, chart_generator_module):
         """Test gender-course distribution chart generation"""
         mock_conn = MagicMock()
@@ -531,7 +531,7 @@ class TestDatabaseChartGenerator:
             assert 'Male' in call_args[0][1]['groups']
             assert 'Female' in call_args[0][1]['groups']
 
-    @patch('university_system.infrastructure.database.db.get_connection')
+    @patch('education_system.university_system.infrastructure.database.db.get_connection')
     def test_generate_module_popularity(self, mock_get_conn, chart_generator_module):
         """Test module popularity chart generation"""
         mock_conn = MagicMock()
@@ -559,7 +559,7 @@ class TestDatabaseChartGenerator:
                 'color': 'coral'
             }, 'Top 15 Most Popular Modules')
 
-    @patch('university_system.infrastructure.database.db.get_connection')
+    @patch('education_system.university_system.infrastructure.database.db.get_connection')
     def test_generate_grade_distribution(self, mock_get_conn, chart_generator_module):
         """Test grade distribution chart generation"""
         mock_conn = MagicMock()
@@ -589,7 +589,7 @@ class TestDatabaseChartGenerator:
                 'color': 'mediumseagreen'
             }, 'Overall Grade Distribution')
 
-    @patch('university_system.infrastructure.database.db.get_connection')
+    @patch('education_system.university_system.infrastructure.database.db.get_connection')
     def test_database_error_handling(self, mock_get_conn, chart_generator_module, capsys):
         """Test error handling for database errors"""
         mock_get_conn.side_effect = Exception("Database connection error")
@@ -605,7 +605,7 @@ class TestDatabaseChartGenerator:
 class TestConvenienceFunctions:
     """Test convenience functions"""
 
-    @patch('university_system.infrastructure.database.db.get_connection')
+    @patch('education_system.university_system.infrastructure.database.db.get_connection')
     def test_get_admin_emails(self, mock_get_conn, chart_generator_module):
         """Test getting admin emails from database"""
         mock_conn = MagicMock()
@@ -624,7 +624,7 @@ class TestConvenienceFunctions:
         assert 'admin1@university.edu' in emails
         assert 'admin2@university.edu' in emails
 
-    @patch('university_system.infrastructure.database.db.get_connection')
+    @patch('education_system.university_system.infrastructure.database.db.get_connection')
     def test_get_admin_emails_with_nulls(self, mock_get_conn, chart_generator_module):
         """Test getting admin emails filters out nulls"""
         mock_conn = MagicMock()
@@ -644,7 +644,7 @@ class TestConvenienceFunctions:
         assert None not in emails
         assert '' not in emails
 
-    @patch('university_system.infrastructure.database.db.get_connection')
+    @patch('education_system.university_system.infrastructure.database.db.get_connection')
     def test_get_admin_emails_error(self, mock_get_conn, chart_generator_module):
         """Test getting admin emails with error returns default"""
         mock_get_conn.side_effect = Exception("Database error")
@@ -665,7 +665,7 @@ class TestChartTypes:
         gen.available = True
         return gen
 
-    @patch('university_system.modules.shared.utils.chart_generator.Figure')
+    @patch('education_system.university_system.modules.shared.utils.chart_generator.Figure')
     def test_bar_chart_with_all_options(self, mock_figure, setup_chart_generator, chart_generator_module):
         """Test bar chart with all options"""
         gen = setup_chart_generator
@@ -696,7 +696,7 @@ class TestChartTypes:
         mock_ax.set_ylabel.assert_called_with('Count')
         mock_ax.set_title.assert_called_with('Test', fontweight='bold', pad=20)
 
-    @patch('university_system.modules.shared.utils.chart_generator.Figure')
+    @patch('education_system.university_system.modules.shared.utils.chart_generator.Figure')
     def test_line_chart_with_string_x_values(self, mock_figure, setup_chart_generator, chart_generator_module):
         """Test line chart with string x values rotates labels"""
         gen = setup_chart_generator
@@ -716,8 +716,8 @@ class TestChartTypes:
         assert fig is not None
         mock_ax.set_xticklabels.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.chart_generator.Figure')
-    @patch('university_system.modules.shared.utils.chart_generator.sns')
+    @patch('education_system.university_system.modules.shared.utils.chart_generator.Figure')
+    @patch('education_system.university_system.modules.shared.utils.chart_generator.sns')
     def test_pie_chart_with_custom_colors(self, mock_sns, mock_figure, setup_chart_generator, chart_generator_module):
         """Test pie chart with custom colors"""
         gen = setup_chart_generator

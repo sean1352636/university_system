@@ -15,7 +15,7 @@ class TestBackupGUIModule:
 
     def test_backup_gui_file_exists(self):
         """Test that backup GUI file exists."""
-        gui_file = Path("university_system/modules/shared/gui/database/backup_gui.py")
+        gui_file = Path(__file__).resolve().parents[4] / "modules" / "shared" / "gui" / "database" / "backup_gui.py"
         assert gui_file.exists()
 
     def test_backup_gui_module_imports(self):
@@ -86,7 +86,7 @@ class TestBackupGUIFunctionality:
             from education_system.university_system.modules.shared.gui.database import backup_gui
 
             # Read the file to check imports
-            gui_file = Path("university_system/modules/shared/gui/database/backup_gui.py")
+            gui_file = Path(__file__).resolve().parents[4] / "modules" / "shared" / "gui" / "database" / "backup_gui.py"
             content = gui_file.read_text()
 
             # Check for backup module import
@@ -100,7 +100,7 @@ class TestBackupGUIFunctionality:
     def test_backup_gui_uses_tkinter(self):
         """Test that backup GUI uses tkinter."""
         try:
-            gui_file = Path("university_system/modules/shared/gui/database/backup_gui.py")
+            gui_file = Path(__file__).resolve().parents[4] / "modules" / "shared" / "gui" / "database" / "backup_gui.py"
             content = gui_file.read_text()
 
             # Check for tkinter imports
@@ -115,18 +115,18 @@ class TestBackupGUIDirectory:
 
     def test_gui_directory_exists(self):
         """Test that GUI directory exists."""
-        gui_dir = Path("university_system/modules/shared/gui/database")
+        gui_dir = Path(__file__).resolve().parents[4] / "modules" / "shared" / "gui" / "database"
         assert gui_dir.exists()
         assert gui_dir.is_dir()
 
     def test_gui_init_file_exists(self):
         """Test that GUI __init__.py exists."""
-        init_file = Path("university_system/modules/shared/gui/database/__init__.py")
+        init_file = Path(__file__).resolve().parents[4] / "modules" / "shared" / "gui" / "database" / "__init__.py"
         assert init_file.exists()
 
     def test_submodule_structure_exists(self):
         """Test that the split submodule structure exists."""
-        base = Path("university_system/modules/shared/gui/database")
+        base = Path(__file__).resolve().parents[4] / "modules" / "shared" / "gui" / "database"
         expected_files = [
             "backup_gui.py",
             "config.py",

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/student_support/features/notifications.py
+# hypothesis_version: 6.151.9
+
+['\n🔔 NOTIFICATIONS', ' AND is_read = 0', '%Y-%m-%d %H:%M:%S', '=', 'Ticket Created', 'User ID required', 'created', 'created_at', 'created_date', 'created_datetime', 'id', 'is_read', 'message', 'notification_id', 'notifications', 'role', 'rowid', 'satisfaction', 'survey_type', 'ticket_id', 'title', 'type', 'view_tickets', 'y', '📫', '📬', '📭 No notifications.']

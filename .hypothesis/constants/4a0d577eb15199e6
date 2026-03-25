@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/betting_shop_cli/account.py
+# hypothesis_version: 6.151.9
+
+[0.0, '\n💳 Payment Methods:', '-', '0', '0. Cancel', '1', '1. Bank Transfer', '1. Cash', '2', '2. Debit/Credit Card', '2. PayPal', '3', '3. Student Account', 'ACCOUNT BALANCE', 'Bank Transfer', 'Card', 'Cash', 'DEPOSIT FUNDS', 'PayPal', 'Student Account', 'TRANSACTION HISTORY', 'WITHDRAW FUNDS', 'email', 'username', 'yes']

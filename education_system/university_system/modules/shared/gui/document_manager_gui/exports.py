@@ -88,10 +88,10 @@ class ExportManager:
                     cursor.execute('''
                     SELECT sd.document_id, s.student_id, s.first_name, s.last_name,
                            dt.type_name, sd.upload_date, sd.verification_status
-                    FROM student_documents sd
-                    JOIN students s ON sd.student_id = s.student_id
+                    FROM documents sd
+                    JOIN students s ON sd.owner_id = s.student_id
                     JOIN document_types dt ON sd.type_id = dt.type_id
-                    WHERE sd.is_current_version = 1
+                    WHERE sd.source_type = 'student' AND sd.is_current_version = 1
                     ''')
                     columns = ['Document ID', 'Student ID', 'First Name', 'Last Name', 'Document Type', 'Upload Date', 'Status']
                 elif data_type == "students":
@@ -170,14 +170,14 @@ class ExportManager:
             cursor = conn.cursor()
 
             cursor.execute('''
-            SELECT sd.document_id, sd.student_id, s.first_name, s.last_name,
+            SELECT sd.document_id, sd.owner_id as student_id, s.first_name, s.last_name,
                    dt.type_name, sd.upload_date, sd.expiry_date,
                    sd.verification_status, sd.workflow_status, sd.uploaded_by,
                    sd.original_filename, sd.file_size, sd.version_number
-            FROM student_documents sd
-            JOIN students s ON sd.student_id = s.student_id
+            FROM documents sd
+            JOIN students s ON sd.owner_id = s.student_id
             JOIN document_types dt ON sd.document_type_id = dt.type_id
-            WHERE sd.is_current_version = 1
+            WHERE sd.source_type = 'student' AND sd.is_current_version = 1
             ORDER BY sd.upload_date DESC
             ''')
 
@@ -747,10 +747,10 @@ class ExportManager:
                 with get_connection() as conn:
                     cursor = conn.cursor()
                     cursor.execute("""
-                        SELECT sd.document_id, sd.student_id, dt.type_name,
+                        SELECT sd.document_id, sd.owner_id as student_id, dt.type_name,
                                sd.original_filename, sd.verification_status,
                                sd.upload_date, sd.expiry_date, sd.file_size
-                        FROM student_documents sd
+                        FROM documents sd
                         JOIN document_types dt ON sd.type_id = dt.type_id
                         WHERE sd.is_current_version = 1
                         ORDER BY sd.upload_date DESC
@@ -834,10 +834,10 @@ class ExportManager:
             with get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
-                    SELECT sd.document_id, sd.student_id, dt.type_name,
+                    SELECT sd.document_id, sd.owner_id as student_id, dt.type_name,
                            sd.original_filename, sd.verification_status,
                            sd.upload_date, sd.expiry_date, sd.file_size
-                    FROM student_documents sd
+                    FROM documents sd
                     JOIN document_types dt ON sd.type_id = dt.type_id
                     WHERE sd.is_current_version = 1
                     ORDER BY sd.upload_date DESC
@@ -885,14 +885,14 @@ class ExportManager:
                 cursor.execute("""
                     SELECT
                         COUNT(*) as total,
-                        COUNT(DISTINCT sd.student_id) as unique_students,
+                        COUNT(DISTINCT sd.owner_id) as unique_students,
                         COUNT(DISTINCT sd.type_id) as unique_types,
                         SUM(CASE WHEN sd.verification_status = 'Pending' THEN 1 ELSE 0 END) as pending,
                         SUM(CASE WHEN sd.verification_status = 'Verified' THEN 1 ELSE 0 END) as approved,
                         SUM(CASE WHEN sd.verification_status = 'Rejected' THEN 1 ELSE 0 END) as rejected,
                         SUM(CASE WHEN DATE(sd.expiry_date) < DATE('now') THEN 1 ELSE 0 END) as expired,
                         SUM(sd.file_size) as total_size
-                    FROM student_documents sd
+                    FROM documents sd
                     WHERE sd.is_current_version = 1
                 """)
                 stats = cursor.fetchone()
@@ -952,7 +952,7 @@ class ExportManager:
 
                 cursor.execute("""
                     SELECT dt.type_name, COUNT(*) as count
-                    FROM student_documents sd
+                    FROM documents sd
                     JOIN document_types dt ON sd.type_id = dt.type_id
                     WHERE sd.is_current_version = 1
                     GROUP BY dt.type_name
@@ -1070,13 +1070,13 @@ class ExportManager:
                 cursor.execute("""
                     SELECT
                         COUNT(*) as total,
-                        COUNT(DISTINCT sd.student_id) as unique_students,
+                        COUNT(DISTINCT sd.owner_id) as unique_students,
                         COUNT(DISTINCT sd.type_id) as unique_types,
                         SUM(CASE WHEN sd.verification_status = 'Pending' THEN 1 ELSE 0 END) as pending,
                         SUM(CASE WHEN sd.verification_status = 'Verified' THEN 1 ELSE 0 END) as approved,
                         SUM(CASE WHEN sd.verification_status = 'Rejected' THEN 1 ELSE 0 END) as rejected,
                         SUM(CASE WHEN DATE(sd.expiry_date) < DATE('now') THEN 1 ELSE 0 END) as expired
-                    FROM student_documents sd
+                    FROM documents sd
                     WHERE sd.is_current_version = 1
                 """)
                 stats = cursor.fetchone()
@@ -1118,7 +1118,7 @@ class ExportManager:
 
                 cursor.execute("""
                     SELECT dt.type_name, COUNT(*) as count
-                    FROM student_documents sd
+                    FROM documents sd
                     JOIN document_types dt ON sd.type_id = dt.type_id
                     WHERE sd.is_current_version = 1
                     GROUP BY dt.type_name
@@ -1156,9 +1156,9 @@ class ExportManager:
                 elements.append(Paragraph("Recent Documents (Last 50)", heading_style))
 
                 cursor.execute("""
-                    SELECT sd.student_id, dt.type_name, sd.original_filename,
+                    SELECT sd.owner_id as student_id, dt.type_name, sd.original_filename,
                            sd.verification_status, sd.upload_date
-                    FROM student_documents sd
+                    FROM documents sd
                     JOIN document_types dt ON sd.type_id = dt.type_id
                     WHERE sd.is_current_version = 1
                     ORDER BY sd.upload_date DESC

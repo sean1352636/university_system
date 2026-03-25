@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/office_hours/office_hours_permissions.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d %H:%M:%S', 'admin', 'book_office_hours', 'instructor', 'manage_office_hours', 'staff', 'student', 'view_office_hours']

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/booking/snacks.py
+# hypothesis_version: 6.151.9
+
+['#0f3460', '#27ae60', '#333333', '#7f8c8d', '#e74c3c', '#ecf0f1', '#ffffff', ', ', '-', '.', '...', '400x500', 'Card.TFrame', 'Helvetica', 'Items', 'Main.TFrame', 'New Snack Order', 'Primary.TButton', 'Ref', 'SNK', 'Secondary.TButton', 'Select Items:', 'Select items', 'Status', 'Subtitle.TLabel', 'Success.TButton', 'Total', 'Warning', '_', 'bold', 'both', 'cinema.menu.title', 'cinema.snacks.order', 'cinema.snacks.skip', 'cinema.snacks.title', 'end', 'headings', 'left', 'pending', 'right', 'vertical', 'w', 'x', 'y', '← ']

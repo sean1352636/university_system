@@ -6,9 +6,10 @@ from tkinter import ttk, messagebox
 from education_system.college_system.modules.domain.onboarding.services.onboarding_service import (
     OnboardingService,
 )
+from education_system.college_system.core.i18n import t
 
 
-# ── Dialogs ─────────────────────────────────────────────────────
+# -- Dialogs -------------------------------------------------------------------
 
 class _ChecklistDialog(tk.Toplevel):
     """Dialog for creating / editing an onboarding checklist."""
@@ -37,11 +38,11 @@ class _ChecklistDialog(tk.Toplevel):
         self._vars: dict[str, tk.StringVar] = {}
 
         fields = [
-            ("staff_id", "Staff ID"),
-            ("start_date", "Start Date (YYYY-MM-DD)"),
-            ("mentor_id", "Mentor ID"),
-            ("probation_end_date", "Probation End Date"),
-            ("notes", "Notes"),
+            ("staff_id", t("onboarding.staff_member") + " ID"),
+            ("start_date", t("onboarding.start_date") + " (YYYY-MM-DD)"),
+            ("mentor_id", t("onboarding.mentor") + " ID"),
+            ("probation_end_date", t("onboarding.probation_end")),
+            ("notes", t("common.notes")),
         ]
         for row, (key, label) in enumerate(fields):
             tk.Label(c, text=label, anchor="w", font=("Helvetica", 9, "bold")).grid(
@@ -55,8 +56,8 @@ class _ChecklistDialog(tk.Toplevel):
 
         btn = tk.Frame(c)
         btn.grid(row=len(fields), column=0, columnspan=2, pady=(15, 0))
-        ttk.Button(btn, text="Save", command=self._on_save).pack(side="left", padx=5)
-        ttk.Button(btn, text="Cancel", command=self.destroy).pack(side="left", padx=5)
+        ttk.Button(btn, text=t("common.save"), command=self._on_save).pack(side="left", padx=5)
+        ttk.Button(btn, text=t("common.cancel"), command=self.destroy).pack(side="left", padx=5)
 
     def _on_save(self):
         self.result = {k: v.get().strip() for k, v in self._vars.items()}
@@ -95,21 +96,21 @@ class _TaskDialog(tk.Toplevel):
         self._vars: dict[str, tk.StringVar] = {}
 
         row = 0
-        tk.Label(c, text="Checklist ID", anchor="w",
+        tk.Label(c, text=t("onboarding.checklist") + " ID", anchor="w",
                  font=("Helvetica", 9, "bold")).grid(row=row, column=0, sticky="w", **pad)
         var = tk.StringVar(value=str(self._item.get("checklist_id", "") or ""))
         ttk.Entry(c, textvariable=var, width=36).grid(row=row, column=1, sticky="ew", **pad)
         self._vars["checklist_id"] = var
 
         row += 1
-        tk.Label(c, text="Task Name", anchor="w",
+        tk.Label(c, text=t("onboarding.task_name"), anchor="w",
                  font=("Helvetica", 9, "bold")).grid(row=row, column=0, sticky="w", **pad)
         var = tk.StringVar(value=str(self._item.get("task_name", "") or ""))
         ttk.Entry(c, textvariable=var, width=36).grid(row=row, column=1, sticky="ew", **pad)
         self._vars["task_name"] = var
 
         row += 1
-        tk.Label(c, text="Category", anchor="w",
+        tk.Label(c, text=t("common.category"), anchor="w",
                  font=("Helvetica", 9, "bold")).grid(row=row, column=0, sticky="w", **pad)
         var = tk.StringVar(value=str(self._item.get("category", "general") or "general"))
         ttk.Combobox(c, textvariable=var, values=self.CATEGORIES, width=34,
@@ -117,21 +118,21 @@ class _TaskDialog(tk.Toplevel):
         self._vars["category"] = var
 
         row += 1
-        tk.Label(c, text="Assigned To (ID)", anchor="w",
+        tk.Label(c, text=t("common.assigned_to") + " (ID)", anchor="w",
                  font=("Helvetica", 9, "bold")).grid(row=row, column=0, sticky="w", **pad)
         var = tk.StringVar(value=str(self._item.get("assigned_to", "") or ""))
         ttk.Entry(c, textvariable=var, width=36).grid(row=row, column=1, sticky="ew", **pad)
         self._vars["assigned_to"] = var
 
         row += 1
-        tk.Label(c, text="Due Date (YYYY-MM-DD)", anchor="w",
+        tk.Label(c, text=t("onboarding.due_date"), anchor="w",
                  font=("Helvetica", 9, "bold")).grid(row=row, column=0, sticky="w", **pad)
         var = tk.StringVar(value=str(self._item.get("due_date", "") or ""))
         ttk.Entry(c, textvariable=var, width=36).grid(row=row, column=1, sticky="ew", **pad)
         self._vars["due_date"] = var
 
         row += 1
-        tk.Label(c, text="Notes", anchor="w",
+        tk.Label(c, text=t("common.notes"), anchor="w",
                  font=("Helvetica", 9, "bold")).grid(row=row, column=0, sticky="w", **pad)
         var = tk.StringVar(value=str(self._item.get("notes", "") or ""))
         ttk.Entry(c, textvariable=var, width=36).grid(row=row, column=1, sticky="ew", **pad)
@@ -140,8 +141,8 @@ class _TaskDialog(tk.Toplevel):
         row += 1
         btn = tk.Frame(c)
         btn.grid(row=row, column=0, columnspan=2, pady=(15, 0))
-        ttk.Button(btn, text="Save", command=self._on_save).pack(side="left", padx=5)
-        ttk.Button(btn, text="Cancel", command=self.destroy).pack(side="left", padx=5)
+        ttk.Button(btn, text=t("common.save"), command=self._on_save).pack(side="left", padx=5)
+        ttk.Button(btn, text=t("common.cancel"), command=self.destroy).pack(side="left", padx=5)
 
     def _on_save(self):
         self.result = {k: v.get().strip() for k, v in self._vars.items()}
@@ -177,15 +178,15 @@ class _ReviewDialog(tk.Toplevel):
         self._vars: dict[str, tk.StringVar] = {}
 
         fields = [
-            ("checklist_id", "Checklist ID", None),
-            ("review_date", "Review Date (YYYY-MM-DD)", None),
-            ("reviewer_id", "Reviewer ID", None),
-            ("review_number", "Review Number", None),
-            ("performance_rating", "Performance Rating", None),
-            ("areas_of_strength", "Areas of Strength", None),
-            ("areas_for_development", "Areas for Development", None),
-            ("targets", "Targets", None),
-            ("recommendation", "Recommendation", self.RECOMMENDATIONS),
+            ("checklist_id", t("onboarding.checklist") + " ID", None),
+            ("review_date", t("onboarding.review_date") + " (YYYY-MM-DD)", None),
+            ("reviewer_id", t("onboarding.reviewer") + " ID", None),
+            ("review_number", t("onboarding.review_number"), None),
+            ("performance_rating", t("onboarding.performance_rating"), None),
+            ("areas_of_strength", t("onboarding.areas_of_strength"), None),
+            ("areas_for_development", t("onboarding.areas_for_development"), None),
+            ("targets", t("onboarding.targets"), None),
+            ("recommendation", t("onboarding.recommendation"), self.RECOMMENDATIONS),
         ]
         for row, (key, label, options) in enumerate(fields):
             tk.Label(c, text=label, anchor="w",
@@ -207,8 +208,8 @@ class _ReviewDialog(tk.Toplevel):
 
         btn = tk.Frame(c)
         btn.grid(row=len(fields), column=0, columnspan=2, pady=(15, 0))
-        ttk.Button(btn, text="Save", command=self._on_save).pack(side="left", padx=5)
-        ttk.Button(btn, text="Cancel", command=self.destroy).pack(side="left", padx=5)
+        ttk.Button(btn, text=t("common.save"), command=self._on_save).pack(side="left", padx=5)
+        ttk.Button(btn, text=t("common.cancel"), command=self.destroy).pack(side="left", padx=5)
 
     def _on_save(self):
         self.result = {k: v.get().strip() for k, v in self._vars.items()}
@@ -230,7 +231,7 @@ class _DetailDialog(tk.Toplevel):
                      font=("Helvetica", 9, "bold")).grid(row=row, column=0, sticky="w", padx=10, pady=3)
             tk.Label(c, text=str(v or ""), anchor="w",
                      font=("Helvetica", 9)).grid(row=row, column=1, sticky="w", padx=10, pady=3)
-        ttk.Button(c, text="Close", command=self.destroy).grid(
+        ttk.Button(c, text=t("common.close"), command=self.destroy).grid(
             row=len(data), column=0, columnspan=2, pady=(15, 0)
         )
         self.update_idletasks()
@@ -240,7 +241,7 @@ class _DetailDialog(tk.Toplevel):
         self.geometry(f"+{px - w // 2}+{py - h // 2}")
 
 
-# ── Main Frame ──────────────────────────────────────────────────
+# -- Main Frame ----------------------------------------------------------------
 
 class OnboardingFrame(tk.Frame):
     """Staff Onboarding management frame with tabbed interface."""
@@ -253,7 +254,7 @@ class OnboardingFrame(tk.Frame):
         self._build_ui()
         self.refresh()
 
-    # ── UI Construction ─────────────────────────────────────────
+    # -- UI Construction -------------------------------------------------------
 
     def _build_ui(self):
         self.configure(bg="#ecf0f1")
@@ -262,7 +263,7 @@ class OnboardingFrame(tk.Frame):
         header.pack(fill="x")
         header.pack_propagate(False)
         tk.Label(
-            header, text="Staff Onboarding",
+            header, text=t("onboarding.management"),
             font=("Helvetica", 15, "bold"), bg="#2c3e50", fg="white",
         ).pack(side="left", padx=20, pady=10)
 
@@ -274,36 +275,37 @@ class OnboardingFrame(tk.Frame):
         self._build_reviews_tab()
         self._build_stats_tab()
 
-    # ── Tab 0: Checklists ───────────────────────────────────────
+    # -- Tab 0: Checklists -----------------------------------------------------
 
     def _build_checklists_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Checklists")
+        self._nb.add(tab, text=t("onboarding.checklists"))
 
         # Filters
         filt = tk.Frame(tab, bg="#ecf0f1")
         filt.pack(fill="x", pady=(0, 5))
-        tk.Label(filt, text="Status:", bg="#ecf0f1",
+        tk.Label(filt, text=t("common.status") + ":", bg="#ecf0f1",
                  font=("Helvetica", 9, "bold")).pack(side="left", padx=(0, 5))
-        self._cl_status_var = tk.StringVar(value="All")
+        self._cl_status_var = tk.StringVar(value=t("common.all"))
         ttk.Combobox(
             filt, textvariable=self._cl_status_var, width=14, state="readonly",
-            values=["All", "in_progress", "completed", "extended", "failed"],
+            values=[t("common.all"), "in_progress", "completed", "extended", "failed"],
         ).pack(side="left", padx=2)
-        ttk.Button(filt, text="Filter", command=self._load_checklists).pack(side="left", padx=4)
+        ttk.Button(filt, text=t("common.filter"), command=self._load_checklists).pack(side="left", padx=4)
 
         # Buttons
         toolbar = tk.Frame(tab, bg="#ecf0f1")
         toolbar.pack(fill="x", pady=(0, 5))
         for txt, cmd in [
-            ("New", self._on_new_checklist),
-            ("View", self._on_view_checklist),
-            ("Update", self._on_update_checklist),
-            ("Complete", self._on_complete_checklist),
-            ("Delete", self._on_delete_checklist),
-            ("Refresh", self._load_checklists),
+            (t("common.create"), self._on_new_checklist),
+            (t("common.view"), self._on_view_checklist),
+            (t("common.update"), self._on_update_checklist),
+            (t("common.completed"), self._on_complete_checklist),
+            (t("common.delete"), self._on_delete_checklist),
+            (t("common.refresh"), self._load_checklists),
         ]:
             ttk.Button(toolbar, text=txt, command=cmd).pack(side="left", padx=3)
+        ttk.Button(toolbar, text=t("common.export_csv", default="Export CSV"), command=self._export_checklists_csv).pack(side="right", padx=3)
 
         # Treeview
         cols = ("id", "staff_id", "start_date", "mentor_id",
@@ -314,11 +316,11 @@ class OnboardingFrame(tk.Frame):
             tree_frame, columns=cols, show="headings", selectmode="browse",
         )
         headings = {
-            "id": ("ID", 40), "staff_id": ("Staff ID", 70),
-            "start_date": ("Start Date", 90), "mentor_id": ("Mentor ID", 70),
-            "probation_end_date": ("Probation End", 100),
-            "probation_outcome": ("Outcome", 90),
-            "overall_status": ("Status", 90),
+            "id": (t("common.id"), 40), "staff_id": (t("onboarding.staff_member") + " ID", 70),
+            "start_date": (t("onboarding.start_date"), 90), "mentor_id": (t("onboarding.mentor") + " ID", 70),
+            "probation_end_date": (t("onboarding.probation_end"), 100),
+            "probation_outcome": (t("onboarding.outcome"), 90),
+            "overall_status": (t("common.status"), 90),
         }
         for col, (text, width) in headings.items():
             self._tree_cl.heading(col, text=text)
@@ -328,7 +330,7 @@ class OnboardingFrame(tk.Frame):
         self._tree_cl.pack(side="left", fill="both", expand=True)
         vsb.pack(side="right", fill="y")
 
-        self._cl_status = tk.StringVar(value="Ready")
+        self._cl_status = tk.StringVar(value=t("common.ready"))
         tk.Label(tab, textvariable=self._cl_status, bg="#ecf0f1", anchor="w",
                  font=("Helvetica", 9), fg="#7f8c8d").pack(fill="x")
 
@@ -336,7 +338,7 @@ class OnboardingFrame(tk.Frame):
         self._tree_cl.delete(*self._tree_cl.get_children())
         try:
             status = self._cl_status_var.get()
-            status_filter = None if status == "All" else status
+            status_filter = None if status == t("common.all") else status
             items = self._svc.list_checklists(status=status_filter)
             for item in items:
                 self._tree_cl.insert("", "end", iid=item["id"], values=(
@@ -348,19 +350,19 @@ class OnboardingFrame(tk.Frame):
                     item.get("probation_outcome", ""),
                     item.get("overall_status", ""),
                 ))
-            self._cl_status.set(f"{len(items)} checklist(s) loaded")
+            self._cl_status.set(t("onboarding.count_loaded", count=len(items)))
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load checklists:\n{exc}")
+            messagebox.showerror(t("common.error"), f"Failed to load checklists:\n{exc}")
 
     def _selected_cl_id(self) -> int | None:
         sel = self._tree_cl.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select a checklist first.")
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"))
             return None
         return int(sel[0])
 
     def _on_new_checklist(self):
-        dlg = _ChecklistDialog(self, title="New Checklist")
+        dlg = _ChecklistDialog(self, title=t("onboarding.new_checklist"))
         self.wait_window(dlg)
         if dlg.result is None:
             return
@@ -369,12 +371,12 @@ class OnboardingFrame(tk.Frame):
             staff_id = int(data.pop("staff_id"))
             clean = {k: v for k, v in data.items() if v}
             self._svc.create_checklist(staff_id, **clean)
-            messagebox.showinfo("Success", "Checklist created.")
+            messagebox.showinfo(t("common.success"), t("common.created_success"))
             self._load_checklists()
         except ValueError:
-            messagebox.showerror("Error", "Staff ID must be a number.")
+            messagebox.showerror(t("common.error"), t("common.invalid_input"))
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_view_checklist(self):
         pk = self._selected_cl_id()
@@ -382,9 +384,9 @@ class OnboardingFrame(tk.Frame):
             return
         item = self._svc.get_checklist(pk)
         if not item:
-            messagebox.showerror("Error", "Checklist not found.")
+            messagebox.showerror(t("common.error"), t("common.no_data"))
             return
-        _DetailDialog(self, "Checklist Details", item)
+        _DetailDialog(self, t("onboarding.checklist_details"), item)
 
     def _on_update_checklist(self):
         pk = self._selected_cl_id()
@@ -392,31 +394,31 @@ class OnboardingFrame(tk.Frame):
             return
         item = self._svc.get_checklist(pk)
         if not item:
-            messagebox.showerror("Error", "Checklist not found.")
+            messagebox.showerror(t("common.error"), t("common.no_data"))
             return
-        dlg = _ChecklistDialog(self, title="Update Checklist", item=item)
+        dlg = _ChecklistDialog(self, title=t("onboarding.update_checklist"), item=item)
         self.wait_window(dlg)
         if dlg.result is None:
             return
         try:
             clean = {k: v for k, v in dlg.result.items() if v}
             self._svc.update_checklist(pk, **clean)
-            messagebox.showinfo("Success", "Checklist updated.")
+            messagebox.showinfo(t("common.success"), t("common.updated_success"))
             self._load_checklists()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_complete_checklist(self):
         pk = self._selected_cl_id()
         if pk is None:
             return
         dlg = tk.Toplevel(self)
-        dlg.title("Complete Checklist")
+        dlg.title(t("onboarding.complete_checklist"))
         dlg.resizable(False, False)
         dlg.grab_set()
         c = tk.Frame(dlg, padx=20, pady=15)
         c.pack()
-        tk.Label(c, text="Outcome:", font=("Helvetica", 9, "bold")).pack(anchor="w")
+        tk.Label(c, text=t("onboarding.outcome") + ":", font=("Helvetica", 9, "bold")).pack(anchor="w")
         var = tk.StringVar(value="completed")
         ttk.Combobox(
             c, textvariable=var, values=["completed", "extended", "failed"],
@@ -426,13 +428,13 @@ class OnboardingFrame(tk.Frame):
         def _save():
             try:
                 self._svc.complete_checklist(pk, outcome=var.get())
-                messagebox.showinfo("Success", "Checklist completed.")
+                messagebox.showinfo(t("common.success"), t("onboarding.checklist_completed"))
                 dlg.destroy()
                 self._load_checklists()
             except Exception as exc:
-                messagebox.showerror("Error", str(exc))
+                messagebox.showerror(t("common.error"), str(exc))
 
-        ttk.Button(c, text="Save", command=_save).pack(pady=(10, 0))
+        ttk.Button(c, text=t("common.save"), command=_save).pack(pady=(10, 0))
         dlg.update_idletasks()
         px = self.winfo_rootx() + self.winfo_width() // 2
         py = self.winfo_rooty() + self.winfo_height() // 2
@@ -443,63 +445,62 @@ class OnboardingFrame(tk.Frame):
         pk = self._selected_cl_id()
         if pk is None:
             return
-        if not messagebox.askyesno(
-            "Confirm", "Delete this checklist and all its tasks/reviews?"
-        ):
+        if not messagebox.askyesno(t("common.confirm"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_checklist(pk)
-            messagebox.showinfo("Success", "Checklist deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_checklists()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
-    # ── Tab 1: Tasks ────────────────────────────────────────────
+    # -- Tab 1: Tasks ----------------------------------------------------------
 
     def _build_tasks_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Tasks")
+        self._nb.add(tab, text=t("onboarding.tasks"))
 
         # Filters
         filt = tk.Frame(tab, bg="#ecf0f1")
         filt.pack(fill="x", pady=(0, 5))
 
-        tk.Label(filt, text="Checklist ID:", bg="#ecf0f1",
+        tk.Label(filt, text=t("onboarding.checklist") + " ID:", bg="#ecf0f1",
                  font=("Helvetica", 9, "bold")).pack(side="left", padx=(0, 3))
         self._task_cl_var = tk.StringVar()
         ttk.Entry(filt, textvariable=self._task_cl_var, width=8).pack(side="left", padx=2)
 
-        tk.Label(filt, text="Category:", bg="#ecf0f1",
+        tk.Label(filt, text=t("common.category") + ":", bg="#ecf0f1",
                  font=("Helvetica", 9, "bold")).pack(side="left", padx=(10, 3))
-        self._task_cat_var = tk.StringVar(value="All")
+        self._task_cat_var = tk.StringVar(value=t("common.all"))
         ttk.Combobox(
             filt, textvariable=self._task_cat_var, width=14, state="readonly",
-            values=["All", "general", "it_setup", "hr_paperwork", "induction",
+            values=[t("common.all"), "general", "it_setup", "hr_paperwork", "induction",
                     "training", "safeguarding", "department", "health_safety"],
         ).pack(side="left", padx=2)
 
-        tk.Label(filt, text="Completed:", bg="#ecf0f1",
+        tk.Label(filt, text=t("common.completed") + ":", bg="#ecf0f1",
                  font=("Helvetica", 9, "bold")).pack(side="left", padx=(10, 3))
-        self._task_done_var = tk.StringVar(value="All")
+        self._task_done_var = tk.StringVar(value=t("common.all"))
         ttk.Combobox(
             filt, textvariable=self._task_done_var, width=8, state="readonly",
-            values=["All", "Yes", "No"],
+            values=[t("common.all"), t("common.yes"), t("common.no")],
         ).pack(side="left", padx=2)
 
-        ttk.Button(filt, text="Filter", command=self._load_tasks).pack(side="left", padx=6)
+        ttk.Button(filt, text=t("common.filter"), command=self._load_tasks).pack(side="left", padx=6)
 
         # Buttons
         toolbar = tk.Frame(tab, bg="#ecf0f1")
         toolbar.pack(fill="x", pady=(0, 5))
         for txt, cmd in [
-            ("New", self._on_new_task),
-            ("Complete", self._on_complete_task),
-            ("Update", self._on_update_task),
-            ("Delete", self._on_delete_task),
-            ("Show Pending", self._on_show_pending),
-            ("Refresh", self._load_tasks),
+            (t("common.create"), self._on_new_task),
+            (t("common.completed"), self._on_complete_task),
+            (t("common.update"), self._on_update_task),
+            (t("common.delete"), self._on_delete_task),
+            (t("onboarding.show_pending"), self._on_show_pending),
+            (t("common.refresh"), self._load_tasks),
         ]:
             ttk.Button(toolbar, text=txt, command=cmd).pack(side="left", padx=3)
+        ttk.Button(toolbar, text=t("common.export_csv", default="Export CSV"), command=self._export_tasks_csv).pack(side="right", padx=3)
 
         # Treeview
         cols = ("id", "checklist_id", "task_name", "category",
@@ -510,10 +511,10 @@ class OnboardingFrame(tk.Frame):
             tree_frame, columns=cols, show="headings", selectmode="browse",
         )
         headings = {
-            "id": ("ID", 40), "checklist_id": ("Checklist ID", 85),
-            "task_name": ("Task", 180), "category": ("Category", 100),
-            "assigned_to": ("Assigned To", 85), "due_date": ("Due Date", 90),
-            "completed": ("Completed", 70), "completed_date": ("Completed Date", 110),
+            "id": (t("common.id"), 40), "checklist_id": (t("onboarding.checklist") + " ID", 85),
+            "task_name": (t("onboarding.task_name"), 180), "category": (t("common.category"), 100),
+            "assigned_to": (t("common.assigned_to"), 85), "due_date": (t("onboarding.due_date"), 90),
+            "completed": (t("common.completed"), 70), "completed_date": (t("onboarding.completed_date"), 110),
         }
         for col, (text, width) in headings.items():
             self._tree_tasks.heading(col, text=text)
@@ -523,7 +524,7 @@ class OnboardingFrame(tk.Frame):
         self._tree_tasks.pack(side="left", fill="both", expand=True)
         vsb.pack(side="right", fill="y")
 
-        self._task_status = tk.StringVar(value="Ready")
+        self._task_status = tk.StringVar(value=t("common.ready"))
         tk.Label(tab, textvariable=self._task_status, bg="#ecf0f1", anchor="w",
                  font=("Helvetica", 9), fg="#7f8c8d").pack(fill="x")
 
@@ -535,16 +536,16 @@ class OnboardingFrame(tk.Frame):
             if cl_id:
                 kwargs["checklist_id"] = int(cl_id)
             cat = self._task_cat_var.get()
-            if cat != "All":
+            if cat != t("common.all"):
                 kwargs["category"] = cat
             done = self._task_done_var.get()
-            if done == "Yes":
+            if done == t("common.yes"):
                 kwargs["completed"] = 1
-            elif done == "No":
+            elif done == t("common.no"):
                 kwargs["completed"] = 0
             items = self._svc.list_tasks(**kwargs)
             for item in items:
-                completed_display = "Yes" if item.get("completed") else "No"
+                completed_display = t("common.yes") if item.get("completed") else t("common.no")
                 self._tree_tasks.insert("", "end", iid=item["id"], values=(
                     item.get("id", ""),
                     item.get("checklist_id", ""),
@@ -555,21 +556,21 @@ class OnboardingFrame(tk.Frame):
                     completed_display,
                     item.get("completed_date", ""),
                 ))
-            self._task_status.set(f"{len(items)} task(s) loaded")
+            self._task_status.set(t("onboarding.tasks_loaded", count=len(items)))
         except ValueError:
-            messagebox.showerror("Error", "Checklist ID must be a number.")
+            messagebox.showerror(t("common.error"), t("common.invalid_input"))
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load tasks:\n{exc}")
+            messagebox.showerror(t("common.error"), f"Failed to load tasks:\n{exc}")
 
     def _selected_task_id(self) -> int | None:
         sel = self._tree_tasks.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select a task first.")
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"))
             return None
         return int(sel[0])
 
     def _on_new_task(self):
-        dlg = _TaskDialog(self, title="New Task")
+        dlg = _TaskDialog(self, title=t("onboarding.new_task"))
         self.wait_window(dlg)
         if dlg.result is None:
             return
@@ -581,12 +582,12 @@ class OnboardingFrame(tk.Frame):
             if clean.get("assigned_to"):
                 clean["assigned_to"] = int(clean["assigned_to"])
             self._svc.create_task(checklist_id, task_name, **clean)
-            messagebox.showinfo("Success", "Task created.")
+            messagebox.showinfo(t("common.success"), t("common.created_success"))
             self._load_tasks()
         except ValueError:
-            messagebox.showerror("Error", "Checklist ID and Assigned To must be numbers.")
+            messagebox.showerror(t("common.error"), t("common.invalid_input"))
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_complete_task(self):
         pk = self._selected_task_id()
@@ -594,10 +595,10 @@ class OnboardingFrame(tk.Frame):
             return
         try:
             self._svc.complete_task(pk)
-            messagebox.showinfo("Success", "Task marked as completed.")
+            messagebox.showinfo(t("common.success"), t("onboarding.task_completed"))
             self._load_tasks()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_update_task(self):
         pk = self._selected_task_id()
@@ -605,9 +606,9 @@ class OnboardingFrame(tk.Frame):
             return
         item = self._svc.get_task(pk)
         if not item:
-            messagebox.showerror("Error", "Task not found.")
+            messagebox.showerror(t("common.error"), t("common.no_data"))
             return
-        dlg = _TaskDialog(self, title="Update Task", item=item)
+        dlg = _TaskDialog(self, title=t("onboarding.update_task"), item=item)
         self.wait_window(dlg)
         if dlg.result is None:
             return
@@ -617,25 +618,25 @@ class OnboardingFrame(tk.Frame):
             if clean.get("assigned_to"):
                 clean["assigned_to"] = int(clean["assigned_to"])
             self._svc.update_task(pk, **clean)
-            messagebox.showinfo("Success", "Task updated.")
+            messagebox.showinfo(t("common.success"), t("common.updated_success"))
             self._load_tasks()
         except ValueError:
-            messagebox.showerror("Error", "Assigned To must be a number.")
+            messagebox.showerror(t("common.error"), t("common.invalid_input"))
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_delete_task(self):
         pk = self._selected_task_id()
         if pk is None:
             return
-        if not messagebox.askyesno("Confirm", "Delete this task?"):
+        if not messagebox.askyesno(t("common.confirm"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_task(pk)
-            messagebox.showinfo("Success", "Task deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_tasks()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_show_pending(self):
         """Show all pending tasks across all checklists."""
@@ -650,39 +651,40 @@ class OnboardingFrame(tk.Frame):
                     item.get("category", ""),
                     item.get("assigned_to", ""),
                     item.get("due_date", ""),
-                    "No",
+                    t("common.no"),
                     "",
                 ))
-            self._task_status.set(f"{len(items)} pending task(s)")
+            self._task_status.set(t("onboarding.pending_tasks", count=len(items)))
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load pending tasks:\n{exc}")
+            messagebox.showerror(t("common.error"), f"Failed to load pending tasks:\n{exc}")
 
-    # ── Tab 2: Probation Reviews ────────────────────────────────
+    # -- Tab 2: Probation Reviews ----------------------------------------------
 
     def _build_reviews_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Probation Reviews")
+        self._nb.add(tab, text=t("onboarding.probation_reviews"))
 
         # Filters
         filt = tk.Frame(tab, bg="#ecf0f1")
         filt.pack(fill="x", pady=(0, 5))
-        tk.Label(filt, text="Checklist ID:", bg="#ecf0f1",
+        tk.Label(filt, text=t("onboarding.checklist") + " ID:", bg="#ecf0f1",
                  font=("Helvetica", 9, "bold")).pack(side="left", padx=(0, 3))
         self._rev_cl_var = tk.StringVar()
         ttk.Entry(filt, textvariable=self._rev_cl_var, width=8).pack(side="left", padx=2)
-        ttk.Button(filt, text="Filter", command=self._load_reviews).pack(side="left", padx=6)
+        ttk.Button(filt, text=t("common.filter"), command=self._load_reviews).pack(side="left", padx=6)
 
         # Buttons
         toolbar = tk.Frame(tab, bg="#ecf0f1")
         toolbar.pack(fill="x", pady=(0, 5))
         for txt, cmd in [
-            ("New", self._on_new_review),
-            ("View", self._on_view_review),
-            ("Update", self._on_update_review),
-            ("Delete", self._on_delete_review),
-            ("Refresh", self._load_reviews),
+            (t("common.create"), self._on_new_review),
+            (t("common.view"), self._on_view_review),
+            (t("common.update"), self._on_update_review),
+            (t("common.delete"), self._on_delete_review),
+            (t("common.refresh"), self._load_reviews),
         ]:
             ttk.Button(toolbar, text=txt, command=cmd).pack(side="left", padx=3)
+        ttk.Button(toolbar, text=t("common.export_csv", default="Export CSV"), command=self._export_reviews_csv).pack(side="right", padx=3)
 
         # Treeview
         cols = ("id", "checklist_id", "review_date", "reviewer_id",
@@ -693,11 +695,11 @@ class OnboardingFrame(tk.Frame):
             tree_frame, columns=cols, show="headings", selectmode="browse",
         )
         headings = {
-            "id": ("ID", 40), "checklist_id": ("Checklist ID", 85),
-            "review_date": ("Review Date", 95), "reviewer_id": ("Reviewer", 70),
-            "review_number": ("Review #", 65),
-            "performance_rating": ("Rating", 90),
-            "recommendation": ("Recommendation", 110),
+            "id": (t("common.id"), 40), "checklist_id": (t("onboarding.checklist") + " ID", 85),
+            "review_date": (t("onboarding.review_date"), 95), "reviewer_id": (t("onboarding.reviewer"), 70),
+            "review_number": (t("onboarding.review_number"), 65),
+            "performance_rating": (t("onboarding.performance_rating"), 90),
+            "recommendation": (t("onboarding.recommendation"), 110),
         }
         for col, (text, width) in headings.items():
             self._tree_rev.heading(col, text=text)
@@ -707,7 +709,7 @@ class OnboardingFrame(tk.Frame):
         self._tree_rev.pack(side="left", fill="both", expand=True)
         vsb.pack(side="right", fill="y")
 
-        self._rev_status = tk.StringVar(value="Ready")
+        self._rev_status = tk.StringVar(value=t("common.ready"))
         tk.Label(tab, textvariable=self._rev_status, bg="#ecf0f1", anchor="w",
                  font=("Helvetica", 9), fg="#7f8c8d").pack(fill="x")
 
@@ -727,21 +729,21 @@ class OnboardingFrame(tk.Frame):
                     item.get("performance_rating", ""),
                     item.get("recommendation", ""),
                 ))
-            self._rev_status.set(f"{len(items)} review(s) loaded")
+            self._rev_status.set(t("onboarding.reviews_loaded", count=len(items)))
         except ValueError:
-            messagebox.showerror("Error", "Checklist ID must be a number.")
+            messagebox.showerror(t("common.error"), t("common.invalid_input"))
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load reviews:\n{exc}")
+            messagebox.showerror(t("common.error"), f"Failed to load reviews:\n{exc}")
 
     def _selected_rev_id(self) -> int | None:
         sel = self._tree_rev.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select a review first.")
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"))
             return None
         return int(sel[0])
 
     def _on_new_review(self):
-        dlg = _ReviewDialog(self, title="New Review")
+        dlg = _ReviewDialog(self, title=t("onboarding.new_review"))
         self.wait_window(dlg)
         if dlg.result is None:
             return
@@ -755,12 +757,12 @@ class OnboardingFrame(tk.Frame):
             if clean.get("review_number"):
                 clean["review_number"] = int(clean["review_number"])
             self._svc.create_review(checklist_id, review_date, **clean)
-            messagebox.showinfo("Success", "Review created.")
+            messagebox.showinfo(t("common.success"), t("common.created_success"))
             self._load_reviews()
         except ValueError:
-            messagebox.showerror("Error", "Checklist ID, Reviewer ID, and Review Number must be numbers.")
+            messagebox.showerror(t("common.error"), t("common.invalid_input"))
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_view_review(self):
         pk = self._selected_rev_id()
@@ -768,9 +770,9 @@ class OnboardingFrame(tk.Frame):
             return
         item = self._svc.get_review(pk)
         if not item:
-            messagebox.showerror("Error", "Review not found.")
+            messagebox.showerror(t("common.error"), t("common.no_data"))
             return
-        _DetailDialog(self, "Review Details", item)
+        _DetailDialog(self, t("onboarding.review_details"), item)
 
     def _on_update_review(self):
         pk = self._selected_rev_id()
@@ -778,9 +780,9 @@ class OnboardingFrame(tk.Frame):
             return
         item = self._svc.get_review(pk)
         if not item:
-            messagebox.showerror("Error", "Review not found.")
+            messagebox.showerror(t("common.error"), t("common.no_data"))
             return
-        dlg = _ReviewDialog(self, title="Update Review", item=item)
+        dlg = _ReviewDialog(self, title=t("onboarding.update_review"), item=item)
         self.wait_window(dlg)
         if dlg.result is None:
             return
@@ -792,34 +794,34 @@ class OnboardingFrame(tk.Frame):
             if clean.get("review_number"):
                 clean["review_number"] = int(clean["review_number"])
             self._svc.update_review(pk, **clean)
-            messagebox.showinfo("Success", "Review updated.")
+            messagebox.showinfo(t("common.success"), t("common.updated_success"))
             self._load_reviews()
         except ValueError:
-            messagebox.showerror("Error", "Reviewer ID and Review Number must be numbers.")
+            messagebox.showerror(t("common.error"), t("common.invalid_input"))
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_delete_review(self):
         pk = self._selected_rev_id()
         if pk is None:
             return
-        if not messagebox.askyesno("Confirm", "Delete this review?"):
+        if not messagebox.askyesno(t("common.confirm"), t("common.delete_confirm_msg")):
             return
         try:
             self._svc.delete_review(pk)
-            messagebox.showinfo("Success", "Review deleted.")
+            messagebox.showinfo(t("common.success"), t("common.deleted_success"))
             self._load_reviews()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
-    # ── Tab 3: Statistics ───────────────────────────────────────
+    # -- Tab 3: Statistics -----------------------------------------------------
 
     def _build_stats_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(tab, text="Statistics")
+        self._nb.add(tab, text=t("common.summary"))
         self._stats_frame = tab
 
-        ttk.Button(tab, text="Refresh Statistics", command=self._load_stats).pack(
+        ttk.Button(tab, text=t("onboarding.refresh_statistics"), command=self._load_stats).pack(
             anchor="w", pady=(0, 10)
         )
         self._stats_container = tk.Frame(tab, bg="#ecf0f1")
@@ -835,14 +837,14 @@ class OnboardingFrame(tk.Frame):
             hdr_font = ("Helvetica", 11, "bold")
 
             row = 0
-            tk.Label(c, text="Checklists", font=hdr_font, bg="#ecf0f1").grid(
+            tk.Label(c, text=t("onboarding.checklists"), font=hdr_font, bg="#ecf0f1").grid(
                 row=row, column=0, columnspan=2, sticky="w", pady=(5, 2)
             )
             for label, key in [
-                ("Total:", "total_checklists"),
-                ("In Progress:", "in_progress"),
-                ("Completed:", "completed"),
-                ("Failed:", "failed"),
+                (t("common.total") + ":", "total_checklists"),
+                (t("common.in_progress") + ":", "in_progress"),
+                (t("common.completed") + ":", "completed"),
+                (t("onboarding.failed") + ":", "failed"),
             ]:
                 row += 1
                 tk.Label(c, text=label, font=lbl_font, bg="#ecf0f1", anchor="w").grid(
@@ -854,14 +856,14 @@ class OnboardingFrame(tk.Frame):
                 )
 
             row += 1
-            tk.Label(c, text="Tasks", font=hdr_font, bg="#ecf0f1").grid(
+            tk.Label(c, text=t("onboarding.tasks"), font=hdr_font, bg="#ecf0f1").grid(
                 row=row, column=0, columnspan=2, sticky="w", pady=(15, 2)
             )
             for label, key in [
-                ("Total:", "total_tasks"),
-                ("Completed:", "tasks_completed"),
-                ("Pending:", "tasks_pending"),
-                ("Completion Rate:", "completion_rate"),
+                (t("common.total") + ":", "total_tasks"),
+                (t("common.completed") + ":", "tasks_completed"),
+                (t("common.pending") + ":", "tasks_pending"),
+                (t("onboarding.completion_rate") + ":", "completion_rate"),
             ]:
                 row += 1
                 tk.Label(c, text=label, font=lbl_font, bg="#ecf0f1", anchor="w").grid(
@@ -874,11 +876,11 @@ class OnboardingFrame(tk.Frame):
                 )
 
             row += 1
-            tk.Label(c, text="Probation Reviews", font=hdr_font, bg="#ecf0f1").grid(
+            tk.Label(c, text=t("onboarding.probation_reviews"), font=hdr_font, bg="#ecf0f1").grid(
                 row=row, column=0, columnspan=2, sticky="w", pady=(15, 2)
             )
             row += 1
-            tk.Label(c, text="Total:", font=lbl_font, bg="#ecf0f1", anchor="w").grid(
+            tk.Label(c, text=t("common.total") + ":", font=lbl_font, bg="#ecf0f1", anchor="w").grid(
                 row=row, column=0, sticky="w", padx=(20, 10), pady=1
             )
             tk.Label(c, text=str(stats.get("total_reviews", 0)), font=lbl_font,
@@ -887,7 +889,7 @@ class OnboardingFrame(tk.Frame):
             by_rec = stats.get("by_recommendation", {})
             if by_rec:
                 row += 1
-                tk.Label(c, text="By Recommendation:", font=lbl_font, bg="#ecf0f1",
+                tk.Label(c, text=t("onboarding.by_recommendation") + ":", font=lbl_font, bg="#ecf0f1",
                          anchor="w").grid(row=row, column=0, sticky="w", padx=(20, 10), pady=1)
                 for rec_name, cnt in by_rec.items():
                     row += 1
@@ -897,9 +899,23 @@ class OnboardingFrame(tk.Frame):
                              anchor="w").grid(row=row, column=1, sticky="w", pady=1)
 
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load statistics:\n{exc}")
+            messagebox.showerror(t("common.error"), f"Failed to load statistics:\n{exc}")
 
-    # ── Public ──────────────────────────────────────────────────
+    # -- CSV export ------------------------------------------------------------
+
+    def _export_checklists_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._tree_cl, "onboarding_checklists.csv")
+
+    def _export_tasks_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._tree_tasks, "onboarding_tasks.csv")
+
+    def _export_reviews_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._tree_rev, "onboarding_reviews.csv")
+
+    # -- Public ----------------------------------------------------------------
 
     def refresh(self):
         """Reload all tabs."""

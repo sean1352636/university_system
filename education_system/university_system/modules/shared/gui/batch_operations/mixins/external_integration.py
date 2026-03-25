@@ -6,6 +6,8 @@ from education_system.university_system.modules.shared.gui.batch_operations.cons
     Path,
     requests,
     logger,
+    EXTERNAL_DB_CONFIG_PATH,
+    EXTERNAL_API_CONFIG_PATH,
 )
 
 
@@ -561,3 +563,25 @@ File: {export_path}
         except Exception as e:
             logger.error(f"Error exporting via email: {e}")
             raise
+
+    def save_external_db_config(self, config: dict):
+        """Save external database configuration to file."""
+        with open(EXTERNAL_DB_CONFIG_PATH, 'w') as f:
+            json.dump(config, f, indent=2)
+        logger.info("Saved external database configuration")
+
+    def save_rest_api_config(self, config: dict):
+        """Save REST API configuration to file."""
+        with open(EXTERNAL_API_CONFIG_PATH, 'w') as f:
+            json.dump(config, f, indent=2)
+        logger.info("Saved REST API configuration")
+
+    def test_rest_api_connection(self, url: str, api_key: str) -> bool:
+        """Test REST API connection."""
+        try:
+            headers = {'Authorization': f'Bearer {api_key}'} if api_key else {}
+            response = requests.get(url, headers=headers, timeout=10)
+            return response.status_code == 200
+        except Exception as e:
+            logger.error(f"REST API connection test failed: {e}")
+            return False

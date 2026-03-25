@@ -13,26 +13,26 @@ from education_system.university_system.utils.logging.log_config import configur
 from education_system.university_system.modules.shared.constants import paths
 from education_system.university_system.infrastructure.database.db import get_connection
 
-from .exceptions import (
+from education_system.university_system.modules.domain.academics.services.academic_calendar.exceptions import (
     CalendarError, ValidationError, DatabaseError,
     PermissionError, ExportError
 )
-from .config import CalendarConfig, ValidationUtils
-from .database import DatabaseManager
-from .auth import AuthenticationManager
-from .audit import AuditManager
-from .recurring_events import RecurringEventManager
-from .categories import EventCategoryManager, CourseManager
-from .resources import ResourceManager
-from .notifications import NotificationManager, SMSNotificationManager
-from .search import AdvancedSearchManager
-from .holidays import HolidayManager
-from .visualization import DataVisualizationManager, EnhancedCalendarVisualizationManager
-from .dependencies import EventDependencyManager
-from .reporting import AdvancedReportingManager
-from .deadlines import AcademicDeadlineManager
-from .batch import BatchOperationsManager
-from .timezone import EnhancedTimeZoneManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.config import CalendarConfig, ValidationUtils
+from education_system.university_system.modules.domain.academics.services.academic_calendar.database import DatabaseManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.auth import AuthenticationManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.audit import AuditManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.recurring_events import RecurringEventManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.categories import EventCategoryManager, CourseManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.resources import ResourceManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.notifications import NotificationManager, SMSNotificationManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.search import AdvancedSearchManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.holidays import HolidayManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.visualization import DataVisualizationManager, EnhancedCalendarVisualizationManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.dependencies import EventDependencyManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.reporting import AdvancedReportingManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.deadlines import AcademicDeadlineManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.batch import BatchOperationsManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.timezone import EnhancedTimeZoneManager
 
 logger = configure_logging(name=__name__)
 
@@ -117,7 +117,7 @@ class AcademicCalendarManager:
             self.mobile_api = None
             if FLASK_AVAILABLE:
                 try:
-                    from .mobile_api import MobileAPIManager
+                    from education_system.university_system.modules.domain.academics.services.academic_calendar.mobile_api import MobileAPIManager
                     self.mobile_api = MobileAPIManager(self)
                 except Exception:
                     self.mobile_api = None
@@ -498,15 +498,25 @@ class AcademicCalendarManager:
                     notes TEXT
                 )''',
 
-                '''CREATE TABLE IF NOT EXISTS course_event_attendance (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                '''CREATE TABLE IF NOT EXISTS unified_event_registrations (
+                    registration_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     event_id TEXT NOT NULL,
-                    student_id TEXT NOT NULL,
+                    user_id TEXT NOT NULL,
+                    user_type TEXT DEFAULT 'student',
+                    registration_date TEXT,
                     attendance_status TEXT DEFAULT 'present',
-                    notes TEXT,
-                    recorded_at TEXT NOT NULL,
-                    FOREIGN KEY (event_id) REFERENCES academic_calendar_events (id) ON DELETE CASCADE,
-                    UNIQUE(event_id, student_id)
+                    checked_in_at TEXT,
+                    check_out_time TEXT,
+                    payment_status TEXT,
+                    payment_amount REAL DEFAULT 0.0,
+                    payment_method TEXT,
+                    is_waitlisted BOOLEAN DEFAULT 0,
+                    num_guests INTEGER DEFAULT 0,
+                    feedback_rating REAL,
+                    feedback_comment TEXT,
+                    qr_code TEXT,
+                    cpd_credits REAL DEFAULT 0.0,
+                    FOREIGN KEY (event_id) REFERENCES academic_calendar_events (id) ON DELETE CASCADE
                 )''',
 
                 '''CREATE TABLE IF NOT EXISTS trip_calendar_events (
@@ -542,10 +552,10 @@ class AcademicCalendarManager:
         """Create database indexes for performance"""
         try:
             indexes = [
-                "CREATE INDEX IF NOT EXISTS idx_events_date ON events(date)",
-                "CREATE INDEX IF NOT EXISTS idx_events_date_start ON events(date_start)",
-                "CREATE INDEX IF NOT EXISTS idx_events_type ON events(event_type)",
-                "CREATE INDEX IF NOT EXISTS idx_events_created_by ON events(created_by)",
+                "CREATE INDEX IF NOT EXISTS idx_events_date ON academic_calendar_events(date)",
+                "CREATE INDEX IF NOT EXISTS idx_events_date_start ON academic_calendar_events(date_start)",
+                "CREATE INDEX IF NOT EXISTS idx_events_type ON academic_calendar_events(event_type)",
+                "CREATE INDEX IF NOT EXISTS idx_events_created_by ON academic_calendar_events(created_by)",
                 "CREATE INDEX IF NOT EXISTS idx_semesters_academic_year ON semesters(academic_year_id)"
             ]
 
@@ -732,7 +742,7 @@ class AcademicCalendarManager:
 
             # Check for required tables
             required_tables = [
-                'academic_years', 'semesters', 'events', 'event_categories'
+                'academic_years', 'semesters', 'academic_calendar_events', 'event_categories'
             ]
 
             from education_system.university_system.core.sql_safety import validate_identifier

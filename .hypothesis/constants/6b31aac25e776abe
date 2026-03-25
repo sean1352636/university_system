@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/plagiarism_main_gui/dialogs/comparison.py
+# hypothesis_version: 6.151.9
+
+[1.0, 100, 120, '*.*', '*.html', '*.txt', '...', '.html', '1.0', '600x400', 'All files', 'Author', 'Cancel', 'Close', 'Date', 'Document 1', 'Document 2', 'Error', 'Export Comparison', 'Export Complete', 'Export Error', 'HTML files', 'Missing Documents', 'No Matches', 'No Selection', 'Repository Search', 'Search', 'Search:', 'Select', 'Text files', 'Title', 'Unknown', 'Words', 'author_name', 'black', 'headings', 'highlight', 'id', 'readonly', 'submission_date', 'tags', 'title', 'utf-8', 'values', 'w', 'word_count', 'yellow']

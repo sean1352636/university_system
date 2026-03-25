@@ -15,7 +15,7 @@ from education_system.university_system.modules.domain.academics.services.module
     CS_optional_module_1, CS_optional_module_2,
     DS_optional_module_1, DS_optional_module_2,
 )
-from .models import ProgressTracker
+from education_system.university_system.modules.shared.utils.batch_operations.models import ProgressTracker
 
 logger = configure_logging(name=__name__)
 

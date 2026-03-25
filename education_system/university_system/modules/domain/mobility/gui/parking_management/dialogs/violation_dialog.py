@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
 
-from .. import get_connection
+from education_system.university_system.modules.domain.mobility.gui.parking_management import get_connection
 
 
 class ViolationDialog:

@@ -4,28 +4,28 @@ Re-exports all functions so that `from .fines import (...)` in the parent
 __init__.py continues to work unchanged.
 """
 
-from .display import show_fine_management, load_user_fines
-from .refunds import (
+from education_system.university_system.modules.domain.academics.gui.library.fines.display import show_fine_management, load_user_fines
+from education_system.university_system.modules.domain.academics.gui.library.fines.refunds import (
     refund_fine_dialog,
     _show_user_refund_details,
     _process_library_fine_refund,
     _send_refund_receipt_email,
 )
-from .payments import (
+from education_system.university_system.modules.domain.academics.gui.library.fines.payments import (
     process_fine_payment,
     pay_fine_from_finance_account,
     process_fine_payment_gui,
 )
-from .finance_integration import (
+from education_system.university_system.modules.domain.academics.gui.library.fines.finance_integration import (
     _show_topup_dialog,
     pay_fine_via_finance,
     _process_library_fine_payment,
     open_finance_payment_for_user,
 )
-from .admin import waive_all_fines, view_fine_history, adjust_fine_amount
-from .reports import generate_fine_statistics_report, export_fines_to_csv, _save_text_report
-from .recording import _record_fine_payment, _record_library_payment_in_finance
-from .receipts import generate_fine_receipt_gui
+from education_system.university_system.modules.domain.academics.gui.library.fines.admin import waive_all_fines, view_fine_history, adjust_fine_amount
+from education_system.university_system.modules.domain.academics.gui.library.fines.reports import generate_fine_statistics_report, export_fines_to_csv, _save_text_report
+from education_system.university_system.modules.domain.academics.gui.library.fines.recording import _record_fine_payment, _record_library_payment_in_finance
+from education_system.university_system.modules.domain.academics.gui.library.fines.receipts import generate_fine_receipt_gui
 
 __all__ = [
     # display

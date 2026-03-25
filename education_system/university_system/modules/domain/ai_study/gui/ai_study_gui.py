@@ -9,6 +9,7 @@ from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
 from typing import Optional
 
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.modules.domain.ai_study.services.ai_study_service import AIStudyService
 from education_system.university_system.infrastructure.shared_context import get_auth
 from education_system.university_system.infrastructure.localization import get_translation
@@ -19,10 +20,10 @@ _t = get_translation
 class AIStudyGUI:
     """GUI for AI Study Companion features."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, auth=None):
         """Initialize the AI Study GUI."""
         self.service = AIStudyService()
-        self.auth = get_auth()
+        self.auth = auth or get_auth()
 
         if parent:
             self.window = tk.Toplevel(parent)
@@ -340,7 +341,7 @@ class AIStudyGUI:
                     AND (name LIKE ? OR name LIKE ?)
                     ORDER BY date_start DESC, date DESC
                     LIMIT 1
-                """, (f"%{module_code}%", f"%Exam: {module_code}%")).fetchone()
+                """, (f"%{escape_like(module_code)}%", f"%Exam: {escape_like(module_code)}%")).fetchone()
 
                 if exam_event:
                     # Get the exam date (prefer date_start, fallback to date)

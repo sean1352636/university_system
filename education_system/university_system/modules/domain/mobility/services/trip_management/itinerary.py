@@ -1,6 +1,6 @@
-from . import _common
-from ._common import sqlite3, get_text, logging, datetime, log_create, log_read
-from .database import safe_db_operation
+from education_system.university_system.modules.domain.mobility.services.trip_management import _common
+from education_system.university_system.modules.domain.mobility.services.trip_management._common import sqlite3, get_text, logging, datetime, log_create, log_read
+from education_system.university_system.modules.domain.mobility.services.trip_management.database import safe_db_operation
 
 
 @log_create(module="trips", description="Adding trip itinerary")

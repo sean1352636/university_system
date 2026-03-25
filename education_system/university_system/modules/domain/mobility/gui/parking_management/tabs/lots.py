@@ -3,8 +3,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
 
-from .. import get_connection, _t
-from ..dialogs.lot_dialog import LotDialog
+from education_system.university_system.modules.domain.mobility.gui.parking_management import get_connection, _t
+from education_system.university_system.modules.domain.mobility.gui.parking_management.dialogs.lot_dialog import LotDialog
 
 
 class LotsMixin:

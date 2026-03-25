@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/commerce/services/shop_management/discounts.py
+# hypothesis_version: 6.151.9
+
+[0.0, 100.0, 100, 110, '\nAvailable Products:', '\nDiscount List:', '\nDiscount Types:', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', ',', '-', '1', '1. All products', '2', '2. Specific category', '3', '?', 'Current details:', 'Description: ', 'Discount Name: ', 'Discount Value: ', 'Editing discount', 'Never', 'No', 'None', 'Operation cancelled.', 'Yes', 'activated', 'all', 'applicable_products', 'back', 'category', 'conn', 'deactivated', 'description', 'discount_type', 'discount_value', 'end_date', 'fixed', 'is_active', 'manage_discounts', 'min_purchase_amount', 'name', 'percentage', 'price', 'product_id', 'quantity', 'shop', 'start_date', 'y']

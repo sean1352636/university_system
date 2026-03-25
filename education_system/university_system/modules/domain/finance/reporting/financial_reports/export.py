@@ -9,8 +9,8 @@ from reportlab.lib.units import inch
 
 from education_system.university_system.infrastructure.database.db import get_connection
 
-from . import _common
-from ._common import get_current_academic_year
+from education_system.university_system.modules.domain.finance.reporting.financial_reports import _common
+from education_system.university_system.modules.domain.finance.reporting.financial_reports._common import get_current_academic_year
 
 
 def advanced_export_system():
@@ -45,12 +45,12 @@ def advanced_export_system():
 
     if choice == '1':
         # Complete package - import here to avoid circular imports
-        from .reports import (
+        from education_system.university_system.modules.domain.finance.reporting.financial_reports.reports import (
             generate_advanced_financial_forecasting,
             generate_comprehensive_budget_variance_report,
             real_time_financial_dashboard,
         )
-        from .scenario_planning import scenario_planning_tools
+        from education_system.university_system.modules.domain.finance.reporting.financial_reports.scenario_planning import scenario_planning_tools
 
         print("Generating complete financial analysis package...")
 

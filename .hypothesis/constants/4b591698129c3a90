@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/batch_operations/mixins/module_operations.py
+# hypothesis_version: 6.151.9
+
+[100, ',', '.csv', '?', 'compulsory_module_1', 'compulsory_module_2', 'data', 'error', 'module type', 'module_code', 'module_type', 'optional_module_1', 'optional_module_2', 'optional_module_3', 'optional_module_4', 'row', 'student_id']

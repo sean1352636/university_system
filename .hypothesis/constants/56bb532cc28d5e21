@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/gui/charity_shop_gui/sales.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d %H:%M:%S', 'Available', 'Charity Shop', 'Charity Shop Sale', 'Confirm', 'Error', 'Finance Account', 'Info', 'No Selection', 'No Stock', 'Payment Failed', 'Sale Complete', 'Success', 'System', 'Valued Customer', 'WALK-IN', 'category', 'charity_shop_item', 'condition', 'customer_email', 'customer_name', 'datetime', 'full_name', 'id', 'item_id', 'item_name', 'message', 'name', 'payment_method', 'price', 'price_per_item', 'quantity', 'quantity_sold', 'receipt_sent', 'sell', 'status', 'student_id', 'success', 'total', 'total_amount', 'total_revenue', 'transaction_ref', 'unit_price', 'username']

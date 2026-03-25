@@ -32,12 +32,12 @@ class LostFoundGUI:
         'Other'
     ]
 
-    def __init__(self, parent):
+    def __init__(self, parent, auth=None):
         self.root = tk.Toplevel(parent)
         self.root.title("Lost & Found System")
         self.root.geometry("1400x900")
 
-        self.auth = get_auth()
+        self.auth = auth or get_auth()
         self.service = LostFoundService()
 
         # Store selected photo path

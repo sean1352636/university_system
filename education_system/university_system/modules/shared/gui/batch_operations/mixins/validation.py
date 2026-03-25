@@ -141,7 +141,7 @@ class ValidationMixin:
         try:
             # Check for missing required fields
             cursor.execute("""
-                SELECT student_id, first_name, last_name, email_address, phone_number
+                SELECT student_id, first_name, last_name, email_address
                 FROM students
                 WHERE first_name IS NULL OR first_name = ''
                    OR last_name IS NULL OR last_name = ''
@@ -150,7 +150,7 @@ class ValidationMixin:
 
             missing_data = cursor.fetchall()
             for record in missing_data:
-                student_id, first_name, last_name, email, phone = record
+                student_id, first_name, last_name, email = record
                 missing_fields = []
                 if not first_name: missing_fields.append('first_name')
                 if not last_name: missing_fields.append('last_name')
@@ -200,26 +200,6 @@ class ValidationMixin:
                             'new_value': corrected_email,
                             'description': 'Email format automatically corrected',
                             'action': 'auto_corrected',
-                            'timestamp': datetime.datetime.now().isoformat()
-                        })
-
-            # Validate phone numbers
-            cursor.execute("SELECT student_id, phone_number FROM students WHERE phone_number IS NOT NULL")
-            phone_records = cursor.fetchall()
-
-            for student_id, phone in phone_records:
-                if phone:
-                    # Clean phone number for validation
-                    clean_phone = re.sub(r'[^\d]', '', phone)
-                    if len(clean_phone) < 10:
-                        issues.append({
-                            'type': 'invalid_format',
-                            'severity': 'medium',
-                            'student_id': student_id,
-                            'field': 'phone_number',
-                            'current_value': phone,
-                            'description': 'Phone number too short',
-                            'action': 'requires_correction',
                             'timestamp': datetime.datetime.now().isoformat()
                         })
 
@@ -305,12 +285,12 @@ class ValidationMixin:
         issues = []
 
         try:
-            # Check for students with grades but no enrollment records
+            # Check for students with grades but no module enrollment
             cursor.execute("""
                 SELECT DISTINCT g.student_id
                 FROM grades g
-                LEFT JOIN enrollments e ON g.student_id = e.student_id
-                WHERE e.student_id IS NULL
+                LEFT JOIN student_modules sm ON g.student_id = sm.student_id
+                WHERE sm.student_id IS NULL
             """)
 
             orphan_grades = cursor.fetchall()
@@ -319,28 +299,28 @@ class ValidationMixin:
                     'type': 'integrity_violation',
                     'severity': 'high',
                     'student_id': student_id,
-                    'description': 'Student has grades but no enrollment records',
+                    'description': 'Student has grades but no module enrollment records',
                     'action': 'requires_investigation',
                     'timestamp': datetime.datetime.now().isoformat()
                 })
 
-            # Check for invalid grade values
+            # Check for invalid grade values (letter_grade column)
             cursor.execute("""
-                SELECT student_id, subject, grade
+                SELECT student_id, assessment_id, letter_grade
                 FROM grades
-                WHERE grade NOT IN ('A', 'B', 'C', 'D', 'F', 'A+', 'A-', 'B+', 'B-', 'C+', 'C-', 'D+', 'D-')
-                  AND grade NOT BETWEEN 0 AND 100
+                WHERE letter_grade IS NOT NULL
+                  AND letter_grade NOT IN ('A', 'B', 'C', 'D', 'F', 'A+', 'A-', 'B+', 'B-', 'C+', 'C-', 'D+', 'D-')
             """)
 
             invalid_grades = cursor.fetchall()
-            for student_id, subject, grade in invalid_grades:
+            for student_id, assessment_id, letter_grade in invalid_grades:
                 issues.append({
                     'type': 'invalid_data',
                     'severity': 'medium',
                     'student_id': student_id,
-                    'field': 'grade',
-                    'subject': subject,
-                    'current_value': grade,
+                    'field': 'letter_grade',
+                    'assessment_id': assessment_id,
+                    'current_value': letter_grade,
                     'description': 'Invalid grade value',
                     'action': 'requires_correction',
                     'timestamp': datetime.datetime.now().isoformat()
@@ -445,24 +425,23 @@ class ValidationMixin:
         issues = []
 
         try:
-            # Check for enrollments without valid students
+            # Check for module enrollments without valid students
             cursor.execute("""
-                SELECT e.student_id, e.course_id, e.semester
-                FROM enrollments e
-                LEFT JOIN students s ON e.student_id = s.student_id
+                SELECT sm.student_id, sm.module_code
+                FROM student_modules sm
+                LEFT JOIN students s ON sm.student_id = s.student_id
                 WHERE s.student_id IS NULL
             """)
 
             invalid_enrollments = cursor.fetchall()
-            for student_id, course_id, semester in invalid_enrollments:
+            for student_id, module_code in invalid_enrollments:
                 issues.append({
                     'type': 'relationship_violation',
                     'severity': 'high',
-                    'table': 'enrollments',
+                    'table': 'student_modules',
                     'student_id': student_id,
-                    'course_id': course_id,
-                    'semester': semester,
-                    'description': 'Enrollment record references non-existent student',
+                    'module_code': module_code,
+                    'description': 'Module enrollment references non-existent student',
                     'action': 'requires_cleanup',
                     'timestamp': datetime.datetime.now().isoformat()
                 })
@@ -625,11 +604,9 @@ class ValidationMixin:
     def _show_validation_results_dialog(self, report_data: Dict, report_filename: str):
         """Show validation results in a dialog"""
         try:
-            result_dialog = tk.Toplevel(self.root)
+            result_dialog = tk.Toplevel()
             result_dialog.title(_t("batch_ops.windows.validation_results"))
             result_dialog.geometry("800x600")
-            result_dialog.transient(self.root)
-            result_dialog.grab_set()
 
             # Center the dialog
             result_dialog.update_idletasks()

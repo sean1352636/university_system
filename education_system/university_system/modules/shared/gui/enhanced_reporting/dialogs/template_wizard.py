@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..core import ReportingSystemGUI
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import ReportingSystemGUI
 
 
 def show_template_wizard(gui: ReportingSystemGUI) -> None:

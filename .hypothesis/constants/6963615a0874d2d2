@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/barber/gui/tabs/refunds_tab.py
+# hypothesis_version: 6.151.9
+
+[100, 120, 150, '10', 'Amount', 'Arial', 'Barber Shop Refunds', 'Customer', 'Date', 'Export to CSV', 'Payment Method', 'Process Refund', 'Reference', 'Refresh', 'Refunds', 'Search', 'Search:', 'Status', 'Transaction ID', 'View Details', 'amount', 'bold', 'customer', 'date', 'headings', 'horizontal', 'payment_method', 'reference', 'status', 'transaction_id', 'vertical', 'w']

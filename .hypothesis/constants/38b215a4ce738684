@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/managers/delegated_access_manager.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d %H:%M:%S', ', ', '?', 'Delegation created', 'Delegation revoked', 'active', 'admin', 'audit_id', 'created_at', 'delegate_user_id', 'delegate_username', 'delegation_id', 'expired_count', 'expires_at', 'grantor_user_id', 'grantor_username', 'id', 'manage_users', 'message', 'pending', 'permissions', 'reason', 'relationship', 'request_id', 'requester_user_id', 'requester_username', 'resolved_at', 'revoked_at', 'role', 'scope_keys', 'status', 'success', 'target_user_id', 'target_username', 'updated_at', 'username']

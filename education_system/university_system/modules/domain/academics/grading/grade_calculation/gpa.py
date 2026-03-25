@@ -9,7 +9,7 @@ from education_system.university_system.modules.domain.academics.grading.grade_c
 
 
 def calculate_student_gpa(cursor, student_id):
-    """Calculate the GPA for a specific student"""
+    """Calculate the GPA for a specific student (from module_grades + assignment_submissions)"""
     try:
         # Get module grades for this student
         cursor.execute('''
@@ -21,21 +21,44 @@ def calculate_student_gpa(cursor, student_id):
 
         module_grades = cursor.fetchall()
 
-        if not module_grades:
+        # Also get graded assignment submissions (grouped by module for GPA)
+        cursor.execute('''
+        SELECT a.module_code, m.module_name,
+               ROUND(AVG(sub.grade), 2) as avg_grade
+        FROM assignment_submissions sub
+        JOIN assignments a ON sub.assignment_id = a.id
+        JOIN modules m ON a.module_code = m.module_code
+        WHERE sub.student_id = ? AND sub.grade IS NOT NULL
+        GROUP BY a.module_code
+        ''', (student_id,))
+
+        assignment_grades = cursor.fetchall()
+
+        # Merge: module_grades takes priority, fill in from assignment_submissions
+        seen_modules = set()
+        all_grades = []
+
+        for module_code, module_name, grade in module_grades:
+            if grade:
+                seen_modules.add(module_code)
+                all_grades.append((module_code, module_name, grade))
+
+        for module_code, module_name, avg_grade in assignment_grades:
+            if module_code not in seen_modules and avg_grade is not None:
+                all_grades.append((module_code, module_name, avg_grade))
+
+        if not all_grades:
             return None, 0, []
 
         total_points = 0
         total_modules = 0
-
         detailed_grades = []
 
-        for module_code, module_name, grade in module_grades:
-            if grade:
-                gpa_points = letter_to_gpa(grade)
-                total_points += gpa_points
-                total_modules += 1
-
-                detailed_grades.append((module_code, module_name, grade, gpa_points))
+        for module_code, module_name, grade in all_grades:
+            gpa_points = letter_to_gpa(grade)
+            total_points += gpa_points
+            total_modules += 1
+            detailed_grades.append((module_code, module_name, grade, gpa_points))
 
         if total_modules == 0:
             return None, 0, []

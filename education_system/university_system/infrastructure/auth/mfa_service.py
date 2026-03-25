@@ -123,13 +123,15 @@ class MFAService:
                 from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
                 import sqlite3 as _sqlite3
                 uni_conn = _sqlite3.connect(str(DEFAULT_DB_PATH))
-                uni_row = uni_conn.execute(
-                    "SELECT username FROM users WHERE id = ?",
-                    (user_id,),
-                ).fetchone()
-                uni_conn.close()
-                if uni_row:
-                    username = uni_row[0]
+                try:
+                    uni_row = uni_conn.execute(
+                        "SELECT username FROM users WHERE id = ?",
+                        (user_id,),
+                    ).fetchone()
+                    if uni_row:
+                        username = uni_row[0]
+                finally:
+                    uni_conn.close()
             except Exception:
                 pass
 

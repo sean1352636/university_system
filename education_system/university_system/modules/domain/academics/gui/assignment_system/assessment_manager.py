@@ -544,30 +544,32 @@ class AssessmentManager:
                 duration = int(duration_var.get())
     
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-                cursor = conn.cursor()
-                cursor.execute(
-                    """
-                    UPDATE assessments
-                    SET assessment_name = ?, assessment_type = ?, module_code = ?,
-                        max_points = ?, weight = ?, due_date = ?, description = ?,
-                        duration_minutes = ?, status = ?, updated_at = datetime('now')
-                    WHERE assessment_id = ?
-                    """,
-                    (
-                        title_var.get().strip(),
-                        type_var.get(),
-                        module_code,
-                        max_points,
-                        weight,
-                        due_text,
-                        desc_text.get("1.0", tk.END).strip(),
-                        duration,
-                        status_var.get(),
-                        assessment_id
+                try:
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        """
+                        UPDATE assessments
+                        SET assessment_name = ?, assessment_type = ?, module_code = ?,
+                            max_points = ?, weight = ?, due_date = ?, description = ?,
+                            duration_minutes = ?, status = ?, updated_at = datetime('now')
+                        WHERE assessment_id = ?
+                        """,
+                        (
+                            title_var.get().strip(),
+                            type_var.get(),
+                            module_code,
+                            max_points,
+                            weight,
+                            due_text,
+                            desc_text.get("1.0", tk.END).strip(),
+                            duration,
+                            status_var.get(),
+                            assessment_id
+                        )
                     )
-                )
-                conn.commit()
-                conn.close()
+                    conn.commit()
+                finally:
+                    conn.close()
     
                 editor.destroy()
                 self.load_assessments_data()

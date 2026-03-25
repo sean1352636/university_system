@@ -7,6 +7,7 @@ email and finance integration.
 """
 
 from education_system.university_system.infrastructure.database.db import sqlite3
+from education_system.university_system.core.sql_safety import escape_like
 import uuid
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Tuple
@@ -109,23 +110,8 @@ def init_mail_db():
                 )
             ''')
 
-            # Mail transactions table
-            conn.execute('''
-                CREATE TABLE IF NOT EXISTS mail_transactions (
-                    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    reference TEXT UNIQUE NOT NULL,
-                    user_id TEXT NOT NULL,
-                    transaction_type TEXT NOT NULL,
-                    package_id INTEGER,
-                    amount DECIMAL(10,2) NOT NULL,
-                    payment_method TEXT,
-                    status TEXT DEFAULT 'completed',
-                    receipt_sent INTEGER DEFAULT 0,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    processed_by TEXT,
-                    FOREIGN KEY (package_id) REFERENCES mail_packages(package_id)
-                )
-            ''')
+            # NOTE: mail transactions now use the unified 'transactions' table
+            # with source_type = 'mail'
 
             # Mail notifications log
             conn.execute('''
@@ -312,7 +298,7 @@ class PackageManager:
         """Search packages by tracking number, recipient name, or sender."""
         try:
             with get_connection() as conn:
-                search = f"%{search_term}%"
+                search = f"%{escape_like(search_term)}%"
                 cursor = conn.execute('''
                     SELECT * FROM mail_packages
                     WHERE tracking_number LIKE ?
@@ -494,10 +480,11 @@ class TransactionManager:
 
             with transaction() as conn:
                 conn.execute('''
-                    INSERT INTO mail_transactions
-                    (reference, user_id, transaction_type, package_id, amount,
+                    INSERT INTO transactions
+                    (source_type, reference_number, student_id, transaction_type,
+                     reference_id, reference_type, amount,
                      payment_method, processed_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    VALUES ('mail', ?, ?, ?, ?, 'package', ?, ?, ?)
                 ''', (reference, user_id, transaction_type, package_id, amount,
                       payment_method, processed_by))
 
@@ -524,8 +511,8 @@ class TransactionManager:
         try:
             with get_connection() as conn:
                 cursor = conn.execute('''
-                    SELECT * FROM mail_transactions
-                    WHERE user_id = ?
+                    SELECT * FROM transactions
+                    WHERE source_type = 'mail' AND student_id = ?
                     ORDER BY created_at DESC
                     LIMIT ?
                 ''', (user_id, limit))
@@ -563,8 +550,8 @@ class ReportManager:
 
                 # Revenue
                 cursor = conn.execute('''
-                    SELECT COALESCE(SUM(amount), 0) FROM mail_transactions
-                    WHERE DATE(created_at) = ?
+                    SELECT COALESCE(SUM(amount), 0) FROM transactions
+                    WHERE source_type = 'mail' AND DATE(created_at) = ?
                 ''', (date,))
                 revenue = cursor.fetchone()[0]
 
@@ -600,8 +587,8 @@ class ReportManager:
 
                 # Total revenue
                 cursor = conn.execute('''
-                    SELECT COALESCE(SUM(amount), 0) FROM mail_transactions
-                    WHERE strftime('%Y', created_at) = ? AND strftime('%m', created_at) = ?
+                    SELECT COALESCE(SUM(amount), 0) FROM transactions
+                    WHERE source_type = 'mail' AND strftime('%Y', created_at) = ? AND strftime('%m', created_at) = ?
                 ''', (str(year), f"{month:02d}"))
                 total_revenue = cursor.fetchone()[0]
 

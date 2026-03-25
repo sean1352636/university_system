@@ -273,16 +273,18 @@ class TemplateManager:
             }
             
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-            INSERT INTO assignment_templates (name, description, template_data, category, created_by, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ''', (name, description, json.dumps(template_data), category,
-                  self.auth.current_user['id'], datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-            
-            conn.commit()
-            conn.close()
+            try:
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                INSERT INTO assignment_templates (name, description, template_data, category, created_by, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ''', (name, description, json.dumps(template_data), category,
+                      self.auth.current_user['id'], datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
+                conn.commit()
+            finally:
+                conn.close()
             
             messagebox.showinfo("Success", f"Template '{name}' created successfully!")
             self.clear_template_form()
@@ -432,17 +434,19 @@ class TemplateManager:
             if template_type == 'db':
                 # Load from database
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-                cursor = conn.cursor()
+                try:
+                    cursor = conn.cursor()
 
-                cursor.execute('SELECT name, template_data FROM assignment_templates WHERE id = ?', (template_ref,))
-                result = cursor.fetchone()
-                if not result:
-                    raise Exception("Template not found in database")
+                    cursor.execute('SELECT name, template_data FROM assignment_templates WHERE id = ?', (template_ref,))
+                    result = cursor.fetchone()
+                    if not result:
+                        raise Exception("Template not found in database")
 
-                template_name, template_data_json = result
-                template_data = json.loads(template_data_json)
-                template_id = template_ref
-                conn.close()
+                    template_name, template_data_json = result
+                    template_data = json.loads(template_data_json)
+                    template_id = template_ref
+                finally:
+                    conn.close()
 
             else:  # template_type == 'file'
                 # Load from file
@@ -454,52 +458,54 @@ class TemplateManager:
                 template_id = None  # File-based templates don't have DB IDs
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            # Temporarily disable foreign key checks to avoid module_code issues
-            cursor.execute("PRAGMA foreign_keys = OFF")
-            
-            # Create assignment from template
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            
-            assignment_title = template_data.get('title_template', template_name)
-            assignment_instructions = template_data.get('instructions_template', '')
+                # Temporarily disable foreign key checks to avoid module_code issues
+                cursor.execute("PRAGMA foreign_keys = OFF")
 
-            cursor.execute('''
-            INSERT INTO assignments
-            (module_code, title, instructions, due_date, max_marks,
-             file_types_allowed, max_file_size_mb, template_id, created_by, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                module_code,
-                assignment_title,
-                assignment_instructions,
-                due_date.strftime('%Y-%m-%d %H:%M:%S'),
-                int(template_data.get('default_max_marks', 100)),
-                template_data.get('default_file_types', ''),
-                int(template_data.get('default_max_size', 10)),
-                template_id,
-                self.auth.current_user['id'],
-                timestamp,
-                timestamp
-            ))
+                # Create assignment from template
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-            assignment_id = cursor.lastrowid
+                assignment_title = template_data.get('title_template', template_name)
+                assignment_instructions = template_data.get('instructions_template', '')
 
-            # Update template usage count (only for database templates)
-            if template_id is not None:
-                cursor.execute('UPDATE assignment_templates SET usage_count = usage_count + 1 WHERE id = ?', (template_id,))
+                cursor.execute('''
+                INSERT INTO assignments
+                (module_code, title, instructions, due_date, max_marks,
+                 file_types_allowed, max_file_size_mb, template_id, created_by, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    module_code,
+                    assignment_title,
+                    assignment_instructions,
+                    due_date.strftime('%Y-%m-%d %H:%M:%S'),
+                    int(template_data.get('default_max_marks', 100)),
+                    template_data.get('default_file_types', ''),
+                    int(template_data.get('default_max_size', 10)),
+                    template_id,
+                    self.auth.current_user['id'],
+                    timestamp,
+                    timestamp
+                ))
 
-            # Get module name for email
-            cursor.execute('SELECT module_name FROM modules WHERE module_code = ?', (module_code,))
-            module_result = cursor.fetchone()
-            module_name = module_result[0] if module_result else module_code
+                assignment_id = cursor.lastrowid
 
-            # Re-enable foreign key checks
-            cursor.execute("PRAGMA foreign_keys = ON")
+                # Update template usage count (only for database templates)
+                if template_id is not None:
+                    cursor.execute('UPDATE assignment_templates SET usage_count = usage_count + 1 WHERE id = ?', (template_id,))
 
-            conn.commit()
-            conn.close()
+                # Get module name for email
+                cursor.execute('SELECT module_name FROM modules WHERE module_code = ?', (module_code,))
+                module_result = cursor.fetchone()
+                module_name = module_result[0] if module_result else module_code
+
+                # Re-enable foreign key checks
+                cursor.execute("PRAGMA foreign_keys = ON")
+
+                conn.commit()
+            finally:
+                conn.close()
 
             # Send email notifications to enrolled students
             try:

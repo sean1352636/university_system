@@ -33,7 +33,7 @@ except ImportError:
 
 
 def init_order_items_table():
-    """Initialize restaurant_order_items table if it doesn't exist"""
+    """Initialize order_items table if it doesn't exist"""
     try:
         conn = get_db_connection()
         if not conn:
@@ -41,17 +41,18 @@ def init_order_items_table():
 
         cursor = conn.cursor()
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS restaurant_order_items (
-                order_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            CREATE TABLE IF NOT EXISTS order_items (
+                item_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 order_id INTEGER NOT NULL,
-                item_id INTEGER NOT NULL,
+                product_id INTEGER NOT NULL,
                 item_name TEXT NOT NULL,
                 quantity INTEGER NOT NULL DEFAULT 1,
                 unit_price REAL NOT NULL,
                 subtotal REAL NOT NULL,
+                source_type TEXT DEFAULT 'restaurant',
                 special_instructions TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (order_id) REFERENCES restaurant_orders(order_id),
+                FOREIGN KEY (order_id) REFERENCES orders(order_id),
                 FOREIGN KEY (item_id) REFERENCES menu_items(item_id)
             )
         ''')
@@ -587,23 +588,29 @@ class PlaceOrderWindow:
             payment_method_text = f"Payment Method: {payment_method}" if payment_method else "Please pay at the restaurant to complete your order."
 
             # Render email from template
-            subject, body = render_template('commerce/restaurant_order_confirmation',
-                customer_name=self.selected_customer_name,
-                order_id=order_id,
-                order_date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                status_text=status_text,
-                items_text=items_text,
-                subtotal=f"{subtotal:.2f}",
-                tax=f"{tax:.2f}",
-                total=f"{total:.2f}",
-                payment_method_text=payment_method_text
-            )
+            result = render_template('commerce/restaurant_order_confirmation', {
+                'customer_name': self.selected_customer_name,
+                'order_id': order_id,
+                'order_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'status_text': status_text,
+                'items_text': items_text,
+                'subtotal': f"{subtotal:.2f}",
+                'tax': f"{tax:.2f}",
+                'total': f"{total:.2f}",
+                'payment_method_text': payment_method_text
+            })
+            if result and isinstance(result, tuple):
+                subject, body = result
+            else:
+                subject = "Order Confirmation - Restaurant"
+                body = (f"Dear {self.selected_customer_name},\n\n"
+                        f"Your order #{order_id} has been placed successfully.\n"
+                        f"Status: {status_text}\n\n"
+                        f"Items:\n{items_text}\n\n"
+                        f"Subtotal: £{subtotal:.2f}\nTax: £{tax:.2f}\nTotal: £{total:.2f}\n\n"
+                        f"{payment_method_text}\n\nThank you for your order.")
 
-            success = send_email(
-                recipient_email=self.current_user_email,
-                subject=subject,
-                body=body
-            )
+            success = send_email(self.current_user_email, subject, body)
 
             if success:
                 print(f"✓ Order receipt sent to {self.current_user_email}")
@@ -641,9 +648,9 @@ class PlaceOrderWindow:
 
             # Create order
             cursor.execute('''
-                INSERT INTO restaurant_orders
-                (customer_id, order_time, total_price, tax_amount, status, payment_method)
-                VALUES (?, ?, ?, ?, 'Pending', NULL)
+                INSERT INTO orders
+                (source_type, customer_id, order_date, total_amount, tax_amount, order_status, payment_method)
+                VALUES ('restaurant', ?, ?, ?, ?, 'Pending', NULL)
             ''', (self.selected_customer_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                   total, tax))
 
@@ -653,12 +660,12 @@ class PlaceOrderWindow:
             for cart_item in self.cart:
                 item_subtotal = cart_item['price'] * cart_item['quantity']
                 cursor.execute('''
-                    INSERT INTO restaurant_order_items
-                    (order_id, item_id, item_name, quantity, unit_price, subtotal, special_instructions)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (order_id, cart_item['item_id'], cart_item['name'],
+                    INSERT INTO order_items
+                    (source_type, order_id, item_name, quantity, unit_price, subtotal, special_instructions)
+                    VALUES ('restaurant', ?, ?, ?, ?, ?, ?)
+                ''', (order_id, cart_item['name'],
                       cart_item['quantity'], cart_item['price'], item_subtotal,
-                      cart_item['special_instructions']))
+                      cart_item.get('special_instructions', '')))
 
             # Update customer total spent if applicable
             if self.selected_customer_id:
@@ -705,7 +712,7 @@ class PlaceOrderWindow:
 
         # Show payment method dialog
         payment_dialog = PaymentMethodDialog(self.window, total, self.selected_customer_id,
-                                             self.current_student_id)
+                                             self.current_student_id, self.auth)
         if not payment_dialog.result:
             return  # User cancelled
 
@@ -721,9 +728,9 @@ class PlaceOrderWindow:
 
             # Create order
             cursor.execute('''
-                INSERT INTO restaurant_orders
-                (customer_id, order_time, total_price, tax_amount, status, payment_method)
-                VALUES (?, ?, ?, ?, 'Paid', ?)
+                INSERT INTO orders
+                (source_type, customer_id, order_date, total_amount, tax_amount, order_status, payment_method)
+                VALUES ('restaurant', ?, ?, ?, ?, 'Paid', ?)
             ''', (self.selected_customer_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                   total, tax, payment_method))
 
@@ -733,12 +740,12 @@ class PlaceOrderWindow:
             for cart_item in self.cart:
                 item_subtotal = cart_item['price'] * cart_item['quantity']
                 cursor.execute('''
-                    INSERT INTO restaurant_order_items
-                    (order_id, item_id, item_name, quantity, unit_price, subtotal, special_instructions)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (order_id, cart_item['item_id'], cart_item['name'],
+                    INSERT INTO order_items
+                    (source_type, order_id, item_name, quantity, unit_price, subtotal, special_instructions)
+                    VALUES ('restaurant', ?, ?, ?, ?, ?, ?)
+                ''', (order_id, cart_item['name'],
                       cart_item['quantity'], cart_item['price'], item_subtotal,
-                      cart_item['special_instructions']))
+                      cart_item.get('special_instructions', '')))
 
             # Update customer total spent if applicable
             if self.selected_customer_id:
@@ -749,34 +756,47 @@ class PlaceOrderWindow:
                     WHERE customer_id = ?
                 ''', (total, int(total), self.selected_customer_id))
 
-            # Process student account payment if applicable
-            if payment_method == 'Student Account' and FINANCE_AVAILABLE:
-                # Use current student ID or get from customer
-                student_id = self.current_student_id
-                if not student_id:
+            # Resolve finance account user identifier before closing connection
+            finance_student_id = None
+            if payment_method == 'Finance Account' and FINANCE_AVAILABLE:
+                finance_student_id = self.current_student_id
+                if not finance_student_id and self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
+                    finance_student_id = self.auth.current_user.get('username', '')
+                if not finance_student_id:
                     cursor.execute('SELECT name FROM restaurant_customers WHERE customer_id = ?',
                                  (self.selected_customer_id,))
                     result_row = cursor.fetchone()
-                    student_id = result_row[0] if result_row else None
-
-                if student_id:
-                    result = process_student_finance_account_payment(
-                        student_id=student_id,
-                        amount=total,
-                        description=f"Restaurant Order #{order_id}",
-                        transaction_source='Restaurant',
-                        transaction_ref=f"ORDER-{order_id}",
-                        processed_by=self.auth.current_user.get('username') if self.auth and hasattr(self.auth, 'current_user') else 'system'
-                    )
-
-                    if not result.get('success'):
-                        conn.rollback()
-                        conn.close()
-                        messagebox.showerror("Payment Failed", result.get('message', 'Payment failed'))
-                        return
+                    finance_student_id = result_row[0] if result_row else None
 
             conn.commit()
             conn.close()
+
+            # Process finance account payment after releasing the DB connection
+            # so process_student_finance_account_payment can acquire its own
+            if payment_method == 'Finance Account' and FINANCE_AVAILABLE and finance_student_id:
+                result = process_student_finance_account_payment(
+                    student_id=finance_student_id,
+                    amount=total,
+                    description=f"Restaurant Order #{order_id}",
+                    transaction_source='Restaurant',
+                    transaction_ref=f"ORDER-{order_id}",
+                    processed_by=self.auth.current_user.get('username') if self.auth and hasattr(self.auth, 'current_user') else 'system'
+                )
+
+                if not result.get('success'):
+                    # Payment failed — mark the order as failed
+                    try:
+                        rollback_conn = get_db_connection()
+                        if rollback_conn:
+                            rollback_conn.execute(
+                                "UPDATE orders SET order_status = 'Payment Failed' WHERE id = ?",
+                                (order_id,))
+                            rollback_conn.commit()
+                            rollback_conn.close()
+                    except Exception:
+                        pass
+                    messagebox.showerror("Payment Failed", result.get('message', 'Payment failed'))
+                    return
 
             # Send email receipt
             receipt_sent = self.send_order_receipt_email(order_id, total, payment_method, self.cart)
@@ -973,11 +993,12 @@ class NewCustomerDialog:
 class PaymentMethodDialog:
     """Dialog for selecting payment method"""
 
-    def __init__(self, parent, amount, customer_id=None, student_id=None):
+    def __init__(self, parent, amount, customer_id=None, student_id=None, auth=None):
         self.result = None
         self.amount = amount
         self.customer_id = customer_id
         self.student_id = student_id
+        self.auth = auth
 
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Select Payment Method")
@@ -985,87 +1006,189 @@ class PaymentMethodDialog:
         self.dialog.transient(parent)
         self.dialog.grab_set()
 
+        self._build_ui(parent, amount, customer_id, student_id)
+
+        self.dialog.wait_window()
+
+    def _resolve_user_identifier(self, student_id, customer_id):
+        """Resolve user identifier for finance account lookup.
+
+        Uses the same pattern as the shop checkout: try student_id first,
+        then fall back to username for admin/staff users.
+        """
+        # 1. Explicit student_id passed in
+        if student_id:
+            return student_id
+
+        # 2. Try current_user from auth (handles admin/staff via username)
+        if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
+            current_user = self.auth.current_user
+            if isinstance(current_user, dict):
+                # Try student_id from auth first
+                uid = current_user.get('student_id')
+                if uid:
+                    return uid
+                # Fall back to username (for admin/staff users)
+                uid = current_user.get('username', '')
+                if uid:
+                    return uid
+
+        # 3. Fall back to restaurant customer name lookup
+        if customer_id:
+            try:
+                conn = get_db_connection()
+                if conn:
+                    cursor = conn.cursor()
+                    cursor.execute('SELECT name FROM restaurant_customers WHERE customer_id = ?',
+                                 (customer_id,))
+                    row = cursor.fetchone()
+                    conn.close()
+                    if row:
+                        return row[0]
+            except Exception:
+                pass
+        return None
+
+    def _build_ui(self, parent, amount, customer_id, student_id):
+        """Build dialog UI"""
         frame = ttk.Frame(self.dialog, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Amount
-        ttk.Label(frame, text=f"Amount: £{amount:.2f}",
+        ttk.Label(frame, text=f"Amount to pay: £{amount:.2f}",
                  font=('Arial', 14, 'bold')).pack(pady=10)
 
         # Payment methods
         self.method_var = tk.StringVar(value="Cash")
+        self.method_var.trace_add('write', lambda *_: self._on_method_changed())
 
         methods = [
             ("Cash", "Cash"),
             ("Card", "Card"),
-            ("Student Account", "Student Account")
+            ("Finance Account", "Finance Account")
         ]
 
         for text, value in methods:
             ttk.Radiobutton(frame, text=text, variable=self.method_var,
                           value=value).pack(anchor=tk.W, pady=5)
 
-        # Show student balance if student_id provided
-        if student_id and FINANCE_AVAILABLE:
-            try:
-                balance = get_student_finance_account_balance(student_id)
-                if balance is not None:
-                    balance_color = 'green' if balance >= amount else 'red'
-                    ttk.Label(frame, text=f"Your Student Account Balance: £{balance:.2f}",
-                            font=('Arial', 10, 'bold'),
-                            foreground=balance_color).pack(pady=10)
+        # Finance account info frame (shown/hidden based on selection)
+        self.finance_frame = ttk.LabelFrame(frame, text="Finance Account Details", padding="10")
 
-                    if balance < amount:
-                        ttk.Label(frame, text="⚠ Insufficient funds for Student Account payment",
-                                font=('Arial', 9),
-                                foreground='red').pack()
-                else:
-                    ttk.Label(frame, text="Student Account: Not found",
-                            font=('Arial', 9),
-                            foreground='orange').pack(pady=10)
+        # Resolve student_id for balance lookup
+        self.resolved_student_id = self._resolve_user_identifier(student_id, customer_id)
+        self.current_balance = None
+
+        # Pre-fetch balance
+        if self.resolved_student_id and FINANCE_AVAILABLE:
+            try:
+                self.current_balance = get_student_finance_account_balance(self.resolved_student_id)
             except Exception as e:
                 print(f"Could not check balance: {e}")
-        elif customer_id and FINANCE_AVAILABLE:
-            # Fallback to old method if no student_id
-            try:
-                conn = get_db_connection()
-                cursor = conn.cursor()
-                cursor.execute('SELECT name FROM restaurant_customers WHERE customer_id = ?',
-                             (customer_id,))
-                row = cursor.fetchone()
-                conn.close()
 
-                if row:
-                    balance = get_student_finance_account_balance(row[0])
-                    if balance is not None:
-                        balance_color = 'green' if balance >= amount else 'red'
-                        ttk.Label(frame, text=f"Student Account Balance: £{balance:.2f}",
-                                font=('Arial', 9),
-                                foreground=balance_color).pack(pady=5)
-            except Exception:
-                pass
+        # Build finance info labels (populated when shown)
+        self.balance_label = ttk.Label(self.finance_frame, text="", font=('Arial', 11, 'bold'))
+        self.balance_label.pack(anchor=tk.W, pady=(0, 5))
+
+        self.deduction_label = ttk.Label(self.finance_frame, text="", font=('Arial', 10))
+        self.deduction_label.pack(anchor=tk.W, pady=2)
+
+        self.remaining_label = ttk.Label(self.finance_frame, text="", font=('Arial', 11, 'bold'))
+        self.remaining_label.pack(anchor=tk.W, pady=(5, 0))
+
+        self.warning_label = ttk.Label(self.finance_frame, text="", font=('Arial', 9), foreground='red')
+        self.warning_label.pack(anchor=tk.W, pady=(5, 0))
 
         # Buttons
         btn_frame = ttk.Frame(frame)
-        btn_frame.pack(pady=20)
+        btn_frame.pack(pady=20, side=tk.BOTTOM)
 
         ttk.Button(btn_frame, text="Confirm", command=self.confirm).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT)
+
+    def _on_method_changed(self):
+        """Show/hide finance account details based on selected payment method"""
+        if self.method_var.get() == "Finance Account":
+            self.finance_frame.pack(fill=tk.X, pady=10)
+            self._update_finance_info()
+        else:
+            self.finance_frame.pack_forget()
+
+    def _update_finance_info(self):
+        """Update finance account balance labels"""
+        if not FINANCE_AVAILABLE:
+            self.balance_label.config(text="Finance system unavailable", foreground='red')
+            self.deduction_label.config(text="")
+            self.remaining_label.config(text="")
+            self.warning_label.config(text="")
+            return
+
+        if not self.resolved_student_id:
+            self.balance_label.config(text="No finance account linked", foreground='orange')
+            self.deduction_label.config(text="")
+            self.remaining_label.config(text="")
+            self.warning_label.config(text="")
+            return
+
+        # Refresh balance
+        try:
+            self.current_balance = get_student_finance_account_balance(self.resolved_student_id)
+        except Exception:
+            pass
+
+        if self.current_balance is None:
+            self.balance_label.config(text="Finance account not found", foreground='orange')
+            self.deduction_label.config(text="")
+            self.remaining_label.config(text="")
+            self.warning_label.config(text="")
+            return
+
+        remaining = self.current_balance - self.amount
+        has_funds = remaining >= 0
+
+        balance_color = 'green' if has_funds else 'red'
+        self.balance_label.config(
+            text=f"Current Balance: £{self.current_balance:.2f}",
+            foreground=balance_color
+        )
+        self.deduction_label.config(
+            text=f"Payment Amount: -£{self.amount:.2f}",
+            foreground='black'
+        )
+
+        remaining_color = 'green' if has_funds else 'red'
+        self.remaining_label.config(
+            text=f"Remaining Balance: £{remaining:.2f}",
+            foreground=remaining_color
+        )
+
+        if not has_funds:
+            self.warning_label.config(text="Insufficient funds for this payment")
+        else:
+            self.warning_label.config(text="")
 
     def confirm(self):
         """Confirm payment method"""
         method = self.method_var.get()
 
-        # Validate student account has sufficient funds
-        if method == "Student Account" and self.student_id and FINANCE_AVAILABLE:
+        if method == "Finance Account":
+            if not FINANCE_AVAILABLE:
+                messagebox.showerror("Error", "Finance system is unavailable", parent=self.dialog)
+                return
+
+            if not self.resolved_student_id:
+                messagebox.showerror("Error", "No finance account linked to this user", parent=self.dialog)
+                return
+
             try:
-                balance = get_student_finance_account_balance(self.student_id)
+                balance = get_student_finance_account_balance(self.resolved_student_id)
                 if balance is None:
-                    messagebox.showerror("Error", "Student account not found", parent=self.dialog)
+                    messagebox.showerror("Error", "Finance account not found", parent=self.dialog)
                     return
                 if balance < self.amount:
                     if not messagebox.askyesno("Insufficient Funds",
-                                              f"Your balance (£{balance:.2f}) is less than the order total (£{self.amount:.2f}).\n\n"
+                                              f"Your balance (£{balance:.2f}) is less than "
+                                              f"the order total (£{self.amount:.2f}).\n\n"
                                               "Continue anyway?",
                                               parent=self.dialog):
                         return
@@ -1110,7 +1233,7 @@ Features:
 ✓ Customer selection and creation
 ✓ Automatic tax calculation (20% VAT)
 ✓ Special instructions for each item
-✓ Multiple payment methods (Cash, Card, Student Account)
+✓ Multiple payment methods (Cash, Card, Finance Account)
 ✓ Loyalty points for registered customers
 """
 

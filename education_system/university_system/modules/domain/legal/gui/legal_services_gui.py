@@ -6,19 +6,19 @@ consultations, document management, billing, and reporting with full
 email and finance integration.
 """
 
-from ._imports import (
+from education_system.university_system.modules.domain.legal.gui._imports import (
     tk, ttk, messagebox, traceback,
     get_connection,
     init_legal_services_db,
     log_activity,
     _t, logger,
 )
-from .case_management import CaseManagementMixin
-from .consultations import ConsultationsMixin
-from .documents import DocumentsMixin
-from .billing import BillingMixin
-from .reports import ReportsMixin
-from .refunds import RefundsMixin
+from education_system.university_system.modules.domain.legal.gui.case_management import CaseManagementMixin
+from education_system.university_system.modules.domain.legal.gui.consultations import ConsultationsMixin
+from education_system.university_system.modules.domain.legal.gui.documents import DocumentsMixin
+from education_system.university_system.modules.domain.legal.gui.billing import BillingMixin
+from education_system.university_system.modules.domain.legal.gui.reports import ReportsMixin
+from education_system.university_system.modules.domain.legal.gui.refunds import RefundsMixin
 
 
 class LegalServicesGUI(

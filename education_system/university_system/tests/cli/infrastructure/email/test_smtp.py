@@ -48,9 +48,9 @@ def temp_attachment():
 class TestSendEmailViaSMTP:
     """Test send_email_via_smtp() function"""
 
-    @patch('university_system.infrastructure.email.smtp.smtplib.SMTP')
-    @patch('university_system.infrastructure.email.smtp.execute_db_operation')
-    @patch('university_system.infrastructure.email.smtp.config')
+    @patch('education_system.university_system.infrastructure.email.smtp.smtplib.SMTP')
+    @patch('education_system.university_system.infrastructure.email.smtp.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.smtp.config')
     def test_send_simple_email_success(self, mock_config_dict, mock_db_op, mock_smtp, mock_config):
         """Test sending a simple email successfully"""
         from education_system.university_system.infrastructure.email.smtp import send_email_via_smtp
@@ -79,9 +79,9 @@ class TestSendEmailViaSMTP:
         mock_smtp_instance.login.assert_called_once_with('test@university.edu', 'test_password')
         mock_smtp_instance.sendmail.assert_called_once()
 
-    @patch('university_system.infrastructure.email.smtp.smtplib.SMTP')
-    @patch('university_system.infrastructure.email.smtp.execute_db_operation')
-    @patch('university_system.infrastructure.email.smtp.config')
+    @patch('education_system.university_system.infrastructure.email.smtp.smtplib.SMTP')
+    @patch('education_system.university_system.infrastructure.email.smtp.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.smtp.config')
     def test_send_email_with_cc_recipients(self, mock_config_dict, mock_db_op, mock_smtp, mock_config):
         """Test sending email with CC recipients"""
         from education_system.university_system.infrastructure.email.smtp import send_email_via_smtp
@@ -109,9 +109,9 @@ class TestSendEmailViaSMTP:
         assert 'cc1@university.edu' in all_recipients
         assert 'cc2@university.edu' in all_recipients
 
-    @patch('university_system.infrastructure.email.smtp.smtplib.SMTP')
-    @patch('university_system.infrastructure.email.smtp.execute_db_operation')
-    @patch('university_system.infrastructure.email.smtp.config')
+    @patch('education_system.university_system.infrastructure.email.smtp.smtplib.SMTP')
+    @patch('education_system.university_system.infrastructure.email.smtp.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.smtp.config')
     def test_send_email_with_bcc_recipients(self, mock_config_dict, mock_db_op, mock_smtp, mock_config):
         """Test sending email with BCC recipients"""
         from education_system.university_system.infrastructure.email.smtp import send_email_via_smtp
@@ -139,9 +139,9 @@ class TestSendEmailViaSMTP:
         assert 'bcc1@university.edu' in all_recipients
         assert 'bcc2@university.edu' in all_recipients
 
-    @patch('university_system.infrastructure.email.smtp.smtplib.SMTP')
-    @patch('university_system.infrastructure.email.smtp.execute_db_operation')
-    @patch('university_system.infrastructure.email.smtp.config')
+    @patch('education_system.university_system.infrastructure.email.smtp.smtplib.SMTP')
+    @patch('education_system.university_system.infrastructure.email.smtp.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.smtp.config')
     def test_send_email_with_cc_and_bcc(self, mock_config_dict, mock_db_op, mock_smtp, mock_config):
         """Test sending email with both CC and BCC recipients"""
         from education_system.university_system.infrastructure.email.smtp import send_email_via_smtp
@@ -170,11 +170,11 @@ class TestSendEmailViaSMTP:
         assert 'cc@university.edu' in all_recipients
         assert 'bcc@university.edu' in all_recipients
 
-    @patch('university_system.infrastructure.email.smtp.open', new_callable=mock_open, read_data=b'file content')
-    @patch('university_system.infrastructure.email.smtp.os.path.basename')
-    @patch('university_system.infrastructure.email.smtp.smtplib.SMTP')
-    @patch('university_system.infrastructure.email.smtp.execute_db_operation')
-    @patch('university_system.infrastructure.email.smtp.config')
+    @patch('education_system.university_system.infrastructure.email.smtp.open', new_callable=mock_open, read_data=b'file content')
+    @patch('education_system.university_system.infrastructure.email.smtp.os.path.basename')
+    @patch('education_system.university_system.infrastructure.email.smtp.smtplib.SMTP')
+    @patch('education_system.university_system.infrastructure.email.smtp.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.smtp.config')
     def test_send_email_with_single_attachment(self, mock_config_dict, mock_db_op, mock_smtp, mock_basename, mock_file, mock_config):
         """Test sending email with a single attachment"""
         from education_system.university_system.infrastructure.email.smtp import send_email_via_smtp
@@ -198,11 +198,11 @@ class TestSendEmailViaSMTP:
         assert result is True
         mock_file.assert_called()
 
-    @patch('university_system.infrastructure.email.smtp.open', new_callable=mock_open, read_data=b'file content')
-    @patch('university_system.infrastructure.email.smtp.os.path.basename')
-    @patch('university_system.infrastructure.email.smtp.smtplib.SMTP')
-    @patch('university_system.infrastructure.email.smtp.execute_db_operation')
-    @patch('university_system.infrastructure.email.smtp.config')
+    @patch('education_system.university_system.infrastructure.email.smtp.open', new_callable=mock_open, read_data=b'file content')
+    @patch('education_system.university_system.infrastructure.email.smtp.os.path.basename')
+    @patch('education_system.university_system.infrastructure.email.smtp.smtplib.SMTP')
+    @patch('education_system.university_system.infrastructure.email.smtp.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.smtp.config')
     def test_send_email_with_multiple_attachments(self, mock_config_dict, mock_db_op, mock_smtp, mock_basename, mock_file, mock_config):
         """Test sending email with multiple attachments"""
         from education_system.university_system.infrastructure.email.smtp import send_email_via_smtp
@@ -227,9 +227,9 @@ class TestSendEmailViaSMTP:
         # Should have opened both files
         assert mock_file.call_count >= 2
 
-    @patch('university_system.infrastructure.email.smtp.smtplib.SMTP')
-    @patch('university_system.infrastructure.email.smtp.execute_db_operation')
-    @patch('university_system.infrastructure.email.smtp.config')
+    @patch('education_system.university_system.infrastructure.email.smtp.smtplib.SMTP')
+    @patch('education_system.university_system.infrastructure.email.smtp.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.smtp.config')
     def test_send_email_without_tls(self, mock_config_dict, mock_db_op, mock_smtp, mock_config):
         """Test sending email without TLS"""
         from education_system.university_system.infrastructure.email.smtp import send_email_via_smtp
@@ -256,9 +256,9 @@ class TestSendEmailViaSMTP:
         mock_smtp_instance.starttls.assert_not_called()
         assert result is True
 
-    @patch('university_system.infrastructure.email.smtp.smtplib.SMTP')
-    @patch('university_system.infrastructure.email.smtp.execute_db_operation')
-    @patch('university_system.infrastructure.email.smtp.config')
+    @patch('education_system.university_system.infrastructure.email.smtp.smtplib.SMTP')
+    @patch('education_system.university_system.infrastructure.email.smtp.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.smtp.config')
     def test_send_email_without_authentication(self, mock_config_dict, mock_db_op, mock_smtp, mock_config):
         """Test sending email without SMTP authentication"""
         from education_system.university_system.infrastructure.email.smtp import send_email_via_smtp
@@ -285,10 +285,10 @@ class TestSendEmailViaSMTP:
         mock_smtp_instance.login.assert_not_called()
         assert result is True
 
-    @patch('university_system.infrastructure.email.smtp.smtplib.SMTP')
-    @patch('university_system.infrastructure.email.smtp.log_email_metrics')
-    @patch('university_system.infrastructure.email.smtp.log_event')
-    @patch('university_system.infrastructure.email.smtp.config')
+    @patch('education_system.university_system.infrastructure.email.smtp.smtplib.SMTP')
+    @patch('education_system.university_system.infrastructure.email.smtp.log_email_metrics')
+    @patch('education_system.university_system.infrastructure.email.smtp.log_event')
+    @patch('education_system.university_system.infrastructure.email.smtp.config')
     def test_send_email_smtp_connection_error(self, mock_config_dict, mock_log_event, mock_log_metrics, mock_smtp, mock_config):
         """Test handling of SMTP connection errors"""
         from education_system.university_system.infrastructure.email.smtp import send_email_via_smtp
@@ -311,10 +311,10 @@ class TestSendEmailViaSMTP:
         mock_log_metrics.assert_called_once_with('failed')
         mock_log_event.assert_called_once()
 
-    @patch('university_system.infrastructure.email.smtp.smtplib.SMTP')
-    @patch('university_system.infrastructure.email.smtp.log_email_metrics')
-    @patch('university_system.infrastructure.email.smtp.log_event')
-    @patch('university_system.infrastructure.email.smtp.config')
+    @patch('education_system.university_system.infrastructure.email.smtp.smtplib.SMTP')
+    @patch('education_system.university_system.infrastructure.email.smtp.log_email_metrics')
+    @patch('education_system.university_system.infrastructure.email.smtp.log_event')
+    @patch('education_system.university_system.infrastructure.email.smtp.config')
     def test_send_email_authentication_error(self, mock_config_dict, mock_log_event, mock_log_metrics, mock_smtp, mock_config):
         """Test handling of SMTP authentication errors"""
         from education_system.university_system.infrastructure.email.smtp import send_email_via_smtp
@@ -338,10 +338,10 @@ class TestSendEmailViaSMTP:
         assert result is False
         mock_log_metrics.assert_called_once_with('failed')
 
-    @patch('university_system.infrastructure.email.smtp.smtplib.SMTP')
-    @patch('university_system.infrastructure.email.smtp.log_email_metrics')
-    @patch('university_system.infrastructure.email.smtp.log_event')
-    @patch('university_system.infrastructure.email.smtp.config')
+    @patch('education_system.university_system.infrastructure.email.smtp.smtplib.SMTP')
+    @patch('education_system.university_system.infrastructure.email.smtp.log_email_metrics')
+    @patch('education_system.university_system.infrastructure.email.smtp.log_event')
+    @patch('education_system.university_system.infrastructure.email.smtp.config')
     def test_send_email_sendmail_error(self, mock_config_dict, mock_log_event, mock_log_metrics, mock_smtp, mock_config):
         """Test handling of sendmail errors"""
         from education_system.university_system.infrastructure.email.smtp import send_email_via_smtp
@@ -365,9 +365,9 @@ class TestSendEmailViaSMTP:
         assert result is False
         mock_log_metrics.assert_called_once_with('failed')
 
-    @patch('university_system.infrastructure.email.smtp.smtplib.SMTP')
-    @patch('university_system.infrastructure.email.smtp.execute_db_operation')
-    @patch('university_system.infrastructure.email.smtp.config')
+    @patch('education_system.university_system.infrastructure.email.smtp.smtplib.SMTP')
+    @patch('education_system.university_system.infrastructure.email.smtp.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.smtp.config')
     def test_email_message_structure(self, mock_config_dict, mock_db_op, mock_smtp, mock_config):
         """Test that email message is properly structured"""
         from education_system.university_system.infrastructure.email.smtp import send_email_via_smtp
@@ -399,9 +399,9 @@ class TestSendEmailViaSMTP:
         assert 'Bcc: bcc@university.edu' in msg_string
         assert 'Test Body' in msg_string
 
-    @patch('university_system.infrastructure.email.smtp.smtplib.SMTP')
-    @patch('university_system.infrastructure.email.smtp.execute_db_operation')
-    @patch('university_system.infrastructure.email.smtp.config')
+    @patch('education_system.university_system.infrastructure.email.smtp.smtplib.SMTP')
+    @patch('education_system.university_system.infrastructure.email.smtp.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.smtp.config')
     def test_database_logging_called(self, mock_config_dict, mock_db_op, mock_smtp, mock_config):
         """Test that database logging is called after successful send"""
         from education_system.university_system.infrastructure.email.smtp import send_email_via_smtp
@@ -424,10 +424,10 @@ class TestSendEmailViaSMTP:
         assert result is True
         mock_db_op.assert_called_once()
 
-    @patch('university_system.infrastructure.email.smtp.ssl.create_default_context')
-    @patch('university_system.infrastructure.email.smtp.smtplib.SMTP')
-    @patch('university_system.infrastructure.email.smtp.execute_db_operation')
-    @patch('university_system.infrastructure.email.smtp.config')
+    @patch('education_system.university_system.infrastructure.email.smtp.ssl.create_default_context')
+    @patch('education_system.university_system.infrastructure.email.smtp.smtplib.SMTP')
+    @patch('education_system.university_system.infrastructure.email.smtp.execute_db_operation')
+    @patch('education_system.university_system.infrastructure.email.smtp.config')
     def test_ssl_context_used(self, mock_config_dict, mock_db_op, mock_smtp, mock_ssl_context, mock_config):
         """Test that SSL context is created and used for TLS"""
         from education_system.university_system.infrastructure.email.smtp import send_email_via_smtp
@@ -452,10 +452,10 @@ class TestSendEmailViaSMTP:
         mock_ssl_context.assert_called_once()
         mock_smtp_instance.starttls.assert_called_once_with(context=mock_context)
 
-    @patch('university_system.infrastructure.email.smtp.open', side_effect=FileNotFoundError("File not found"))
-    @patch('university_system.infrastructure.email.smtp.smtplib.SMTP')
-    @patch('university_system.infrastructure.email.smtp.log_email_metrics')
-    @patch('university_system.infrastructure.email.smtp.config')
+    @patch('education_system.university_system.infrastructure.email.smtp.open', side_effect=FileNotFoundError("File not found"))
+    @patch('education_system.university_system.infrastructure.email.smtp.smtplib.SMTP')
+    @patch('education_system.university_system.infrastructure.email.smtp.log_email_metrics')
+    @patch('education_system.university_system.infrastructure.email.smtp.config')
     def test_attachment_file_not_found(self, mock_config_dict, mock_log_metrics, mock_smtp, mock_file, mock_config):
         """Test handling of missing attachment files"""
         from education_system.university_system.infrastructure.email.smtp import send_email_via_smtp

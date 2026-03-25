@@ -220,7 +220,7 @@ class TestAuditLogs:
     """Test audit log functionality"""
 
     @patch('tkinter.Toplevel')
-    @patch('university_system.modules.domain.finance.gui.finance.compliance.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.compliance.get_connection')
     def test_gui_view_audit_logs_creates_dialog(self, mock_conn, mock_toplevel, compliance_manager, test_db_with_collection_data):
         """Test that audit log viewer creates a dialog"""
         mock_conn.return_value = test_db_with_collection_data
@@ -230,7 +230,7 @@ class TestAuditLogs:
         # Verify dialog was created
         mock_toplevel.assert_called()
 
-    @patch('university_system.modules.domain.finance.gui.finance.compliance.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.compliance.get_connection')
     def test_gui_view_audit_logs_loads_data(self, mock_conn, test_db_with_collection_data):
         """Test that audit logs are loaded from database"""
         mock_conn.return_value = test_db_with_collection_data

@@ -99,7 +99,6 @@ except ImportError:
 
 # Import academic system launchers
 try:
-    from education_system.university_system.modules.domain.academics.services.lms.lms_core import launch_lms_gui
     from education_system.university_system.modules.domain.academics.services.degree_audit.degree_audit_core import launch_degree_audit_gui
     from education_system.university_system.modules.domain.academics.services.evaluation.course_evaluation_core import launch_course_evaluation_gui
     ACADEMIC_SYSTEMS_AVAILABLE = True
@@ -157,21 +156,21 @@ class CourseValidationDialog:
         ttk.Checkbutton(options_frame, text="Find missing required data", 
                        variable=self.check_missing).pack(anchor=tk.W)
         
-        # Results display
-        results_frame = ttk.LabelFrame(main_frame, text="Validation Results", padding=10)
-        results_frame.pack(fill=tk.BOTH, expand=True, pady=5)
-        
-        self.results_text = ScrolledText(results_frame, wrap=tk.WORD)
-        self.results_text.pack(fill=tk.BOTH, expand=True)
-        
-        # Buttons
+        # Buttons — pack before results so they stay visible on resize
         button_frame = ttk.Frame(main_frame)
-        button_frame.pack(fill=tk.X, pady=10)
-        
+        button_frame.pack(fill=tk.X, pady=10, side=tk.BOTTOM)
+
         ttk.Button(button_frame, text="Run Validation", command=self.run_validation).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Fix Issues", command=self.fix_issues).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Export Report", command=self.export_validation_report).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+
+        # Results display
+        results_frame = ttk.LabelFrame(main_frame, text="Validation Results", padding=10)
+        results_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+
+        self.results_text = ScrolledText(results_frame, wrap=tk.WORD)
+        self.results_text.pack(fill=tk.BOTH, expand=True)
         
         self.issues_found = []
     

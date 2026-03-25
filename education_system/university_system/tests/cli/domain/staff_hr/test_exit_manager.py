@@ -16,9 +16,9 @@ class TestExitInterviews:
     @pytest.fixture
     def mock_db(self):
         """Set up mock database connections."""
-        with patch('university_system.modules.domain.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
-             patch('university_system.modules.domain.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
-             patch('university_system.modules.domain.staff_hr.services.managers.exit_manager.log_activity'):
+        with patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
+             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
+             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.log_activity'):
 
             mock_conn = MagicMock()
             mock_get.return_value.__enter__ = MagicMock(return_value=mock_conn)
@@ -210,9 +210,9 @@ class TestExitChecklistTemplates:
     @pytest.fixture
     def mock_db(self):
         """Set up mock database connections."""
-        with patch('university_system.modules.domain.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
-             patch('university_system.modules.domain.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
-             patch('university_system.modules.domain.staff_hr.services.managers.exit_manager.log_activity'):
+        with patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
+             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
+             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.log_activity'):
 
             mock_conn = MagicMock()
             mock_get.return_value.__enter__ = MagicMock(return_value=mock_conn)
@@ -353,9 +353,9 @@ class TestUserExitChecklist:
     @pytest.fixture
     def mock_db(self):
         """Set up mock database connections."""
-        with patch('university_system.modules.domain.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
-             patch('university_system.modules.domain.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
-             patch('university_system.modules.domain.staff_hr.services.managers.exit_manager.log_activity'):
+        with patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
+             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
+             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.log_activity'):
 
             mock_conn = MagicMock()
             mock_get.return_value.__enter__ = MagicMock(return_value=mock_conn)
@@ -514,9 +514,9 @@ class TestKnowledgeTransfer:
     @pytest.fixture
     def mock_db(self):
         """Set up mock database connections."""
-        with patch('university_system.modules.domain.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
-             patch('university_system.modules.domain.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
-             patch('university_system.modules.domain.staff_hr.services.managers.exit_manager.log_activity'):
+        with patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
+             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
+             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.log_activity'):
 
             mock_conn = MagicMock()
             mock_get.return_value.__enter__ = MagicMock(return_value=mock_conn)
@@ -594,9 +594,9 @@ class TestTurnoverAnalytics:
     @pytest.fixture
     def mock_db(self):
         """Set up mock database connections."""
-        with patch('university_system.modules.domain.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
-             patch('university_system.modules.domain.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
-             patch('university_system.modules.domain.staff_hr.services.managers.exit_manager.log_activity'):
+        with patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
+             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
+             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.log_activity'):
 
             mock_conn = MagicMock()
             mock_get.return_value.__enter__ = MagicMock(return_value=mock_conn)
@@ -809,9 +809,9 @@ class TestSearchAndFiltering:
     @pytest.fixture
     def mock_db(self):
         """Set up mock database connections."""
-        with patch('university_system.modules.domain.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
-             patch('university_system.modules.domain.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
-             patch('university_system.modules.domain.staff_hr.services.managers.exit_manager.log_activity'):
+        with patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
+             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
+             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.log_activity'):
 
             mock_conn = MagicMock()
             mock_get.return_value.__enter__ = MagicMock(return_value=mock_conn)
@@ -893,9 +893,9 @@ class TestEdgeCases:
     @pytest.fixture
     def mock_db(self):
         """Set up mock database connections."""
-        with patch('university_system.modules.domain.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
-             patch('university_system.modules.domain.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
-             patch('university_system.modules.domain.staff_hr.services.managers.exit_manager.log_activity'):
+        with patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
+             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
+             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.log_activity'):
 
             mock_conn = MagicMock()
             mock_get.return_value.__enter__ = MagicMock(return_value=mock_conn)

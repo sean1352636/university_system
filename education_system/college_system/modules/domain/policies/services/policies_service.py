@@ -3,6 +3,7 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import PolicyError, ValidationError
 from education_system.college_system.infrastructure.database.db import connect
+from education_system.college_system.core.sql_safety import validate_identifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,10 +26,23 @@ class PolicyService:
             raise ValidationError("category is required.")
         conn = self._conn()
         try:
+            # Build INSERT with only non-None values so DB defaults apply
+            fields = {k: v for k, v in {
+                'title': kwargs.get('title'),
+                'category': kwargs.get('category'),
+                'version': kwargs.get('version'),
+                'author_id': kwargs.get('author_id'),
+                'content': kwargs.get('content'),
+                'file_path': kwargs.get('file_path'),
+                'review_date': kwargs.get('review_date'),
+                'status': kwargs.get('status'),
+                'approved_by': kwargs.get('approved_by'),
+            }.items() if v is not None}
+            cols = ", ".join(fields.keys())
+            placeholders = ", ".join("?" for _ in fields)
             conn.execute(
-                """INSERT INTO policies (title, category, version, author_id, content, file_path, review_date, status, approved_by)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (kwargs.get('title'), kwargs.get('category'), kwargs.get('version'), kwargs.get('author_id'), kwargs.get('content'), kwargs.get('file_path'), kwargs.get('review_date'), kwargs.get('status'), kwargs.get('approved_by'),),
+                f"INSERT INTO policies ({cols}) VALUES ({placeholders})",
+                list(fields.values()),
             )
             conn.commit()
             row = conn.execute(
@@ -60,7 +74,7 @@ class PolicyService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -78,7 +92,7 @@ class PolicyService:
         if not updates:
             raise ValidationError("No valid fields to update.")
         updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [pk]
         conn = self._conn()
         try:
@@ -116,7 +130,7 @@ class PolicyService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         conn = self._conn()
         try:

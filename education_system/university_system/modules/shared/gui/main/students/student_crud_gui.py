@@ -4,7 +4,11 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import logging
 import random
+import secrets
+import json
 from education_system.university_system.infrastructure.database.db import sqlite3
+from education_system.college_system.core.paths import DB_FILE as COLLEGE_DB_FILE
+from education_system.shared.transfer.academic_history import extract_college_history
 from datetime import datetime
 
 # Import utility functions
@@ -27,6 +31,13 @@ from education_system.university_system.modules.shared.utils.sql_safety import (
 )
 
 logger = logging.getLogger(__name__)
+
+try:
+    from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+    ACTIVITY_LOGGER_AVAILABLE = True
+except ImportError:
+    ACTIVITY_LOGGER_AVAILABLE = False
+    log_activity = None
 
 # Helper functions for safely setting widget values
 def _safe_set_combobox(combobox, value):
@@ -90,37 +101,109 @@ def create_student_dialog(self):
     personal_frame = ttk.LabelFrame(scrollable_frame, text=_t("student.personal_info"), padding=15)
     personal_frame.grid(row=1, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
 
+    # Import from College button
+    def _import_from_college():
+        """Show dialog to select a student from the college system and autofill fields."""
+        try:
+            import sqlite3 as _sqlite3
+            conn = _sqlite3.connect(str(COLLEGE_DB_FILE))
+            conn.row_factory = _sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT id, student_id, first_name, last_name, date_of_birth, phone, address "
+                "FROM students WHERE status = 'active' ORDER BY last_name, first_name"
+            )
+            college_students = cursor.fetchall()
+            conn.close()
+        except Exception as e:
+            messagebox.showerror(_t("common.error"), f"Could not load college students:\n{e}")
+            return
+        if not college_students:
+            messagebox.showinfo("Import", "No active students found in the college system.")
+            return
+        sel_dlg = tk.Toplevel(dialog)
+        sel_dlg.title("Select College Student")
+        sel_dlg.geometry("550x400")
+        sel_dlg.transient(dialog)
+        sel_dlg.grab_set()
+        tk.Label(sel_dlg, text="Select a student from the College System:",
+                 font=('Arial', 11, 'bold')).pack(padx=10, pady=(10, 5))
+        srch_frame = tk.Frame(sel_dlg)
+        srch_frame.pack(fill="x", padx=10)
+        tk.Label(srch_frame, text="Search:").pack(side="left")
+        srch_var = tk.StringVar()
+        ttk.Entry(srch_frame, textvariable=srch_var, width=30).pack(side="left", padx=5)
+        lf = tk.Frame(sel_dlg)
+        lf.pack(fill="both", expand=True, padx=10, pady=5)
+        lb_scroll = tk.Scrollbar(lf)
+        lb_scroll.pack(side="right", fill="y")
+        lb = tk.Listbox(lf, yscrollcommand=lb_scroll.set, font=('Courier', 10))
+        lb.pack(fill="both", expand=True)
+        lb_scroll.config(command=lb.yview)
+        _stu_map = {}
+        def _populate(ft=""):
+            lb.delete(0, tk.END)
+            _stu_map.clear()
+            for s in college_students:
+                name = f"{s['first_name']} {s['last_name']}"
+                if ft and ft.lower() not in name.lower() and ft.lower() not in (s['student_id'] or '').lower():
+                    continue
+                pos = lb.size()
+                lb.insert(tk.END, f"{s['student_id']}  {s['first_name']:15s} {s['last_name']:15s}  DOB: {s['date_of_birth'] or 'N/A'}")
+                _stu_map[pos] = s
+        _populate()
+        srch_var.trace_add("write", lambda *_: _populate(srch_var.get()))
+        def _on_pick():
+            sel = lb.curselection()
+            if not sel:
+                messagebox.showwarning("Selection", "Please select a student.", parent=sel_dlg)
+                return
+            s = _stu_map[sel[0]]
+            _safe_entry_insert(fields['first_name'], s['first_name'])
+            _safe_entry_insert(fields['last_name'], s['last_name'])
+            if s['date_of_birth']:
+                _safe_entry_insert(fields['dob'], s['date_of_birth'])
+            dialog._imported_college_student = dict(s)
+            sel_dlg.destroy()
+        bf = tk.Frame(sel_dlg)
+        bf.pack(pady=10)
+        ttk.Button(bf, text="Select & Import", command=_on_pick).pack(side="left", padx=5)
+        ttk.Button(bf, text="Cancel", command=sel_dlg.destroy).pack(side="left", padx=5)
+
+    ttk.Button(personal_frame, text="Import from College System",
+               command=_import_from_college).grid(row=0, column=0, columnspan=2, pady=(0, 10), sticky=tk.W)
+
     # Title/Prefix
-    ttk.Label(personal_frame, text=_t("student.title_label")).grid(row=0, column=0, sticky=tk.W, pady=5)
+    ttk.Label(personal_frame, text=_t("student.title_label")).grid(row=1, column=0, sticky=tk.W, pady=5)
     fields['title'] = ttk.Combobox(personal_frame, values=['Mr', 'Ms', 'Mrs', 'Dr', 'Prof'],
                                   state='readonly', width=27)
-    fields['title'].grid(row=0, column=1, pady=5, padx=(10, 0), sticky=tk.W)
+    fields['title'].grid(row=1, column=1, pady=5, padx=(10, 0), sticky=tk.W)
 
     # First Name
-    ttk.Label(personal_frame, text=_t("student.first_name_required")).grid(row=1, column=0, sticky=tk.W, pady=5)
+    ttk.Label(personal_frame, text=_t("student.first_name_required")).grid(row=2, column=0, sticky=tk.W, pady=5)
     fields['first_name'] = ttk.Entry(personal_frame, width=30)
-    fields['first_name'].grid(row=1, column=1, pady=5, padx=(10, 0))
+    fields['first_name'].grid(row=2, column=1, pady=5, padx=(10, 0))
 
     # Middle Name
-    ttk.Label(personal_frame, text=_t("student.middle_name_label")).grid(row=2, column=0, sticky=tk.W, pady=5)
+    ttk.Label(personal_frame, text=_t("student.middle_name_label")).grid(row=3, column=0, sticky=tk.W, pady=5)
     fields['middle_name'] = ttk.Entry(personal_frame, width=30)
-    fields['middle_name'].grid(row=2, column=1, pady=5, padx=(10, 0))
+    fields['middle_name'].grid(row=3, column=1, pady=5, padx=(10, 0))
 
     # Last Name
-    ttk.Label(personal_frame, text=_t("student.last_name_required")).grid(row=3, column=0, sticky=tk.W, pady=5)
+    ttk.Label(personal_frame, text=_t("student.last_name_required")).grid(row=4, column=0, sticky=tk.W, pady=5)
     fields['last_name'] = ttk.Entry(personal_frame, width=30)
-    fields['last_name'].grid(row=3, column=1, pady=5, padx=(10, 0))
+    fields['last_name'].grid(row=4, column=1, pady=5, padx=(10, 0))
 
     # Gender
-    ttk.Label(personal_frame, text=_t("student.gender_required")).grid(row=4, column=0, sticky=tk.W, pady=5)
+    ttk.Label(personal_frame, text=_t("student.gender_required")).grid(row=5, column=0, sticky=tk.W, pady=5)
     fields['gender'] = ttk.Combobox(personal_frame, values=['male', 'female', 'other'],
                                    state='readonly', width=27)
-    fields['gender'].grid(row=4, column=1, pady=5, padx=(10, 0), sticky=tk.W)
+    fields['gender'].grid(row=5, column=1, pady=5, padx=(10, 0), sticky=tk.W)
 
     # Date of Birth
-    ttk.Label(personal_frame, text=_t("student.dob_required")).grid(row=5, column=0, sticky=tk.W, pady=5)
+    ttk.Label(personal_frame, text=_t("student.dob_required")).grid(row=6, column=0, sticky=tk.W, pady=5)
     fields['dob'] = ttk.Entry(personal_frame, width=30)
-    fields['dob'].grid(row=5, column=1, pady=5, padx=(10, 0))
+    fields['dob'].grid(row=6, column=1, pady=5, padx=(10, 0))
 
     # Academic Information Section
     academic_frame = ttk.LabelFrame(scrollable_frame, text=_t("student.academic_info"), padding=15)
@@ -198,7 +281,7 @@ def create_student_dialog(self):
             age = now_dt.year - dob.year - ((now_dt.month, now_dt.day) < (dob.month, dob.day))
 
             # Generate student ID and email
-            student_id = str(random.randint(1000000, 9999999)).zfill(7)
+            student_id = str(secrets.randbelow(9000000) + 1000000).zfill(7)
             email_address = f"C{student_id}@tees.ac.uk"
             registration_time = now_dt.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -312,6 +395,131 @@ Student Details:
 - Login Password: {temp_password}{modules_text}"""
 
             messagebox.showinfo(_t("common.success"), success_msg)
+
+            # Transfer academic history from college if imported
+            if hasattr(dialog, '_imported_college_student') and dialog._imported_college_student:
+                _imp_college = dialog._imported_college_student
+                try:
+                    _history = extract_college_history(str(COLLEGE_DB_FILE), _imp_college['id'])
+                    if _history:
+                        import sqlite3 as _hist_sqlite3
+                        _hist_conn = _hist_sqlite3.connect(str(self.db_path))
+                        _hist_conn.execute(
+                            "INSERT INTO academic_transfer_history (student_id, source_system, data_json, transferred_at) "
+                            "VALUES (?, ?, ?, datetime('now'))",
+                            (student_id, 'college', json.dumps(_history))
+                        )
+                        _hist_conn.commit()
+                        _hist_conn.close()
+                except Exception:
+                    pass  # Don't fail the import if history extraction fails
+
+                # Set previous_system fields on the new student record
+                try:
+                    import sqlite3 as _ps_sqlite3
+                    _ps_conn = _ps_sqlite3.connect(str(self.db_path))
+                    _ps_conn.execute(
+                        "UPDATE students SET previous_system = ?, previous_system_id = ? WHERE student_id = ?",
+                        ('college', _imp_college.get('student_id', ''), student_id)
+                    )
+                    _ps_conn.commit()
+                    _ps_conn.close()
+                except Exception:
+                    pass  # Don't fail the import if previous_system update fails
+
+            # Remove imported student from college system if applicable
+            if hasattr(dialog, '_imported_college_student') and dialog._imported_college_student:
+                _imp = dialog._imported_college_student
+                _imp_name = f"{_imp.get('first_name', '')} {_imp.get('last_name', '')}"
+                if messagebox.askyesno(
+                    "Transfer Student",
+                    f"Mark {_imp_name} as transferred in the College System?",
+                ):
+                    try:
+                        import sqlite3 as _sqlite3
+                        _conn = _sqlite3.connect(str(COLLEGE_DB_FILE))
+                        _conn.execute(
+                            "UPDATE students SET status = 'transferred' WHERE id = ?",
+                            (_imp['id'],),
+                        )
+                        _conn.commit()
+                        _conn.close()
+                        logger.info(
+                            "Student %s (%s) transferred from college to university as %s",
+                            _imp.get('student_id', ''), _imp_name, student_id,
+                        )
+                        # Notify college admin(s) of the transfer via cross-system notifications
+                        # AND college-local notifications so it appears in their inbox
+                        _transfer_title = f"Student Transfer: {_imp_name} moved to University"
+                        _transfer_msg = (
+                            f"Student {_imp.get('student_id', '')} ({_imp_name}) "
+                            f"has been transferred from the College System "
+                            f"to the University System.\n\n"
+                            f"New University Student ID: {student_id}\n"
+                            f"Transferred by: {first_name} {last_name} creation process\n\n"
+                            f"The student's college record has been marked as 'transferred'."
+                        )
+                        try:
+                            # 1) Cross-system notification (visible in Cross-System Notifications)
+                            from education_system.shared.notifications.service import CrossSystemNotificationService
+                            _sender_id = getattr(self.auth, 'current_user', {}).get('user_id') if self.auth else None
+                            _xn_svc = CrossSystemNotificationService()
+                            _xn_svc.send_to_role(
+                                sender_user_id=_sender_id or 0,
+                                sender_system='university',
+                                target_system='college',
+                                target_role='admin',
+                                title=_transfer_title,
+                                message=_transfer_msg,
+                                priority='high',
+                            )
+                        except Exception:
+                            pass
+                        try:
+                            # 2) College-local notification + email message
+                            #    Look up admin users by username in shared auth, then find
+                            #    matching local user_id in the college DB.
+                            import sqlite3 as _sq3
+                            from education_system.shared.auth.db import AUTH_DB_FILE
+                            _auth_conn = _sq3.connect(str(AUTH_DB_FILE))
+                            _auth_conn.row_factory = _sq3.Row
+                            _admins = _auth_conn.execute(
+                                "SELECT u.username FROM users u "
+                                "JOIN user_systems us ON u.id = us.user_id "
+                                "WHERE us.system_key = 'college' AND us.role = 'admin' "
+                                "AND u.is_active = 1"
+                            ).fetchall()
+                            _auth_conn.close()
+                            _col_conn = _sqlite3.connect(str(COLLEGE_DB_FILE))
+                            _col_conn.row_factory = _sq3.Row
+                            _admin_ids = []
+                            for _admin in _admins:
+                                _local = _col_conn.execute(
+                                    "SELECT id FROM users WHERE username = ?",
+                                    (_admin['username'],),
+                                ).fetchone()
+                                if _local:
+                                    _admin_ids.append(_local['id'])
+                                    _col_conn.execute(
+                                        "INSERT INTO notifications (user_id, title, message, type) "
+                                        "VALUES (?, ?, ?, ?)",
+                                        (_local['id'], _transfer_title, _transfer_msg, 'alert'),
+                                    )
+                            # Also insert into messages table so it appears in email inbox
+                            # Use first admin as sender (system message)
+                            _msg_sender = _admin_ids[0] if _admin_ids else 1
+                            for _aid in _admin_ids:
+                                _col_conn.execute(
+                                    "INSERT INTO messages (sender_id, recipient_id, subject, body) "
+                                    "VALUES (?, ?, ?, ?)",
+                                    (_msg_sender, _aid, _transfer_title, _transfer_msg),
+                                )
+                            _col_conn.commit()
+                            _col_conn.close()
+                        except Exception:
+                            pass
+                    except Exception as _e:
+                        logging.warning(f"Failed to mark college student as transferred: {_e}")
 
             # Send welcome email to new student
             self._send_welcome_email_to_student(

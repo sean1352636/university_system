@@ -1,0 +1,121 @@
+{
+    "app": {
+        "title": "教育系统",
+        "language_selector": {
+            "title": "选择语言",
+            "subtitle": "选择您的首选语言",
+            "confirm": "确定",
+            "cancel": "取消"
+        }
+    },
+    "login": {
+        "title": "教育系统 - 登录",
+        "sign_in": "请登录以继续",
+        "username": "用户名",
+        "password": "密码",
+        "login_button": "登录",
+        "enter_both": "请输入用户名和密码。",
+        "no_access": "您的账户没有权限访问任何系统。",
+        "contact_admin": "请联系管理员。",
+        "default_hint": "默认：superadmin / SuperAdmin@123"
+    },
+    "mfa": {
+        "title": "双因素认证",
+        "enter_code": "请输入您的认证代码：",
+        "code_sent": "验证码已发送至 {email}",
+        "code_failed": "邮件发送失败。您的代码如下所示：",
+        "verify": "验证",
+        "back_to_login": "返回登录",
+        "enter_code_prompt": "请输入代码。"
+    },
+    "system_picker": {
+        "welcome": "欢迎，{name}",
+        "choose_system": "请选择要启动的系统：",
+        "university": "大学管理系统",
+        "college": "高中学院管理系统",
+        "secondary": "中学管理系统",
+        "primary": "小学管理系统",
+        "logout": "退出登录",
+        "superadmin_dashboard": "超级管理员控制面板"
+    },
+    "common": {
+        "ok": "确定",
+        "cancel": "取消",
+        "save": "保存",
+        "delete": "删除",
+        "edit": "编辑",
+        "add": "添加",
+        "search": "搜索",
+        "refresh": "刷新",
+        "close": "关闭",
+        "back": "返回",
+        "next": "下一步",
+        "yes": "是",
+        "no": "否",
+        "confirm": "确认",
+        "error": "错误",
+        "success": "成功",
+        "warning": "警告",
+        "loading": "加载中...",
+        "no_results": "未找到结果",
+        "actions": "操作",
+        "status": "状态",
+        "name": "姓名",
+        "email": "电子邮箱",
+        "date": "日期",
+        "type": "类型",
+        "description": "描述",
+        "submit": "提交",
+        "export": "导出",
+        "import": "导入",
+        "filter": "筛选",
+        "clear": "清除",
+        "select_all": "全选",
+        "deselect_all": "取消全选",
+        "active": "活跃",
+        "inactive": "不活跃",
+        "transferred": "已转移"
+    },
+    "shared_modules": {
+        "cross_system_notifications": "跨系统通知",
+        "student_journey": "学生历程",
+        "analytics_dashboard": "分析仪表盘",
+        "outcome_tracking": "成果追踪",
+        "predictive_alerts": "预测预警",
+        "bulk_transfer": "批量转移",
+        "transfer_documents": "转学文件",
+        "reverse_lookup": "反向查询",
+        "parent_continuity": "家长衔接",
+        "cross_system_calendar": "跨系统日历",
+        "inter_system_messaging": "跨系统消息",
+        "central_admin_portal": "中央管理门户",
+        "gdpr_compliance": "GDPR合规",
+        "shared_documents": "共享文档",
+        "student_self_service": "学生自助服务",
+        "digital_transcript": "电子成绩单"
+    },
+    "switch_system": {
+        "title": "切换系统",
+        "switch_to": "切换到：",
+        "switching": "正在切换到 {system}..."
+    },
+    "superadmin": {
+        "title": "超级管理员控制面板",
+        "overview": "仪表盘",
+        "system_health": "系统健康状态",
+        "user_management": "用户管理",
+        "student_analytics": "学生分析",
+        "notifications": "通知",
+        "student_search": "学生搜索",
+        "audit_log": "审计日志",
+        "quick_launch": "快速启动"
+    },
+    "roles": {
+        "admin": "管理员",
+        "staff": "职员",
+        "teacher": "教师",
+        "student": "学生",
+        "parent": "家长",
+        "superadmin": "超级管理员"
+    }
+}

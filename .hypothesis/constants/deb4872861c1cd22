@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/staff_hr/services/managers/admin_tools_manager.py
+# hypothesis_version: 6.151.9
+
+[' AND assigned_to = ?', ' AND host_id = ?', ' AND status = ?', ' AND user_id = ?', '%H:%M:%S', '%Y-%m-%d', 'Deactivated', 'access_card', 'access_level', 'approval_chain', 'approval_id', 'assign', 'assigned_to_name', 'building', 'buildings_access', 'card_number', 'card_type', 'current_approver', 'document_approval', 'document_description', 'document_path', 'due_date', 'expiry_date', 'from_department', 'host_department', 'host_name', 'issue', 'issue_date', 'key', 'key_number', 'key_type', 'normal', 'notes', 'priority', 'request_description', 'requested_by_name', 'room_location', 'scheduled_time', 'staff', 'submit', 'submitted_by_name', 'total_steps', 'user_name', 'vehicle_registration', 'visit_purpose', 'visitor_company', 'visitor_email', 'visitor_phone']

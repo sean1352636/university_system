@@ -1,6 +1,6 @@
 from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from .core import safe_execute
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.core import safe_execute
 
 
 def init_alumni_db():
@@ -48,43 +48,68 @@ def init_alumni_db():
         )
         ''')
 
-        # Enhanced alumni events table
+        # Unified events table
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS alumni_events (
+        CREATE TABLE IF NOT EXISTS unified_events (
             event_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            event_name TEXT,
-            event_date TEXT,
-            event_location TEXT,
-            event_description TEXT,
+            source_type TEXT,
+            source_event_id TEXT,
+            title TEXT,
+            description TEXT,
+            event_type TEXT,
+            event_category TEXT,
+            start_datetime TEXT,
+            end_datetime TEXT,
+            location TEXT,
+            building TEXT,
+            room TEXT,
+            room_id TEXT,
+            organizer_id TEXT,
+            organizer_name TEXT,
+            organizer_type TEXT,
+            max_capacity INTEGER,
             registration_required BOOLEAN,
-            max_attendees INTEGER,
+            registration_deadline TEXT,
+            is_public BOOLEAN,
+            is_featured BOOLEAN,
+            status TEXT,
+            tags TEXT,
+            image_url TEXT,
+            virtual_link TEXT,
             event_fee REAL DEFAULT 0.0,
             payment_required BOOLEAN DEFAULT 0,
-            event_type TEXT DEFAULT 'in-person',
-            virtual_link TEXT,
+            waitlist_enabled BOOLEAN DEFAULT 1,
             qr_code_path TEXT,
+            club_id TEXT,
             created_by TEXT,
-            created_date TEXT,
-            registration_deadline TEXT,
-            waitlist_enabled BOOLEAN DEFAULT 1
+            created_at TEXT,
+            updated_at TEXT,
+            notes TEXT
         )
         ''')
 
-        # Event registrations with payment info
+        # Unified event registrations with payment info
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS event_registrations (
+        CREATE TABLE IF NOT EXISTS unified_event_registrations (
             registration_id INTEGER PRIMARY KEY AUTOINCREMENT,
             event_id INTEGER,
-            alumni_id TEXT,
+            user_id TEXT,
+            user_type TEXT DEFAULT 'alumni',
             registration_date TEXT,
-            attendance_confirmed BOOLEAN,
+            attendance_status TEXT,
+            checked_in_at TEXT,
+            check_out_time TEXT,
             payment_status TEXT DEFAULT 'pending',
             payment_amount REAL DEFAULT 0.0,
             payment_method TEXT,
             is_waitlisted BOOLEAN DEFAULT 0,
-            check_in_time TEXT,
-            FOREIGN KEY (event_id) REFERENCES alumni_events (event_id),
-            FOREIGN KEY (alumni_id) REFERENCES alumni (alumni_id)
+            num_guests INTEGER DEFAULT 0,
+            feedback_rating REAL,
+            feedback_comment TEXT,
+            qr_code TEXT,
+            cpd_credits REAL DEFAULT 0.0,
+            FOREIGN KEY (event_id) REFERENCES unified_events (event_id),
+            FOREIGN KEY (user_id) REFERENCES alumni (alumni_id)
         )
         ''')
 
@@ -401,7 +426,7 @@ def init_alumni_db():
             caption TEXT,
             upload_date TEXT,
             is_featured BOOLEAN DEFAULT 0,
-            FOREIGN KEY (event_id) REFERENCES alumni_events (event_id),
+            FOREIGN KEY (event_id) REFERENCES unified_events (event_id),
             FOREIGN KEY (uploaded_by) REFERENCES alumni (alumni_id)
         )
         ''')
@@ -496,7 +521,7 @@ def init_alumni_db():
             survey_title TEXT,
             questions TEXT,
             created_date TEXT,
-            FOREIGN KEY (event_id) REFERENCES alumni_events (event_id)
+            FOREIGN KEY (event_id) REFERENCES unified_events (event_id)
         )
         ''')
 
@@ -514,6 +539,12 @@ def init_alumni_db():
 
         # Initialize default data
         init_default_enhanced_data(cursor)
+
+        # Add Gift Aid column if not present (v8.2.0 migration)
+        try:
+            cursor.execute("ALTER TABLE donations ADD COLUMN is_gift_aided INTEGER DEFAULT 0")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
 
         conn.commit()
         conn.close()

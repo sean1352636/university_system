@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/managers/session_manager.py
+# hypothesis_version: 6.151.9
+
+['.university_system', '127.0.0.1', 'SessionManager', '_chatbot_sessions', 'access_chatbot', 'auth_method', 'cli_remember_me.json', 'created_at', 'device_fingerprint', 'id', 'new_token', 'original_role', 'password', 'r', 'sso_provider_id', 'success', 'token', 'username', 'w']

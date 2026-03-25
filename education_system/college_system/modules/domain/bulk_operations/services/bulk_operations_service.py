@@ -3,6 +3,7 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import BulkOperationError, ValidationError
 from education_system.college_system.infrastructure.database.db import connect
+from education_system.college_system.core.sql_safety import validate_identifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,10 +26,23 @@ class BulkOperationService:
             raise ValidationError("initiated_by is required.")
         conn = self._conn()
         try:
+            # Build INSERT with only non-None values so DB defaults apply
+            fields = {k: v for k, v in {
+                'job_type': kwargs.get('job_type'),
+                'initiated_by': kwargs.get('initiated_by'),
+                'file_path': kwargs.get('file_path'),
+                'total_rows': kwargs.get('total_rows'),
+                'processed_rows': kwargs.get('processed_rows'),
+                'success_count': kwargs.get('success_count'),
+                'error_count': kwargs.get('error_count'),
+                'error_log': kwargs.get('error_log'),
+                'status': kwargs.get('status'),
+            }.items() if v is not None}
+            cols = ", ".join(fields.keys())
+            placeholders = ", ".join("?" for _ in fields)
             conn.execute(
-                """INSERT INTO bulk_jobs (job_type, initiated_by, file_path, total_rows, processed_rows, success_count, error_count, error_log, status)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (kwargs.get('job_type'), kwargs.get('initiated_by'), kwargs.get('file_path'), kwargs.get('total_rows'), kwargs.get('processed_rows'), kwargs.get('success_count'), kwargs.get('error_count'), kwargs.get('error_log'), kwargs.get('status'),),
+                f"INSERT INTO bulk_jobs ({cols}) VALUES ({placeholders})",
+                list(fields.values()),
             )
             conn.commit()
             row = conn.execute(
@@ -60,7 +74,7 @@ class BulkOperationService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -78,7 +92,7 @@ class BulkOperationService:
         if not updates:
             raise ValidationError("No valid fields to update.")
         updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [pk]
         conn = self._conn()
         try:
@@ -116,7 +130,7 @@ class BulkOperationService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         conn = self._conn()
         try:

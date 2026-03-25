@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/cloud.py
+# hypothesis_version: 6.151.9
+
+[200, 400, 500, '%Y-%m-%d %H:%M:%S.%f', '/event', '/health', '@timestamp', 'Authorization', 'Content-Type', 'activity-logs', 'activity_log', 'activity_logger', 'application-logs', 'application/json', 'aws_cloudwatch', 'data', 'default-stream', 'elasticsearch', 'enabled_services', 'event', 'event_type', 'headers', 'hec_token', 'hec_url', 'index', 'json', 'log_group', 'log_stream', 'main', 'password', 'source', 'sourcetype', 'splunk', 'time', 'timeout', 'timestamp', 'url', 'username', 'webhook', 'webhook_url']

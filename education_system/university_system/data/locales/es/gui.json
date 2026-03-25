@@ -46,7 +46,34 @@
     "export": "Exportar",
     "save_changes": "Guardar cambios",
     "create": "Crear",
-    "select": "Seleccionar"
+    "select": "Seleccionar",
+    "switch_system": {
+      "title": "Cambiar Sistema",
+      "header": "Cambiar a otro sistema",
+      "choose_system": "Elija un sistema para iniciar:",
+      "failed": "Error al cambiar de sistema: {error}",
+      "college": "Sistema de Colegio de Sexto Curso",
+      "secondary": "Sistema de Escuela Secundaria",
+      "primary": "Sistema de Escuela Primaria"
+    },
+    "mfa": {
+      "verification_status_disabled": "Desactivado (Solo Contraseña)",
+      "verification_status_enabled": "Activado",
+      "login_verification_label": "Verificación de Inicio de Sesión: ",
+      "configured": "Configurado",
+      "primary_method": "Principal",
+      "turned_off_success": "MFA ha sido desactivado.\n\nSu configuración ha sido guardada.\nPuede restaurarla más tarde desde este menú.",
+      "module_not_available": "Módulo MFA no disponible: {error}",
+      "error_opening_setup": "Error al abrir configuración MFA: {error}",
+      "error_opening_wizard": "Error al abrir asistente MFA: {error}",
+      "reenable_email_subject": "MFA Reactivado para Su Cuenta",
+      "reenable_email_body": "Hola {username},\n\nLa Autenticación Multifactor (MFA) ha sido reactivada para su cuenta usando su configuración guardada previamente.\n\nDetalles:\n- Cuenta: {username}\n- Correo: {email}\n- Métodos restaurados: {methods_count}\n\nSi no realizó este cambio, contacte soporte inmediatamente y cambie su contraseña.\n\nGracias,\nEquipo de Seguridad del Sistema Universitario",
+      "reenabled_title": "MFA Reactivado",
+      "reenabled_with_email": "MFA ha sido reactivado exitosamente usando su configuración guardada.\n\nSe ha enviado un correo de confirmación a:\n{email}",
+      "reenabled_no_email": "MFA ha sido reactivado exitosamente usando su configuración guardada.\n\n(No se pudo enviar la notificación por correo)",
+      "reenabled_email_error": "MFA ha sido reactivado exitosamente usando su configuración guardada.\n\n(No se pudo enviar el correo de confirmación: {error})",
+      "reenabled_simple": "MFA ha sido reactivado exitosamente usando su configuración guardada."
+    }
   },
   "nav": {
     "categories": {

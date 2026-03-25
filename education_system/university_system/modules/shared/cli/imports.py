@@ -582,16 +582,16 @@ except ImportError as e:
 def get_enhanced_reporting():
     """Lazy import for enhanced reporting"""
     try:
-        from education_system.university_system.modules.shared.services.enhanced_reporting import display_enhanced_reporting_menu
+        from education_system.university_system.modules.shared.services.analytics.enhanced_reporting import display_enhanced_reporting_menu
         return display_enhanced_reporting_menu
     except ImportError:
         return None
 
 def get_predictive_analytics():
-    """Lazy import for predictive analytics"""
+    """Lazy import for predictive analytics GUI class"""
     try:
-        from education_system.university_system.modules.shared.services.predictive_analytics import display_predictive_analytics_menu
-        return display_predictive_analytics_menu
+        from education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui import PredictiveAnalyticsGUI
+        return PredictiveAnalyticsGUI
     except ImportError:
         return None
 

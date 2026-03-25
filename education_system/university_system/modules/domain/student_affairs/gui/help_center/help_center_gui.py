@@ -8,6 +8,7 @@ import logging
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 from education_system.university_system.modules.shared.utils.simple_activity_logger import log_activity
 
@@ -330,7 +331,7 @@ class HelpCenterGUI:
         self._kb_articles.clear()
 
         query_text = self.kb_search_var.get().strip()
-        search_pattern = f"%{query_text}%"
+        search_pattern = f"%{escape_like(query_text)}%"
 
         try:
             with get_connection() as conn:

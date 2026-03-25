@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/feature_factory.py
+# hypothesis_version: 6.151.9
+
+[500, 800, '15', '20', '900x600', '=', 'Arial', 'bold', 'create_cli_menu', 'create_gui_launcher', 'current_user']

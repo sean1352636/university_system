@@ -114,7 +114,7 @@ except ImportError:
 _AUDIT_LOG_COLUMNS_CACHE: Optional[List[str]] = None
 _STUDENT_COLUMNS_CACHE: Optional[List[str]] = None
 
-from .base import LibraryGUI
+from education_system.university_system.modules.domain.academics.gui.library.base import LibraryGUI
 
 def show_settings(self):
     """Show settings interface"""
@@ -767,7 +767,8 @@ def backup_settings_only_gui(self):
     """Backup only library settings to a separate file"""
     try:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        backup_dir = os.path.join(os.path.dirname(DATABASE_FILE), 'backups', 'settings')
+        from education_system.university_system.modules.shared.constants import paths as _paths
+        backup_dir = str(_paths.BACKUP_SETTINGS_DIR)
         os.makedirs(backup_dir, exist_ok=True)
 
         backup_file = os.path.join(backup_dir, f'settings_backup_{timestamp}.json')

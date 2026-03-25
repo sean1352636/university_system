@@ -83,7 +83,7 @@ def secure_filename(filename: str) -> str:
         filename = unicodedata.normalize('NFKD', filename)
         filename = filename.encode('ascii', 'ignore').decode('ascii')
     except Exception:
-        pass
+        logger.exception("Unicode normalization failed for filename")
 
     # Replace path separators with underscores
     for sep in (os.sep, os.altsep):
@@ -135,7 +135,7 @@ class SecureFileUpload:
     # Whitelist of allowed extensions by category
     ALLOWED_EXTENSIONS: Dict[str, Set[str]] = {
         'documents': {'.pdf', '.doc', '.docx', '.txt', '.odt', '.rtf', '.xls', '.xlsx', '.ppt', '.pptx', '.jpg', '.jpeg', '.png', '.gif', '.bmp'},
-        'images': {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'},
+        'images': {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'},
         'archives': {'.zip', '.tar', '.gz', '.7z', '.rar'},
         'videos': {'.mp4', '.avi', '.mov', '.wmv', '.mkv', '.webm'},
         'audio': {'.mp3', '.wav', '.ogg', '.flac', '.m4a'},
@@ -164,7 +164,7 @@ class SecureFileUpload:
         'image/gif',
         'image/bmp',
         'image/webp',
-        'image/svg+xml',
+        # image/svg+xml intentionally excluded — SVGs can contain XSS/XXE attacks
         # Archives
         'application/zip',
         'application/x-tar',
@@ -468,7 +468,7 @@ class SecureFileUpload:
             try:
                 os.chmod(category_dir, 0o700)
             except OSError:
-                pass
+                logger.exception("Failed to set permissions on category directory: %s", category_dir)
 
             # Generate full file path
             file_path = category_dir / unique_name
@@ -609,7 +609,7 @@ class SecureFileUpload:
 
             return 'text/plain'
         except (UnicodeDecodeError, Exception):
-            pass
+            logger.exception("MIME type detection failed for text-based format check")
 
         # Unknown type
         return 'application/octet-stream'

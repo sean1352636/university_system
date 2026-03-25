@@ -99,7 +99,6 @@ except ImportError:
 
 # Import academic system launchers
 try:
-    from education_system.university_system.modules.domain.academics.services.lms.lms_core import launch_lms_gui
     from education_system.university_system.modules.domain.academics.services.degree_audit.degree_audit_core import launch_degree_audit_gui
     from education_system.university_system.modules.domain.academics.services.evaluation.course_evaluation_core import launch_course_evaluation_gui
     ACADEMIC_SYSTEMS_AVAILABLE = True
@@ -201,12 +200,14 @@ def add_prerequisite_gui(self):
                 return
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            # Check for circular dependency
-            if self.check_circular_prerequisite_db(cursor, course_id, prereq_id):
-                messagebox.showerror("Circular Dependency",
-                                   "Adding this prerequisite would create a circular dependency!")
+                # Check for circular dependency
+                if self.check_circular_prerequisite_db(cursor, course_id, prereq_id):
+                    messagebox.showerror("Circular Dependency",
+                                       "Adding this prerequisite would create a circular dependency!")
+            finally:
                 conn.close()
                 return
 
@@ -736,30 +737,32 @@ class AddPrerequisiteDialog:
             
             # Create prerequisites table if it doesn't exist
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS course_prerequisites (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                course_id INTEGER NOT NULL,
-                prerequisite_course_id INTEGER NOT NULL,
-                is_required BOOLEAN DEFAULT 1,
-                created_at TEXT NOT NULL,
-                FOREIGN KEY (course_id) REFERENCES courses (id),
-                FOREIGN KEY (prerequisite_course_id) REFERENCES courses (id),
-                UNIQUE(course_id, prerequisite_course_id)
-            )
-            ''')
-            
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            
-            cursor.execute('''
-            INSERT INTO course_prerequisites (course_id, prerequisite_course_id, is_required, created_at)
-            VALUES (?, ?, ?, ?)
-            ''', (course_id, prereq_id, self.is_required.get(), timestamp))
-            
-            conn.commit()
-            conn.close()
+            try:
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                CREATE TABLE IF NOT EXISTS course_prerequisites (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    course_id INTEGER NOT NULL,
+                    prerequisite_course_id INTEGER NOT NULL,
+                    is_required BOOLEAN DEFAULT 1,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (course_id) REFERENCES courses (id),
+                    FOREIGN KEY (prerequisite_course_id) REFERENCES courses (id),
+                    UNIQUE(course_id, prerequisite_course_id)
+                )
+                ''')
+
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                cursor.execute('''
+                INSERT INTO course_prerequisites (course_id, prerequisite_course_id, is_required, created_at)
+                VALUES (?, ?, ?, ?)
+                ''', (course_id, prereq_id, self.is_required.get(), timestamp))
+
+                conn.commit()
+            finally:
+                conn.close()
             
             self.result = True
             self.dialog.destroy()

@@ -1,21 +1,13 @@
-"""Database constants and configuration."""
+"""Database constants and configuration for the Sixth Form College system."""
 
-# Connection settings
-CONNECTION_TIMEOUT = 30
-BUSY_TIMEOUT = 5000  # milliseconds
-
-# Connection pool
-POOL_MIN_SIZE = 1
-POOL_MAX_SIZE = 5
-
-# SQLite PRAGMAs for performance and safety
-PRAGMAS = {
-    "journal_mode": "WAL",
-    "foreign_keys": "ON",
-    "busy_timeout": str(BUSY_TIMEOUT),
-    "cache_size": "-8000",  # 8MB
-    "synchronous": "NORMAL",
-}
+from education_system.shared.database.constants import (
+    CONNECTION_TIMEOUT,
+    BUSY_TIMEOUT,
+    POOL_MIN_SIZE,
+    POOL_MAX_SIZE,
+    PRAGMAS,
+    TERMS,
+)
 
 # UK A-Level grade scale: (min_score, max_score, ucas_tariff_points)
 GRADE_SCALE = {
@@ -39,7 +31,6 @@ BTEC_GRADE_SCALE = {
 
 QUALIFICATION_TYPES = ("A-Level", "BTEC", "T-Level", "GCSE", "Core Maths", "EPQ")
 YEAR_GROUPS = ("12", "13")
-TERMS = ("Autumn", "Spring", "Summer")
 
 # Attendance statuses
 ATTENDANCE_STATUSES = ("present", "absent", "late", "excused")

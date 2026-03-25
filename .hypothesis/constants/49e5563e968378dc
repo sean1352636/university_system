@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/budget_manager/reports.py
+# hypothesis_version: 6.151.9
+
+[100, 400, 600, '\nACTIVE BUDGETS:\n', '%Y-%m-%d', '*.*', '*.txt', '.txt', '1.0', '10', '800x600', 'All files', 'Budget vs Actual', 'Close', 'Courier', 'Email', 'Email Sent', 'Email to Admin', 'Error', 'Financial Summary', 'No Data', 'Not Available', 'OK', 'OVER', 'On track', 'Report Output', 'Reports', 'Save Report', 'Save as TXT', 'Saved', 'Select Report', 'Spending Trends', 'Spending by Category', 'Text files', 'Unknown', '_', 'admin@university.edu', 'allocated_amount', 'amount', 'budget_id', 'categories', 'daily_spending', 'days_progress_pct', 'email', 'first_name', 'guest', 'keys', 'last_name', 'reports', 'spent_amount', 'statistics', 'total_amount', 'transactions', 'username', 'utf-8', 'w']

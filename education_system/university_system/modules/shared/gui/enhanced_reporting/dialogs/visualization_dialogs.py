@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..core import ReportingSystemGUI
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import ReportingSystemGUI
 
 
 def show_data_visualization_studio(gui: ReportingSystemGUI) -> None:

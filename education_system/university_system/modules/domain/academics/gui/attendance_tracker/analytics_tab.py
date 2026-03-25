@@ -29,8 +29,8 @@ except ImportError:
     ORIGINAL_FUNCTIONS_AVAILABLE = False
 
 # Import window classes
-from .misc_windows import GamificationWindow
-from .alerts_predictive_windows import PredictiveAnalyticsWindow, SinglePredictionDialog
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker.misc_windows import GamificationWindow
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker.alerts_predictive_windows import PredictiveAnalyticsWindow, SinglePredictionDialog
 
 
 def batch_risk_analysis(self):

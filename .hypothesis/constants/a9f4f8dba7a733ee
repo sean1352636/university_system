@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/library/fines/finance_integration.py
+# hypothesis_version: 6.151.9
+
+[0.0, '%Y-%m-%d', '400x300', '800x600', 'Cash/Card at Library', 'Demo', 'GBP', 'Library', 'Library fine payment', 'Payment Failed', 'Quick amounts:', 'Segoe UI', 'Student Account', 'System', 'Top Up & Pay Fine', 'Top-up Amount: £', 'Top-up Failed', 'Unknown error', 'User', 'bold', 'common.cancel', 'common.error', 'common.success', 'common.warning', 'completed', 'demo@university.edu', 'message', 'new_balance', 'paid', 'success']

@@ -143,16 +143,16 @@ def real_time_financial_dashboard(self):
             """)
             total_revenue = cursor.fetchone()[0] or 0
 
-            # Add club payments to total revenue
+            # Add club payments to total revenue (from payments table with source_type='club')
             try:
-                cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM club_payments WHERE status = 'completed'")
+                cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE source_type = 'club' AND status = 'completed'")
                 total_revenue += cursor.fetchone()[0] or 0
             except Exception:
                 pass
 
             # Add housing payments to total revenue
             try:
-                cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM housing_payments WHERE status = 'completed'")
+                cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE source_type = 'housing' AND status = 'completed'")
                 total_revenue += cursor.fetchone()[0] or 0
             except Exception:
                 pass

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/constants/institution_settings.py
+# hypothesis_version: 6.151.9
+
+['get_elections_phone', 'get_setting', 'load_settings', 'reset_settings', 'save_settings']

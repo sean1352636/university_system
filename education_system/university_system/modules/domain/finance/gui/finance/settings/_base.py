@@ -12,7 +12,7 @@ from education_system.university_system.infrastructure.database.db import get_co
 from cryptography.fernet import Fernet
 
 try:
-    from education_system.university_system.infrastructure.logging.log_config import configure_logging, get_log_file
+    from education_system.university_system.utils.logging.log_config import configure_logging, get_log_file
 except ImportError:
     def configure_logging(name=None):
         """Fallback logging configuration."""
@@ -35,20 +35,20 @@ cipher_suite = Fernet(ENCRYPTION_KEY)
 # Payment gateway configurations (from original file)
 PAYMENT_GATEWAYS = {
     'stripe': {
-        'public_key': 'pk_test_...',
-        'secret_key': 'sk_test_...',
-        'webhook_secret': 'whsec_...'
+        'public_key': os.getenv('STRIPE_PUBLIC_KEY', ''),
+        'secret_key': os.getenv('STRIPE_SECRET_KEY', ''),
+        'webhook_secret': os.getenv('STRIPE_WEBHOOK_SECRET', '')
     },
     'paypal': {
-        'client_id': 'your_paypal_client_id',
-        'client_secret': 'your_paypal_client_secret',
-        'environment': 'sandbox'
+        'client_id': os.getenv('PAYPAL_CLIENT_ID', ''),
+        'client_secret': os.getenv('PAYPAL_CLIENT_SECRET', ''),
+        'environment': os.getenv('PAYPAL_ENVIRONMENT', 'sandbox')
     }
 }
 
 # WARNING: Never commit real API keys to version control!
 # Set these environment variables in your deployment environment
-from .currency import SUPPORTED_CURRENCIES  # noqa: E402 – re-export
+from education_system.university_system.modules.domain.finance.gui.finance.settings.currency import SUPPORTED_CURRENCIES  # noqa: E402 – re-export
 # Load exchange API key from environment variable
 EXCHANGE_API_KEY = os.getenv('EXCHANGE_API_KEY', '')
 
@@ -75,13 +75,13 @@ warnings.filterwarnings('ignore')
 # Mixin imports
 # ---------------------------------------------------------------------------
 
-from .general_settings import GeneralSettingsMixin  # noqa: E402
-from .currency import CurrencyMixin  # noqa: E402
-from .notifications import NotificationsMixin  # noqa: E402
-from .financial_aid import FinancialAidMixin  # noqa: E402
-from .scholarships import ScholarshipsMixin  # noqa: E402
-from .admin import AdminMixin  # noqa: E402
-from .reports import ReportsMixin  # noqa: E402
+from education_system.university_system.modules.domain.finance.gui.finance.settings.general_settings import GeneralSettingsMixin  # noqa: E402
+from education_system.university_system.modules.domain.finance.gui.finance.settings.currency import CurrencyMixin  # noqa: E402
+from education_system.university_system.modules.domain.finance.gui.finance.settings.notifications import NotificationsMixin  # noqa: E402
+from education_system.university_system.modules.domain.finance.gui.finance.settings.financial_aid import FinancialAidMixin  # noqa: E402
+from education_system.university_system.modules.domain.finance.gui.finance.settings.scholarships import ScholarshipsMixin  # noqa: E402
+from education_system.university_system.modules.domain.finance.gui.finance.settings.admin import AdminMixin  # noqa: E402
+from education_system.university_system.modules.domain.finance.gui.finance.settings.reports import ReportsMixin  # noqa: E402
 
 
 class SettingsManager(

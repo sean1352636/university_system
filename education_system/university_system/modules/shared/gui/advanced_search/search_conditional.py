@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
-from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
+from education_system.university_system.core.sql_safety import escape_like, validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
@@ -873,7 +873,7 @@ def get_connection():
             print_error(f"Database connection error: {e}")
             return None
 
-from .base import AdvancedSearchGUI
+from education_system.university_system.modules.shared.gui.advanced_search.base import AdvancedSearchGUI
 
 def show_condition_builder(self):
     """Show advanced condition builder interface"""
@@ -1061,7 +1061,7 @@ def perform_conditional_logic_search(self, conditions):
             safe_field = validate_identifier(field, "column")
             if operator in ['LIKE', 'NOT LIKE']:
                 condition_str = "[" + safe_field + "] " + operator + " ?"
-                params.append(f"%{value}%")
+                params.append(f"%{escape_like(value)}%")
             else:
                 condition_str = "[" + safe_field + "] " + operator + " ?"
                 # Type conversion for numeric fields

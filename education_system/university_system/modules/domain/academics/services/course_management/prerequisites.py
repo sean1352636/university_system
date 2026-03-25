@@ -5,7 +5,7 @@ from education_system.university_system.modules.shared.utils.simple_activity_log
     log_read,
     log_delete,
 )
-from .validation import check_circular_prerequisite
+from education_system.university_system.modules.domain.academics.services.course_management.validation import check_circular_prerequisite
 
 
 @log_create(module="course_management", description="Adding course prerequisite")

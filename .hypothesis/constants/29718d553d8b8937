@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/student_union/clubs/club_management/finance.py
+# hypothesis_version: 6.151.9
+
+[100, '\nAvailable clubs:', '\nBudget Breakdown:', '%Y', '%Y-%m-%d %H:%M:%S', '-', '1', '2', '3', '4', '5', 'Choose an action: ', 'Invalid choice.', 'Invalid selection.', 'id', 'manage_all_clubs', 'manage_own_club']

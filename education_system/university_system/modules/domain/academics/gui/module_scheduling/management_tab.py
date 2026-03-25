@@ -62,7 +62,7 @@ except ImportError:
     except Exception:
         class ModuleScheduler: pass
 
-from .main_gui import ModuleSchedulingGUI
+from education_system.university_system.modules.domain.academics.gui.module_scheduling.main_gui import ModuleSchedulingGUI
 
 def create_management_tab(self):
     """Create the data management tab"""
@@ -143,14 +143,14 @@ def create_backup(self, backup_name=None, description=""):
     from education_system.university_system.modules.shared.constants import paths
     import shutil
     import os
-    os.makedirs(str(paths.BACKUP_DIR), exist_ok=True)
+    os.makedirs(str(paths.BACKUP_DATABASE_DIR), exist_ok=True)
 
-    backup_path = os.path.join(str(paths.BACKUP_DIR), f"{backup_name}.db")
+    backup_path = os.path.join(str(paths.BACKUP_DATABASE_DIR), f"{backup_name}.db")
 
     try:
         # Check if source database exists
         if not os.path.exists(DEFAULT_DB_PATH):
-            messagebox.showerror("Error", f"Database file not found: {DEFAULT_DB_PATH}")
+            messagebox.showerror("Error", f"Database file not found: {DEFAULT_DB_PATH}", parent=self.root)
             return None
 
         # Copy the database file
@@ -168,11 +168,11 @@ def create_backup(self, backup_name=None, description=""):
             VALUES (?, ?, ?, ?)
             ''', (backup_name, backup_path, file_size, description))
 
-        messagebox.showinfo("Success", f"Backup created successfully:\n{backup_path}")
+        messagebox.showinfo("Success", f"Backup created successfully:\n{backup_path}", parent=self.root)
         return backup_path
 
     except Exception as e:
-        messagebox.showerror("Error", f"Error creating backup: {str(e)}")
+        messagebox.showerror("Error", f"Error creating backup: {str(e)}", parent=self.root)
         return None
 
 ModuleSchedulingGUI.create_backup = create_backup
@@ -191,7 +191,7 @@ def list_backups(self):
         backups = cursor.fetchall()
 
     if not backups:
-        messagebox.showinfo("Backups", "No backups found.")
+        messagebox.showinfo("Backups", "No backups found.", parent=self.root)
         return
 
     # Create dialog to show backups
@@ -235,7 +235,7 @@ def restore_backup(self, backup_name=None):
     if backup_name is None:
         backup_path = filedialog.askopenfilename(
             title="Select Backup File to Restore",
-            initialdir=str(paths.BACKUP_DIR),
+            initialdir=str(paths.BACKUP_DATABASE_DIR),
             filetypes=[
                 ("Database Backup", "*.db"),
                 ("All Files", "*.*")
@@ -248,10 +248,10 @@ def restore_backup(self, backup_name=None):
         # Extract backup name from path for display
         backup_name = os.path.basename(backup_path).replace('.db', '')
     else:
-        backup_path = os.path.join(str(paths.BACKUP_DIR), f"{backup_name}.db")
+        backup_path = os.path.join(str(paths.BACKUP_DATABASE_DIR), f"{backup_name}.db")
 
     if not os.path.exists(backup_path):
-        messagebox.showerror("Error", f"Backup file not found: {backup_path}")
+        messagebox.showerror("Error", f"Backup file not found: {backup_path}", parent=self.root)
         return False
 
     # Confirm restoration
@@ -260,7 +260,7 @@ def restore_backup(self, backup_name=None):
         f"WARNING: This will replace the current database with the backup from {backup_name}\n\n"
         "A pre-restore backup will be created automatically.\n\n"
         "Are you sure you want to continue?"
-    )
+    , parent=self.root)
 
     if not confirm:
         return False
@@ -272,11 +272,11 @@ def restore_backup(self, backup_name=None):
         # Replace current database
         shutil.copy2(backup_path, DEFAULT_DB_PATH)
 
-        messagebox.showinfo("Success", f"Database restored from backup: {backup_name}\n\nPlease restart the application.")
+        messagebox.showinfo("Success", f"Database restored from backup: {backup_name}\n\nPlease restart the application.", parent=self.root)
         return True
 
     except Exception as e:
-        messagebox.showerror("Error", f"Error restoring backup: {str(e)}")
+        messagebox.showerror("Error", f"Error restoring backup: {str(e)}", parent=self.root)
         return False
 
 ModuleSchedulingGUI.restore_backup = restore_backup
@@ -298,11 +298,11 @@ def validate_data(self):
                 self.log_text.insert(tk.END, f"{i}. {issue}\n")
             self.log_text.insert(tk.END, "=" * 50 + "\n")
             
-            if messagebox.askyesno("Issues Found", f"Found {len(issues)} data consistency issues.\n\nWould you like to fix them automatically?"):
+            if messagebox.askyesno("Issues Found", f"Found {len(issues)} data consistency issues.\n\nWould you like to fix them automatically?", parent=self.root):
                 self.clean_orphaned_records()
         else:
             self.log_text.insert(tk.END, "No data consistency issues found.\n")
-            messagebox.showinfo("Validation Complete", "No data consistency issues found.")
+            messagebox.showinfo("Validation Complete", "No data consistency issues found.", parent=self.root)
         
         self.log_text.config(state=tk.DISABLED)
         self.notebook.select(7)  # Switch to management tab
@@ -311,7 +311,7 @@ def validate_data(self):
         self.update_status("Ready")
         
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to validate data: {str(e)}")
+        messagebox.showerror("Error", f"Failed to validate data: {str(e)}", parent=self.root)
         self.update_status("Ready")
 
 ModuleSchedulingGUI.validate_data = validate_data
@@ -322,7 +322,7 @@ def clean_orphaned_records(self):
         "Confirm Cleanup",
         "This will remove schedules with invalid room or instructor references.\n\n"
         "Are you sure you want to continue?"
-    )
+    , parent=self.root)
 
     if not confirm:
         return
@@ -349,11 +349,11 @@ def clean_orphaned_records(self):
                  f"• Removed {removed_room_refs} schedules with invalid room references\n" \
                  f"• Removed {removed_instructor_refs} schedules with invalid instructor references"
 
-        messagebox.showinfo("Cleanup Complete", message)
+        messagebox.showinfo("Cleanup Complete", message, parent=self.root)
         self.refresh_all_data()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Error during cleanup: {str(e)}")
+        messagebox.showerror("Error", f"Error during cleanup: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.clean_orphaned_records = clean_orphaned_records
 
@@ -366,16 +366,16 @@ def repair_issues(self):
         issues = self.scheduler.validate_data_consistency()
         if issues:
             self.scheduler.clean_orphaned_records()
-            messagebox.showinfo("Success", "Common issues repaired.")
+            messagebox.showinfo("Success", "Common issues repaired.", parent=self.root)
         else:
-            messagebox.showinfo("Info", "No issues found to repair.")
+            messagebox.showinfo("Info", "No issues found to repair.", parent=self.root)
         
         self.refresh_all_data()
         self.update_activity_log("Repaired data issues")
         self.update_status("Ready")
         
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to repair issues: {str(e)}")
+        messagebox.showerror("Error", f"Failed to repair issues: {str(e)}", parent=self.root)
         self.update_status("Ready")
 
 ModuleSchedulingGUI.repair_issues = repair_issues
@@ -394,16 +394,16 @@ def import_csv(self):
             success = self.scheduler.import_schedules_from_csv(file_path)
             
             if success:
-                messagebox.showinfo("Success", "CSV imported successfully!")
+                messagebox.showinfo("Success", "CSV imported successfully!", parent=self.root)
                 self.refresh_all_data()
                 self.update_activity_log(f"Imported data from {os.path.basename(file_path)}")
             else:
-                messagebox.showerror("Error", "Failed to import CSV file.")
+                messagebox.showerror("Error", "Failed to import CSV file.", parent=self.root)
             
             self.update_status("Ready")
         
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to import CSV: {str(e)}")
+        messagebox.showerror("Error", f"Failed to import CSV: {str(e)}", parent=self.root)
         self.update_status("Ready")
 
 ModuleSchedulingGUI.import_csv = import_csv
@@ -416,18 +416,18 @@ def export_all_data(self):
         filename = self.scheduler.export_all_schedules_to_csv()
         
         if filename:
-            if messagebox.askyesno("Export Complete", f"Data exported successfully!\n\nFile: {filename}\n\nWould you like to open the file location?"):
+            if messagebox.askyesno("Export Complete", f"Data exported successfully!\n\nFile: {filename}\n\nWould you like to open the file location?", parent=self.root):
                 folder_path = os.path.dirname(os.path.abspath(filename))
                 webbrowser.open(f"file://{folder_path}")
             
             self.update_activity_log("Exported all schedule data")
         else:
-            messagebox.showerror("Error", "Failed to export data.")
+            messagebox.showerror("Error", "Failed to export data.", parent=self.root)
         
         self.update_status("Ready")
         
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export data: {str(e)}")
+        messagebox.showerror("Error", f"Failed to export data: {str(e)}", parent=self.root)
         self.update_status("Ready")
 
 ModuleSchedulingGUI.export_all_data = export_all_data
@@ -483,11 +483,11 @@ def import_schedules_from_csv(self):
         if errors:
             message += f"\nErrors: {len(errors)}\n\nFirst 5 errors:\n" + "\n".join(errors[:5])
 
-        messagebox.showinfo("Import Complete", message)
+        messagebox.showinfo("Import Complete", message, parent=self.root)
         self.refresh_all_data()
 
     except Exception as e:
-        messagebox.showerror("Import Error", f"Failed to import CSV: {str(e)}")
+        messagebox.showerror("Import Error", f"Failed to import CSV: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.import_schedules_from_csv = import_schedules_from_csv
 
@@ -534,10 +534,10 @@ def export_all_schedules_to_csv(self):
             # Write data
             writer.writerows(schedules)
 
-        messagebox.showinfo("Export Complete", f"Exported {len(schedules)} schedules to:\n{filename}")
+        messagebox.showinfo("Export Complete", f"Exported {len(schedules)} schedules to:\n{filename}", parent=self.root)
 
     except Exception as e:
-        messagebox.showerror("Export Error", f"Failed to export CSV: {str(e)}")
+        messagebox.showerror("Export Error", f"Failed to export CSV: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.export_all_schedules_to_csv = export_all_schedules_to_csv
 
@@ -781,7 +781,7 @@ def open_activity_log_window(self):
         activity_window.geometry(f"+{x}+{y}")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to open activity log: {str(e)}")
+        messagebox.showerror("Error", f"Failed to open activity log: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.open_activity_log_window = open_activity_log_window
 
@@ -826,13 +826,13 @@ def _refresh_activity_log(self, tree):
             ))
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to refresh activity log: {str(e)}")
+        messagebox.showerror("Error", f"Failed to refresh activity log: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI._refresh_activity_log = _refresh_activity_log
 
 def _clear_old_activity_logs(self, tree):
     """Clear activity logs older than 30 days"""
-    if not messagebox.askyesno("Confirm", "Clear activity logs older than 30 days?"):
+    if not messagebox.askyesno("Confirm", "Clear activity logs older than 30 days?", parent=self.root):
         return
 
     try:
@@ -845,11 +845,11 @@ def _clear_old_activity_logs(self, tree):
             cursor.execute('DELETE FROM activity_log WHERE timestamp < ?', (cutoff_date,))
             deleted_count = cursor.rowcount
 
-        messagebox.showinfo("Success", f"Deleted {deleted_count} old activity log entries.")
+        messagebox.showinfo("Success", f"Deleted {deleted_count} old activity log entries.", parent=self.root)
         self._refresh_activity_log(tree)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to clear old logs: {str(e)}")
+        messagebox.showerror("Error", f"Failed to clear old logs: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI._clear_old_activity_logs = _clear_old_activity_logs
 
@@ -881,10 +881,10 @@ def _export_activity_log(self):
             writer.writerow(['ID', 'User ID', 'Username', 'Action', 'Details', 'Timestamp', 'IP Address'])
             writer.writerows(logs)
 
-        messagebox.showinfo("Success", f"Activity log exported to {filename}")
+        messagebox.showinfo("Success", f"Activity log exported to {filename}", parent=self.root)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export activity log: {str(e)}")
+        messagebox.showerror("Error", f"Failed to export activity log: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI._export_activity_log = _export_activity_log
 

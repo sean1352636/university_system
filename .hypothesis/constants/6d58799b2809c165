@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/attendance_tracker/settings_admin_tabs.py
+# hypothesis_version: 6.151.9
+
+[1.0, -100, 100, 120, 365, ' - ', '%Y-%m-%d', '*', '*.*', '*.csv', '*.db', '*.xlsx', '-', '.csv', '2', '3', '70', '80', 'Action', 'All files', 'CSV files', 'Database files', 'Error', 'Excel files', 'Primary.TButton', 'Record ID', 'Success.TButton', 'System', 'Table', 'Timestamp', 'User', 'Warning.TButton', 'activity.log', 'auto_email_warnings', 'boolean', 'cnt', 'common.error', 'common.save', 'common.success', 'common.warning', 'enable_gamification', 'enable_geofencing', 'enable_qr_checkin', 'end', 'headings', 'integer', 'manual', 'r', 'sms_api_key', 'string', 'utf-8', 'values']

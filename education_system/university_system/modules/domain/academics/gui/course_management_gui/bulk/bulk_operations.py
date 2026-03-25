@@ -99,7 +99,6 @@ except ImportError:
 
 # Import academic system launchers
 try:
-    from education_system.university_system.modules.domain.academics.services.lms.lms_core import launch_lms_gui
     from education_system.university_system.modules.domain.academics.services.degree_audit.degree_audit_core import launch_degree_audit_gui
     from education_system.university_system.modules.domain.academics.services.evaluation.course_evaluation_core import launch_course_evaluation_gui
     ACADEMIC_SYSTEMS_AVAILABLE = True
@@ -244,16 +243,18 @@ class BulkUpdateDialog:
                 return
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-            update_query = f"UPDATE courses SET {update_field} = ? WHERE {selection_method} = ?"
-            cursor.execute(update_query, (new_value, criteria_value))
+                update_query = f"UPDATE courses SET {update_field} = ? WHERE {selection_method} = ?"
+                cursor.execute(update_query, (new_value, criteria_value))
 
-            updated_count = cursor.rowcount
-            conn.commit()
-            conn.close()
+                updated_count = cursor.rowcount
+                conn.commit()
+            finally:
+                conn.close()
 
             messagebox.showinfo("Update Complete", f"Successfully updated {updated_count} courses.")
             self.result = True
@@ -341,12 +342,14 @@ class BulkUpdateDialog:
                 return
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            query = f"SELECT course_code, course_name FROM courses WHERE {selection_method} = ?"
-            cursor.execute(query, (criteria_value,))
-            courses = cursor.fetchall()
-            conn.close()
+                query = f"SELECT course_code, course_name FROM courses WHERE {selection_method} = ?"
+                cursor.execute(query, (criteria_value,))
+                courses = cursor.fetchall()
+            finally:
+                conn.close()
 
             if courses:
                 preview_text = f"Courses that will be updated ({len(courses)}):\n\n"
@@ -383,29 +386,31 @@ class BulkUpdateDialog:
                 return
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-            cursor = conn.cursor()
-
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-            update_query = f"UPDATE courses SET {update_field} = ? WHERE {selection_method} = ?"
-            cursor.execute(update_query, (new_value, criteria_value))
-
-            # After performing the update, resynchronise any legacy alias
-            # columns for all courses.  This ensures that if the caller
-            # updated a canonical field (course_code, course_name or
-            # credit_hours) the corresponding alias columns (code, name,
-            # credits) remain in sync.  Performing the update for all
-            # rows is inexpensive given the expected table size.
             try:
-                cursor.execute(
-                    "UPDATE courses SET code = course_code, name = course_name, credits = credit_hours, date_added = COALESCE(date_added, created_at)"
-                )
-            except Exception:
-                pass
-            
-            updated_count = cursor.rowcount
-            conn.commit()
-            conn.close()
+                cursor = conn.cursor()
+
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                update_query = f"UPDATE courses SET {update_field} = ? WHERE {selection_method} = ?"
+                cursor.execute(update_query, (new_value, criteria_value))
+
+                # After performing the update, resynchronise any legacy alias
+                # columns for all courses.  This ensures that if the caller
+                # updated a canonical field (course_code, course_name or
+                # credit_hours) the corresponding alias columns (code, name,
+                # credits) remain in sync.  Performing the update for all
+                # rows is inexpensive given the expected table size.
+                try:
+                    cursor.execute(
+                        "UPDATE courses SET code = course_code, name = course_name, credits = credit_hours, date_added = COALESCE(date_added, created_at)"
+                    )
+                except Exception:
+                    pass
+
+                updated_count = cursor.rowcount
+                conn.commit()
+            finally:
+                conn.close()
             
             messagebox.showinfo("Update Complete", f"Successfully updated {updated_count} courses.")
             self.result = True

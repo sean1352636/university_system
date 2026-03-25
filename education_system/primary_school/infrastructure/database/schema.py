@@ -80,9 +80,12 @@ TABLES = {
             start_date TEXT DEFAULT (date('now')),
             dbs_check_date TEXT,
             dbs_certificate_number TEXT,
+            dbs_number TEXT,
             qualifications TEXT,
             emergency_contact_name TEXT,
             emergency_contact_phone TEXT,
+            notes TEXT,
+            leaving_date TEXT,
             status TEXT DEFAULT 'Active',
             created_at TEXT DEFAULT (datetime('now'))
         )
@@ -178,6 +181,19 @@ TABLES = {
             submitted_date TEXT,
             status TEXT DEFAULT 'Pending',
             feedback TEXT,
+            file_path TEXT,
+            is_late INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "homework_feedback": """
+        CREATE TABLE IF NOT EXISTS homework_feedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            submission_id INTEGER NOT NULL REFERENCES homework_submissions(id),
+            teacher_feedback TEXT,
+            sticker TEXT,
+            parent_comment TEXT,
+            parent_id TEXT,
             created_at TEXT DEFAULT (datetime('now'))
         )
     """,
@@ -422,7 +438,8 @@ TABLES = {
             status TEXT DEFAULT 'Pending',
             decision_date TEXT,
             notes TEXT,
-            created_at TEXT DEFAULT (datetime('now'))
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
         )
     """,
     "clubs": """
@@ -520,8 +537,10 @@ TABLES = {
             location TEXT,
             copies INTEGER DEFAULT 1,
             available INTEGER DEFAULT 1,
+            available_copies INTEGER DEFAULT 1,
             status TEXT DEFAULT 'Available',
-            created_at TEXT DEFAULT (datetime('now'))
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
         )
     """,
     "library_loans": """
@@ -532,6 +551,7 @@ TABLES = {
             loan_date TEXT DEFAULT (date('now')),
             due_date TEXT,
             return_date TEXT,
+            returned_date TEXT,
             status TEXT DEFAULT 'On Loan',
             created_at TEXT DEFAULT (datetime('now'))
         )
@@ -593,7 +613,8 @@ TABLES = {
             slot_duration INTEGER DEFAULT 10,
             year_groups TEXT,
             status TEXT DEFAULT 'Scheduled',
-            created_at TEXT DEFAULT (datetime('now'))
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
         )
     """,
     "parents_evening_slots": """
@@ -606,7 +627,8 @@ TABLES = {
             parent_name TEXT,
             status TEXT DEFAULT 'Available',
             notes TEXT,
-            created_at TEXT DEFAULT (datetime('now'))
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
         )
     """,
     "calendar_events": """
@@ -796,6 +818,432 @@ TABLES = {
             updated_at TEXT DEFAULT (datetime('now'))
         )
     """,
+    "payroll_records": """
+        CREATE TABLE IF NOT EXISTS payroll_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            staff_id INTEGER NOT NULL,
+            pay_period TEXT NOT NULL,
+            gross_pay REAL NOT NULL DEFAULT 0,
+            tax REAL NOT NULL DEFAULT 0,
+            ni_contribution REAL NOT NULL DEFAULT 0,
+            pension REAL NOT NULL DEFAULT 0,
+            other_deductions REAL NOT NULL DEFAULT 0,
+            net_pay REAL NOT NULL DEFAULT 0,
+            status TEXT DEFAULT 'draft'
+                CHECK(status IN ('draft','pending_approval','approved','processed','paid')),
+            approved_by TEXT,
+            processed_date TEXT,
+            notes TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (staff_id) REFERENCES staff(id)
+        )
+    """,
+    "payroll_config": """
+        CREATE TABLE IF NOT EXISTS payroll_config (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tax_year TEXT NOT NULL,
+            tax_band_1 REAL DEFAULT 12570,
+            tax_rate_1 REAL DEFAULT 0.20,
+            tax_band_2 REAL DEFAULT 50270,
+            tax_rate_2 REAL DEFAULT 0.40,
+            ni_threshold REAL DEFAULT 12570,
+            ni_rate REAL DEFAULT 0.12,
+            pension_rate REAL DEFAULT 0.05,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "certificates": """
+        CREATE TABLE IF NOT EXISTS certificates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT NOT NULL,
+            certificate_number TEXT UNIQUE NOT NULL,
+            certificate_type TEXT NOT NULL,
+            course_name TEXT NOT NULL,
+            award_date TEXT NOT NULL,
+            grade TEXT,
+            additional_info TEXT,
+            status TEXT NOT NULL DEFAULT 'active',
+            issued_by TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """,
+    "transcript_requests": """
+        CREATE TABLE IF NOT EXISTS transcript_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT NOT NULL,
+            requested_by TEXT,
+            academic_year TEXT,
+            status TEXT NOT NULL DEFAULT 'pending',
+            generated_at TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Pupil Wellbeing ──
+    "pupil_wellbeing_concerns": """
+        CREATE TABLE IF NOT EXISTS pupil_wellbeing_concerns (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pupil_id TEXT NOT NULL,
+            reported_by TEXT NOT NULL,
+            concern_type TEXT NOT NULL,
+            description TEXT NOT NULL,
+            severity TEXT DEFAULT 'Low',
+            status TEXT DEFAULT 'Open',
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "pupil_wellbeing_checkins": """
+        CREATE TABLE IF NOT EXISTS pupil_wellbeing_checkins (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pupil_id TEXT NOT NULL,
+            feeling TEXT NOT NULL,
+            notes TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "pupil_parent_meetings": """
+        CREATE TABLE IF NOT EXISTS pupil_parent_meetings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pupil_id TEXT NOT NULL,
+            staff_id TEXT NOT NULL,
+            meeting_date TEXT NOT NULL,
+            notes TEXT,
+            actions TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Feedback & Complaints ──
+    "feedback": """
+        CREATE TABLE IF NOT EXISTS feedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT,
+            category TEXT,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL,
+            anonymous INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'open',
+            votes INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "feedback_responses": """
+        CREATE TABLE IF NOT EXISTS feedback_responses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            feedback_id INTEGER NOT NULL,
+            response TEXT NOT NULL,
+            responded_by TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "complaints": """
+        CREATE TABLE IF NOT EXISTS complaints (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            complainant_id TEXT,
+            category TEXT,
+            subject TEXT NOT NULL,
+            description TEXT NOT NULL,
+            status TEXT DEFAULT 'open',
+            priority TEXT DEFAULT 'normal',
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "complaint_responses": """
+        CREATE TABLE IF NOT EXISTS complaint_responses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            complaint_id INTEGER NOT NULL,
+            response TEXT NOT NULL,
+            responded_by TEXT,
+            action_taken TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── GDPR ──
+    "gdpr_requests": """
+        CREATE TABLE IF NOT EXISTS gdpr_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            requester_name TEXT NOT NULL,
+            requester_email TEXT,
+            request_type TEXT NOT NULL,
+            details TEXT,
+            status TEXT DEFAULT 'pending',
+            processed_by TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            completed_at TEXT
+        )
+    """,
+    "gdpr_consent_records": """
+        CREATE TABLE IF NOT EXISTS gdpr_consent_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            consent_type TEXT NOT NULL,
+            consented INTEGER DEFAULT 0,
+            consent_date TEXT,
+            withdrawal_date TEXT
+        )
+    """,
+    # ── Dashboard KPIs ──
+    "dashboard_kpis": """
+        CREATE TABLE IF NOT EXISTS dashboard_kpis (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            kpi_name TEXT NOT NULL,
+            kpi_value TEXT,
+            period TEXT,
+            category TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Payroll ──
+    "payroll_records": """
+        CREATE TABLE IF NOT EXISTS payroll_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            staff_id TEXT NOT NULL,
+            pay_period TEXT NOT NULL,
+            gross_pay REAL NOT NULL,
+            tax REAL DEFAULT 0,
+            ni_contribution REAL DEFAULT 0,
+            pension REAL DEFAULT 0,
+            other_deductions REAL DEFAULT 0,
+            net_pay REAL NOT NULL,
+            status TEXT DEFAULT 'draft',
+            approved_by TEXT,
+            processed_date TEXT,
+            notes TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Staff Management ──
+    "staff_appraisals": """
+        CREATE TABLE IF NOT EXISTS staff_appraisals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            staff_id TEXT NOT NULL,
+            appraiser_id TEXT,
+            academic_year TEXT,
+            status TEXT DEFAULT 'scheduled',
+            overall_rating TEXT,
+            summary TEXT,
+            meeting_date TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "appraisal_objectives": """
+        CREATE TABLE IF NOT EXISTS appraisal_objectives (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            appraisal_id INTEGER NOT NULL,
+            objective TEXT NOT NULL,
+            target TEXT,
+            progress TEXT,
+            status TEXT DEFAULT 'not_started',
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "lesson_observations": """
+        CREATE TABLE IF NOT EXISTS lesson_observations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            staff_id TEXT NOT NULL,
+            observer_id TEXT,
+            observation_date TEXT NOT NULL,
+            subject TEXT,
+            class_name TEXT,
+            grade TEXT,
+            strengths TEXT,
+            areas_for_improvement TEXT,
+            actions TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "staff_wellbeing_surveys": """
+        CREATE TABLE IF NOT EXISTS staff_wellbeing_surveys (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT,
+            status TEXT DEFAULT 'draft',
+            created_by TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "staff_wellbeing_responses": """
+        CREATE TABLE IF NOT EXISTS staff_wellbeing_responses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            survey_id INTEGER NOT NULL,
+            staff_id TEXT,
+            responses_json TEXT,
+            submitted_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "staff_support_requests": """
+        CREATE TABLE IF NOT EXISTS staff_support_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            staff_id TEXT NOT NULL,
+            category TEXT,
+            description TEXT,
+            status TEXT DEFAULT 'open',
+            assigned_to TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Lesson Plans ──
+    "lesson_plans": """
+        CREATE TABLE IF NOT EXISTS lesson_plans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            teacher_id TEXT NOT NULL,
+            subject TEXT,
+            class_name TEXT,
+            lesson_date TEXT,
+            topic TEXT NOT NULL,
+            objectives TEXT,
+            activities TEXT,
+            resources TEXT,
+            assessment TEXT,
+            differentiation TEXT,
+            timing_notes TEXT,
+            shared INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "lesson_plan_shares": """
+        CREATE TABLE IF NOT EXISTS lesson_plan_shares (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            plan_id INTEGER NOT NULL,
+            shared_with_id TEXT NOT NULL,
+            shared_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Portfolio & Skills ──
+    "learning_portfolio": """
+        CREATE TABLE IF NOT EXISTS learning_portfolio (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pupil_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT,
+            subject TEXT,
+            term TEXT,
+            teacher_comment TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "pupil_skills": """
+        CREATE TABLE IF NOT EXISTS pupil_skills (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pupil_id TEXT NOT NULL,
+            skill_area TEXT,
+            skill_name TEXT NOT NULL,
+            level TEXT DEFAULT 'beginning',
+            assessed_by TEXT,
+            assessed_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Homework Enhancements ──
+    "homework_feedback": """
+        CREATE TABLE IF NOT EXISTS homework_feedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            submission_id INTEGER NOT NULL,
+            teacher_feedback TEXT,
+            sticker TEXT,
+            parent_comment TEXT,
+            parent_id TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Student ID Cards ──
+    "student_id_cards": """
+        CREATE TABLE IF NOT EXISTS student_id_cards (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT NOT NULL,
+            card_number TEXT UNIQUE NOT NULL,
+            full_name TEXT NOT NULL,
+            photo_path TEXT,
+            qr_data TEXT,
+            issue_date TEXT NOT NULL,
+            expiry_date TEXT NOT NULL,
+            status TEXT DEFAULT 'active',
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── LMS ──
+    "lms_modules": """
+        CREATE TABLE IF NOT EXISTS lms_modules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            course_id TEXT,
+            title TEXT NOT NULL,
+            description TEXT,
+            order_index INTEGER DEFAULT 0,
+            published INTEGER DEFAULT 0,
+            created_by TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "lms_lessons": """
+        CREATE TABLE IF NOT EXISTS lms_lessons (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            module_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            content_type TEXT DEFAULT 'text',
+            content TEXT,
+            order_index INTEGER DEFAULT 0,
+            duration_mins INTEGER,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "lms_progress": """
+        CREATE TABLE IF NOT EXISTS lms_progress (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT NOT NULL,
+            lesson_id INTEGER NOT NULL,
+            completed INTEGER DEFAULT 0,
+            completed_at TEXT
+        )
+    """,
+    "lms_quizzes": """
+        CREATE TABLE IF NOT EXISTS lms_quizzes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            lesson_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            pass_mark INTEGER DEFAULT 50,
+            time_limit_mins INTEGER,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "lms_questions": """
+        CREATE TABLE IF NOT EXISTS lms_questions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            quiz_id INTEGER NOT NULL,
+            question_text TEXT NOT NULL,
+            question_type TEXT DEFAULT 'multiple_choice',
+            options_json TEXT,
+            correct_answer TEXT NOT NULL,
+            marks INTEGER DEFAULT 1,
+            order_index INTEGER DEFAULT 0
+        )
+    """,
+    "lms_quiz_attempts": """
+        CREATE TABLE IF NOT EXISTS lms_quiz_attempts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            quiz_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
+            answers_json TEXT,
+            score INTEGER,
+            passed INTEGER DEFAULT 0,
+            attempted_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "lms_resources": """
+        CREATE TABLE IF NOT EXISTS lms_resources (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT,
+            file_path TEXT,
+            resource_type TEXT DEFAULT 'document',
+            course_id TEXT,
+            uploaded_by TEXT,
+            download_count INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
 }
 
 
@@ -806,8 +1254,51 @@ def initialise_database(db_path):
         cursor = conn.cursor()
         for table_name, ddl in TABLES.items():
             cursor.execute(ddl)
+
+        # Migration: add new columns to homework_submissions if missing
+        hw_sub_cols = {r[1] for r in cursor.execute("PRAGMA table_info(homework_submissions)").fetchall()}
+        if "file_path" not in hw_sub_cols:
+            cursor.execute("ALTER TABLE homework_submissions ADD COLUMN file_path TEXT")
+        if "is_late" not in hw_sub_cols:
+            cursor.execute("ALTER TABLE homework_submissions ADD COLUMN is_late INTEGER DEFAULT 0")
+
+        # Shared LMS tables
+        from education_system.shared.lms.schema import create_lms_tables
+        create_lms_tables(conn)
+
         conn.commit()
         logger.info("Database initialised successfully at %s", db_path)
+    finally:
+        conn.close()
+
+
+def seed_default_staff(db_path):
+    """Seed default staff records into the staff table (primary school)."""
+    conn = sqlite3.connect(db_path, timeout=30)
+    try:
+        cursor = conn.cursor()
+        staff_records = [
+            ("STF0001", None, "Margaret", "Henderson", "Head Teacher",
+             "m.henderson@primary.school.uk", None, "Senior Leadership", "Active"),
+            ("STF0002", None, "Claire", "Barton", "Teacher",
+             "c.barton@primary.school.uk", "Year 1", "Key Stage 1", "Active"),
+            ("STF0003", None, "David", "Okonkwo", "Teacher",
+             "d.okonkwo@primary.school.uk", "Year 3", "Key Stage 2", "Active"),
+            ("STF0004", None, "Sophie", "Marsh", "Teaching Assistant",
+             "s.marsh@primary.school.uk", None, "Key Stage 1", "Active"),
+            ("STF0005", None, "Rebecca", "Thornton", "SENCO",
+             "r.thornton@primary.school.uk", None, "Inclusion", "Active"),
+        ]
+        for sid, uid, fn, ln, role, email, class_of, dept, status in staff_records:
+            cursor.execute(
+                """INSERT OR IGNORE INTO staff
+                   (staff_id, user_id, first_name, last_name, role, email,
+                    class_teacher_of, department, status)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (sid, uid, fn, ln, role, email, class_of, dept, status),
+            )
+        conn.commit()
+        logger.info("Default staff records seeded for primary school")
     finally:
         conn.close()
 

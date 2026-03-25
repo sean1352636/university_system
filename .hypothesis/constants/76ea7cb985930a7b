@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/parent_portal/academic_support.py
+# hypothesis_version: 6.151.9
+
+['\nExisting Goals:', '\nOVERDUE HOMEWORK:', '\nOptions:', '\nRecently Completed:', '\nSchedule Meeting:', '\nUpcoming Homework:', '\nUpdate status:', '%H:%M', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '1', '1. Active', '1. Add new goal', '2', '2. Achieved', '3', '3. Back to menu', '3. Paused', '4', '4. Cancelled', 'Description: ', 'End time (HH:MM): ', 'Enter goal number: ', 'Goal set', 'Goal title: ', 'Invalid choice.', 'Invalid date format.', 'Invalid goal choice.', 'Select option: ', 'Select status: ', 'Start time (HH:MM): ', 'Target grade: ', 'Update progress: ', 'achieved', 'active', 'cancelled', 'id', 'minimal', 'parent', 'paused', 'role', 'schedule_meetings', 'set_academic_goals', 'view_homework']

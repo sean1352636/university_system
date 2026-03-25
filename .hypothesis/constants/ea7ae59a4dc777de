@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/staff_hr/services/managers/leave_manager.py
+# hypothesis_version: 6.151.9
+
+[' = ?', ' AND r.status = ?', '#3498db', '%Y-%m-%d', ', ', 'approve', 'approver', 'balance_id', 'cancel', 'color_code', 'column', 'create', 'created_at', 'days', 'description', 'document_path', 'is_active', 'is_paid', 'leave_balance', 'leave_request', 'leave_type', 'leave_type_id', 'max_days_per_year', 'name', 'reason', 'reject', 'request_id', 'requires_approval', 'update', 'updated_at = ?']

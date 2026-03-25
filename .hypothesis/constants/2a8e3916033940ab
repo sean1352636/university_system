@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/commerce/gui/restaurant_management_gui/inventory/inventory_reports.py
+# hypothesis_version: 6.151.9
+
+[0.3, 1.0, 100, 105, 110, '\n\nRECOMMENDATIONS:\n', '\n\nSUMMARY:\n', '-', '1000x600', '450x500', '900x600', '900x700', '=', 'ABC Analysis', 'Arial', 'CRITICAL', 'Category A Items:\n', 'Category B Items:\n', 'Category C Items:\n', 'Close', 'Error', 'Expiry Report', 'Inventory Reports', 'LOW STOCK REPORT\n', 'Low Stock', 'Low Stock Report', 'No Data', 'No expired items.\n', 'Received', 'Stock Movement', 'WARNING', 'Waste', 'bold', 'both', 'disabled']

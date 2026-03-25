@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/batch_operations/constants.py
+# hypothesis_version: 6.151.9
+
+['BATCHDEFAULT_DB_PATH', 'gui_settings.json', 'import_history.json', 'modules_system.log']

@@ -40,7 +40,7 @@ from education_system.university_system.infrastructure.shared_context import get
 try:
     from education_system.university_system.infrastructure.email.email_service import send_email
     from education_system.university_system.infrastructure.database.db import get_connection
-    from education_system.university_system.infrastructure.logging.log_config import configure_logging, get_log_file
+    from education_system.university_system.utils.logging.log_config import configure_logging, get_log_file
 except ImportError:
     # Fallback for backward compatibility (non-security critical)
     def send_email(*args, **kwargs):
@@ -69,7 +69,7 @@ except ImportError:
         return str(paths.LOG_DIR / name)
 
 try:
-    from education_system.university_system.modules.finance.core.financial_core import (
+    from education_system.university_system.modules.domain.finance.core.financial_core import (
         assign_to_collection_agency, track_collection_progress,
         update_collection_case_status, create_payment_arrangement,
         send_arrangement_confirmation, setup_collection_workflows,
@@ -106,7 +106,7 @@ except ImportError:
 
 # Add these import stubs for the missing functions if they don't exist
 try:
-    from education_system.university_system.modules.finance.core.financial_core import (
+    from education_system.university_system.modules.domain.finance.core.financial_core import (
         modify_payment_plan, view_student_credits, add_student_credit,
         manage_financial_aid, create_budget_plan, view_overdue_accounts,
         create_collection_case, aging_analysis_report, collection_case_status_report,
@@ -186,14 +186,14 @@ cipher_suite = Fernet(ENCRYPTION_KEY)
 # Payment gateway configurations (from original file)
 PAYMENT_GATEWAYS = {
     'stripe': {
-        'public_key': 'pk_test_...',
-        'secret_key': 'sk_test_...',
-        'webhook_secret': 'whsec_...'
+        'public_key': os.getenv('STRIPE_PUBLIC_KEY', ''),
+        'secret_key': os.getenv('STRIPE_SECRET_KEY', ''),
+        'webhook_secret': os.getenv('STRIPE_WEBHOOK_SECRET', '')
     },
     'paypal': {
-        'client_id': 'your_paypal_client_id',
-        'client_secret': 'your_paypal_client_secret',
-        'environment': 'sandbox'
+        'client_id': os.getenv('PAYPAL_CLIENT_ID', ''),
+        'client_secret': os.getenv('PAYPAL_CLIENT_SECRET', ''),
+        'environment': os.getenv('PAYPAL_ENVIRONMENT', 'sandbox')
     }
 }
 
@@ -317,7 +317,7 @@ class FinanceGUI:
 
                     # Try to initialize enhanced finance tables if available
                     try:
-                        from education_system.university_system.modules.finance.core.financial_core import init_enhanced_finance_db
+                        from education_system.university_system.modules.domain.finance.core.financial_core import init_enhanced_finance_db
                         init_enhanced_finance_db()
                     except ImportError:
                         # Finance core module not available, just ensure basic connection works
@@ -754,8 +754,8 @@ class FinanceGUI:
                         COUNT(*) as total_transactions,
                         COALESCE(SUM(CASE WHEN transaction_type IN ('top_up', 'deposit', 'refund') THEN amount ELSE 0 END), 0) as total_deposited,
                         COALESCE(SUM(CASE WHEN transaction_type IN ('use', 'withdrawal', 'payment') THEN amount ELSE 0 END), 0) as total_spent
-                    FROM student_finance_transactions
-                    WHERE student_id = ?
+                    FROM transactions
+                    WHERE source_type = 'student_finance' AND student_id = ?
                 ''', (student_id,))
                 stats = cursor.fetchone()
 
@@ -917,8 +917,8 @@ class FinanceGUI:
                 cursor = conn.cursor()
                 cursor.execute('''
                     SELECT created_at, transaction_type, amount, balance_after, description
-                    FROM student_finance_transactions
-                    WHERE student_id = ?
+                    FROM transactions
+                    WHERE source_type = 'student_finance' AND student_id = ?
                     ORDER BY created_at DESC
                 ''', (student_id,))
 
@@ -973,41 +973,43 @@ class FinanceGUI:
                 if filter_type == 'deposit':
                     cursor.execute('''
                         SELECT created_at, transaction_type, amount, balance_after, description
-                        FROM student_finance_transactions
-                        WHERE student_id = ? AND transaction_type IN ('top_up', 'deposit', 'refund')
+                        FROM transactions
+                        WHERE source_type = 'student_finance' AND student_id = ? AND transaction_type IN ('top_up', 'deposit', 'refund')
                         ORDER BY created_at DESC
                         LIMIT 20
                     ''', (student_id,))
                 elif filter_type == 'spend':
                     cursor.execute('''
                         SELECT created_at, transaction_type, amount, balance_after, description
-                        FROM student_finance_transactions
-                        WHERE student_id = ? AND transaction_type IN ('use', 'withdrawal', 'payment')
+                        FROM transactions
+                        WHERE source_type = 'student_finance' AND student_id = ? AND transaction_type IN ('use', 'withdrawal', 'payment')
                         ORDER BY created_at DESC
                         LIMIT 20
                     ''', (student_id,))
                 else:
                     cursor.execute('''
                         SELECT created_at, transaction_type, amount, balance_after, description
-                        FROM student_finance_transactions
-                        WHERE student_id = ?
+                        FROM transactions
+                        WHERE source_type = 'student_finance' AND student_id = ?
                         ORDER BY created_at DESC
                         LIMIT 20
                     ''', (student_id,))
 
                 for row in cursor.fetchall():
-                    trans_type = row[1].replace('_', ' ').title()
+                    trans_type = (row[1] or '').replace('_', ' ').title()
+                    amount = float(row[2]) if row[2] is not None else 0.0
+                    balance = float(row[3]) if row[3] is not None else 0.0
 
                     # Format amount with +/- indicator
                     if row[1] in ['use', 'withdrawal', 'payment']:
-                        amount_str = f"-£{row[2]:.2f}"
+                        amount_str = f"-\u00a3{amount:.2f}"
                         tag = 'negative'
                     else:
-                        amount_str = f"+£{row[2]:.2f}"
+                        amount_str = f"+\u00a3{amount:.2f}"
                         tag = 'positive'
 
                     trans_tree.insert('', 'end', values=(
-                        row[0], trans_type, amount_str, f"£{row[3]:.2f}", row[4] or ''
+                        row[0] or '', trans_type, amount_str, f"\u00a3{balance:.2f}", row[4] or ''
                     ), tags=(tag,))
 
                 # Configure tag colors
@@ -1110,10 +1112,10 @@ class FinanceGUI:
 
                     processed_by = self.auth.current_user.get('username', 'Unknown') if self.auth.current_user else 'Unknown'
                     cursor.execute('''
-                        INSERT INTO student_finance_transactions
-                        (account_id, student_id, transaction_type, amount, balance_before, balance_after,
+                        INSERT INTO transactions
+                        (source_type, account_id, student_id, transaction_type, amount, balance_before, balance_after,
                          description, processed_by)
-                        VALUES (?, ?, 'top_up', ?, ?, ?, ?, ?)
+                        VALUES ('student_finance', ?, ?, 'top_up', ?, ?, ?, ?, ?)
                     ''', (account_id, student_id, amount, current_balance, new_balance,
                          f'Top up via {method_var.get()}', processed_by))
 
@@ -1202,10 +1204,10 @@ class FinanceGUI:
                 processed_by = self.auth.current_user.get('username', 'Unknown') if self.auth.current_user else 'Unknown'
                 description = desc_entry.get() or f'{purpose_var.get().replace("_", " ").title()}'
                 cursor.execute('''
-                    INSERT INTO student_finance_transactions
-                    (account_id, student_id, transaction_type, amount, balance_before, balance_after,
+                    INSERT INTO transactions
+                    (source_type, account_id, student_id, transaction_type, amount, balance_before, balance_after,
                      description, processed_by)
-                    VALUES (?, ?, 'use', ?, ?, ?, ?, ?)
+                    VALUES ('student_finance', ?, ?, 'use', ?, ?, ?, ?, ?)
                 ''', (account_id, student_id, amount, balance, new_balance, description, processed_by))
 
                 conn.commit()
@@ -1298,10 +1300,10 @@ class FinanceGUI:
                 processed_by = self.auth.current_user.get('username', 'Unknown') if self.auth.current_user else 'Unknown'
                 description = reason_entry.get() or f'Withdrawal via {method_var.get()}'
                 cursor.execute('''
-                    INSERT INTO student_finance_transactions
-                    (account_id, student_id, transaction_type, amount, balance_before, balance_after,
+                    INSERT INTO transactions
+                    (source_type, account_id, student_id, transaction_type, amount, balance_before, balance_after,
                      description, processed_by)
-                    VALUES (?, ?, 'withdrawal', ?, ?, ?, ?, ?)
+                    VALUES ('student_finance', ?, ?, 'withdrawal', ?, ?, ?, ?, ?)
                 ''', (account_id, student_id, amount, balance, new_balance, description, processed_by))
 
                 conn.commit()
@@ -1410,8 +1412,8 @@ class FinanceGUI:
             cursor = conn.cursor()
             cursor.execute('''
                 SELECT created_at, transaction_type, amount, balance_after, description
-                FROM student_finance_transactions
-                WHERE student_id = ?
+                FROM transactions
+                WHERE source_type = 'student_finance' AND student_id = ?
                 ORDER BY created_at DESC
                 LIMIT 100
             ''', (student_id,))
@@ -1526,8 +1528,8 @@ class FinanceGUI:
                 SELECT
                     COUNT(*) as total_refunds,
                     COALESCE(SUM(amount), 0) as total_amount,
-                    COUNT(DISTINCT department) as departments_count
-                FROM finance_refunds
+                    COUNT(DISTINCT COALESCE(department, source_type)) as departments_count
+                FROM unified_refunds
             ''')
 
             summary = cursor.fetchone()
@@ -1547,85 +1549,31 @@ class FinanceGUI:
             conn = get_connection()
             cursor = conn.cursor()
 
-            # Check if refund_time column exists and add it if not
-            cursor.execute("PRAGMA table_info(finance_refunds)")
-            columns = [col[1] for col in cursor.fetchall()]
-
-            if 'finance_refunds' not in [row[0] for row in cursor.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]:
-                # Create table if it doesn't exist
+            # Build query from unified_refunds table
+            if search_term:
                 cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS finance_refunds (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        refund_reference TEXT UNIQUE,
-                        department TEXT,
-                        amount REAL,
-                        refund_method TEXT,
-                        refund_date TEXT,
-                        refund_time TEXT,
-                        transaction_reference TEXT,
-                        processed_by TEXT,
-                        notes TEXT
-                    )
-                ''')
-                conn.commit()
-            elif 'refund_time' not in columns:
-                # Add refund_time column if table exists but column doesn't
-                try:
-                    cursor.execute('ALTER TABLE finance_refunds ADD COLUMN refund_time TEXT')
-                    conn.commit()
-                except Exception as e:
-                    print(f"Note: Could not add refund_time column: {e}")
-
-            # Refresh column list
-            cursor.execute("PRAGMA table_info(finance_refunds)")
-            columns = [col[1] for col in cursor.fetchall()]
-            has_refund_time = 'refund_time' in columns
-
-            # Build query with optional search filter
-            if has_refund_time:
-                # Use refund_time if it exists
-                if search_term:
-                    cursor.execute('''
-                        SELECT id, refund_reference, department, amount, refund_method,
-                               refund_date, refund_time, transaction_id, processed_by, notes
-                        FROM finance_refunds
-                        WHERE LOWER(refund_reference) LIKE ?
-                           OR LOWER(department) LIKE ?
-                           OR LOWER(transaction_id) LIKE ?
-                           OR LOWER(processed_by) LIKE ?
-                           OR LOWER(notes) LIKE ?
-                        ORDER BY refund_date DESC, refund_time DESC
-                    ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%',
-                          f'%{search_term}%', f'%{search_term}%'))
-                else:
-                    cursor.execute('''
-                        SELECT id, refund_reference, department, amount, refund_method,
-                               refund_date, refund_time, transaction_id, processed_by, notes
-                        FROM finance_refunds
-                        ORDER BY refund_date DESC, refund_time DESC
-                    ''')
+                    SELECT refund_id, refund_reference,
+                           COALESCE(department, source_type) as department,
+                           amount, refund_method, refund_date, '' as refund_time,
+                           reference_id, processed_by, notes
+                    FROM unified_refunds
+                    WHERE LOWER(COALESCE(refund_reference, '')) LIKE ?
+                       OR LOWER(COALESCE(department, source_type, '')) LIKE ?
+                       OR LOWER(COALESCE(reference_id, '')) LIKE ?
+                       OR LOWER(COALESCE(processed_by, '')) LIKE ?
+                       OR LOWER(COALESCE(notes, '')) LIKE ?
+                    ORDER BY refund_date DESC
+                ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%',
+                      f'%{search_term}%', f'%{search_term}%'))
             else:
-                # Use refund_date only if refund_time doesn't exist
-                if search_term:
-                    cursor.execute('''
-                        SELECT id, refund_reference, department, amount, refund_method,
-                               refund_date, '' as refund_time, transaction_id, processed_by, notes
-                        FROM finance_refunds
-                        WHERE LOWER(refund_reference) LIKE ?
-                           OR LOWER(department) LIKE ?
-                           OR LOWER(transaction_id) LIKE ?
-                           OR LOWER(processed_by) LIKE ?
-                           OR LOWER(notes) LIKE ?
-                        ORDER BY refund_date DESC
-                    ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%',
-                          f'%{search_term}%', f'%{search_term}%'))
-                else:
-                    cursor.execute('''
-                        SELECT id, refund_reference, department, amount, refund_method,
-                               refund_date, '' as refund_time, transaction_id, processed_by, notes
-                        FROM finance_refunds
-                        ORDER BY refund_date DESC
-                    ''')
+                cursor.execute('''
+                    SELECT refund_id, refund_reference,
+                           COALESCE(department, source_type) as department,
+                           amount, refund_method, refund_date, '' as refund_time,
+                           reference_id, processed_by, notes
+                    FROM unified_refunds
+                    ORDER BY refund_date DESC
+                ''')
 
             refunds = cursor.fetchall()
 

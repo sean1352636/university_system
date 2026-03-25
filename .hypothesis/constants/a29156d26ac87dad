@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/batch_operations/api.py
+# hypothesis_version: 6.151.9
+
+[100, 400, 500, 5000, ' LIMIT ? OFFSET ?', ' WHERE course = ?', '/api/health', '/api/import', '/api/students', '127.0.0.1', 'GET', 'POST', 'PUT', 'count', 'course', 'details', 'error', 'errors', 'failed', 'healthy', 'imported', 'limit', 'message', 'offset', 'record_index', 'records', 'status', 'student_id', 'students', 'success', 'timestamp', 'validation_errors']

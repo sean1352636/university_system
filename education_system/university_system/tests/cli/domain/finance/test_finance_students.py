@@ -313,7 +313,7 @@ class TestAddStudentCredit:
         inputs = iter([sample_student, '50.00', '1', 'Test credit', ''])
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        with patch('university_system.modules.domain.finance.finance_misc.students.get_current_user') as mock_user:
+        with patch('education_system.university_system.modules.domain.finance.core.students.get_current_user') as mock_user:
             mock_user.return_value = {'username': 'test_admin'}
             students.add_student_credit()
 
@@ -332,7 +332,7 @@ class TestAddStudentCredit:
         inputs = iter([sample_student, '-50.00', '100.00', '1', 'Test credit', ''])
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        with patch('university_system.modules.domain.finance.finance_misc.students.get_current_user') as mock_user:
+        with patch('education_system.university_system.modules.domain.finance.core.students.get_current_user') as mock_user:
             mock_user.return_value = {'username': 'test_admin'}
             students.add_student_credit()
 
@@ -344,7 +344,7 @@ class TestAddStudentCredit:
         inputs = iter([sample_student, '50.00', '1', 'Test credit', 'invalid-date'])
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        with patch('university_system.modules.domain.finance.finance_misc.students.get_current_user') as mock_user:
+        with patch('education_system.university_system.modules.domain.finance.core.students.get_current_user') as mock_user:
             mock_user.return_value = {'username': 'test_admin'}
             students.add_student_credit()
 
@@ -426,7 +426,7 @@ class TestApplyCreditToFees:
         inputs = iter([student_with_credit_and_fees, 'y'])
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        with patch('university_system.modules.domain.finance.finance_misc.students.get_current_user') as mock_user:
+        with patch('education_system.university_system.modules.domain.finance.core.students.get_current_user') as mock_user:
             mock_user.return_value = {'username': 'test_admin'}
             students.apply_credit_to_fees()
 
@@ -466,7 +466,7 @@ class TestAPIFinancialSummary:
         test_db_connection.commit()
         return sample_student
 
-    @patch('university_system.modules.domain.finance.finance_misc.students.verify_jwt_in_request')
+    @patch('education_system.university_system.modules.domain.finance.core.security_automation.verify_jwt_in_request')
     def test_api_get_student_financial_summary_returns_data(self, mock_jwt, test_db_connection, student_with_financial_data):
         """Test that API returns financial summary correctly"""
         result = students.api_get_student_financial_summary(student_with_financial_data)
@@ -502,7 +502,7 @@ class TestErrorHandling:
 
         monkeypatch.setattr(students, 'get_connection', mock_get_connection)
 
-        with patch('university_system.modules.domain.finance.finance_misc.students.get_current_user') as mock_user:
+        with patch('education_system.university_system.modules.domain.finance.core.students.get_current_user') as mock_user:
             mock_user.return_value = {'username': 'test_admin'}
             students.add_student_credit()
 

@@ -13,7 +13,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_promo_management(self):
     """Display promo code management page."""
@@ -63,16 +63,18 @@ def refresh_promo_list(self):
         self.promo_tree.delete(item)
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM promo_codes ORDER BY id DESC")
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM promo_codes ORDER BY id DESC")
 
-    for row in cursor.fetchall():
-        value_display = f"{row[3]}%" if row[2] == 'percentage' else f"\u00a3{row[3]:.2f}"
-        self.promo_tree.insert("", "end", values=(
-            row[0], row[1], row[2].title(), value_display,
-            f"\u00a3{row[4]:.2f}", row[6], row[5] or "\u221e", row[8] or "No limit", row[9].upper()
-        ))
-    conn.close()
+        for row in cursor.fetchall():
+            value_display = f"{row[3]}%" if row[2] == 'percentage' else f"\u00a3{row[3]:.2f}"
+            self.promo_tree.insert("", "end", values=(
+                row[0], row[1], row[2].title(), value_display,
+                f"\u00a3{row[4]:.2f}", row[6], row[5] or "\u221e", row[8] or "No limit", row[9].upper()
+            ))
+    finally:
+        conn.close()
 
 def show_add_promo_form(self):
     """Show form to add promo code."""
@@ -179,10 +181,12 @@ def deactivate_selected_promo(self):
     promo_id = self.promo_tree.item(selected[0])['values'][0]
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("UPDATE promo_codes SET status = 'inactive' WHERE id = ?", (promo_id,))
-    conn.commit()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE promo_codes SET status = 'inactive' WHERE id = ?", (promo_id,))
+        conn.commit()
+    finally:
+        conn.close()
 
     messagebox.showinfo(_t("cinema.common.success"), "Promo code deactivated")
     self.refresh_promo_list()

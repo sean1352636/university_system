@@ -31,8 +31,8 @@ def mock_database():
     mock_conn.cursor.return_value = mock_cursor
     mock_conn.close = MagicMock()
 
-    with patch('university_system.modules.shared.services.analytics.analytics_dashboard_core.transaction') as mock_trans, \
-         patch('university_system.modules.shared.services.analytics.analytics_dashboard_core.get_connection') as mock_get_conn:
+    with patch('education_system.university_system.modules.shared.services.analytics.analytics_dashboard_core.transaction') as mock_trans, \
+         patch('education_system.university_system.modules.shared.services.analytics.analytics_dashboard_core.get_connection') as mock_get_conn:
         mock_trans.return_value.__enter__.return_value = mock_conn
         mock_trans.return_value.__exit__.return_value = None
         mock_get_conn.return_value = mock_conn
@@ -77,7 +77,7 @@ class TestAnalyticsModelManager:
         from education_system.university_system.modules.shared.services.analytics.analytics_dashboard_core import \
             AnalyticsModelManager
 
-        with patch('university_system.modules.shared.services.analytics.analytics_dashboard_core.transaction') as mock_trans:
+        with patch('education_system.university_system.modules.shared.services.analytics.analytics_dashboard_core.transaction') as mock_trans:
             mock_trans.return_value.__enter__.side_effect = Exception("Database error")
 
             with pytest.raises(Exception) as exc_info:
@@ -542,7 +542,7 @@ class TestCLIFunctions:
 
         assert callable(display_predictive_analytics_menu)
 
-    @patch('builtins.input', side_effect=['8'])
+    @patch('builtins.input', side_effect=['9'])
     @patch('builtins.print')
     def test_display_predictive_analytics_menu_exits(self, mock_print, mock_input):
         """Test CLI menu exits properly"""
@@ -605,7 +605,7 @@ class TestErrorHandling:
         from education_system.university_system.modules.shared.services.analytics.analytics_dashboard_core import \
             AnalyticsModelManager
 
-        with patch('university_system.modules.shared.services.analytics.analytics_dashboard_core.transaction') as mock_trans:
+        with patch('education_system.university_system.modules.shared.services.analytics.analytics_dashboard_core.transaction') as mock_trans:
             mock_trans.return_value.__enter__.side_effect = Exception("Connection failed")
 
             with pytest.raises(Exception) as exc_info:

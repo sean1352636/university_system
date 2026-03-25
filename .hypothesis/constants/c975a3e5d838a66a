@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/module_scheduling/notifications.py
+# hypothesis_version: 6.151.9
+
+['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', 'Computer Lab', 'Dear Recipient', 'English', 'Friday', 'Instructor', 'Lab', 'Lecture', 'Lecture Hall', 'Monday', 'Notifications Sent', 'Other', 'Seminar', 'Seminar Room', 'Student', 'Thursday', 'Tuesday', 'Tutorial', 'Tutorial Room', 'User', 'Wednesday', 'Workshop', 'Workshop Room', '_', 'custom_subject', 'day', 'en', 'end_time', 'errors', 'info', 'instructor', 'instructor_emailed', 'message', 'module_code', 'module_name', 'new_room', 'notification_type', 'old_room', 'recipient_name', 'room_change_notice', 'schedule_change', 'start_time', 'student', 'student_name', 'students_emailed']

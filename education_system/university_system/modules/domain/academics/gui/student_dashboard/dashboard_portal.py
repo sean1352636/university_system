@@ -5,9 +5,12 @@ Unified home page that aggregates data from multiple backends into a single
 scrollable dashboard view for students.
 """
 
-from .common_imports import *
-from .overview import OverviewMixin
-from .quick_actions import QuickActionsMixin
+import tkinter as tk
+from tkinter import ttk
+
+from education_system.university_system.modules.domain.academics.gui.student_dashboard.common_imports import get_auth, get_student_id, get_student_name
+from education_system.university_system.modules.domain.academics.gui.student_dashboard.overview import OverviewMixin
+from education_system.university_system.modules.domain.academics.gui.student_dashboard.quick_actions import QuickActionsMixin
 
 
 class StudentDashboardPortal(OverviewMixin, QuickActionsMixin):

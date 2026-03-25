@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/event_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' = ?', ' AND ', ' WHERE ', ' WHERE event_id = ?', '%Y-%m-%d %H:%M:%S', ', ', '/<int:event_id>', '/api/events', 'GET', 'POST', 'PUT', 'SELECT * FROM events', 'UPDATE events SET ', 'building', 'cancelled', 'cancelled = 0', 'category', 'category = ?', 'create', 'description', 'end_datetime', 'event', 'event_registration', 'event_registrations', 'events', 'items', 'location', 'max_capacity', 'organizer_id', 'organizer_name', 'organizer_type', 'role', 'room', 'search', 'start_datetime', 'start_datetime >= ?', 'sub', 'tags', 'title', 'total', 'upcoming', 'update', 'updated_at = ?', 'user_id', 'user_type', 'view']

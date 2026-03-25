@@ -12,7 +12,7 @@ Modules
 """
 
 # Constants
-from .constants import (
+from education_system.university_system.infrastructure.auth.core_utils.constants import (
     ROLES,
     PERMISSIONS,
     DEFAULT_SESSION_TIMEOUT,
@@ -23,7 +23,7 @@ from .constants import (
 )
 
 # Utility functions
-from .utils import (
+from education_system.university_system.infrastructure.auth.core_utils.utils import (
     validate_username,
     validate_password,
     validate_email,
@@ -34,7 +34,7 @@ from .utils import (
 )
 
 # Global auth functions
-from .global_auth import (
+from education_system.university_system.infrastructure.auth.core_utils.global_auth import (
     get_current_user,
     set_auth_instance,
     get_auth_instance,

@@ -8,8 +8,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Table of Contents
 
+**Version 8.x**
+
+- [8.45.0 — 2026-03-25](#8450---2026-03-25)
+- [8.44.0 — 2026-03-24](#8440---2026-03-24)
+- [8.43.0 — 2026-03-24](#8430---2026-03-24)
+- [8.42.0 — 2026-03-24](#8420---2026-03-24)
+- [8.41.0 — 2026-03-24](#8410---2026-03-24)
+- [8.40.0 — 2026-03-24](#8400---2026-03-24)
+- [8.39.0 — 2026-03-23](#8390---2026-03-23)
+- [8.38.0 — 2026-03-23](#8380---2026-03-23)
+- [8.37.0 — 2026-03-23](#8370---2026-03-23)
+- [8.36.0 — 2026-03-23](#8360---2026-03-23)
+- [8.35.0 — 2026-03-23](#8350---2026-03-23)
+- [8.34.0 — 2026-03-23](#8340---2026-03-23)
+- [8.33.0 — 2026-03-22](#8330---2026-03-22)
+- [8.32.0 — 2026-03-21](#8320---2026-03-21)
+- [8.31.0 — 2026-03-21](#8310---2026-03-21)
+- [8.30.0 — 2026-03-21](#8300---2026-03-21)
+- [8.29.0 — 2026-03-20](#8290---2026-03-20)
+- [8.28.0 — 2026-03-19](#8280---2026-03-19)
+- [8.27.0 — 2026-03-19](#8270---2026-03-19)
+- [8.26.0 — 2026-03-19](#8260---2026-03-19)
+- [8.25.0 — 2026-03-19](#8250---2026-03-19)
+- [8.24.0 — 2026-03-18](#8240---2026-03-18)
+- [8.23.0 — 2026-03-18](#8230---2026-03-18)
+- [8.22.0 — 2026-03-18](#8220---2026-03-18)
+- [8.21.0 — 2026-03-17](#8210---2026-03-17)
+- [8.20.0 — 2026-03-17](#8200---2026-03-17)
+- [8.19.0 — 2026-03-16](#8190---2026-03-16)
+- [8.18.0 — 2026-03-16](#8180---2026-03-16)
+- [8.17.0 — 2026-03-16](#8170---2026-03-16)
+- [8.16.0 — 2026-03-16](#8160---2026-03-16)
+- [8.15.0 — 2026-03-16](#8150---2026-03-16)
+- [8.14.0 — 2026-03-16](#8140---2026-03-16)
+- [8.13.0 — 2026-03-16](#8130---2026-03-16)
+- [8.12.0 — 2026-03-16](#8120---2026-03-16)
+- [8.11.0 — 2026-03-16](#8110---2026-03-16)
+- [8.10.0 — 2026-03-16](#8100---2026-03-16)
+- [8.9.0 — 2026-03-15](#890---2026-03-15)
+- [8.8.0 — 2026-03-15](#880---2026-03-15)
+- [8.7.0 — 2026-03-15](#870---2026-03-15)
+- [8.6.0 — 2026-03-15](#860---2026-03-15)
+- [8.5.0 — 2026-03-15](#850---2026-03-15)
+- [8.4.0 — 2026-03-15](#840---2026-03-15)
+- [8.3.0 — 2026-03-14](#830---2026-03-14)
+- [8.2.0 — 2026-03-14](#820---2026-03-14)
+- [8.1.0 — 2026-03-14](#810---2026-03-14)
+- [8.0.0 — 2026-03-14](#800---2026-03-14)
+
 **Version 7.x**
 
+- [7.32.0 — 2026-03-13](#7320---2026-03-13)
+- [7.31.0 — 2026-03-13](#7310---2026-03-13)
+- [7.30.0 — 2026-03-13](#7300---2026-03-13)
+- [7.29.0 — 2026-03-13](#7290---2026-03-13)
+- [7.28.0 — 2026-03-13](#7280---2026-03-13)
+- [7.27.0 — 2026-03-13](#7270---2026-03-13)
+- [7.26.0 — 2026-03-13](#7260---2026-03-13)
+- [7.25.0 — 2026-03-13](#7250---2026-03-13)
+- [7.24.0 — 2026-03-13](#7240---2026-03-13)
+- [7.23.0 — 2026-03-12](#7230---2026-03-12)
+- [7.22.0 — 2026-03-12](#7220---2026-03-12)
+- [7.21.0 — 2026-03-12](#7210---2026-03-12)
+- [7.20.0 — 2026-03-12](#7200---2026-03-12)
+- [7.19.0 — 2026-03-12](#7190---2026-03-12)
+- [7.18.0 — 2026-03-12](#7180---2026-03-12)
+- [7.17.0 — 2026-03-12](#7170---2026-03-12)
+- [7.16.0 — 2026-03-12](#7160---2026-03-12)
+- [7.15.0 — 2026-03-12](#7150---2026-03-12)
+- [7.14.0 — 2026-03-12](#7140---2026-03-12)
+- [7.13.0 — 2026-03-12](#7130---2026-03-12)
+- [7.12.0 — 2026-03-12](#7120---2026-03-12)
+- [7.11.0 — 2026-03-11](#7110---2026-03-11)
+- [7.10.0 — 2026-03-11](#7100---2026-03-11)
+- [7.9.0 — 2026-03-11](#790---2026-03-11)
+- [7.8.0 — 2026-03-11](#780---2026-03-11)
+- [7.7.0 — 2026-03-11](#770---2026-03-11)
+- [7.6.0 — 2026-03-10](#760---2026-03-10)
 - [7.5.0 — 2026-03-10](#750---2026-03-10)
 - [7.4.0 — 2026-03-09](#740---2026-03-09)
 - [7.3.0 — 2026-03-09](#730---2026-03-09)
@@ -56,6 +132,3402 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](education_system/docs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](education_system/docs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](education_system/docs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.37.0] — 2026-03-23
+
+### All Systems — Link new tests to main testing infrastructure
+
+#### Changed
+
+- **`secondary_school/tests/conftest.py`** — Added 4 missing service fixtures (`clubs_service`, `library_service`, `transport_service`, `medical_service`) with imports; moved from inline class-level fixtures in test_services.py to shared conftest
+- **`primary_school/tests/conftest.py`** — Added 22 new service fixtures covering all newly tested services: homework, SATs, phonics, reading records, progress, timetable, pastoral, safeguarding, SEND, admissions, finance, announcements, calendar, parents evening, clubs, library, meals, transport, medical, assets, room booking, HR, CPD
+- **`secondary_school/tests/test_services.py`** — Removed 4 inline fixtures and 4 direct imports; services now provided by conftest
+- **`Makefile`** — Added `test-gui` target (runs `pytest -m gui`) and `test-auth` target (runs all shared auth + security tests); updated `.PHONY` with all test targets
+- **`.github/workflows/ci.yml`** — Added GUI test step after coverage run; runs college/secondary/primary GUI tests with `-m gui` marker
+
+---
+
+## [8.45.0] — 2026-03-25
+
+### Refactored — Consolidate duplicated infrastructure into shared modules
+
+Six categories of code that were duplicated across college, secondary, and primary subsystems have been extracted into `education_system/shared/` and replaced with thin wrappers in each subsystem.
+
+#### Added
+
+- **`shared/database/constants.py`** — Common database constants (`PRAGMAS`, `CONNECTION_TIMEOUT`, `BUSY_TIMEOUT`, `POOL_MIN_SIZE`, `POOL_MAX_SIZE`, `TERMS`) shared by all subsystems
+- **`shared/validation/validators.py`** — Common input validators (`validate_email`, `validate_non_empty`, `validate_date`, `validate_grade_score`, `validate_positive_int`, `validate_day_of_week`, `validate_time`, `validate_time_range`) with system-specific wrappers to preserve exception types
+- **`shared/core/paths.py`** — `SystemPaths` dataclass and `get_system_paths()` factory for standardized directory layout across subsystems
+- **`shared/core/logging.py`** — `setup_logging()` function providing consistent file + console handler configuration
+
+#### Changed
+
+- **`college_system/infrastructure/database/constants.py`** — Now imports shared constants, keeps only college-specific values (grade scales, qualification types)
+- **`secondary_school/infrastructure/database/constants.py`** — Now imports shared constants, keeps only secondary-specific values (GCSE grades, key stages, behaviour)
+- **`primary_school/infrastructure/database/constants.py`** — Now imports shared constants, keeps only primary-specific values (EYFS, KS1/KS2, SATs, phonics)
+- **`{college,secondary,primary}/core/paths.py`** — Now use `get_system_paths()` factory, re-export paths for backward compatibility
+- **`{college,secondary,primary}/core/logs.py`** — Now delegate to `shared.core.logging.setup_logging()`
+- **`{college,secondary,primary}/infrastructure/validation/validators.py`** — Now wrap shared validators with system-specific `ValidationError` re-raising; keep domain-specific validators locally
+- **`{college,secondary,primary}/infrastructure/database/db.py`** — Now import PRAGMAS/timeouts from shared constants via subsystem constants
+- **`college_system/core/i18n.py`** — Replaced 220-line reimplementation with delegation to `shared.i18n` engine, adding college locale directory
+- **`university_system/core/i18n.py`** — Replaced 389-line reimplementation with delegation to `shared.i18n` engine, adding university locale directory via `add_locale_dir()`
+- **`shared/gui/mfa_gui.py`** — Now contains both `MFAVerifyDialog` and `MFASettingsFrame` (previously duplicated across 3 systems); subsystem files are now 1-line re-exports
+- **`shared/cli/cli_helpers.py`** — Extracted `print_header()`, `print_menu()`, `get_choice()`, `run_submenu()`, `login_prompt()` shared by all 3 CLI entry points
+- **`shared/testing/conftest_helpers.py`** — Factory functions (`make_template_db_fixture`, `make_db_path_fixture`, `make_auth_db_path_fixture`, `make_auth_fixture`) eliminating duplicated pytest fixture boilerplate
+- **`{college,secondary,primary}/tests/conftest.py`** — Template DB and per-test copy fixtures now use shared factories
+- **`{college,secondary,primary}/cli/cli_main.py`** — CLI helper functions replaced with imports from `shared/cli/cli_helpers.py`
+
+#### Removed — Duplicate login windows consolidated into single universal login
+
+All per-system login windows have been removed. The single `UniversalLoginWindow` in `shared/gui/login_gui.py` is now the only GUI login, used by `run.py --gui` and by each system when launched standalone.
+
+- **`secondary_school/main_gui.py`** — Removed `LoginWindow` class (~95 lines); standalone `run()` now uses `UniversalLoginWindow`
+- **`primary_school/main_gui.py`** — Removed `LoginWindow` class (~90 lines); standalone `run()` now uses `UniversalLoginWindow`
+- **`college_system/modules/shared/gui/main_gui.py`** — Removed `LoginFrame` from frame map and all `login_gui` references; `main()` now uses `UniversalLoginWindow` when not pre-authenticated
+- Login via `run.py --gui` is unchanged (already used `UniversalLoginWindow`)
+
+#### Fixed
+
+- **`shared/cross_system/journey_service.py`** — Fixed `no such column: id` error when searching university students (university `students` table uses `student_id` as primary key, not `id`); fixed `sqlite3.Row has no attribute get` by replacing `row.get()` calls with key-checked access; added `"id" in cols` guard to all fallback queries
+
+#### Docs & Project Config
+
+- **`LICENSE`** — Updated copyright to "Education System Contributors" (was "University Management System Contributors")
+- **`.gitignore`** — Added comments explaining why `*.db` and `*.log` are ignored (runtime-generated, created on first launch)
+- **`pyproject.toml`** — Added `[tool.setuptools.packages.find]` with `include = ["education_system*"]` so the project is pip-installable via `pip install -e .`
+- **`docs/secondary_school/development/API.md`** — New REST API reference for the secondary school system (52 endpoints across 7 categories)
+- **`docs/primary_school/development/API.md`** — New REST API reference for the primary school system (47 endpoints across 7 categories)
+- **`docs/university_system/development/ADDING_MODULES.md`** — New guide for adding domain modules to the university system (service, GUI, CLI, i18n, tests)
+- **`docs/shared/INFRASTRUCTURE.md`** — New overview of all shared infrastructure modules (auth, database, paths, logging, i18n, validators, GUI, CLI helpers, test fixtures, base classes)
+
+---
+
+## [8.44.0] — 2026-03-24
+
+### Improved — README restructure and documentation split
+
+- **README.md reduced from 3,008 to ~360 lines** — restructured as a concise front door with Quick Start, Systems Overview, Architecture, Installation, Usage, Configuration, Development, and links to detailed docs.
+- **Content extracted into dedicated files:**
+  - `docs/PROJECT_STRUCTURE.md` — full directory tree (was ~870 lines in README)
+  - `docs/DEPLOYMENT.md` — Docker, nginx, production deployment
+  - `docs/TROUBLESHOOTING.md` — common issues and solutions
+  - `docs/MODULE_GUIDES.md` — per-module user guides
+  - `SECURITY.md` — security features, practices, and vulnerability reporting (GitHub recognises this file in the Security tab)
+  - `ROADMAP.md` — future plans and known limitations
+  - `CONTRIBUTING.md` — full contributing guide with branch naming, commit format, how to add a new module/system, code style, PR process
+  - `.env.example` — environment variable reference with all configurable options
+- **Repo name mismatch** given a prominent callout at the top of the README
+- **Default credentials warning** uses GitHub blockquote warning format
+- **Makefile targets** fully listed in a table
+- **API docs link** added (`/api/v1/docs` for Swagger UI)
+- **What's New** section condensed to latest 3 versions with link to CHANGELOG.md
+
+---
+
+## [8.43.0] — 2026-03-24
+
+### Added — Live session monitoring and real-time force logout
+
+- **Live session dashboard** — the "Active Sessions" page now auto-refreshes every 5 seconds, showing a real-time view of all logged-in users with a "Live — last updated HH:MM:SS" timestamp. Sessions are grouped by user with a session count column. The live refresh stops automatically when navigating away from the page.
+- **Session heartbeat** — all authenticated users now send a heartbeat request (`GET /api/v1/web/session/heartbeat`) every 5 seconds. If an admin force-logs out a user, the heartbeat detects the terminated session and automatically redirects the user to the login page with the message: *"Your session was terminated by an administrator."*
+- **Swagger UI CSP fix** — added `'unsafe-inline'` to `script-src` Content Security Policy directive for the `/api/v1/docs` page to allow the inline Swagger UI initialization script to execute.
+
+---
+
+## [8.42.0] — 2026-03-24
+
+### Fixed — API connectivity and access improvements
+
+- **Fixed API login "Connection error"** — web frontend JS was sending requests to `/api/auth/login` but the server registers auth at `/api/v1/auth/login`. Updated `API` base URL in both `shared/api/web/static/js/app.js` and `shared/api/university/static/js/app.js` from `"/api"` to `"/api/v1"`.
+- **Fixed web dashboard "not found"** — web data routes (`/api/web/dashboard/...`, `/api/web/students/...`, etc.) were not versioned, causing 404s after the JS API base URL fix. Updated all web data routes in `shared/api/web/routes.py` from `/api/web/` to `/api/v1/web/`.
+- **Fixed backward-compat redirect dropping POST body** — the `redirect_unversioned()` handler used HTTP 301 which causes browsers to convert POST→GET. Changed to HTTP 307 which preserves the original method.
+- **Fixed Swagger UI docs blank page** — JavaScript object literal had double-escaped braces (`{{{{`) in the f-string, producing invalid JS. Also switched CDN from `unpkg.com` to `cdn.jsdelivr.net` for broader accessibility.
+
+### Added — Network access and session management
+
+- **API accessible from other devices** — server now binds to `0.0.0.0` instead of `127.0.0.1` by default, allowing connections from any device on the network. Configurable via `API_HOST` and `API_PORT` environment variables. CORS default updated to allow all origins (CSRF still enforced via Origin/Referer matching).
+- **Admin session management dashboard** — new "Active Sessions" page in the admin sidebar showing all active, non-expired sessions with username, display name, created/expires timestamps, and a **Force Logout** button per user.
+  - Backend: `GET /api/v1/web/admin/sessions` (active sessions only) and `POST /api/v1/web/admin/force-logout` (invalidates all sessions for a user)
+  - Available to both admin and superadmin roles; prevents self-logout
+  - Confirmation dialog before force-logout with success/error feedback
+
+---
+
+## [8.41.0] — 2026-03-24
+
+### Added — 8 additional API improvements (medium + lower priority)
+
+**Medium Priority:**
+- **Request payload validation** (`shared/api/request_validator.py`) — JSON Schema-style validation with type checks, format validation (email, date, phone), enum/range constraints, nested objects, and array items. `PayloadValidationError` returns 422 with detailed field-level errors.
+- **Per-user rate limiting** — rate limiter now supports `key_func` parameter with `user_key()` (JWT user ID), `ip_key()`, and `user_and_ip_key()` strategies. API key clients get their own rate limit buckets.
+- **Caching middleware** (`shared/api/caching.py`) — global `Cache-Control` headers: `no-store` for mutations, `public, max-age=10` for health checks, `private, no-cache` for authenticated GETs. Route-level `@cache_control()` decorator and `etag_response()` for conditional 304 responses with `ETag`/`If-None-Match`.
+- **Request size limits** — `MAX_CONTENT_LENGTH` set to 16 MB (configurable via `API_MAX_CONTENT_LENGTH` env var). Oversized requests return 413 with a clear error message.
+
+**Lower Priority:**
+- **API key authentication** (`shared/api/api_keys.py`) — static API keys for service-to-service integrations stored in the auth DB (SHA-256 hashed). `@api_key_required("college")` decorator, `@api_key_or_token()` for dual auth. Keys have per-system access control, labels, and revocation support.
+- **Consistent error response format** — `shared/api/errors.py` now handles 400, 404, 405, 413, 422, 429, 500 with consistent `{"error": ..., "message": ...}` format. `PayloadValidationError` and `APIValidationError` auto-registered. `domain_error_handler()` factory ensures all system-specific errors follow the same pattern.
+- **Async support improvements** (`shared/api/async_adapter.py`) — added `run_in_executor_sync()` for standard Flask routes, `configure_executor()` for worker count tuning, and kwargs support in `run_in_executor()`. Thread pool increased to 8 workers.
+- **Content negotiation** (`shared/api/content_negotiation.py`) — `negotiate_response()` returns JSON (default), CSV (`?format=csv` or `Accept: text/csv`), or Excel (`?format=excel`). Built-in `to_csv()` and `to_excel()` converters with openpyxl support and CSV fallback.
+
+---
+
+## [8.40.0] — 2026-03-24
+
+### Added — API versioning, deduplication, OpenAPI docs, and University Flask migration
+
+- **API versioning** — all routes now live under `/api/v1/` (e.g. `/api/v1/college/students`). Old unversioned URLs (`/api/college/...`) return 301 redirects to the versioned equivalents for backward compatibility.
+- **OpenAPI / Swagger UI** — auto-generated OpenAPI 3.0.3 spec at `/api/v1/openapi.json` with interactive Swagger UI at `/api/v1/docs`, covering all 1,044 API paths across all four systems.
+- **Deduplicated shared API modules** — extracted identical `pagination.py`, `validators.py`, `config.py`, and `errors.py` into `shared/api/` base modules. College, secondary, and primary system files are now thin re-exports, eliminating ~600 lines of duplicated code.
+  - New `shared/api/base_config.py` — `BaseAPIConfig` class inherited by all system configs
+  - New `shared/api/errors.py` — `register_common_error_handlers()` and `domain_error_handler()` factory for consistent error responses
+  - New `shared/api/validators.py` — `APIValidationError` + all shared validation functions
+- **University API migrated to Flask** — replaced legacy `BaseHTTPRequestHandler` server with a Flask app factory (`create_app()`) that reuses the same blueprints, auth, rate limiting, and middleware as the other three systems. Legacy `/api/status` and `/api/metrics` endpoints preserved for backward compatibility.
+
+---
+
+## [8.39.0] — 2026-03-23
+
+### Improved — University API web portal usability
+
+- **Dashboard quick actions** — 8 clickable tiles for common tasks (Add Student, New Assignment, Record Grades, Take Attendance, Help Desk, Announcements, Events, Finance)
+- **7 new custom page renderers** with stats cards, inline workflow actions, and contextual forms:
+  - **Help Desk** — open/in-progress/resolved stats, priority badges, new ticket form
+  - **Barber** — today's appointments, pending count, complete/cancel inline actions
+  - **Gym** — active memberships, check-in button, class booking, renew/cancel actions
+  - **Marketplace** — active listings, mark sold, search, create/edit/delete
+  - **Career** — job postings + applications, post job form
+  - **Budget** — spending total, expense CRUD, savings goals with progress bars
+  - **Achievement Badges** — badge stats, leaderboard, create/award badges
+- **Smart status badges** — auto-detected status/priority columns now render as color-coded badges (green=active, yellow=pending, red=cancelled) across all generic list pages
+- **Currency formatting** — amount/price/fee/balance columns auto-format as $X.XX
+- **10 new sidebar items** — achievement badges, clearing & adjustment, external examiners, HESA export, student app, student finance, student wellbeing, study recommendations, events discovery, facilities mgmt
+- Total custom-rendered pages: 19 (up from 12)
+
+---
+
+## [8.38.0] — 2026-03-23
+
+### Added — University API: ~200 missing endpoints across 20 existing route files
+
+Audited all existing university API route files against their corresponding service
+files and added missing endpoints to achieve full service-to-API coverage:
+
+- **accessibility_routes** — +11 endpoints (status updates, approvals, renewals, documentation, statistics)
+- **ai_study_routes** — +8 endpoints (plan generation, flashcard review/decks, analytics)
+- **feedback_system_routes** — +10 endpoints (voting, trending, search, statistics)
+- **gym_routes** — +12 endpoints (check-in/out, renewals, PT sessions, equipment, stats)
+- **legal_routes** — +13 endpoints (case management, documents, payments, consultations)
+- **lost_found_routes** — +11 endpoints (status updates, photos, matching, claims, statistics)
+- **marketplace_routes** — +10 endpoints (updates, sold/claim, saves/favorites, search)
+- **barber_routes** — +13 endpoints (status, customers, feedback, waitlist, revenue, stats)
+- **dentist_routes** — +12 endpoints (scheduling, prescriptions, payments, statistics)
+- **nailbar_routes** — +9 endpoints (updates, availability, payments, revenue, stats)
+- **musicshop_routes** — +14 endpoints (stock, order mgmt, payments, wishlists, reports)
+- **phoneshop_routes** — +10 endpoints (stock, order updates, payments, reports)
+- **carrental_routes** — +14 endpoints (rental lifecycle, payments, fleet reports, maintenance)
+- **campus_navigation_routes** — +10 endpoints (routing, favorites, history, stats)
+- **career_routes** — +9 endpoints (resumes, interviews, events, skills)
+- **budget_routes** — +10 endpoints (expense mgmt, spending trends, meal plans)
+- **events_discovery_routes** — +11 endpoints (RSVPs, check-in/out, ratings, statistics)
+- **course_planning_routes** — +7 endpoints (auto-planning, prerequisites, recommendations)
+- **equipment_routes** — +10 endpoints (checkout/return, overdue, reports)
+- **betting_routes** — +10 endpoints (deposits, settlements, cash-out, statistics)
+
+---
+
+## [8.37.0] — 2026-03-23
+
+### Added — University API: 8 missing module route files
+
+Added API routes for 8 domain modules that had GUI features and services but no REST API coverage:
+
+- **Achievement Badges** (`/api/achievement-badges/`) — badges, awards, progress, leaderboard, statistics
+- **Clearing & Adjustment** (`/api/clearing-adjustment/`) — vacancies, applications, adjustment requests, statistics
+- **External Examiners** (`/api/external-examiners/`) — examiners, assignments, report submission
+- **HESA Export** (`/api/hesa-export/`) — returns, field mappings, submission log, statistics
+- **Student App** (`/api/student-app/`) — preferences, notifications, quick links
+- **Student Finance** (`/api/student-finance/`) — accounts and transactions
+- **Student Wellbeing** (`/api/student-wellbeing/`) — referrals, check-ins, counselling sessions
+- **Study Recommendations** (`/api/study-recommendations/`) — profiles, recommendations, study sessions, stats
+
+Total new endpoints: ~70. All registered in shared API route init.
+
+---
+
+## [8.36.0] — 2026-03-23
+
+### All Systems — Comprehensive test suite expansion (344 new tests)
+
+#### Added
+
+- **Shared auth infrastructure tests (81 tests across 4 files)**
+  - `shared/tests/test_password_manager.py` (17 tests) — Bcrypt hashing/verification round-trip, PBKDF2 legacy hash support, password strength validation (min length, uppercase, lowercase, digit, special char), edge cases (empty, very long, unicode)
+  - `shared/tests/test_mfa_service.py` (18 tests) — TOTP setup/verification, MFA enable/disable lifecycle, recovery code generation (XXXX-XXXX format, 10 codes), single-use enforcement, case-insensitive matching, rate limiting lockout after 5 failures, counter reset on success
+  - `shared/tests/test_session_manager.py` (12 tests) — Session creation (token length, uniqueness), validation (valid/invalid/expired/empty), single/bulk invalidation, user isolation, cleanup of expired sessions, concurrent session support
+  - `shared/tests/test_auth_core.py` (34 tests) — Login (valid/wrong password/unknown user), lockout (trigger/persist/expire/reset), disabled accounts, user registration (create/duplicate/weak password/systems), role-for-system checks (correct/wrong system/superadmin/not logged in), logout (state/session), password change (success/wrong old/weak new), get_user_by_id
+
+- **Secondary school service tests (122 tests)**
+  - `secondary_school/tests/test_services.py` — 21 test classes covering: ExamService (8), HomeworkService (6), TimetableService (5), ProgressService (4), PastoralService (6), SafeguardingService (5), SENDService (6), RewardsService (5), AdmissionsService (5), FinanceService (9), AnnouncementService (4), CalendarService (3), ParentsEveningService (7), AssetService (5), RoomBookingService (6), HRService (8), CPDService (4), ClubsService (6), LibraryService (7), TransportService (7), MedicalService (6)
+
+- **Primary school service tests (97 tests)**
+  - `primary_school/tests/test_services.py` — 23 test classes covering: HomeworkService (9), SATsService (5), PhonicsService (5), ReadingRecordService (4), ProgressService (4), TimetableService (3), PastoralService (4), SafeguardingService (4), SENDService (7), AdmissionsService (4), FinanceService (4), AnnouncementService (3), CalendarService (3), ParentsEveningService (4), ClubService (5), LibraryService (5), MealService (3), TransportService (3), MedicalService (4), AssetService (3), RoomBookingService (4), HRService (4), CPDService (3)
+
+- **GUI tests (44 tests across 3 systems)**
+  - `college_system/tests/gui/test_gui.py` (15 tests) — DashboardFrame, StudentFrame, CourseFrame: module import verification, class existence, underlying service calls (list/get/create)
+  - `secondary_school/tests/gui/test_gui.py` (15 tests) — StudentFrame, HomeworkFrame, AdmissionsFrame: module import, class existence, service layer verification
+  - `primary_school/tests/gui/test_gui.py` (14 tests) — HomeworkFrame: module import, dialog import, constants (HOMEWORK_STATUSES, STICKER_DISPLAY), service calls (list/get/create/filter), validation
+
+#### Fixed
+
+- **Primary school schema** — Added missing columns: `dbs_number`/`notes`/`leaving_date` on `staff`, `updated_at` on `admissions`/`library_books`/`parents_evening_events`/`parents_evening_slots`, `available_copies`/`returned_date` on library tables
+
+---
+
+## [8.35.0] — 2026-03-23
+
+### All Systems — Cross-system security test suite (83 tests)
+
+#### Added
+
+- **`shared/tests/test_security.py`** — Comprehensive security test suite covering:
+  - **SQL injection** (24 tests) — `validate_identifier` rejects injection payloads (`;`, `'`, `--`, special chars, empty strings), accepts safe identifiers; `escape_like` escapes `%`, `_`; `build_where_clause` / `build_set_clause` use `?` placeholders and reject malicious column names
+  - **Authentication security** (10 tests) — Brute force lockout after 5 failed attempts, counter reset on success, consistent error messages for valid/invalid usernames, timing attack detection (xfail — documents known timing oracle), password hash not exposed in login responses or `get_user_by_id`
+  - **Session security** (4 tests) — Token entropy (unique, ≥32 chars), new token on each login (session fixation), logout destroys session, bulk session invalidation
+  - **Privilege escalation** (8 tests) — Role hierarchy enforcement (student < staff < admin), unknown roles have no privileges, cross-system access isolation, grant/revoke cycle, invalid role rejection
+  - **Input validation** (15 tests) — XSS payloads rejected by identifier validation and parameterised in WHERE clauses, path traversal rejected, integer overflow handled via parameterisation, weak passwords rejected (5 variants), strong passwords accepted
+  - **Account lifecycle** (3 tests) — Deactivated accounts cannot login, expired sessions rejected, password change invalidates all sessions
+
+#### Identified
+
+- **Timing oracle** — Login rejects unknown usernames instantly (~5ms) vs ~400ms for wrong-password-on-existing-user (bcrypt cost). Documented as `xfail` test with TODO to add dummy bcrypt hash for unknown users.
+
+---
+
+## [8.34.0] — 2026-03-23
+
+### All Systems — Export path fixes, test fixes, and test runner improvement
+
+#### Fixed
+
+- **`predictive_analytics.py`** — Risk reports now write to `university_system/data/reports/risk_reports/` instead of a bare `risk_reports/` relative path that dumped files into the home directory
+- **`import_export.py`** — All 7 document manager export functions (import template, students, all documents, search results, activity log, compliance data, custom export) now write to `university_system/exports/documents/` instead of the current working directory
+- **`export_manager.py`** (CLI) — "Current directory" export option now defaults to `university_system/exports/` instead of `os.getcwd()`
+- **`test_admin.py`** — Fixed 3 hanging email menu tests (`test_display_messages_menu`, `test_display_preferences_menu`, `test_display_admin_message_management_menu`) — mocked input returned `'q'` but menus expected `'6'`/`'8'` to exit, causing infinite loops
+
+#### Changed
+
+- **`run.py`** — "Run ALL tests" now collects all 4 system test directories in a single pytest invocation instead of spawning 4 separate processes
+
+## [8.33.0] — 2026-03-22
+
+### University System — Test suite fixes and startup performance
+
+#### Fixed
+
+- **test_alumni_management.py** — Fixed wrong table names (`alumni_events` → `unified_events`, `alumni_mentorships` → `mentorships`, `job_board` → `job_postings`, `alumni_forum_posts` → `alumni_forum`, `alumni_forum_replies` → `forum_replies`), wrong column names (`donation_amount` → `amount`, `donation_purpose` → `campaign`, `event_name` → `title`, `max_attendees` → `max_capacity`), added `_ensure_student()` helper for FK constraints, fixed teardown deletion order
+- **test_academic_calendar.py** — Fixed `test_database_tables_created` querying wrong DB (`get_connection()` → `calendar_manager.config.db_file`), fixed table name (`calendar_events` → `academic_calendar_events`)
+- **test_helpdesk.py** — Fixed FK constraint on `knowledge_base.author_id` by removing hardcoded `author_id=2001`, fixed teardown with `try/finally` and `IntegrityError` handling
+- **test_student_support.py** — Replaced all `sqlite3.connect(SUPPORT_DB)` with `get_connection()` to use test-isolated DB, added `monkeypatch` to patch `SUPPORT_DB` in service submodules, fixed teardown
+- **test_staff_crud.py** — Replaced `sqlite3.connect(DB_PATH)` with `get_connection()` to use test-isolated DB
+- **test_mfa_unique_contacts.py** — Replaced `sqlite3.connect(str(DEFAULT_DB_PATH))` with `get_connection()` to use test-isolated DB
+- **test_finance_students.py** — Fixed stale patch paths (`finance_misc` → `finance.core`), fixed `verify_jwt_in_request` patch target to `security_automation` module
+- **test_early_warning_core.py** — Added missing `lms_video_lectures`, `lms_course_content`, `lms_courses`, and `student_modules` tables to test fixture, fixed teardown FK ordering
+- **test_internship_management.py** — Fixed teardown FK ordering with `try/finally` and `IntegrityError` handling
+- **test_integration_marketplace_core.py** — Fixed menu exit choice (`'8'` → `'0'`) matching actual menu which uses `'0'` to return, preventing infinite loop
+
+#### Changed
+
+- **conftest.py** — Added `email_address`, `phone_number`, and `course` columns to template `students` table so tests using either naming convention work correctly
+- **conftest.py** — Replaced heavy `UserAuth` initialization (~19s cold start from AI/chatbot/voice imports) with lightweight mock auth in `_initialize_test_auth()`, cutting test startup time significantly
+- **pyproject.toml** — Removed `filterwarnings` block (`"error"` setting was suppressing test tracebacks)
+
+## [8.32.0] — 2026-03-21
+
+### All Systems — Staff seeding, error handling, and connection safety
+
+#### Added
+
+- **Default staff records** seeded in all 4 systems (5 per system, `INSERT OR IGNORE` for idempotency):
+  - Primary: Head Teacher, Year 1 Teacher, Year 3 Teacher, Teaching Assistant, SENCO
+  - Secondary: Head of Maths, English Teacher, Science Teacher, PE Teacher, Head of Year 7
+  - College: Programme Leader, A-Level Maths Lecturer, BTEC Business Lecturer, Student Support, Careers Advisor
+  - University: Professor of Computer Science, Senior Lecturer, Research Fellow, Lab Technician, Academic Advisor
+
+#### Fixed
+
+- **`admin_service.py`** — Staff count now checks `staff_profiles` table (used by university) and returns highest count across all staff-related tables
+- **`admin_service.py`** — Replaced 6 silent `except Exception: pass/return []` blocks with `logger.warning()` calls
+- **`analytics_service.py`** — Replaced 5 silent exception swallows with `logger.warning()` calls
+- **`journey_service.py`** — Replaced 9 silent exception swallows with `logger.warning()` calls
+- **`academic_misconduct/database.py`** — Fixed connection leaks in 13 methods (added `try/finally` with `conn.close()`), replaced all `print()` error messages with `logger.warning()`
+
+---
+
+## [8.31.0] — 2026-03-21
+
+### Shared — Super Admin CLI Dashboard
+
+Added a full CLI equivalent of the Super Admin GUI Dashboard, providing all 14 management sections via a text-based menu interface.
+
+#### Added
+
+- **`shared/cli/superadmin_cli.py`** — New 14-section CLI dashboard matching the GUI:
+  1. Dashboard Overview (system status, student stats, recent activity)
+  2. System Health (per-system DB status, size, student/staff counts)
+  3. User Management (list, search, create, edit, reset password, deactivate)
+  4. Student Analytics (summary, per-system breakdown, retention, transfers, trends, CSV export)
+  5. Misconduct Overview (cross-system case counts with active/critical breakdown)
+  6. Notifications (view, send, broadcast to role, mark read)
+  7. Student Search (cross-system name search)
+  8. Student Journey (timeline of student progression through systems)
+  9. Permission Matrix (user roles across all 4 systems at a glance)
+  10. Audit Log (view, filter by type/date/text, export CSV)
+  11. Backup / Restore (individual or all-system database backups)
+  12. Batch Operations (bulk role change, bulk deactivation)
+  13. Active Sessions (view and force-logout sessions)
+  14. Quick Launch (launch individual system CLIs)
+
+#### Changed
+
+- **`shared/cli/login_cli.py`** — Superadmin users (admin in all 4 systems) now see `[S] Super Admin Dashboard` option in the system picker
+- **`run.py`** — CLI dispatch loop handles `__superadmin__` system key, launching the CLI dashboard; returns to dashboard after individual system exits (matching GUI behaviour)
+
+---
+
+## [8.30.0] — 2026-03-21
+
+### Cross-System — Comprehensive error sweep fixing NameError, ImportError, KeyError, and AttributeError issues
+
+Full-system audit and fix pass resolving runtime errors across all four education subsystems, covering broken imports, missing dict keys, GUI-service mismatches, wrong SQL column references, and i18n placeholder inconsistencies.
+
+#### Fixed
+
+##### University — Broken imports and undefined names (5 files)
+- **integration_manager.py**: Added missing imports for `display_academic_calendar_menu`, `display_trip_management_menu`, `academic_misconduct_menu`, and `ACADEMIC_MISCONDUCT_AVAILABLE` with safe fallbacks
+- **integration_manager.py**: Fixed `CommunicationDashboard` and `display_communication_dashboard` — imported from correct module (`email.admin.menus`)
+- **auth_manager.py**: Added missing `ValidationError` import used in 7 except clauses
+- **logs.py**: Fixed `execute_db_operation` import from non-existent `finance.core.finance_db_operations` → correct `modules.shared.utils.database`
+- **student_union_core.py**: Fixed `student_union_misc` import from non-existent `modules.core.services` → correct `student_union.administration.miscellaneous`
+
+##### University — GUI-service method mismatches and wrong arguments (4 files)
+- **achievement_badge_gui.py**: Fixed `create_badge()` passing a dict instead of keyword arguments
+- **hesa_export_gui.py**: Fixed 6 method mismatches — `get_returns` → `list_returns`, `create_return(dict)` → kwargs, `generate_xml()` → `generate_xml_export(return_id)`, `submit_return()` → `update_return_status()`, `add_field_mapping(dict)` → kwargs, `get_statistics()` → `get_return_statistics()`
+- **clearing_adjustment_gui.py**: Fixed `add_vacancy()` passing a dict instead of keyword arguments
+- **payments.py**: Fixed parking refund INSERT missing required `refund_date` column
+
+##### University — Wrong SQL column names (3 files)
+- **external_examiner_service.py**: Fixed `WHERE examiner_id = ?` → `WHERE id = ?` in `get_examiner()` and `update_examiner()` (table PK is `id`)
+- **student_union_core.py**: Fixed 2 foreign key references from `union_events` → `unified_events`
+- **dashboard.py**: Fixed SQL query referencing `union_events` → `unified_events`
+
+##### University — AttributeError: undefined method (1 file)
+- **navigation.py**: Fixed `self.open_trip_gui_direct()` → `self.open_trip_management_dialog()` (method not bound to class)
+
+##### University — KeyError: `current_user` dict key mismatches (20+ files)
+- **login_manager.py**: Added `user_id` and `display_name` keys to legacy auth `user_dict` — legacy path only set `id`, causing KeyError when code accessed `user_id`
+- **logs.py**: Changed `current_user['id']`, `['username']`, `['role']` to safe `.get()` access
+- **cli_menus.py**: Changed `current_user['id']` → `.get('user_id') or .get('id')`
+- **profiles.py**: Changed `current_user['id']` → safe access (2 occurrences)
+- **academic_calendar/main_gui.py**, **layout_manager.py**: Changed `['username']` and `['role']` → `.get()` with defaults
+- **parent_portal/**: Changed ~40 unsafe `current_user['role']` accesses → `.get('role', '')` across 10 service files
+
+##### University — i18n format placeholder mismatch (1 file)
+- **trip_management/menu.py**: Fixed `KeyError: 'user'` — locale string used `{user}` but `.format()` only passed `username=`; now passes both `user=` and `username=`
+
+##### University — Missing module exports (1 file)
+- **health/services/__init__.py**: Added 11 missing exports (`_sqlite_main_db_path`, `backup_before_operation`, `cipher_suite`, `encrypt_sensitive_data`, `decrypt_sensitive_data`, `generate_appointment_schedule_report`, `generate_health_condition_analysis`, `generate_provider_performance_report`, `generate_student_health_summary`, `generate_vaccination_status_report`, `truthy`) required by `miscellaneous.py`
+
+##### University — Test file import fix (1 file)
+- **test_health_miscellaneous.py**: Fixed import from non-existent `modules.core.services.health_misc` → correct `modules.domain.health.services`
+
+##### Shared Auth — Key consistency (1 file)
+- **shared/auth/core.py**: Added `id` key to `_current_user` dict in all 3 login paths (login, verify_mfa, verify_mfa_external) — code across all systems accesses both `id` and `user_id`
+
+##### Secondary School (1 file)
+- **cli_main.py**: Fixed `current_user["id"]` → `current_user["user_id"]` in password change flow
+
+##### Primary School (1 file)
+- **main_gui.py**: Fixed unsafe `current_user["role"]` and `["display_name"]` → `.get()` with defaults
+
+---
+
+## [8.29.0] — 2026-03-20
+
+### University System — Bug fixes across commerce, student portals, and GUI launchers
+
+Wide-ranging bug fixes addressing broken payment flows, missing auth context in GUI modules, mismatched service/GUI method names, and incorrect database column references.
+
+#### Fixed
+
+##### Restaurant Management — Payment flow (3 files)
+- **place_order.py**: Fixed `PaymentMethodDialog` missing `wait_window()` — dialog returned immediately so "Place Order & Pay" button silently did nothing
+- **place_order.py**: Renamed "Student Account" to "Finance Account" across all restaurant GUI files; payment method dialog now shows balance details dynamically when Finance Account is selected (current balance, deduction amount, remaining balance)
+- **place_order.py**: Fixed finance account lookup for admin/staff users — now falls back to `username` when `student_id` is `None`, matching the shop checkout pattern
+- **place_order.py**: Fixed "database is locked" error — order connection is now committed and closed before calling `process_student_finance_account_payment`, which needs its own connection
+
+##### Restaurant Refunds — Auto-detect payer (1 file)
+- **refunds.py**: Replaced manual student ID entry with automatic payer resolution via `get_payer_info_from_order()` — resolves through `restaurant_customers` table to find user identifier, name, and email
+- **refunds.py**: Refund method dialog now shows payer details and marks the original payment method; Finance Account button is disabled when no account is linked
+- **refunds.py**: Refund receipt email now sent automatically to the resolved payer's email after successful refund
+
+##### Shop Management (2 files)
+- **main_gui.py**: Initialised `status_label = None` in `__init__` to prevent `AttributeError` when `_bind_sidebar_scroll_events` fails before creating the widget
+- **dashboard_manager.py**: Made `update_status()` defensive — checks `status_label` exists before configuring it
+
+##### Auth context not passed to GUI modules (8 files)
+- **wellness_gui.py**: Added `auth` parameter — was using `get_auth()` which returns a fresh instance without the logged-in user
+- **marketplace_gui.py**: Added `auth` parameter and fixed `user_id` resolution to use `current_user` attribute with proper fallbacks
+- **lost_found_gui.py**: Added `auth` parameter
+- **roommate_gui.py**: Added `auth` parameter
+- **student_app_gui.py**: Added `auth` parameter and `student_id` resolution
+- **achievement_badge_gui.py**: Added `auth` parameter and `student_id` resolution
+- **student_success_gui.py**: Updated all launchers (Wellness Hub, Marketplace, Lost & Found, Roommate Finder) to pass `self.auth`
+- **new_features_gui.py**: Updated Student App and Achievement Badge launchers to pass `self.auth`
+
+##### GUI–Service method mismatches (2 files)
+- **student_app_gui.py**: Fixed `get_dashboard()` → `get_student_dashboard(student_id)`, and all other service calls (`get_notifications`, `get_preferences`, `get_quick_links`, `save_preferences`, `mark_all_notifications_read`, `add_quick_link`) to pass required `student_id`
+- **achievement_badge_gui.py**: Fixed `get_my_badges()` → `get_student_badges(student_id)`, `get_available_badges()` → `list_badges()`, `get_badge_definitions()` → `list_badges(active_only=False)`
+
+##### Student Dashboard — Quick action buttons (1 file)
+- **quick_actions.py**: Fixed four broken buttons mapped to non-existent methods: `show_timetable` → `show_student_timetable_gui`, `show_module_registration` → `show_student_registration_gui`, `show_exams` → `show_exam_scheduler_gui`, `show_library` → `show_library_management`
+
+##### Database column/schema fixes (4 files)
+- **parking payments.py**: Fixed `p.id` → `p.payment_id` and `r.id` → `r.refund_id` in payment query
+- **career_services_gui.py**: Fixed `id` → `event_id` in `unified_events` query
+- **phoneshop_gui.py**: Fixed `o['status']` → `o.get('status') or o.get('order_status', '')` for orders table column mismatch
+- **musicshop_gui.py**: Fixed `p['title']` → `p.get('title') or p.get('name', '')` for products table column mismatch
+
+##### Other fixes (3 files)
+- **charity_shop refunds.py**: Fixed `NoneType.__format__` crash when `amount` is `NULL` — added safe defaults for `amount`, `payment_method`, and `status`
+- **helpdesk database.py**: Fixed FOREIGN KEY constraint failure in `init_default_data` — departments now look up actual SLA policy IDs by name instead of hardcoding (1, 2, 3); workflows no longer insert `created_by` FK that may not exist
+- **printing_gui.py**: Fixed `student_id` resolving to `None` — changed `dict.get('student_id', fallback)` to `or`-chain so `None` values fall through correctly
+
+---
+
+## [8.28.0] — 2026-03-19
+
+### University System — SQLite3 bug fixes and unified schema alignment
+
+Comprehensive audit and fix of SQLite3 errors across the entire university system, resolving resource leaks, schema mismatches, and 120+ misnamed column references.
+
+#### Fixed
+
+##### SQLite3 resource leaks and error handling (5 files)
+- **assessment_service.py**: Added `cursor.close()` in all 7 methods (cursors were created but never closed)
+- **restaurant connection.py**: Wrapped `init_db()` in `try/finally` so connections are always closed on error
+- **cinema database.py**: Added `try/finally` to `init_database()` to close both cursor and connection; changed silent `except OperationalError: pass` to only suppress "duplicate column" errors
+- **university db.py**: Added `atexit.register(self.close_all)` to `ConnectionPool` so connections are closed on interpreter shutdown
+- **shared/auth/db.py**: Added retry logic with exponential backoff for "database is locked" errors (3 retries)
+
+##### GUI launch errors (2 files)
+- **housing payment_manager.py**: Removed invalid `finance_gui.show_dashboard()` call — `FinanceGUI` sets up dashboard automatically during `__init__`
+- **shop_management main_gui.py**: Bound `update_status` method from `dashboard_manager` (was only checked in `ui_components` where it doesn't exist)
+
+##### Unified schema column alignment — orders table (20+ files, 80+ fixes)
+- `total_price` → `total_amount` across all restaurant, café, bar, and shop modules
+- `order_time` → `order_date` across all order-related queries
+- `status` → `order_status` in all SQL queries against the orders table
+- Files: order_processing, order_management, place_order, exports, forecasting, financials, financial_reporting, inventory_management, staff_administration, menu_management, loyalty_program, maintenance, reservation_system, table_management, financial_reports, payments, refunds, sales_reports, cafe_system_cli, bar_gui, cafe_orders
+
+##### Unified schema column alignment — products table (10+ files, 30+ fixes)
+- `id` → `product_id` in all SQL queries referencing the unified products table
+- `p.id` → `p.product_id` in all JOIN clauses
+- Files: cafe_system_cli, cafe_pos, cafe_menu, bar_cli, bar_gui, music_shop_cli, phone_shop_cli, phoneshop_core, musicshop_core
+
+##### Unified schema column alignment — orders/order_items PKs (6 files)
+- `id` → `order_id` for orders table references
+- `id` → `item_id` for order_items table references
+- `o.id` → `o.order_id` in JOINs and subqueries
+- Files: cafe_system_cli, cafe_orders, bar_gui, music_shop_cli, phone_shop_cli, phoneshop_core, musicshop_core
+
+##### Grocery shop fixes (2 files)
+- `gt.transaction_date` → `gt.created_at` in refund list queries (transactions table has `created_at`)
+- Added `created_at as transaction_date` alias to service queries for backward-compatible dict access
+- Replaced `ON CONFLICT(user_id, product_id)` with explicit SELECT/UPDATE (cart table lacks unique constraint)
+- Fixed `view_cart` JOIN: `p.product_id` → `p.source_product_id` (cart stores source product IDs)
+- Fixed GUI tags: `product_id` (integer PK) → `source_product_id` (string code like 'GR001')
+- Fixed `GROUP BY DATE(transaction_date)` → `GROUP BY DATE(created_at)` in reports
+
+##### Takeaway GUI fix (1 file)
+- `item['item_id']` → `item['product_id']` (products table has no `item_id` column)
+
+##### Events and calendar fixes (2 files)
+- **events_service.py**: Fixed index on `unified_events(event_date)` → `unified_events(start_datetime)`
+- **calendar_core.py**: Fixed 4 indexes referencing `events` table → `academic_calendar_events`; fixed table verification list
+
+##### Blockchain credentials fix (1 file)
+- `blockchain_type` → `public_key` in SELECT, INSERT, and treeview columns (table has no `blockchain_type` column)
+
+##### Cinema loyalty fix (1 file)
+- `b.total_price` → `b.total_amount` and `b.show_date` → `b.booking_time` in bookings query
+
+#### Implemented
+- **Restaurant payments**: Implemented `add_finance_button_to_payment_options()` stub — adds a "Pay via Finance System" button that opens the finance GUI pre-populated with order details
+
+---
+
+## [8.27.0] — 2026-03-19
+
+### Cross-System — Deduplicate sql_safety and defaults modules
+
+Eliminated code duplication across college, secondary, and primary subsystems by consolidating shared utilities into the `education_system/shared/` package.
+
+#### Changed
+
+##### sql_safety.py — 3 identical copies → 1 shared canonical module
+- Upgraded `shared/database/sql_safety.py` to the complete implementation (was a simpler unused version)
+- Replaced `college_system/core/sql_safety.py`, `secondary_school/core/sql_safety.py`, `primary_school/core/sql_safety.py` with thin re-export wrappers
+- All 110 consumer imports across the 3 subsystems continue to work unchanged
+- University system retains its own extended version (1029 lines with DB verification, table registry)
+
+##### defaults.py — common utilities extracted to shared
+- Created `shared/core/defaults.py` with shared utilities: `generate_secure_password()`, `load_or_create_jwt_secret()`, auth constants (`MIN_PASSWORD_LENGTH`, `MAX_LOGIN_ATTEMPTS`, `LOCKOUT_DURATION_MINUTES`, `SESSION_TIMEOUT_MINUTES`), and `STAFF_ID_PREFIX`
+- Slimmed `college_system/core/defaults.py` from 76 → 36 lines (imports shared utilities)
+- Slimmed `secondary_school/core/defaults.py` from 45 → 30 lines
+- Slimmed `primary_school/core/defaults.py` from 95 → 67 lines
+- System-specific values (ID prefixes, credentials, year groups, assessment levels) remain in each subsystem
+
+#### Removed
+- ~180 lines of duplicated password generation and JWT secret management code across 3 subsystems
+- ~130 lines of duplicated SQL safety code across 3 subsystems
+
+---
+
+## [8.26.0] — 2026-03-19
+
+### University System — Backup & Export Directory Reorganisation
+
+Consolidated scattered backup and export directories into two organised top-level directories with type-specific subdirectories, replacing 6 fragmented output locations.
+
+#### Changed
+
+##### Backup directory structure (`backups/`)
+- Reorganised flat `backups/` directory into typed subdirectories: `database/`, `files/`, `attendance/`, `finance/`, `library/`, `health/`, `settings/`, `calendar/`
+- Added 8 new path constants in `core/paths.py`: `BACKUP_DATABASE_DIR`, `BACKUP_FILES_DIR`, `BACKUP_ATTENDANCE_DIR`, `BACKUP_FINANCE_DIR`, `BACKUP_LIBRARY_DIR`, `BACKUP_HEALTH_DIR`, `BACKUP_SETTINGS_DIR`, `BACKUP_CALENDAR_DIR`
+- `DB_BACKUPS_DIR` now aliases `BACKUP_DATABASE_DIR` for backward compatibility
+
+##### Export directory structure (`exports/`)
+- Moved exports from `data/exports/` and `data/db_files/exports/` to a single top-level `exports/` directory
+- Organised into typed subdirectories: `database/`, `pdf/`, `tickets/`, `submissions/`, `reports/`
+- Added 5 new path constants: `EXPORTS_DATABASE_DIR`, `EXPORTS_PDF_DIR`, `EXPORTS_TICKETS_DIR`, `EXPORTS_SUBMISSIONS_DIR`, `EXPORTS_REPORTS_DIR`
+- `DB_EXPORTS_DIR` now aliases `EXPORTS_DATABASE_DIR` for backward compatibility
+
+##### Updated modules (20+ files)
+- Database backup operations → `backups/database/`
+- Assignment maintenance backups → `backups/database/` (DB) and `backups/files/` (zips)
+- Attendance backups → `backups/attendance/`
+- Finance backups → `backups/finance/`
+- Health portal backups → `backups/health/`
+- Calendar backups → `backups/calendar/`
+- Library settings backups → `backups/settings/`
+- Document manager backups → `backups/files/`
+- Helpdesk ticket exports → `exports/tickets/`
+- PDF exports → `exports/pdf/`
+- Finance report exports → `exports/reports/`
+- Shared constants module re-exports all new path constants
+
+#### Removed
+- Empty directories: `data/exports/`, `data/db_files/exports/`, `data/submissions/backups/`, `data/submissions/exports/`, `data/backups/`
+- Old backup files from `backups/` (7 database backup copies, ~91MB)
+
+---
+
+## [8.25.0] — 2026-03-19
+
+### University System — Database Table Consolidation (1148 → 1066 tables)
+
+Major database refactoring to eliminate duplicate table patterns across the university system. Three categories of redundant tables were merged into unified tables with a `source_type` discriminator column, reducing the total table count by 34.
+
+#### Changed
+
+##### Refunds — 19 tables merged into `unified_refunds`
+- Merged `bar_refunds`, `barber_refunds`, `butcher_refunds`, `cafe_refunds`, `carrental_refunds`, `charity_shop_refunds`, `cinema_refunds`, `finance_refunds`, `grocery_refunds`, `legal_refunds`, `musicshop_refunds`, `nailbar_refunds`, `order_refunds`, `parking_refunds`, `phoneshop_refunds`, `refunds`, `shop_refunds`, `takeaway_refunds`, `taxi_refunds`, `train_refunds` into a single `unified_refunds` table
+- `source_type` column identifies origin (bar, barber, cafe, cinema, legal, etc.)
+- `reference_type` + `reference_id` replace domain-specific foreign keys (order_id, ticket_number, booking_ref, etc.)
+- Standardised columns: `amount`, `refund_method`, `refund_reference`, `refund_date`, `processed_by`, `student_id`
+- Finance GUI now reads all refunds from one table instead of aggregating from `finance_refunds`
+- 81 rows of existing data migrated with full fidelity
+- ~40 files updated across all commerce, mobility, finance, and service modules
+
+##### Events — 11 tables merged into `unified_events` + `unified_event_registrations`
+- Merged `events`, `campus_events`, `alumni_events`, `career_events`, `student_events`, `church_events` into `unified_events`
+- Merged `campus_event_registrations`, `event_registrations`, `alumni_event_registrations`, `career_event_registrations`, `event_attendance` into `unified_event_registrations`
+- `source_type` column identifies origin (general, campus, alumni, career, student, church)
+- Domain-specific columns preserved: `event_fee`, `payment_required`, `virtual_link`, `waitlist_enabled`, `club_id`
+- Tables left separate: `special_events` (cinema), `betting_events` (gambling), calendar/scheduling tables, integration event logs
+- ~30 files updated across campus, alumni, career, student union, and academic calendar modules
+
+##### Payments — 7 tables merged into expanded `payments` table
+- Merged `finance_payments`, `library_fine_payments`, `fine_payments`, `housing_payments`, `parking_payments`, `club_payments`, `legal_payments` into the existing `payments` table
+- Added columns: `source_type`, `source_payment_id`, `customer_email`, `payment_type`, `payment_reference`, `reference_type`, `reference_id`, `department`, `description`, `payment_period_start/end`, `receipt_sent`, `processed_by`, `updated_at`
+- Existing 169 payment rows retain `source_type = 'general'` — backward compatible with all existing queries
+- 27 additional rows migrated from domain tables (18 library, 6 housing, 1 club, 2 legal)
+- ~25 files updated across housing, library, finance, legal, parking, and student union modules
+
+##### Documents — 6 tables merged into `documents`
+- Merged `student_documents`, `legal_documents`, `accommodation_documents`, `parent_documents`, `application_documents`, `staff_documents` into a single `documents` table
+- `source_type` column identifies origin (student, legal, accommodation, parent, application, staff)
+- `owner_id` + `owner_type` replace domain-specific owner columns (student_id, user_id, parent_id, client_id)
+- `reference_type` + `reference_id` replace domain-specific foreign keys (case_id, accommodation_id, application_id)
+- Rich schema preserved from student_documents: versioning, verification, workflow, priority, tags, file hashing
+- ~45 files updated across document manager (GUI + utils), housing, legal, staff HR, admissions, parent portal, and schema files
+
+##### Transactions — 21 tables merged into `transactions`
+- Merged `barber_transactions`, `betting_transactions`, `butcher_transactions`, `carrental_transactions`, `charity_shop_transactions`, `dentist_transactions`, `equipment_transactions`, `grocery_transactions`, `gym_transactions`, `mail_transactions`, `musicshop_transactions`, `nailbar_transactions`, `phoneshop_transactions`, `shop_transactions`, `student_finance_transactions`, `bar_inventory_transactions`, `cafe_inventory_transactions`, `barber_gift_card_transactions`, `gateway_transactions`, `meal_plan_transactions`, `meal_transactions` into a single `transactions` table
+- `source_type` column identifies origin (barber, shop, grocery, student_finance, etc.)
+- `reference_type` + `reference_id` replace domain-specific FKs (appointment_id, order_id, rental_id, etc.)
+- Unified columns: `amount`, `payment_method`, `transaction_type`, `status`, `processed_by`, `customer_id`, `student_id`
+- Balance tracking preserved: `balance_before`, `balance_after`, `account_id` for ledger-type transactions
+- Commerce extras preserved: `tip_amount`, `receipt_sent`, `receipt_number`, `items_json`, `subtotal`, `discount_amount`, `tax_amount`
+- 210 rows migrated across all source types
+- ~60 files updated across commerce, finance, mobility, barber, and service modules
+
+##### Orders — 8 tables merged into `orders`
+- Merged `bar_orders`, `butcher_orders`, `cafe_orders`, `musicshop_orders`, `phoneshop_orders`, `restaurant_orders`, `snack_orders`, `takeaway_orders` into a single `orders` table
+- `source_type` column identifies origin (bar, butcher, cafe, music_shop, phone_shop, restaurant, snack, takeaway)
+- Unified columns: `total_amount`, `payment_method`, `order_status`, `customer_id`, `order_number`
+- Domain-specific columns preserved: `delivery_address`, `shipping_address`, `pickup_date/time`, `age_verified`, `rating`, `review`
+- 40 rows migrated; `work_orders` and `purchase_orders` kept separate (different domain)
+
+##### Order Items — 7 tables merged into `order_items`
+- Merged `bar_order_items`, `butcher_order_items`, `cafe_order_items`, `musicshop_order_items`, `phoneshop_order_items`, `restaurant_order_items`, `takeaway_order_items` into a single `order_items` table
+- 50 rows migrated with `source_type` discriminator
+
+##### Products — 8 tables merged into `products` (including menu items)
+- Merged `butcher_products`, `grocery_products`, `musicshop_products`, `phoneshop_products`, `shop_products`, `bar_menu_items`, `cafe_menu_items`, `takeaway_menu_items` into a single `products` table
+- Products and menu items unified — both are "items for sale"
+- Domain-specific columns preserved: `is_alcoholic` (bar), `allergens`/`calories` (takeaway), `artist`/`genre` (music), `warranty_months` (phone), `origin`/`storage_temp` (butcher)
+- 136 rows migrated across all source types
+
+##### Cart — 3 tables merged into `cart`
+- Merged `grocery_cart`, `shop_cart`, `takeaway_cart` into a single `cart` table
+- 0 rows (all carts were empty); code updated across 5 files
+
+##### Database Table List
+- Updated `student_records_tables.txt` with grouped table listing
+- Total tables reduced from 1148 to 1066
+
+#### Removed
+- 19 individual refund tables (data preserved in `unified_refunds`)
+- 6 individual event tables + 5 registration tables (data preserved in `unified_events`/`unified_event_registrations`)
+- 7 individual payment tables (data preserved in `payments`)
+- 6 individual document tables (data preserved in `documents`)
+- 21 individual transaction tables (data preserved in `transactions`)
+- 8 individual order tables (data preserved in `orders`)
+- 7 individual order item tables (data preserved in `order_items`)
+- 8 individual product/menu item tables (data preserved in `products`)
+- 3 individual cart tables (data preserved in `cart`)
+
+---
+
+## [8.24.0] — 2026-03-18
+
+### University System — Student Union Elections, Clubs, Events & Bug Fixes
+
+#### Fixed
+
+##### Student Union — Missing Class Bindings
+- **`send_new_club_announcement`**: Bound from `DatabaseQueryDialog` to `StudentUnionGUI`
+- **`send_event_notification_to_all_students`**: Bound from `DatabaseQueryDialog` to `StudentUnionGUI`
+- **`send_club_join_confirmation`**: Bound from `DatabaseQueryDialog` to `StudentUnionGUI`
+- **`register_for_selected_event`**: Imported from `event_actions.py` and bound
+- **`view_event_details`**: Imported from `event_views.py` and bound
+- **`create_club_dialog`**: Imported from `club_actions.py` and bound
+
+##### Student Union — Database & Query Fixes
+- **Ambiguous `student_id` column**: Qualified join in `join_selected_club` (`s.student_id`)
+- **`union_event_registrations` table not found**: Added `CREATE TABLE IF NOT EXISTS` before queries
+- **`event_time` column not found**: Changed to `start_time` (actual column name in `union_events`)
+- **`accommodation_requests` FK constraint**: Now looks up actual `student_id` from `students` table instead of passing numeric user ID
+- **`database is locked`**: Added proper `try/finally conn.close()` pattern for accessibility feedback
+- **`to_email=` keyword**: Removed invalid keyword args from `send_email` calls in `facility_booking.py` and `election_accessibility.py`
+
+##### Student Union — UI Fixes
+- **`grab failed: window not viewable`**: Added `update_idletasks()` and try/except around `grab_set()` in `CandidatesDialog`
+- **`EngagementTrendAnalysisDialog` not defined**: Added import from `analytics.py` in `volunteer.py`
+
+##### Student Union CLI — Auth Not Set
+- **"You must be logged in"**: Exported `set_auth`/`set_auth_all` from `student_union/__init__.py` and added `set_auth(auth)` call in `menu_router.py` before launching the Student Union CLI
+
+#### Added
+
+##### Election Candidate Profiles — Full Data for All Candidates
+- **Bob Smith**: Business Admin, financial transparency/enterprise platform, entrepreneurship experience
+- **Carol Davis**: Education, academic quality/inclusivity platform, peer tutoring experience
+- **David Lee**: Accounting, smart budgeting/accountability platform, finance club experience
+- Each candidate now has complete biography, platform & policies, and experience & qualifications
+
+##### Election Endorsements — DB-Backed
+- **Endorsements loaded from `candidate_endorsements` table** with public/anonymous display
+- **Duplicate endorsement check** prevents endorsing the same candidate twice
+- **Treeview count refresh** after endorsing via `_refresh_endorsement_count`
+
+##### Campaign Media & Posters — Real Upload/Delete
+- **Upload button**: Copies files (images, PDFs, videos) to `data/uploads/campaign_media/`
+- **DB-backed file list**: Stored in `campaign_media` table, displayed in Treeview
+- **Delete button**: Removes from DB and Treeview
+
+##### Campaign Manifesto — Uses Real Profile Data
+- Shows full biography + platform for all candidates (previously only Alice Johnson)
+
+##### Election Accessibility — Auto-Fill Contact Email
+- **Feedback form**: Automatically populates contact email from current user's auth session
+
+##### Test Voting System — Full 5-Step Implementation
+- **Step 1**: Identity verification with user details
+- **Step 2**: Position selection (loads from active elections or sample data)
+- **Step 3**: Cast vote with candidate list and abstain option
+- **Step 4**: Review & confirm with confirmation checkbox
+- **Step 5**: Receipt with hashed ID + system test results (7 accessibility checks)
+
+##### Election Security Audit — 4 Methods Fully Implemented
+- **Run Security Scan**: Checks for duplicate votes, out-of-period votes, orphaned votes (PASS/FAIL)
+- **View Logs**: Merges activity from votes, feedback, endorsements into sortable Treeview
+- **Generate Audit Report**: Full statistics + security checks with Save as TXT and Email to Admin
+- **Security Settings**: MFA, encryption, IP logging, session timeout — saves to `election_security_settings` table
+
+##### Election Integrity — 4 Methods Fully Implemented
+- **Run Integrity Check**: Verifies vote counts, orphans, duplicates (PASS/FAIL)
+- **Verify My Vote**: Enter receipt ID, confirms vote exists without revealing candidate (secret ballot)
+- **Export Audit Log**: Saves all election activity as CSV or TXT via file dialog
+- **Generate Security Certificate**: Text certificate with SHA-256 hash and Save as TXT
+
+##### Configure Voting Methods — 3 Methods Fully Implemented
+- **Save Configuration**: Saves voting method and options to `election_voting_config` table
+- **Load Template**: 4 presets (Simple Majority, Ranked Choice, Approval, Two-Round) that populate form
+- **Preview Ballot**: Realistic ballot preview with real candidates from DB, method-specific controls
+
+---
+
+## [8.23.0] — 2026-03-18
+
+### University System — Major Student Union, Events & Housing Overhaul
+
+#### Fixed
+
+##### Housing GUI — Module-Level Function Call Bugs
+- **`self.function()` calls to sibling functions**: Fixed `inspection_manager.py`, `report_manager.py`, `scheduled_reports.py`, `refund_manager.py`, and `student_portal.py` — all had module-level functions calling other module-level functions via `self.X()` which failed with `AttributeError` since `self` was the `HousingGUI` instance. Changed to direct function calls (`function(self, ...)`)
+- **Missing imports**: Added missing imports in `report_manager.py` (`render_template`, `paths`, `export_data_gui`, `show_scheduled_reports_manager`) and `student_portal.py` (`create_new_application_form`, `create_applications_list`, `create_maintenance_list`, `create_payment_history`, `generate_id`)
+
+##### Student Union GUI — Missing Imports & Bad Parameters
+- **Equipment dialogs not found**: Added missing imports for `BrowseAvailableEquipmentDialog`, `SearchEquipmentDialog`, `CheckOutEquipmentDialog`, `ReturnEquipmentDialog`, `ViewMyEquipmentCheckoutsDialog` in `equipment_admin.py`
+- **Backup dialog crash**: Changed `initialvalue=` to `initialfile=` in `admin_panel.py` (`filedialog.asksaveasfilename`)
+- **Club Payments crash**: Added missing `_create_refunds_tab` import and class binding in `core/main_gui.py`
+- **University Shop blank screen**: Initialized `self.content_frame = None` in `__init__` and added `None` guard in `clear_content()`
+
+##### University Restaurant — Blank Screen
+- **Uninitialized GUI attributes**: Pre-initialized `content_area`, `content_frames`, treeview attributes to `None` before `show_restaurant_management()` runs
+- **Broken `return_to_main_menu`**: Fixed destruction of wrong root window; now correctly destroys only the restaurant Toplevel and restores parent root
+
+##### Events Service — `log_activity()` Signature Mismatch
+- **`event_id` keyword arg not supported**: Moved `event_id` into the `details` dict for all `log_activity()` calls across the events service
+
+##### Events Service — RSVP User Email Lookup
+- **Numeric user ID not matched**: Email lookup now checks `users.id` (numeric) first, then `users.username`, then `students.student_id`
+
+##### Academic Calendar — Add to Calendar Button
+- **Wrong table and columns**: Fixed `_add_to_academic_calendar` in Campus Events GUI to insert into `academic_calendar_events` (the actual table) with correct columns (`id`, `name`, `date`, `event_type`, `created_by`, `date_added`, `last_modified`)
+- **CHECK constraint violation**: Set only `date` field (with `date_start`/`date_end` NULL) to satisfy the constraint
+
+#### Changed
+
+##### Unified Events System — Single `campus_events` Table
+- **Merged three event tables** (`events`, `discovery_events`, `campus_events`) into a single `campus_events` table
+- **Rewrote `EventsService`** to query `campus_events` instead of `discovery_events`, with `_row_to_event()` helper providing backward-compatible aliases (`title`, `category`, `start_datetime`, `end_datetime`, `max_capacity`, etc.)
+- **Updated schema**: Added `building`, `organizer_name`, `updated_at` columns to `campus_events` with migration logic
+- **Updated API routes**: `events_discovery_routes.py` now queries `campus_events`
+- **Dropped `discovery_events` table** from database and recreated all `discovery_event_*` supporting tables with correct FK references to `campus_events`
+- **Removed "Create Event" button** from Event Discovery GUI — event creation now only via Campus Events Hub
+
+##### Automatic Academic Calendar Integration
+- **Events auto-added to academic calendar** on creation from both Campus Events Hub and Event Discovery
+- **Replaced manual "Add to Calendar" button** with "Export to ICS" button
+- **Post-creation ICS export prompt**: After creating an event, dialog asks if user wants to export as `.ics` file
+
+##### RSVP Email Confirmations
+- **Confirmation email on RSVP**: Sends email with event name, date, time, location, and RSVP status
+
+#### Added
+
+##### Student Union — Trip Management Module (New)
+- **New `trips/trips.py` module** with `StudentUnionTripsDialog`
+- **Upcoming Trips tab**: View trips from DB, register with email confirmation
+- **Organise Trip tab**: Create trips with destination, dates, cost, club selector
+- **My Trips tab**: View and cancel registrations
+- **New DB tables**: `union_trips`, `union_trip_registrations`
+
+##### Student Union Calendar — Events List View
+- **Replaced full calendar GUI** with a simple Treeview showing all `union_events` with club name resolution
+
+##### Academic Conferences — Registration & Paper Submission
+- **Conference registration**: Register button with email confirmation
+- **Paper submission fixed**: Submit button now functional, with file upload option (PDF/DOCX), copies to uploads directory, sends confirmation email
+
+##### Advanced Analytics — Export & Email
+- **Save as TXT** and **Email to Admin** buttons added to all 4 tabs (Engagement Trends, Event Predictions, Member Retention, Recommendations)
+
+##### Green Initiatives — Full Implementation
+- **All 5 original dialogs** fully implemented with real DB operations (was all placeholders)
+- **4 new dialog classes**: Sustainable Events, Eco Suppliers, Green Certifications, Carbon Offset Programs
+- **7 new DB tables**: `green_initiatives`, `carbon_tracking`, `waste_reduction_log`, `green_transport_log`, `eco_suppliers`, `green_certifications`, `carbon_offsets`
+- **Environmental Reports**: Save as TXT and Email to Admin
+
+##### Equipment System — Full Implementation
+- **Add Equipment**: Real form with validation, saves to `union_equipment`
+- **Update Status**: Loads from DB, updates availability/condition
+- **Maintenance Tracking**: Report issues, complete maintenance, schedule future maintenance — all DB-backed
+- **Equipment Reports**: 4 report types (Inventory, Status, Maintenance, Asset Valuation) with Save as TXT and Email to Admin
+- **My Checkouts**: Replaced hardcoded data with real DB queries, working renew functionality
+
+##### Equipment Returns — Late Fee & Finance Integration
+- **Return Equipment** fully rewritten with real DB data
+- **Late fee calculation**: £10/day, shown on selection
+- **Payment options**: Cash, Card, or Student Finance Account
+- **Student Finance Account integration**: Checks balance, deducts amount, records transaction in `student_finance_transactions` with before/after balance
+- **Finance recording**: Payment logged in `finance_payments` table
+- **Email confirmations**: Return confirmation email + payment receipt email with full details
+
+---
+
+## [8.22.0] — 2026-03-18
+
+### University System — Document Upload Path Fix
+
+#### Fixed
+
+##### Medical Accommodation Document Upload (`document_upload.py`)
+- **Uploads created in wrong directory**: Upload path was a relative `"uploaded_documents"` string, causing files to be saved in the current working directory (e.g. home directory) instead of the project data folder. Changed to an absolute path resolving to `university_system/data/uploads/accommodation/`
+- **Moved existing uploaded files** into the correct `data/uploads/accommodation/` subdirectory
+
+---
+
+## [8.21.0] — 2026-03-17
+
+### University System — CLI Input Validation Fixes
+
+#### Fixed
+
+##### Security Analysis CLI (`security_analysis.py`)
+- **Menu choice not validated**: Added `.strip()` and validation against valid options (`1`-`5`) with error message for invalid input
+- **Unused `input()` return values**: 4 "Press Enter to continue" calls now assign to `_` to explicitly discard the return value
+
+##### Log Views CLI (`views.py`)
+- **Menu choice not validated**: Added `.strip()` and validation against valid options (`1`-`4`) with error message for invalid input
+- **Y/N inputs not validated**: Real-time monitoring and alerts toggle inputs now `.strip().lower()` and validate against `y`/`n`
+- **Numeric inputs not validated**: Hours and days inputs now `.strip()` with user-facing error messages on invalid input
+- **Unused `input()` return values**: 3 "Press Enter to continue" calls now assign to `_`
+
+##### Reset Password (`reset_password.py`)
+- **Reverted unnecessary `str()` wrapper**: `input()` in Python 3 always returns `str`; kept the existing `.strip()` and empty-check validation that was already correct
+
+---
+
+## [8.20.0] — 2026-03-17
+
+### University System — Finance GUI Overhaul
+
+#### Fixed
+
+##### Budget Service — Table Name Collision
+- **`no such column: budget_id`**: `budget_categories` table defined in both `finance_schemas.py` (institutional, no `budget_id`) and `budget_service.py` (student personal, with `budget_id`). When institutional schema ran first, student budget queries failed. Renamed student table to `student_budget_categories` across `budget_service.py` and `budget_cli.py`
+
+##### Budget GUI — Data Not Showing After Creation
+- **Budgets not appearing**: `create_personal_budget` called `refresh_my_budgets()` but the My Budgets tab never loaded data on init — added `root.after(100, self.refresh_my_budgets)` on tab creation
+- **Expenses/income not appearing**: `add_personal_expense` and `add_personal_income` only called `refresh_dashboard()`, never refreshed their treeviews. Added `refresh_expenses_list()` and `refresh_income_list()` methods with initial load on tab creation
+
+##### Finance GUI — sqlite3.Row Objects Displayed as Raw Objects
+- **Institutional budget categories**: `plans.py` inserted raw `sqlite3.Row` into treeview — fixed with `tuple(category)`
+- **Collections table**: `_collections.py` inserted raw rows — converted to list with formatted monetary values
+- **Fees table**: `_fees.py` inserted raw rows — converted with `:.2f` formatting for amount column
+
+##### Collections Management — Multiple Crashes
+- **`ValueError: Unknown format code 'f'`**: `_send_collection_notice` passed `total_debt` as pre-formatted string to i18n `{total_debt:.2f}` — now passes as float
+- **`ValueError: could not convert string to float`**: fee amount from treeview was a raw `sqlite3.Row` repr string — added robust float parsing with `£`/`,` stripping
+- **`no such column: last_contact_date`**: `collection_cases` schema has no `last_contact_date` — changed UPDATE to append notice info to `notes` column instead
+- **Send Notice dialog too large**: reduced from 750x700 to 650x550; moved button bar to bottom of dialog (packed `side='bottom'`) so Send/Cancel buttons are always visible
+
+##### Transactions — NoneType Format Error
+- **`unsupported format string passed to NoneType.__format__`**: `amount` and `balance_after` columns could be NULL — added null-safe conversion with `float(val) if val is not None else 0.0`
+
+#### Changed
+
+##### Reports — Open in New Window with Save & Email
+- All 4 budget reports (Financial Summary, Budget vs Actual, Spending by Category, Spending Trends) now open in a new `Toplevel` window (800x600)
+- Each report window includes **Save as TXT** button (file dialog) and **Email to Admin** button (looks up admin email from `users` table, sends via university email service)
+- Inline report text widget still updated for backward compatibility
+
+##### Collections — Student Dropdown & Email on Resolve
+- **Create Collection Case**: replaced manual student ID text entry with `ttk.Combobox` dropdown populated from `students` table (`ID - First Last` format)
+- **Resolve Case**: added "Email resolution notice to student" checkbox (default: checked) — sends email with case details, amount collected, and remaining balance via university email system
+- Extracted `_get_student_email()` and `_send_email_to_student()` helper methods shared by send notice and resolve flows
+
+##### Fees — Record Payment Redesigned
+- **Record Fee Payment**: replaced multi-step flow (select fee first, then dialog) with a single form featuring student dropdown, dynamic outstanding fee dropdown (loads unpaid/partial/overdue fees on student select), auto-filled amount, payment method, and notes. Pre-selects student/fee if a row was already selected in the fees table
+
+##### Payments — Record Payment Redesigned
+- **Record Payment** (Payments tab): replaced sequential `simpledialog` popups (`askstring` → `askfloat` → `askstring`) with a single unified form
+- Student selection via dropdown instead of manual ID entry, with current user pre-selected
+- Payment purpose dropdown, amount, method (incl. Student Finance Account with balance display), date, transaction ID, and notes all in one form
+- Both `show_payment_dialog` (toolbar) and `gui_record_payment` (core finance) now use the same `_open_record_payment_form()` method
+
+---
+
+## [8.19.0] — 2026-03-16
+
+### University System — Finance & Budget Module Fixes
+
+#### Fixed
+
+##### Finance GUI — Missing Tables & Database Locks
+- Added 5 missing tables to `initialize_database_schema`: `scholarships`, `financial_aid`, `financial_transactions`, `late_fees`, `financial_aid_types` — resolves "Table not found" errors in DB stats
+- `clean_database`: wrapped each DELETE in try/except so missing tables (`financial_transactions`) are skipped instead of crashing the entire cleanup
+- Fallback `get_connection()` in finance module now sets WAL mode and 30s busy timeout (was returning bare connections with no concurrency handling)
+- `save_fee_type`: connection now properly closed on error (was leaking connections causing subsequent locks)
+- `save_aid_type`: empty `max_amount` field crashed with `ValueError` — now defaults to 0.0; added name validation
+- Expense projection: `purchase_orders` table created inline with `CREATE TABLE IF NOT EXISTS` before querying
+
+##### Budget Service — All Operations Failing
+- **FOREIGN KEY constraint failed**: `create_budget`, `add_expense`, `add_income`, `create_goal` all used `transaction()` which sets `PRAGMA foreign_keys=ON` — but `student_id` comes from auth username (not in `students` table). Rewrote all four methods to use `get_connection()` directly with `PRAGMA foreign_keys=OFF` set before any writes
+- **`log_activity()` unexpected keyword argument**: 10 calls used invalid kwargs (`budget_id=`, `expense_id=`, `goal_id=`, `tracking_id=`, `listing_id=`, `purchase_id=`). Fixed all to pass IDs inside the `details` dict parameter
+- **"no such column: budget_id"**: `get_student_budgets` now checks table schema and calls `create_tables()` if the expected columns are missing
+- **"no such column: c.color_code"**: `get_spending_by_category` now probes for the column before using it in the query, falls back to `NULL`
+
+##### Budget GUI — Display & Input Bugs
+- **Empty amount fields**: `add_personal_expense` and `add_personal_income` crashed with `ValueError: could not convert string to float: ''` — now pre-checks for empty string and shows warning
+- **payment_method='card'**: violated CHECK constraint (`cash, debit, credit, meal-plan, financial-aid, other`) — changed to `'other'`
+- **income_type mismatch**: GUI values (`Salary, Scholarship, Grant, Allowance, Other`) didn't match CHECK constraint (`work-study, scholarship, grant, loan, family, job, investment, other`) — added mapping (`Salary→job`, `Allowance→family`, etc.)
+- **Budget categories showing `sqlite3.Row` objects**: `tree.insert` passed raw Row — fixed to `tuple(category)`
+
+---
+
+## [8.18.0] — 2026-03-16
+
+### University System — Academic Calendar & Attendance Tracker Fixes
+
+#### Fixed
+
+##### Academic Calendar — Multiple Dialog & Service Bugs
+- **Edit Event**: dialog too small, buttons hidden off-screen — made content scrollable with buttons pinned at bottom so they always show
+- **Recurring Events**: dialog too small (550x600) — increased to 550x750 with minsize
+- **Book Resource**: replaced free-text date/time entries with dropdown pickers (date: next 60 days, time: hour/minute combos); added start > end validation
+- **Link Course to Event**: replaced free-text event ID prompt with proper dialog showing event dropdown — users could never enter valid UUIDs manually
+- **Assign Tag to Event**: event query used `title` column but table has `name` — fixed SQL and label builder
+- **Link Course to Event service**: INSERT into `course_events` missing `date_added` column (NOT NULL constraint) — added `datetime('now')`
+- **CSV export**: `sqlite3.Row` objects don't support `.get()` — converted to `dict` before accessing; added `title` fallback for `name` field
+- **About dialog**: `NameError: name 'platform' is not defined` — added missing `import platform`
+- **Grab warning** ("grab failed: window not viewable"): `safe_grab_set` now checks `winfo_viewable()` before grabbing, retries with backoff, catches `TclError` silently if dialog destroyed before timer fires
+- **"bgerror: application has been destroyed"**: grab retry timers no longer crash when dialog is closed before they fire
+
+##### Attendance Tracker — Multiple Bugs & Placeholder Implementations
+- **Module dropdown doubles**: `get_modules()` SQL used `UNION` producing duplicate rows (one with NULL name, one with real name) — changed to `UNION ALL` + `GROUP BY module_code` with `MAX(module_name)`
+- **`_` shadowing in `generate_at_risk_report`**: `for _, row in iterrows()` reassigned `_` which shadowed the i18n `get_text as _` import, causing `UnboundLocalError` — renamed to `_idx`
+- **PDF export**: custom report "Export as PDF" wrote plain text with `.pdf` extension — now generates a valid PDF with proper structure (catalog, pages, Courier font, content stream, xref table)
+- **Excel export**: wrote plain text with `.xlsx` extension — now uses `openpyxl` if available, with graceful fallback
+- **Database locked on init**: `init_enhanced_attendance_db()` and `create_missing_tables()` could deadlock — added `PRAGMA journal_mode=WAL` and `PRAGMA busy_timeout=5000`
+
+#### Changed
+
+##### Attendance Tracker — Trends Report
+- Fully reimplemented: now queries real attendance data from DB (overall stats, module performance, at-risk students) instead of hardcoded sample text
+- Opens in its own window with **Export as TXT** and **Email to Admin** buttons
+- Module filter dropdown populated from actual database modules
+
+##### Attendance Tracker — Custom Report
+- Fully implemented `generate_report()` and `preview_report()` (previously just showed placeholder messageboxes)
+- Three report types: Attendance Summary (module breakdown), Detailed Records (individual entries), Statistical Analysis (distribution, averages)
+- Respects module/student/date range filters from the configuration panel
+- Preview opens in a read-only scrollable window
+- Export to CSV, HTML, PDF, and Excel formats
+
+##### Attendance Tracker — Cleanup Data
+- Fully implemented (previously just showed a messagebox saying "would cleanup")
+- Counts records to be deleted and shows confirmation with exact count and cutoff date
+- Performs actual `DELETE FROM attendance_records WHERE date < ?`
+- Reports deletion results
+
+#### Added
+
+##### Academic Calendar — Book Resource Email Confirmation
+- On successful booking, sends confirmation email to current user with resource name, date/time, and notes via `queue_email`
+
+---
+
+## [8.17.0] — 2026-03-16
+
+### University System — LMS Consolidation & External Examiners Bug Fixes
+
+#### Fixed
+
+##### External Examiners — Action Items Tab Broken
+- `add_examiner` INSERT used nonexistent column `expertise_area` — fixed to `specialisation` (matching the CREATE TABLE)
+- `_refresh_actions` called `get_overdue_actions()` which only returns items past their deadline — added `list_actions()` method and switched refresh to use it so newly added items appear
+- Actions treeview had no `id` column — added it; `update_action_status` now passes the integer ID instead of the description text
+- `add_action_item` raised `ValueError` when no visits existed — made `visit_id` nullable so standalone action items are allowed
+- Examiner specialisation display read `expertise_area` instead of `specialisation` from DB results
+
+#### Changed
+
+##### LMS — Merged Into Course Management GUI
+- **Consolidated 3 separate LMS GUI files into 1**: the standalone `lms_gui.py` (1500 lines) and the shared `LMSFrame` have been merged into `lms_tab.py` within the Course Management GUI
+- The LMS tab now contains 13 sub-tabs combining all features from both systems:
+  - **From standalone**: Courses, Content, Discussions, Quizzes, Gradebook, My Courses (enrollment)
+  - **From shared LMSFrame**: Modules & Lessons, Create Lesson, Resources, Student Progress, Current Lesson (mark complete), Take Quiz (interactive), My Progress (progress bars)
+- All delegate/proxy code (`_HeadlessLMS` pattern) removed — methods now call service layer directly
+- Removed standalone LMS button from main GUI sidebar
+- Internal "Launch LMS" buttons in Course Management now switch to the LMS tab instead of opening a separate window
+- Deleted `university_system/modules/domain/academics/gui/lms_gui.py`
+- Shared `LMSFrame` (`shared/lms/lms_gui.py`) retained for college, secondary, and primary subsystems
+
+#### Added
+
+##### Shared LMS Services
+- `education_system/shared/lms/discussion_service.py` — `DiscussionService` for forum/post CRUD
+- `education_system/shared/lms/gradebook_service.py` — `GradebookService` for grade entries and weighted grade calculation
+- `education_system/shared/lms/course_management_service.py` — `CourseManagementService` for LMS courses, content, video lectures, and enrollment
+
+##### Shared LMS Schema
+- Added 8 new tables to `shared/lms/schema.py`: `lms_courses`, `lms_course_content`, `lms_video_lectures`, `lms_discussion_forums`, `lms_discussion_posts`, `lms_student_enrollment`, `lms_gradebook`
+- Added 6 new indexes for the new tables
+
+---
+
+## [8.16.0] — 2026-03-16
+
+### University System — External Examiners, TA Management, Office Hours & Misc Fixes
+
+#### Fixed
+
+##### External Examiners — All Service Methods Broken
+- `add_examiner`: Inserted into nonexistent column `specialisation` — changed to `expertise_area`; now accepts dict argument
+- `get_examiner` / `update_examiner`: Used `WHERE id =` but PK is `examiner_id`
+- `schedule_visit`: GUI passed a dict but service expected keyword args; `examiner_visits` FK references `external_examiners(id)` but PK is `examiner_id` — used direct connection with FK checks disabled
+- `record_findings`: GUI passed `(examiner_name, date, {dict})` but service expected `(visit_id, findings, recommendations)` — now detects dict 3rd arg and extracts `rating`/`findings`
+- `add_action_item`: GUI passed dict without `visit_id` — now falls back to most recent visit
+- Visits treeview had no ID column — added it so record findings can reference the correct visit
+- `_record_findings` now passes keyword args directly instead of a dict
+
+##### External Examiners GUI — Column Name Mismatches
+- `get_examiners()` → `list_examiners()`, `specialisation` → `expertise_area`
+- `get_visits()` → `list_visits()`, `examiner` → `examiner_id`, `date` → `visit_date`, `rating` → `overall_rating`
+- `get_action_items()` → `get_overdue_actions()`, `description` → `action_description`, `responsible` → `responsible_person`
+
+##### Study Recommendations — `study_profiles` Column Mismatch
+- Table has `study_style` not `learning_style`, and stores extras in `interests_json`
+- `create_profile` now uses correct columns; `get_profile` maps them back to expected keys
+- Fixed `'list' object has no attribute 'get'` when `interests_json` contains a JSON array instead of object
+
+##### Study Recommendations — Log Session Module Dropdown
+- Module field was free-text entry — changed to readonly dropdown
+- Students see only their enrolled modules; admins see all modules
+- Module code extracted from `"CIS0001 - Module Name"` format before saving
+
+##### Office Hours — Booking/Cancellation Email Notifications
+- **Book**: Emails both student (confirmation with instructor, date, time, location) and instructor (notification with student name/ID)
+- **Cancel**: Emails both student and instructor confirming the cancellation
+
+##### Academic Progress — Target GPA ValueError Traceback
+- Called `float()` on empty string — now checks for empty input before conversion
+
+#### Added
+
+##### TA Management — Email Notifications
+- **Assign TA**: Emails the student with module code, role type, and hours per week
+- **Remove TA**: Emails the student confirming their TA assignment has been removed
+
+---
+
+## [8.15.0] — 2026-03-16
+
+### University System — Student Success GUIs, Grade Sources & Warning System Fixes
+
+#### Fixed
+
+##### Course Planning — Prerequisite Visualisation FK Constraint
+- `prerequisite_graph_cache` table has a FK to `courses.code`, but course IDs come from modules/prerequisites that may not exist in `courses`
+- Disabled FK checks for cache insert and wrapped in try/except (cache failure is non-critical)
+
+##### Course Planning — Email to Advisor "No Such Column: user_id"
+- Query referenced `user_id` column but `users` table has `id`; roles were case-sensitive (`'Staff'` vs actual `'staff'`)
+- Changed to `id` and `LOWER(role) IN ('staff', 'admin', 'instructor')`
+
+##### Course Planning — "No Graded Courses Found"
+- GPA calculator and degree progress tracker only queried empty `module_grades` and `student_grades` tables
+- Now also pulls from `assignment_submissions` (averaged per module) and `grades` table, with `module_grades` taking priority
+- Changed message from "courses" to "modules"
+
+##### Course Planning — GPA Calculator Fully Rewritten
+- Previous version failed on null credits, didn't handle numeric grades (percentages), and only produced simple letter grades (A/B/C/D/F)
+- Now pulls from three sources (`module_grades`, `assignment_submissions`, `grades`), handles both letter and percentage grades with full A+/A/A-/B+ scale, defaults null credits to 1, and shows detailed breakdown per module
+
+##### Course Planning — Progress Tracker Accepted Free-Text Input
+- Program field was a free-text `ttk.Entry` — users could type anything
+- Changed to `ttk.Combobox` (readonly) populated from the `courses` table, pre-selects student's enrolled course
+
+##### Academic Progress — "Please Log In" Despite Being Logged In
+- `AcademicProgressGUI`, `AIStudyGUI`, and `StudyMatchingGUI` all called `get_auth()` which returns the shared instance without the session's `current_user`
+- Added `auth` parameter to all three constructors; launchers now pass `self.auth`
+
+##### Academic Progress — GPA Shows 0.00 in Early Warnings
+- `_calculate_current_gpa` in progress service only queried empty `module_grades` and `student_grades`
+- Now pulls from three sources: `module_grades` (letter grades), `assignment_submissions` (percentage grades averaged per module), `grades` table (score-based)
+- Handles both letter and numeric grades with `pct_to_letter` conversion
+
+##### Academic Progress — Stale Warning Messages After GPA Changes
+- Old warnings stored "GPA 0.00" in the message text and were never updated
+- Added `_refresh_warning_records`: auto-resolves warnings whose conditions no longer apply, updates existing warnings with fresh data (message, value, severity), only creates new warnings if none exist for that type
+
+##### Academic Progress — Acknowledge/Resolve Warning ValueError on Empty Input
+- Used `askinteger` which throws `ValueError` traceback when user submits empty field
+- Replaced with a custom dropdown dialog showing active warnings in a combobox (`ID - Type [severity]`), falls back to `askinteger` if warnings can't be loaded
+
+##### Academic Progress — Target GPA Calculator ValueError Traceback
+- Called `float()` on empty string before checking if input was provided
+- Added empty-string checks before conversion to prevent `ValueError`
+
+##### Study Recommendations — All Features Broken
+- GUI called service methods without required `student_id` parameter
+- Called nonexistent methods (`get_study_profile`, `save_study_profile`, `get_study_log`)
+- `log_study_session` was called with a dict instead of keyword arguments
+- Rewrote entire GUI to match actual service API: passes `student_id` to all calls, uses correct method names (`get_profile`, `create_profile`, `get_study_history`), passes keyword args instead of dicts
+- Added `auth` parameter and login check
+
+#### Added
+
+##### Course Planning — Email Report to Admin Button
+- Added "Email Report to Admin" button that builds a text report from the current plan and sends to all admin users
+
+---
+
+## [8.14.0] — 2026-03-16
+
+### University System — Library GUI Fixes & Feature Implementations
+
+#### Fixed
+
+##### Library Audit Log — "table audit_log has no column named table_affected"
+- `log_audit_event` inserted into `table_affected` column which doesn't exist — actual column is `table_name`
+- Also used `success` column which doesn't exist — changed to `details`
+
+##### Library Finance — "No Admin Email Addresses Found"
+- Admin role is stored as lowercase `admin` in the database, but queries checked for `'Admin'` (case-sensitive)
+- Changed all admin email queries to use `LOWER(role) = 'admin'` across `finance.py` and `checkout_return.py`
+
+##### Library Finance — Revenue Charts "No Revenue Data"
+- `show_revenue_charts` and `generate_revenue_report` queried `payment_allocations`/`payments`/`student_fees` (generic student payment tables) instead of `library_fine_payments`
+- Changed both to query `library_fine_payments` using `payment_amount` and `payment_date` columns
+
+##### Library Health Check — Missing Directories
+- Checked bare relative paths (`backups`, `qr_codes`, `digital_library`) against CWD instead of actual locations
+- `backups` → `university_system/data/backups/`, `qr_codes` → `university_system/qr_codes/`, `digital_library` → `university_system/digital_library/`
+- Auto-creates missing directories on health check
+
+##### Library Advanced Search — Search Button Not Visible
+- Window size was 600x500 — too small to show all search fields plus the results area and buttons
+- Increased to 650x700
+
+##### Library Book Return Calendar — Failed to Open Calendar
+- Tried to import `CalendarGUI` from academic calendar module which often fails
+- Replaced with a simple treeview showing all loans with checkout date, due date, return date, and status — color-coded red for overdue, green for returned
+
+##### Module Registration — My Enrollment Shows sqlite3.Row Objects
+- `get_connection()` returns `row_factory=sqlite3.Row` by default — treeview displayed object repr instead of values
+- Added `tuple(row)` conversion
+
+##### Module Registration — Re-enrollment UNIQUE Constraint Failed
+- Duplicate check only looked for `status = 'Enrolled'` — a previously dropped module still had a row, causing INSERT to fail
+- Now detects existing rows with any status and updates back to 'Enrolled' for re-enrollment
+
+#### Added
+
+##### Library Reviews — Full Implementation
+- `view_review_details` now opens a dialog showing: book info (title, author, ID), rating stars, reviewer, date, status, helpful votes, moderation info, and full review text
+- "Publish Review" button in the dialog to publish individual reviews
+- `publish_all_reviews` method and "Publish All Reviews" button to set all pending/non-published reviews to published status
+
+##### Library Reading Lists — Import List Fully Implemented
+- `import_reading_list_dialog` reads a CSV file, auto-detects column (book_id/isbn/title), prompts for list name
+- Creates the reading list in `reading_lists` table and matches entries against `books` by ID, ISBN, or title
+- Reports count of matched and unmatched entries
+
+##### Library Reservations — Book Dropdown & Auto-Fill User
+- Replaced free-text Book ID entry with a dropdown listing all books (ID, title, author, status)
+- User ID auto-fills from the current logged-in user
+
+##### Library Reservations — Email Notifications
+- **Create reservation**: Emails user confirming their reservation with book title
+- **Cancel reservation**: Emails user confirming cancellation
+- **Book returned**: When a book is returned, automatically emails all users with active reservations for that book, notifying them the book is now available
+
+##### Library Finance — Email Report to Admin Button
+- Added "Email Report to Admin" button to the finance reports toolbar
+- Sends the generated revenue report text to all admin email addresses
+
+##### Library Archive Old Records — Fully Implemented
+- Creates `archived_book_loans` table (mirrors `book_loans` schema + `archived_at` timestamp)
+- Finds returned loans older than 90 days, confirms with user, copies to archive, deletes from active table
+- Reports archived count, deleted count, remaining active loans, total archived records
+
+##### Library Checkout/Return — Email Notifications
+- **Checkout**: Emails the user (confirmation with title, book ID, due date) and all admins (checkout notification)
+- **Return**: Emails the user (return confirmation) and all admins (return notification)
+
+---
+
+## [8.13.0] — 2026-03-16
+
+### University System — Grade Management, Student Portal & Registration Fixes
+
+#### Fixed
+
+##### Grade Management — `safe_commit()` Infinite Recursion
+- `safe_commit()` in `grade_manager.py` called `self.safe_commit()` (itself) instead of `self.conn.commit()` — caused infinite recursion and `maximum recursion depth exceeded` error on every grade save
+- Fixed to call `self.conn.commit()`
+
+##### Grade Management — Add Grade "Assessment Does Not Exist"
+- Validation only checked the `assessments` table, but most items in the dropdown come from the `assignments` table (A-prefixed IDs)
+- For A-prefixed IDs, now validates against `assignments` and saves to `assignment_submissions` (updates existing submission or creates a grade-only entry)
+- Fixed NOT NULL constraint on `file_name` by providing placeholder values for grade-only entries
+
+##### Grade Management — Edit Grade "Grade Not Found"
+- Query only looked in the `grades` table, but grades from `assignment_submissions` have S-prefixed IDs
+- Now detects S-prefix and queries `assignment_submissions` joined with `assignments`/`students`; updates the correct table on save
+
+##### Grade Management — Delete Grade Not Handling Assignment Submissions
+- Only deleted from `grades` table — S-prefixed grades from `assignment_submissions` were ignored
+- Now detects S-prefix and clears the grade fields on the submission (sets status back to 'submitted') rather than deleting the submission record
+
+##### Grade Management — View Grades Statistics "No Grades Available"
+- `show_grade_statistics` only queried the empty `grades` table
+- Now uses a CTE (`all_grades`) that combines `grades` and `assignment_submissions` — same UNION approach as the grades treeview
+- All three tabs (Overall, By Assessment, By Student) use the combined view
+
+##### Grade Management — Add Grade Now Shows Student's Submissions
+- Assessment dropdown was static (all assessments for all students)
+- Now dynamically populates when a student is selected: shows their submitted assignments from `assignment_submissions` and their module assessments from `assessments`
+- Each entry shows status (Submitted/Graded/Assessment) and max points
+
+##### Grade Management — Assessments Tab Edit/Copy/Delete "Not Found"
+- All three actions only queried the `assessments` table, but the list includes assignments (A-prefixed IDs)
+- Now detects A-prefix and routes to the correct table for edit (updates `assignments`), copy (inserts into `assignments`), and delete (clears `assignment_submissions`, `groups`, then `assignments`)
+
+##### Grade Management — Add Assessment Missing Fields
+- Dialog was missing Duration and Status fields compared to the Create Assessment form in the Assignment GUI
+- Added Duration (minutes), Status (Active/Draft/Archived), Due Time, and default values matching the assessment GUI
+
+##### My Grades & GPA — Empty Despite Grades Existing
+- `StudentGradesPortal` (Dashboard, My Grades, Transcript) only queried the empty `module_grades` table
+- `calculate_student_gpa` now also queries `assignment_submissions` grouped by module, merging with `module_grades` (which takes priority)
+- Grades table and transcript now show individual assignment grades alongside module grades
+
+##### Learning Outcomes — "No Such Column: orr.date_assessed"
+- Query referenced `orr.date_assessed` but the actual column in `outcome_results` is `assessment_date`
+
+##### Learning Outcomes — "No Such Column: lo.course"
+- Query filtered by `lo.course` but the `learning_outcomes` table has no `course` column
+- Removed the course filter — now shows all outcomes with the student's results
+
+##### Module Registration — "No Such Column: max_capacity"
+- Browse modules, module details, and enrollment capacity check all referenced `max_capacity` which doesn't exist on the `modules` table
+- Removed from all three queries; capacity set to None (no limit)
+
+#### Added
+
+##### Grade Management — Email Notifications for Grade Changes
+- **Add Grade**: Emails the student with assessment name, score, percentage, letter grade, and feedback
+- **Edit Grade**: Emails the student that their grade has been updated with new score details
+- **Delete Grade**: Emails the student that their grade has been removed
+- Uses `_email_grade_notification` helper that looks up student email from the `students` table
+
+---
+
+## [8.12.0] — 2026-03-16
+
+### University System — Assignment GUI: Group Management, Peer Review & Layout Fixes
+
+#### Fixed
+
+##### Manage Groups — All Actions Broken (Table Name Mismatch)
+- Every group action method (view members, add/remove members, merge, split, delete, message, view submission, export) queried `assignment_groups`/`assignment_group_members` tables, but groups are stored in `groups`/`group_members`
+- Member JOINs referenced `users` table columns (`u.first_name`, `u.email`, `u.id`), but `group_members.student_id` maps to `students.student_id` — all member lookups returned empty or failed
+- `show_group_details` referenced nonexistent columns `description` and `max_members` on `groups` table
+- `delete_selected_group` did not call `load_filtered_groups()` after deletion — deleted group remained visible
+- Rewrote entire `management.py` with correct table names (`groups`, `group_members`), correct JOINs (`students`), and correct column references (`s.first_name`, `s.email_address`)
+
+##### Manage Groups — Merge Groups Only Allowed Single Selection
+- Treeview used default `selectmode='browse'` (single selection only)
+- Changed to `selectmode='extended'` to allow Ctrl+click multi-select for merge operations
+
+##### Setup Peer Review — Entirely Non-Functional (Used Simulated Data)
+- `get_connection()` import didn't exist — always fell to `except` block which generated random fake student data
+- Queried `assignment_submissions` with nonexistent columns (`submission_id`, `student_name`, `assignment_name`)
+- Tried to insert into nonexistent tables (`peer_review_sessions`, `review_criteria`)
+- Never parsed the assignment ID from the `"3 - Title (Module)"` dropdown format
+- Ran setup in a background thread (unsafe for tkinter widget updates)
+- Rewrote to: parse assignment ID from dropdown, query `assignment_submissions` JOIN `students` with correct columns, insert into the real `peer_review_assignments` table, clear previous assignments first, run on main thread
+
+##### Create Group Assignment — Layout Mismatch
+- Used a custom canvas/scrollbar wrapper around the form, unlike other pages
+- Removed redundant canvas — now packs directly into `content_area` (which is already scrollable via the layout manager) matching the Create Assessment layout pattern
+
+##### File Preview System — Layout Mismatch
+- Used a vertical `PanedWindow` with its own panel structure, unlike other pages
+- Changed to pack directly into `content_area` with `LabelFrame` sections: filters (`fill='x'`), file list (`fill='x'`), and preview (`fill='both', expand=True`) — matching the Create Assessment layout pattern
+
+#### Added
+
+##### Send Message to Group — Email Integration
+- After saving internal messages to the `messages` table, now also sends emails to each group member via the email service
+- DB connection is closed before sending emails to avoid database locks
+- Success dialog reports both internal message count and email count
+
+##### Setup Peer Review — Email Notifications to Reviewers
+- After creating peer review assignments, emails each reviewer with: assignment name, number of reviews assigned, and due date
+
+---
+
+## [8.11.0] — 2026-03-16
+
+### University System — Assignment GUI Bug Fixes & Feature Completions
+
+#### Fixed
+
+##### Data Cleanup — "Cannot VACUUM from within a transaction"
+- `optimize_database()` ran `VACUUM` inside a default transaction — SQLite forbids this
+- Changed to use `isolation_level=None` (autocommit) for the VACUUM connection
+- `cleanup_old_data()` had the same bug — now commits and closes the transaction first, then runs VACUUM on a separate autocommit connection
+
+##### Verify File Integrity — False "1 Missing" Count
+- Rows with empty `file_path` strings were counted as missing files despite the `IS NOT NULL` filter
+- Added `AND file_path != ''` to the SQL query and skip empty paths in the loop
+- Hash comparison now only runs when `stored_hash` is not None — avoids false corruption reports for submissions without stored hashes
+
+##### Send Messages — "Database Locked" During Email Send
+- The DB connection stayed open while iterating over recipients and sending emails — the email service opens its own connection, causing a lock
+- Refactored to collect all recipient info and commit/close the DB connection first, then send emails afterwards
+
+##### Setup Peer Review — `name 'time' is not defined`
+- `time.time()` was used without importing the `time` module
+- Replaced with `datetime.now().timestamp()` which is already imported
+
+##### Manage Groups — Groups Not Saved for Self-Select Mode
+- `create_group_assignment_gui` only created groups for `instructor_assign` and `random` formation methods
+- Self-select mode now creates empty placeholder groups (based on enrolled student count / max group size) so they appear in Manage Groups immediately
+- Students can then join these pre-created groups
+
+#### Added
+
+##### Edit Group — Full Implementation
+- Replaced placeholder messagebox with a complete edit dialog: rename group, view current members list, checkbox to email members about changes
+- Compatible with both `groups` and `assignment_groups` tables
+- Email notification sends each member: assignment title, old group name, new group name
+
+##### File Preview System — Vertical Layout
+- Changed from side-by-side (horizontal PanedWindow) to stacked layout (vertical PanedWindow) — file list at top, preview at bottom
+- Uses full available screen space like other content pages
+- Added vertical scrollbar to the file list tree
+
+---
+
+## [8.10.0] — 2026-03-16
+
+### University System — Module Scheduling Messagebox Fixes & Assignment GUI Enhancements
+
+#### Fixed
+
+##### Module Scheduling GUI — Messagebox Parent Parameter Misplaced (76 instances)
+- `parent=self.root` / `parent=self.dialog` was placed inside `str()`, `len()`, or `_t()` calls instead of as a messagebox parameter — caused dialogs to appear as separate top-level windows and steal focus
+- ~68 instances of `str(e, parent=self.root)` fixed to `str(e)` with `parent=` moved to the messagebox call
+- 3 instances of `len(x, parent=self.root)` in `management_tab.py` and `settings_tab.py`
+- 5 instances of `_t(key, parent=self.root)` in `main_gui.py`, `dashboard_tab.py`, `notifications.py`, `misc.py`
+- 1 instance of `conflict(s, parent=self.root)` mangled into display text in `conflicts_tab.py`
+- 1 missing `parent=` on `messagebox.askokcancel` in `main_gui.py:on_closing`
+- Files affected: `analytics_tab.py`, `conflicts_tab.py`, `dashboard_tab.py`, `dialogs.py`, `exports.py`, `instructors_tab.py`, `main_gui.py`, `management_tab.py`, `misc.py`, `modules_tab.py`, `notifications.py`, `rooms_tab.py`, `schedules_tab.py`, `scheduling_engine.py`, `settings_tab.py`, `timetables_tab.py`
+
+##### Assignment GUI — Duplicate Assignment Crashes with `sqlite3.Row` Error
+- `sqlite3.Row` does not support `.get()` — `original.get('instructions', '')` raised `AttributeError`
+- Added a `col()` helper that checks `original.keys()` for column existence and returns a default if missing
+
+##### Assignment GUI — Archive Assignments "Database is Locked"
+- `bulk_archive_assignments` did not use `try/finally` around the DB connection — if an error occurred mid-operation, the connection was never closed, locking the database
+- Wrapped in `try/finally` to ensure `conn.close()` always runs
+
+##### Assignment GUI — Delete Assignments "FOREIGN KEY Constraint Failed"
+- Only `assignment_submissions` was deleted before removing the assignment — `groups` and `group_members` tables still had FK references
+- Now disables FK checks with `PRAGMA foreign_keys = OFF`, deletes `group_members`, `groups`, and `assignment_submissions` before the assignment itself
+- Added `try/finally` to ensure connection is always closed
+
+##### Assignment GUI — Manage Assignments Layout
+- Assignment details frame only used top half of available space — changed from `fill='x'` to `fill='both', expand=True`
+- Bound `<<TreeviewSelect>>` event to populate the details pane when an assignment is selected
+
+##### Assignment GUI — Group Assignment Creation Layout
+- Form fields did not expand to fill width — `grid_columnconfigure(1, weight=1)` was missing on `basic_frame`, `group_frame`, and `submission_frame`
+- Module combobox changed from `sticky='w'` to `sticky='ew'`
+
+#### Added
+
+##### Assignment GUI — Send Reminders (Fully Implemented)
+- Replaced placeholder messagebox with a full dialog: selected assignment list, recipient selection (not submitted / all enrolled), customizable subject and message body with `{assignment_title}` and `{due_date}` placeholders
+- Sends via the university email service and reports count of emails sent
+
+##### Assignment GUI — Due Date Change Email Notifications
+- "Email students about due date change" checkbox (checked by default) added to the Change Due Dates dialog
+- After updating, emails all enrolled students with the assignment name and new due date via the email service
+
+##### Assignment GUI — Self-Select Group Assignment Email Notifications
+- When creating a group assignment with self-select formation, all enrolled students now receive an email with: assignment title, module, due date, group size requirements, and instructions to form/join a group
+- Complements the existing instructor-assign/random mode emails
+
+---
+
+## [8.9.0] — 2026-03-15
+
+### University System — Login, Module Scheduling, Assignment & Evaluation Fixes
+
+#### Fixed
+
+##### Login GUI — Show Password Toggle
+- Added "Show password" checkbox below the password field on the universal login screen
+- Toggles between `*` masked and plain text display
+
+##### Module Scheduling GUI — Messagebox Window Switching
+- All 229 messagebox calls across 16 files were missing `parent=` parameter, causing tkinter to switch focus away from the scheduling window or close it when a success/error message appeared
+- Added `parent=self.root` to all calls in main GUI files and `parent=self.dialog` to all calls in dialog classes
+
+##### Course Evaluation — Launch Evaluation Module Code
+- Replaced free-text "Module Code" entry with a readonly dropdown populated from the `courses` table
+- Academic year changed from free-text to a dropdown with year ranges
+
+##### Assignment GUI — Group Assignment Creation Layout
+- Content only used the top half of the screen — the canvas and scrollbar were not expanding properly
+- Wrapped canvas in a `canvas_frame` with `fill='both', expand=True` and added `_on_canvas_configure` to stretch the scrollable frame width to match the canvas
+
+##### Assignment GUI — Configure Group "Select a Module" Error
+- The Group Configuration dialog required the Create Group Assignment form to be open first (checked `self.group_module_var` which only existed after opening that form)
+- Added a module dropdown selector at the top of the configuration dialog itself, populated from the `modules` table
+- Pre-selects the module from the create form if available
+
+##### Assignment GUI — "no such table: student_enrollments"
+- Group configuration queried `student_enrollments JOIN users` which don't exist
+- Changed to `student_modules JOIN students` to match the actual schema (both occurrences)
+
+##### Assignment GUI — Peer Review Configuration Empty Dropdown
+- The assignments combobox was created but never populated with data
+- Now queries active assignments and populates with "ID - Title (Module)" format
+- Also fixed the combobox being packed into the wrong parent widget
+
+##### Assignment GUI — Manage Groups Not Showing
+- `load_filtered_groups` queried `assignment_groups` / `assignment_group_members` tables, but group creation inserts into `groups` / `group_members` — table name mismatch
+- Changed query to use the actual `groups` and `group_members` tables
+- Removed phantom `CREATE TABLE IF NOT EXISTS` for the wrong table names
+
+#### Added
+
+##### Course Evaluation — Email Results to Admin
+- New "Email Report to Admin" button on the Results & Analytics tab
+- Queries `users` table for admin email addresses and sends the full results report via the university email service
+
+##### Assignment GUI — Group Assignment Email Notifications
+- After creating a group assignment with instructor-assign or random formation, each student receives an email with: assignment title, module, due date, group name, and full list of group member names
+- Uses the university email service with student emails from the `students` table
+
+#### Changed
+
+##### Database Cleanup
+- Removed 6 junk entries from `modules` table (CS, CS101, CS201, DSS, TEST101, maths) — only the 14 legitimate CIS modules remain
+
+---
+
+## [8.8.0] — 2026-03-15
+
+### University System — Course Management GUI Consolidation & Fixes
+
+#### Changed
+
+##### LMS, Degree Audit & Course Evaluation Integrated as Tabs
+- **LMS** embedded as a tab in the Course Management GUI with sub-tabs: Courses, Content, Discussions, Quizzes, My Courses
+- **Degree Audit** embedded as a tab with sub-tabs: Degree Progress, Prerequisites, What-If Scenarios, Academic Advising, Graduation Audit
+- **Course Evaluation** embedded as a tab with sub-tabs: Templates, Evaluations, Submit Response, Results & Analytics
+- All three use a headless delegate pattern — original GUI classes build their sub-tabs into the host's notebook without creating separate Toplevel windows
+- Removed the Academic Systems tab (which had launch buttons for each) since all three are now directly accessible as tabs
+- Original standalone files retained as class definitions for delegation
+
+##### LMS Gradebook Removed
+- Removed the Gradebook tab from the LMS — grades are managed through the dedicated Grade Management GUI to avoid data fragmentation between `lms_gradebook` and `grades`/`module_grades` tables
+- Dropped the `lms_gradebook` table (was empty) and removed its CREATE TABLE/INDEX from the LMS schema initializer
+
+##### Course Management — Create Course Fixed
+- Course code regex changed from `^[A-Z]{2,4}\d{2,3}$` (forced module-style codes) to `^[A-Z]{2,4}\d{0,4}$` (accepts `CS`, `DS`, `ENG`, `BUS101`)
+- Course type dropdown default changed from "Core" to "Degree Program" with options: Degree Program, Certificate, Diploma, Short Course — new courses now appear in analytics/reports
+- Fixed broken try/finally in `create_course()` where `finally: conn.close(); return` made the INSERT unreachable dead code
+- Department changed from free-text entry to dropdown with common department names
+
+##### Course Analytics & Trends Fixed
+- All analytics queries now filter on `course_type = 'Degree Program'` — excludes modules from course counts/reports
+- Enrollment JOIN changed from `student_modules.module_code` (matched module codes, not course codes) to `students.course` — shows correct enrollment counts (e.g. CS: 5, DS: 4)
+- Course Trends Analysis showed 0 students for the same reason — fixed with same JOIN change
+- Course Details dropdown now only shows degree programme courses
+- Added `finally: conn.close()` to trends data loader to prevent DB lock leaks
+
+##### Enrollment Report Dialog Fixed
+- Added `self.dialog.wait_window()` — dialog was non-modal, so the caller checked `dialog.result` immediately (always `None`) and never generated reports
+
+##### Course Schedule — Create Schedule Made User-Friendly
+- All fields now use dropdowns: course (degree programmes only), semester, year (current +4), start/end time (30-min slots 08:00-20:30), classroom (from `rooms` table showing room, building, type, capacity)
+- Days of week use checkbuttons (Mon-Fri) instead of free-text entry
+- Classroom dropdown loads from `rooms` table (`is_active = 1`) instead of free-text
+- Fixed `NOT NULL constraint failed: course_schedule.created_at` — passes timestamp as parameter; recreated DB table with proper DEFAULT
+- Fixed DB connection leak — `conn.close()` only ran on success path, leaked on IntegrityError/Error; added `finally: if conn: conn.close()`
+
+##### Process Waitlist — Fixed System Crash
+- `load_waitlist_data` and `process_course_waitlist` both leaked DB connections on error/early-return paths, locking the database and crashing subsequent operations
+- Added `finally: if conn: conn.close()` to both methods
+- Moved email sending to after `conn.commit()` with separate short-lived connection to avoid holding transaction lock during SMTP
+- Fixed `send_email` call signature to use `recipient_email=` keyword
+
+##### Course Recommendations & Data Validation — Buttons Visible on Resize
+- Both dialogs had buttons packed after the expanding results frame — when window grew, buttons were pushed off-screen
+- Moved `button_frame.pack(side=tk.BOTTOM)` before the results frame so tkinter allocates button space first
+
+##### About Dialog — No Longer Closes Main Window
+- Added `parent=self.root` to `messagebox.showinfo()` to anchor the dialog to the correct window
+
+#### Fixed
+
+##### LMS Create Course — Was Creating Modules Instead of Courses
+- Replaced free-text "Module Code" entry with a readonly dropdown populated from the `courses` table (active courses only)
+- The `module_code` column in `lms_courses` now stores actual course codes (CS, DS) not arbitrary text
+- Cleaned 2 bogus entries (DSS, maths) from the `modules` table that were created by prior LMS usage
+
+##### Degree Audit — What-If Scenario NOT NULL Constraint
+- INSERT was missing `target_program_id` (NOT NULL column) — now looks up course ID from `courses` table and includes it
+
+##### Database Cleanup
+- Removed 17 module/test entries from `courses` table that were actually modules or test data — courses table now contains only actual degree programmes (CS, DS)
+- Cleaned orphaned rows from `course_schedule`, `course_history`, `course_waitlist` that referenced deleted entries
+
+#### Added
+
+##### LMS — Student Self-Enrollment
+- New "Enrol in LMS Course" button on the My Courses tab (both standalone and embedded versions)
+- Shows dropdown of published LMS courses the student isn't already enrolled in, with enrollment counts and limits
+- Checks enrollment limit before enrolling; inserts into `lms_student_enrollment`
+
+##### Degree Audit — Advising Appointment Email Confirmations
+- After scheduling an advising appointment, sends confirmation emails to both student and advisor
+- Student email: looks up `email_address` from `students` table, includes date, time, duration, type, topic, advisor name
+- Advisor email: looks up `email` from `instructors` table, includes same details plus student name/ID
+- Uses university email service (`send_email(recipient_email=, subject=, body=)`)
+- Email failures logged without blocking the appointment creation
+
+---
+
+## [8.7.0] — 2026-03-15
+
+### University System — Batch Operations Import & Validation Fixes
+
+#### Fixed
+
+##### CSV/Excel Import — Records Silently Failing Due to Missing Gender/DOB
+- `import_valid_records_with_progress` used `record['gender']` (hard KeyError) instead of `.get()`, crashing every record when the CSV/Excel had no gender or DOB columns
+- Gender, DOB, age, and title are now all optional — uses `.get()` with `None` defaults
+- Student ID, email, and registration date now read from the file if present (checks both `email`/`email_address`, `registration_date`/`registration_datetime` column name variants)
+- Module columns (`module_1`–`module_N`) are now read from the file and parsed from "CODE - name" format, falling back to default module set only when no module columns exist
+
+##### CSV/Excel Import — Existing Students Fail with FOREIGN KEY Constraint
+- `INSERT OR REPLACE` triggers a DELETE then INSERT internally — when re-importing students that already have `student_modules` rows, the FK constraint on `student_modules.student_id` blocks the delete
+- Fixed by disabling FK checks (`PRAGMA foreign_keys = OFF`) for the duration of the import, re-enabled in `finally` block
+
+##### CSV/Excel Import — Error Display Shows "Unknown error" for Every Row
+- `show_import_results` looked for `error.get('error')` but the import handler stores errors as `{'row': N, 'errors': [list]}` — key mismatch meant every error displayed as "Unknown error"
+- Now checks for `'errors'` (list) first, joins with `; `, includes row number, handles both dict and string error formats
+- Same fix applied to the error export function
+
+##### CSV Import — "Could not determine delimiter"
+- `csv.Sniffer().sniff()` fails on single-column CSVs or short files
+- Added fallback: tries common delimiters (`,`, `\t`, `;`, `|`) by presence in sample, defaults to comma; increased sample from 1KB to 4KB
+
+##### Excel Import — "'dict' object has no attribute 'columns'"
+- `pd.read_excel(sheet_name=None)` returns a dict of DataFrames, not a single DataFrame
+- Added check to extract the first sheet's DataFrame when result is a dict
+
+##### Validation Required Fields Too Strict
+- Removed `gender` and `dob` from the required fields list in `validate_student_data` — these are optional data that many CSV/Excel imports won't include
+- They are still validated when present (format, range checks)
+
+##### Data Validation — Queries Reference Non-Existent Tables/Columns
+- `_validate_student_data` queried `phone_number` column which doesn't exist in `students` — removed
+- `_validate_data_integrity` queried `enrollments` table (doesn't exist) — changed to `student_modules`; fixed `grades` query to use actual columns (`letter_grade`, `assessment_id` instead of `subject`, `grade`)
+- `_validate_relationships` queried `enrollments` with `course_id`/`semester` — changed to `student_modules` with `module_code`
+
+##### Batch Operations — Export Students Crashes
+- `export_manager.py` called `self.gui.backend.export_students_to_file(...)` which hit the CLI `ExportOpsMixin` (takes no args) — changed to `self.gui.report_mgr.export_students_to_file(...)` (GUI version with correct signature)
+
+#### Changed
+
+##### Import Results Dialog — Clearer Status Message
+- Header now shows specific student counts: "9 student(s) added/updated successfully", "7 added/updated, 2 failed", or "No students were added — 9 record(s) failed"
+
+##### Success Rate Report — Proper Export
+- Replaced silent JSON file dump with file picker dialog supporting JSON, CSV, and TXT formats
+- Report now includes per-operation breakdown alongside totals
+
+---
+
+## [8.6.0] — 2026-03-15
+
+### University System — Bug Fixes, Email Integration & Import/Export Improvements
+
+#### Fixed
+
+##### Student Records — Send Email Not Actually Sending
+- Fixed compose email dialog (`email_gui/email_dialogs.py`) importing from non-existent `utils.email_service` module, falling back to a DB-only insert that falsely reported "Email sent"
+- Now imports from the correct university email service (`infrastructure.email.email_service.send_email`) and uses the proper `recipient_email=` / `subject=` / `body=` signature
+
+##### Advanced Search — Save Search Profile FOREIGN KEY Crash
+- Fixed `IntegrityError: FOREIGN KEY constraint failed` when saving a search profile (`search_profiles.py`)
+- INSERT referenced a non-existent `name` column and SELECT used `search_id` instead of `id` — aligned SQL with the actual `saved_searches` table schema
+- Temporarily disables FK checks during the operation since the GUI user ID is a session identifier not necessarily present in the `users` table
+
+##### Advanced Search — Fuzzy Name Search Returns No Results
+- Fixed fuzzy search using hardcoded column indices (`student[3]`, `student[5]`) which broke depending on which schema initializer created the `students` table (column order differs between `database_utils.py` and `core_schemas.py`)
+- Switched to `sqlite3.Row` factory with named column access (`row["first_name"]`, `row["last_name"]`)
+
+##### Advanced Search — Combined Filter Modules Show "code - None"
+- Module listbox queried `student_modules.module_name` which is nullable, displaying entries like "CS101 - None"
+- Now queries the `modules` table first (where `module_name` is NOT NULL), falling back to `student_modules`, and gracefully handles NULL names in display
+
+##### Advanced Search — Mass Email Crashes System
+- Fixed import from non-existent `infrastructure.email.email_service` path (was a flat module import, but it's actually a package)
+- Now uses the correct `from education_system.university_system.infrastructure.email.email_service import send_email` with proper `recipient_email=` keyword argument
+
+##### Advanced Search — Duplicate Demographics Reports
+- "Student Demographics Reports" and "Advanced Demographics Window" both called the same `student_demographics_reports` function
+- "Advanced Demographics Window" now delegates to `show_advanced_demographic_report()` which uses the comprehensive `generate_demographics_analysis_report()` analysis
+
+##### Batch Operations — Export Students Crashes with `unexpected keyword argument 'progress_callback'`
+- Export called `self.gui.backend.export_students_to_file(...)` which hit the CLI `ExportOpsMixin` (takes no arguments)
+- Changed to call `self.gui.report_mgr.export_students_to_file(...)` — the GUI version that accepts `(output_file, format, filters, include_modules, progress_callback=)`
+
+##### Batch Operations — CSV Import "Could not determine delimiter"
+- `csv.Sniffer().sniff()` fails on single-column CSVs or files with unusual formatting
+- Added fallback that checks for common delimiters (`,`, `\t`, `;`, `|`) in the sample, defaulting to comma; increased sample size from 1KB to 4KB
+
+##### Batch Operations — Excel Import "'dict' object has no attribute 'columns'"
+- `pd.read_excel(file_path, sheet_name=None)` returns a dict of DataFrames keyed by sheet name, not a single DataFrame
+- Added check: if result is a dict, extract the first sheet's DataFrame before processing
+
+#### Added
+
+##### Batch Operations — Email Validation Report to Admin
+- Added "Email Report to Admin" button to the Validate Data results dialog
+- Queries `users` table for `role = 'admin'` email addresses from the university DB
+- Formats a plain-text report with severity breakdown and issue details (capped at 50 for readability)
+- Sends via the university email service with per-recipient success/failure feedback
+
+##### Batch Operations — Email Duplicate Report to Admin
+- Added "Email Report to Admin" button to the Find Duplicates results dialog
+- Same admin email lookup and university email service integration
+- Report includes each duplicate pair with confidence score, student names, IDs, and emails
+
+##### Batch Operations — Success Rate Report Export
+- Replaced silent JSON file dump with a proper file picker dialog (`filedialog.asksaveasfilename`)
+- Supports three export formats: JSON (structured), CSV (spreadsheet-friendly), TXT (human-readable)
+- Report now includes per-operation breakdown (timestamp, filename, records, success/fail counts, rate) alongside totals
+
+#### Removed
+
+##### Advanced Search — User Permissions Manager
+- Removed "User Permissions" entry from the Admin Features menu (permissions are managed through the main auth system, not the search GUI)
+
+---
+
+## [8.5.0] — 2026-03-15
+
+### Bug Fixes Across All Systems
+
+#### Fixed
+
+##### Cross-System Bulk Transfer — Schema Mismatch
+- Fixed `academic_transfer_history` table schema mismatch in `shared/bulk_transfer/bulk_transfer_service.py` that caused "table has no column named student_name" errors when transferring students between systems (e.g. secondary → college)
+- The bulk transfer service defined the table with `student_name`, `grades_summary`, etc. as separate columns, but all per-system schemas (college, secondary, university) use `(student_id, source_system, source_student_id, data_json)` — a JSON-based schema
+- Aligned `_ensure_transfer_table` and `_insert_transfer_record` to use the `data_json` pattern, storing all history data (including student name) as JSON
+- Added migration to add `data_json` column if the table was created with the old schema
+
+##### University System — Clearing & Adjustment GUI
+- Fixed `ClearingAdjustmentService` missing `get_vacancies()`, `get_applications()`, `get_adjustments()`, `get_statistics()` methods that the GUI expected
+- Added convenience wrapper methods that delegate to existing `list_vacancies()`, `list_applications()`, `list_adjustment_requests()`, `get_clearing_statistics()` and remap dict keys to match GUI expectations (e.g. `course_name` → `course`, `applicant_name` → `name`, `tariff_points` → `tariff`)
+
+##### University System — Advanced Search GUI
+- Added missing `import sqlite3` in `advanced_search/admin.py` — `load_user_permissions()` used `sqlite3.Row` without importing the module
+- Fixed `NoneType has no len()` error in `advanced_search/database.py` — added null check before calling `len(self.search_history)` when `search_history` is `None`
+- Fixed `bad window path name` TclError in `advanced_search/menus.py` — 3 menu button lambdas destroyed the dialog synchronously before running the command callback, causing the new dialog to reference destroyed widgets. Changed to `dialog.destroy()` followed by `self.master.after(50, cmd)` to let the event loop process destruction first
+
+##### College System — Sidebar Scrollbar
+- Replaced `ttk.Scrollbar` with `tk.Scrollbar` for the sidebar panel — the ttk version was invisible on dark backgrounds with some OS themes
+- Added explicit colour styling (`bg`, `troughcolor`, `activebackground`) and `width=12` for reliable visibility
+- Increased scroll speed (4 units per tick, doubled Windows MouseWheel sensitivity)
+
+---
+
+## [8.4.0] — 2026-03-15
+
+### College System — 10 New FE/Sixth Form Modules (Features 31–40)
+
+Added 10 new domain modules to the college/sixth form system, each with full service layer, GUI (tkinter with tabbed notebook), and CLI interfaces. 25 new database tables added to the schema.
+
+#### Added
+
+##### 31. DfE School Census / ILR Data Extraction (`census_ilr`)
+- Automated data extraction for statutory census and ILR returns
+- Generate census student records from enrolled students
+- Generate ILR learning aims from funding records
+- Validation engine with detailed error reporting
+- XML export for census and ILR submissions
+- Submission tracking with audit trail and return statistics
+- **Tables**: `census_returns`, `census_student_records`, `ilr_learning_aims`
+- **GUI**: Returns List, Generate & Validate, Export tabs
+- **CLI**: 10 menu items covering all service methods
+
+##### 32. UCAS Data Export (`ucas_export`)
+- UCAS application data export in required XML format
+- Batch-based export workflow (create → generate → validate → export)
+- Pulls from existing `ucas_records` and student data
+- Per-student export status tracking with error reporting
+- Batch statistics dashboard
+- **Tables**: `ucas_export_batches`, `ucas_export_records`
+- **GUI**: Export Batches, Generate Data, XML Preview tabs
+- **CLI**: 8 menu items
+
+##### 33. Destination Outcome Tracking (`destination_outcomes`)
+- Enhanced destination tracking with NEET rates, employment stats, university progression
+- Outcome verification workflow with staff sign-off
+- Sustained destination tracking at 3-month and 6-month checkpoints
+- Leaver surveys (3/6/12 month) with satisfaction ratings
+- Statistical dashboards: NEET rate, employment rate, university progression, full breakdown by type
+- **Tables**: `destination_outcomes`, `outcome_surveys`
+- **GUI**: Outcomes, NEET Dashboard, Employment Stats, University Progression, Surveys tabs
+- **CLI**: 12 menu items
+
+##### 34. Internal Quality Review Cycle Manager (`iqr_manager`)
+- Schedule, assign, and track IQR visits and resulting action plans
+- Review cycles with academic year, focus areas, and date ranges
+- Visit types: learning walk, deep dive, work scrutiny, student voice, staff interview
+- Ofsted-aligned judgement grades (outstanding/good/requires improvement/inadequate)
+- Action plan management with responsible person, target dates, progress tracking, and evidence
+- Cycle statistics: visits completed, judgement distribution, action status breakdown
+- **Tables**: `iqr_cycles`, `iqr_visits`, `iqr_action_plans`
+- **GUI**: Review Cycles, Visit Schedule, Action Plans, Reports tabs
+- **CLI**: 11 menu items
+
+##### 35. Ofsted SEF Builder (`sef_builder`)
+- Self-Evaluation Form builder with evidence linking to system data
+- Structured judgement areas aligned to Ofsted inspection framework
+- Evidence links by type: data, document, observation, survey, outcome, external
+- Auto-populate evidence from attendance rates, achievement data, destination outcomes
+- SEF versioning, approval workflow, and export
+- Summary dashboard with grade distribution
+- **Tables**: `sef_documents`, `sef_judgement_areas`, `sef_evidence_links`
+- **GUI**: SEF Documents, Judgement Areas, Evidence Links, Data Dashboard tabs
+- **CLI**: 14 menu items
+
+##### 36. Question-Level Analysis (`question_analysis`)
+- Question-level analysis for assessments — identify weak topics across a cohort
+- Assessment paper and question setup with topic, skill type, difficulty, specification reference
+- Individual and bulk score entry
+- Per-question facility index calculation (avg marks / max marks)
+- Topic-level aggregation and cohort weakness identification below configurable threshold
+- Per-student breakdown and skill type analysis (knowledge/application/analysis/evaluation)
+- Cross-paper comparison
+- **Tables**: `assessment_papers`, `paper_questions`, `student_question_scores`
+- **GUI**: Assessment Papers, Question Setup, Score Entry, Analysis Dashboard, Topic Weaknesses tabs
+- **CLI**: 11 menu items
+
+##### 37. Differentiated Target Setting Engine (`target_setting`)
+- ALPS-style target generation from prior attainment (GCSE/BTEC points)
+- Prior attainment import (single and bulk) with average points calculation
+- Minimum Expected Grade (MEG), target, and aspirational grade generation
+- Value-added calculation per student and per course
+- ALPS summary dashboard with overall statistics
+- Benchmark management for qualification types and subject groups
+- **Tables**: `prior_attainment`, `target_grades`, `alps_benchmarks`
+- **GUI**: Prior Attainment, Target Generation, Value Added, ALPS Dashboard, Benchmarks tabs
+- **CLI**: 11 menu items
+
+##### 38. Supply/Cover Teacher Agency Integration (`cover_agency`)
+- Manage preferred cover agencies with contact details, day rates, and ranking
+- Cover request workflow: create, send, track agency response, confirm teacher
+- Auto-request cover from highest-ranked available agency
+- Agency invoice management with approval workflow
+- Agency statistics: acceptance rate, total spend
+- Cover spend reports by date range
+- **Tables**: `cover_agencies`, `agency_cover_requests`, `agency_invoices`
+- **GUI**: Agencies, Cover Requests, Invoice Management, Spend Reports tabs
+- **CLI**: 14 menu items
+
+##### 39. Lettings Management Upgrade (`lettings_portal`)
+- Online booking portal for external hirers with invoicing
+- Hirer account management with account types (regular/occasional/community/commercial)
+- Facility catalogue with hourly, half-day, full-day, and community rates
+- Availability checking and blocking
+- Integrated booking-to-invoice workflow with VAT calculation and discounts
+- Payment recording and hirer statements
+- Revenue and utilisation reports by date range
+- **Tables**: `lettings_hirers`, `lettings_invoices`, `lettings_facilities`, `lettings_availability`
+- **GUI**: Hirers, Facilities, Bookings Portal, Invoicing, Revenue Reports tabs
+- **CLI**: 15 menu items
+
+##### 40. Apprenticeship Employer Portal (`employer_portal`)
+- Employer account registration with sector, size, and levy payer tracking
+- Learner-employer linking with apprenticeship standard, dates, and mentor details
+- Progress review scheduling and completion (monthly/tripartite/gateway/EPA readiness)
+- Tripartite sign-off tracking (employer, learner, assessor)
+- Off-the-job hours tracking with target percentage completion
+- EPA gateway readiness checks
+- Employer dashboard with learner summaries and on-track rates
+- Overdue review alerts
+- **Tables**: `employer_accounts`, `employer_learner_links`, `progress_reviews`, `employer_sign_offs`
+- **GUI**: Employers, Learner Links, Progress Reviews, Sign-Off Tracking, Dashboard tabs
+- **CLI**: 15 menu items
+
+#### Integration
+
+- **Schema**: 25 new tables added to `college_system/infrastructure/database/schema.py`
+- **Exceptions**: 10 new exception classes in `core/exceptions.py`
+- **Main GUI**: All 10 frames imported, registered in `_FRAME_MAP` and `_SIDEBAR_SECTIONS`
+- **CLI**: All 10 modules added to existing admin submenus (Exams & Assessment, Staff & HR, Administration, Analytics & Reports, Parent & Careers)
+
+---
+
+## [8.3.0] — 2026-03-14
+
+### University System — Remove Duplicate Financial Forecasting Module & Bug Fix
+
+#### Removed
+
+##### Standalone Financial Forecasting Module (`financial_forecasting`)
+- Removed duplicate `financial_forecasting` module (GUI, CLI, service) that duplicated functionality already present in the main finance system
+- The main finance system retains full forecasting capabilities: `finance/gui/finance/layout/_forecasting.py` (GUI tab), `finance/reporting/financial_reports/forecasting.py` (cash flow forecaster with seasonal patterns), and `finance/reporting/revenue_analytics/forecasting.py` (ML-based predictive analytics, revenue forecasting, budget variance)
+- Removed sidebar button, CLI menu option, and admin visibility entry for the standalone module
+
+#### Fixed
+
+- **Budget Manager crash for non-admin users** — `BudgetManager.update_budget_data()` now guards against missing `budget_plans_tree` and `budget_categories_tree` widgets, which are only created for admin/staff/instructor roles via the institutional budget tab
+
+---
+
+## [8.2.0] — 2026-03-14
+
+### University System — 7 New Modules + 3 Merged Enhancements (Features 21–30)
+
+Added 7 new standalone modules to the university system (service + GUI + CLI each). 3 features were merged into existing comprehensive modules to avoid duplication: Course Evaluations → existing evaluation system, Grant Tracker → existing research/grants system, Alumni Engagement → existing alumni management.
+
+#### Added
+
+##### 21. HESA Data Export (`hesa_export`)
+- Statutory XML returns for HESA (Student, Staff, Finance, Unistats)
+- Field mapping management for HESA-to-local field translations
+- XML generation from student records using `xml.etree.ElementTree`
+- Submission log tracking with audit trail
+- Return statistics dashboard
+- **GUI**: Returns, Field Mappings, Submission Log, Statistics tabs
+- **CLI**: Create/submit returns, generate XML, manage mappings
+
+##### 22. Online Course Evaluations — Merged into Existing Evaluation System
+- Rather than creating a duplicate, anonymised feedback was merged into `academics/services/evaluation/course_evaluation_core.py`
+- **`AnonymisedEvaluationService`** class added with SHA-256 student ID hashing, aggregated-only results, duplicate submission prevention
+- New tables: `evaluation_forms`, `eval_form_questions`, `eval_form_responses` (with `student_hash`), `eval_form_answers`
+- Replaced stub CLI with fully functional menu (create forms, add questions, submit anonymised responses, view aggregated results)
+- Existing `EvaluationTemplateManager`, `CourseEvaluationManager`, `ResponseManager`, `ResultsAnalyticsManager` preserved for backward compatibility
+
+##### 23. External Examiner Tracking (`external_examiners`)
+- Examiner profiles with institution, specialisation, appointment dates
+- Visit scheduling with department, purpose, and modules reviewed
+- Findings and recommendations recording with overall ratings
+- Action item management with responsible person, deadline, and status tracking
+- Overdue action alerts
+- Department summary reports and examiner history
+- **GUI**: Examiners, Visits, Action Items, Reports tabs
+- **CLI**: Add examiners, schedule visits, record findings, manage actions
+
+##### 24. Financial Forecasting (`financial_forecasting`)
+- Historical income/expenditure records by category, period, and department
+- **Linear regression** and **moving average** forecast models
+- Confidence interval calculations (low/high bounds)
+- Income vs expenditure summary, trend analysis with growth rates
+- Category breakdown and budget variance reporting
+- Forecast model management (create, activate/deactivate)
+- **GUI**: Records, Forecasting, Analysis, Models tabs
+- **CLI**: Add records, generate forecasts, view trends and variance
+
+##### 25. Student App / Portal (`student_app`)
+- Mobile-responsive portal aggregator for timetable, grades, and messages
+- Dashboard aggregating data from existing university tables (students, grades, timetable_entries)
+- Push-style notification system (grade, timetable, message, announcement, deadline types)
+- Read/unread tracking with mark-all-read support
+- User preferences (theme, notification toggles, language)
+- Customisable quick links
+- **GUI**: Dashboard, Notifications, Preferences, Quick Links tabs
+- **CLI**: Dashboard view, notification management, preference updates
+
+##### 26. Achievement Badge System (`achievement_badges`)
+- Badge definitions with categories (academic, extracurricular, community, leadership, milestone)
+- Points-based system with badge criteria and progress tracking
+- Student badge awards with reason and awarded-by tracking
+- Badge display toggle (show/hide on profile)
+- **Leaderboard** ranking students by total badge points
+- Badge statistics by category
+- Duplicate award prevention
+- **GUI**: My Badges, Available Badges, Leaderboard, Manage (admin) tabs
+- **CLI**: View badges, progress, leaderboard; admin create/award badges
+
+##### 27. Personalised Study Recommendations (`study_recommendations`)
+- Student study profiles with learning style, preferred times, strengths/weaknesses
+- **Automated recommendation generation** based on grade analysis (identifies modules below threshold)
+- Learning-style-specific study technique suggestions (visual/auditory/reading/kinesthetic)
+- Study session logging with effectiveness ratings
+- Study statistics (total hours, session count, average effectiveness)
+- Study streak tracking
+- Weak area analysis from grade data
+- **GUI**: Recommendations, Study Profile, Study Log, Stats tabs
+- **CLI**: Generate recommendations, manage profile, log sessions, view weak areas
+
+##### 28. Clearing & Adjustment Workflow (`clearing_adjustment`)
+- Clearing vacancy management with course, places available, and minimum tariff points
+- Clearing application submission with UCAS ID, qualifications, and tariff points
+- **Auto-shortlisting** — matches applicant tariff points against course requirements
+- Application status pipeline (pending → shortlisted → offered → accepted/rejected)
+- Automatic place count decrement on acceptance
+- Adjustment requests for course changes with approval workflow
+- Clearing statistics dashboard
+- **GUI**: Vacancies, Applications, Adjustment, Statistics tabs
+- **CLI**: Manage vacancies, submit/process applications, auto-shortlist
+
+##### 29. Research Grant Tracker — Merged into Existing Research & Grants System
+- Rather than creating a duplicate, grant tracking was merged into `research/services/research_grants_core.py`
+- **`GrantTrackerService`** class added with budget items, milestone tracking, deadline alerts, pipeline summary, success rates
+- New tables: `grant_tracker_apps`, `grant_tracker_milestones`, `grant_tracker_budget`, `grant_tracker_alerts`
+- Replaced stub CLI with fully functional menu (create applications, manage milestones/budgets, view pipeline, deadlines, funding by department)
+- Existing `ResearchProjectManager`, `GrantApplicationManager`, `PublicationManager`, `MilestoneManager`, `EquipmentManager`, `EthicsReviewManager` preserved for backward compatibility
+
+##### 30. Alumni Engagement — Merged into Existing Alumni Management
+- Rather than creating a duplicate module, engagement features were merged into the existing comprehensive Alumni Management system (`student_affairs/services/alumni_management/`)
+- **Gift Aid** support added to the donations table (`is_gift_aided` column migration)
+- **Engagement dashboard** function (`get_engagement_dashboard()`) added to `reports.py` — aggregates total alumni, active mentors, total donated, upcoming events, gift aid totals
+- **Dashboard GUI** enhanced with Total Donated, Active Mentors, and Gift Aid Eligible stats on the main Alumni dashboard
+- Existing system already provides: alumni profiles, donations with campaigns, mentoring with AI matching, events with check-in, job board, forum, stories, photo gallery, regional chapters, gamification, leaderboards, and 28+ CLI options with permission-based access
+
+##### Integration
+- **GUI Navigation** (`gui_setup.py`):
+  - External Examiners, Study Recommendations → Academic Management category
+  - Financial Forecasting → Finance category
+  - Student App, Achievement Badges → Student Services category
+  - Alumni Engagement → Career & Alumni category
+  - HESA Export, Clearing & Adjustment → Administration category
+- **Role-based visibility** (`get_visible_buttons_for_role`):
+  - All users: Student App, Achievement Badges, Study Recommendations
+  - Staff: External Examiners
+  - Admin: HESA Export, Clearing & Adjustment, Financial Forecasting
+- **CLI Menu** (`menu_router.py`): New "NEW UNIVERSITY FEATURES" section with 7 standalone modules, lazy-imported on selection; Course Evaluations and Research/Grants CLIs replaced with functional implementations in their existing menu entries
+- **Feature launcher** (`new_features_gui.py`): Error-handled `show_*` methods for 7 GUIs
+- **Method bindings** (`main_gui.py`): 7 `show_*` methods bound to `UnifiedManagementGUI`
+
+#### Technical Details
+- 49 new Python files across 7 standalone module directories (service + GUI + CLI + `__init__.py` per module)
+- 3 existing modules enhanced in-place (course evaluation, research/grants, alumni management) with new service classes and functional CLIs replacing stubs
+- All services use `get_connection()`/`transaction()` context managers from shared database infrastructure
+- Tables auto-created via `_ensure_tables_exist()` on first service instantiation
+- All imports verified passing (10 services, 10 GUI launchers, 10 CLI menus)
+
+---
+
+## [8.1.0] — 2026-03-14
+
+### Academic Misconduct — Per-System Dashboards & Super Admin Cross-System View
+
+Major enhancement to the shared Academic Misconduct module, adding system-scoped dashboards for each education system and a cross-system overview for super admins.
+
+#### Added
+
+##### Per-System Misconduct Dashboards
+- **`AcademicMisconductPanel`** now accepts a `system_key` parameter (`'university'`, `'college'`, `'secondary'`, `'primary'`) to scope all data to a single system
+- All case queries (dashboard stats, case list, analytics, CSV export, reports) filter by `system_key` when set
+- New cases automatically tagged with the launching system's `system_key`
+- Window title, header, and dashboard title display the system name (e.g. "Academic Misconduct Panel - College")
+- Each system's main GUI now passes its `system_key` when launching the misconduct panel:
+  - University → `system_key='university'`
+  - College → `system_key='college'`
+  - Secondary School → `system_key='secondary'`
+  - Primary School → `system_key='primary'`
+
+##### Super Admin Cross-System Dashboard
+- **`superadmin_dashboard.py`** (new mixin) — `MisconductSuperAdminMixin` provides a cross-system overview accessible when no `system_key` is set
+- Global aggregate stats: total cases, active, resolved, critical across all systems
+- Per-system breakdown cards showing total, active, resolved, pending hearings, and critical counts for each of the 4 systems
+- Violation types pivot table comparing counts across all systems
+- Severity distribution comparison table across all systems
+- Recent cases table (last 10) showing system column with colour-coded system badges
+- "All Systems" nav item in sidebar (visible only in super admin mode)
+- **Super Admin Dashboard** (`shared/gui/superadmin_dashboard.py`) — new "Misconduct" section in navigation with:
+  - Cross-system stats overview
+  - Per-system breakdown cards
+  - Launch buttons to open the misconduct panel for any individual system or in all-systems super admin mode
+
+##### System-Aware Student Lookup
+- **`_get_system_db_path()`** — new method on `MisconductDatabaseMixin` that resolves each system's own SQLite database for student/course lookups
+  - University → `university_system/data/db_files/student_records.db`
+  - College → `college_system/data/db_files/sixthform.db`
+  - Secondary → `secondary_school/data/db_files/secondary_school.db`
+  - Primary → `primary_school/data/db_files/primary_school.db`
+- **`student_lookup.py`** rewritten with per-system query definitions handling different table schemas:
+  - University: `students` table (`email_address`, `course`)
+  - College: `students` table (`email`, `major`)
+  - Secondary: `students` table (`email`, `year_group`, `form_group`)
+  - Primary: `pupils` table (`pupil_id`, `parent1_email`, `class_name`)
+- **`get_student_assignments()`** now system-aware:
+  - University: `assignments` table with `module_code`, `is_active`, submission joins
+  - College: `assignments` table with `course_id` (no `module_code`)
+  - Secondary/Primary: `homework` table with `subject_id`/`subject_code`
+- **`get_valid_courses()`** and **`validate_course()`** adapted per system (college → `major`, secondary → `form_group`, primary → `class_name`)
+- All lookups use `_table_exists()` guard before querying to prevent errors on missing tables
+
+##### Database Migration
+- `init_misconduct_tables()` now adds `system_key` column to existing `academic_misconduct_cases` tables via `ALTER TABLE` migration (defaults to `'university'` for pre-existing rows)
+
+#### Fixed
+- Student lookup no longer searches the wrong database — each system's misconduct panel now only finds students from its own system
+- `module_code` column error on college/secondary/primary systems resolved by using system-appropriate assignment/homework queries
+- `MisconductFrame` quick stats now filter by `system_key`
+
+#### Changed
+- **`MisconductFrame`** constructor now accepts `system_key` parameter, passed through to `AcademicMisconductPanel`
+- **`misconduct_frame.py`** quick stats queries filter by `system_key`
+- All analytics queries (`refresh_analytics_tab`, `export_analytics_csv`, `generate_analytics_report`) respect `system_key` filter
+- Dashboard recent cases and stats scoped to current system
+- Header and sidebar updated to reflect system context
+
+---
+
+## [8.0.0] — 2026-03-14
+
+### Major Release — Security Hardening, Shared Infrastructure, and 40+ New Modules
+
+Comprehensive overhaul adding critical security fixes, shared infrastructure modules, and 40+ new feature modules across all four education subsystems. This is a major version bump due to the scope of changes: new shared database layer, security framework, LMS foundation, and significant feature parity improvements for secondary and primary schools.
+
+#### Security Fixes
+
+##### SQL Injection — Dynamic Filter Keys (CRITICAL)
+- **80 occurrences fixed** across 40 college service files — all dynamic `WHERE` clause column names from `**filters` now validated with `validate_identifier()` before interpolation
+- **3 additional fixes** in `compliance_service.py` (dynamic `SET` clause keys) with missing import added
+- Zero unvalidated column name interpolations remaining in the codebase
+
+##### Field-Level Encryption at Rest (NEW)
+- **`shared/security/encryption.py`** — `FieldEncryptor` class using Fernet (AES-128-CBC + HMAC-SHA256)
+- **`shared/security/data_classification.py`** — Defines 30+ sensitive field names across 6 categories (medical, safeguarding, contact, identity, protected characteristics, SEN)
+- **`shared/security/secure_record.py`** — `encrypt_record()`/`decrypt_record()` utilities for transparent field-level encryption
+- Encrypted values use `ENC:` prefix for identification; graceful passthrough when no key configured
+
+##### CSRF Token Support (NEW)
+- **`shared/security/csrf.py`** — HMAC-SHA256 token generation tied to session IDs with 1-hour expiry
+- `generate_csrf_token()`, `validate_csrf_token()`, and `@csrf_protect` Flask decorator
+- Proper timing-safe comparison via `hmac.compare_digest()`
+
+##### Persistent Rate Limiting (NEW)
+- **`shared/security/rate_limiter.py`** — `PersistentRateLimiter` backed by SQLite (survives restarts)
+- Per-key rate limiting with configurable max requests and time windows
+- Automatic cleanup of expired entries
+
+##### Log Integrity (NEW)
+- **`shared/security/log_integrity.py`** — `SecureLogger` appends HMAC-SHA256 signatures to every log entry
+- `verify_log_file()` detects tampered log lines by comparing signatures
+
+##### Password Expiration (NEW)
+- Added `password_changed_at` column to shared auth `users` table
+- `UserAuth.check_password_expiry(user_id, max_age_days=90)` — checks if password needs rotation
+- `change_password()` now updates `password_changed_at` timestamp automatically
+
+#### Shared Infrastructure
+
+##### Shared Database Layer (`shared/database/`)
+- **`db.py`** — Unified `connect()` with standard PRAGMAs (WAL, foreign_keys, busy_timeout), `set_db_path()`/`get_db_path()`, `transaction()` context manager, `ConnectionPool` class, `DatabaseManager` for higher-level operations
+- **`sql_safety.py`** — Consolidated `validate_identifier()`, `escape_like()`, `build_where_clause()`, `build_set_clause()`
+
+##### Shared Backup/Restore (`shared/backup/`)
+- **`backup_manager.py`** — `backup()` with gzip compression, SHA-256 checksums, metadata files; `restore()` with pre-restore safety copy; `verify_backup()`, `list_backups()`, `cleanup_old_backups()` with configurable retention
+- **`backup_scheduler.py`** — `BackupScheduler` with threaded background scheduling (hourly/daily/weekly), automatic cleanup, manual `run_now()` trigger
+
+##### Shared Reporting (`shared/reporting/`)
+- **`csv_exporter.py`** — `export_to_csv()` from dicts/tuples, `export_query_to_csv()` direct from SQL queries
+- **`pdf_exporter.py`** — `generate_report_html()` with professional styling, table/text/summary sections; `save_report_html()` to file
+
+##### Shared Certificates & Transcripts (`shared/certificates/`)
+- **`transcript_service.py`** — `TranscriptService` with auto-detection of student/pupil tables, HTML export with professional template, CSV export
+- **`certificate_service.py`** — `CertificateService` supporting 5 types (completion, achievement, attendance, merit, distinction), unique certificate numbers, HTML export with decorative template, external verification by certificate number, revocation
+- **`certificates_gui.py`** — 4-tab GUI (Certificates, Transcripts, Generate, Verify)
+- Professional HTML templates for both transcripts and certificates
+- Registered in all 4 subsystems' sidebars
+
+##### Shared Student ID Cards (`shared/student_id/`)
+- **`student_id_service.py`** — `StudentIDService` with card number generation (checksum-validated), QR data (JSON), issue/expiry tracking, deactivation, reissue flow
+- Auto-creates `student_id_cards` table if missing
+
+##### Shared LMS Foundation (`shared/lms/`)
+- **`course_content_service.py`** — Module/lesson CRUD, publish/unpublish, reorder
+- **`learning_progress_service.py`** — Lesson completion tracking, per-student/per-course progress percentages, next lesson suggestion, completion stats
+- **`quiz_service.py`** — Quiz creation, MCQ/true-false/short-answer questions, auto-grading on submission with score/pass calculation
+- **`resource_library_service.py`** — Upload, search, download tracking, deletion
+- **`lms_gui.py`** — Role-based tabs (staff: content management, student: learning view), quiz-taking interface, progress bar visualisation
+- **`schema.py`** — `create_lms_tables(conn)` for 7 tables + 8 indexes
+- Registered in all 4 subsystems with LMS tables added to all schemas
+
+#### New Secondary School Modules (14 modules, ~41 files)
+
+##### Pastoral Care
+- **Student Wellbeing** — Referrals (concern type, risk level, status tracking), mood check-ins (1-5 rating), counselling session records, wellbeing summary dashboard
+- **Intervention Tracking** — Create/manage interventions (academic, behavioural, attendance, pastoral, mentoring), session logging, outcome recording with impact ratings
+
+##### Communication
+- **Feedback** — Anonymous/named feedback submission, voting, admin responses, status tracking
+
+##### Admin
+- **Complaints** — Formal complaint submission, categorisation, responses, escalation workflow, resolution tracking
+- **GDPR** — Data subject access requests, consent management, data deletion tracking, audit log
+- **Data Dashboard** — Attendance KPIs, grade distribution, behaviour summary, enrollment statistics
+- **Payroll** — Full payroll processing (gross/tax/NI/pension/net), approval workflow (draft → pending → approved → paid), batch processing, payslip generation, period summaries, UK tax config
+
+##### Staff
+- **Appraisals** — Performance reviews with objectives, progress tracking, ratings, meeting scheduling
+- **Observations** — Lesson observation scheduling, Ofsted-aligned grading (Outstanding/Good/RI/Inadequate), strengths/areas for improvement, action plans
+- **Staff Wellbeing** — Wellbeing surveys with responses, support request tracking, dashboard
+- **Lesson Plans** — Plan creation (objectives, activities, resources, assessment, differentiation, timing), sharing between teachers, calendar view
+
+##### Student Life
+- **Portfolio** — Student work portfolio (coursework, artwork, projects, achievements), file attachments, sharing
+- **Skills Passport** — Skill tracking by category (academic, digital, communication, teamwork, leadership, problem-solving, creative), teacher endorsements
+- **Student Council** — Member management (president, VP, secretary, treasurer, representative), meeting minutes, proposal submission and voting
+- **Study Planner** — Goal setting by subject with target dates, study session logging with duration, statistics and streaks
+
+##### Schema
+- **50+ new tables** added including wellbeing, interventions, feedback, complaints, GDPR, dashboard KPIs, payroll, appraisals, observations, staff wellbeing, lesson plans, portfolio, skills passport, council, study planner, homework enhancements (rubrics, feedback, drafts), student ID cards, LMS tables
+- Total: 120 CREATE TABLE statements
+
+#### New Primary School Modules (11 modules, ~64 files)
+
+##### Pastoral Care
+- **Pupil Wellbeing** — Wellbeing concerns (emotional, social, family, health, friendship, anxiety, bereavement), emoji-based feelings check-ins (happy, sad, worried, angry, scared, ok), parent meeting records, overview dashboard
+
+##### Communication
+- **Feedback** — Parent/staff feedback submission, categorised (teaching, facilities, meals, communication, safety), responses
+
+##### Admin
+- **Complaints** — Simplified complaint handling for primary context
+- **GDPR** — Data requests, consent records, data deletion
+- **Data Dashboard** — Attendance, assessment, behaviour, enrollment KPIs
+- **Payroll** — Same full payroll system as secondary
+
+##### Staff
+- **Appraisals**, **Observations**, **Staff Wellbeing**, **Lesson Plans** — Same feature set as secondary, adapted for primary school context
+
+##### Academics
+- **Portfolio** — Learning portfolio (writing, maths, art, science, topic work, achievements), teacher comments
+- **Skills Tracker** — Skill recording by area with primary-appropriate levels (beginning, developing, secure, mastery)
+
+##### Schema
+- **40+ new tables** added
+- Total: 87 CREATE TABLE statements
+
+#### Enhanced Existing Modules
+
+##### Secondary School Homework (10 new methods)
+- `add_rubric()` / `get_rubric()` — Rubric criteria with max marks
+- `submit_with_attachment()` — File attachment support with auto late-detection
+- `add_feedback()` / `get_detailed_feedback()` — Detailed teacher feedback records
+- `save_draft()` / `get_draft()` — Draft saving before final submission
+- `get_submission_stats()` — Submitted/unmarked/late counts and averages
+- `list_late_submissions()` — Filter late submissions
+- `extend_deadline()` — Deadline extension with audit trail
+- `resubmit()` — Linked resubmissions
+- New schema tables: `homework_rubrics`, `homework_feedback`, `homework_drafts`
+- Enhanced GUI with rubric management, feedback viewing, late submission tracking, statistics
+
+##### Primary School Homework (4 new methods)
+- `add_teacher_feedback()` — Feedback with age-appropriate stickers (gold star, well done, good effort, keep trying)
+- `add_parent_comment()` — Parent engagement via comments
+- `get_submission_with_feedback()` — Joined submission + feedback view
+- `list_outstanding()` — Unsubmitted homework by pupil
+- New schema table: `homework_feedback` (with sticker and parent comment support)
+- Enhanced GUI with sticker-based feedback dialogs and outstanding homework search
+
+#### New University Modules (3 modules)
+
+- **Assignments** — Assignment creation, student submission (text + file), grading with feedback, late detection
+- **Student Finance** — Fee management, payment recording, scholarship tracking, balance calculation
+- **Student Wellbeing** — Referrals, mood check-ins, counselling session tracking
+- New schema file: `new_features_schemas.py` with 17 tables (assignments, submissions, grades, fees, payments, scholarships, wellbeing, student ID, LMS)
+
+#### GUI Registration
+
+All new modules registered in sidebar navigation with role-based visibility:
+- **Secondary** — 14 new sidebar entries; students see Portfolio, Skills Passport, Study Planner, Feedback, Student Council, LMS; admin-only: Complaints, GDPR, Data Dashboard, Appraisals, Observations, Payroll
+- **Primary** — 11 new sidebar entries; staff see Pupil Wellbeing, Feedback, Lesson Plans, Staff Wellbeing, Portfolio, Skills Tracker, LMS; admin-only: Complaints, GDPR, Data Dashboard, Appraisals, Observations, Payroll
+- **College** — LMS and Certificates added to sidebar
+- **University** — LMS, Certificates, and Assignments registered in navigation
+
+#### File Counts
+- ~89 new Python module files (services + GUIs)
+- ~36 new shared infrastructure files
+- ~50+ new database tables per school system
+- 80 SQL injection fixes across college services
+- 6 existing files enhanced (homework services + GUIs)
+- 4 schema files updated
+- 4 main_gui.py files updated with new module registrations
+- 802 total files modified/created
+
+---
+
+## [7.32.0] — 2026-03-13
+
+### Web Dashboard — Full Navigation for Secondary & Primary Schools
+
+Added comprehensive sidebar navigation to the web SPA for both the secondary school and primary school systems, matching the existing university and college navigation patterns.
+
+#### Secondary School Navigation (~50 items across 8 categories)
+- **Academics** — Enrollments, Subjects, Timetable, Exams, Exam Results, Homework, Submissions, Progress Targets, Interventions
+- **Pastoral Care** — Behaviour, Detentions, Exclusions, Rewards, Pastoral Notes, House Points, Safeguarding, SEND, SEND Provisions
+- **Communication** — Announcements, Notifications, Email, Calendar, Communication Log, Parents Evening
+- **Student Life** — Clubs, Trips, Careers, Work Experience, Library, Library Loans, Meals, Medical, First Aid, Consent, Form Groups, Transport
+- **Staff & HR** — Staff Directory, Staff HR, Staff Leave, Cover, CPD
+- **Facilities** — Room Bookings, Assets, Visitors, Incidents, Seating Plans
+- **Finance** — Transactions, Budgets
+- **Administration** — Admissions, Documents, Policies, Settings, Audit Log
+
+#### Primary School Navigation (~40 items across 8 categories)
+- **Academics** — Classes, Subjects, Timetable, Assessments, Homework, Phonics, SATs, Reading Records, Progress
+- **Pastoral Care** — Behaviour, Rewards, Safeguarding, SEND, Pastoral Notes
+- **Communication** — Announcements, Notifications, Email, Calendar, Communication Log, Parents Evening
+- **Pupil Life** — Clubs, Trips, Library, Library Loans, Meals, Medical, Consent, Transport
+- **Staff & HR** — Staff Directory, Staff HR, Staff Leave, Cover, CPD
+- **Facilities** — Room Bookings, Assets, Visitors, Incidents
+- **Finance** — Transactions, Budgets
+- **Administration** — Admissions, Documents, Policies, Settings, Audit Log
+
+All navigation items use the generic table viewer (`tbl:` prefix) to render data from the corresponding system database with auto-detected columns, pagination, and search.
+
+---
+
+## [7.31.0] — 2026-03-13
+
+### Secondary School — Full API Route Coverage (44 new routes)
+
+Created 44 API route files under `shared/api/secondary/routes/`, bringing secondary school coverage from 8 routes to 52 (51 blueprints + auth). Every domain service module now has a corresponding REST API.
+
+#### New Routes by Category
+
+- **Academics** (6) — `exams`, `homework`, `interventions`, `progress`, `reports`, `timetable`
+- **Admin** (8) — `admissions`, `audit_log`, `data_export`, `documents`, `finance`, `policies`, `settings`, `users`
+- **Communication** (6) — `announcements`, `calendar`, `communication_log`, `email`, `notifications`, `parents_evening`
+- **Facilities** (5) — `assets`, `incidents`, `room_booking`, `seating_plans`, `visitors`
+- **Pastoral Care** (6) — `detentions`, `exclusions`, `pastoral`, `rewards`, `safeguarding`, `send`
+- **Staff** (4) — `cover`, `cpd`, `hr`, `staff_directory`
+- **Student Life** (9) — `careers`, `clubs`, `consent`, `form_groups`, `library`, `meals`, `medical`, `transport`, `trips`
+
+#### Technical Details
+- All routes follow the established secondary pattern: imports from `shared.api.secondary.auth` and `shared.api.secondary.validators`
+- Service imports use nested domain paths (e.g. `secondary_school.modules.domain.pastoral_care.behaviour.services.behaviour_service`)
+- Each route file includes: Blueprint, `_db_path` global, `init_*_routes()` function, CRUD endpoints with `@token_required` and `@role_required` decorators
+- Updated `shared/api/secondary/routes/__init__.py` with all 51 blueprints and 51 init functions
+
+---
+
+## [7.30.0] — 2026-03-13
+
+### Security, Bug Fixes, and Feature Improvements
+
+Comprehensive audit and fix pass covering security vulnerabilities, code quality, and missing features across all 4 education systems (~200+ files modified).
+
+#### Security Fixes
+
+##### SQL Injection — Dynamic Column Names (CRITICAL)
+- **92 service files patched** — all dynamic `SET` clause column names now validated with `validate_identifier()` before interpolation
+- Affected systems: college (45 files), primary (37 files), secondary (8 files), shared (2 files)
+- Created new `sql_safety.py` modules for secondary and primary schools
+
+##### LIKE Wildcard Injection (MEDIUM)
+- **45 files patched** — all `f"%{search}%"` patterns now escape `%` and `_` via `escape_like()`
+- College (20 files), secondary (4 files), primary (4 files), university (17 files)
+
+##### JWT Secret (CRITICAL)
+- Default JWT secret changed from `"change-me-in-production"` to `secrets.token_urlsafe(64)` auto-generated at module load
+- Env var `JWT_SECRET_KEY` still overrides when set
+
+##### CSRF Protection (HIGH)
+- JSON POST/PUT/DELETE/PATCH requests now validate `Origin`/`Referer` headers against server host
+- Non-browser clients (no Origin/Referer) are allowed through
+- Cross-origin browser requests are blocked with 403
+
+##### SVG Upload Removal (HIGH)
+- Removed `image/svg+xml` and `.svg` from allowed upload types to prevent XSS/XXE attacks
+
+##### MFA Recovery Code Rate Limiting (MEDIUM)
+- `verify_recovery_code()` now tracks failed attempts per user — locks out after 5 failures for 15 minutes
+- Successful verification clears the counter
+
+##### Enhanced Rate Limiting (MEDIUM)
+- Added per-username rate limiting (5 attempts/60s) alongside existing per-IP tracking
+- Login route checks both stores
+
+##### Insecure Temporary Passwords (LOW)
+- Replaced `random.choices` with `secrets.choice` for password generation in CLI menus and parent portal admin
+
+##### Encryption Key Storage (MEDIUM)
+- Moved default key storage from database directory to separate `.keys/` subdirectory
+- Added warning log when file-based storage is used
+- Backward-compatible migration from legacy path
+
+#### Bug Fixes
+
+##### Database Connection Leaks
+- **10 connections fixed** in college and secondary `student_gui.py` — all wrapped in `try/finally`
+- Verified all secondary/primary GUI files are clean (service layer pattern used consistently)
+
+##### Silent Exception Swallowing
+- **13 `except Exception: pass` replaced** with `logging.warning(..., exc_info=True)` — 8 in college student GUI, 4 in secondary student GUI, 1 in enrollment service
+
+##### Missing DB Error Logging
+- **4 exception handlers enhanced** in `college/infrastructure/database/db.py` — transaction rollback, connection pool, execute_write, and manager transaction now log errors
+
+##### Cross-Database Logic Moved to Service Layer
+- **College `student_gui.py`** — removed raw `sqlite3` access to secondary DB and auth DB; added 4 new service methods: `fetch_secondary_students`, `import_from_secondary`, `mark_secondary_as_transferred`, `notify_transfer`
+- **Secondary `student_gui.py`** — same refactoring for primary school imports; 4 analogous service methods added
+- Both GUIs now call service methods instead of managing cross-system DB connections directly
+
+##### Schema Column Mismatches
+- **ComplianceService** — fixed `funding_body`/`funding_type` → `learning_aim`/`funding_model`
+- **AssetsService** — fixed `loaned_to`/`asset_name` → `student_id`/`description`
+- **ParentsEveningService** — fixed `teacher_id`/`slot_duration_mins` → `staff_id`/`slot_duration`
+
+#### New Features
+
+##### Delete Operations (18 Services)
+Added missing delete methods to college services: enrollment, grades, attendance, first_aid, helpdesk (cascades to responses), parent_portal, admissions, safeguarding, behaviour, pastoral, send, exams, compliance, parents_evening, careers, bursary, assets, library
+
+##### Skeleton GUIs Implemented (6 Modules)
+Populated empty `_load_*()` methods with real data loading:
+- **UCAS** — applications + choices
+- **Value Added** — baselines + predictions
+- **ILP** — plans, targets, reviews
+- **T-Levels** — routes, enrollments, placement logs
+- **Apprenticeships** — standards, enrollments, OTJ logs, reviews
+- **Governance** — governors, meetings, actions, strategic plans
+
+##### Stub Functions Implemented
+- **9 automation functions** in university student support: escalation processing, keyword-based sentiment analysis, category suggestion (10 categories), auto-assignment, resolution time estimation, background task scheduler, notification queue processing, metrics calculation, staff assignment loading
+- **AI detector custom dataset** — loads `.json`, `.jsonl`, `.csv` with validation and trains TF-IDF + RandomForest
+- **Plagiarism integration** — real API-based implementation replacing placeholder
+
+##### Pagination (6 GUI Modules + 4 Services)
+- Added paginated loading (50 records/page) with Previous/Next buttons, page indicator, and record count
+- **GUIs**: students, courses, enrollment, grades, attendance, assignments
+- **Services**: added `count_*()` methods and `limit`/`offset` params to students, enrollment, assignments, attendance
+- Search and filter actions reset to page 0
+
+##### CSV Export (108 GUI Modules — Full Coverage)
+- Created shared helper `college_system/modules/shared/csv_export.py`
+- Added "Export CSV" buttons to **all 108 college GUI modules** with Treeview data tables
+- Multi-tab modules export per-tab (e.g. disciplinary exports cases/evidence/appeals separately; pastoral exports notes/wellbeing/LAC)
+- Modules with multiple treeviews get per-treeview export buttons (e.g. funding: records, evidence, rules, resits)
+- Initial 12 modules: students, attendance, grades, courses, enrollment, assignments, staff, finance, safeguarding, behaviour, exams, timetable
+- Remaining 96 modules: all other domain modules including departments, governance, helpdesk, library, marketing, recruitment, risk management, student support, and more
+
+##### API Input Validation (4 Systems)
+Added 7 validation functions to all 4 system validator files:
+- `validate_email` — regex format check
+- `validate_date` — parse with format string
+- `validate_date_range` — ensures start <= end
+- `validate_phone` — digits/spaces/+/-/parens, 7-15 digit length
+- `validate_string_length` — min/max bounds
+- `validate_enum` — value in allowed set
+- `validate_positive_int` — positive integer check
+
+##### Keyboard Accessibility (6 GUI Modules)
+- **Main GUI shell** — `Escape` (close/back), `Ctrl+D` (dashboard), `Ctrl+L` (logout), `Ctrl+Q` (exit), accelerator labels on menu items
+- **Students** — `Return` (edit), `Delete` (delete with confirm), `Ctrl+F` (search), `Ctrl+N` (add new), `Escape` (close dialog)
+- **Courses** — `Return` (edit), `Delete` (delete with confirm), `Ctrl+N` (add new), `Escape` (close dialog)
+- **Attendance** — `Return` (view record), `Ctrl+N` (create session)
+- **Grades** — `Return` (view details), `Escape` (close transcript)
+- **Enrollment** — `Return` (view details), `Delete` (drop with confirm), `Ctrl+N` (enroll)
+
+##### Test Coverage (8 New Test Files, 133 Tests)
+- **New coverage**: compliance (16 tests), first_aid (17 tests), assets (16 tests), parents_evening (18 tests), parent_portal (15 tests)
+- **Extended coverage**: assignments (17 tests), courses (18 tests), grades (16 tests)
+- Tests cover CRUD operations, edge cases (not found, duplicates, invalid data), and cascading deletes
+
+---
+
+## [7.29.0] — 2026-03-13
+
+### Fixed — CSP Compliance & Inline Style Cleanup
+
+Resolved Content Security Policy violations blocking inline styles across the web dashboard.
+
+#### CSP Policy Update
+- **Added `'unsafe-inline'` to `style-src`** in unified server CSP — required for dynamic data-driven colors (system accents, chart bar widths, status dots)
+- **Added `_custom_csp` guard** — `after_request` handler now skips CSP override when a route sets `response._custom_csp = True`, fixing docs route CSP
+
+#### Inline Style Removal (~40 occurrences)
+- **Replaced all `style=` attributes** with CSS utility classes (`.sa-hidden`, `.sa-text-center`, `.sa-fw-bold`, `.sa-text-success`, `.sa-text-danger`, `.sa-cursor-pointer`, `.sa-max-w-400`, etc.)
+- **Replaced `.style.display` JS assignments** with `classList.toggle("sa-hidden", ...)` across user filtering, notification modal toggle, and search detail panel
+- **Replaced `.style.color` JS assignments** with `classList.add/remove` for success/danger feedback in backup status and batch operation results
+- **Only 9 dynamic-color inline styles remain** — system accent `background:${color}` values that depend on runtime data
+
+#### Form Validation Fix
+- **Removed `required` from notification recipient input** — was causing "invalid form control not focusable" errors when the input was hidden in broadcast mode
+- **Changed modal field visibility** to use `.sa-hidden` class toggle instead of `.style.display`
+
+#### New CSS Classes
+- Utility classes: `.sa-hidden`, `.sa-text-center`, `.sa-fw-bold`, `.sa-text-success`, `.sa-text-danger`, `.sa-cursor-pointer`, `.sa-max-w-400`, `.sa-w-full`, `.sa-mt-1`, `.sa-mb-075`, `.sa-textarea`
+- Component classes: `.picker-bg`, `.picker-logout`, `.picker-body`, `.picker-welcome`, `.topbar-left`, `.sa-notif-count`, `.sa-broadcast-btn`, `.sa-batch-apply-btn`, `.sa-backup-btn`, `.settings-password-hint`, `.settings-submit-btn`, `.settings-account`, `.att-bar-row`, `.att-bar-header`, `.att-bar-count`, `.badge-spaced`
+
+#### Files Changed
+- `shared/api/unified_server.py` — CSP `style-src` update + `_custom_csp` guard
+- `shared/api/web/static/js/app.js` — replaced ~40 inline styles and ~10 `.style.*` JS assignments
+- `shared/api/web/static/css/style.css` — added utility and component classes
+
+---
+
+## [7.28.0] — 2026-03-13
+
+### Added — Superadmin Web Dashboard & Full Feature Implementation
+
+Complete cross-system superadmin dashboard in the web frontend, matching the tkinter GUI's 13-section layout with real backend data.
+
+#### Superadmin App Shell
+- **Superadmin detection** — `isSuperadmin()` checks admin role in all 4 systems, auto-routes to `__superadmin__` mode
+- **Dark sidebar** with 13 navigation items matching GUI: Dashboard, System Health, User Management, Student Analytics, Notifications, Student Search, Student Journey, Permission Matrix, Audit Log, Backup/Restore, Batch Operations, Active Sessions, Quick Launch
+- **"Admin Dashboard" button** in per-system view for superadmins to return to cross-system overview
+- **System color scheme** matching GUI: Primary=#e67e22, Secondary=#8e44ad, College=#27ae60, University=#2980b9
+
+#### Dashboard Overview
+- **4 color-coded system cards** with student/staff counts, DB size, and online/offline status dots
+- **Summary stats row** — total students, staff, transfers, registered users
+- **Recent activity feed** with timestamps
+
+#### System Health
+- **Health cards per system** with status badge, database exists/size, student/staff count, table count, last activity, DB path
+
+#### User Management
+- **Full user table** with username, display name, email, system badges, role badges, active status, last login
+- **Triple filtering** — search box, system dropdown, role dropdown with live client-side filtering
+
+#### Student Analytics (fully implemented)
+- **Summary cards** — total students, active, transferred, graduated
+- **Per-system breakdown** with system-colored cards showing total/active/transferred/graduated/dropped counts
+- **Retention statistics table** — system, total, active, retained %, dropped out, dropout %
+- **Transfer rates table** — source system, destination, count, rate %
+- **Year-over-year trends table** — system, year, student count
+
+#### Notifications (fully implemented)
+- **Notification list** with ID, sender system, title, message preview, priority badge, read status, date
+- **Unread count badge** with mark-all-read button
+- **Send notification modal** — recipient user ID, target system, title, priority, message
+- **Broadcast to role modal** — target system, target role, title, priority, message
+- **Backend endpoints**: `GET/POST notifications`, `POST mark-read`, `POST send`, `POST broadcast`
+
+#### Student Search (fully implemented)
+- **Cross-system search** — searches all 4 system databases for matching students
+- **Results table** with system badge, student ID, name, status, year/group
+- **Click-to-expand detail panel** showing full student information
+
+#### Student Journey (fully implemented)
+- **Timeline visualization** with colored dots and connecting lines per system stage
+- **Journey cards** showing system name, student info (ID, status, enrollment date, year group), and academic history
+- **Search-first workflow** — finds student, then fetches cross-system journey data
+
+#### Permission Matrix (fully implemented)
+- **Matrix table** showing each user's role across all 4 systems (Primary, Secondary, College, University)
+- **Role badges** per cell, em-dash for no access
+
+#### Backup / Restore (fully implemented)
+- **Backup rows per system** with colored accent stripe, DB name, size, and "Backup Now" button
+- **Live status feedback** — success/error messages after backup attempt
+- **Backend endpoint**: `POST /web/superadmin/backup` with system parameter
+
+#### Batch Operations (fully implemented)
+- **Bulk role change** — select system, current role, new role; applies to all matching users with confirmation dialog
+- **Bulk deactivation** — select system and role; deactivates all matching users with confirmation dialog
+- **Backend endpoints**: `POST batch/role-change`, `POST batch/deactivate`
+
+#### Active Sessions
+- **Session table** with username, display name, created timestamp, expires timestamp
+
+#### Quick Launch
+- **4 system launch cards** with system icon, name, description, and launch button
+- Clicking enters that system's per-system dashboard as superadmin
+
+#### Backend API Endpoints Added
+- `GET /api/web/superadmin/overview` — cross-system summary stats
+- `GET /api/web/superadmin/health` — per-system health data
+- `GET /api/web/superadmin/sessions` — active auth sessions
+- `GET /api/web/superadmin/audit` — audit log entries
+- `GET /api/web/superadmin/analytics` — student analytics via AnalyticsService
+- `GET /api/web/superadmin/notifications` — notifications via CrossSystemNotificationService
+- `POST /api/web/superadmin/notifications/mark-read`
+- `POST /api/web/superadmin/notifications/send`
+- `POST /api/web/superadmin/notifications/broadcast`
+- `GET /api/web/superadmin/search` — cross-system student search via JourneyService
+- `GET /api/web/superadmin/journey` — student journey data via JourneyService
+- `GET /api/web/superadmin/permissions` — permission matrix from auth DB
+- `POST /api/web/superadmin/backup` — database backup
+- `GET /api/web/superadmin/backup/info` — database info for backup page
+- `POST /api/web/superadmin/batch/role-change`
+- `POST /api/web/superadmin/batch/deactivate`
+
+#### CSS Added
+- Superadmin layout: `.sa-app`, `.sa-sidebar`, `.sa-header`, `.sa-brand`, `.sa-topbar`, `.sa-content`, `.sa-welcome`
+- System cards: `.sa-system-cards`, `.sa-sys-card`, `.sa-sys-accent`, `.sa-sys-body`, `.sa-sys-dot`
+- Summary stats: `.sa-summary-row`, `.sa-stat-card`, `.sa-stat-accent`
+- Health cards: `.sa-health-grid`, `.sa-health-card`, `.sa-health-accent`
+- Activity feed: `.sa-activity-list`, `.sa-activity-item`
+- User management: `.sa-users-toolbar`, `.sa-filter-group`
+- Analytics: `.sa-analytics-cards`, `.sa-analytics-card`
+- Notifications: `.sa-notif-toolbar`, `.sa-notif-badge`
+- Search: `.sa-search-bar`, `.sa-search-detail`
+- Journey timeline: `.sa-journey-stage`, `.sa-journey-dot-col`, `.sa-journey-dot`, `.sa-journey-line`, `.sa-journey-card`
+- Permissions: `.sa-perm-table`, `.sa-perm-check`, `.sa-perm-cross`
+- Backup: `.sa-backup-row`, `.sa-backup-accent`, `.sa-backup-info`
+- Batch operations: `.sa-batch-form`, `.sa-batch-result`
+- Quick launch: `.sa-launch-grid`, `.sa-launch-card`
+- Responsive breakpoints for all new sections at 768px and 480px
+
+#### New SVG Icons
+- `activity`, `database`, `zap`, `eye`, `layers`, `archive`, `play`
+
+#### Files Changed
+- `shared/api/web/routes.py` — 16 new superadmin API endpoints
+- `shared/api/web/static/js/app.js` — superadmin app shell + 13 page implementations (~900 lines added)
+- `shared/api/web/static/css/style.css` — comprehensive superadmin styles (~200 lines added)
+
+---
+
+## [7.27.0] — 2026-03-13
+
+### Removed — Old Web Portal
+
+Consolidated the standalone web portal into the unified API server's web frontend (added in 7.26.0).
+
+- **Deleted `shared/web_portal/`** — removed `app.py`, `__init__.py`, and `__pycache__/` (old Jinja2-based portal on port 8080)
+- **Removed `[5] Portal` menu option** from `run.py` interactive launcher
+- **Removed `--portal` CLI flag** from `run.py` argument parser
+- **Removed `run_unified_portal()` function** and all portal entries from the dispatch table
+- **Updated university system routes** — root redirect and `web_portal` endpoint now point to `/web/login`
+- The web dashboard is now accessible via the API server (`--api` / option 3) at `/web/login`
+
+---
+
+## [7.26.0] — 2026-03-13
+
+### Added — Web Login & Dashboard Frontend
+
+Full browser-based login screen and dashboard served from the unified API server at `/web/login`.
+
+#### Login & Authentication
+- **Login page** with username/password form, styled with gradient background and Inter font
+- **MFA support** — 6-digit TOTP verification screen with back-to-login option
+- **JWT token management** — access + refresh tokens stored in localStorage with automatic refresh on 401
+- **Session persistence** — stays logged in across page reloads
+
+#### System Picker (Superadmin)
+- **2x2 grid layout** showing all 4 systems (University, College, Secondary, Primary) with icons, role badges, and descriptions
+- **Sign Out button** positioned in top-right corner
+- **Single-system users skip the picker** — users with access to only one system go straight to the dashboard
+
+#### Dashboard
+- **Stats cards** — total students/pupils, courses, attendance rate, assessments (live from system databases)
+- **Attendance breakdown** — bar chart showing present/late/absent percentages
+- **Quick actions** — one-click navigation to Students, Courses, Attendance, Grades, Reports
+- **Recent enrollments table** with student name, course, date, and status badges
+
+#### Data Pages
+- **Students/Pupils** — full list with ID, name, email, year/group, status; client-side search filtering
+- **Courses** — code, name, department, credits, status
+- **Attendance** — date, student, course, status with colour-coded badges
+- **Grades** — student, course, assessment type, grade, date
+- **Reports** (staff/admin) — aggregate stats, grade distribution, attendance by status
+- **User Management** (admin) — all auth users with system/role badges, active status, search
+
+#### Account Settings
+- **Change password** form with validation (12+ chars, uppercase, lowercase, digit, special)
+- **Account info** display — username, display name, user ID, system access
+
+#### Architecture
+- **SPA** — single `index.html` with vanilla JS (`app.js`), no framework dependencies
+- **Flask blueprint** (`shared/api/web/routes.py`) serves static files and data API endpoints
+- **Data endpoints** query real system SQLite databases: `/api/web/dashboard/<system>`, `/api/web/students/<system>`, etc.
+- **Role-based access control** — students can't access student list or reports; only admins see user management
+- **Responsive sidebar** with collapsible mobile menu
+- **CSP updated** to allow Google Fonts (Inter) from `fonts.googleapis.com` / `fonts.gstatic.com`
+
+#### Files Added
+- `shared/api/web/__init__.py`, `routes.py` — blueprint + 7 data endpoints
+- `shared/api/web/templates/index.html` — SPA entry point
+- `shared/api/web/static/css/style.css` — full responsive stylesheet
+- `shared/api/web/static/js/app.js` — complete SPA (~600 lines)
+
+---
+
+## [7.25.0] — 2026-03-13
+
+### Changed — Unified API & Portal Architecture
+
+Major consolidation of API and portal infrastructure into a single shared module with unified authentication.
+
+#### API Consolidation
+- **Moved all API files** from 4 separate locations (`college_system/api/`, `secondary_school/api/`, `primary_school/api/`, `university_system/api/`) into `shared/api/{college,secondary,primary,university}/` (225 files)
+- **Fixed all imports** across the codebase to reference the new `education_system.shared.api.*` paths
+- **Removed old `api/` directories** from each subsystem
+
+#### Unified API Server
+- **Single API server** (`shared/api/unified_server.py`) serves all systems on one port (5000)
+- System routes mounted under prefixed paths: `/api/college/*`, `/api/school/*`, `/api/primary/*`
+- **Removed system selection menu** for API mode — selecting `[3] API` now launches the unified server directly
+- Index route at `/` returns system endpoints and auth URL
+
+#### Unified API Authentication
+- **Single login endpoint** (`shared/api/auth.py`) at `POST /api/auth/login` for all systems
+- JWT contains the user's full system access list (`systems: [{system_key, role}, ...]`)
+- Access + refresh token pair issued on login with token rotation on refresh
+- `POST /api/auth/mfa/verify` — MFA challenge completion
+- `POST /api/auth/refresh` — token refresh with rotation
+- `POST /api/auth/register` — admin-only user creation with multi-system access
+- `token_required`, `role_required`, `system_required` decorators for route protection
+- Per-system `auth.py` files now delegate to the shared auth module
+- Old per-system auth blueprints removed from `ALL_BLUEPRINTS`
+
+#### Unified Web Portal
+- **Single portal** at port 8080 with unified login (no system dropdown)
+- After login, users with multiple systems see a card-based system picker with icons
+- Users with single-system access skip the picker and go straight to the dashboard
+- "Switch System" nav link to change between systems without logging out
+- Portal resolves each system's DB path dynamically via `_resolve_db_path()`
+- Root `/` and `/portal` routes redirect to `/portal/login`
+- Login validates user has access to the selected system
+
+### Removed
+- `college_system/api/` directory (moved to `shared/api/college/`)
+- `secondary_school/api/` directory (moved to `shared/api/secondary/`)
+- `primary_school/api/` directory (moved to `shared/api/primary/`)
+- `university_system/api/` directory (moved to `shared/api/university/`)
+- Per-system auth blueprints from route registrations
+- System selection menu when launching API mode
+- Per-system portal launchers (`run_college_portal`, `run_school_portal`, etc.) replaced by `run_unified_portal`
+
+---
+
+## [7.24.0] — 2026-03-13
+
+### Added — 20 Shared Infrastructure Improvements
+
+Major infrastructure expansion across the entire education system, adding shared modules in `education_system/shared/` that benefit all four subsystems (university, college, secondary, primary).
+
+#### Architecture & Patterns
+- **DB context manager** (`shared/auth/db.py`): `get_connection()` context manager with auto-commit/rollback and guaranteed `conn.close()`
+- **Base service class** (`shared/base/service.py`): `BaseService` with generic CRUD operations (get_by_id, list_all, search, insert, update, delete), column validation, and connection management
+- **Base GUI classes** (`shared/base/gui.py`): `BaseModuleGUI` with tabbed layout, search bar, status bar, and treeview helpers; `BaseCRUDDialog` with auto-generated modal forms
+- **Migration framework** (`shared/migrations/runner.py`): `MigrationRunner` with versioned SQL/Python migrations, `_migrations` tracking table, and `@migration` decorator
+
+#### API & Security
+- **Rate limiting** (`shared/api/rate_limiter.py`): Per-IP token-bucket rate limiter with `X-RateLimit-*` headers, `429` responses, and Flask `init_app()` integration — enabled on college, secondary, and primary API servers
+- **JWT refresh tokens** (`shared/api/jwt_utils.py`): `JWTManager` with access/refresh token pairs, token rotation on refresh, revocation, and expired token cleanup
+- **Health check endpoints** (`shared/api/health.py`): `/api/health` (full), `/api/health/ready`, `/api/health/live` Flask blueprint — integrated into all 3 Flask API servers, Dockerfile, and docker-compose healthcheck
+- **API middleware** (`shared/api/middleware.py`): `X-Request-ID` tracking, `X-Response-Time` header, and request logging — registered on college, secondary, and primary APIs
+- **Async API adapter** (`shared/api/async_adapter.py`): `AsyncFlaskRunner` wrapping Flask WSGI in aiohttp with `run_in_executor()` and `make_async_handler()` decorator
+
+#### Observability & Compliance
+- **Centralized audit logging** (`shared/audit/logger.py`): `AuditLogger` with `AuditAction` enum (auth, data, GDPR, safeguarding events), SQLite-backed append-only `audit_log` table with indexed queries
+
+#### Reporting & Data
+- **Reporting engine** (`shared/reporting/engine.py`): `ReportEngine` generating PDF (reportlab), Excel (openpyxl), and CSV reports with consistent branding across all systems
+- **Student data portability** (`shared/transfer/portability.py`): `StudentDataExporter`/`StudentDataImporter` supporting JSON, CSV, and UK Common Transfer File (CTF) v18.0 XML format
+- **Dashboard analytics engine** (`shared/analytics/engine.py`): `AnalyticsEngine` with `attendance_summary()`, `grade_distribution()`, `at_risk_students()`, and `system_overview()` methods
+
+#### Real-Time & Portal
+- **Real-time notifications** (`shared/notifications/realtime.py`): `NotificationBroker` with Server-Sent Events (SSE), per-user and broadcast channels, keepalive pings
+- **Self-service web portal** (`shared/web_portal/app.py`): Flask-based responsive portal with login, dashboard stats, attendance badges, and grades view — launchable via `run.py --portal`
+
+#### Testing
+- **Cross-system integration tests** (`shared/tests/test_cross_system.py`): 9 test classes covering shared auth, audit logging, migrations, portability, reporting, rate limiting, health checks, and demo seeding
+- **GUI testing utilities** (`shared/testing/gui_helpers.py`): `GUITestCase` with auto Tk root, `pump_events()`, widget finders, `simulate_click()`/`simulate_type()`, and `get_treeview_data()`
+- **Service test helpers** (`shared/testing/service_helpers.py`): `ServiceTestCase` with temp DB, schema init, and assertion helpers
+
+#### DevEx & CI/CD
+- **Database seeding CLI** (`shared/seeding/seeder.py`): `DemoSeeder` generating realistic UK students, courses, enrollments, attendance, and grades per system — launchable via `run.py --seed`
+- **Makefile** (project root): Multi-system dev commands — `make test`, `make lint`, `make seed`, `make portal`, `make docker-up`, `make ci`, per-subsystem test targets
+- **CI coverage tracking** (`.github/workflows/ci.yml`): Tests across all 5 test directories with `--cov-fail-under=30`, HTML/XML coverage artifacts, `--timeout=60`, `-m "not slow and not gui"` markers
+
+### Changed
+- Docker healthcheck updated to use `/api/health/live` endpoint
+- `docker-compose.yml` app service now includes healthcheck configuration
+- `run.py` extended with `--portal` and `--seed` CLI flags and portal launcher functions
+
+---
+
+## [7.23.0] — 2026-03-12
+
+### Added — Super Admin Dashboard: 15 Features
+
+Major expansion of the shared superadmin dashboard (`shared/gui/superadmin_dashboard.py`) from 8 sidebar sections to 15, with full backend support in `shared/admin_portal/admin_service.py`.
+
+#### User Management Actions (CRUD)
+- Create User dialog with username, display name, email, password, and per-system role checkboxes
+- Edit User dialog to update display name, email, active status, and system/role assignments
+- Reset Password button with bcrypt re-hashing and legacy salt cleanup
+- Deactivate User button with confirmation prompt
+- All four actions accessible from the User Management toolbar
+
+#### Send Notifications & Broadcast
+- Send Notification dialog: target a specific user by ID with title, message, priority, and system
+- Broadcast to Role dialog: send an announcement to all users with a given role in a target system
+- Both dialogs wired to `CrossSystemNotificationService.send()` and `send_to_role()`
+
+#### Export Buttons
+- Analytics page: "Export CSV" button calls `AnalyticsService.export_summary_csv()` with file-save dialog
+- Audit Log page: "Export CSV" button exports filtered audit entries to CSV
+
+#### Audit Log Filtering
+- Type filter dropdown (All / notification / transfer)
+- Date range inputs (From / To) defaulting to last 30 days
+- Text search on description and details fields
+- Backend `get_audit_summary()` enhanced with `type_filter`, `search_text`, `date_from`, `date_to` parameters (backward-compatible)
+
+#### Auto-Refresh with Dialog Awareness
+- Dashboard and System Health sections refresh every 60 seconds
+- Refresh defers automatically when a modal dialog (Toplevel) is open to prevent UI conflicts
+- Timer properly cancelled on logout and window close
+
+#### Backup / Restore Section
+- Per-system database backup buttons creating timestamped copies via `shutil.copy2`
+- Shared auth database backup button
+- Status labels showing backup file names on success
+
+#### Health Alert Thresholds
+- Configurable thresholds: maximum DB size (MB) and minimum active student count
+- Live alert display showing warnings for systems exceeding thresholds or reporting errors
+- Alerts refresh on threshold save
+
+#### Permission Matrix View
+- New sidebar section showing all users in a table with one column per system (Primary, Secondary, College, University)
+- Each cell shows the user's role in that system or an em dash if not assigned
+- Provides an at-a-glance view of cross-system permissions
+
+#### Student Journey Timeline
+- Search by student name or ID across all 4 systems
+- Visual vertical timeline with colour-coded dot and connecting line per stage
+- Each stage card shows system name, student ID, status, enrollment date, year group
+- Academic history entries displayed as sub-items
+
+#### Drill-Down Analytics
+- Year-over-year trends table showing student counts by year per system
+- Cross-system comparison cards combining health data (students, staff, DB size) with retention metrics (retained %, dropout %)
+
+#### Batch Operations Section
+- Bulk Role Change: select system, current role, and new role — applies to all matching users with confirmation
+- Bulk Deactivation: select system and role — deactivates all active matching users with confirmation
+
+#### Active Sessions Section
+- Table of active sessions showing username, user ID, token preview, created/expires timestamps
+- Force Logout button to terminate all sessions for a selected user
+- Refresh button to reload session data
+- Backend: `get_active_sessions()` and `force_logout_user()` methods added to AdminService
+
+#### i18n Framework
+- `_t(key, default)` translation helper function with JSON locale file support
+- `load_translations(locale)` loads from `shared/data/locales/<locale>/superadmin_dashboard.json`
+- All navigation labels and header title wired through `_t()` with English defaults
+- Ready for locale JSON files to enable multi-language support
+
+#### About Dialog
+- "About" button in header bar
+- Shows application name, version (v7.22.0), description, and tech stack
+
+### Added — Shared Service Tests (38 tests)
+
+New test suite at `education_system/shared/tests/` covering the three core shared services:
+
+#### AdminService (20 tests)
+- System health: returns all 4 systems, counts students and staff correctly
+- User management: get summary, get all users, filter by system/role, create user, duplicate detection, update user, deactivate, reset password, update system assignments
+- Backup: creates timestamped file, raises on invalid system
+- Audit log: empty results, filter combinations
+- Sessions: get active sessions, force logout
+- System config: returns correct structure
+
+#### AnalyticsService (10 tests)
+- Summary: total students, active/graduated/transferred counts, per-system breakdown
+- Retention: stats for all 4 systems with percentage calculations
+- Year trends: returns data grouped by enrollment year
+- Transfer rates: returns list (empty when no transfer history table)
+- CSV export: produces valid CSV string with all sections
+
+#### CrossSystemNotificationService (8 tests)
+- Send: returns notification dict, respects priority parameter
+- Broadcast: sends to all users with target role (verified count)
+- Retrieve: empty unread, unread after send, unread count, get all with limit
+- Mark read: single notification, mark all read
+
+### Changed — Shared Module Exports
+- `shared/cross_system/__init__.py` now exports `JourneyService`
+- `shared/notifications/__init__.py` now exports `CrossSystemNotificationService`
+
+### Changed — Configuration
+- `pyproject.toml`: added `education_system/shared/tests` to pytest `testpaths`
+
+### Added — AdminService Backend Methods
+- `create_user(username, display_name, email, password, systems_roles)` — bcrypt-hashed, with user_systems
+- `update_user(user_id, display_name, email, is_active)` — partial updates
+- `deactivate_user(user_id)` — sets is_active=0
+- `reset_password(user_id, new_password)` — bcrypt hash, clears legacy_salt
+- `update_user_systems(user_id, systems_roles)` — replaces system/role assignments
+- `backup_database(system)` — timestamped shutil.copy2 backup
+- `get_active_sessions()` — lists active sessions with username join
+- `force_logout_user(user_id)` — deletes all sessions for a user
+
+---
+
+## [7.22.0] — 2026-03-12
+
+### Fixed — College Student Creation Bugs
+
+#### Foreign Key Constraint Failed on Student Creation
+- `student_gui.py` `_on_add()` called `auth.create_user()` which creates a user in the **shared auth DB** (`auth.db`), then set that shared auth user ID on the student record — but `students.user_id` FK references the **college local** `users` table where that ID doesn't exist
+- Fix: now creates user in both shared auth DB (with `systems=[("college", "student")]`) and college local `users` table, using the local ID for the student FK
+
+#### Unique Constraint Failed on `students.student_id`
+- `_generate_student_id()` used `ORDER BY id DESC LIMIT 1` to find the last student ID — if students were deleted, the highest auto-increment `id` row might not have the highest `student_id` number, causing collisions
+- Fix: now uses `MAX(CAST(REPLACE(student_id, prefix, '') AS INTEGER))` to find the actual highest student ID number
+
+#### Password Too Short for Account Creation
+- Generated password format `{FirstName}{4digits}!` (e.g. "Tom1234!") was only 9 characters, below the 12-character minimum
+- Fix: password now uses `{FirstName}{LastName}{4digits}!` with a minimum length guarantee
+
+### Fixed — Transfer Notifications Not Appearing in Email Inbox
+
+Transfer notifications were written to `notifications` tables but admins check their **email/messages inbox** which reads from separate tables (`messages`, `emails`, `email_log`).
+
+#### All Three Transfer Paths Updated
+- **University→College**: now also inserts into college `messages` table alongside `notifications`
+- **College→Secondary**: now also inserts into secondary `emails` table alongside `notifications`
+- **Secondary→Primary**: now also inserts into primary `email_log` table alongside `notifications`
+
+### Fixed — Messaging & Notifications Show Empty for Logged-In Admin (College)
+
+#### Shared Auth vs Local User ID Mismatch in GUI Queries
+- `MessageFrame._get_user_id()` and `NotificationFrame._get_user_id()` returned the **shared auth** user ID (e.g. 30 for `admin1`) but queried the college local `messages`/`notifications` tables which use **local** user IDs (e.g. 8)
+- Fix: both frames now resolve the local college user ID via username lookup in the college `users` table
+- Also fixed guard that skipped lookup when `db_path` is `None` (always the case when launched via `run.py` — `connect(None)` correctly falls back to the default DB path)
+
+---
+
+## [7.21.0] — 2026-03-12
+
+### Changed — College System Sidebar Navigation
+
+The college system main GUI has been redesigned with a persistent sidebar navigation panel, replacing the flat grid of buttons on the dashboard.
+
+#### Sidebar Layout
+- Two-panel layout using `tk.PanedWindow`: scrollable sidebar (left, 250px) + content area (right)
+- Dark-themed sidebar (`#1a2332`) with 14 collapsible sections grouping all ~130 modules:
+  - Students & Learning, Courses & Curriculum, Teaching & Quality, Pastoral & Welfare, Exams & Reports, Staff, Communication, Student Life, Parents & Community, Finance & Resources, Administration, Compliance & Safety, Accessibility, Cross-System Tools
+- Section headers show item count badge and toggle with click (arrow indicator)
+- Buttons highlight on hover and show active state (blue) for the current module
+- Breadcrumb bar at top of content area shows current location (e.g. "Staff > Cover")
+- Role-based filtering — sections with no visible items for the user's role are hidden
+- Sidebar hidden on login screen, appears after authentication
+- Mousewheel scrolling works anywhere over the sidebar (bound to outer frame, not just canvas)
+- Scroll region updates dynamically when sections expand/collapse
+
+#### Dashboard Simplified
+- Navigation buttons removed from dashboard (now in sidebar)
+- Quick Actions row added with 6 shortcut buttons (Students, Courses, Attendance, Timetable, Messages, Reports)
+- Stat cards now have per-card accent colours
+- "Getting Started" tip card explains sidebar navigation
+
+### Fixed — Multiple Bug Fixes
+
+#### Auth Object Not Propagated to Frames (College System)
+- When launching college via universal login, `shared_auth` replaced `app._auth` but all frames still held references to the old, never-logged-in `UserAuth` — causing "not logged in" errors
+- Fix: after setting `app._auth = shared_auth`, all frame `_auth` references are now updated
+
+#### NoneType Subscript Errors in College GUI Frames
+- `message_gui.py` — added `_get_user_id()` helper with null guard on `current_user` (4 access points)
+- `notification_gui.py` — same pattern (3 access points)
+- `assignment_gui.py` — inline null guards on `current_user` access (3 lines)
+- `timetable_gui.py` — inline null guard (1 line)
+- Root cause: `refresh()` called during frame init before login, when `current_user` is `None`
+
+#### Student Self-Service Portal Auth Handling
+- `portal_gui.py` — added `_resolve_auth()` helper to handle `auth` being either a dict or `UserAuth` object
+
+#### Student Dialog Frame Padding Error
+- `student_gui.py` — fixed `pady=(10, 0)` in `tk.Frame` constructor (tuples only valid in `pack()`/`grid()`)
+
+### Fixed — Cross-System Transfer Notifications Not Delivered
+
+Transfer notifications were being sent via the source system's email service to admin email addresses that don't exist in that system's user database, so no inbox messages were created.
+
+#### University→College Transfer
+- Replaced university `send_email()` call with two-step notification:
+  1. Cross-system notification via `CrossSystemNotificationService.send_to_role()` (visible in Cross-System Notifications module)
+  2. College-local notification inserted directly into college DB `notifications` table, using username lookup to resolve local user IDs
+
+#### College→Secondary Transfer
+- Same two-step pattern: cross-system notification + secondary-local notification
+- Replaced `NotificationService(self._db_path).send()` which was sending to shared auth user IDs (wrong DB)
+
+#### Secondary→Primary Transfer
+- Same two-step pattern: cross-system notification + primary-local notification
+- Replaced `EmailService.send()` which required a sender_id that wasn't always available
+- Primary notifications use `notification_type='Info'` column (different schema from other systems)
+
+---
+
+## [7.20.0] — 2026-03-12
+
+### Changed — Legacy Language Selectors Removed & Switch System Restricted
+
+#### Legacy Language Selectors Removed
+- Removed "Change Language" button from university system GUI header
+- Removed Language menu from college system File menu
+- Replaced legacy `gui_language_selector.py` and `language_selector.py` in the university system with thin shims that delegate to the shared i18n module — 70+ files that import `create_language_menu_button` or `show_gui_language_selector` continue to work without changes
+- University no longer shows its own language selector on startup — uses the shared one chosen at `run.py` launch
+- College i18n automatically synced with the shared language choice
+
+#### Switch System Button — Superadmin Only
+- "Switch System" button/menu item now only visible to superadmin users (admin in all 4 systems) across all 4 systems:
+  - Primary: sidebar button conditionally rendered
+  - Secondary: sidebar button conditionally rendered
+  - College: File menu item starts disabled, enabled after login for superadmin
+  - University: header button conditionally rendered
+- `systems` list now passed through to user dicts in primary, secondary, and college launchers so superadmin detection works
+- "Super Admin Dashboard" button added to all 4 switch system dialogs (visible only to superadmin)
+
+### Fixed
+- Language selector GUI no longer breaks subsequent tkinter windows — standalone mode now uses `tk.Tk` directly instead of a `Toplevel` on a temporary hidden root, ensuring clean Tcl interpreter state for the login window
+- Fixed `__superadmin__` switch routing in `run.py` — no longer falls through to "Switching to..." print and system access check; handled immediately via `continue` back to the dashboard handler
+
+---
+
+## [7.19.0] — 2026-03-12
+
+### Added — Unified i18n Support Across All Systems
+
+Language selection is now shown at the very start of `run.py`, before the login screen, and the choice is shared across all 4 education systems.
+
+#### 13 Supported Languages
+English, Español, Français, Deutsch, 中文, العربية, Português, Русский, 日本語, 한국어, Cymraeg (Welsh), Polski, اردو (Urdu)
+
+#### Shared i18n Module (`education_system/shared/i18n/`)
+- `core.py` — unified i18n engine with dot-notation key lookup, deep merge of multiple locale directories, fallback chain (current lang → English → default → key), format string support
+- `selector_gui.py` — tkinter language selector dialog (400x500, dark header, listbox with native language names)
+- `selector_cli.py` — CLI language selector menu with numbered list
+- Language preference persisted to `shared/data/config/language_config.json`
+- `add_locale_dir()` API allows each subsystem to layer system-specific translations on top of shared ones
+
+#### Shared Locale Files (`education_system/shared/data/locales/`)
+- `{lang}/common.json` for all 13 languages
+- Covers: login, MFA, system picker, common UI labels, shared module names, roles, switch system, superadmin dashboard strings
+
+#### Integration
+- `run.py` shows language selector immediately on startup (GUI dialog for GUI mode, CLI menu for CLI mode, silent load for API/test)
+- University system no longer shows its own language selector — uses the shared choice
+- College system i18n synced with shared choice via `_init_college_i18n()`
+- Secondary and primary school systems can now access translations via `from education_system.shared.i18n import t`
+
+#### New Files
+- `education_system/shared/i18n/__init__.py`
+- `education_system/shared/i18n/core.py`
+- `education_system/shared/i18n/selector_gui.py`
+- `education_system/shared/i18n/selector_cli.py`
+- `education_system/shared/data/locales/{en,es,fr,de,zh,ar,pt,ru,ja,ko,cy,pl,ur}/common.json`
+
+---
+
+## [7.18.0] — 2026-03-12
+
+### Added — Super Admin Dashboard
+
+Superadmin users now see a full management dashboard instead of just the system selection screen.
+
+#### Dashboard Features
+- **Overview**: 4 color-coded system cards (student/staff counts, DB size, status), summary metrics, recent activity feed
+- **System Health**: per-system status cards with DB info, counts, last activity, and status badges
+- **User Management**: filterable Treeview of all users across systems with system/role/search filters
+- **Student Analytics**: cross-system student counts, transfer rates, retention statistics
+- **Cross-System Notifications**: inbox with unread count badge and mark-all-read
+- **Student Search**: search across all 4 databases, view details on selection
+- **Audit Log**: recent transfers and cross-system activity timeline
+- **Quick Launch**: 4 large color-coded buttons to drill into individual systems; returns to dashboard when system is closed
+
+#### Integration
+- `UniversalLoginWindow` detects superadmin (admin in all 4 systems) and routes to dashboard via `system_key="__superadmin__"`
+- `run.py` dispatch loop handles `__superadmin__` by launching `SuperAdminDashboard` window
+- After closing a launched system, superadmin returns to the dashboard (not exit)
+- Logout from dashboard returns to login screen
+
+#### New Files
+- `education_system/shared/gui/superadmin_dashboard.py` — `SuperAdminDashboard(tk.Tk)` standalone window
+
+---
+
+## [7.17.0] — 2026-03-12
+
+### Added — 14 Cross-System Shared Modules (GUI + CLI)
+
+Comprehensive suite of shared tools available across all 4 education systems, each with both a tkinter GUI sidebar module and a CLI text-menu interface.
+
+#### Data & Reporting
+- **Cross-System Analytics Dashboard** (`shared/analytics/`) — aggregate metrics across all systems: total students, transfer rates, retention stats, year-over-year trends, CSV export
+- **Student Outcome Tracking** (`shared/outcomes/`) — track what happens to students after they transfer: destination performance, grade averages, progression statistics
+- **Predictive Alerts** (`shared/predictive/`) — flags at-risk students based on attendance (<80%), low grades, and transfer instability from previous systems; risk scored as High/Medium/Low
+
+#### Transfer Improvements
+- **Bulk Transfer** (`shared/bulk_transfer/`) — transfer multiple students at once (e.g., entire Year 6 class to secondary); auto-detects eligible students by year group, extracts academic history in batch
+- **Transfer Documents** (`shared/transfer_docs/`) — generates formatted transition reports with student info, academic summary, attendance, SEN status, and transfer details; save to file
+- **Reverse Lookup** (`shared/reverse_lookup/`) — from a source system, find where transferred students ended up; shows destination system, current status, grade summary, and aggregate destination statistics
+
+#### Communication
+- **Parent Account Continuity** (`shared/parent_continuity/`) — when a student transfers, detect unlinked parent accounts and link them to the destination system in the shared auth DB
+- **Cross-System Calendar** (`shared/calendar/`) — shared events calendar stored in auth DB; supports event types (open day, transition, training, holiday, meeting), per-system targeting, month view, and upcoming events
+- **Inter-System Messaging** (`shared/messaging/`) — teacher-to-teacher messaging about specific students across systems; inbox/sent/compose with staff directory lookup per system
+
+#### Admin & Compliance
+- **Central Admin Portal** (`shared/admin_portal/`) — superadmin dashboard showing system health (DB sizes, student/staff counts), cross-system user management, audit log of transfers and notifications
+- **GDPR Compliance** (`shared/gdpr/`) — cross-system student data search, Subject Access Request report generation, student data anonymisation (with typed-name confirmation), data retention reports
+- **Shared Document Storage** (`shared/documents/`) — documents (EHCPs, medical, safeguarding, transcripts) that follow students across systems; file upload/download with metadata stored in auth DB
+
+#### Student-Facing
+- **Student Self-Service Portal** (`shared/student_portal/`) — students view their own journey, records (grades/attendance per system), and submit record requests (transcript, data export, correction); admin can view and resolve pending requests
+- **Digital Transcript** (`shared/transcript/`) — auto-generates a comprehensive transcript pulling data from all systems attended; includes personal info, educational history per system, grades, attendance percentages, qualifications; save to file or copy to clipboard
+
+#### Module Registration
+- All 14 modules registered in GUI sidebars of all 4 systems (primary, secondary, college, university)
+- All 14 modules registered in CLI menus of all 4 systems under "Cross-System Tools"
+- Role access: admin gets all modules; staff/teachers get all except Central Admin Portal and GDPR Compliance; students get Self-Service, Transcript, and Calendar; parents get Calendar and Transcript
+
+#### New Files (42 files across 14 packages)
+Each package in `education_system/shared/` contains: `__init__.py`, `*_service.py`, `*_gui.py`, `*_cli.py`
+- `shared/analytics/` (analytics_service, analytics_gui, analytics_cli)
+- `shared/outcomes/` (outcomes_service, outcomes_gui, outcomes_cli)
+- `shared/predictive/` (predictive_service, predictive_gui, predictive_cli)
+- `shared/bulk_transfer/` (bulk_transfer_service, bulk_transfer_gui, bulk_transfer_cli)
+- `shared/transfer_docs/` (transfer_docs_service, transfer_docs_gui, transfer_docs_cli)
+- `shared/reverse_lookup/` (reverse_lookup_service, reverse_lookup_gui, reverse_lookup_cli)
+- `shared/parent_continuity/` (parent_service, parent_gui, parent_cli)
+- `shared/calendar/` (calendar_service, calendar_gui, calendar_cli)
+- `shared/messaging/` (messaging_service, messaging_gui, messaging_cli)
+- `shared/admin_portal/` (admin_service, admin_gui, admin_cli)
+- `shared/gdpr/` (gdpr_service, gdpr_gui, gdpr_cli)
+- `shared/documents/` (document_service, document_gui, document_cli)
+- `shared/student_portal/` (portal_service, portal_gui, portal_cli)
+- `shared/transcript/` (transcript_service, transcript_gui, transcript_cli)
+
+#### Schema Changes
+- `cross_system_events` table added to shared auth DB (calendar)
+- `cross_system_messages` table added to shared auth DB (messaging)
+- `cross_system_documents` table added to shared auth DB (documents)
+- `student_record_requests` table added to shared auth DB (student portal)
+
+---
+
+## [7.16.0] — 2026-03-12
+
+### Added — Deep Cross-System Integration
+
+Four major features that fully link all four education systems (Primary → Secondary → College → University) into a unified platform.
+
+#### 1. Academic History Transfer
+- When importing a student from a previous system, their academic history (grades, attendance, exam results) is now automatically extracted and stored
+- **Secondary ← Primary**: Extracts assessments, SATs results, phonics results, and attendance records
+- **College ← Secondary**: Extracts grades, exam results, and attendance records
+- **University ← College**: Extracts grades and attendance session/record data
+- History stored as JSON in new `academic_transfer_history` table in each destination database
+- Extraction failures are handled gracefully and never block the transfer process
+
+#### 2. Previous System ID Tracking
+- New `previous_system` and `previous_system_id` columns added to the `students` table in secondary, college, and university databases
+- When a student is imported, these fields are populated to maintain a link back to their record in the source system
+- Enables tracing a student's full path across systems (e.g., `previous_system='primary'`, `previous_system_id='PRI0001'`)
+- Schema migration runs automatically on startup — existing records are unaffected
+
+#### 3. Cross-System Student Journey Dashboard
+- New shared module (`education_system/shared/cross_system/`) available in all 4 systems' sidebars
+- **Search**: Find a student across all 4 databases by name
+- **Journey Timeline**: Visual timeline showing each stage of a student's educational journey
+- Each stage displays: system name, student ID, year group, status, and key dates
+- Academic transfer history shown inline when available
+- Follows `previous_system_id` links to reconstruct the full path automatically
+- Handles missing databases gracefully (e.g., if only college and university are deployed)
+
+#### 4. Shared Cross-System Notifications
+- New shared module (`education_system/shared/notifications/`) for admin-to-admin messaging across systems
+- `CrossSystemNotificationService`: send notifications to specific users or broadcast to a role in any system
+- `CrossSystemNotificationsFrame`: sidebar GUI with inbox, detail view, and compose dialog
+- Notification data stored in shared auth database (`cross_system_notifications` table)
+- Admin and staff users can send messages; all users can view their notifications
+- Unread count badge, mark-as-read, mark-all-read functionality
+
+#### Module Registration
+- "Student Journey" and "Cross-System Notifications" added to admin/staff sidebar in all 4 systems
+- Both modules follow the standard frame pattern (`parent, db_path=None, auth=None`)
+
+#### New Files
+- `education_system/shared/transfer/academic_history.py` — history extraction functions for all 3 source systems
+- `education_system/shared/cross_system/__init__.py`
+- `education_system/shared/cross_system/journey_service.py` — multi-DB query service
+- `education_system/shared/cross_system/journey_dashboard.py` — tkinter journey dashboard GUI
+- `education_system/shared/notifications/__init__.py`
+- `education_system/shared/notifications/service.py` — cross-system notification service
+- `education_system/shared/notifications/gui.py` — notification inbox GUI
+
+#### Schema Changes
+- `academic_transfer_history` table added to secondary, college, and university databases
+- `previous_system TEXT` and `previous_system_id TEXT` columns added to `students` table in secondary, college, and university
+- `cross_system_notifications` table added to shared auth database
+
+---
+
+## [7.15.0] — 2026-03-12
+
+### Added — Admin Notification on Student Transfer
+
+When a student is transferred between systems, the admin user(s) of the source system are now automatically notified.
+
+#### University System (student imported from College)
+- After marking a college student as transferred, emails all active college admin users via the university email service (`send_email`)
+- Email includes: student name, old college student ID, new university student ID, and transfer confirmation
+
+#### College System (student imported from Secondary School)
+- After marking a secondary student as transferred, sends an in-app notification to all active secondary school admin users via `NotificationService.send()`
+- Notification includes: student name, old secondary ID, new college student ID
+
+#### Secondary School System (student imported from Primary School)
+- After marking a primary pupil as transferred, sends an internal email to all active primary school admin users via `EmailService.send()`
+- Email includes: pupil name, old primary pupil ID, new secondary student ID
+
+#### Implementation Details
+- Admin users are looked up from the shared auth database (`user_systems` table) by `system_key` and `role = 'admin'`
+- All notification sending is wrapped in try/except so failures never block the transfer process
+- Each system uses its native messaging mechanism (university: SMTP/DB email, college: notifications, secondary: internal email)
+
+---
+
+## [7.14.0] — 2026-03-12
+
+### Added — MFA Setup for College, Secondary and Primary Systems
+
+#### Secondary School System
+- **MFA Verify Dialog** — new `MFAVerifyDialog` shown during login when a user has MFA enabled; accepts 6-digit TOTP codes or recovery codes
+- **MFA Settings module** — new sidebar module accessible to all roles (admin, teacher, student) for setting up, disabling, and managing TOTP-based MFA
+- **Login integration** — `LoginWindow._on_login()` now checks for `mfa_required` in the auth response and presents the verify dialog before completing login
+
+#### Primary School System
+- **MFA Verify Dialog** — same TOTP verification dialog integrated into the primary school login flow
+- **MFA Settings module** — new sidebar module accessible to all roles (admin, staff, parent) for managing MFA
+- **Login integration** — `LoginWindow._login()` now handles the MFA challenge flow
+
+#### College System (already had MFA)
+- College system already had full MFA support (`MFAVerifyDialog`, `MFASettingsFrame`, login integration) — no changes needed
+
+#### Shared Components Used
+- Both new MFA GUIs delegate to the existing shared `MFAService` (`education_system/shared/auth/mfa_service.py`) for TOTP setup, verification, and recovery code management
+- Each system's `infrastructure/auth/mfa_service.py` re-exports the shared service
+- MFA data stored in the central shared auth database (`shared/data/db_files/auth.db`)
+
+#### MFA Settings Features (both systems)
+- Current MFA status display (enabled/disabled)
+- Recovery code count
+- Setup button — generates TOTP secret, provisioning URI, and 10 recovery codes
+- Disable button — removes all MFA data with confirmation prompt
+- Refresh button to update status
+
+---
+
+## [7.13.0] — 2026-03-12
+
+### Added — Cross-System Student Import on Create
+
+Students can now be imported from the previous education stage when creating a new student record, enabling a seamless progression pipeline across all four systems.
+
+#### University System
+- **"Import from College System"** button added to the Create Student dialog (personal info section)
+- Opens a searchable selection dialog listing all active students from the college database (`sixthform.db`)
+- Autofills first name, last name, and date of birth; user completes remaining fields (title, middle name, gender)
+- On successful creation, the student record is automatically removed from the college system
+
+#### College System
+- **"Import from Secondary School"** button added to the Add Student dialog (shown in add mode only)
+- Opens a searchable selection dialog listing all active students from the secondary school database
+- Autofills first name, last name, and date of birth
+- On successful creation, the student record is automatically removed from the secondary school system
+
+#### Secondary School System
+- **"Import from Primary School"** button added to the Add Student dialog (shown in add mode only)
+- Opens a searchable selection dialog listing all active pupils from the primary school database
+- Autofills first name, last name, and date of birth
+- On successful creation, the pupil record is automatically removed from the primary school system
+
+#### Import Dialog Features (all three systems)
+- Real-time search filtering by student name or ID
+- Scrollable listbox showing student/pupil ID, name, and date of birth
+- Source record only deleted after the new record is successfully created (safe rollback)
+
+---
+
+## [7.12.0] — 2026-03-12
+
+### Added — Full i18n (Internationalization) for College System
+
+#### Language Support
+- **10 languages supported**: English, Welsh (Cymraeg), Spanish (Español), French (Français), German (Deutsch), Polish (Polski), Urdu (اردو), Arabic (العربية), Chinese (中文), Portuguese (Português)
+- **40 locale files** created — each language has 4 JSON translation files: `gui.json`, `system.json`, `modules.json`, `api.json`
+- **In-app language switching** — new "Language / Iaith" menu in the menu bar after login; selecting a language instantly rebuilds the entire UI in the chosen language without losing the logged-in session
+
+#### GUI Integration (110 files)
+- All 110 domain GUI module files updated to use `t()` translation calls for every user-facing string: headers, buttons, labels, treeview headings, messagebox titles/messages, status bars, dialog fields, and form validation messages
+- Dashboard fully translated — welcome banner, quick statistics labels, navigation button labels all resolve via i18n keys at render time
+- Main window translated — window title, menu bar items, top bar, switch system dialog, logout/exit confirmation dialogs
+- Variable naming conflicts resolved throughout (e.g. loop variable `t` renamed to `tutor`, `tmpl`, `dtype`, `tgt` etc. to avoid shadowing the `t()` function)
+
+#### API Integration (58 files)
+- All 58 API route files updated to use `t()` for response messages (error messages, success messages, validation messages)
+
+#### i18n Module Improvements
+- Fixed `load_locale = set_language` alias placement (was before `set_language` definition, causing `NameError`)
+- Fixed `cli_main.py` import to use `set_language` directly
+- Added `_rebuild_ui()` method to `CollegeApp` for instant in-place language switching — destroys and recreates all widgets, menu bar, topbar, and 110+ module frames with the new language
+
+#### Translation Coverage
+- `gui.json` — 200+ keys covering login, main window, dashboard, MFA, and common UI elements (buttons, labels, statuses, field names)
+- `modules.json` — 1400+ keys covering all 110+ modules with per-module management headers, CRUD messages, form labels, column headings, and navigation labels
+- `api.json` — 340+ keys covering all API response messages across 40+ endpoint categories
+- `system.json` — 50 keys covering app info, auth messages, menu items, and error messages
+
+---
+
+### [7.11.0] — 2026-03-11
+
+#### Fixed — Document Manager GUI File Dialogs (Linux)
+- **File browser shows 0 compatible documents** — All file dialog `filetypes` filters used semicolons (`*.pdf;*.jpg;*.jpeg`) to separate extensions, which only works on Windows. On Linux/Tk, semicolons are treated as literal characters in the pattern, matching nothing. Replaced with space-separated patterns (`*.pdf *.jpg *.jpeg`) across 6 files: `documents.py`, `helpers.py`, `student_portal.py`, `ocr.py` (2 dialogs), and `printing_gui.py`.
+
+---
+
+## [7.10.0] — 2026-03-11
+
+#### Fixed — University Student Export
+- **Excel export crash (`Invalid extension for engine: 'excel'`)** — File save dialog used `.excel` as extension (from `"Excel".lower()`). Added explicit extension mapping so Excel exports correctly use `.xlsx`.
+- **PDF export text cutoff** — Replaced hard character truncation with reportlab `Paragraph` objects for proper text wrapping within table cells. Module column widths are now calculated dynamically to share remaining page width evenly.
+
+#### Fixed — University Batch Operations GUI
+- **`'EnhancedBatchOperationManager' object has no attribute 'db_manager'`** — Added `_DbManagerAdapter` that provides the `get_connection()`/`close()`/`db_path` interface expected by all batch operation mixins, backed by `DatabaseManager`. Fixes CSV import, Excel import, backup creation, and all other batch database operations.
+- **`no such column: compulsory_module_1`** — `update_student_modules()` tried to write module data into non-existent columns on the `students` table. Rewrote to use the `student_modules` table (DELETE + INSERT) matching the actual schema.
+- **`'BatchOperationsGUI' object has no attribute 'show_import_results'`** — Added delegation method on `BatchOperationsGUI` that forwards to `ImportManager.show_import_results()`. Fixes batch update, grade import, and module enrollment import result dialogs.
+- **`KeyError: 'student_id'` in validation results** — `show_validation_results()` expected `name` and `issues` keys but validation returns `type`, `description`, `severity`. Fixed to use `.get()` with fallbacks for all key variations.
+- **`'EnhancedBatchOperationManager' object has no attribute 'root'`** — `_show_validation_results_dialog()` in `validation.py` referenced `self.root` on the backend object. Changed to `tk.Toplevel()` without a parent reference.
+- **`FOREIGN KEY constraint failed` when merging duplicate students** — `merge_students()` now updates/deletes related records in `student_modules`, `grades`, `attendance`, and `enrollments` before deleting the duplicate student record.
+- **Missing methods: `test_rest_api_connection`, `save_rest_api_config`, `save_external_db_config`** — Added all three to `ExternalIntegrationMixin`. Config methods save to the existing `EXTERNAL_DB_CONFIG_PATH` and `EXTERNAL_API_CONFIG_PATH` files.
+
+---
+
+### [7.9.0] — 2026-03-11
+
+#### Fixed — University Email System
+- **Empty inbox** — Changed `JOIN users` to `LEFT JOIN users` in all mailbox queries (`get_inbox`, `get_sent_messages`, `get_archived_messages`) so messages are returned even when sender/recipient only exists in shared auth DB, not the legacy `users` table. Also fixed `chat.py` and `maintenance.py` with same pattern.
+
+#### Fixed — Course Management GUI
+- **`ScrolledText` not defined** — Added missing `from tkinter.scrolledtext import ScrolledText` import in `ui_setup.py`.
+- **`ACADEMIC_SYSTEMS_AVAILABLE` not defined** — Added missing import from `_imports.py` in `ui_setup.py`.
+- **`ModuleNotFoundError` on return to main menu** — Removed broken `subprocess.Popen` calls that tried to run GUI files as standalone scripts. "Return to Main Menu" now simply closes the child window.
+- **Course catalog crash (`no such column: m.capacity`)** — Removed references to non-existent `capacity` and `instructor` columns from the course catalog search query.
+- **Course details dropdown empty** — Changed query to use `COALESCE(course_code, code)` / `COALESCE(course_name, name)` so courses with NULL `course_code` but valid `code` column appear in the dropdown.
+- **Search dialog closes immediately** — Added `self.dialog.wait_window()` to `AdvancedSearchDialog` so it blocks until the user submits or cancels.
+- **15 phantom courses with None code/name in Manage Course Status** — Added `WHERE COALESCE(course_code, code) IS NOT NULL AND COALESCE(course_name, name) IS NOT NULL` filter to `ManageCourseStatusDialog.load_courses()`.
+- **Enrollment counts showing 0 everywhere** — Rewrote all analytics queries (in both `core/analytics.py` and `analytics/analytics.py`) to `LEFT JOIN student_modules` and `COUNT(DISTINCT sm.student_id)` instead of reading the stale `current_enrollment` column. Affects: overall statistics, department breakdown, most popular courses, low enrollment, trends, capacity reports, and chart visualizations.
+- **`EnrollmentReportDialog` not defined** — Added missing import from `analytics/analytics.py`.
+- **Waitlist duplicate crash** — Added pre-check before INSERT to warn user if student is already on waitlist instead of crashing on UNIQUE constraint.
+
+---
+
+### [7.8.0] — 2026-03-11
+
+#### Security — High Severity Fixes (H1–H10)
+- **[H1] Replaced hardcoded weak default passwords** — All three school systems (college, secondary, primary) now read default credentials from environment variables and fall back to cryptographically random passwords via `generate_secure_password()`. Removed hardcoded `admin1234`, `staff1234`, `student1234`.
+- **[H2] CORS restricted to explicit origins** — College, secondary, and primary API servers no longer allow all origins. Configurable via `COLLEGE_CORS_ORIGINS`, `SCHOOL_CORS_ORIGINS`, `PRIMARY_CORS_ORIGINS` env vars; defaults to localhost.
+- **[H3] Security headers added to all API servers** — Added `X-Frame-Options`, `X-Content-Type-Options`, `Content-Security-Policy`, `Strict-Transport-Security`, `Referrer-Policy`, and `X-XSS-Protection` headers via `_init_security()` in college, secondary, and primary API servers.
+- **[H4] Cookie security flags configured** — `SESSION_COOKIE_HTTPONLY`, `SESSION_COOKIE_SAMESITE=Lax`, and `SESSION_COOKIE_SECURE` (production) now set in all three API servers.
+- **[H5] CSRF protection on college API** — State-changing requests (POST/PUT/DELETE/PATCH) require JSON content-type or `X-Requested-With` header to prevent cross-site request forgery.
+- **[H6] Rate limiting on college login/registration** — In-memory per-IP rate limiter: 10 login attempts/minute, 5 registration attempts/hour. Returns HTTP 429 when exceeded.
+- **[H7] Encryption key file permissions hardened** — All health encryption key creation code (`data_privacy.py`, `health_portal_core.py`, `auth_encryption.py`) now sets `chmod 600` on newly created key files.
+- **[H8] HTTPS/TLS via nginx reverse proxy** — Added nginx service to `docker-compose.yml` with TLS termination, HTTP→HTTPS redirect, and TLS 1.2+ configuration. App container no longer exposes ports directly.
+- **[H9] Internal API bound to localhost** — Batch operations API now binds to `127.0.0.1` instead of `0.0.0.0`.
+- **[H10] JWT secret persisted across restarts** — College and primary school JWT secrets now persist to `.jwt_secret` file (chmod 600) on first startup. Environment variable takes precedence. Tokens survive application restarts.
+
+#### Security — Medium Severity Fixes (M1–M10)
+- **[M1] Generic login error messages** — Deactivated account error changed to "Invalid username or password" to prevent user enumeration.
+- **[M2] Object-level authorization** — Added `_check_student_access()` to college grade routes; students can only view their own records.
+- **[M3] Email header injection prevention** — CRLF validation on all email header fields (To, Subject, CC, BCC) in university SMTP client.
+- **[M4] Secure random for ID generation** — Replaced `random.randint()` with `secrets.randbelow()` for student ID generation in API routes, CLI, and GUI.
+- **[M5] Database file permissions** — Auth database files auto-set to `chmod 600` on connection via `_secure_db_permissions()`.
+- **[M6] Automatic session cleanup** — Expired sessions pruned probabilistically (1-in-20) during `validate_session()` calls.
+- **[M7] Minimum password length increased** — From 8 to 12 characters (`MIN_PASSWORD_LENGTH` in shared auth defaults).
+- **[M8] Docker security hardening** — Non-root user (`appuser`), `HEALTHCHECK` instruction, memory (512M) and CPU (1.0) resource limits.
+- **[M9] Webhook HMAC-SHA256 verification** — Webhook endpoint supports `X-Webhook-Signature` header with mandatory timestamp validation. Legacy key auth retained as fallback.
+- **[M10] SQL column name validation** — Explicit allowlist validation on dynamic SQL columns in shared auth and primary school pupil service.
+
+#### Changed
+- **Dockerfile** — Runs as non-root `appuser`, includes `HEALTHCHECK` instruction.
+- **docker-compose.yml** — Added nginx reverse proxy, resource limits, internal-only app port.
+- **`.gitignore`** — Added `**/.jwt_secret` and `nginx/certs/` patterns.
+- **`SECURITY_AUDIT.txt`** — Updated with all fixed items (C1–C4, H1–H10, M1–M10, L1–L3).
+
+---
+
+### [7.7.0] — 2026-03-11
+
+#### Added
+- **MFA settings menu for secondary school and primary school CLI** — Both systems now have a `[M] MFA Settings` option in every role-based menu (admin, teacher, student for secondary; admin, teacher, parent, student for primary). Users can set up TOTP-based MFA, disable MFA, and view remaining recovery codes. New files: `secondary_school/cli/mfa_cli.py`, `primary_school/cli/mfa_cli.py`, and corresponding `infrastructure/auth/mfa_service.py` re-exports from the shared auth module.
+- **University CLI "Authentication" menu option** — Added an "Authentication" entry under the Technology & Analytics section of the university main CLI menu, providing access to user management, role management, MFA settings, and account security from the main menu.
+
+#### Fixed
+- **University authentication menu crashed when accessed from main menu** — `display_auth_menu()` created a new `UserAuth()` instance instead of reusing the already-authenticated session, showing a "Not logged in" login screen. Now accepts an optional `existing_auth` parameter to reuse the current session.
+- **KeyError: 'permissions' crash in university auth CLI menus** — Multiple places in `cli_menus.py` accessed `user['permissions']` directly on user dicts that don't always contain a `permissions` key (fetched user records from `get_user()`, and `current_user` from shared auth). Changed all references to use `.get('permissions', [])` with fallback to `auth.get_user_permissions()` where needed. Also fixed unsafe access to `user['password_reset_required']`.
+
+---
+
+### [7.6.0] — 2026-03-10
+
+#### Fixed
+- **University admin (and all roles) had no permissions in GUI/CLI** — When logging in via the universal shared auth, the `session_user` dict was built with `"permissions": []` in `run.py`, so admin users could not access any permission-gated features. Permissions are now loaded from the university auth constants (`PERMISSIONS` dict) based on the user's role, giving admin 277 permissions, staff 150, student 117, instructor 93, and parent 44. The same fix was applied to both CLI paths in `cli_main.py` as a fallback when the database permission lookup returns empty.
+
+#### Changed
+- **Eliminated all wildcard imports** — Replaced 7 `from .common_imports import *` statements with explicit, named imports across the university student dashboard, grades, and registration GUI modules.
+- **Converted all relative imports to absolute imports** — 897 files converted from relative (`from .foo import bar`) to fully qualified absolute imports (`from education_system.<path>.foo import bar`) across the entire codebase. Three Django todoapp files retained relative imports due to a hyphenated directory name (`python-utilities`).
+
+#### Fixed
+- **Corrected 24 broken import paths** — Fixed imports pointing to wrong module locations, including:
+  - `infrastructure.logging.log_config` → `utils.logging.log_config` (13 files)
+  - `modules.finance.core.financial_core` → `modules.domain.finance.core.financial_core` (6 files)
+  - `infrastructure.security.immutable_audit` → `infrastructure.security.immutable_audit_log` (3 files)
+  - `infrastructure.realtime` → `infrastructure.communication.realtime_notifications`
+  - `modules.shared.services.enhanced_reporting` → `modules.shared.services.analytics.enhanced_reporting`
+  - `services.cli` / `services.gui` → `modules.services.cli` / `modules.services.gui`
+  - 6 additional path corrections for auth, data management, assignments, grading, parking, and academic calendar modules.
+- **Created 4 missing `__init__.py` files** — Added package init files for `commerce/gui`, `housing/gui`, `shared/gui` (university level), and `database/migrations` to make them importable as packages.
+- **Fixed test imports** — Updated test files for academic calendar, commerce restaurant, housing accommodation, and main GUI to reference correct module paths.
+
+#### Notes
+- 13 imports reference planned-but-unimplemented modules (e.g. `budget_gui`, `scholarship_gui`, `gui_context`). All are safely wrapped in `try/except` with graceful fallbacks.
+- Full audit: 18,646 import statements checked, 0 syntax errors.
 
 ---
 
@@ -164,7 +3636,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [7.2.0] - 2026-03-09
+## [7.2.0] — 2026-03-09
 
 ### Changed
 - **Logout returns to universal login** — logging out of any system (university, college, secondary school, primary school) now returns to the shared login screen instead of each system's own login page
@@ -178,7 +3650,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [7.1.0] - 2026-03-09
+## [7.1.0] — 2026-03-09
 
 ### Added
 - **Unified Authentication across all 4 systems** — university, college, secondary school, and primary school now share a single auth database (`auth.db`) with one set of credentials
@@ -206,7 +3678,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [7.0.0] - 2026-03-09
+## [7.0.0] — 2026-03-09
 
 ### Added
 - **Primary School Management System** — complete new system for Reception–Year 6, placed in `education_system/primary_school/`, following the same architecture as the secondary school system
@@ -248,7 +3720,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `run.py` updated with primary school launcher functions and dispatch table entries
 - Changelog title updated to cover full Education System (not just University)
 
-## [6.24.0] - 2026-03-07
+## [6.24.0] — 2026-03-07
 
 ### Added
 - **College: Baseline Assessment** — initial assessments with student joins, progress checkpoints linked to courses, student progress tracking, statistics dashboard (2 tables: `baseline_assessments`, `progress_checkpoints`)
@@ -270,7 +3742,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All 27 placeholder/stub college modules now replaced with fully functional implementations (service + GUI + CLI each)
 - Each module includes full CRUD operations, search/filter capabilities, statistics dashboards, and proper error handling
 
-## [6.23.0] - 2026-03-07
+## [6.23.0] — 2026-03-07
 
 ### Added
 - **College: Alumni Network** — fully functional module with alumni records (search/filter by year), events (type filter), surveys (joins alumni names), and statistics dashboard (3 tables: `alumni_records`, `alumni_events`, `alumni_surveys`)
@@ -291,7 +3763,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 13 placeholder/stub college modules replaced with fully functional implementations (service + GUI + CLI each)
 - Each module includes full CRUD operations, search/filter capabilities, statistics dashboards, and proper error handling
 
-## [6.22.2] - 2026-03-06
+## [6.22.2] — 2026-03-06
 
 ### Added
 - **Secondary School: System Switching (GUI)** — "Switch System" button in the sidebar opens a dialog to switch to College or University GUI
@@ -306,7 +3778,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **University System: Chatbot GUI quick-action buttons** — fixed SQL queries in `context.py` and `dashboard.py` that used wrong table/column names vs actual DB schema (`enrollments` → `student_modules`, `read` → `is_read`, `day_of_week` → `days_of_week`, `room_number`/`building` → `classroom`, `application_type`/`amount` → `academic_year`/`application_date`, `visibility` → `is_active`/`target_audience`); all 12 quick-action buttons now query correctly
 - **University System: Admin user_id FK mismatch** — `user_accounts.user_id` for admin pointed to a student record; added auto-repair in `_create_default_accounts_if_needed()` to detect and fix FK mismatches on startup
 
-## [6.22.1] - 2026-03-06
+## [6.22.1] — 2026-03-06
 
 ### Fixed
 - **University System: Missing `__init__.py` files** — added 12 missing `__init__.py` files across domain modules (`academic_progress`, `admissions`, `alumni`, `campus`, `career`, `facilities`, `finance`, `marketplace`, `academic_progress/services`, `ai_study/gui`, `ai_study/services`, `shared/gui/main/core`)
@@ -318,7 +3790,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `commerce/services/restaurant/operations/restaurant_context.py`
 - **University System: Missing `.env` file** — created `.env` from `.env.example` with development defaults
 
-## [6.22.0] - 2026-03-06
+## [6.22.0] — 2026-03-06
 
 ### Added
 - **Secondary School Attendance: 100 New GUI Functions** — comprehensive attendance management overhaul across two batches (50 + 50 functions)
@@ -426,7 +3898,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Attendance treeview changed to `selectmode="extended"` for multi-select support
 - Attendance service expanded with 16 new query methods for analytics, patterns, thresholds, communication logging, and subject-based filtering
 
-## [6.21.0] - 2026-03-06
+## [6.21.0] — 2026-03-06
 
 ### Added
 - **College System: 14 More Modules** — internal verification, functional skills, study programmes, tutorial, student wellbeing, student council, lettings, health & safety, letter templates, disciplinary, onboarding, expense claims, baseline assessment, data export (110 total modules)
@@ -508,7 +3980,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Custom export templates with field mapping
   - Validation with error/warning logging
 
-## [6.20.0] - 2026-03-06
+## [6.20.0] — 2026-03-06
 
 ### Added
 - **College System: 19 New Modules** — ILP, UCAS, T-Levels, apprenticeships, value-added, governance, DBS checks, risk management, prevent duty, complaints, equality & diversity, staff absence, recruitment, marketing, early warning, self-assessment, alumni, student portal, forums (96 total modules)
@@ -622,7 +4094,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Thread pinning, locking, and view counting
   - Post management with solution marking
 
-## [6.19.0] - 2026-03-05
+## [6.19.0] — 2026-03-05
 
 ### Changed
 - **Domain directory reorganisation** — grouped 50 modules into 7 logical categories for cleaner structure
@@ -635,7 +4107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `communication/` — email, notifications, announcements, calendar, communication_log, parents_evening (6)
 - Updated all import paths across 54 files (services, GUIs, main_gui.py, seed_subjects.py)
 
-## [6.18.0] - 2026-03-05
+## [6.18.0] — 2026-03-05
 
 ### Added
 - **Secondary School: 5 More Modules** — exclusions, progress tracking, seating plans, consent, incidents (51 total modules)
@@ -670,7 +4142,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - RIDDOR reportable flag, investigation notes
   - Open/closed status workflow, filter by type and status
 
-## [6.17.0] - 2026-03-05
+## [6.17.0] — 2026-03-05
 
 ### Added
 - **Secondary School: 6 More Modules** — rewards, careers, form groups, audit, policies, communication log (46 total modules)
@@ -709,7 +4181,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Follow-up tracking with date and done flag
   - Filter by contact type and follow-up needed
 
-## [6.16.0] - 2026-03-05
+## [6.16.0] — 2026-03-05
 
 ### Added
 - **Secondary School: 6 More Modules** — system configuration, admissions, notifications, interventions, staff CPD and transport (40 total modules)
@@ -747,7 +4219,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Assign students to routes, view students per route
   - Student count displayed in route list
 
-## [6.15.0] - 2026-03-05
+## [6.15.0] — 2026-03-05
 
 ### Added
 - **Secondary School: 10 Additional Modules** — completing the full school management suite (34 total modules)
@@ -809,7 +4281,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Scrollable sidebar** — sidebar now scrolls with mousewheel to accommodate all 34 modules; logout/shutdown buttons fixed at bottom
 - **Role-based access expanded**: admin sees all 34 modules; teachers see 27 modules (everything except HR, Finance, Users, Data Export, Safeguarding, Visitors, Assets); students see 11 modules (Dashboard, Grades, Timetable, Exams, Homework, Calendar, Announcements, Library, Clubs, Staff Directory, Email)
 
-## [6.14.0] - 2026-03-05
+## [6.14.0] — 2026-03-05
 
 ### Added
 - **Secondary School: 12 New Modules** — major expansion of the school management system
@@ -881,7 +4353,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Role-based access expanded**: admin sees all 24 modules; teachers see everything except HR, Finance, Users, Data Export, and Safeguarding; students see Dashboard, Grades, Timetable, Exams, Homework, Calendar, Announcements, Library, and Email
 - **Sidebar navigation** updated with all 24 modules in logical order
 
-## [6.13.0] - 2026-03-05
+## [6.13.0] — 2026-03-05
 
 ### Added
 - **Secondary School: Internal Email System** — DB-based messaging between all system users
@@ -914,7 +4386,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Role-based access updated**: admin sees all modules; teachers see everything except HR and Finance; students see Dashboard, Grades, Timetable, Exams, and Email
 
 
-## [6.12.0] - 2026-03-05
+## [6.12.0] — 2026-03-05
 
 ### Added
 - **Secondary School: Auto-generate timetables** — automatic timetable generation for year groups
@@ -934,7 +4406,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Auto-enrollment** — new students are automatically enrolled in core subjects (Maths, English Lang/Lit, Science) plus 4 randomly-selected unique option subjects
 
 
-## [6.11.1] - 2026-03-05
+## [6.11.1] — 2026-03-05
 
 ### Added
 - **Secondary School: Subject seeding** — 50 UK secondary school subjects auto-seeded on first run
@@ -945,7 +4417,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `main_gui.run()` detects first run (DB file absent) and auto-seeds subjects after schema init
 
 
-## [6.11.0] - 2026-03-05
+## [6.11.0] — 2026-03-05
 
 ### Added
 - **Secondary School System (rebuilt)** — full Python tkinter GUI application at `education_system/secondary_school/`
@@ -969,7 +4441,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **run.py**: school system launcher updated to import from `education_system.secondary_school.main_gui` (was referencing non-existent `education_system.school_system`)
 
 
-## [6.10.0] - 2026-02-28
+## [6.10.0] — 2026-02-28
 
 ### Added
 - **Secondary School System** — integrated into the Education System launcher
@@ -990,7 +4462,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - School GUI: "Switch System" button in top bar offers University and College options
 
 
-## [6.9.0] - 2026-02-28
+## [6.9.0] — 2026-02-28
 
 ### Added
 - **College System: Funding & ILR** — ILR funding records, evidence, rules, and English/Maths resit tracking
@@ -1055,7 +4527,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **College System: Attendance GUI** — added 4th tab "Generate from Timetable" for staff/admin
 - **College System: Dashboard GUI** — navigation section now uses a scrollable canvas with vertical scrollbar and mousewheel support so all 38 nav buttons are accessible regardless of window size
 
-## [6.8.0] - 2026-02-27
+## [6.8.0] — 2026-02-27
 
 ### Added
 - **College System: Admissions** — full application lifecycle management
@@ -1148,7 +4620,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **College System: Parent CLI menu** — added Parents Evening option (key 6)
 - **College System: GUI frame map** — registered 16 new frames in `CollegeApp._FRAME_MAP` (34 total frames)
 
-## [6.7.0] - 2026-02-27
+## [6.7.0] — 2026-02-27
 
 ### Added
 - **College System: To-Do List** — personal task management for all users
@@ -1202,7 +4674,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **College System: Instructor CLI menu** — added To-Do List, Calendar, Helpdesk, and Settings options (keys 8-9, A-B)
 - **College System: Student CLI menu** — added To-Do List, Calendar, Helpdesk, and Settings options (keys 7-9, A)
 
-## [6.6.0] - 2026-02-27
+## [6.6.0] — 2026-02-27
 
 ### Added
 - **College System: Role-based access control** — differentiated permissions for admin, staff, instructor, and student roles
@@ -1213,7 +4685,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Course CLI**: Add Course, Manage Prerequisites, Delete Course options hidden for instructors (view/update/roster only)
   - **Timetable CLI**: Add/Update/Delete Slot and Generate options hidden for instructors (view and My Timetable only)
 
-## [6.5.0] - 2026-02-27
+## [6.5.0] — 2026-02-27
 
 ### Added
 - **College System: Structured logging** — Python `logging` throughout the entire college system (81 log calls across 24 files)
@@ -1225,7 +4697,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **API layer**: JWT token generation, auth failures (missing/expired/invalid tokens), access denied, error handler logging for validation/auth/database/system errors
   - **GUI/CLI layer**: login success/failure, logout, application startup
 
-## [6.4.0] - 2026-02-27
+## [6.4.0] — 2026-02-27
 
 ### Added
 - **College System: Internal Messaging** — full two-way user-to-user messaging system
@@ -1240,14 +4712,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Soft-delete on user removal: deleting a student or staff member marks their messages as deleted for that user while preserving them for the other party
 - **College System: New exception** — `MessageError(CollegeSystemError)`
 
-## [6.3.1] - 2026-02-27
+## [6.3.1] — 2026-02-27
 
 ### Fixed
 - **Restaurant test imports** — corrected 7 test files that imported submodules from `connection.py` (a file) instead of from the `operations` package where `audit`, `backup`, `exports`, `financials`, `forecasting`, and `connection` modules actually live
 - **Health services re-exports** — added missing re-exports (`_sqlite_main_db_path`, `backup_before_operation`, `cipher_suite`, `encrypt_sensitive_data`, `decrypt_sensitive_data`, `truthy`, and 5 report generators) to `health/services/__init__.py` so the `miscellaneous.py` shim can resolve them
 - **Logs shim re-export** — added `LOG_MANAGEMENT_AVAILABLE` to `modules/shared/utils/logs.py` backward-compatibility shim
 
-## [6.3.0] - 2026-02-26
+## [6.3.0] — 2026-02-26
 
 ### Added
 - **College System: Timetable Management** — schedule course slots with conflict detection
@@ -1285,7 +4757,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **College System: broken import in `system_routes.py`** — `from college_system import __version__` failed when launched via `run.py`; fixed to `from education_system.college_system import __version__`
 
-## [6.2.0] - 2026-02-26
+## [6.2.0] — 2026-02-26
 
 ### Added
 - **Cross-system switching** — switch between University and College systems without restarting
@@ -1296,7 +4768,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `education_system/switch.py` shared state module coordinates transitions via `request_switch()` / `consume()`
   - `run.py` dispatch loop automatically re-launches the target system/mode after a switch
 
-## [6.1.0] - 2026-02-26
+## [6.1.0] — 2026-02-26
 
 ### Changed
 - **Unified launcher** — rewrote `run.py` as a two-step launcher: select mode (CLI/GUI/API/Test), then select system (University/College)
@@ -1308,7 +4780,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - `college_run.py` — consolidated into `run.py`; use `python run.py --college` instead
 
-## [6.0.0] - 2026-02-26
+## [6.0.0] — 2026-02-26
 
 ### Added
 - **College Management System** — fully independent system at `education_system/college_system/` with the same 4-layer architecture (core, infrastructure, modules, api) and tech stack (Tkinter, Flask, SQLite, bcrypt)

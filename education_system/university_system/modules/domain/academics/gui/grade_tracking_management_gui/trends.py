@@ -1,7 +1,7 @@
 from tkinter import messagebox
 import threading
 
-from ._imports import (
+from education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui._imports import (
     GRADE_CALCULATION_AVAILABLE,
     analyze_overall_grade_trends,
     analyze_by_assessment_type,

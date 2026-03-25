@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/main/main_gui.py
+# hypothesis_version: 6.151.9
+
+[700, 1000, '1000x650', '1200x800', '900x600', 'Analytics Dashboard', 'Bulk Transfer', 'Central Admin Portal', 'Digital Transcript', 'GDPR Compliance', 'Outcome Tracking', 'Parent Continuity', 'Predictive Alerts', 'Reverse Lookup', 'Shared Documents', 'Student Journey', 'Student Self-Service', 'Transfer Documents', 'WM_DELETE_WINDOW', 'both', 'clam', 'gui.window_title', 'last_activity']

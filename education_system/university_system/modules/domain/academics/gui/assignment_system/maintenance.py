@@ -101,19 +101,19 @@ class MaintenanceManager:
     def optimize_database(self):
         """Optimize database performance"""
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), isolation_level=None)
             cursor = conn.cursor()
-            
-            # Run VACUUM to optimize database
+
+            # Run VACUUM outside of a transaction (requires isolation_level=None)
             cursor.execute('VACUUM')
-            
+
             # Update statistics
             cursor.execute('ANALYZE')
-            
+
             conn.close()
-            
+
             self.show_maintenance_status("Database optimization completed successfully", "success")
-            
+
         except Exception as e:
             self.show_maintenance_status(f"Database optimization failed: {e}", "error")
     
@@ -196,32 +196,34 @@ class MaintenanceManager:
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-            
-            cursor.execute('SELECT file_path, file_hash FROM assignment_submissions WHERE file_path IS NOT NULL')
+
+            cursor.execute(
+                "SELECT file_path, file_hash FROM assignment_submissions "
+                "WHERE file_path IS NOT NULL AND file_path != ''"
+            )
             files = cursor.fetchall()
-            
+            conn.close()
+
             missing_files = 0
             corrupted_files = 0
-            
+            checked_files = 0
+
             for file_path, stored_hash in files:
-                # Skip if file_path is None or empty
                 if not file_path or not isinstance(file_path, str) or not file_path.strip():
-                    missing_files += 1
                     continue
 
+                checked_files += 1
                 if not os.path.exists(file_path):
                     missing_files += 1
-                else:
+                elif stored_hash:
                     current_hash = self._calculate_file_hash(file_path)
-                    if current_hash != stored_hash:
+                    if current_hash and current_hash != stored_hash:
                         corrupted_files += 1
-            
-            conn.close()
-            
-            status_msg = f"File integrity check: {len(files)} files checked, {missing_files} missing, {corrupted_files} corrupted"
+
+            status_msg = f"File integrity check: {checked_files} files checked, {missing_files} missing, {corrupted_files} corrupted"
             msg_type = "success" if (missing_files == 0 and corrupted_files == 0) else "warning"
             self.show_maintenance_status(status_msg, msg_type)
-            
+
         except Exception as e:
             self.show_maintenance_status(f"File integrity check failed: {e}", "error")
     
@@ -244,47 +246,49 @@ class MaintenanceManager:
             archive_dir.mkdir(parents=True, exist_ok=True)
     
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            cursor.execute(
-                '''
-                SELECT id, file_path
-                FROM assignment_submissions
-                WHERE submission_date < ? AND file_path IS NOT NULL AND file_path != ''
-                ''',
-                (cutoff_str,)
-            )
-            rows = cursor.fetchall()
-    
-            archived_count = 0
-            for submission_id, file_path in rows:
-                # Skip if file_path is None or empty
-                if not file_path or not isinstance(file_path, str) or not file_path.strip():
-                    continue
-
-                src = Path(file_path)
-                if not src.exists():
-                    continue
-    
-                try:
-                    relative_path = src.relative_to(submitted_dir)
-                except ValueError:
-                    relative_path = src.name
-    
-                dest = archive_dir / str(relative_path)
-                dest.parent.mkdir(parents=True, exist_ok=True)
-                shutil.move(str(src), str(dest))
-    
+            try:
+                cursor = conn.cursor()
                 cursor.execute(
                     '''
-                    UPDATE assignment_submissions
-                    SET file_path = ?, status = CASE WHEN status = 'graded' THEN status ELSE 'archived' END
-                    WHERE id = ?
-                    ''', (str(dest), submission_id)
+                    SELECT id, file_path
+                    FROM assignment_submissions
+                    WHERE submission_date < ? AND file_path IS NOT NULL AND file_path != ''
+                    ''',
+                    (cutoff_str,)
                 )
-                archived_count += 1
-    
-            conn.commit()
-            conn.close()
+                rows = cursor.fetchall()
+
+                archived_count = 0
+                for submission_id, file_path in rows:
+                    # Skip if file_path is None or empty
+                    if not file_path or not isinstance(file_path, str) or not file_path.strip():
+                        continue
+
+                    src = Path(file_path)
+                    if not src.exists():
+                        continue
+
+                    try:
+                        relative_path = src.relative_to(submitted_dir)
+                    except ValueError:
+                        relative_path = src.name
+
+                    dest = archive_dir / str(relative_path)
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.move(str(src), str(dest))
+
+                    cursor.execute(
+                        '''
+                        UPDATE assignment_submissions
+                        SET file_path = ?, status = CASE WHEN status = 'graded' THEN status ELSE 'archived' END
+                        WHERE id = ?
+                        ''', (str(dest), submission_id)
+                    )
+                    archived_count += 1
+
+                conn.commit()
+            finally:
+                conn.close()
     
             self.show_maintenance_status(f"Archived {archived_count} submission file(s) older than one year.", "success")
         except Exception as e:
@@ -629,11 +633,13 @@ class MaintenanceManager:
                 status_label.config(text="Optimizing database...")
                 cleanup_window.update()
                 
-                cursor.execute('VACUUM')
-                results_text.insert(tk.END, "Database optimized\n")
-                
                 conn.commit()
                 conn.close()
+                # VACUUM must run outside a transaction
+                vacuum_conn = sqlite3.connect(str(DEFAULT_DB_PATH), isolation_level=None)
+                vacuum_conn.execute('VACUUM')
+                vacuum_conn.close()
+                results_text.insert(tk.END, "Database optimized\n")
                 
                 progress_var.set(100)
                 status_label.config(text="Cleanup completed!")
@@ -713,9 +719,11 @@ class MaintenanceManager:
         status_label = ttk.Label(progress_window, text="Initializing...")
         status_label.pack(pady=5)
 
-        # Use canonical backup directory
-        backup_dir = str(paths.BACKUP_DIR)
-        os.makedirs(backup_dir, exist_ok=True)
+        # Use canonical backup directories for organised storage
+        db_backup_dir = str(paths.BACKUP_DATABASE_DIR)
+        files_backup_dir = str(paths.BACKUP_FILES_DIR)
+        os.makedirs(db_backup_dir, exist_ok=True)
+        os.makedirs(files_backup_dir, exist_ok=True)
     
         # Generate backup filename with timestamp
         from datetime import datetime
@@ -733,7 +741,7 @@ class MaintenanceManager:
                     progress_window.update()
     
                     # Create database backup
-                    backup_file = os.path.join(backup_dir, f"database_backup_{timestamp}.db")
+                    backup_file = os.path.join(db_backup_dir, f"database_backup_{timestamp}.db")
                     import shutil
                     shutil.copy2(str(DEFAULT_DB_PATH), backup_file)
     
@@ -748,7 +756,7 @@ class MaintenanceManager:
     
                     # Create files backup (submission files, etc.)
                     data_dir = os.path.dirname(DEFAULT_DB_PATH)
-                    files_backup = os.path.join(backup_dir, f"files_backup_{timestamp}.zip")
+                    files_backup = os.path.join(files_backup_dir, f"files_backup_{timestamp}.zip")
     
                     import zipfile
                     with zipfile.ZipFile(files_backup, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -772,7 +780,7 @@ class MaintenanceManager:
                 progress_window.update()
     
                 # Show success message with backup location
-                backup_location = backup_dir
+                backup_location = str(paths.BACKUP_DIR)
                 self.root.after(1000, lambda: [
                     progress_window.destroy(),
                     messagebox.showinfo("Backup Complete",

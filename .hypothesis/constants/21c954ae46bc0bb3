@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/core/institution_settings.py
+# hypothesis_version: 6.151.9
+
+['+44 1642 218121', '+44 1642 342256', '+44 1642 342257', '+44 1642 342258', 'Middlesbrough', 'NNNN-NNNN', 'TS1 3BX', 'Tees Valley', 'Teesside University', 'UNIVERSITY_', 'United Kingdom', 'address_line1', 'address_line2', 'country', 'elections_email', 'elections_phone', 'events_support_email', 'events_support_phone', 'get_elections_phone', 'get_setting', 'info@tees.ac.uk', 'institution_name', 'load_settings', 'main_email', 'main_phone', 'postcode', 'r', 'reset_settings', 'save_settings', 'student_union_email', 'student_union_phone', 'utf-8', 'w', 'website']

@@ -4,6 +4,7 @@ import logging
 from datetime import date, timedelta
 from education_system.primary_school.infrastructure.database.db import connect
 from education_system.primary_school.core.exceptions import LibraryError
+from education_system.primary_school.core.sql_safety import validate_identifier
 import traceback
 
 logger = logging.getLogger(__name__)
@@ -70,7 +71,8 @@ class LibraryService:
                     sql += " AND available_copies = 0"
             if search:
                 sql += " AND (title LIKE ? OR author LIKE ? OR isbn LIKE ?)"
-                term = f"%{search}%"
+                escaped = escape_like(search)
+                term = f"%{escaped}%"
                 params.extend([term, term, term])
             sql += " ORDER BY title"
             cursor.execute(sql, params)
@@ -89,7 +91,7 @@ class LibraryService:
             updates = {k: v for k, v in kwargs.items() if k in allowed}
             if not updates:
                 return None
-            set_clause = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
             values = list(updates.values())
             values.append(book_id)
             cursor.execute(

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/attendance/attendance_tracker.py
+# hypothesis_version: 6.151.9
+
+['=', 'Attendance System', 'AttendanceAPI', 'AttendanceDashboard', 'BackupRecoverySystem', 'GeofencingSystem', 'QRAttendanceSystem', '__main__', 'get_enhanced_setting', 'get_modules', 'record_attendance', 'set_enhanced_setting']

@@ -10,7 +10,7 @@ internal implementation.
 
 from __future__ import annotations
 
-from ..core import ReportingSystemGUI  # type: ignore
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import ReportingSystemGUI  # type: ignore
 
 def create_templates_tab(gui: ReportingSystemGUI) -> None:
     """Create the templates tab for the given GUI instance.

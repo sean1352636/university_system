@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/analytics/student_analytics/utilities.py
+# hypothesis_version: 6.151.9
+
+[0.0, 4.0, 100, 300, 587, '\nRange validation:', '\nRecommendations:', '#1f77b4', '#2ca02c', '#8c564b', '#9467bd', '#98df8a', '#aec7e8', '#d62728', '#ff7f0e', '#ff9896', '#ffbb78', ',', '-', '1', '1. Color scheme', '2', '2. Export formats', '2. Green theme', '3', '3. Red theme', '4', '4. Custom colors', '5', '5. Reset to defaults', '6', '=', 'Current settings:', 'Email password: ', 'age', 'coerce', 'colors', 'dpi', 'email_config', 'engagement_score', 'excel', 'export_formats', 'figure_size', 'gpa', 'numeric', 'pdf', 'png', 'sender_email', 'sender_password', 'smtp.gmail.com', 'smtp_port', 'smtp_server', 'student_id', 'svg']

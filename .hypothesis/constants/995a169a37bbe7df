@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/email_manager.py
+# hypothesis_version: 6.151.9
+
+[100, 1000, '=', 'clear_email_queue', 'confirmation', 'generic', 'get_queued_emails', 'handle_exception', 'metadata', 'queued', 'recipient', 'reply_notification', 'satisfaction_survey', 'send_email', 'send_sla_alert', 'sla_alert', 'status', 'subject', 'ticket_notification', 'timestamp', 'type']

@@ -451,9 +451,9 @@ class _ChatMixin:
 
             # Get messages (most recent first, then reverse for display)
             cursor.execute('''
-            SELECT m.id, m.content, m.sent_at, u.username, u.first_name, u.last_name
+            SELECT m.id, m.content, m.sent_at, COALESCE(u.username, 'User ' || m.sender_id), COALESCE(u.first_name, ''), COALESCE(u.last_name, '')
             FROM chat_messages m
-            JOIN users u ON m.sender_id = u.id
+            LEFT JOIN users u ON m.sender_id = u.id
             WHERE m.room_id = ?
             ORDER BY m.sent_at DESC
             LIMIT ? OFFSET ?

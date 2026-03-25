@@ -51,17 +51,19 @@ class MaintenanceMixin:
 
             # Log backup
             conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            total_size = sum(f.stat().st_size for f in Path(backup_dir).rglob('*') if f.is_file())
+                total_size = sum(f.stat().st_size for f in Path(backup_dir).rglob('*') if f.is_file())
 
-            cursor.execute('''
-            INSERT INTO backup_history (backup_type, file_path, size_bytes, created_at)
-            VALUES (?, ?, ?, ?)
-            ''', ('full', backup_dir, total_size, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                cursor.execute('''
+                INSERT INTO backup_history (backup_type, file_path, size_bytes, created_at)
+                VALUES (?, ?, ?, ?)
+                ''', ('full', backup_dir, total_size, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
-            conn.commit()
-            conn.close()
+                conn.commit()
+            finally:
+                conn.close()
 
             print(f"Backup completed successfully!")
             print(f"Backup size: {total_size / (1024*1024):.1f} MB")
@@ -163,16 +165,18 @@ class MaintenanceMixin:
             ensure_parent_dir(archive_path)
 
             conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('''
-                SELECT file_path, student_id, file_name
-                FROM assignment_submissions
-                WHERE assignment_id = ?
-            ''', (assignment_id,))
+                cursor.execute('''
+                    SELECT file_path, student_id, file_name
+                    FROM assignment_submissions
+                    WHERE assignment_id = ?
+                ''', (assignment_id,))
 
-            submissions = cursor.fetchall()
-            conn.close()
+                submissions = cursor.fetchall()
+            finally:
+                conn.close()
 
             with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
                 for file_path, student_id, file_name in submissions:
@@ -196,22 +200,24 @@ class MaintenanceMixin:
             ensure_parent_dir(export_path)
 
             conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            export_data = {}
+                export_data = {}
 
-            tables = ['assignments', 'assignment_submissions', 'assignment_groups',
-                     'rubrics', 'assignment_templates', 'extension_requests',
-                     'peer_review_assignments', 'notifications', 'messages']
+                tables = ['assignments', 'assignment_submissions', 'assignment_groups',
+                         'rubrics', 'assignment_templates', 'extension_requests',
+                         'peer_review_assignments', 'notifications', 'messages']
 
-            for table in tables:
-                safe_table = validate_table_name(table)
-                cursor.execute('SELECT * FROM [' + safe_table + ']')
-                columns = [desc[0] for desc in cursor.description]
-                rows = cursor.fetchall()
-                export_data[table] = [dict(zip(columns, row)) for row in rows]
+                for table in tables:
+                    safe_table = validate_table_name(table)
+                    cursor.execute('SELECT * FROM [' + safe_table + ']')
+                    columns = [desc[0] for desc in cursor.description]
+                    rows = cursor.fetchall()
+                    export_data[table] = [dict(zip(columns, row)) for row in rows]
 
-            conn.close()
+            finally:
+                conn.close()
 
             with open(export_path, 'w') as f:
                 json.dump(export_data, f, indent=2)

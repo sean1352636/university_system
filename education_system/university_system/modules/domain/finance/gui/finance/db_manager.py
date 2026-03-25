@@ -46,7 +46,7 @@ from education_system.university_system.modules.shared.utils.sql_safety import (
 try:
     from education_system.university_system.infrastructure.email.email_service import send_email
     from education_system.university_system.infrastructure.database.db import get_connection
-    from education_system.university_system.infrastructure.logging.log_config import configure_logging, get_log_file
+    from education_system.university_system.utils.logging.log_config import configure_logging, get_log_file
 except ImportError:
     # Fallback for backward compatibility (non-security critical)
     def send_email(*args, **kwargs):
@@ -62,10 +62,11 @@ except ImportError:
         a single database file when the main refactored modules are not
         available.
         """
-        # Determine the project root (refactored directory) one level above finance
-        base_dir = Path(__file__).resolve().parents[1]
-        db_path = base_dir / "db_files" / str(DEFAULT_DB_PATH)
-        return sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=30000")
+        conn.row_factory = sqlite3.Row
+        return conn
 
     def configure_logging(name=None):
         return logging.getLogger(name or __name__)
@@ -75,7 +76,7 @@ except ImportError:
         return str(paths.LOG_DIR / name)
 
 try:
-    from education_system.university_system.modules.finance.core.financial_core import (
+    from education_system.university_system.modules.domain.finance.core.financial_core import (
         assign_to_collection_agency, track_collection_progress,
         update_collection_case_status, create_payment_arrangement,
         send_arrangement_confirmation, setup_collection_workflows,
@@ -121,7 +122,7 @@ except ImportError:
     quick_fix_database = None
 
 try:
-    from education_system.university_system.modules.finance.core.financial_core import (
+    from education_system.university_system.modules.domain.finance.core.financial_core import (
         modify_payment_plan, view_student_credits, add_student_credit,
         manage_financial_aid, create_budget_plan, view_overdue_accounts,
         create_collection_case, aging_analysis_report, collection_case_status_report,
@@ -207,14 +208,14 @@ cipher_suite = Fernet(ENCRYPTION_KEY)
 # Payment gateway configurations (from original file)
 PAYMENT_GATEWAYS = {
     'stripe': {
-        'public_key': 'pk_test_...',
-        'secret_key': 'sk_test_...',
-        'webhook_secret': 'whsec_...'
+        'public_key': os.getenv('STRIPE_PUBLIC_KEY', ''),
+        'secret_key': os.getenv('STRIPE_SECRET_KEY', ''),
+        'webhook_secret': os.getenv('STRIPE_WEBHOOK_SECRET', '')
     },
     'paypal': {
-        'client_id': 'your_paypal_client_id',
-        'client_secret': 'your_paypal_client_secret',
-        'environment': 'sandbox'
+        'client_id': os.getenv('PAYPAL_CLIENT_ID', ''),
+        'client_secret': os.getenv('PAYPAL_CLIENT_SECRET', ''),
+        'environment': os.getenv('PAYPAL_ENVIRONMENT', 'sandbox')
     }
 }
 
@@ -255,6 +256,8 @@ class DatabaseManager:
         """Initialize database schema with all required columns"""
         try:
             conn = get_connection()
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute("PRAGMA busy_timeout=5000")
             cursor = conn.cursor()
 
             # Create fee_types table with is_active if it doesn't exist
@@ -321,30 +324,41 @@ class DatabaseManager:
 
                 print("Default fee types created")
 
-            # Create club_payments table
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS club_payments (
-                payment_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                club_id INTEGER NOT NULL,
-                amount REAL NOT NULL,
-                payment_type TEXT DEFAULT 'membership_fee',
-                payment_method TEXT DEFAULT 'cash',
-                payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                student_id TEXT,
-                description TEXT,
-                notes TEXT,
-                processed_by TEXT,
-                status TEXT DEFAULT 'completed',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (club_id) REFERENCES student_clubs(club_id),
-                FOREIGN KEY (student_id) REFERENCES students(student_id)
-            )
-            ''')
+            # Note: Club payments now use the unified 'payments' table with source_type='club'.
+            # The club_payments table is no longer created separately.
+            # Ensure payments table has required columns for club payment tracking
+            try:
+                cursor.execute("SELECT source_type FROM payments LIMIT 0")
+            except Exception:
+                # Add source_type and related columns if they don't exist
+                try:
+                    cursor.execute("ALTER TABLE payments ADD COLUMN source_type TEXT DEFAULT NULL")
+                except Exception:
+                    pass
+                try:
+                    cursor.execute("ALTER TABLE payments ADD COLUMN reference_id TEXT DEFAULT NULL")
+                except Exception:
+                    pass
+                try:
+                    cursor.execute("ALTER TABLE payments ADD COLUMN reference_type TEXT DEFAULT NULL")
+                except Exception:
+                    pass
+                try:
+                    cursor.execute("ALTER TABLE payments ADD COLUMN payment_type TEXT DEFAULT NULL")
+                except Exception:
+                    pass
+                try:
+                    cursor.execute("ALTER TABLE payments ADD COLUMN description TEXT DEFAULT NULL")
+                except Exception:
+                    pass
+                try:
+                    cursor.execute("ALTER TABLE payments ADD COLUMN processed_by TEXT DEFAULT NULL")
+                except Exception:
+                    pass
 
-            # Create indexes for club_payments
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_club_payments_club_id ON club_payments(club_id)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_club_payments_date ON club_payments(payment_date)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_club_payments_student ON club_payments(student_id)')
+            # Create indexes for club payments in the payments table
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_payments_source_type ON payments(source_type)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_payments_reference_id ON payments(reference_id)')
 
             # Create student_finance_accounts table for student finance management
             cursor.execute('''
@@ -360,30 +374,100 @@ class DatabaseManager:
             )
             ''')
 
-            # Create student_finance_transactions table for tracking account transactions
+            # Note: student_finance_transactions now uses the unified 'transactions' table
+            # with source_type = 'student_finance'. No separate table creation needed.
+
+            # Create indexes for student finance tables
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_student_finance_accounts_student ON student_finance_accounts(student_id)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_transactions_source_type ON transactions(source_type)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_transactions_student ON transactions(student_id)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_transactions_account ON transactions(account_id)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(created_at)')
+
+            # Create scholarships table
             cursor.execute('''
-            CREATE TABLE IF NOT EXISTS student_finance_transactions (
-                transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                account_id INTEGER NOT NULL,
-                student_id TEXT NOT NULL,
-                transaction_type TEXT NOT NULL,
-                amount DECIMAL(10,2) NOT NULL,
-                balance_before DECIMAL(10,2),
-                balance_after DECIMAL(10,2),
+            CREATE TABLE IF NOT EXISTS scholarships (
+                scholarship_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                scholarship_name TEXT NOT NULL,
                 description TEXT,
-                reference_id TEXT,
-                processed_by TEXT,
+                amount REAL NOT NULL,
+                criteria TEXT,
+                academic_year TEXT,
+                is_active INTEGER DEFAULT 1,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (account_id) REFERENCES student_finance_accounts(account_id),
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            ''')
+
+            # Create financial_aid table
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS financial_aid (
+                aid_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_id TEXT NOT NULL,
+                aid_type TEXT NOT NULL,
+                amount REAL NOT NULL,
+                status TEXT DEFAULT 'pending',
+                academic_year TEXT,
+                application_date TEXT,
+                decision_date TEXT,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (student_id) REFERENCES students(student_id)
             )
             ''')
 
-            # Create indexes for student finance tables
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_student_finance_accounts_student ON student_finance_accounts(student_id)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_student_finance_transactions_account ON student_finance_transactions(account_id)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_student_finance_transactions_student ON student_finance_transactions(student_id)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_student_finance_transactions_date ON student_finance_transactions(created_at)')
+            # Create financial_transactions table
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS financial_transactions (
+                transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_id TEXT,
+                transaction_type TEXT NOT NULL,
+                amount REAL NOT NULL,
+                description TEXT,
+                reference_number TEXT,
+                transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                status TEXT DEFAULT 'completed',
+                created_by TEXT,
+                FOREIGN KEY (student_id) REFERENCES students(student_id)
+            )
+            ''')
+
+            # Create late_fees table
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS late_fees (
+                late_fee_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_fee_id INTEGER NOT NULL,
+                late_fee_amount REAL NOT NULL,
+                calculation_method TEXT DEFAULT 'fixed',
+                days_overdue INTEGER NOT NULL,
+                applied_date TEXT NOT NULL,
+                waived INTEGER DEFAULT 0,
+                waived_by TEXT,
+                waived_date TEXT,
+                waiver_reason TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (student_fee_id) REFERENCES student_fees(student_fee_id)
+            )
+            ''')
+
+            # Create financial_aid_types table
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS financial_aid_types (
+                aid_type_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                aid_name TEXT NOT NULL,
+                aid_category TEXT,
+                description TEXT,
+                max_amount REAL,
+                eligibility_criteria TEXT,
+                application_deadline TEXT,
+                is_renewable INTEGER DEFAULT 0,
+                requires_repayment INTEGER DEFAULT 0,
+                is_active INTEGER DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            ''')
 
             conn.commit()
             conn.close()
@@ -444,32 +528,44 @@ class DatabaseManager:
 
             from education_system.university_system.infrastructure.database.db import get_connection
             conn = get_connection()
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute("PRAGMA busy_timeout=5000")
             cursor = conn.cursor()
 
             cleaned_count = 0
 
             # Delete old payment records (>5 years)
-            cursor.execute('''
-            DELETE FROM payments
-            WHERE date(payment_date) < date('now', '-5 years')
-            ''')
-            cleaned_count += cursor.rowcount
+            try:
+                cursor.execute('''
+                DELETE FROM payments
+                WHERE date(payment_date) < date('now', '-5 years')
+                ''')
+                cleaned_count += cursor.rowcount
+            except Exception:
+                pass
 
-            # Delete old transaction records (>5 years)
-            cursor.execute('''
-            DELETE FROM financial_transactions
-            WHERE date(transaction_date) < date('now', '-5 years')
-            ''')
-            cleaned_count += cursor.rowcount
+            # Delete old transaction records (>5 years) — table may not exist
+            try:
+                cursor.execute('''
+                DELETE FROM financial_transactions
+                WHERE date(transaction_date) < date('now', '-5 years')
+                ''')
+                cleaned_count += cursor.rowcount
+            except Exception:
+                pass
 
             # Delete orphaned fee records (no associated student)
-            cursor.execute('''
-            DELETE FROM student_fees
-            WHERE student_id NOT IN (SELECT student_id FROM students)
-            ''')
-            cleaned_count += cursor.rowcount
+            try:
+                cursor.execute('''
+                DELETE FROM student_fees
+                WHERE student_id NOT IN (SELECT student_id FROM students)
+                ''')
+                cleaned_count += cursor.rowcount
+            except Exception:
+                pass
 
             # Optimize database
+            conn.commit()
             cursor.execute('VACUUM')
             cursor.execute('ANALYZE')
 

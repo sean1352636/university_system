@@ -4,20 +4,20 @@ import os
 import json
 from datetime import datetime, timedelta
 
-from .config import CONFIG, AVAILABLE_SECTIONS, get_reporting_db_connection, logger
-from ._compat import get_log_file
-from .models import ReportTemplate, AdvancedScheduledReport
-from .cache import CacheManager
-from .data_quality import DataQualityMonitor
-from .predictive import PredictiveAnalytics
-from .visualization import AdvancedVisualization
-from .templates_db import save_template, load_templates, get_template
-from .report_generation import generate_report
-from .scheduler import (
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.config import CONFIG, AVAILABLE_SECTIONS, get_reporting_db_connection, logger
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting._compat import get_log_file
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.models import ReportTemplate, AdvancedScheduledReport
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.cache import CacheManager
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.data_quality import DataQualityMonitor
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.predictive import PredictiveAnalytics
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.visualization import AdvancedVisualization
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.templates_db import save_template, load_templates, get_template
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.report_generation import generate_report
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.scheduler import (
     run_system_maintenance, cleanup_old_reports,
     load_scheduled_reports, save_scheduled_reports, start_scheduler,
 )
-from .api import app
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.api import app
 from education_system.university_system.core.sql_safety import validate_table_name
 
 

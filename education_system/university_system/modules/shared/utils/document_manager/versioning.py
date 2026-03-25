@@ -1,4 +1,4 @@
-from ._common import (
+from education_system.university_system.modules.shared.utils.document_manager._common import (
     os, shutil, zipfile, datetime, sqlite3,
     get_connection, _t,
 )
@@ -42,9 +42,9 @@ class VersioningMixin:
             # Get current documents for the student
             cursor.execute('''
             SELECT sd.document_id, dt.type_name, sd.version_number
-            FROM student_documents sd
+            FROM documents sd
             JOIN document_types dt ON sd.type_id = dt.type_id
-            WHERE sd.student_id = ? AND sd.is_current_version = 1
+            WHERE sd.owner_id = ? AND sd.source_type = 'student' AND sd.is_current_version = 1
             ORDER BY dt.type_name
             ''', (student_id,))
 
@@ -76,7 +76,7 @@ class VersioningMixin:
             cursor.execute('''
             SELECT document_id, version_number, upload_date, uploaded_by,
                    original_filename, file_size, is_current_version
-            FROM student_documents
+            FROM documents
             WHERE (document_id = ? OR parent_document_id = ?)
             ORDER BY version_number DESC
             ''', (selected_doc_id, selected_doc_id))
@@ -111,7 +111,7 @@ class VersioningMixin:
             cursor.execute('''
             SELECT document_id, version_number, upload_date, file_size,
                    file_hash, verification_status
-            FROM student_documents
+            FROM documents
             WHERE document_id = ? OR parent_document_id = ?
             ORDER BY version_number
             ''', (doc_id, doc_id))
@@ -173,7 +173,7 @@ class VersioningMixin:
 
             cursor.execute('''
             SELECT document_id, version_number, upload_date, original_filename
-            FROM student_documents
+            FROM documents
             WHERE (document_id = ? OR parent_document_id = ?)
             AND is_current_version = 0
             ORDER BY version_number DESC
@@ -204,7 +204,7 @@ class VersioningMixin:
             if confirm == 'y':
                 # Mark current version as not current
                 cursor.execute('''
-                UPDATE student_documents
+                UPDATE documents
                 SET is_current_version = 0
                 WHERE (document_id = ? OR parent_document_id = ?)
                 AND is_current_version = 1
@@ -212,7 +212,7 @@ class VersioningMixin:
 
                 # Mark selected version as current
                 cursor.execute('''
-                UPDATE student_documents
+                UPDATE documents
                 SET is_current_version = 1
                 WHERE document_id = ?
                 ''', (selected[0],))
@@ -238,7 +238,7 @@ class VersioningMixin:
             # Count old versions
             cursor.execute('''
             SELECT COUNT(*), SUM(file_size)
-            FROM student_documents
+            FROM documents
             WHERE is_current_version = 0
             ''')
 
@@ -268,7 +268,7 @@ class VersioningMixin:
 
                 cursor.execute('''
                 SELECT document_id, file_path, original_filename
-                FROM student_documents
+                FROM documents
                 WHERE is_current_version = 0 AND file_path IS NOT NULL
                 ''')
 
@@ -296,7 +296,7 @@ class VersioningMixin:
 
                             # Update database
                             cursor.execute('''
-                            UPDATE student_documents
+                            UPDATE documents
                             SET file_path = ?
                             WHERE document_id = ?
                             ''', (new_path, doc_id))
@@ -309,7 +309,7 @@ class VersioningMixin:
 
                 if confirm == 'DELETE':
                     cursor.execute('''
-                    SELECT file_path FROM student_documents
+                    SELECT file_path FROM documents
                     WHERE is_current_version = 0 AND file_path IS NOT NULL
                     ''')
 
@@ -326,7 +326,7 @@ class VersioningMixin:
                                 print(f"Error deleting {file_path}: {e}")
 
                     # Delete database records
-                    cursor.execute('DELETE FROM student_documents WHERE is_current_version = 0')
+                    cursor.execute('DELETE FROM documents WHERE is_current_version = 0')
 
                     conn.commit()
                     print(f"\n✅ Deleted {deleted_count} old version files and {count} database records")
@@ -350,7 +350,7 @@ class VersioningMixin:
             # Documents with multiple versions
             cursor.execute('''
             SELECT parent_document_id, COUNT(*) as version_count
-            FROM student_documents
+            FROM documents
             WHERE parent_document_id IS NOT NULL
             GROUP BY parent_document_id
             HAVING COUNT(*) > 1
@@ -371,8 +371,8 @@ class VersioningMixin:
             FROM document_types dt
             JOIN (
                 SELECT type_id, COUNT(*) as version_count
-                FROM student_documents
-                GROUP BY student_id, type_id
+                FROM documents
+                GROUP BY owner_id, type_id
             ) vc ON dt.type_id = vc.type_id
             GROUP BY dt.type_name
             ORDER BY avg_versions DESC
@@ -389,7 +389,7 @@ class VersioningMixin:
             cursor.execute('''
             SELECT SUM(file_size) as total_size,
                    COUNT(*) as version_count
-            FROM student_documents
+            FROM documents
             WHERE is_current_version = 0
             ''')
 

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/assignments/groups/group_management.py
+# hypothesis_version: 6.151.9
+
+['\nGroup Assignments:', '%Y%m%d_%H%M%S', '%Y-%m-%d %H:%M:%S', '-', '1', '2', '2. Create new group', '3', '4', '5', '5. Delete group', '6', '6. Export group list', '=', 'Available groups:', 'Choose option: ', 'Deletion cancelled.', 'Enter student ID: ', 'First Name', 'Group ID', 'Group Name', 'Group memberships:', 'Group name: ', 'Groups:', 'Invalid selection.', 'Joined Date', 'Last Name', 'Maximum group size: ', 'Members', 'Members:', 'Minimum group size: ', 'No groups available.', 'No groups found.', 'No groups to delete.', 'Role', 'Student ID', 'assignment_groups', 'create', 'delete', 'exports', 'group_id', 'group_name', 'manage_assignments', 'student_id', 'update', 'username', 'w', 'yes']

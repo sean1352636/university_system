@@ -333,7 +333,7 @@ class TestAppointmentManagement:
     def test_show_upcoming_appointments(self, test_db, mock_auth, capsys):
         """Test showing upcoming appointments"""
         # Mock get_user_student_id
-        with patch('university_system.modules.domain.health.appointments.appointment_booking.get_user_student_id', return_value='S001'):
+        with patch('education_system.university_system.modules.domain.health.appointments.appointment_booking.get_user_student_id', return_value='S001'):
             # Add future appointment
             cursor = test_db.cursor()
             future_date = (datetime.now() + timedelta(days=3)).strftime('%Y-%m-%d')

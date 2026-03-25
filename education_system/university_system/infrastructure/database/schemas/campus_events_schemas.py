@@ -15,51 +15,100 @@ def init_campus_events_system_db():
 
         print(_t("schemas.initializing", name="Campus Events Hub"))
 
-        # Events
+        # Unified Events
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS campus_events (
+        CREATE TABLE IF NOT EXISTS unified_events (
             event_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            event_name TEXT NOT NULL,
-            event_type TEXT NOT NULL,
-            event_category TEXT NOT NULL,
+            source_type TEXT NOT NULL,
+            source_event_id INTEGER,
+            title TEXT NOT NULL,
             description TEXT,
-            organizer_id TEXT NOT NULL,
-            organizer_type TEXT NOT NULL,
-            event_date TEXT NOT NULL,
-            start_time TEXT NOT NULL,
-            end_time TEXT NOT NULL,
+            event_type TEXT,
+            event_category TEXT,
+            start_datetime TEXT,
+            end_datetime TEXT,
             location TEXT,
+            building TEXT,
+            room TEXT,
             room_id INTEGER,
-            capacity INTEGER,
-            registration_required BOOLEAN DEFAULT 0,
+            organizer_id TEXT,
+            organizer_name TEXT,
+            organizer_type TEXT,
+            max_capacity INTEGER,
+            registration_required INTEGER DEFAULT 0,
             registration_deadline TEXT,
-            is_public BOOLEAN DEFAULT 1,
-            is_featured BOOLEAN DEFAULT 0,
+            is_public INTEGER DEFAULT 1,
+            is_featured INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'scheduled',
             tags TEXT,
             image_url TEXT,
-            status TEXT DEFAULT 'scheduled',
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            virtual_link TEXT,
+            event_fee REAL DEFAULT 0,
+            payment_required INTEGER DEFAULT 0,
+            waitlist_enabled INTEGER DEFAULT 0,
+            qr_code_path TEXT,
+            club_id INTEGER,
+            created_by TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT,
+            notes TEXT
         )
         ''')
 
-        # Campus Event registrations (separate from alumni_events)
+        # Migration: add columns that may not exist in older databases
+        cursor.execute("PRAGMA table_info(unified_events)")
+        existing_columns = {row[1] for row in cursor.fetchall()}
+
+        unified_event_migrations = [
+            ('building', 'TEXT'),
+            ('organizer_name', 'TEXT'),
+            ('updated_at', 'TEXT'),
+            ('virtual_link', 'TEXT'),
+            ('event_fee', 'REAL DEFAULT 0'),
+            ('payment_required', 'INTEGER DEFAULT 0'),
+            ('waitlist_enabled', 'INTEGER DEFAULT 0'),
+            ('qr_code_path', 'TEXT'),
+            ('club_id', 'INTEGER'),
+            ('created_by', 'TEXT'),
+            ('notes', 'TEXT'),
+            ('source_type', 'TEXT'),
+            ('source_event_id', 'INTEGER'),
+        ]
+
+        for col_name, col_type in unified_event_migrations:
+            if col_name not in existing_columns:
+                try:
+                    safe_alter_table_add_column("unified_events", col_name, col_type, conn)
+                    print(_t("schemas.added_missing_column", column=col_name, table="unified_events"))
+                except Exception as e:
+                    print(_t("schemas.column_add_warning", column=col_name, table="unified_events", error=str(e)))
+
+        # Unified Event registrations
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS campus_event_registrations (
+        CREATE TABLE IF NOT EXISTS unified_event_registrations (
             registration_id INTEGER PRIMARY KEY AUTOINCREMENT,
             event_id INTEGER NOT NULL,
-            user_id TEXT NOT NULL,
-            user_type TEXT NOT NULL,
-            registration_date TEXT DEFAULT CURRENT_TIMESTAMP,
+            user_id TEXT,
+            user_type TEXT,
+            registration_date TEXT DEFAULT (datetime('now')),
             attendance_status TEXT DEFAULT 'registered',
             checked_in_at TEXT,
+            check_out_time TEXT,
+            payment_status TEXT,
+            payment_amount REAL,
+            payment_method TEXT,
+            is_waitlisted INTEGER DEFAULT 0,
+            num_guests INTEGER DEFAULT 0,
             feedback_rating INTEGER,
             feedback_comment TEXT,
-            FOREIGN KEY (event_id) REFERENCES campus_events (event_id)
+            qr_code TEXT,
+            cpd_credits REAL,
+            FOREIGN KEY (event_id) REFERENCES unified_events(event_id)
         )
         ''')
 
-        # Migration: Ensure campus_event_registrations has all required columns
-        cursor.execute("PRAGMA table_info(campus_event_registrations)")
+        # Migration: Ensure unified_event_registrations has all required columns
+        cursor.execute("PRAGMA table_info(unified_event_registrations)")
         existing_columns = {row[1] for row in cursor.fetchall()}
 
         event_reg_migrations = [
@@ -68,17 +117,25 @@ def init_campus_events_system_db():
             ('registration_date', 'TEXT'),
             ('attendance_status', 'TEXT'),
             ('checked_in_at', 'TEXT'),
+            ('check_out_time', 'TEXT'),
+            ('payment_status', 'TEXT'),
+            ('payment_amount', 'REAL'),
+            ('payment_method', 'TEXT'),
+            ('is_waitlisted', 'INTEGER DEFAULT 0'),
+            ('num_guests', 'INTEGER DEFAULT 0'),
             ('feedback_rating', 'INTEGER'),
             ('feedback_comment', 'TEXT'),
+            ('qr_code', 'TEXT'),
+            ('cpd_credits', 'REAL'),
         ]
 
         for col_name, col_type in event_reg_migrations:
             if col_name not in existing_columns:
                 try:
-                    safe_alter_table_add_column("campus_event_registrations", col_name, col_type, conn)
-                    print(_t("schemas.added_missing_column", column=col_name, table="campus_event_registrations"))
+                    safe_alter_table_add_column("unified_event_registrations", col_name, col_type, conn)
+                    print(_t("schemas.added_missing_column", column=col_name, table="unified_event_registrations"))
                 except Exception as e:
-                    print(_t("schemas.column_add_warning", column=col_name, table="campus_event_registrations", error=str(e)))
+                    print(_t("schemas.column_add_warning", column=col_name, table="unified_event_registrations", error=str(e)))
 
         # Event series/recurring events
         cursor.execute('''
@@ -104,7 +161,7 @@ def init_campus_events_system_db():
             sent_to TEXT NOT NULL,
             sent_at TEXT DEFAULT CURRENT_TIMESTAMP,
             sent_by TEXT,
-            FOREIGN KEY (event_id) REFERENCES campus_events (event_id)
+            FOREIGN KEY (event_id) REFERENCES unified_events (event_id)
         )
         ''')
 
@@ -118,7 +175,7 @@ def init_campus_events_system_db():
             contribution_amount REAL,
             logo_url TEXT,
             website_url TEXT,
-            FOREIGN KEY (event_id) REFERENCES campus_events (event_id)
+            FOREIGN KEY (event_id) REFERENCES unified_events (event_id)
         )
         ''')
 

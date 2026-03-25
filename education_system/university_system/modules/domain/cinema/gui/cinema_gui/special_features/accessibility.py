@@ -13,8 +13,8 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
-from ..constants import SEAT_TYPES
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.constants import SEAT_TYPES
 
 def show_accessible_page(self):
     self.clear_content()
@@ -157,49 +157,51 @@ def configure_accessible_seats(self):
             couple_seats = parse_seats(couple_e.get())
 
             conn = sqlite3.connect(DB_FILE)
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            # First, reset all special seat flags
-            cursor.execute("""
-                UPDATE seats
-                SET is_wheelchair = 0, is_companion = 0, is_couple = 0
-            """)
-
-            # Update wheelchair seats
-            for row, num in wheelchair_seats:
+                # First, reset all special seat flags
                 cursor.execute("""
                     UPDATE seats
-                    SET is_wheelchair = 1
-                    WHERE row = ? AND seat_number = ?
-                """, (row, num))
+                    SET is_wheelchair = 0, is_companion = 0, is_couple = 0
+                """)
 
-            # Update companion seats
-            for row, num in companion_seats:
-                cursor.execute("""
-                    UPDATE seats
-                    SET is_companion = 1
-                    WHERE row = ? AND seat_number = ?
-                """, (row, num))
+                # Update wheelchair seats
+                for row, num in wheelchair_seats:
+                    cursor.execute("""
+                        UPDATE seats
+                        SET is_wheelchair = 1
+                        WHERE row = ? AND seat_number = ?
+                    """, (row, num))
 
-            # Update couple seats
-            for row, num in couple_seats:
-                cursor.execute("""
-                    UPDATE seats
-                    SET is_couple = 1
-                    WHERE row = ? AND seat_number = ?
-                """, (row, num))
+                # Update companion seats
+                for row, num in companion_seats:
+                    cursor.execute("""
+                        UPDATE seats
+                        SET is_companion = 1
+                        WHERE row = ? AND seat_number = ?
+                    """, (row, num))
 
-            conn.commit()
+                # Update couple seats
+                for row, num in couple_seats:
+                    cursor.execute("""
+                        UPDATE seats
+                        SET is_couple = 1
+                        WHERE row = ? AND seat_number = ?
+                    """, (row, num))
 
-            # Get counts for confirmation
-            cursor.execute("SELECT COUNT(*) FROM seats WHERE is_wheelchair = 1")
-            wheelchair_count = cursor.fetchone()[0]
-            cursor.execute("SELECT COUNT(*) FROM seats WHERE is_companion = 1")
-            companion_count = cursor.fetchone()[0]
-            cursor.execute("SELECT COUNT(*) FROM seats WHERE is_couple = 1")
-            couple_count = cursor.fetchone()[0]
+                conn.commit()
 
-            conn.close()
+                # Get counts for confirmation
+                cursor.execute("SELECT COUNT(*) FROM seats WHERE is_wheelchair = 1")
+                wheelchair_count = cursor.fetchone()[0]
+                cursor.execute("SELECT COUNT(*) FROM seats WHERE is_companion = 1")
+                companion_count = cursor.fetchone()[0]
+                cursor.execute("SELECT COUNT(*) FROM seats WHERE is_couple = 1")
+                couple_count = cursor.fetchone()[0]
+
+            finally:
+                conn.close()
 
             messagebox.showinfo(_t("cinema.common.config_saved"),
                 f"Accessible seat configuration updated successfully!\n\n"
@@ -217,24 +219,26 @@ def configure_accessible_seats(self):
 
 def view_accessible_bookings(self):
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    # Query bookings that have wheelchair-accessible seats
-    cursor.execute("""
-        SELECT DISTINCT b.booking_ref, b.customer_name,
-               GROUP_CONCAT(s.row || s.seat_number, ', ') as seats,
-               sc.show_time
-        FROM bookings b
-        JOIN booked_seats bs ON bs.booking_id = b.id
-        JOIN seats s ON s.id = bs.seat_id
-        JOIN screenings sc ON sc.id = b.screening_id
-        WHERE b.status = 'confirmed'
-          AND (s.is_wheelchair = 1 OR s.row || s.seat_number IN ('A1', 'A2', 'A11', 'A12', 'H1', 'H2', 'H11', 'H12'))
-        GROUP BY b.id
-        ORDER BY sc.show_time DESC
-    """)
-    accessible_bookings = cursor.fetchall()
-    conn.close()
+        # Query bookings that have wheelchair-accessible seats
+        cursor.execute("""
+            SELECT DISTINCT b.booking_ref, b.customer_name,
+                   GROUP_CONCAT(s.row || s.seat_number, ', ') as seats,
+                   sc.show_time
+            FROM bookings b
+            JOIN booked_seats bs ON bs.booking_id = b.id
+            JOIN seats s ON s.id = bs.seat_id
+            JOIN screenings sc ON sc.id = b.screening_id
+            WHERE b.status = 'confirmed'
+              AND (s.is_wheelchair = 1 OR s.row || s.seat_number IN ('A1', 'A2', 'A11', 'A12', 'H1', 'H2', 'H11', 'H12'))
+            GROUP BY b.id
+            ORDER BY sc.show_time DESC
+        """)
+        accessible_bookings = cursor.fetchall()
+    finally:
+        conn.close()
 
     view_win = tk.Toplevel(self.root)
     view_win.title("Accessible Seat Bookings")

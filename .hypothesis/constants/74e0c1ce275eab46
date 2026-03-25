@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/virtual_classroom/classroom_manager.py
+# hypothesis_version: 6.151.9
+
+[100, ' AND is_active = 1', ' WHERE is_active = 1', 'breakout_rooms', 'chat', 'features', 'is_active', 'max_participants', 'meet', 'meeting_id', 'meeting_link', 'passcode', 'polling', 'recording', 'screen_sharing', 'session_name', 'teams', 'webrtc', 'whiteboard', 'zoom']

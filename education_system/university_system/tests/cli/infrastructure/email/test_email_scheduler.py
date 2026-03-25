@@ -51,9 +51,9 @@ def cleanup_scheduler():
 class TestCheckBookReturnReminders:
     """Test check_book_return_reminders function"""
 
-    @patch('university_system.infrastructure.email.email_scheduler.send_book_return_reminder')
-    @patch('university_system.infrastructure.email.email_scheduler.get_connection')
-    @patch('university_system.infrastructure.email.email_scheduler.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.send_book_return_reminder')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.get_connection')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.log_event')
     def test_check_book_return_reminders_no_books(self, mock_log_event, mock_get_conn, mock_send_reminder):
         """Test checking reminders when no books are due"""
         from education_system.university_system.infrastructure.email.email_scheduler import check_book_return_reminders
@@ -69,9 +69,9 @@ class TestCheckBookReturnReminders:
         mock_send_reminder.assert_not_called()
         mock_log_event.assert_called_with('info', 'Email Scheduler: Sent 0 book return reminders')
 
-    @patch('university_system.infrastructure.email.email_scheduler.send_book_return_reminder')
-    @patch('university_system.infrastructure.email.email_scheduler.get_connection')
-    @patch('university_system.infrastructure.email.email_scheduler.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.send_book_return_reminder')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.get_connection')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.log_event')
     def test_check_book_return_reminders_with_books(self, mock_log_event, mock_get_conn, mock_send_reminder):
         """Test checking reminders with books due in 3 days"""
         from education_system.university_system.infrastructure.email.email_scheduler import check_book_return_reminders
@@ -93,9 +93,9 @@ class TestCheckBookReturnReminders:
         mock_send_reminder.assert_any_call(102, 202, 'Advanced Algorithms', '2025-01-20')
         mock_log_event.assert_called_with('info', 'Email Scheduler: Sent 2 book return reminders')
 
-    @patch('university_system.infrastructure.email.email_scheduler.send_book_return_reminder')
-    @patch('university_system.infrastructure.email.email_scheduler.get_connection')
-    @patch('university_system.infrastructure.email.email_scheduler.logger')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.send_book_return_reminder')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.get_connection')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.logger')
     def test_check_book_return_reminders_send_failure(self, mock_logger, mock_get_conn, mock_send_reminder):
         """Test handling of reminder send failures"""
         from education_system.university_system.infrastructure.email.email_scheduler import check_book_return_reminders
@@ -115,8 +115,8 @@ class TestCheckBookReturnReminders:
 
         mock_logger.error.assert_called()
 
-    @patch('university_system.infrastructure.email.email_scheduler.get_connection')
-    @patch('university_system.infrastructure.email.email_scheduler.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.get_connection')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.log_event')
     def test_check_book_return_reminders_db_error(self, mock_log_event, mock_get_conn):
         """Test handling of database errors"""
         from education_system.university_system.infrastructure.email.email_scheduler import check_book_return_reminders
@@ -132,9 +132,9 @@ class TestCheckBookReturnReminders:
 class TestCheckOverdueBooks:
     """Test check_overdue_books function"""
 
-    @patch('university_system.infrastructure.email.email_scheduler.send_overdue_notification')
-    @patch('university_system.infrastructure.email.email_scheduler.get_connection')
-    @patch('university_system.infrastructure.email.email_scheduler.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.send_overdue_notification')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.get_connection')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.log_event')
     def test_check_overdue_books_no_overdue(self, mock_log_event, mock_get_conn, mock_send_notification):
         """Test checking overdue books when none are overdue"""
         from education_system.university_system.infrastructure.email.email_scheduler import check_overdue_books
@@ -149,9 +149,9 @@ class TestCheckOverdueBooks:
         mock_send_notification.assert_not_called()
         mock_log_event.assert_called_with('info', 'Email Scheduler: Sent 0 overdue book notifications')
 
-    @patch('university_system.infrastructure.email.email_scheduler.send_overdue_notification')
-    @patch('university_system.infrastructure.email.email_scheduler.get_connection')
-    @patch('university_system.infrastructure.email.email_scheduler.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.send_overdue_notification')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.get_connection')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.log_event')
     def test_check_overdue_books_with_overdue(self, mock_log_event, mock_get_conn, mock_send_notification):
         """Test checking overdue books with actual overdue books"""
         from education_system.university_system.infrastructure.email.email_scheduler import check_overdue_books
@@ -172,9 +172,9 @@ class TestCheckOverdueBooks:
         mock_send_notification.assert_any_call(101, 201, 'Introduction to Python', '2025-01-10', 5)
         mock_send_notification.assert_any_call(102, 202, 'Advanced Algorithms', '2025-01-12', 3)
 
-    @patch('university_system.infrastructure.email.email_scheduler.send_overdue_notification')
-    @patch('university_system.infrastructure.email.email_scheduler.get_connection')
-    @patch('university_system.infrastructure.email.email_scheduler.logger')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.send_overdue_notification')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.get_connection')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.logger')
     def test_check_overdue_books_notification_failure(self, mock_logger, mock_get_conn, mock_send_notification):
         """Test handling of notification send failures"""
         from education_system.university_system.infrastructure.email.email_scheduler import check_overdue_books
@@ -197,9 +197,9 @@ class TestCheckOverdueBooks:
 class TestCheckSlaBreaches:
     """Test check_sla_breaches function"""
 
-    @patch('university_system.infrastructure.email.email_scheduler.send_sla_alert')
-    @patch('university_system.infrastructure.email.email_scheduler.get_connection')
-    @patch('university_system.infrastructure.email.email_scheduler.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.send_sla_alert')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.get_connection')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.log_event')
     def test_check_sla_breaches_no_breaches(self, mock_log_event, mock_get_conn, mock_send_alert):
         """Test checking SLA breaches when none exist"""
         from education_system.university_system.infrastructure.email.email_scheduler import check_sla_breaches
@@ -214,9 +214,9 @@ class TestCheckSlaBreaches:
         mock_send_alert.assert_not_called()
         mock_log_event.assert_called_with('info', 'Email Scheduler: Sent 0 SLA breach alerts')
 
-    @patch('university_system.infrastructure.email.email_scheduler.send_sla_alert')
-    @patch('university_system.infrastructure.email.email_scheduler.get_connection')
-    @patch('university_system.infrastructure.email.email_scheduler.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.send_sla_alert')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.get_connection')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.log_event')
     def test_check_sla_breaches_with_breaches(self, mock_log_event, mock_get_conn, mock_send_alert):
         """Test checking SLA breaches with actual breaches"""
         from education_system.university_system.infrastructure.email.email_scheduler import check_sla_breaches
@@ -237,9 +237,9 @@ class TestCheckSlaBreaches:
         mock_send_alert.assert_any_call(12345, alert_type='overdue')
         mock_send_alert.assert_any_call(12346, alert_type='overdue')
 
-    @patch('university_system.infrastructure.email.email_scheduler.send_sla_alert')
-    @patch('university_system.infrastructure.email.email_scheduler.get_connection')
-    @patch('university_system.infrastructure.email.email_scheduler.logger')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.send_sla_alert')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.get_connection')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.logger')
     def test_check_sla_breaches_alert_failure(self, mock_logger, mock_get_conn, mock_send_alert):
         """Test handling of alert send failures"""
         from education_system.university_system.infrastructure.email.email_scheduler import check_sla_breaches
@@ -262,8 +262,8 @@ class TestCheckSlaBreaches:
 class TestSendDailySatisfactionSurveys:
     """Test send_daily_satisfaction_surveys function"""
 
-    @patch('university_system.infrastructure.email.email_scheduler.send_bulk_satisfaction_surveys')
-    @patch('university_system.infrastructure.email.email_scheduler.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.send_bulk_satisfaction_surveys')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.log_event')
     def test_send_daily_satisfaction_surveys_success(self, mock_log_event, mock_send_bulk):
         """Test sending daily satisfaction surveys successfully"""
         from education_system.university_system.infrastructure.email.email_scheduler import send_daily_satisfaction_surveys
@@ -275,8 +275,8 @@ class TestSendDailySatisfactionSurveys:
         mock_send_bulk.assert_called_once_with(days_old=1)
         mock_log_event.assert_called_with('info', 'Email Scheduler: Sent 5/5 satisfaction surveys')
 
-    @patch('university_system.infrastructure.email.email_scheduler.send_bulk_satisfaction_surveys')
-    @patch('university_system.infrastructure.email.email_scheduler.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.send_bulk_satisfaction_surveys')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.log_event')
     def test_send_daily_satisfaction_surveys_partial_success(self, mock_log_event, mock_send_bulk):
         """Test sending satisfaction surveys with partial success"""
         from education_system.university_system.infrastructure.email.email_scheduler import send_daily_satisfaction_surveys
@@ -287,8 +287,8 @@ class TestSendDailySatisfactionSurveys:
 
         mock_log_event.assert_called_with('info', 'Email Scheduler: Sent 3/5 satisfaction surveys')
 
-    @patch('university_system.infrastructure.email.email_scheduler.send_bulk_satisfaction_surveys')
-    @patch('university_system.infrastructure.email.email_scheduler.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.send_bulk_satisfaction_surveys')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.log_event')
     def test_send_daily_satisfaction_surveys_failure(self, mock_log_event, mock_send_bulk):
         """Test handling of survey send failures"""
         from education_system.university_system.infrastructure.email.email_scheduler import send_daily_satisfaction_surveys
@@ -304,8 +304,8 @@ class TestSendDailySatisfactionSurveys:
 class TestSetupSchedules:
     """Test setup_schedules function"""
 
-    @patch('university_system.infrastructure.email.email_scheduler.schedule')
-    @patch('university_system.infrastructure.email.email_scheduler.logger')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.schedule')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.logger')
     def test_setup_schedules_configures_all_jobs(self, mock_logger, mock_schedule):
         """Test that all scheduled jobs are configured"""
         from education_system.university_system.infrastructure.email.email_scheduler import setup_schedules
@@ -322,7 +322,7 @@ class TestSetupSchedules:
         # Should configure daily jobs
         assert mock_schedule.every.call_count >= 3  # At least 3 daily jobs
 
-    @patch('university_system.infrastructure.email.email_scheduler.schedule')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.schedule')
     def test_setup_schedules_timing(self, mock_schedule):
         """Test that jobs are scheduled at correct times"""
         from education_system.university_system.infrastructure.email.email_scheduler import setup_schedules
@@ -336,8 +336,8 @@ class TestSetupSchedules:
 class TestStartScheduler:
     """Test start_scheduler function"""
 
-    @patch('university_system.infrastructure.email.email_scheduler.threading.Thread')
-    @patch('university_system.infrastructure.email.email_scheduler.setup_schedules')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.threading.Thread')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.setup_schedules')
     def test_start_scheduler_success(self, mock_setup, mock_thread, cleanup_scheduler):
         """Test starting scheduler successfully"""
         from education_system.university_system.infrastructure.email.email_scheduler import start_scheduler, scheduler_running
@@ -357,7 +357,7 @@ class TestStartScheduler:
         mock_setup.assert_called_once()
         mock_thread_instance.start.assert_called_once()
 
-    @patch('university_system.infrastructure.email.email_scheduler.threading.Thread')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.threading.Thread')
     def test_start_scheduler_already_running(self, mock_thread, cleanup_scheduler):
         """Test starting scheduler when already running"""
         from education_system.university_system.infrastructure.email import email_scheduler
@@ -371,8 +371,8 @@ class TestStartScheduler:
 
         assert result is False
 
-    @patch('university_system.infrastructure.email.email_scheduler.threading.Thread')
-    @patch('university_system.infrastructure.email.email_scheduler.setup_schedules')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.threading.Thread')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.setup_schedules')
     def test_start_scheduler_clears_stop_flag(self, mock_setup, mock_thread, cleanup_scheduler):
         """Test that start_scheduler clears the stop flag"""
         from education_system.university_system.infrastructure.email.email_scheduler import (
@@ -397,7 +397,7 @@ class TestStartScheduler:
 class TestStopScheduler:
     """Test stop_scheduler function"""
 
-    @patch('university_system.infrastructure.email.email_scheduler.schedule')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.schedule')
     def test_stop_scheduler_success(self, mock_schedule, cleanup_scheduler):
         """Test stopping scheduler successfully"""
         from education_system.university_system.infrastructure.email import email_scheduler
@@ -424,7 +424,7 @@ class TestStopScheduler:
 
         assert result is True
 
-    @patch('university_system.infrastructure.email.email_scheduler.schedule')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.schedule')
     def test_stop_scheduler_timeout(self, mock_schedule, cleanup_scheduler):
         """Test stopping scheduler with timeout"""
         from education_system.university_system.infrastructure.email import email_scheduler
@@ -439,7 +439,7 @@ class TestStopScheduler:
         # Should return False if thread is still alive after timeout
         assert mock_thread.join.called
 
-    @patch('university_system.infrastructure.email.email_scheduler.schedule')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.schedule')
     def test_stop_scheduler_sets_stop_flag(self, mock_schedule, cleanup_scheduler):
         """Test that stop_scheduler sets the stop flag"""
         from education_system.university_system.infrastructure.email.email_scheduler import (
@@ -483,7 +483,7 @@ class TestIsSchedulerRunning:
 class TestGetScheduledJobs:
     """Test get_scheduled_jobs function"""
 
-    @patch('university_system.infrastructure.email.email_scheduler.schedule')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.schedule')
     def test_get_scheduled_jobs_empty(self, mock_schedule):
         """Test getting scheduled jobs when none exist"""
         from education_system.university_system.infrastructure.email.email_scheduler import get_scheduled_jobs
@@ -495,7 +495,7 @@ class TestGetScheduledJobs:
         assert jobs == []
         mock_schedule.get_jobs.assert_called_once()
 
-    @patch('university_system.infrastructure.email.email_scheduler.schedule')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.schedule')
     def test_get_scheduled_jobs_with_jobs(self, mock_schedule):
         """Test getting scheduled jobs when jobs exist"""
         from education_system.university_system.infrastructure.email.email_scheduler import get_scheduled_jobs
@@ -512,9 +512,9 @@ class TestGetScheduledJobs:
 class TestRunScheduler:
     """Test run_scheduler function (foreground mode)"""
 
-    @patch('university_system.infrastructure.email.email_scheduler.schedule')
-    @patch('university_system.infrastructure.email.email_scheduler.setup_schedules')
-    @patch('university_system.infrastructure.email.email_scheduler.time.sleep')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.schedule')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.setup_schedules')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.time.sleep')
     def test_run_scheduler_keyboard_interrupt(self, mock_sleep, mock_setup, mock_schedule):
         """Test run_scheduler stops on keyboard interrupt"""
         from education_system.university_system.infrastructure.email.email_scheduler import run_scheduler
@@ -527,10 +527,10 @@ class TestRunScheduler:
         mock_setup.assert_called_once()
         mock_schedule.clear.assert_called_once()
 
-    @patch('university_system.infrastructure.email.email_scheduler.schedule')
-    @patch('university_system.infrastructure.email.email_scheduler.setup_schedules')
-    @patch('university_system.infrastructure.email.email_scheduler.time.sleep')
-    @patch('university_system.infrastructure.email.email_scheduler.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.schedule')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.setup_schedules')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.time.sleep')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.log_event')
     def test_run_scheduler_error_handling(self, mock_log_event, mock_sleep, mock_setup, mock_schedule):
         """Test run_scheduler handles errors"""
         from education_system.university_system.infrastructure.email.email_scheduler import run_scheduler
@@ -544,9 +544,9 @@ class TestRunScheduler:
         # Should log error
         assert any('error' in str(call).lower() for call in mock_log_event.call_args_list)
 
-    @patch('university_system.infrastructure.email.email_scheduler.schedule')
-    @patch('university_system.infrastructure.email.email_scheduler.setup_schedules')
-    @patch('university_system.infrastructure.email.email_scheduler.time.sleep')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.schedule')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.setup_schedules')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.time.sleep')
     def test_run_scheduler_runs_pending(self, mock_sleep, mock_setup, mock_schedule):
         """Test run_scheduler runs pending jobs"""
         from education_system.university_system.infrastructure.email.email_scheduler import run_scheduler
@@ -568,9 +568,9 @@ class TestRunScheduler:
 class TestSchedulerThreadLoop:
     """Test _run_scheduler_loop internal function"""
 
-    @patch('university_system.infrastructure.email.email_scheduler.schedule')
-    @patch('university_system.infrastructure.email.email_scheduler.time.sleep')
-    @patch('university_system.infrastructure.email.email_scheduler.log_event')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.schedule')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.time.sleep')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.log_event')
     def test_scheduler_loop_sets_running_flag(self, mock_log_event, mock_sleep, mock_schedule):
         """Test that scheduler loop sets running flag"""
         from education_system.university_system.infrastructure.email.email_scheduler import (
@@ -587,8 +587,8 @@ class TestSchedulerThreadLoop:
         # Running flag should be cleared after loop exits
         assert not scheduler_running.is_set()
 
-    @patch('university_system.infrastructure.email.email_scheduler.schedule')
-    @patch('university_system.infrastructure.email.email_scheduler.time.sleep')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.schedule')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.time.sleep')
     def test_scheduler_loop_stops_on_flag(self, mock_sleep, mock_schedule):
         """Test that scheduler loop stops when stop flag is set"""
         from education_system.university_system.infrastructure.email.email_scheduler import (
@@ -607,9 +607,9 @@ class TestSchedulerThreadLoop:
 class TestIntegration:
     """Integration tests for email scheduler"""
 
-    @patch('university_system.infrastructure.email.email_scheduler.send_bulk_satisfaction_surveys')
-    @patch('university_system.infrastructure.email.email_scheduler.send_book_return_reminder')
-    @patch('university_system.infrastructure.email.email_scheduler.get_connection')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.send_bulk_satisfaction_surveys')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.send_book_return_reminder')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.get_connection')
     def test_scheduler_lifecycle(self, mock_get_conn, mock_book_reminder, mock_surveys, cleanup_scheduler):
         """Test complete scheduler lifecycle: start, check status, stop"""
         from education_system.university_system.infrastructure.email.email_scheduler import (
@@ -620,7 +620,7 @@ class TestIntegration:
         assert is_scheduler_running() is False
 
         # Start scheduler
-        with patch('university_system.infrastructure.email.email_scheduler.setup_schedules'):
+        with patch('education_system.university_system.infrastructure.email.email_scheduler.setup_schedules'):
             result = start_scheduler()
             assert result is True
             assert is_scheduler_running() is True
@@ -630,7 +630,7 @@ class TestIntegration:
         assert result is True
         assert is_scheduler_running() is False
 
-    @patch('university_system.infrastructure.email.email_scheduler.schedule')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.schedule')
     def test_setup_and_get_jobs(self, mock_schedule):
         """Test setting up schedules and retrieving jobs"""
         from education_system.university_system.infrastructure.email.email_scheduler import (
@@ -650,8 +650,8 @@ class TestIntegration:
 class TestErrorRecovery:
     """Test error recovery and resilience"""
 
-    @patch('university_system.infrastructure.email.email_scheduler.get_connection')
-    @patch('university_system.infrastructure.email.email_scheduler.logger')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.get_connection')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.logger')
     def test_book_reminders_continues_after_error(self, mock_logger, mock_get_conn):
         """Test that book reminder check continues after individual errors"""
         from education_system.university_system.infrastructure.email.email_scheduler import check_book_return_reminders
@@ -666,7 +666,7 @@ class TestErrorRecovery:
             (2, 102, 202, '2025-01-20', 'Book 2'),
         ]
 
-        with patch('university_system.infrastructure.email.email_scheduler.send_book_return_reminder') as mock_send:
+        with patch('education_system.university_system.infrastructure.email.email_scheduler.send_book_return_reminder') as mock_send:
             # First call fails, second succeeds
             mock_send.side_effect = [Exception("Failed"), None]
 
@@ -676,9 +676,9 @@ class TestErrorRecovery:
             # Both books should be attempted
             assert mock_send.call_count == 2
 
-    @patch('university_system.infrastructure.email.email_scheduler.schedule')
-    @patch('university_system.infrastructure.email.email_scheduler.time.sleep')
-    @patch('university_system.infrastructure.email.email_scheduler.logger')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.schedule')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.time.sleep')
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.logger')
     def test_scheduler_loop_handles_errors(self, mock_logger, mock_sleep, mock_schedule):
         """Test that scheduler loop handles errors gracefully"""
         from education_system.university_system.infrastructure.email.email_scheduler import (

@@ -3,6 +3,7 @@
 from education_system.college_system.core.exceptions import PreventDutyError
 from education_system.college_system.infrastructure.database.db import connect
 
+from education_system.college_system.core.sql_safety import escape_like
 import logging
 
 logger = logging.getLogger(__name__)
@@ -69,7 +70,8 @@ class PreventDutyService:
                 params.append(concern_type)
             if search:
                 sql += " AND subject_name LIKE ?"
-                params.append(f"%{search}%")
+                escaped = escape_like(search)
+                params.append(f"%{escaped}%")
             sql += " ORDER BY created_at DESC"
             return [dict(r) for r in conn.execute(sql, params).fetchall()]
         finally:

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/accessibility_tools.py
+# hypothesis_version: 6.151.9
+
+[' AND status = ?', ' AND student_id = ?', '1', '2', '3', '4', '5', '6', '=', 'AssistiveTechManager', '[]', 'accommodations', 'approved', 'create', 'disabilities', 'exam_accommodation', 'fulfilled', 'profile_id', 'reviewer_id', 'status', 'student_id', 'type', 'update', 'user_id', '❌ Invalid choice.']

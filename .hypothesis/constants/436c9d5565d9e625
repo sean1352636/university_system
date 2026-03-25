@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/betting_shop_cli/predictions.py
+# hypothesis_version: 6.151.9
+
+[0.0, 0.05, 2.0, 100, '-', '0', '1', '1. All Categories', '2', '2. Sports', '3', '3. Politics', '4', '4. Entertainment', '5', '5. Academic', '6', '6. Other', 'A', 'B', 'MY PREDICTION BETS', 'PLACE PREDICTION BET', 'PREDICTION MARKETS', 'academic', 'column', 'entertainment', 'lost', 'other', 'outcome_a', 'outcome_b', 'politics', 'pool_a', 'pool_b', 'sports', 'username', 'won', 'yes', '❌ Bet cancelled', '❌ Invalid market ID', '❌ Invalid selection', '❌ Invalid stake']

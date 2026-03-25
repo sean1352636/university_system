@@ -1,9 +1,9 @@
 import json
 from typing import Dict, List, Any
 
-from .models import LogLevel, SecurityLevel
-from .logger import EnhancedActivityLogger
-from .plugins.base import LoggerPlugin, PluginManager
+from education_system.university_system.modules.shared.utils.simple_activity_logger.models import LogLevel, SecurityLevel
+from education_system.university_system.modules.shared.utils.simple_activity_logger.logger import EnhancedActivityLogger
+from education_system.university_system.modules.shared.utils.simple_activity_logger.plugins.base import LoggerPlugin, PluginManager
 
 
 # Create singleton instance with plugin support

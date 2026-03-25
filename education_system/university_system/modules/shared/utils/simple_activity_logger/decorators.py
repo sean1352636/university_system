@@ -5,7 +5,7 @@ import logging
 
 import psutil
 
-from .models import LogLevel, SecurityLevel
+from education_system.university_system.modules.shared.utils.simple_activity_logger.models import LogLevel, SecurityLevel
 
 _logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ def enhanced_log_activity(action=None, module=None, description=None,
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             # Import here to avoid circular imports with module_api
-            from .module_api import logger
+            from education_system.university_system.modules.shared.utils.simple_activity_logger.module_api import logger
 
             start_time = time.time()
 
@@ -33,11 +33,15 @@ def enhanced_log_activity(action=None, module=None, description=None,
             # Try to extract user info from function arguments if available
             if args and hasattr(args[0], '__dict__'):
                 obj = args[0]
-                if hasattr(obj, 'current_user'):
+                if hasattr(obj, 'current_user') and obj.current_user is not None:
                     user = obj.current_user
-                    user_id = getattr(user, 'id', 'system')
-                    username = getattr(user, 'username', 'system')
-                    role = getattr(user, 'role', 'system')
+                    # Use str() to guard against non-serialisable objects (e.g. Mock)
+                    uid = getattr(user, 'id', None)
+                    user_id = str(uid) if uid is not None else 'system'
+                    uname = getattr(user, 'username', None)
+                    username = str(uname) if uname is not None else 'system'
+                    urole = getattr(user, 'role', None)
+                    role = str(urole) if urole is not None else 'system'
 
             # Determine the action, module, and details
             action_name = action or func.__name__

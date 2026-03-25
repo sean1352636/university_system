@@ -5,8 +5,8 @@ Cinema Booking System - Helper Functions
 from education_system.university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 
-from .database import DB_FILE
-from .constants import (
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.constants import (
     DYNAMIC_PRICING, GROUP_DISCOUNTS, EARLY_BIRD_DISCOUNTS,
     MEMBERSHIP_TIERS, AGE_RESTRICTED_RATINGS
 )
@@ -45,10 +45,12 @@ def calculate_early_bird_discount(self, show_date_str):
 
 def get_member_discount(self, email):
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT tier FROM members WHERE email = ? AND status = 'active'", (email,))
-    result = cursor.fetchone()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT tier FROM members WHERE email = ? AND status = 'active'", (email,))
+        result = cursor.fetchone()
+    finally:
+        conn.close()
     if result:
         return MEMBERSHIP_TIERS.get(result[0], {}).get('discount', 0)
     return 0

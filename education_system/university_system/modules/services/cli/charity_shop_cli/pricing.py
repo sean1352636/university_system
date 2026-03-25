@@ -2,7 +2,7 @@
 Barcodes, discounts, bundles, dynamic pricing, and price history.
 """
 
-from ._imports import (
+from education_system.university_system.modules.services.cli.charity_shop_cli._imports import (
     sqlite3, json, logger, datetime,
     get_connection, List, Dict, Optional,
     TABLE_NAME, PRICE_HISTORY_TABLE, BUNDLES_TABLE,

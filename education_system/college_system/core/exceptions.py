@@ -471,3 +471,43 @@ class BaselineAssessmentError(CollegeSystemError):
 
 class DataExportError(CollegeSystemError):
     """Data export related errors."""
+
+
+class CensusILRError(CollegeSystemError):
+    """Census/ILR data extraction related errors."""
+
+
+class UCASExportError(CollegeSystemError):
+    """UCAS data export related errors."""
+
+
+class DestinationOutcomeError(CollegeSystemError):
+    """Destination outcome tracking related errors."""
+
+
+class IQRManagerError(CollegeSystemError):
+    """Internal quality review related errors."""
+
+
+class SEFBuilderError(CollegeSystemError):
+    """SEF builder related errors."""
+
+
+class QuestionAnalysisError(CollegeSystemError):
+    """Question-level analysis related errors."""
+
+
+class TargetSettingError(CollegeSystemError):
+    """Target setting engine related errors."""
+
+
+class CoverAgencyError(CollegeSystemError):
+    """Cover agency integration related errors."""
+
+
+class LettingsPortalError(CollegeSystemError):
+    """Lettings portal related errors."""
+
+
+class EmployerPortalError(CollegeSystemError):
+    """Employer portal related errors."""

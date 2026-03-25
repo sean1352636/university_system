@@ -99,7 +99,7 @@ def manage_customer_feedback(self):
                     status TEXT DEFAULT 'Pending',
                     feedback_date DATETIME DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (customer_id) REFERENCES restaurant_customers(customer_id),
-                    FOREIGN KEY (order_id) REFERENCES restaurant_orders(order_id)
+                    FOREIGN KEY (order_id) REFERENCES orders(order_id)
                 )
             ''')
             conn.commit()

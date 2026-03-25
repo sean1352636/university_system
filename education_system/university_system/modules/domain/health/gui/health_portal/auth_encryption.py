@@ -44,6 +44,10 @@ class AuthEncryptionMixin:
         key = Fernet.generate_key()
         with open(key_file, 'wb') as f:
             f.write(key)
+        try:
+            os.chmod(key_file, 0o600)
+        except OSError:
+            pass
         return key
 
     def setup_logging(self):

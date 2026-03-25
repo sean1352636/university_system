@@ -2,7 +2,7 @@
 Analytics and reporting tab for the Activity Logger GUI.
 """
 
-from .._imports import (
+from education_system.university_system.modules.shared.gui.simple_activity_logger_gui._imports import (
     tk, ttk, messagebox, filedialog, scrolledtext,
     json,
     datetime,
@@ -12,9 +12,9 @@ from .._imports import (
 )
 
 if MATPLOTLIB_AVAILABLE:
-    from .._imports import FigureCanvasTkAgg, Figure
+    from education_system.university_system.modules.shared.gui.simple_activity_logger_gui._imports import FigureCanvasTkAgg, Figure
 
-from ..theme import LoggerGUITheme
+from education_system.university_system.modules.shared.gui.simple_activity_logger_gui.theme import LoggerGUITheme
 
 
 class AnalyticsTab(ttk.Frame):

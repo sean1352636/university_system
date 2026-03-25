@@ -2,7 +2,7 @@
 # Split from the monolithic shop_management.py for maintainability.
 # All public functions are re-exported here for backwards compatibility.
 
-from .config import (
+from education_system.university_system.modules.domain.commerce.services.shop_management.config import (
     auth,
     set_auth,
     format_currency,
@@ -21,12 +21,12 @@ from .config import (
     log_dynamic_activity,
 )
 
-from .database import (
+from education_system.university_system.modules.domain.commerce.services.shop_management.database import (
     init_shop_db,
     setup_shop_permissions,
 )
 
-from .menus import (
+from education_system.university_system.modules.domain.commerce.services.shop_management.menus import (
     display_shop_menu,
     display_product_management_menu,
     display_inventory_management_menu,
@@ -38,7 +38,7 @@ from .menus import (
     integrate_shop_with_main,
 )
 
-from .shopping import (
+from education_system.university_system.modules.domain.commerce.services.shop_management.shopping import (
     browse_products,
     add_to_shopping_cart,
     view_shopping_cart,
@@ -48,7 +48,7 @@ from .shopping import (
     validate_inventory_before_checkout,
 )
 
-from .products import (
+from education_system.university_system.modules.domain.commerce.services.shop_management.products import (
     add_new_product,
     edit_product,
     toggle_product_status,
@@ -60,7 +60,7 @@ from .products import (
     bulk_update_prices,
 )
 
-from .inventory import (
+from education_system.university_system.modules.domain.commerce.services.shop_management.inventory import (
     update_stock_levels,
     restock_products,
     view_low_stock_products,
@@ -70,7 +70,7 @@ from .inventory import (
     get_inventory_valuation,
 )
 
-from .discounts import (
+from education_system.university_system.modules.domain.commerce.services.shop_management.discounts import (
     create_discount,
     edit_discount,
     toggle_discount_status,
@@ -79,7 +79,7 @@ from .discounts import (
     cleanup_expired_discounts,
 )
 
-from .reports import (
+from education_system.university_system.modules.domain.commerce.services.shop_management.reports import (
     generate_daily_sales_report,
     generate_weekly_sales_report,
     generate_monthly_sales_report,
@@ -90,18 +90,18 @@ from .reports import (
     display_dashboard,
 )
 
-from .analytics import (
+from education_system.university_system.modules.domain.commerce.services.shop_management.analytics import (
     get_customer_analytics,
     display_customer_analytics,
 )
 
-from .receipts import (
+from education_system.university_system.modules.domain.commerce.services.shop_management.receipts import (
     generate_pdf_receipt,
     generate_barcode,
     print_product_labels,
 )
 
-from .utils import (
+from education_system.university_system.modules.domain.commerce.services.shop_management.utils import (
     log_shop_activity,
     get_transaction_summary,
     backup_shop_database,

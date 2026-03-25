@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/reporting/financial_reports/db_setup.py
+# hypothesis_version: 6.151.9
+
+[0.8, '=', 'alert_system', 'data_quality', 'database', 'export_system', 'ml_models']

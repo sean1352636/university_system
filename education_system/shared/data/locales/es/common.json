@@ -1,0 +1,121 @@
+{
+    "app": {
+        "title": "Sistema Educativo",
+        "language_selector": {
+            "title": "Seleccionar idioma",
+            "subtitle": "Elija su idioma preferido",
+            "confirm": "Aceptar",
+            "cancel": "Cancelar"
+        }
+    },
+    "login": {
+        "title": "Sistema Educativo - Iniciar sesión",
+        "sign_in": "Inicie sesión para continuar",
+        "username": "Nombre de usuario",
+        "password": "Contraseña",
+        "login_button": "Iniciar sesión",
+        "enter_both": "Por favor, introduzca el nombre de usuario y la contraseña.",
+        "no_access": "Su cuenta no tiene acceso a ningún sistema.",
+        "contact_admin": "Por favor, contacte a un administrador.",
+        "default_hint": "Por defecto: superadmin / SuperAdmin@123"
+    },
+    "mfa": {
+        "title": "Autenticación de dos factores",
+        "enter_code": "Introduzca su código de autenticación:",
+        "code_sent": "Se ha enviado un código de verificación a {email}",
+        "code_failed": "Error en el envío del correo. Su código se muestra a continuación:",
+        "verify": "Verificar",
+        "back_to_login": "Volver al inicio de sesión",
+        "enter_code_prompt": "Por favor, introduzca un código."
+    },
+    "system_picker": {
+        "welcome": "Bienvenido/a, {name}",
+        "choose_system": "Elija un sistema para iniciar:",
+        "university": "Sistema de Gestión Universitaria",
+        "college": "Sistema de Sixth Form College",
+        "secondary": "Sistema de Escuela Secundaria",
+        "primary": "Sistema de Escuela Primaria",
+        "logout": "Cerrar sesión",
+        "superadmin_dashboard": "Panel de Super Administrador"
+    },
+    "common": {
+        "ok": "Aceptar",
+        "cancel": "Cancelar",
+        "save": "Guardar",
+        "delete": "Eliminar",
+        "edit": "Editar",
+        "add": "Añadir",
+        "search": "Buscar",
+        "refresh": "Actualizar",
+        "close": "Cerrar",
+        "back": "Atrás",
+        "next": "Siguiente",
+        "yes": "Sí",
+        "no": "No",
+        "confirm": "Confirmar",
+        "error": "Error",
+        "success": "Éxito",
+        "warning": "Advertencia",
+        "loading": "Cargando...",
+        "no_results": "No se encontraron resultados",
+        "actions": "Acciones",
+        "status": "Estado",
+        "name": "Nombre",
+        "email": "Correo electrónico",
+        "date": "Fecha",
+        "type": "Tipo",
+        "description": "Descripción",
+        "submit": "Enviar",
+        "export": "Exportar",
+        "import": "Importar",
+        "filter": "Filtrar",
+        "clear": "Limpiar",
+        "select_all": "Seleccionar todo",
+        "deselect_all": "Deseleccionar todo",
+        "active": "Activo",
+        "inactive": "Inactivo",
+        "transferred": "Transferido"
+    },
+    "shared_modules": {
+        "cross_system_notifications": "Notificaciones entre sistemas",
+        "student_journey": "Trayectoria del estudiante",
+        "analytics_dashboard": "Panel de análisis",
+        "outcome_tracking": "Seguimiento de resultados",
+        "predictive_alerts": "Alertas predictivas",
+        "bulk_transfer": "Transferencia masiva",
+        "transfer_documents": "Documentos de transferencia",
+        "reverse_lookup": "Búsqueda inversa",
+        "parent_continuity": "Continuidad de padres",
+        "cross_system_calendar": "Calendario entre sistemas",
+        "inter_system_messaging": "Mensajería entre sistemas",
+        "central_admin_portal": "Portal de administración central",
+        "gdpr_compliance": "Cumplimiento del RGPD",
+        "shared_documents": "Documentos compartidos",
+        "student_self_service": "Autoservicio del estudiante",
+        "digital_transcript": "Expediente académico digital"
+    },
+    "switch_system": {
+        "title": "Cambiar sistema",
+        "switch_to": "Cambiar a:",
+        "switching": "Cambiando a {system}..."
+    },
+    "superadmin": {
+        "title": "Panel de Super Administrador",
+        "overview": "Panel",
+        "system_health": "Estado del sistema",
+        "user_management": "Gestión de usuarios",
+        "student_analytics": "Análisis de estudiantes",
+        "notifications": "Notificaciones",
+        "student_search": "Búsqueda de estudiantes",
+        "audit_log": "Registro de auditoría",
+        "quick_launch": "Acceso rápido"
+    },
+    "roles": {
+        "admin": "Administrador",
+        "staff": "Personal",
+        "teacher": "Profesor",
+        "student": "Estudiante",
+        "parent": "Padre/Madre",
+        "superadmin": "Super Administrador"
+    }
+}

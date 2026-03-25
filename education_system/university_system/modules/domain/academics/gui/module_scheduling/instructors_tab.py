@@ -61,8 +61,8 @@ except ImportError:
     except Exception:
         class ModuleScheduler: pass
 
-from .main_gui import ModuleSchedulingGUI
-from .dialogs import AddInstructorDialog, EditInstructorDialog
+from education_system.university_system.modules.domain.academics.gui.module_scheduling.main_gui import ModuleSchedulingGUI
+from education_system.university_system.modules.domain.academics.gui.module_scheduling.dialogs import AddInstructorDialog, EditInstructorDialog
 
 def create_instructors_tab(self):
     """Create the instructors management tab"""
@@ -157,7 +157,7 @@ def refresh_instructors(self):
             ))
             
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to refresh instructors: {str(e)}")
+        messagebox.showerror("Error", f"Failed to refresh instructors: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.refresh_instructors = refresh_instructors
 
@@ -210,7 +210,7 @@ def filter_instructors(self, *args):
             ))
             
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to filter instructors: {str(e)}")
+        messagebox.showerror("Error", f"Failed to filter instructors: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.filter_instructors = filter_instructors
 
@@ -228,7 +228,7 @@ def edit_selected_instructor(self):
     """Edit the selected instructor"""
     selected = self.instructors_tree.selection()
     if not selected:
-        messagebox.showwarning("Warning", "Please select an instructor to edit.")
+        messagebox.showwarning("Warning", "Please select an instructor to edit.", parent=self.root)
         return
     
     instructor_data = self.instructors_tree.item(selected[0])['values']
@@ -259,7 +259,7 @@ def view_instructor_schedule(self, instructor_id=None):
     schedules = self._get_instructor_schedule_data(instructor_id)
 
     if not schedules:
-        messagebox.showinfo("No Schedule", f"No schedule found for instructor ID {instructor_id}")
+        messagebox.showinfo("No Schedule", f"No schedule found for instructor ID {instructor_id}", parent=self.root)
         return
 
     # Get instructor name
@@ -317,7 +317,7 @@ def _select_instructor_dialog(self):
         instructors = cursor.fetchall()
 
     if not instructors:
-        messagebox.showinfo("No Instructors", "No instructors found in the system.")
+        messagebox.showinfo("No Instructors", "No instructors found in the system.", parent=self.root)
         return None
 
     dialog = tk.Toplevel(self.root)

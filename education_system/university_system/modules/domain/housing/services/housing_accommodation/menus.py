@@ -1,16 +1,16 @@
-from . import common as _common
-from .common import (
+from education_system.university_system.modules.domain.housing.services.housing_accommodation import common as _common
+from education_system.university_system.modules.domain.housing.services.housing_accommodation.common import (
     get_text, display_language_menu_option, log_menu_navigation,
 )
-from .database import init_housing_db
-from .buildings import create_building, create_rooms_for_building, view_building, update_building, delete_building
-from .applications import create_application, view_application, process_application
-from .assignments import view_assignment, update_assignment_status
-from .maintenance import create_maintenance_request, view_maintenance_requests, update_maintenance_request
-from .payments import record_payment, view_payment_history
-from .inventory import manage_inventory
-from .inspections import create_inspection, view_inspections
-from .reports import display_reports_menu
+from education_system.university_system.modules.domain.housing.services.housing_accommodation.database import init_housing_db
+from education_system.university_system.modules.domain.housing.services.housing_accommodation.buildings import create_building, create_rooms_for_building, view_building, update_building, delete_building
+from education_system.university_system.modules.domain.housing.services.housing_accommodation.applications import create_application, view_application, process_application
+from education_system.university_system.modules.domain.housing.services.housing_accommodation.assignments import view_assignment, update_assignment_status
+from education_system.university_system.modules.domain.housing.services.housing_accommodation.maintenance import create_maintenance_request, view_maintenance_requests, update_maintenance_request
+from education_system.university_system.modules.domain.housing.services.housing_accommodation.payments import record_payment, view_payment_history
+from education_system.university_system.modules.domain.housing.services.housing_accommodation.inventory import manage_inventory
+from education_system.university_system.modules.domain.housing.services.housing_accommodation.inspections import create_inspection, view_inspections
+from education_system.university_system.modules.domain.housing.services.housing_accommodation.reports import display_reports_menu
 
 
 # Main Menu Function

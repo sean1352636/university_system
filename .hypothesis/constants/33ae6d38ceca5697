@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/college_system/modules/domain/notifications/services/notification_service.py
+# hypothesis_version: 6.151.9
+
+[' AND is_read = 0', 'alert', 'cnt', 'info', 'success', 'warning']

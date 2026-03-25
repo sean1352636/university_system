@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/commerce/services/shop_management/products.py
+# hypothesis_version: 6.151.9
+
+[0.2, 100, '\nAdd New Product:', '\nProduct Inventory:', '\nProduct List:', '\n💰 Bulk Price Update', '\n🚀 Quick Add Product', ' AND p.category = ?', ' AND p.price <= ?', ' AND p.price >= ?', ' ORDER BY p.name', '%Y-%m-%d %H:%M:%S', '*', '-', '1', '10', '2', '3', 'Adding new product', 'Category: ', 'Current details:', 'Description: ', 'Editing product', 'General', 'Initial stock: ', 'Invalid price.', 'No', 'No categories found.', 'Operation cancelled.', 'Price (£): ', 'Product Name: ', 'Product name: ', 'Select category: ', 'Update options:', 'Viewing all products', 'Yes', 'activated', 'category', 'conn', 'deactivated', 'description', 'is_active', 'manage_products', 'name', 'price', 'quantity', 'restock_threshold', 'shop', 'tax_rate', 'view_products', 'y', '❌ Invalid choice.', '❌ Invalid input.']

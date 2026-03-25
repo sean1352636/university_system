@@ -13,6 +13,8 @@ import mimetypes
 import base64
 import secrets
 import traceback
+
+from education_system.university_system.core.sql_safety import escape_like
 from typing import Optional, List, Dict, Any
 from functools import wraps
 
@@ -21,13 +23,13 @@ from education_system.university_system.infrastructure.email.email_manager impor
 from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH, TICKET_TEMPLATES_DIR, UPLOAD_DIR
 from education_system.university_system.utils.logging.log_config import get_log_file
 
-from ..config import (
+from education_system.university_system.modules.domain.student_affairs.services.student_support.config import (
     SUPPORT_DB, TICKET_STATUSES, TICKET_PRIORITIES, SUPPORT_CATEGORIES,
     NotificationType, TicketSentiment, FileType, SupportConfig
 )
-from .. import auth as _auth_mod
-from ..auth import get_current_user_safe, require_auth, has_staff_permissions
-from .knowledge_base import _search_knowledge_base
+from education_system.university_system.modules.domain.student_affairs.services.student_support import auth as _auth_mod
+from education_system.university_system.modules.domain.student_affairs.services.student_support.auth import get_current_user_safe, require_auth, has_staff_permissions
+from education_system.university_system.modules.domain.student_affairs.services.student_support.features.knowledge_base import _search_knowledge_base
 
 logger = logging.getLogger(__name__)
 
@@ -96,7 +98,7 @@ def _search_tickets(query, filters, page, per_page):
         
         # Add search condition
         base_query += "(title LIKE ? OR description LIKE ?)"
-        search_term = f"%{query}%"
+        search_term = f"%{escape_like(query)}%"
         params.extend([search_term, search_term])
         
         # Apply additional filters
@@ -149,7 +151,7 @@ def _search_faqs(query, filters):
         WHERE (question LIKE ? OR answer LIKE ?)
         """
         
-        search_term = f"%{query}%"
+        search_term = f"%{escape_like(query)}%"
         params = [search_term, search_term, search_term, search_term]
         
         if filters and filters.get('category'):
@@ -190,7 +192,7 @@ def _search_resources(query, filters):
         WHERE (title LIKE ? OR description LIKE ? OR tags LIKE ?)
         """
 
-        search_term = f"%{query}%"
+        search_term = f"%{escape_like(query)}%"
         params = [search_term] * 6
 
         if filters and filters.get('category'):

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/college_system/modules/domain/timetable/services/room_service.py
+# hypothesis_version: 6.151.9
+
+[100, ' AND r.capacity >= ?', ' AND r.room_type = ?', ' AND room_type = ?', ' AND status = ?', ' ORDER BY room_code', ', ', 'Resource not found.', 'Room not found.', 'Room updated: id=%d', 'active', 'building', 'capacity', 'classroom', 'condition', 'decommissioned', 'equipment', 'floor', 'good', 'has_computers', 'has_projector', 'has_whiteboard', 'maintenance', 'quantity', 'resource_name', 'resource_type', 'room_code', 'room_type', 'slots_booked', 'status', 'utilization_pct']

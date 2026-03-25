@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/admin/db.py
+# hypothesis_version: 6.151.9
+
+['INTEGER DEFAULT 1', 'INTEGER DEFAULT 50', 'TEXT', 'chat_rooms', 'description', 'error', 'info', 'is_active', 'max_members', 'preference_id', 'warning']

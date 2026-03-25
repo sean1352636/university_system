@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/batch_operations/duplicates.py
+# hypothesis_version: 6.151.9
+
+[0.0, 0.3, 0.4, 0.7, 1.0, 100, 200, '1', '2', '3', '5', '; ', 'confidence', 'course', 'data', 'dob', 'email', 'email_address', 'existing_record', 'first_name', 'gender', 'i', 'id', 'import_record', 'last_name', 'name', 'student1', 'student2', 'u', 'w', 'y']

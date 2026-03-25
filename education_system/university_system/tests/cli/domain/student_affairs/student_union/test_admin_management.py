@@ -48,7 +48,7 @@ def mock_auth():
 class TestSetupPermissions:
     """Test permission setup functionality."""
 
-    @patch('university_system.modules.domain.student_affairs.student_union.administration.admin_management.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.administration.admin_management.get_connection')
     def test_setup_student_union_permissions(self, mock_get_conn):
         """Test setting up student union permissions."""
         mock_conn = Mock()
@@ -64,7 +64,7 @@ class TestSetupPermissions:
         mock_conn.commit.assert_called_once()
         mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.domain.student_affairs.student_union.administration.admin_management.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.administration.admin_management.get_connection')
     def test_setup_new_features_permissions(self, mock_get_conn):
         """Test setting up new features permissions."""
         mock_conn = Mock()
@@ -325,8 +325,8 @@ class TestComplianceReporting:
         mock_file.assert_called()
         assert mock_cursor.execute.call_count >= 3
 
-    @patch('university_system.modules.domain.student_affairs.student_union.administration.admin_management.send_confirmation_email')
-    @patch('university_system.modules.domain.student_affairs.student_union.administration.admin_management.render_template')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.administration.admin_management.send_confirmation_email')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.administration.admin_management.render_template')
     def test_send_compliance_reminders(self, mock_render, mock_send_email, mock_cursor):
         """Test sending compliance reminders."""
         mock_cursor.fetchall.return_value = [
@@ -339,8 +339,8 @@ class TestComplianceReporting:
 
         mock_send_email.assert_called()
 
-    @patch('university_system.modules.domain.student_affairs.student_union.administration.admin_management.send_confirmation_email')
-    @patch('university_system.modules.domain.student_affairs.student_union.administration.admin_management.render_template')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.administration.admin_management.send_confirmation_email')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.administration.admin_management.render_template')
     def test_send_compliance_reminders_no_candidates(self, mock_render, mock_send_email, mock_cursor):
         """Test sending reminders with no active candidates."""
         mock_cursor.fetchall.return_value = []
@@ -439,7 +439,7 @@ class TestVotingConfiguration:
 class TestSampleData:
     """Test sample data insertion."""
 
-    @patch('university_system.modules.domain.student_affairs.student_union.administration.admin_management.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.administration.admin_management.get_connection')
     def test_insert_sample_data(self, mock_get_conn):
         """Test inserting sample data for new features."""
         mock_conn = Mock()
@@ -468,7 +468,7 @@ class TestAdminMenu:
             assert any('permission' in str(call).lower() for call in mock_print.call_args_list)
 
     @patch('builtins.input', side_effect=['5'])
-    @patch('university_system.modules.domain.student_affairs.student_union.administration.admin_management.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.administration.admin_management.get_connection')
     def test_display_admin_menu_with_permissions(self, mock_get_conn, mock_input, mock_auth):
         """Test admin menu with all permissions."""
         mock_conn = Mock()
@@ -498,7 +498,7 @@ class TestAuthSetup:
         original_has_auth = admin_management.HAS_AUTH
         admin_management.HAS_AUTH = True
 
-        with patch('university_system.modules.domain.student_affairs.student_union.administration.admin_management.set_auth_instance') as mock_set:
+        with patch('education_system.university_system.modules.domain.student_affairs.student_union.administration.admin_management.set_auth_instance') as mock_set:
             admin_management.set_auth(mock_auth)
             mock_set.assert_called_once_with(mock_auth)
 

@@ -30,20 +30,22 @@ class SubmissionsMixin:
             assignment_id = int(assignment_id)
 
             conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            # Get assignment details
-            cursor.execute('''
-            SELECT a.*, m.module_name
-            FROM assignments a
-            JOIN modules m ON a.module_code = m.module_code
-            WHERE a.id = ? AND a.is_active = 1
-            ''', (assignment_id,))
+                # Get assignment details
+                cursor.execute('''
+                SELECT a.*, m.module_name
+                FROM assignments a
+                JOIN modules m ON a.module_code = m.module_code
+                WHERE a.id = ? AND a.is_active = 1
+                ''', (assignment_id,))
 
-            assignment = cursor.fetchone()
+                assignment = cursor.fetchone()
 
-            if not assignment:
-                print("Assignment not found.")
+                if not assignment:
+                    print("Assignment not found.")
+            finally:
                 conn.close()
                 return
 
@@ -353,18 +355,20 @@ class SubmissionsMixin:
                 student_id = self._get_student_id()
 
             conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('''
-                SELECT s.*, a.title, a.module_code, a.due_date
-                FROM assignment_submissions s
-                INNER JOIN assignments a ON s.assignment_id = a.id
-                WHERE s.student_id = ?
-                ORDER BY s.submission_date DESC
-            ''', (student_id,))
+                cursor.execute('''
+                    SELECT s.*, a.title, a.module_code, a.due_date
+                    FROM assignment_submissions s
+                    INNER JOIN assignments a ON s.assignment_id = a.id
+                    WHERE s.student_id = ?
+                    ORDER BY s.submission_date DESC
+                ''', (student_id,))
 
-            submissions = cursor.fetchall()
-            conn.close()
+                submissions = cursor.fetchall()
+            finally:
+                conn.close()
 
             return submissions
 
@@ -434,11 +438,13 @@ class SubmissionsMixin:
                 submission_date = datetime.strptime(submission_date, '%Y-%m-%d %H:%M:%S')
 
             conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('SELECT due_date FROM assignments WHERE id = ?', (assignment_id,))
-            result = cursor.fetchone()
-            conn.close()
+                cursor.execute('SELECT due_date FROM assignments WHERE id = ?', (assignment_id,))
+                result = cursor.fetchone()
+            finally:
+                conn.close()
 
             if result:
                 due_date = datetime.strptime(result[0], '%Y-%m-%d %H:%M:%S')
@@ -484,16 +490,18 @@ class SubmissionsMixin:
                 export_path = os.path.join(self.submission_dir, 'exports', f'submissions_{assignment_id}.zip')
 
             conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('''
-                SELECT student_id, file_path, file_name
-                FROM assignment_submissions
-                WHERE assignment_id = ?
-            ''', (assignment_id,))
+                cursor.execute('''
+                    SELECT student_id, file_path, file_name
+                    FROM assignment_submissions
+                    WHERE assignment_id = ?
+                ''', (assignment_id,))
 
-            submissions = cursor.fetchall()
-            conn.close()
+                submissions = cursor.fetchall()
+            finally:
+                conn.close()
 
             with zipfile.ZipFile(export_path, 'w') as zipf:
                 for student_id, file_path, file_name in submissions:

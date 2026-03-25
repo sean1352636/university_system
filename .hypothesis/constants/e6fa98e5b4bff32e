@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/cli/chatbot_integration.py
+# hypothesis_version: 6.151.9
+
+['\nChat session ended.', '%Y-%m-%d %H:%M:%S', '1', '1. ', '2', '2. ', '3', '3. ', '3. Restart Chatbot', '4', '4. ', '4. Back', '5', '5. ', ': ', '=', 'Enter choice: ', 'Use Voice Interface', 'access_chatbot', 'admin', 'bye', 'chatbot_admin', 'cli.chatbot.goodbye', 'cli.chatbot.title', 'cli.logged_in_as', 'common.back', 'common.enter_choice', 'display_chatbot_menu', 'exit', 'id', 'instructor', 'launch_chatbot', 'parent', 'quit', 'restart_chatbot', 'role', 'staff', 'start_chat_session', 'student', 'username', 'voice_interaction', 'yes']

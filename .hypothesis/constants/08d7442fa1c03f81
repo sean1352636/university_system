@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/ai/ai_detector/detector/submission_mixin.py
+# hypothesis_version: 6.151.9
+
+[0.0, 0.5, 0.7, 0.9, 200, '...', 'Submission not found', 'ai_score', 'average_ai_score', 'avg', 'behavioral_analysis', 'character_count', 'connected', 'critical', 'database_status', 'detailed_results', 'detection_methods', 'detection_threshold', 'error', 'generated_at', 'high', 'high_risk_count', 'include_text', 'is_ai_generated', 'limit', 'low', 'medium', 'pattern_matching', 'r.ai_score', 'r.confidence', 'recent_count', 'risk_level', 's.assignment_id', 's.course_code', 's.id', 's.student_id', 's.submission_date', 's.submission_text', 'statistical_analysis', 'student_filter', 'style_profiles', 'submission_text', 'submissions', 'temporal_analysis', 'text_preview', 'total', 'total_submissions', 'unique_students', 'word_count']

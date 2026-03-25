@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/analytics/student_analytics/cli.py
+# hypothesis_version: 6.151.9
+
+['\n🔧 UTILITIES', ',', ', ', '1', '1. Age range', '10', '10. Cohort Analysis', '11', '12', '13', '14', '15', '15. Export Data', '16', '16. Email Reports', '17', '18', '19', '2', '2. GPA range', '20', '20. Exit', '3', '4', '4. Course selection', '5', '5. Gender', '6', '6. Completion status', '7', '8', '8. Clear all filters', '9', '=', 'All filters cleared', 'Available courses:', 'Available genders:', 'Available statuses:', 'Invalid choice', 'Invalid date format', 'Maximum GPA: ', 'Maximum age: ', 'Minimum GPA: ', 'Minimum age: ', 'Select gender: ', 'age_range', 'completion_status', 'course', 'date_range', 'engagement_range', 'gender', 'gpa_range', '📊 BASIC ANALYTICS']

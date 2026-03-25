@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/database/schema_validator.py
+# hypothesis_version: 6.151.9
+
+['1.0', 'BOOL', 'BOOLEAN', 'DOUBLE', 'FLOAT', 'INT', 'INTEGER', 'REAL', 'STRING', 'SchemaDifference', 'SchemaValidator', 'TEXT', 'TableSchema', 'VARCHAR', 'actual', 'cid', 'code', 'column', 'columns', 'courses', 'default', 'details', 'differences', 'email', 'enrollments', 'error', 'expected', 'exported_at', 'extra_column', 'extra_table', 'foreign_keys', 'from', 'id', 'indexes', 'info', 'missing_column', 'missing_table', 'notnull', 'on_delete', 'on_update', 'password_hash', 'pk', 'primary_key', 'r', 'role', 'schema_hash', 'severity', 'students', 'table', 'table name', 'tables', 'to', 'type', 'type_mismatch', 'user_accounts', 'user_id', 'username', 'users', 'version', 'w', 'warning']

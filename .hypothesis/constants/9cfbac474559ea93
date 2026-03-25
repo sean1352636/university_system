@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/housing/gui/housing_accommodation_gui/__init__.py
+# hypothesis_version: 6.151.9
+
+['HousingGUI', 'generate_id', 'init_housing_db', 'orig_create_building', 'orig_delete_building', 'orig_generate_id', 'orig_init_housing_db', 'orig_record_payment', 'orig_select_student', 'orig_set_auth', 'orig_update_building', 'orig_view_assignment', 'orig_view_building', 'send_housing_email', 'set_auth']

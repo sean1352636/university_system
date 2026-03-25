@@ -1,9 +1,9 @@
-from . import common as _common
-from .common import (
+from education_system.university_system.modules.domain.housing.services.housing_accommodation import common as _common
+from education_system.university_system.modules.domain.housing.services.housing_accommodation.common import (
     sqlite3, datetime, get_text, get_connection,
     log_read, log_update,
 )
-from .applications import select_student
+from education_system.university_system.modules.domain.housing.services.housing_accommodation.applications import select_student
 
 
 # Housing Assignment Functions
@@ -337,10 +337,10 @@ def view_assignment():
 
         # Get payment information
         cursor.execute('''
-        SELECT payment_id, amount, payment_date, payment_method, payment_period_start,
+        SELECT source_payment_id, amount, payment_date, payment_method, payment_period_start,
                payment_period_end, status
-        FROM housing_payments
-        WHERE assignment_id = ?
+        FROM payments
+        WHERE source_type = 'housing' AND reference_id = ?
         ORDER BY payment_date DESC
         ''', (assignment_id,))
 

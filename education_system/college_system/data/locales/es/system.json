@@ -1,0 +1,50 @@
+{
+    "app": {
+        "name": "Sistema de Gestión de Sexto Curso",
+        "version": "1.0.0"
+    },
+    "auth": {
+        "login_prompt": "Introduzca su nombre de usuario:",
+        "password_prompt": "Introduzca su contraseña:",
+        "login_success": "Inicio de sesión exitoso. ¡Bienvenido/a, {username}!",
+        "login_failed": "Nombre de usuario o contraseña no válidos.",
+        "logout_success": "Sesión cerrada correctamente.",
+        "access_denied": "Acceso denegado. Permisos insuficientes.",
+        "session_expired": "Sesión expirada. Inicie sesión de nuevo.",
+        "account_locked": "Cuenta bloqueada por demasiados intentos fallidos.",
+        "password_changed": "Contraseña cambiada correctamente.",
+        "password_weak": "La contraseña debe tener al menos 8 caracteres con mayúscula, minúscula, dígito y carácter especial.",
+        "mfa_required": "Se requiere verificación MFA.",
+        "mfa_invalid": "Código MFA no válido.",
+        "mfa_setup_success": "MFA ha sido activado para su cuenta.",
+        "mfa_disabled": "MFA ha sido desactivado."
+    },
+    "menu": {
+        "main_title": "=== Sistema de Gestión de Sexto Curso ===",
+        "select_option": "Seleccione una opción:",
+        "invalid_option": "Opción no válida. Inténtelo de nuevo.",
+        "exit": "Salir",
+        "back": "Atrás",
+        "students": "Gestión de Estudiantes",
+        "courses": "Gestión de Cursos",
+        "enrollment": "Gestión de Matrícula",
+        "grades": "Gestión de Calificaciones",
+        "attendance": "Gestión de Asistencia",
+        "timetable": "Gestión de Horarios",
+        "assignments": "Gestión de Tareas",
+        "notifications": "Notificaciones",
+        "mfa_settings": "Configuración MFA",
+        "my_timetable": "Mi Horario",
+        "my_submissions": "Mis Entregas",
+        "admin": "Administración",
+        "change_password": "Cambiar Contraseña"
+    },
+    "errors": {
+        "generic": "Se produjo un error: {message}",
+        "db_error": "Error de base de datos: {message}",
+        "validation": "Error de validación: {message}",
+        "unexpected": "Error inesperado: {message}",
+        "not_found": "No encontrado.",
+        "unknown_frame": "Marco desconocido: {name}"
+    }
+}

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/reports/generators.py
+# hypothesis_version: 6.151.9
+
+[100, 150, 300, '#27ae60', '#7f8c8d', '#e74c3c', '#ffffff', 'Active Bookings', 'Available', 'Avg. Booking Value', 'Booked', 'Bookings', 'Cancelled', 'Card.TFrame', 'Count', 'Daily Revenue', 'Date', 'Helvetica', 'Movie', 'Occupancy %', 'Occupancy (%)', 'Payment Method', 'Revenue', 'Revenue (£)', 'Revenue by Movie', 'Status', 'Tickets Sold', 'Total', 'Total Bookings', 'Total Revenue', 'bold', 'end', 'headings', 'w', 'x']

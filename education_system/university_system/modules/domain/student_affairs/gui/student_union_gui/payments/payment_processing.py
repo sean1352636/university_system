@@ -124,11 +124,12 @@ def _create_payment_overview_tab(self, parent):
     try:
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
-        # Get payment statistics from club_payments table
+        # Get payment statistics from payments table (club source)
         cursor.execute('''
-            SELECT COUNT(*), SUM(amount), AVG(amount), COUNT(DISTINCT club_id)
-            FROM club_payments
-            WHERE payment_date >= date('now', '-30 days')
+            SELECT COUNT(*), SUM(amount), AVG(amount), COUNT(DISTINCT reference_id)
+            FROM payments
+            WHERE source_type = 'club'
+              AND payment_date >= date('now', '-30 days')
         ''')
         count, total, avg, clubs_count = cursor.fetchone()
         # Display stats in grid
@@ -163,7 +164,7 @@ def _create_payment_overview_tab(self, parent):
     try:
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
-        # Get recent club payments from club_payments table
+        # Get recent club payments from payments table
         cursor.execute('''
             SELECT
                 cp.payment_date,
@@ -171,8 +172,9 @@ def _create_payment_overview_tab(self, parent):
                 cp.payment_type,
                 cp.amount,
                 cp.status
-            FROM club_payments cp
-            LEFT JOIN student_clubs sc ON cp.club_id = sc.club_id
+            FROM payments cp
+            LEFT JOIN student_clubs sc ON CAST(cp.reference_id AS INTEGER) = sc.club_id
+            WHERE cp.source_type = 'club'
             ORDER BY cp.payment_date DESC
             LIMIT 20
         ''')
@@ -242,7 +244,7 @@ def _create_record_payment_tab(self, parent):
     button_frame = ttk.Frame(parent)
     button_frame.pack(fill=tk.X, padx=10, pady=10)
     def record_payment():
-        """Record the payment to club_payments table"""
+        """Record the payment to payments table with source_type='club'"""
         try:
             if not club_var.get():
                 messagebox.showerror("Error", "Please select a club")
@@ -262,26 +264,29 @@ def _create_record_payment_tab(self, parent):
             club_id = int(club_var.get().split(' - ')[0])
             # Get current user
             processed_by = self.current_user.get('username', 'Unknown') if self.current_user else 'Unknown'
-            # Insert into club_payments
+            # Insert into payments with source_type='club'
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            cursor.execute('''
-                INSERT INTO club_payments
-                (club_id, amount, payment_type, payment_method, payment_date,
-                 student_id, description, notes, processed_by, status)
-                VALUES (?, ?, ?, ?, datetime('now'), ?, ?, ?, ?, 'completed')
-            ''', (
-                club_id,
-                amount,
-                payment_type_var.get(),
-                payment_method_var.get(),
-                student_id_var.get().strip() or None,
-                description_var.get().strip() or None,
-                notes_text.get('1.0', tk.END).strip() or None,
-                processed_by
-            ))
-            conn.commit()
-            conn.close()
+            try:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT INTO payments
+                    (source_type, reference_id, reference_type, amount, payment_type,
+                     payment_method, payment_date, student_id, description, notes,
+                     processed_by, status)
+                    VALUES ('club', ?, 'club', ?, ?, ?, datetime('now'), ?, ?, ?, ?, 'completed')
+                ''', (
+                    str(club_id),
+                    amount,
+                    payment_type_var.get(),
+                    payment_method_var.get(),
+                    student_id_var.get().strip() or None,
+                    description_var.get().strip() or None,
+                    notes_text.get('1.0', tk.END).strip() or None,
+                    processed_by
+                ))
+                conn.commit()
+            finally:
+                conn.close()
             messagebox.showinfo("Success", f"Payment of £{amount:.2f} recorded successfully!")
             # Clear form
             club_combo.set('')
@@ -367,9 +372,9 @@ def _create_payment_history_tab(self, parent):
                 SELECT cp.payment_id, cp.payment_date, sc.club_name,
                        cp.amount, cp.payment_type, cp.payment_method,
                        cp.description, cp.status
-                FROM club_payments cp
-                LEFT JOIN student_clubs sc ON cp.club_id = sc.club_id
-                WHERE 1=1
+                FROM payments cp
+                LEFT JOIN student_clubs sc ON CAST(cp.reference_id AS INTEGER) = sc.club_id
+                WHERE cp.source_type = 'club'
             '''
             params = []
             # Apply filters
@@ -431,9 +436,10 @@ def _create_payment_reports_tab(self, parent):
             if report_type == 'By Club':
                 cursor.execute('''
                     SELECT sc.club_name, COUNT(*) as count, SUM(cp.amount) as total
-                    FROM club_payments cp
-                    LEFT JOIN student_clubs sc ON cp.club_id = sc.club_id
-                    GROUP BY cp.club_id
+                    FROM payments cp
+                    LEFT JOIN student_clubs sc ON CAST(cp.reference_id AS INTEGER) = sc.club_id
+                    WHERE cp.source_type = 'club'
+                    GROUP BY cp.reference_id
                     ORDER BY total DESC
                 ''')
                 results_text.insert('1.0', "PAYMENT REPORT BY CLUB\n")
@@ -446,7 +452,8 @@ def _create_payment_reports_tab(self, parent):
             elif report_type == 'By Payment Type':
                 cursor.execute('''
                     SELECT cp.payment_type, COUNT(*), SUM(cp.amount)
-                    FROM club_payments cp
+                    FROM payments cp
+                    WHERE cp.source_type = 'club'
                     GROUP BY cp.payment_type
                     ORDER BY SUM(cp.amount) DESC
                 ''')
@@ -459,7 +466,8 @@ def _create_payment_reports_tab(self, parent):
             elif report_type == 'By Payment Method':
                 cursor.execute('''
                     SELECT cp.payment_method, COUNT(*), SUM(cp.amount)
-                    FROM club_payments cp
+                    FROM payments cp
+                    WHERE cp.source_type = 'club'
                     GROUP BY cp.payment_method
                     ORDER BY SUM(cp.amount) DESC
                 ''')
@@ -473,7 +481,8 @@ def _create_payment_reports_tab(self, parent):
                 cursor.execute('''
                     SELECT strftime('%Y-%m', cp.payment_date) as month,
                            COUNT(*), SUM(cp.amount)
-                    FROM club_payments cp
+                    FROM payments cp
+                    WHERE cp.source_type = 'club'
                     GROUP BY month
                     ORDER BY month DESC
                     LIMIT 12
@@ -511,8 +520,9 @@ def _create_payment_reports_tab(self, parent):
                 if report_type == 'By Club':
                     cursor.execute('''
                         SELECT sc.club_name, COUNT(*), SUM(cp.amount)
-                        FROM club_payments cp
-                        LEFT JOIN student_clubs sc ON cp.club_id = sc.club_id
+                        FROM payments cp
+                        LEFT JOIN student_clubs sc ON CAST(cp.reference_id AS INTEGER) = sc.club_id
+                        WHERE cp.source_type = 'club'
                         GROUP BY sc.club_name
                         ORDER BY SUM(cp.amount) DESC
                     ''')
@@ -522,7 +532,8 @@ def _create_payment_reports_tab(self, parent):
                 elif report_type == 'By Payment Type':
                     cursor.execute('''
                         SELECT cp.payment_type, COUNT(*), SUM(cp.amount)
-                        FROM club_payments cp
+                        FROM payments cp
+                        WHERE cp.source_type = 'club'
                         GROUP BY cp.payment_type
                         ORDER BY SUM(cp.amount) DESC
                     ''')
@@ -532,7 +543,8 @@ def _create_payment_reports_tab(self, parent):
                 elif report_type == 'By Payment Method':
                     cursor.execute('''
                         SELECT cp.payment_method, COUNT(*), SUM(cp.amount)
-                        FROM club_payments cp
+                        FROM payments cp
+                        WHERE cp.source_type = 'club'
                         GROUP BY cp.payment_method
                         ORDER BY SUM(cp.amount) DESC
                     ''')
@@ -543,7 +555,8 @@ def _create_payment_reports_tab(self, parent):
                     cursor.execute('''
                         SELECT strftime('%Y-%m', cp.payment_date) as month,
                                COUNT(*), SUM(cp.amount)
-                        FROM club_payments cp
+                        FROM payments cp
+                        WHERE cp.source_type = 'club'
                         GROUP BY month
                         ORDER BY month DESC
                         LIMIT 12
@@ -631,9 +644,10 @@ def _create_refunds_tab(self, parent, payments_window):
                         cp.amount,
                         cp.payment_method,
                         cp.status
-                    FROM club_payments cp
-                    LEFT JOIN student_clubs sc ON cp.club_id = sc.club_id
-                    WHERE cp.student_id LIKE ? OR sc.club_name LIKE ?
+                    FROM payments cp
+                    LEFT JOIN student_clubs sc ON CAST(cp.reference_id AS INTEGER) = sc.club_id
+                    WHERE cp.source_type = 'club'
+                      AND (cp.student_id LIKE ? OR sc.club_name LIKE ?)
                     ORDER BY cp.payment_date DESC
                 ''', (f'%{search_term}%', f'%{search_term}%'))
             else:
@@ -647,8 +661,9 @@ def _create_refunds_tab(self, parent, payments_window):
                         cp.amount,
                         cp.payment_method,
                         cp.status
-                    FROM club_payments cp
-                    LEFT JOIN student_clubs sc ON cp.club_id = sc.club_id
+                    FROM payments cp
+                    LEFT JOIN student_clubs sc ON CAST(cp.reference_id AS INTEGER) = sc.club_id
+                    WHERE cp.source_type = 'club'
                     ORDER BY cp.payment_date DESC
                     LIMIT 100
                 ''')
@@ -781,9 +796,9 @@ Status: {values[7]}
                 cursor = conn.cursor()
 
                 cursor.execute('''
-                    UPDATE club_payments
+                    UPDATE payments
                     SET status = 'refunded'
-                    WHERE payment_id = ?
+                    WHERE payment_id = ? AND source_type = 'club'
                 ''', (payment_id,))
 
                 # Generate refund reference
@@ -792,11 +807,13 @@ Status: {values[7]}
 
                 # Record refund transaction
                 cursor.execute('''
-                    INSERT INTO club_payments
-                    (student_id, club_id, payment_type, amount, payment_method,
+                    INSERT INTO payments
+                    (source_type, student_id, reference_id, reference_type,
+                     payment_type, amount, payment_method,
                      payment_date, status, notes)
-                    SELECT student_id, club_id, ?, ?, ?, date('now'), 'completed', ?
-                    FROM club_payments WHERE payment_id = ?
+                    SELECT 'club', student_id, reference_id, 'club',
+                           ?, ?, ?, date('now'), 'completed', ?
+                    FROM payments WHERE payment_id = ? AND source_type = 'club'
                 ''', (f'refund_{payment_type}', amount, refund_method.lower().replace(' ', '_'),
                       f'Refund for payment {payment_id}', payment_id))
 
@@ -942,10 +959,10 @@ def add_to_student_account(student_id: str, amount: float, payment_ref: str) -> 
 
         # Record transaction
         cursor.execute('''
-            INSERT INTO student_finance_transactions
-            (account_id, student_id, transaction_type, amount, balance_before,
+            INSERT INTO transactions
+            (source_type, account_id, student_id, transaction_type, amount, balance_before,
              balance_after, description, created_at)
-            VALUES (?, ?, 'credit', ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, CURRENT_TIMESTAMP)
         ''', (account_id, student_id, amount, balance_before, balance_after,
               f'Student Union Refund - Payment: {payment_ref}'))
 
@@ -1002,23 +1019,24 @@ def send_refund_receipt(student_id: str, amount: float, method: str,
 
 
 def notify_finance_gui(student_id: str, amount: float, method: str, refund_ref: str):
-    """Record refund in finance system for integration"""
+    """Record refund in unified refunds table for finance integration"""
     try:
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
 
-        # Try to insert into finance refunds table if it exists
+        # Insert into unified_refunds table
         try:
             cursor.execute('''
-                INSERT INTO finance_refunds
-                (student_id, refund_amount, refund_method, refund_reason,
-                 refund_date, reference_number, status, processed_by, department)
-                VALUES (?, ?, ?, ?, date('now'), ?, 'completed', 'student_union', 'student_union')
-            ''', (student_id, amount, method, 'Student Union Payment Refund', refund_ref))
+                INSERT INTO unified_refunds
+                (refund_reference, source_type, reference_type, student_id,
+                 amount, refund_method, refund_date, processed_by, notes, status)
+                VALUES (?, 'student_union', 'payment', ?, ?, ?, date('now'),
+                        'student_union', 'Student Union Payment Refund', 'completed')
+            ''', (refund_ref, student_id, amount, method))
             conn.commit()
-            print(f"[Student Union] Refund recorded in finance system: {refund_ref}")
+            print(f"[Student Union] Refund recorded in unified_refunds: {refund_ref}")
         except sqlite3.Error:
-            # Table might not exist, that's okay
+            # Table might not exist yet, that's okay
             pass
 
         conn.close()

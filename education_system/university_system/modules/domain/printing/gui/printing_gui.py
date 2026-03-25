@@ -73,8 +73,8 @@ class PrintingServicesGUI:
         if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
             user = self.auth.current_user
             if isinstance(user, dict):
-                return user.get('student_id', user.get('username', 'unknown'))
-            return getattr(user, 'student_id', getattr(user, 'username', 'unknown'))
+                return user.get('student_id') or user.get('username') or 'unknown'
+            return getattr(user, 'student_id', None) or getattr(user, 'username', 'unknown')
         return 'unknown'
 
     def _ensure_quota(self, conn, student_id):
@@ -325,7 +325,7 @@ class PrintingServicesGUI:
     def _browse_file(self):
         path = filedialog.askopenfilename(
             parent=self.window,
-            filetypes=[("PDF", "*.pdf"), ("Documents", "*.doc;*.docx"), ("All files", "*.*")]
+            filetypes=[("PDF", "*.pdf"), ("Documents", "*.doc *.docx"), ("All files", "*.*")]
         )
         if path:
             self.file_entry.delete(0, tk.END)

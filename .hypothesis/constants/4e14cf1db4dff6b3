@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/library/recommendations.py
+# hypothesis_version: 6.151.9
+
+[0.2, 0.3, 0.9, ' OR ', '%Y-%m-%d %H:%M:%S', 'b.author = ?', 'b.category = ?', 'book_recommendations', 'system_config']

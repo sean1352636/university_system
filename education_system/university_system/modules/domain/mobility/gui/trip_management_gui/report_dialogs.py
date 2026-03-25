@@ -5,7 +5,7 @@ from datetime import datetime
 from threading import Thread
 import logging
 
-from ._imports import (
+from education_system.university_system.modules.domain.mobility.gui.trip_management_gui._imports import (
     safe_db_operation,
     logger,
     PDF_AVAILABLE,
@@ -17,7 +17,7 @@ from ._imports import (
 )
 
 if TEMPLATE_AVAILABLE:
-    from ._imports import render_template
+    from education_system.university_system.modules.domain.mobility.gui.trip_management_gui._imports import render_template
 
 
 class ReportGeneratorDialog(Dialog):

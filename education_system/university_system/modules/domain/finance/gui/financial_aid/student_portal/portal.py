@@ -2,7 +2,7 @@
 StudentPortal - Main class composing all mixin functionality.
 """
 
-from ..common_imports import (
+from education_system.university_system.modules.domain.finance.gui.financial_aid.common_imports import (
     get_auth,
     FinancialAidManager,
     ScholarshipManager,
@@ -10,15 +10,15 @@ from ..common_imports import (
     get_student_id,
 )
 
-from .dashboard import DashboardMixin
-from .scholarships import ScholarshipsMixin
-from .financial_aid import FinancialAidMixin
-from .applications import ApplicationsMixin
-from .awards import AwardsMixin
-from .recommendations import RecommendationsMixin
-from .deadlines import DeadlinesMixin
-from .documents import DocumentsMixin
-from .profile import ProfileMixin
+from education_system.university_system.modules.domain.finance.gui.financial_aid.student_portal.dashboard import DashboardMixin
+from education_system.university_system.modules.domain.finance.gui.financial_aid.student_portal.scholarships import ScholarshipsMixin
+from education_system.university_system.modules.domain.finance.gui.financial_aid.student_portal.financial_aid import FinancialAidMixin
+from education_system.university_system.modules.domain.finance.gui.financial_aid.student_portal.applications import ApplicationsMixin
+from education_system.university_system.modules.domain.finance.gui.financial_aid.student_portal.awards import AwardsMixin
+from education_system.university_system.modules.domain.finance.gui.financial_aid.student_portal.recommendations import RecommendationsMixin
+from education_system.university_system.modules.domain.finance.gui.financial_aid.student_portal.deadlines import DeadlinesMixin
+from education_system.university_system.modules.domain.finance.gui.financial_aid.student_portal.documents import DocumentsMixin
+from education_system.university_system.modules.domain.finance.gui.financial_aid.student_portal.profile import ProfileMixin
 
 
 class StudentPortal(

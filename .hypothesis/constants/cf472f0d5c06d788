@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/pastoral_care/send/services/send_service.py
+# hypothesis_version: 6.151.9
+
+[' AND sr.status = ?', ', ', 'Cognition & Learning', 'EHCP', 'Monitoring', 'SEN Support', 'access_arrangements', 'diagnosis', 'ehcp', 'ehcp_review_date', 'external_agencies', 'key_worker', 'notes', 'primary_need', 'sen_type', 'status', 'strategies']

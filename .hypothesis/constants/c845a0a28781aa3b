@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/main/staff/__init__.py
+# hypothesis_version: 6.151.9
+
+['create_staff_dialog', 'delete_staff_dialog', 'search_staff_dialog', 'update_staff_dialog', 'view_staff']

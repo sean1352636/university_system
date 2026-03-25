@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/storage.py
+# hypothesis_version: 6.151.9
+
+[30.0, 100, 1000, 1024, ' AND ', ' WHERE ', '%Y%m%d_%H%M%S', '%Y-%m-%d %H:%M:%S', '*.log*', ',', '.gz', '?', 'DATE(timestamp) <= ?', 'DATE(timestamp) >= ?', 'compress_old_logs', 'compressed', 'count', 'created', 'database_size', 'date_from', 'date_to', 'geolocation', 'log_level', 'max_file_size', 'message', 'metadata', 'modified', 'module', 'name', 'processing_time', 'rb', 'recent_activity', 'request_size', 'response_size', 'retention_days', 'role', 'security_level', 'session_id', 'size', 'stack_trace', 'status', 'timestamp <= ?', 'timestamp >= ?', 'timestamp_from', 'timestamp_to', 'total_logs', 'trace_id', 'user_agent', 'wb']

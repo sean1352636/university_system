@@ -1,6 +1,6 @@
 """Chart builder functions for the enhanced reporting GUI."""
 
-from .constants import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.standalone.constants import (
     logging, os, pd, datetime,
     paths, get_db_connection,
     ENHANCED_AVAILABLE,

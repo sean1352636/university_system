@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/core/logs.py
+# hypothesis_version: 6.151.9
+
+[100, 110, 5000, '%Y%m%d_%H%M%S', '%Y-%m-%d', '-', '1', '2', '3', '4', '5', '6', '7', '8', '9', '=', 'action', 'activity_by_action', 'app.log', 'auth', 'chat', 'configure_logging', 'critical', 'current_user', 'daily', 'date_from', 'debug', 'details', 'email', 'email_manager', 'error', 'get_log_file', 'handle_exception', 'id', 'info', 'log_event', 'logger', 'module', 'modules_used', 'most_active_users', 'role', 'search_text', 'send_message', 'status', 'success', 'timestamp', 'unknown', 'user_id', 'username', 'utf-8', 'w', 'warning', 'y']

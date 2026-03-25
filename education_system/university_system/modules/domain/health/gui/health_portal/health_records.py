@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
+from education_system.university_system.core.sql_safety import escape_like
 
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
@@ -226,7 +227,7 @@ class HealthRecordsMixin:
 
             if self.hr_search_student.get().strip():
                 query += " AND hr.student_id LIKE ?"
-                params.append(f"%{self.hr_search_student.get().strip()}%")
+                params.append(f"%{escape_like(self.hr_search_student.get().strip())}%")
 
             if self.hr_search_date_from.get().strip():
                 query += " AND hr.record_date >= ?"

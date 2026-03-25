@@ -1,7 +1,112 @@
 {
     "backups": [
         {
-            "path": "/home/seancatchpole989/university_system/backups/student_records_before_restore_20260222_080726.db.zip",
+            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_delete_table_20260323_124231.db.gz",
+            "filename": "student_records_before_delete_table_20260323_124231.db.gz",
+            "type": "full",
+            "manual": false,
+            "operation": "delete_table",
+            "timestamp": "20260323_124231",
+            "size": 3329,
+            "file_hash": "5ad54927ad3ff2095f7b9b26f9457f31357e6c764d8c0580edec8c5657baf5cc",
+            "compressed": true,
+            "encrypted": false,
+            "cloud_uploaded": false,
+            "remote_uploaded": false,
+            "backup_type": "full"
+        },
+        {
+            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_create_customer_20260323_124224.db.gz",
+            "filename": "student_records_before_create_customer_20260323_124224.db.gz",
+            "type": "full",
+            "manual": false,
+            "operation": "create_customer",
+            "timestamp": "20260323_124224",
+            "size": 3332,
+            "file_hash": "5ad54927ad3ff2095f7b9b26f9457f31357e6c764d8c0580edec8c5657baf5cc",
+            "compressed": true,
+            "encrypted": false,
+            "cloud_uploaded": false,
+            "remote_uploaded": false,
+            "backup_type": "full"
+        },
+        {
+            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_create_customer_20260323_124224.db.gz",
+            "filename": "student_records_before_create_customer_20260323_124224.db.gz",
+            "type": "full",
+            "manual": false,
+            "operation": "create_customer",
+            "timestamp": "20260323_124224",
+            "size": 3332,
+            "file_hash": "5ad54927ad3ff2095f7b9b26f9457f31357e6c764d8c0580edec8c5657baf5cc",
+            "compressed": true,
+            "encrypted": false,
+            "cloud_uploaded": false,
+            "remote_uploaded": false,
+            "backup_type": "full"
+        },
+        {
+            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_delete_table_20260323_115838.db.gz",
+            "filename": "student_records_before_delete_table_20260323_115838.db.gz",
+            "type": "full",
+            "manual": false,
+            "operation": "delete_table",
+            "timestamp": "20260323_115838",
+            "size": 3254,
+            "file_hash": "adf990388d969e0cf94da37abf97c3fb9b83896b002eddf6a814cc570a572c3e",
+            "compressed": true,
+            "encrypted": false,
+            "cloud_uploaded": false,
+            "remote_uploaded": false,
+            "backup_type": "full"
+        },
+        {
+            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_create_customer_20260323_115827.db.gz",
+            "filename": "student_records_before_create_customer_20260323_115827.db.gz",
+            "type": "full",
+            "manual": false,
+            "operation": "create_customer",
+            "timestamp": "20260323_115827",
+            "size": 3257,
+            "file_hash": "adf990388d969e0cf94da37abf97c3fb9b83896b002eddf6a814cc570a572c3e",
+            "compressed": true,
+            "encrypted": false,
+            "cloud_uploaded": false,
+            "remote_uploaded": false,
+            "backup_type": "full"
+        },
+        {
+            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_create_customer_20260323_115827.db.gz",
+            "filename": "student_records_before_create_customer_20260323_115827.db.gz",
+            "type": "full",
+            "manual": false,
+            "operation": "create_customer",
+            "timestamp": "20260323_115827",
+            "size": 3257,
+            "file_hash": "adf990388d969e0cf94da37abf97c3fb9b83896b002eddf6a814cc570a572c3e",
+            "compressed": true,
+            "encrypted": false,
+            "cloud_uploaded": false,
+            "remote_uploaded": false,
+            "backup_type": "full"
+        },
+        {
+            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_delete_table_20260323_080911.db.gz",
+            "filename": "student_records_before_delete_table_20260323_080911.db.gz",
+            "type": "full",
+            "manual": false,
+            "operation": "delete_table",
+            "timestamp": "20260323_080911",
+            "size": 2897,
+            "file_hash": "cfac809b424fca6e639e3ae54d473a3cdaa3a9da6e9810ad1f58fadcb02464be",
+            "compressed": true,
+            "encrypted": false,
+            "cloud_uploaded": false,
+            "remote_uploaded": false,
+            "backup_type": "full"
+        },
+        {
+            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_restore_20260222_080726.db.zip",
             "filename": "student_records_before_restore_20260222_080726.db.zip",
             "type": "full",
             "manual": true,
@@ -13,66 +118,25 @@
             "encrypted": false,
             "cloud_uploaded": false,
             "remote_uploaded": false,
-            "backup_type": "full"
-        },
-        {
-            "path": "/home/seancatchpole989/university_system/backups/student_records_manual_full_20260222_080723.db.gz",
-            "filename": "student_records_manual_full_20260222_080723.db.gz",
-            "type": "full",
-            "manual": true,
-            "operation": null,
-            "timestamp": "20260222_080723",
-            "size": 897094,
-            "file_hash": "8471d9ee33c6d34e9c530dbf9a2c8923a46c9b9224a912f3777b61699e151142",
-            "compressed": true,
-            "encrypted": false,
-            "cloud_uploaded": false,
-            "remote_uploaded": false,
-            "backup_type": "full"
-        },
-        {
-            "path": "/home/seancatchpole989/university_system/backups/student_records_manual_full_20260222_080554.db.gz",
-            "filename": "student_records_manual_full_20260222_080554.db.gz",
-            "type": "full",
-            "manual": true,
-            "operation": null,
-            "timestamp": "20260222_080554",
-            "size": 896730,
-            "file_hash": "955ec439211ae07aa992857f6f7ba14958e0656a9ebe65af031b3f1346688439",
-            "compressed": true,
-            "encrypted": false,
-            "cloud_uploaded": false,
-            "remote_uploaded": false,
-            "backup_type": "full"
-        },
-        {
-            "path": "/home/seancatchpole989/university_system/backups/student_records_before_update_20260206_144524.db.gz",
-            "filename": "student_records_before_update_20260206_144524.db.gz",
-            "type": "full",
-            "manual": false,
-            "operation": "update",
-            "timestamp": "20260206_144524",
-            "size": 1129572,
-            "file_hash": "fe5b241a7c525c107fa7d17999c2cd7a00cef1b5cce4486edd770632b3354524",
-            "compressed": true,
-            "encrypted": false,
-            "cloud_uploaded": false,
-            "remote_uploaded": false,
-            "backup_type": "full"
+            "backup_type": "full",
+            "id": 1,
+            "size_formatted": "876.20 KB",
+            "date_formatted": "2026-02-22 08:07:26"
         }
     ],
-    "last_full": "/home/seancatchpole989/university_system/backups/student_records_before_restore_20260222_080726.db.zip",
+    "last_full": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_delete_table_20260323_124231.db.gz",
     "statistics": {
-        "total_backups": 3,
-        "total_size": 2923396,
+        "total_backups": 8,
+        "total_size": 919883,
         "backup_types": {
-            "full": 3
+            "full": 8
         },
         "success_rate": 0,
-        "average_size": 974465.3333333334,
+        "average_size": 114985.375,
         "storage_usage": {
-            "2026-02": 2923396
+            "2026-03": 22658,
+            "2026-02": 897225
         },
-        "recent_activity": 3
+        "recent_activity": 8
     }
 }

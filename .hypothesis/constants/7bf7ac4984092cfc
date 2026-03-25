@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/services/trip_management/permissions.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d %H:%M:%S', ', ', 'Create new trips', 'Manage trip expenses', 'Register for trips', 'View trip reports', 'admin', 'create_trips', 'instructor', 'manage_trip_expenses', 'manage_trips', 'register_for_trips', 'staff', 'student', 'view_trip_reports', 'view_trips']

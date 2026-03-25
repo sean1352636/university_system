@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/module_scheduling/instructors_tab.py
+# hypothesis_version: 6.151.9
+
+[100, 120, 140, 150, '09:00', '1000x400', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '500x400', ':', '<Double-1>', 'Active', 'Arial', 'Close', 'Computer Lab', 'Current Hours', 'Data.Treeview', 'Day', 'Department', 'Email', 'English', 'Error', 'Friday', 'ID', 'Inactive', 'Lab', 'Lecture', 'Lecture Hall', 'Max Hours', 'Module', 'Monday', 'Name', 'New instructor added', 'No Instructors', 'No Schedule', 'Other', 'Room', 'Select', 'Select Instructor', 'Seminar', 'Seminar Room', 'Status', 'Thursday', 'Time', 'Tuesday', 'Tutorial', 'Tutorial Room', 'Type', 'Warning', 'Wednesday', 'Workshop', 'Workshop Room', 'common.edit_selected', 'common.refresh', 'common.search', 'day', 'en', 'headings', 'module_code', 'room', 'session_type', 'values', 'w']

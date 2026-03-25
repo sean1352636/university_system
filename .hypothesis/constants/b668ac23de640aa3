@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/club_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' = ?', ' AND ', ' WHERE ', ' WHERE club_id = ?', '%Y-%m-%d', ', ', '/<int:club_id>', '/api/clubs', 'GET', 'POST', 'PUT', 'active', 'category', 'category = ?', 'club', 'club_member', 'club_members', 'club_name', 'clubs', 'create', 'description', 'items', 'member', 'president_id', 'role', 'search', 'secretary_id', 'status', 'status = ?', 'student_id', 'sub', 'total', 'treasurer_id', 'update', 'view']

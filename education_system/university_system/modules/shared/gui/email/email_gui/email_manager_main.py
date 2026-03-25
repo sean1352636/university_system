@@ -293,7 +293,7 @@ if optimize_database is None:
         print("Warning: optimize_database not available")
 
 # Import dialog classes used by EmailManagerGUI
-from .utility_dialogs import HelpDialog, AboutDialog
+from education_system.university_system.modules.shared.gui.email.email_gui.utility_dialogs import HelpDialog, AboutDialog
 
 class EmailManagerGUI:
     def __init__(self, root, auth=None):
@@ -592,14 +592,14 @@ class EmailManagerGUI:
 # Import tab modules to bind their methods to EmailManagerGUI
 # These modules define helper methods and bind them to the EmailManagerGUI class
 try:
-    from . import email_tab
-    from . import messages_tab
-    from . import dashboard_tab
-    from . import sms_tab
-    from . import announcements_tab
-    from . import chat_tab
-    from . import reports_tab
-    from . import notifications_tab
+    from education_system.university_system.modules.shared.gui.email.email_gui import email_tab
+    from education_system.university_system.modules.shared.gui.email.email_gui import messages_tab
+    from education_system.university_system.modules.shared.gui.email.email_gui import dashboard_tab
+    from education_system.university_system.modules.shared.gui.email.email_gui import sms_tab
+    from education_system.university_system.modules.shared.gui.email.email_gui import announcements_tab
+    from education_system.university_system.modules.shared.gui.email.email_gui import chat_tab
+    from education_system.university_system.modules.shared.gui.email.email_gui import reports_tab
+    from education_system.university_system.modules.shared.gui.email.email_gui import notifications_tab
 except ImportError as e:
     # Some tab modules may not exist yet
     logger.debug(f"Could not import all tab modules: {e}")

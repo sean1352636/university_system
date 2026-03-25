@@ -44,7 +44,7 @@ class TestGenerateEmployeeTaxSummary:
             ('STAFF002', 'Jane Smith', 'Server', 12.00, 140.0)
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', return_value='2025'):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                     exports.generate_employee_tax_summary()
@@ -63,7 +63,7 @@ class TestGenerateEmployeeTaxSummary:
         conn, cursor = mock_db_connection
         cursor.fetchall.return_value = []
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', return_value='2025'):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                     exports.generate_employee_tax_summary()
@@ -88,7 +88,7 @@ class TestGenerateEmployeeTaxSummary:
             ('STAFF001', 'High Earner', 'Manager', 25.00, 2000.0)  # £50,000 annual
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', return_value='2025'):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                     exports.generate_employee_tax_summary()
@@ -113,7 +113,7 @@ class TestGenerateAnnualTaxSummary:
             ('02', 4200.0, 336.0)
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', return_value='2025'):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                     exports.generate_annual_tax_summary()
@@ -134,7 +134,7 @@ class TestGenerateAnnualTaxSummary:
         ]
         cursor.fetchall.return_value = []
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', return_value='2025'):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                     exports.generate_annual_tax_summary()
@@ -162,7 +162,7 @@ class TestExportTaxData:
             [('EXP001', '2025-01-15', 'Food', 'Supplies', 100.00, 'Supplier A')]
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', side_effect=['2025-01-01', '2025-01-31']):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                     exports.export_tax_data()
@@ -188,7 +188,7 @@ class TestExportTaxData:
             [('EXP001', '2025-01-15', 'Food', 'Supplies', 100.00, 'Supplier A')]
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', side_effect=['2025-01-01', '2025-01-31']):
                 with mock.patch('sys.stdout', new=StringIO()):
                     exports.export_tax_data()
@@ -206,10 +206,10 @@ class TestExportTaxData:
         conn, cursor = mock_db_connection
         cursor.fetchall.side_effect = Exception("Database error")
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
             with mock.patch('builtins.input', side_effect=['2025-01-01', '2025-01-31']):
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
-                    with mock.patch('university_system.modules.core.services.restaurant_misc.exports.logging.error') as mock_log:
+                    with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.exports.logging.error') as mock_log:
                         exports.export_tax_data()
 
                         output = fake_out.getvalue()
@@ -227,7 +227,7 @@ class TestExportExpenseData:
             [('Food', 150.00, 1), ('Utilities', 200.00, 2)]
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                 exports.export_expense_data('2025-01-01', '2025-01-31')
 
@@ -241,7 +241,7 @@ class TestExportExpenseData:
         conn, cursor = mock_db_connection
         cursor.fetchall.return_value = []
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                 exports.export_expense_data('2025-01-01', '2025-01-31')
 
@@ -263,7 +263,7 @@ class TestExportProfitLossData:
             ('Utilities', 2000.0)
         ]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                 exports.export_profit_loss_data('2025-01-01', '2025-01-31')
 
@@ -285,7 +285,7 @@ class TestExportProfitLossData:
         ]
         cursor.fetchall.return_value = [('Staff Wages', 10000.0)]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()):
                 exports.export_profit_loss_data('2025-01-01', '2025-01-31')
 
@@ -306,7 +306,7 @@ class TestExportProfitLossData:
         ]
         cursor.fetchall.return_value = [('Staff Wages', 20000.0)]
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()):
                 exports.export_profit_loss_data('2025-01-01', '2025-01-31')
 
@@ -323,9 +323,9 @@ class TestExportProfitLossData:
         conn, cursor = mock_db_connection
         cursor.fetchone.side_effect = Exception("Database error")
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.exports.get_db_connection', return_value=conn):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
-                with mock.patch('university_system.modules.core.services.restaurant_misc.exports.logging.error') as mock_log:
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.exports.logging.error') as mock_log:
                     exports.export_profit_loss_data('2025-01-01', '2025-01-31')
 
                     output = fake_out.getvalue()

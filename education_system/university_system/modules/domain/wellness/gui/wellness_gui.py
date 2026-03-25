@@ -23,10 +23,10 @@ _t = get_translation
 class WellnessGUI:
     """Graphical interface for Mental Health & Wellness Hub."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, auth=None):
         """Initialize the Wellness GUI."""
         self.service = WellnessService()
-        self.auth = get_auth()
+        self.auth = auth or get_auth()
 
         if parent:
             self.root = tk.Toplevel(parent)

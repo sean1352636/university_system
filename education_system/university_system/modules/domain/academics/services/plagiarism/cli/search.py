@@ -1,4 +1,5 @@
-from ..exceptions import PlagiarismCheckerError
+from education_system.university_system.core.sql_safety import escape_like
+from education_system.university_system.modules.domain.academics.services.plagiarism.exceptions import PlagiarismCheckerError
 
 
 def safe_input(prompt, default=None, validator=None):
@@ -91,7 +92,7 @@ def search_repository(checker, auth):
             try:
                 view_num = int(view_choice)
                 if 1 <= view_num <= len(documents):
-                    from .reporting import display_document_details
+                    from education_system.university_system.modules.domain.academics.services.plagiarism.cli.reporting import display_document_details
                     doc_id = documents[view_num-1]['id']
                     display_document_details(checker, doc_id)
                 else:
@@ -114,7 +115,7 @@ def get_author_selection(checker, author_name):
             FROM users
             WHERE first_name LIKE ? OR last_name LIKE ?
             ORDER BY last_name, first_name
-            ''', (f"%{author_name}%", f"%{author_name}%"))
+            ''', (f"%{escape_like(author_name)}%", f"%{escape_like(author_name)}%"))
 
             authors = cursor.fetchall()
 
@@ -157,7 +158,7 @@ def get_module_selection_by_name(checker, module_name):
             FROM modules
             WHERE module_code LIKE ? OR module_name LIKE ?
             ORDER BY module_code
-            ''', (f"%{module_name}%", f"%{module_name}%"))
+            ''', (f"%{escape_like(module_name)}%", f"%{escape_like(module_name)}%"))
 
             modules = cursor.fetchall()
 

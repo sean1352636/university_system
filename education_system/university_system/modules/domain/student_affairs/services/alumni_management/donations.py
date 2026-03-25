@@ -2,7 +2,7 @@ from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.infrastructure.email import send_donation_receipt
 from education_system.university_system.modules.shared.utils.finance_integration import record_revenue_to_finance
-from .core import get_db_connection, safe_execute, auth
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.core import get_db_connection, safe_execute, auth
 
 
 def record_donation():

@@ -175,25 +175,70 @@ class AddTagDialog:
 
 
 class AssignTagDialog:
-    """Simple dialog for assigning tags to events"""
+    """Dialog for assigning tags to events — shows a dropdown of existing events."""
 
     def __init__(self, parent, calendar_manager, callback=None):
-        event_id = simpledialog.askstring(_("academic_calendar.categories.assign_tag"), _("academic_calendar.categories.event_id_prompt"))
-        if not event_id:
+        self.calendar_manager = calendar_manager
+        self.callback = callback
+
+        # Load existing events for the dropdown
+        self.event_map = {}
+        try:
+            rows = calendar_manager.db_manager.execute_query(
+                "SELECT id, name FROM academic_calendar_events ORDER BY name"
+            )
+            for row in rows:
+                label = f"{row['name']} ({row['id'][:8]}...)"
+                self.event_map[label] = row['id']
+        except Exception:
+            pass
+
+        if not self.event_map:
+            messagebox.showwarning(_("common.warning"), "No events found. Create an event first.")
             return
 
-        tags = simpledialog.askstring(_("academic_calendar.categories.assign_tag"), _("academic_calendar.categories.tags_prompt"))
-        if not tags:
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title(_("academic_calendar.categories.assign_tag"))
+        self.dialog.geometry("450x200")
+        self.dialog.transient(parent)
+        safe_grab_set(self.dialog)
+
+        frm = ttk.Frame(self.dialog, padding=15)
+        frm.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(frm, text="Event:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.event_combo = ttk.Combobox(frm, values=list(self.event_map.keys()), width=45, state='readonly')
+        self.event_combo.grid(row=0, column=1, pady=5, padx=5)
+        if self.event_map:
+            self.event_combo.current(0)
+
+        ttk.Label(frm, text="Tags (comma-separated):").grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.tags_var = tk.StringVar()
+        ttk.Entry(frm, textvariable=self.tags_var, width=47).grid(row=1, column=1, pady=5, padx=5)
+
+        ttk.Button(frm, text="Assign Tags", command=self._assign).grid(row=2, column=1, sticky=tk.E, pady=15)
+
+    def _assign(self):
+        selected = self.event_combo.get()
+        if selected not in self.event_map:
+            messagebox.showwarning(_("common.warning"), "Please select an event.")
             return
 
-        tag_list = [tag.strip() for tag in tags.split(',') if tag.strip()]
+        tags_text = self.tags_var.get().strip()
+        if not tags_text:
+            messagebox.showwarning(_("common.warning"), "Please enter at least one tag.")
+            return
+
+        event_id = self.event_map[selected]
+        tag_list = [tag.strip() for tag in tags_text.split(',') if tag.strip()]
 
         try:
-            success, message = calendar_manager.categories.assign_tags_to_event(event_id, tag_list)
+            success, message = self.calendar_manager.categories.assign_tags_to_event(event_id, tag_list)
             if success:
                 messagebox.showinfo(_("common.success"), message)
-                if callback:
-                    callback()
+                if self.callback:
+                    self.callback()
+                self.dialog.destroy()
             else:
                 messagebox.showerror(_("common.error"), message)
         except Exception as e:

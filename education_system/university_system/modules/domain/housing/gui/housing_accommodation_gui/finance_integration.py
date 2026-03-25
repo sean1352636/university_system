@@ -142,8 +142,8 @@ class HousingFinanceManager:
                     COUNT(DISTINCT payment_id) as total_payments,
                     SUM(amount) as total_revenue,
                     COUNT(DISTINCT student_id) as unique_students
-                FROM housing_payments
-                WHERE status = 'Completed'
+                FROM payments
+                WHERE source_type = 'housing' AND status = 'Completed'
             ''')
             total_payments, total_revenue, unique_students = cursor.fetchone()
             total_revenue = total_revenue or 0.0
@@ -153,8 +153,8 @@ class HousingFinanceManager:
             # Outstanding payments
             cursor.execute('''
                 SELECT COUNT(*) as pending_count
-                FROM housing_payments
-                WHERE status != 'Completed'
+                FROM payments
+                WHERE source_type = 'housing' AND status != 'Completed'
             ''')
             pending_count = cursor.fetchone()[0] or 0
 
@@ -213,8 +213,8 @@ class HousingFinanceManager:
                     SUM(amount) as total_outstanding,
                     AVG(amount) as avg_balance,
                     MAX(amount) as max_balance
-                FROM housing_payments
-                WHERE status IN ('Pending', 'Overdue', 'Failed')
+                FROM payments
+                WHERE source_type = 'housing' AND status IN ('Pending', 'Overdue', 'Failed')
             ''')
             outstanding_data = cursor.fetchone()
             students_with_balance = outstanding_data[0] or 0
@@ -255,8 +255,8 @@ class HousingFinanceManager:
                     strftime('%Y-%m', payment_date) as month,
                     COUNT(*) as payment_count,
                     SUM(amount) as monthly_revenue
-                FROM housing_payments
-                WHERE status = 'Completed'
+                FROM payments
+                WHERE source_type = 'housing' AND status = 'Completed'
                     AND payment_date >= date('now', '-6 months')
                 GROUP BY month
                 ORDER BY month DESC
@@ -317,15 +317,16 @@ class HousingFinanceManager:
             # Load payment data
             cursor.execute('''
                 SELECT
-                    hp.payment_id,
+                    hp.source_payment_id,
                     s.first_name || ' ' || s.last_name as student_name,
                     hp.amount,
                     hp.payment_date,
                     hp.payment_method,
                     hp.payment_period_start || ' to ' || hp.payment_period_end as period,
                     hp.status
-                FROM housing_payments hp
+                FROM payments hp
                 JOIN students s ON hp.student_id = s.student_id
+                WHERE hp.source_type = 'housing'
                 ORDER BY hp.payment_date DESC
                 LIMIT 100
             ''')
@@ -352,11 +353,11 @@ class HousingFinanceManager:
                     hb.building_name,
                     COUNT(DISTINCT hp.payment_id) as payment_count,
                     SUM(hp.amount) as total_revenue
-                FROM housing_payments hp
-                JOIN housing_assignments ha ON hp.student_id = ha.student_id
+                FROM payments hp
+                JOIN housing_assignments ha ON hp.reference_id = ha.assignment_id
                 JOIN housing_rooms hr ON ha.room_id = hr.room_id
                 JOIN housing_buildings hb ON hr.building_id = hb.building_id
-                WHERE hp.status = 'Completed'
+                WHERE hp.source_type = 'housing' AND hp.status = 'Completed'
                 GROUP BY hb.building_name
                 ORDER BY total_revenue DESC
             ''')
@@ -561,11 +562,12 @@ class HousingFinanceManager:
                     assignment_id = result[0]
 
                     cursor.execute('''
-                        INSERT INTO housing_payments
-                        (payment_id, assignment_id, student_id, amount, payment_date,
-                         payment_method, transaction_reference, payment_period_start,
-                         payment_period_end, status, received_by, created_at, updated_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO payments
+                        (source_payment_id, source_type, reference_id, reference_type,
+                         student_id, amount, payment_date,
+                         payment_method, payment_reference, payment_period_start,
+                         payment_period_end, status, processed_by, created_at, updated_at)
+                        VALUES (?, 'housing', ?, 'assignment', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ''', (payment_id, assignment_id, student_id, amount, date_entry.get(),
                          method_var.get(), notes_text.get('1.0', 'end').strip(),
                          period_start_entry.get(), period_end_entry.get(),
@@ -627,12 +629,12 @@ class HousingFinanceManager:
             def apply_filter():
                 try:
                     query = '''
-                        SELECT hp.payment_id, s.first_name || ' ' || s.last_name,
+                        SELECT hp.source_payment_id, s.first_name || ' ' || s.last_name,
                                hp.amount, hp.payment_date, hp.payment_method,
                                hp.payment_period_start || ' to ' || hp.payment_period_end, hp.status
-                        FROM housing_payments hp
+                        FROM payments hp
                         JOIN students s ON hp.student_id = s.student_id
-                        WHERE 1=1
+                        WHERE hp.source_type = 'housing'
                     '''
                     params = []
 
@@ -710,12 +712,13 @@ class HousingFinanceManager:
             cursor = conn.cursor()
 
             cursor.execute('''
-                SELECT hp.payment_id, hp.student_id,
+                SELECT hp.source_payment_id, hp.student_id,
                        s.first_name || ' ' || s.last_name,
                        hp.amount, hp.payment_date, hp.payment_method,
                        hp.payment_period_start, hp.payment_period_end, hp.status
-                FROM housing_payments hp
+                FROM payments hp
                 JOIN students s ON hp.student_id = s.student_id
+                WHERE hp.source_type = 'housing'
                 ORDER BY hp.payment_date DESC
             ''')
 
@@ -752,9 +755,9 @@ class HousingFinanceManager:
                 SELECT hp.student_id, s.first_name || ' ' || s.last_name,
                        s.email_address, COUNT(*), SUM(hp.amount),
                        MAX(hp.payment_date), hp.status
-                FROM housing_payments hp
+                FROM payments hp
                 JOIN students s ON hp.student_id = s.student_id
-                WHERE hp.status IN ('Pending', 'Overdue', 'Failed')
+                WHERE hp.source_type = 'housing' AND hp.status IN ('Pending', 'Overdue', 'Failed')
                 GROUP BY hp.student_id, s.first_name, s.last_name, s.email_address, hp.status
                 ORDER BY SUM(hp.amount) DESC
             ''')

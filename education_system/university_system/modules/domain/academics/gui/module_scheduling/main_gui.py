@@ -312,27 +312,15 @@ class ModuleSchedulingGUI:
             self.update_status("Data refreshed successfully")
         except Exception as e:
             self.update_status(f"Error refreshing data: {str(e)}")
-            messagebox.showerror("Error", f"Failed to refresh data: {str(e)}")
+            messagebox.showerror("Error", f"Failed to refresh data: {str(e)}", parent=self.root)
 
     def return_to_main_menu(self):
-        """Return to the main menu/GUI"""
-        if messagebox.askyesno("Return to Main Menu", "Do you want to close this window and return to the main menu?"):
+        """Return to the main menu/GUI by closing this child window"""
+        if messagebox.askyesno("Return to Main Menu", "Do you want to close this window and return to the main menu?", parent=self.root):
             try:
-                # Try to open the main GUI if it exists
-                try:
-                    import subprocess
-                    import sys
-                    # Attempt to launch the main GUI
-                    main_gui_path = Path(__file__).parent / 'main_gui.py'
-                    if main_gui_path.exists():
-                        subprocess.Popen([sys.executable, str(main_gui_path)])
-                except Exception:
-                    pass  # Main GUI may not exist or fail to launch
-
-                # Close this window
                 self.root.destroy()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to return to main menu: {str(e)}")
+                messagebox.showerror("Error", f"Failed to return to main menu: {str(e)}", parent=self.root)
 
     def show_help(self):
         """Show user guide"""
@@ -445,7 +433,7 @@ Version: 2.0
 Developer: Academic Systems Team
         """
         
-        messagebox.showinfo("About", about_text)
+        messagebox.showinfo("About", about_text, parent=self.root)
 
     def show_language_selector(self):
         """Show language selection dialog"""
@@ -457,7 +445,8 @@ Developer: Academic Systems Team
         else:
             messagebox.showwarning(
                 _t("common.warning"),
-                _t("scheduling.language_selector_unavailable")
+                _t("scheduling.language_selector_unavailable"),
+                parent=self.root
             )
             return
 
@@ -465,7 +454,8 @@ Developer: Academic Systems Team
         if new_lang != old_lang:
             messagebox.showinfo(
                 _t("gui.language_changed"),
-                _t("gui.restart_required")
+                _t("gui.restart_required"),
+                parent=self.root
             )
             # Restart the GUI to apply language changes
             self.restart_gui()
@@ -485,7 +475,7 @@ Developer: Academic Systems Team
 
     def on_closing(self):
         """Handle application closing"""
-        if messagebox.askokcancel(_t("common.quit"), _t("scheduling.confirm_quit")):
+        if messagebox.askokcancel(_t("common.quit"), _t("scheduling.confirm_quit"), parent=self.root):
             try:
                 # Create final backup if auto-backup is enabled
                 auto_backup = self.scheduler.get_system_setting('auto_backup', 'True')

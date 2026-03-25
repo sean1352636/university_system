@@ -1,3 +1,3 @@
 # Re-exports AIDetectorGUI for backward compatibility
-from .main import AIDetectorGUI
+from education_system.university_system.modules.domain.academics.gui.ai_detector.main import AIDetectorGUI
 __all__ = ['AIDetectorGUI']

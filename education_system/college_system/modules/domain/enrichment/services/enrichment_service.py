@@ -3,6 +3,7 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import EnrichmentError, ValidationError
 from education_system.college_system.infrastructure.database.db import connect
+from education_system.college_system.core.sql_safety import validate_identifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,10 +26,23 @@ class EnrichmentService:
             raise ValidationError("activity_type is required.")
         conn = self._conn()
         try:
+            # Build INSERT with only non-None values so DB defaults apply
+            fields = {k: v for k, v in {
+                'name': kwargs.get('name'),
+                'activity_type': kwargs.get('activity_type'),
+                'lead_staff_id': kwargs.get('lead_staff_id'),
+                'day_of_week': kwargs.get('day_of_week'),
+                'time_slot': kwargs.get('time_slot'),
+                'location': kwargs.get('location'),
+                'capacity': kwargs.get('capacity'),
+                'description': kwargs.get('description'),
+                'status': kwargs.get('status'),
+            }.items() if v is not None}
+            cols = ", ".join(fields.keys())
+            placeholders = ", ".join("?" for _ in fields)
             conn.execute(
-                """INSERT INTO enrichment_activities (name, activity_type, lead_staff_id, day_of_week, time_slot, location, capacity, description, status)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (kwargs.get('name'), kwargs.get('activity_type'), kwargs.get('lead_staff_id'), kwargs.get('day_of_week'), kwargs.get('time_slot'), kwargs.get('location'), kwargs.get('capacity'), kwargs.get('description'), kwargs.get('status'),),
+                f"INSERT INTO enrichment_activities ({cols}) VALUES ({placeholders})",
+                list(fields.values()),
             )
             conn.commit()
             row = conn.execute(
@@ -60,7 +74,7 @@ class EnrichmentService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -78,7 +92,7 @@ class EnrichmentService:
         if not updates:
             raise ValidationError("No valid fields to update.")
         updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [pk]
         conn = self._conn()
         try:
@@ -116,7 +130,7 @@ class EnrichmentService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         conn = self._conn()
         try:

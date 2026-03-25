@@ -3,6 +3,7 @@
 from education_system.college_system.core.exceptions import RiskManagementError
 from education_system.college_system.infrastructure.database.db import connect
 
+from education_system.college_system.core.sql_safety import escape_like
 import logging
 
 logger = logging.getLogger(__name__)
@@ -76,7 +77,8 @@ class RiskManagementService:
                 params.append(category)
             if search:
                 sql += " AND (risk_title LIKE ? OR description LIKE ? OR risk_owner LIKE ?)"
-                term = f"%{search}%"
+                escaped = escape_like(search)
+                term = f"%{escaped}%"
                 params.extend([term, term, term])
             sql += " ORDER BY risk_score DESC, created_at DESC"
             return [dict(r) for r in conn.execute(sql, params).fetchall()]

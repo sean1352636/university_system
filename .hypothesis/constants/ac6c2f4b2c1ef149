@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/assignment_system/assignment_manager/admin_views.py
+# hypothesis_version: 6.151.9
+
+[100, 140, 150, 200, '#ffcccc', '#fff3cd', '%Y-%m-%d %H:%M:%S', '0', '600x500', '900x600', '<Configure>', 'Access Denied', 'Active', 'Assignment Details', 'Created By', 'Created Date', 'Due Date', 'Error', 'Grade', 'ID', 'Late', 'Late Days', 'Module', 'Name', 'No', 'Not Graded', 'Refresh', 'Status', 'Student ID', 'Submission Date', 'Submissions', 'Title', 'Title.TLabel', 'TkDefaultFont', 'Type', 'Unknown', 'View All Submissions', 'Warning', 'Yes', 'admin', 'all', 'blue', 'bold', 'both', 'end', 'ew', 'headings', 'horizontal', 'inactive', 'left', 'ns', 'nsew', 'nw', 'overdue', 'right', 'role', 'values', 'vertical', 'w', 'x', 'y']

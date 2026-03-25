@@ -45,7 +45,7 @@ class StudentsManager:
             student_data = cursor.fetchone()
 
             # Get document count
-            cursor.execute('SELECT COUNT(*) FROM student_documents WHERE student_id = ? AND is_current_version = 1', (student_id,))
+            cursor.execute('SELECT COUNT(*) FROM documents WHERE owner_id = ? AND source_type = \'student\' AND is_current_version = 1', (student_id,))
             doc_count = cursor.fetchone()[0]
 
             conn.close()
@@ -136,9 +136,9 @@ Total Documents: {doc_count}
             cursor.execute('''
             SELECT dt.type_name, sd.verification_status, DATE(sd.upload_date),
                    sd.expiry_date, sd.version_number
-            FROM student_documents sd
+            FROM documents sd
             JOIN document_types dt ON sd.type_id = dt.type_id
-            WHERE sd.student_id = ? AND sd.is_current_version = 1
+            WHERE sd.owner_id = ? AND sd.source_type = 'student' AND sd.is_current_version = 1
             ORDER BY sd.upload_date DESC
             ''', (student_id,))
 
@@ -254,7 +254,7 @@ Total Documents: {doc_count}
                    COUNT(CASE WHEN sd.verification_status = 'Verified' THEN 1 END) as verified_count,
                    COUNT(CASE WHEN sd.verification_status = 'Pending' THEN 1 END) as pending_count
             FROM students s
-            LEFT JOIN student_documents sd ON s.student_id = sd.student_id AND sd.is_current_version = 1
+            LEFT JOIN documents sd ON s.student_id = sd.owner_id AND sd.source_type = 'student' AND sd.is_current_version = 1
             WHERE s.student_id = ?
             GROUP BY s.student_id
             ''', (student_id,))
@@ -382,7 +382,7 @@ Total Documents: {doc_count}
                    COUNT(sd.document_id) as doc_count,
                    COUNT(CASE WHEN sd.verification_status = 'Verified' THEN 1 END) as verified_count
             FROM students s
-            LEFT JOIN student_documents sd ON s.student_id = sd.student_id AND sd.is_current_version = 1
+            LEFT JOIN documents sd ON s.student_id = sd.owner_id AND sd.source_type = 'student' AND sd.is_current_version = 1
             GROUP BY s.student_id
             ORDER BY s.last_name, s.first_name
             ''')
@@ -757,7 +757,7 @@ Total Documents: {doc_count}
                        ELSE 'Non-Compliant'
                    END as compliance
             FROM students s
-            LEFT JOIN student_documents sd ON s.student_id = sd.student_id AND sd.is_current_version = 1
+            LEFT JOIN documents sd ON s.student_id = sd.owner_id AND sd.source_type = 'student' AND sd.is_current_version = 1
             LEFT JOIN document_types dt ON sd.type_id = dt.type_id
             GROUP BY s.student_id
             ORDER BY s.last_name, s.first_name

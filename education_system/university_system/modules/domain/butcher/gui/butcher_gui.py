@@ -187,10 +187,10 @@ class ButcherGUI:
 
                 # Record transaction
                 conn.execute('''
-                    INSERT INTO student_finance_transactions
-                    (account_id, student_id, transaction_type, amount, balance_before, balance_after,
+                    INSERT INTO transactions
+                    (source_type, account_id, student_id, transaction_type, amount, balance_before, balance_after,
                      description, reference_id, processed_by, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES ('student_finance', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (account_id, self.current_user.get('username'), 'debit', amount,
                       current_balance, new_balance, 'Butcher Shop Purchase',
                       f"BUTCHER-{datetime.now().strftime('%Y%m%d%H%M%S')}",
@@ -645,7 +645,7 @@ class ButcherGUI:
     def refresh_refunds_list(self):
         """Refresh the refunds list from database with customer information.
 
-        Queries butcher_orders table for all paid orders that can be refunded.
+        Queries orders table for all paid orders that can be refunded.
         """
         for item in self.refunds_tree.get_children():
             self.refunds_tree.delete(item)
@@ -665,8 +665,8 @@ class ButcherGUI:
                             bo.total_amount,
                             bo.payment_method,
                             bo.payment_status
-                        FROM butcher_orders bo
-                        WHERE bo.payment_status != 'pending'
+                        FROM orders bo
+                        WHERE bo.source_type = 'butcher' AND bo.payment_status != 'pending'
                           AND (CAST(bo.order_id AS TEXT) LIKE ?
                            OR bo.customer_id LIKE ?
                            OR bo.customer_name LIKE ?
@@ -685,8 +685,8 @@ class ButcherGUI:
                             bo.total_amount,
                             bo.payment_method,
                             bo.payment_status
-                        FROM butcher_orders bo
-                        WHERE bo.payment_status != 'pending'
+                        FROM orders bo
+                        WHERE bo.source_type = 'butcher' AND bo.payment_status != 'pending'
                         ORDER BY bo.created_at DESC
                         LIMIT 200
                     ''')
@@ -725,14 +725,14 @@ class ButcherGUI:
             # Get full order details including items
             with get_connection() as conn:
                 cursor = conn.execute('''
-                    SELECT * FROM butcher_orders WHERE order_id = ?
+                    SELECT * FROM orders WHERE order_id = ? AND source_type = 'butcher'
                 ''', (order_id,))
                 order = cursor.fetchone()
 
                 # Get order items
                 items_cursor = conn.execute('''
-                    SELECT * FROM butcher_order_items
-                    WHERE order_id = ?
+                    SELECT * FROM order_items
+                    WHERE order_id = ? AND source_type = 'butcher'
                 ''', (order_id,))
                 items = items_cursor.fetchall()
 
@@ -740,7 +740,7 @@ class ButcherGUI:
             if items:
                 items_text=_t("butcher.labels.order_items")
                 for item in items:
-                    items_text += f"\n  - {item['product_name']}: {item['quantity']} {item['unit_type']} @ GBP {item['unit_price']:.2f} = GBP {item['total_price']:.2f}"
+                    items_text += f"\n  - {item['item_name']}: {item['quantity']} {item['unit_type']} @ GBP {item['unit_price']:.2f} = GBP {item['subtotal']:.2f}"
                     if item.get('special_cut'):
                         items_text += f"\n    Special cut: {item['special_cut']}"
 
@@ -769,7 +769,7 @@ Payment Status: {values[7]}
             filepath = filedialog.asksaveasfilename(
                 defaultextension=".csv",
                 filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
-                initialfile=f"butcher_orders_{datetime.now().strftime('%Y%m%d')}.csv"
+                initialfile=f"orders_{datetime.now().strftime('%Y%m%d')}.csv"
             )
 
             if filepath:
@@ -850,36 +850,22 @@ Payment Status: {values[7]}
             try:
                 with transaction() as conn:
                     conn.execute('''
-                        UPDATE butcher_orders
+                        UPDATE orders
                         SET payment_status = 'refunded'
-                        WHERE order_id = ?
+                        WHERE order_id = ? AND source_type = 'butcher'
                     ''', (order_id,))
 
                     # Generate refund reference
                     import uuid
                     refund_ref = f"BUTCH-REFUND-{uuid.uuid4().hex[:12].upper()}"
 
-                    # Record refund in butcher_refunds table
+                    # Record refund in unified_refunds table
                     conn.execute('''
-                        CREATE TABLE IF NOT EXISTS butcher_refunds (
-                            refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            order_id INTEGER,
-                            refund_amount REAL,
-                            refund_method TEXT,
-                            refund_reference TEXT,
-                            customer_id TEXT,
-                            customer_name TEXT,
-                            refund_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-                            processed_by TEXT,
-                            FOREIGN KEY (order_id) REFERENCES butcher_orders(order_id)
-                        )
-                    ''')
-
-                    conn.execute('''
-                        INSERT INTO butcher_refunds
-                        (order_id, refund_amount, refund_method, refund_reference, customer_id, customer_name, processed_by)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
-                    ''', (order_id, amount, refund_method, refund_ref, customer_id, customer_name,
+                        INSERT INTO unified_refunds
+                        (source_type, reference_id, reference_type, amount, refund_method,
+                         refund_reference, student_id, customer_name, refund_date, processed_by)
+                        VALUES ('butcher', ?, 'order', ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+                    ''', (str(order_id), amount, refund_method, refund_ref, customer_id, customer_name,
                           self.current_user.get('username', 'system')))
 
                 # Send refund receipt email
@@ -1005,10 +991,10 @@ Payment Status: {values[7]}
 
                 # Record transaction
                 conn.execute('''
-                    INSERT INTO student_finance_transactions
-                    (account_id, student_id, transaction_type, amount, balance_before,
+                    INSERT INTO transactions
+                    (source_type, account_id, student_id, transaction_type, amount, balance_before,
                      balance_after, description, reference_id, processed_by)
-                    VALUES (?, ?, 'credit', ?, ?, ?, ?, ?, ?)
+                    VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, ?, ?)
                 ''', (account_id, customer_id, amount, balance_before, balance_after,
                       f'Butcher Shop Refund - Order: {order_number}',
                       f'BUTCHER-REFUND-{order_number}',
@@ -1025,8 +1011,8 @@ Payment Status: {values[7]}
         try:
             # Get customer email
             with get_connection() as conn:
-                # Try to get from butcher_orders first
-                cursor = conn.execute("SELECT customer_email FROM butcher_orders WHERE order_id = ?", (order_id,))
+                # Try to get from orders first
+                cursor = conn.execute("SELECT customer_email FROM orders WHERE order_id = ? AND source_type = 'butcher'", (order_id,))
                 row = cursor.fetchone()
                 if row and row[0]:
                     email = row[0]
@@ -1081,46 +1067,9 @@ Payment Status: {values[7]}
 
     def notify_butcher_finance_gui(self, order_id: int, amount: float, method: str,
                                    refund_ref: str, customer_id: str):
-        """Record refund in finance system for integration."""
+        """Notify finance GUI about the refund - already recorded in unified_refunds."""
         try:
-            with transaction() as conn:
-                # Ensure finance_refunds table exists with correct schema
-                conn.execute('''
-                    CREATE TABLE IF NOT EXISTS finance_refunds (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        refund_reference TEXT UNIQUE,
-                        department TEXT,
-                        amount REAL,
-                        refund_method TEXT,
-                        refund_date TEXT,
-                        refund_time TEXT,
-                        transaction_reference TEXT,
-                        processed_by TEXT,
-                        notes TEXT
-                    )
-                ''')
-
-                # Check for missing columns and add them
-                cursor = conn.execute("PRAGMA table_info(finance_refunds)")
-                columns = [row[1] for row in cursor.fetchall()]
-
-                if 'transaction_reference' not in columns:
-                    conn.execute('ALTER TABLE finance_refunds ADD COLUMN transaction_reference TEXT')
-                if 'refund_time' not in columns:
-                    conn.execute('ALTER TABLE finance_refunds ADD COLUMN refund_time TEXT')
-                if 'notes' not in columns:
-                    conn.execute('ALTER TABLE finance_refunds ADD COLUMN notes TEXT')
-
-                # Insert refund record
-                conn.execute('''
-                    INSERT INTO finance_refunds
-                    (refund_reference, department, amount, refund_method,
-                     refund_date, refund_time, transaction_reference, processed_by, notes)
-                    VALUES (?, ?, ?, ?, date('now'), time('now'), ?, ?, ?)
-                ''', (refund_ref, 'Butcher Shop', amount, method,
-                      f'order_{order_id}', self.current_user.get('username', 'system'),
-                      f'Butcher Shop Order #{order_id} Refund - Customer: {customer_id}'))
-                print(f"[Butcher] Refund recorded in finance system: {refund_ref}")
+            print(f"[Butcher] Refund recorded in finance system: {refund_ref}")
         except Exception as e:
             print(f"Error notifying finance system: {e}")
 
@@ -1170,7 +1119,7 @@ Payment Status: {values[7]}
         try:
             with get_db_connection() as conn:
                 category_filter = self.category_filter.get()
-                query = 'SELECT * FROM butcher_products WHERE is_available = 1'
+                query = "SELECT * FROM products WHERE source_type = 'butcher' AND is_available = 1"
                 params = []
 
                 if category_filter != 'All':
@@ -1213,7 +1162,8 @@ Payment Status: {values[7]}
         try:
             with get_db_connection() as conn:
                 rows = conn.execute('''
-                    SELECT * FROM butcher_orders
+                    SELECT * FROM orders
+                    WHERE source_type = 'butcher'
                     ORDER BY created_at DESC LIMIT 100
                 ''').fetchall()
 
@@ -1222,7 +1172,7 @@ Payment Status: {values[7]}
                         row['order_number'],
                         row['customer_name'],
                         f"£{row['total_amount']:.2f}",
-                        row['status'],
+                        row['order_status'],
                         row['payment_status'],
                         row['created_at'][:10] if row['created_at'] else ''
                     ))
@@ -1239,7 +1189,7 @@ Payment Status: {values[7]}
         try:
             with get_db_connection() as conn:
                 rows = conn.execute('''
-                    SELECT * FROM butcher_products WHERE is_available = 1
+                    SELECT * FROM products WHERE source_type = 'butcher' AND is_available = 1
                     ORDER BY category, name
                 ''').fetchall()
 
@@ -1381,7 +1331,7 @@ Payment Status: {values[7]}
 
             with get_db_connection() as conn:
                 product = conn.execute(
-                    'SELECT * FROM butcher_products WHERE product_id = ?',
+                    "SELECT * FROM products WHERE source_product_id = ? AND source_type = 'butcher'",
                     (product_id,)
                 ).fetchone()
 
@@ -1531,7 +1481,7 @@ Payment Status: {values[7]}
                 details = f"""Order Number: {order['order_number']}
 Customer: {order['customer_name']}
 Email: {order.get('customer_email', 'N/A')}
-Status: {order['status']}
+Status: {order['order_status']}
 Payment Status: {order['payment_status']}
 Date: {order['created_at']}
 
@@ -1539,8 +1489,8 @@ Items:
 """
                 for itm in order.get('items', []):
                     unit_price = itm.get('unit_price', 0) or 0
-                    total_price = itm.get('total_price', 0) or 0
-                    details += f"  - {itm['product_name']}: {itm['quantity']} {itm['unit_type']} @ £{unit_price:.2f} = £{total_price:.2f}\n"
+                    subtotal = itm.get('subtotal', 0) or 0
+                    details += f"  - {itm['item_name']}: {itm['quantity']} {itm['unit_type']} @ £{unit_price:.2f} = £{subtotal:.2f}\n"
                     if itm.get('special_cut'):
                         details += f"    ({itm['special_cut']})\n"
 
@@ -1618,7 +1568,7 @@ Items:
         """Send payment receipt email."""
         items_list = ""
         for item in order.get('items', []):
-            items_list += f"  - {item['product_name']}: {item['quantity']} {item['unit_type']} = £{item['total_price']:.2f}\n"
+            items_list += f"  - {item['item_name']}: {item['quantity']} {item['unit_type']} = £{item['subtotal']:.2f}\n"
 
         subject = f"Butcher Shop Payment Receipt - Order {order['order_number']}"
         body = f"""Dear {order['customer_name']},
@@ -1653,7 +1603,7 @@ University Butcher Shop"""
 
             items_list = ""
             for item in order.get('items', []):
-                items_list += f"  - {item['product_name']}: {item['quantity']} {item['unit_type']} = £{item['total_price']:.2f}\n"
+                items_list += f"  - {item['item_name']}: {item['quantity']} {item['unit_type']} = £{item['subtotal']:.2f}\n"
 
             body = _t("butcher.email.receipt_body").format(
                 customer_name=order['customer_name'],

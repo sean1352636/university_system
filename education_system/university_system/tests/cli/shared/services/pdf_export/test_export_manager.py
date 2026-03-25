@@ -236,7 +236,7 @@ class TestExportDatabaseToPDF:
 
         # Mock the paths module to use temp db
         with patch(
-            "university_system.modules.shared.services.pdf_export.export_manager.paths"
+            "education_system.university_system.modules.shared.services.pdf_export.export_manager.paths"
         ) as mock_paths:
             mock_paths.DEFAULT_DB_PATH = temp_db
             mock_paths.EXPORTS_DIR = tempfile.mkdtemp()

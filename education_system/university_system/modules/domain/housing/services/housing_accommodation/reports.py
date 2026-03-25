@@ -1,5 +1,5 @@
-from . import common as _common
-from .common import (
+from education_system.university_system.modules.domain.housing.services.housing_accommodation import common as _common
+from education_system.university_system.modules.domain.housing.services.housing_accommodation.common import (
     sqlite3, datetime, os, get_text, get_connection,
     log_read, log_export, log_search,
 )
@@ -137,8 +137,8 @@ def generate_financial_report():
 
         cursor.execute('''
         SELECT COUNT(*) as payment_count, SUM(amount) as total_amount
-        FROM housing_payments
-        WHERE strftime('%Y', payment_date) = ?
+        FROM payments
+        WHERE source_type = 'housing' AND strftime('%Y', payment_date) = ?
         ''', (str(current_year),))
 
         year_stats = cursor.fetchone()
@@ -330,14 +330,15 @@ def export_housing_data():
         elif choice == '5':
             # Export payment data
             cursor.execute('''
-            SELECT p.payment_id, p.student_id, s.first_name, s.last_name,
+            SELECT p.source_payment_id, p.student_id, s.first_name, s.last_name,
                    p.amount, p.payment_date, p.payment_method, p.payment_period_start,
                    p.payment_period_end, p.status, b.building_name, r.room_number
-            FROM housing_payments p
+            FROM payments p
             JOIN students s ON p.student_id = s.student_id
-            JOIN housing_assignments a ON p.assignment_id = a.assignment_id
+            JOIN housing_assignments a ON p.reference_id = a.assignment_id
             JOIN housing_rooms r ON a.room_id = r.room_id
             JOIN housing_buildings b ON r.building_id = b.building_id
+            WHERE p.source_type = 'housing'
             ORDER BY p.payment_date DESC
             ''')
 

@@ -7,12 +7,12 @@ Contains provider implementations for different SSO protocols:
 """
 
 try:
-    from .saml_provider import SAMLProvider
+    from education_system.university_system.infrastructure.auth.sso_providers.saml_provider import SAMLProvider
 except ImportError:
     SAMLProvider = None
 
 try:
-    from .oidc_provider import OIDCProvider
+    from education_system.university_system.infrastructure.auth.sso_providers.oidc_provider import OIDCProvider
 except ImportError:
     OIDCProvider = None
 

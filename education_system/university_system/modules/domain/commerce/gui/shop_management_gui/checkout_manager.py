@@ -146,8 +146,8 @@ def get_payment_methods_data(self, start_date, end_date):
             SELECT payment_method,
                    COUNT(*) as transaction_count,
                    SUM(total_amount) as total_amount
-            FROM shop_transactions
-            WHERE DATE(transaction_date) BETWEEN ? AND ?
+            FROM transactions
+            WHERE source_type = 'shop' AND DATE(created_at) BETWEEN ? AND ?
             GROUP BY payment_method
             ORDER BY total_amount DESC
         """, [start_date, end_date])
@@ -318,9 +318,9 @@ def process_checkout(self, payment_method, customer_name, customer_email):
 
             # Create transaction
             cursor.execute("""
-                INSERT INTO shop_transactions
-                (transaction_id, user_id, student_id, total_amount, transaction_date, payment_method, status, notes)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO transactions
+                (source_transaction_id, customer_id, student_id, total_amount, created_at, payment_method, status, notes, source_type)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'shop')
             """, [
                 transaction_id,
                 self.current_user.get('id', 1),
@@ -430,12 +430,14 @@ def _process_student_account_payment(self, student_id, total_amount, transaction
 
         # Fallback: Legacy method - add to student_fees without balance deduction
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('SELECT first_name, last_name, email FROM students WHERE student_id = ?', (student_id,))
-        student_result = cursor.fetchone()
-        if not student_result:
-            messagebox.showerror("Error", f"Student ID {student_id} not found in system")
+            cursor.execute('SELECT first_name, last_name, email FROM students WHERE student_id = ?', (student_id,))
+            student_result = cursor.fetchone()
+            if not student_result:
+                messagebox.showerror("Error", f"Student ID {student_id} not found in system")
+        finally:
             conn.close()
             return False
 
@@ -626,10 +628,10 @@ def add_shop_refund_to_student_account(self, student_id, amount, refund_ref):
 
             # Record transaction with correct schema
             cursor.execute('''
-                INSERT INTO student_finance_transactions
-                (account_id, student_id, transaction_type, amount, balance_before, balance_after,
+                INSERT INTO transactions
+                (source_type, account_id, student_id, transaction_type, amount, balance_before, balance_after,
                  description, reference_id, processed_by, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                VALUES ('student_finance', ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ''', (account_id, student_id, 'credit', amount, balance_before, balance_after,
                   'Shop Purchase Refund', refund_ref, self.current_user.get('username', 'System')))
 
@@ -650,17 +652,8 @@ def notify_shop_finance_gui(self, transaction_id, amount, method, refund_ref, st
         with transaction() as conn:
             cursor = conn.cursor()
 
-            # Insert into finance_refunds table (use 'amount' column name to match existing schema)
-            cursor.execute('''
-                INSERT INTO finance_refunds
-                (transaction_id, refund_date, amount, refund_method, refund_reference,
-                 student_id, department, processed_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (transaction_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), amount, method,
-                  refund_ref, student_id, 'Shop',
-                  self.current_user.get('username', 'System')))
-
-            # Transaction auto-commits on successful exit
+            # Refund already recorded in unified_refunds table
+            logger.info(f"[Shop] Refund {refund_ref} recorded in unified_refunds")
 
     except Exception as e:
         logger.error(f"Error notifying finance GUI: {e}")

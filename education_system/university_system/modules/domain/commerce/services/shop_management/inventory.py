@@ -1,7 +1,7 @@
 from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.modules.shared.utils.simple_activity_logger import log_update, log_read
-from . import config
+from education_system.university_system.modules.domain.commerce.services.shop_management import config
 
 
 @log_update(module="shop", description="Updating stock levels")
@@ -24,10 +24,10 @@ def update_stock_levels():
         # Get product list
         cursor.execute(
             '''
-            SELECT p.product_id, p.name, p.category, i.quantity
-            FROM shop_products p
-            JOIN shop_inventory i ON p.product_id = i.product_id
-            WHERE p.is_active = 1
+            SELECT p.source_product_id as product_id, p.name, p.category, i.quantity
+            FROM products p
+            JOIN shop_inventory i ON p.source_product_id = i.product_id
+            WHERE p.source_type = 'shop' AND p.is_active = 1
             ORDER BY p.category, p.name
             '''
         )
@@ -56,10 +56,10 @@ def update_stock_levels():
 
         cursor.execute(
             '''
-            SELECT p.product_id, p.name, i.quantity
-            FROM shop_products p
-            JOIN shop_inventory i ON p.product_id = i.product_id
-            WHERE p.product_id = ?
+            SELECT p.source_product_id as product_id, p.name, i.quantity
+            FROM products p
+            JOIN shop_inventory i ON p.source_product_id = i.product_id
+            WHERE p.source_type = 'shop' AND p.source_product_id = ?
             ''',
             [product_id]
         )
@@ -191,10 +191,10 @@ def restock_products():
         # Get products below restock threshold
         cursor.execute(
             '''
-            SELECT p.product_id, p.name, p.category, i.quantity, i.restock_threshold
-            FROM shop_products p
-            JOIN shop_inventory i ON p.product_id = i.product_id
-            WHERE p.is_active = 1 AND i.quantity <= i.restock_threshold
+            SELECT p.source_product_id as product_id, p.name, p.category, i.quantity, i.restock_threshold
+            FROM products p
+            JOIN shop_inventory i ON p.source_product_id = i.product_id
+            WHERE p.source_type = 'shop' AND p.is_active = 1 AND i.quantity <= i.restock_threshold
             ORDER BY (i.quantity * 1.0 / i.restock_threshold), p.category, p.name
             '''
         )
@@ -358,11 +358,11 @@ def view_low_stock_products():
         # Get products below threshold
         cursor.execute(
             '''
-            SELECT p.product_id, p.name, p.category, p.price, i.quantity, i.restock_threshold,
+            SELECT p.source_product_id as product_id, p.name, p.category, p.price, i.quantity, i.restock_threshold,
                    i.last_restock_date, (i.quantity * 100.0 / i.restock_threshold) as stock_percent
-            FROM shop_products p
-            JOIN shop_inventory i ON p.product_id = i.product_id
-            WHERE p.is_active = 1 AND i.quantity <= i.restock_threshold
+            FROM products p
+            JOIN shop_inventory i ON p.source_product_id = i.product_id
+            WHERE p.source_type = 'shop' AND p.is_active = 1 AND i.quantity <= i.restock_threshold
             ORDER BY stock_percent, p.category, p.name
             '''
         )
@@ -375,10 +375,10 @@ def view_low_stock_products():
             # Check for products getting close (within 20% above threshold)
             cursor.execute(
                 '''
-                SELECT p.product_id, p.name, p.category, i.quantity, i.restock_threshold,
+                SELECT p.source_product_id as product_id, p.name, p.category, i.quantity, i.restock_threshold,
                        (i.quantity * 100.0 / i.restock_threshold) as stock_percent
-                FROM shop_products p
-                JOIN shop_inventory i ON p.product_id = i.product_id
+                FROM products p
+                JOIN shop_inventory i ON p.source_product_id = i.product_id
                 WHERE p.is_active = 1
                   AND i.quantity > i.restock_threshold
                   AND i.quantity <= (i.restock_threshold * 1.2)
@@ -460,10 +460,10 @@ def adjust_restock_thresholds():
         # Get product list with inventory details
         cursor.execute(
             '''
-            SELECT p.product_id, p.name, p.category, i.quantity, i.restock_threshold
-            FROM shop_products p
-            JOIN shop_inventory i ON p.product_id = i.product_id
-            WHERE p.is_active = 1
+            SELECT p.source_product_id as product_id, p.name, p.category, i.quantity, i.restock_threshold
+            FROM products p
+            JOIN shop_inventory i ON p.source_product_id = i.product_id
+            WHERE p.source_type = 'shop' AND p.is_active = 1
             ORDER BY p.category, p.name
             '''
         )
@@ -497,10 +497,10 @@ def adjust_restock_thresholds():
 
             cursor.execute(
                 '''
-                SELECT p.product_id, p.name, i.quantity, i.restock_threshold
-                FROM shop_products p
-                JOIN shop_inventory i ON p.product_id = i.product_id
-                WHERE p.product_id = ?
+                SELECT p.source_product_id as product_id, p.name, i.quantity, i.restock_threshold
+                FROM products p
+                JOIN shop_inventory i ON p.source_product_id = i.product_id
+                WHERE p.source_product_id = ?
                 ''',
                 [product_id]
             )
@@ -544,7 +544,7 @@ def adjust_restock_thresholds():
 
         elif choice == '2':
             # Adjust by category
-            cursor.execute("SELECT DISTINCT category FROM shop_products WHERE is_active = 1 ORDER BY category")
+            cursor.execute("SELECT DISTINCT category FROM products WHERE source_type = 'shop' AND is_active = 1 ORDER BY category")
             categories = cursor.fetchall()
 
             print("\nAvailable Categories:")
@@ -565,8 +565,8 @@ def adjust_restock_thresholds():
                 cursor.execute(
                     '''
                     SELECT AVG(i.restock_threshold) as avg_threshold
-                    FROM shop_products p
-                    JOIN shop_inventory i ON p.product_id = i.product_id
+                    FROM products p
+                    JOIN shop_inventory i ON p.source_product_id = i.product_id
                     WHERE p.category = ? AND p.is_active = 1
                     ''',
                     [selected_category]
@@ -590,8 +590,8 @@ def adjust_restock_thresholds():
                     UPDATE shop_inventory
                     SET restock_threshold = ?
                     WHERE product_id IN (
-                        SELECT p.product_id FROM shop_products p
-                        WHERE p.category = ? AND p.is_active = 1
+                        SELECT p.source_product_id FROM products p
+                        WHERE p.source_type = 'shop' AND p.category = ? AND p.is_active = 1
                     )
                     ''',
                     [new_threshold, selected_category]
@@ -614,7 +614,7 @@ def adjust_restock_thresholds():
                     '''
                     SELECT AVG(i.restock_threshold) as avg_threshold
                     FROM shop_inventory i
-                    JOIN shop_products p ON i.product_id = p.product_id
+                    JOIN products p ON i.product_id = p.source_product_id AND p.source_type = 'shop'
                     WHERE p.is_active = 1
                     '''
                 )
@@ -635,8 +635,8 @@ def adjust_restock_thresholds():
                     UPDATE shop_inventory
                     SET restock_threshold = ?
                     WHERE product_id IN (
-                        SELECT p.product_id FROM shop_products p
-                        WHERE p.is_active = 1
+                        SELECT p.source_product_id FROM products p
+                        WHERE p.source_type = 'shop' AND p.is_active = 1
                     )
                     ''',
                     [new_threshold]
@@ -685,9 +685,9 @@ def get_low_stock_alert():
         cursor.execute(
             '''
             SELECT COUNT(*) as low_stock_count
-            FROM shop_products p
-            JOIN shop_inventory i ON p.product_id = i.product_id
-            WHERE p.is_active = 1 AND i.quantity <= i.restock_threshold
+            FROM products p
+            JOIN shop_inventory i ON p.source_product_id = i.product_id
+            WHERE p.source_type = 'shop' AND p.is_active = 1 AND i.quantity <= i.restock_threshold
             '''
         )
 
@@ -715,10 +715,10 @@ def send_low_stock_notification():
         # Get low stock items
         cursor.execute(
             '''
-            SELECT p.product_id, p.name, p.category, i.quantity, i.restock_threshold
-            FROM shop_products p
-            JOIN shop_inventory i ON p.product_id = i.product_id
-            WHERE p.is_active = 1 AND i.quantity <= i.restock_threshold
+            SELECT p.source_product_id as product_id, p.name, p.category, i.quantity, i.restock_threshold
+            FROM products p
+            JOIN shop_inventory i ON p.source_product_id = i.product_id
+            WHERE p.source_type = 'shop' AND p.is_active = 1 AND i.quantity <= i.restock_threshold
             ORDER BY (i.quantity * 1.0 / i.restock_threshold)
             '''
         )
@@ -749,11 +749,11 @@ def get_inventory_valuation():
         cursor.execute(
             '''
             SELECT SUM(p.price * i.quantity) as total_value,
-                   COUNT(p.product_id) as product_count,
+                   COUNT(p.source_product_id) as product_count,
                    SUM(i.quantity) as total_quantity
-            FROM shop_products p
-            JOIN shop_inventory i ON p.product_id = i.product_id
-            WHERE p.is_active = 1
+            FROM products p
+            JOIN shop_inventory i ON p.source_product_id = i.product_id
+            WHERE p.source_type = 'shop' AND p.is_active = 1
             '''
         )
 

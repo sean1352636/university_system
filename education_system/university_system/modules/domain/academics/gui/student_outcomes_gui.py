@@ -177,14 +177,13 @@ class StudentOutcomesGUI:
             cursor.execute(
                 """
                 SELECT lo.outcome_code, lo.category, lo.description,
-                       orr.achievement_level, orr.date_assessed
+                       orr.achievement_level, orr.assessment_date
                 FROM learning_outcomes lo
                 LEFT JOIN outcome_results orr
                     ON lo.outcome_id = orr.outcome_id AND orr.student_id = ?
-                WHERE lo.course = ? OR lo.course = 'ALL'
                 ORDER BY lo.outcome_code
                 """,
-                (self.student_id, course),
+                (self.student_id,),
             )
             rows = cursor.fetchall()
             conn.close()

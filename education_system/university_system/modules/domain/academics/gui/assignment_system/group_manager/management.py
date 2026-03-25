@@ -44,7 +44,8 @@ class ManagementMixin:
         groups_frame.pack(fill='both', expand=True)
 
         columns = ('ID', 'Group Name', 'Assignment', 'Members', 'Submitted', 'Status')
-        self.manage_groups_tree = ttk.Treeview(groups_frame, columns=columns, show='headings')
+        self.manage_groups_tree = ttk.Treeview(groups_frame, columns=columns, show='headings',
+                                               selectmode='extended')
 
         for col in columns:
             self.manage_groups_tree.heading(col, text=col)
@@ -109,7 +110,6 @@ class ManagementMixin:
 
     def load_filtered_groups(self):
         """Load groups based on filters"""
-        # Clear existing data
         for item in self.manage_groups_tree.get_children():
             self.manage_groups_tree.delete(item)
 
@@ -117,50 +117,22 @@ class ManagementMixin:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
-            # Check if groups table exists
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS assignment_groups (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                assignment_id INTEGER NOT NULL,
-                group_name TEXT NOT NULL,
-                description TEXT,
-                max_members INTEGER DEFAULT 4,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (assignment_id) REFERENCES assignments(id)
-            )
-            ''')
-
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS assignment_group_members (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                group_id INTEGER NOT NULL,
-                student_id INTEGER NOT NULL,
-                role TEXT DEFAULT 'member',
-                joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (group_id) REFERENCES assignment_groups(id),
-                FOREIGN KEY (student_id) REFERENCES users(id)
-            )
-            ''')
-
-            # Build query based on filters
             query = '''
             SELECT g.id, g.group_name, a.title, COUNT(DISTINCT gm.student_id) as member_count,
-                   CASE WHEN s.id IS NOT NULL THEN 'Yes' ELSE 'No' END as submitted,
+                   'No' as submitted,
                    CASE
                        WHEN COUNT(DISTINCT gm.student_id) = 0 THEN 'Empty'
-                       WHEN COUNT(DISTINCT gm.student_id) >= g.max_members THEN 'Complete'
+                       WHEN COUNT(DISTINCT gm.student_id) >= COALESCE(a.group_size_max, 4) THEN 'Complete'
                        ELSE 'Incomplete'
                    END as status
-            FROM assignment_groups g
+            FROM groups g
             JOIN assignments a ON g.assignment_id = a.id
-            LEFT JOIN assignment_group_members gm ON g.id = gm.group_id
-            LEFT JOIN assignment_submissions s ON g.assignment_id = s.assignment_id AND g.id = s.group_id
+            LEFT JOIN group_members gm ON g.id = gm.group_id
             '''
 
             conditions = []
             params = []
 
-            # Apply assignment filter
             assignment_filter = self.group_assignment_filter_var.get()
             if assignment_filter and assignment_filter != "All Assignments":
                 assignment_id = assignment_filter.split(' - ')[0]
@@ -175,7 +147,6 @@ class ManagementMixin:
             cursor.execute(query, params)
             groups = cursor.fetchall()
 
-            # Apply status filter in code (since it's calculated)
             status_filter = self.group_status_filter_var.get()
             for group in groups:
                 gid, name, assignment, members, submitted, status = group
@@ -193,7 +164,6 @@ class ManagementMixin:
                                               values=(gid, name, assignment, members, submitted, status),
                                               tags=tags)
 
-            # Configure tags
             self.manage_groups_tree.tag_configure('empty', background='#ffebee')
             self.manage_groups_tree.tag_configure('complete', background='#e8f5e8')
 
@@ -208,7 +178,6 @@ class ManagementMixin:
         selection = self.manage_groups_tree.selection()
         if not selection:
             return
-
         item = self.manage_groups_tree.item(selection[0])
         group_id = item['values'][0]
         self.show_group_details(group_id)
@@ -216,7 +185,6 @@ class ManagementMixin:
 
     def show_group_details(self, group_id):
         """Show detailed group information"""
-        # Clear existing details
         for widget in self.group_details_frame.winfo_children():
             widget.destroy()
 
@@ -224,25 +192,25 @@ class ManagementMixin:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
-            # Get group info
             cursor.execute('''
-            SELECT g.group_name, g.description, a.title, g.max_members
-            FROM assignment_groups g
+            SELECT g.group_name, a.title, g.created_at
+            FROM groups g
             JOIN assignments a ON g.assignment_id = a.id
             WHERE g.id = ?
             ''', (group_id,))
 
             group_info = cursor.fetchone()
             if not group_info:
+                ttk.Label(self.group_details_frame, text="Group not found").pack()
+                conn.close()
                 return
 
-            name, desc, assignment, max_members = group_info
+            name, assignment, created_at = group_info
 
-            # Get members
             cursor.execute('''
-            SELECT u.first_name, u.last_name, u.email, gm.role
-            FROM assignment_group_members gm
-            JOIN users u ON gm.student_id = u.id
+            SELECT s.first_name, s.last_name, s.email_address, gm.role
+            FROM group_members gm
+            JOIN students s ON gm.student_id = s.student_id
             WHERE gm.group_id = ?
             ORDER BY gm.joined_at
             ''', (group_id,))
@@ -250,15 +218,17 @@ class ManagementMixin:
             members = cursor.fetchall()
             conn.close()
 
-            # Display details
             details_text = f"Group: {name}\n"
             details_text += f"Assignment: {assignment}\n"
-            details_text += f"Description: {desc or 'N/A'}\n"
-            details_text += f"Members: {len(members)}/{max_members}\n\n"
+            details_text += f"Created: {created_at or 'N/A'}\n"
+            details_text += f"Members: {len(members)}\n\n"
             details_text += "Members:\n"
 
             for fname, lname, email, role in members:
-                details_text += f"  - {fname} {lname} ({email}) - {role}\n"
+                details_text += f"  - {fname} {lname} ({email or 'no email'}) - {role}\n"
+
+            if not members:
+                details_text += "  (no members)\n"
 
             ttk.Label(self.group_details_frame, text=details_text,
                      font=('TkDefaultFont', 10), justify='left').pack(anchor='w')
@@ -278,7 +248,6 @@ class ManagementMixin:
         group_id = item['values'][0]
         group_name = item['values'][1]
 
-        # Create members window
         members_window = tk.Toplevel(self.root)
         members_window.title(f"Members - {group_name}")
         members_window.geometry("700x500")
@@ -287,7 +256,6 @@ class ManagementMixin:
         ttk.Label(members_window, text=f"Group Members: {group_name}",
                  font=('TkDefaultFont', 12, 'bold')).pack(pady=10)
 
-        # Members list
         members_frame = ttk.Frame(members_window)
         members_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
@@ -300,15 +268,15 @@ class ManagementMixin:
 
         members_tree.pack(fill='both', expand=True)
 
-        # Load members
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
             cursor.execute('''
-            SELECT u.first_name || ' ' || u.last_name, u.email, u.id, gm.role, gm.joined_at
-            FROM assignment_group_members gm
-            JOIN users u ON gm.student_id = u.id
+            SELECT s.first_name || ' ' || s.last_name, s.email_address,
+                   gm.student_id, gm.role, gm.joined_at
+            FROM group_members gm
+            JOIN students s ON gm.student_id = s.student_id
             WHERE gm.group_id = ?
             ORDER BY gm.joined_at
             ''', (group_id,))
@@ -334,8 +302,142 @@ class ManagementMixin:
 
         item = self.manage_groups_tree.item(selection[0])
         group_id = item['values'][0]
+        group_name = item['values'][1]
 
-        messagebox.showinfo("Edit Group", f"Edit group functionality - Group ID: {group_id}")
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            cursor.execute(
+                'SELECT id, group_name, assignment_id, created_at FROM groups WHERE id = ?',
+                (group_id,)
+            )
+            group_info = cursor.fetchone()
+
+            if not group_info:
+                conn.close()
+                messagebox.showerror("Error", "Group not found")
+                return
+
+            gid, current_name, assignment_id, created_at = group_info
+
+            cursor.execute('SELECT title FROM assignments WHERE id = ?', (assignment_id,))
+            assignment_row = cursor.fetchone()
+            assignment_title = assignment_row[0] if assignment_row else "Unknown"
+
+            cursor.execute('''
+                SELECT gm.student_id, s.first_name, s.last_name, s.email_address
+                FROM group_members gm
+                LEFT JOIN students s ON gm.student_id = s.student_id
+                WHERE gm.group_id = ?
+            ''', (group_id,))
+            members = cursor.fetchall()
+            conn.close()
+
+            dialog = tk.Toplevel(self.root)
+            dialog.title(f"Edit Group - {current_name}")
+            dialog.geometry("500x450")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            ttk.Label(dialog, text="Edit Group Details",
+                     font=('TkDefaultFont', 12, 'bold')).pack(anchor='w', padx=10, pady=(10, 5))
+            ttk.Label(dialog, text=f"Assignment: {assignment_title}").pack(anchor='w', padx=10)
+
+            name_frame = ttk.LabelFrame(dialog, text="Group Name", padding=10)
+            name_frame.pack(fill='x', padx=10, pady=10)
+
+            name_var = tk.StringVar(value=current_name)
+            ttk.Entry(name_frame, textvariable=name_var, width=40).pack(fill='x')
+
+            members_frame = ttk.LabelFrame(dialog, text=f"Current Members ({len(members)})", padding=10)
+            members_frame.pack(fill='both', expand=True, padx=10, pady=(0, 10))
+
+            members_list = tk.Listbox(members_frame, height=8, exportselection=False)
+            members_list.pack(fill='both', expand=True)
+            for sid, fname, lname, email in members:
+                display_name = f"{fname or ''} {lname or ''}".strip() or sid
+                members_list.insert(tk.END, f"{sid} - {display_name} ({email or 'no email'})")
+
+            notify_var = tk.BooleanVar(value=False)
+            ttk.Checkbutton(dialog, text="Email group members about changes",
+                           variable=notify_var).pack(anchor='w', padx=10)
+
+            def save_changes():
+                new_name = name_var.get().strip()
+                if not new_name:
+                    messagebox.showerror("Error", "Group name cannot be empty", parent=dialog)
+                    return
+
+                old_name = current_name
+                try:
+                    conn_inner = sqlite3.connect(str(DEFAULT_DB_PATH))
+                    try:
+                        cursor_inner = conn_inner.cursor()
+                        cursor_inner.execute(
+                            'UPDATE groups SET group_name = ? WHERE id = ?',
+                            (new_name, group_id)
+                        )
+                        conn_inner.commit()
+                    finally:
+                        conn_inner.close()
+
+                    dialog.destroy()
+                    self.load_filtered_groups()
+                    messagebox.showinfo("Success", f"Group updated to '{new_name}'")
+
+                    if notify_var.get() and members and new_name != old_name:
+                        self._email_group_edit_notification(
+                            members, old_name, new_name, assignment_title
+                        )
+
+                except Exception as exc:
+                    messagebox.showerror("Error", f"Failed to update group: {exc}", parent=dialog)
+
+            btn_frame = ttk.Frame(dialog)
+            btn_frame.pack(fill='x', padx=10, pady=10)
+            ttk.Button(btn_frame, text="Save Changes", command=save_changes,
+                      style='Accent.TButton').pack(side='left')
+            ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+
+        except Exception as exc:
+            messagebox.showerror("Error", f"Failed to load group for editing: {exc}")
+
+
+    def _email_group_edit_notification(self, members, old_name, new_name, assignment_title):
+        """Email group members about group changes."""
+        try:
+            from education_system.university_system.infrastructure.email.email_service import send_email
+
+            sent = 0
+            for sid, fname, lname, email in members:
+                if not email:
+                    continue
+                name = f"{fname or ''} {lname or ''}".strip() or sid
+                body = (
+                    f"Dear {name},\n\n"
+                    f"Your group has been updated for the following assignment:\n\n"
+                    f"Assignment: {assignment_title}\n"
+                    f"Previous Group Name: {old_name}\n"
+                    f"New Group Name: {new_name}\n\n"
+                    f"Please log in to the Assignment System for full details.\n\n"
+                    f"Best regards,\nAcademic Administration"
+                )
+                try:
+                    send_email(
+                        recipient_email=email,
+                        subject=f"Group Update: {assignment_title}",
+                        body=body
+                    )
+                    sent += 1
+                except Exception:
+                    pass
+
+            if sent > 0:
+                messagebox.showinfo("Emails Sent", f"Notified {sent} group member(s) about the changes.")
+
+        except Exception as e:
+            print(f"Group edit notification email failed: {e}")
 
 
     def add_members_to_group(self):
@@ -352,75 +454,51 @@ class ManagementMixin:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
-            cursor.execute(
-                '''
-                SELECT g.assignment_id, g.group_name, g.max_members,
-                       COUNT(gm.id) as member_count
-                FROM assignment_groups g
-                LEFT JOIN assignment_group_members gm ON g.id = gm.group_id
+            cursor.execute('''
+                SELECT g.assignment_id, g.group_name
+                FROM groups g
                 WHERE g.id = ?
-                GROUP BY g.id
-                ''',
-                (group_id,)
-            )
+            ''', (group_id,))
             group_row = cursor.fetchone()
             if not group_row:
                 conn.close()
-                messagebox.showerror("Error", "Selected group no longer exists.")
+                messagebox.showerror("Error", "Selected group not found.")
                 return
 
-            assignment_id, group_name, max_members, current_members = group_row
+            assignment_id, group_name = group_row
 
-            # Determine module for assignment
-            cursor.execute('SELECT module_code, description FROM assignments WHERE id = ?', (assignment_id,))
+            cursor.execute('SELECT module_code FROM assignments WHERE id = ?', (assignment_id,))
             assignment_row = cursor.fetchone()
             if not assignment_row:
                 conn.close()
-                messagebox.showerror("Error", "Assignment associated with this group was not found.")
+                messagebox.showerror("Error", "Assignment not found.")
                 return
 
-            module_code, assignment_desc = assignment_row
+            module_code = assignment_row[0]
 
-            # Fetch existing member user IDs
+            # Get existing member student_ids
             cursor.execute(
-                'SELECT student_id FROM assignment_group_members WHERE group_id = ?',
+                'SELECT student_id FROM group_members WHERE group_id = ?',
                 (group_id,)
             )
-            existing_user_ids = {row[0] for row in cursor.fetchall()}
+            existing_ids = {row[0] for row in cursor.fetchall()}
 
-            # Fetch available students for module
-            cursor.execute(
-                '''
-                SELECT u.id, s.student_id, s.first_name, s.last_name
+            # Get available students in the module
+            cursor.execute('''
+                SELECT s.student_id, s.first_name, s.last_name
                 FROM students s
                 JOIN student_modules sm ON s.student_id = sm.student_id
-                JOIN users u ON s.user_id = u.id
                 WHERE sm.module_code = ?
                 ORDER BY s.last_name, s.first_name
-                ''',
-                (module_code,)
-            )
+            ''', (module_code,))
             all_candidates = cursor.fetchall()
             conn.close()
 
-            available_students = [
-                candidate for candidate in all_candidates if candidate[0] not in existing_user_ids
-            ]
+            available_students = [c for c in all_candidates if c[0] not in existing_ids]
 
             if not available_students:
                 messagebox.showinfo("Add Members", "No available students to add to this group.")
                 return
-
-            capacity_remaining = None
-            if max_members and max_members > 0:
-                capacity_remaining = max_members - current_members
-                if capacity_remaining <= 0:
-                    messagebox.showinfo(
-                        "Group Full",
-                        f"Group '{group_name}' already has {current_members} member(s) "
-                        "and cannot accept additional members."
-                    )
-                    return
 
             dialog = tk.Toplevel(self.root)
             dialog.title(f"Add Members - {group_name}")
@@ -428,38 +506,25 @@ class ManagementMixin:
             dialog.transient(self.root)
             dialog.grab_set()
 
-            ttk.Label(dialog, text=f"Assignment Module: {module_code}",
-                     font=('TkDefaultFont', 10, 'bold')).pack(anchor='w', padx=10, pady=(10, 0))
-            if assignment_desc:
-                ttk.Label(dialog, text=f"Assignment: {assignment_desc}",
-                         wraplength=380, justify='left').pack(anchor='w', padx=10, pady=(0, 10))
-
-            if capacity_remaining is not None:
-                ttk.Label(dialog, text=f"Available slots: {capacity_remaining}",
-                         style='Info.TLabel').pack(anchor='w', padx=10)
+            ttk.Label(dialog, text=f"Module: {module_code}",
+                     font=('TkDefaultFont', 10, 'bold')).pack(anchor='w', padx=10, pady=(10, 10))
 
             listbox = tk.Listbox(dialog, selectmode=tk.MULTIPLE, exportselection=False)
             listbox.pack(fill='both', expand=True, padx=10, pady=10)
 
-            # Map from index to candidate
             candidate_map = {}
-            for index, (user_id, student_id, first_name, last_name) in enumerate(available_students):
+            for index, (student_id, first_name, last_name) in enumerate(available_students):
                 display = f"{student_id} - {first_name} {last_name}"
                 listbox.insert(tk.END, display)
-                candidate_map[index] = (user_id, student_id, first_name, last_name)
+                candidate_map[index] = student_id
 
             status_var = tk.StringVar(value="")
-            status_label = ttk.Label(dialog, textvariable=status_var, style='Info.TLabel')
-            status_label.pack(anchor='w', padx=10)
+            ttk.Label(dialog, textvariable=status_var, style='Info.TLabel').pack(anchor='w', padx=10)
 
             def add_selected_members():
                 indices = listbox.curselection()
                 if not indices:
                     status_var.set("Select at least one student to add.")
-                    return
-
-                if capacity_remaining is not None and len(indices) > capacity_remaining:
-                    status_var.set(f"Only {capacity_remaining} slot(s) remaining.")
                     return
 
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -468,15 +533,12 @@ class ManagementMixin:
                     cursor_inner = conn_inner.cursor()
 
                     for idx in indices:
-                        user_id, student_id_value, _, _ = candidate_map[idx]
-                        cursor_inner.execute(
-                            '''
-                            INSERT OR IGNORE INTO assignment_group_members
+                        sid = candidate_map[idx]
+                        cursor_inner.execute('''
+                            INSERT OR IGNORE INTO group_members
                                 (group_id, student_id, role, joined_at)
                             VALUES (?, ?, ?, ?)
-                            ''',
-                            (group_id, user_id, 'member', timestamp)
-                        )
+                        ''', (group_id, sid, 'member', timestamp))
 
                     conn_inner.commit()
                     conn_inner.close()
@@ -512,16 +574,13 @@ class ManagementMixin:
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-            cursor.execute(
-                '''
-                SELECT gm.id, u.first_name, u.last_name, u.email
-                FROM assignment_group_members gm
-                JOIN users u ON gm.student_id = u.id
+            cursor.execute('''
+                SELECT gm.id, s.first_name, s.last_name, s.email_address
+                FROM group_members gm
+                JOIN students s ON gm.student_id = s.student_id
                 WHERE gm.group_id = ?
-                ORDER BY u.last_name, u.first_name
-                ''',
-                (group_id,)
-            )
+                ORDER BY s.last_name, s.first_name
+            ''', (group_id,))
             members = cursor.fetchall()
             conn.close()
 
@@ -543,13 +602,12 @@ class ManagementMixin:
 
             member_map = {}
             for index, (member_id, first_name, last_name, email) in enumerate(members):
-                display = f"{first_name} {last_name} ({email})"
+                display = f"{first_name} {last_name} ({email or 'no email'})"
                 listbox.insert(tk.END, display)
                 member_map[index] = member_id
 
             status_var = tk.StringVar(value="")
-            status_label = ttk.Label(dialog, textvariable=status_var, style='Info.TLabel')
-            status_label.pack(anchor='w', padx=10)
+            ttk.Label(dialog, textvariable=status_var, style='Info.TLabel').pack(anchor='w', padx=10)
 
             def remove_selected():
                 indices = listbox.curselection()
@@ -562,7 +620,7 @@ class ManagementMixin:
                     cursor_inner = conn_inner.cursor()
                     for idx in indices:
                         cursor_inner.execute(
-                            "DELETE FROM assignment_group_members WHERE id = ?",
+                            "DELETE FROM group_members WHERE id = ?",
                             (member_map[idx],)
                         )
                     conn_inner.commit()
@@ -589,7 +647,8 @@ class ManagementMixin:
         """Merge multiple selected groups"""
         selections = self.manage_groups_tree.selection()
         if len(selections) < 2:
-            messagebox.showwarning("Warning", "Please select at least 2 groups to merge")
+            messagebox.showwarning("Warning", "Please select at least 2 groups to merge.\n\n"
+                                   "Hold Ctrl and click to select multiple groups.")
             return
 
         group_ids = [self.manage_groups_tree.item(item)['values'][0] for item in selections]
@@ -600,11 +659,7 @@ class ManagementMixin:
 
             placeholder = ','.join('?' * len(group_ids))
             cursor.execute(
-                f'''
-                SELECT id, assignment_id, group_name
-                FROM assignment_groups
-                WHERE id IN ({placeholder})
-                ''',
+                f'SELECT id, assignment_id, group_name FROM groups WHERE id IN ({placeholder})',
                 group_ids
             )
             group_data = cursor.fetchall()
@@ -617,10 +672,7 @@ class ManagementMixin:
             assignment_ids = {row[1] for row in group_data}
             if len(assignment_ids) != 1:
                 conn.close()
-                messagebox.showwarning(
-                    "Cannot Merge",
-                    "Selected groups belong to different assignments."
-                )
+                messagebox.showwarning("Cannot Merge", "Selected groups belong to different assignments.")
                 return
 
             target_group_id = group_data[0][0]
@@ -630,21 +682,18 @@ class ManagementMixin:
             if not messagebox.askyesno(
                     "Confirm Merge",
                     f"Merge {len(group_ids)} groups into '{target_group_name}'?\n\n"
-                    "All members will be moved into the first selected group.") :
+                    "All members will be moved into the first selected group."):
                 conn.close()
                 return
 
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             for other_id in other_groups:
-                cursor.execute(
-                    '''
-                    UPDATE assignment_group_members
+                cursor.execute('''
+                    UPDATE group_members
                     SET group_id = ?, joined_at = COALESCE(joined_at, ?)
                     WHERE group_id = ?
-                    ''',
-                    (target_group_id, timestamp, other_id)
-                )
-                cursor.execute("DELETE FROM assignment_groups WHERE id = ?", (other_id,))
+                ''', (target_group_id, timestamp, other_id))
+                cursor.execute("DELETE FROM groups WHERE id = ?", (other_id,))
 
             conn.commit()
             conn.close()
@@ -672,38 +721,30 @@ class ManagementMixin:
             cursor = conn.cursor()
 
             cursor.execute(
-                '''
-                SELECT g.assignment_id, g.group_name, g.description, g.max_members
-                FROM assignment_groups g
-                WHERE g.id = ?
-                ''',
+                'SELECT assignment_id, group_name FROM groups WHERE id = ?',
                 (group_id,)
             )
             group_info = cursor.fetchone()
-
-            cursor.execute(
-                '''
-                SELECT gm.id, u.first_name, u.last_name, u.email
-                FROM assignment_group_members gm
-                JOIN users u ON gm.student_id = u.id
-                WHERE gm.group_id = ?
-                ''',
-                (group_id,)
-            )
-            members = cursor.fetchall()
 
             if not group_info:
                 conn.close()
                 messagebox.showerror("Error", "Group not found.")
                 return
 
+            assignment_id, group_name = group_info
+
+            cursor.execute('''
+                SELECT gm.id, s.first_name, s.last_name, s.email_address
+                FROM group_members gm
+                JOIN students s ON gm.student_id = s.student_id
+                WHERE gm.group_id = ?
+            ''', (group_id,))
+            members = cursor.fetchall()
+            conn.close()
+
             if len(members) < 2:
-                conn.close()
                 messagebox.showinfo("Split Group", "At least two members are required to split a group.")
                 return
-
-            assignment_id, group_name, description, max_members = group_info
-            conn.close()
 
             dialog = tk.Toplevel(self.root)
             dialog.title(f"Split Group - {group_name}")
@@ -723,7 +764,7 @@ class ManagementMixin:
 
             member_map = {}
             for index, (member_id, first_name, last_name, email) in enumerate(members):
-                listbox.insert(tk.END, f"{first_name} {last_name} ({email})")
+                listbox.insert(tk.END, f"{first_name} {last_name} ({email or 'no email'})")
                 member_map[index] = member_id
 
             status_var = tk.StringVar(value="Select members to move into the new group.")
@@ -748,39 +789,17 @@ class ManagementMixin:
                     conn_inner = sqlite3.connect(str(DEFAULT_DB_PATH))
                     cursor_inner = conn_inner.cursor()
 
-                    # Ensure unique group name
-                    suffix = 1
-                    base_name = new_group_name
-                    cursor_inner.execute(
-                        'SELECT 1 FROM assignment_groups WHERE assignment_id = ? AND group_name = ?',
-                        (assignment_id, new_group_name)
-                    )
-                    while cursor_inner.fetchone():
-                        suffix += 1
-                        new_group_name = f"{base_name} ({suffix})"
-                        cursor_inner.execute(
-                            'SELECT 1 FROM assignment_groups WHERE assignment_id = ? AND group_name = ?',
-                            (assignment_id, new_group_name)
-                        )
-
-                    cursor_inner.execute(
-                        '''
-                        INSERT INTO assignment_groups (assignment_id, group_name, description, max_members, created_at)
-                        VALUES (?, ?, ?, ?, ?)
-                        ''',
-                        (assignment_id, new_group_name, description, max_members, timestamp)
-                    )
+                    cursor_inner.execute('''
+                        INSERT INTO groups (assignment_id, group_name, created_at, created_by)
+                        VALUES (?, ?, ?, ?)
+                    ''', (assignment_id, new_group_name, timestamp, 'system'))
                     new_group_id = cursor_inner.lastrowid
 
                     member_ids = [member_map[idx] for idx in indices]
                     placeholders = ','.join('?' for _ in member_ids)
                     cursor_inner.execute(
-                        f'''
-                        UPDATE assignment_group_members
-                        SET group_id = ?, joined_at = COALESCE(joined_at, ?)
-                        WHERE id IN ({placeholders})
-                        ''',
-                        (new_group_id, timestamp, *member_ids)
+                        f'UPDATE group_members SET group_id = ? WHERE id IN ({placeholders})',
+                        (new_group_id, *member_ids)
                     )
 
                     conn_inner.commit()
@@ -821,18 +840,16 @@ class ManagementMixin:
 
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM group_members WHERE group_id = ?", (group_id,))
+                cursor.execute("DELETE FROM groups WHERE id = ?", (group_id,))
+                conn.commit()
+            finally:
+                conn.close()
 
-            # Delete members first
-            cursor.execute("DELETE FROM assignment_group_members WHERE group_id = ?", (group_id,))
-            # Delete group
-            cursor.execute("DELETE FROM assignment_groups WHERE id = ?", (group_id,))
-
-            conn.commit()
-            conn.close()
-
-            messagebox.showinfo("Success", f"Group '{group_name}' deleted")
             self.load_filtered_groups()
+            messagebox.showinfo("Success", f"Group '{group_name}' deleted")
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to delete group: {e}")
@@ -846,24 +863,33 @@ class ManagementMixin:
             return
 
         item = self.manage_groups_tree.item(selection[0])
+        group_id = item['values'][0]
         group_name = item['values'][1]
 
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-            cursor.execute(
-                '''
-                SELECT u.id, u.first_name, u.last_name
-                FROM assignment_group_members gm
-                JOIN users u ON gm.student_id = u.id
+
+            # Get members with student info
+            cursor.execute('''
+                SELECT s.student_id, s.first_name, s.last_name, s.email_address
+                FROM group_members gm
+                JOIN students s ON gm.student_id = s.student_id
                 WHERE gm.group_id = ?
-                ''',
-                (item['values'][0],)
-            )
-            recipients = cursor.fetchall()
+            ''', (group_id,))
+            members = cursor.fetchall()
+
+            # Also get user IDs for internal messages
+            recipient_user_ids = []
+            for sid, _, _, _ in members:
+                cursor.execute('SELECT id FROM users WHERE student_id = ?', (sid,))
+                user_row = cursor.fetchone()
+                if user_row:
+                    recipient_user_ids.append(user_row[0])
+
             conn.close()
 
-            if not recipients:
+            if not members:
                 messagebox.showinfo("Send Message", "Group has no members to message.")
                 return
 
@@ -880,10 +906,10 @@ class ManagementMixin:
             dialog.transient(self.root)
             dialog.grab_set()
 
-            ttk.Label(dialog, text=f"Send message to {len(recipients)} member(s) in {group_name}:",
+            ttk.Label(dialog, text=f"Send message to {len(members)} member(s) in {group_name}:",
                      font=('TkDefaultFont', 10, 'bold')).pack(anchor='w', padx=10, pady=(10, 5))
 
-            ttk.Label(dialog, text="\n".join(f"• {fn} {ln}" for _, fn, ln in recipients),
+            ttk.Label(dialog, text="\n".join(f"• {fn} {ln}" for _, fn, ln, _ in members),
                      justify='left').pack(anchor='w', padx=10)
 
             ttk.Label(dialog, text="Subject:").pack(anchor='w', padx=10, pady=(15, 5))
@@ -906,21 +932,51 @@ class ManagementMixin:
 
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 try:
+                    # Save internal messages
                     conn_inner = sqlite3.connect(str(DEFAULT_DB_PATH))
-                    cursor_inner = conn_inner.cursor()
-                    for recipient_id, _, _ in recipients:
-                        cursor_inner.execute(
-                            '''
-                            INSERT INTO messages (sender_id, recipient_id, subject, message, content, sent_at)
-                            VALUES (?, ?, ?, ?, ?, ?)
-                            ''',
-                            (sender_id, recipient_id, subject, body, body, timestamp)
-                        )
-                    conn_inner.commit()
-                    conn_inner.close()
+                    try:
+                        cursor_inner = conn_inner.cursor()
+                        for uid in recipient_user_ids:
+                            cursor_inner.execute('''
+                                INSERT INTO messages (sender_id, recipient_id, subject, message, content, sent_at)
+                                VALUES (?, ?, ?, ?, ?, ?)
+                            ''', (sender_id, uid, subject, body, body, timestamp))
+                        conn_inner.commit()
+                    finally:
+                        conn_inner.close()
+
+                    # Send emails to members
+                    emails_sent = 0
+                    try:
+                        from education_system.university_system.infrastructure.email.email_service import send_email
+                        for sid, fn, ln, email_addr in members:
+                            if not email_addr:
+                                continue
+                            name = f"{fn} {ln}".strip()
+                            email_body = (
+                                f"Dear {name},\n\n"
+                                f"You have received a message regarding group '{group_name}':\n\n"
+                                f"Subject: {subject}\n\n"
+                                f"{body}\n\n"
+                                f"Best regards,\nAcademic Administration"
+                            )
+                            try:
+                                send_email(
+                                    recipient_email=email_addr,
+                                    subject=f"[{group_name}] {subject}",
+                                    body=email_body
+                                )
+                                emails_sent += 1
+                            except Exception:
+                                pass
+                    except ImportError:
+                        pass
+
                     dialog.destroy()
-                    messagebox.showinfo("Message Sent",
-                                        f"Message sent to {len(recipients)} member(s) in {group_name}.")
+                    result_msg = f"Message sent to {len(recipient_user_ids)} member(s) in {group_name}."
+                    if emails_sent > 0:
+                        result_msg += f"\n{emails_sent} email(s) also sent."
+                    messagebox.showinfo("Message Sent", result_msg)
                 except Exception as exc:
                     status_var.set(f"Failed to send message: {exc}")
 
@@ -948,11 +1004,7 @@ class ManagementMixin:
             cursor = conn.cursor()
 
             cursor.execute(
-                '''
-                SELECT g.assignment_id, g.group_name
-                FROM assignment_groups g
-                WHERE g.id = ?
-                ''',
+                'SELECT assignment_id, group_name FROM groups WHERE id = ?',
                 (group_id,)
             )
             group_row = cursor.fetchone()
@@ -962,20 +1014,16 @@ class ManagementMixin:
                 return
             assignment_id, group_name = group_row
 
+            # Get student_ids of group members
             cursor.execute(
-                '''
-                SELECT s.student_id
-                FROM assignment_group_members gm
-                JOIN students s ON s.user_id = gm.student_id
-                WHERE gm.group_id = ?
-                ''',
+                'SELECT student_id FROM group_members WHERE group_id = ?',
                 (group_id,)
             )
             student_ids = [row[0] for row in cursor.fetchall()]
 
             if not student_ids:
                 conn.close()
-                messagebox.showinfo("No Submission", "This group has no enrolled student IDs.")
+                messagebox.showinfo("No Submission", "This group has no members.")
                 return
 
             placeholders = ','.join('?' for _ in student_ids)
@@ -1027,10 +1075,6 @@ class ManagementMixin:
             action_frame = ttk.Frame(window)
             action_frame.pack(fill='x', padx=10, pady=10)
 
-            ttk.Button(action_frame, text="Open File",
-                      command=lambda: self.open_submission_file(file_path)).pack(side='left')
-            ttk.Button(action_frame, text="Download File",
-                      command=lambda: self.download_file(file_path)).pack(side='left', padx=10)
             ttk.Button(action_frame, text="Close", command=window.destroy).pack(side='right')
 
         except Exception as exc:
@@ -1050,21 +1094,23 @@ class ManagementMixin:
                 return
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('''
-            SELECT g.id, g.group_name, a.title,
-                   GROUP_CONCAT(u.first_name || ' ' || u.last_name, '; ') as members
-            FROM assignment_groups g
-            JOIN assignments a ON g.assignment_id = a.id
-            LEFT JOIN assignment_group_members gm ON g.id = gm.group_id
-            LEFT JOIN users u ON gm.student_id = u.id
-            GROUP BY g.id
-            ORDER BY a.title, g.group_name
-            ''')
+                cursor.execute('''
+                SELECT g.id, g.group_name, a.title,
+                       GROUP_CONCAT(s.first_name || ' ' || s.last_name, '; ') as members
+                FROM groups g
+                JOIN assignments a ON g.assignment_id = a.id
+                LEFT JOIN group_members gm ON g.id = gm.group_id
+                LEFT JOIN students s ON gm.student_id = s.student_id
+                GROUP BY g.id
+                ORDER BY a.title, g.group_name
+                ''')
 
-            groups = cursor.fetchall()
-            conn.close()
+                groups = cursor.fetchall()
+            finally:
+                conn.close()
 
             with open(save_path, 'w', newline='') as csvfile:
                 writer = csv.writer(csvfile)

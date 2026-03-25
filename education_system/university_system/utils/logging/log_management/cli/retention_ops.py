@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta
 
-from ..security import LogSecurity
+from education_system.university_system.utils.logging.log_management.security import LogSecurity
 
 
 def retention_settings_menu(log_manager, auth):

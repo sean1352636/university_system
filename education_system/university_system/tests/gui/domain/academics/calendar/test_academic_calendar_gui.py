@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 
 # Import GUI module
 try:
-    from education_system.university_system.modules.domain.academics.gui.academic_calendar_gui import (
+    from education_system.university_system.modules.domain.academics.gui.academic_calendar import (
         CalendarError,
         ValidationError,
         DatabaseError,
@@ -109,7 +109,7 @@ class TestCalendarGUIInitialization:
         assert CalendarGUI is not None
 
     @patch('tkinter.Tk')
-    @patch('university_system.modules.domain.academics.gui.academic_calendar_gui.CalendarGUI.__init__', return_value=None)
+    @patch('education_system.university_system.modules.domain.academics.gui.academic_calendar.main_gui.CalendarGUI.__init__', return_value=None)
     def test_calendar_gui_instantiation(self, mock_init, mock_tk):
         """Test that CalendarGUI can be instantiated"""
         if not GUI_AVAILABLE:
@@ -370,7 +370,7 @@ class TestModuleStructure:
         if not GUI_AVAILABLE:
             pytest.skip("GUI module not available")
 
-        from education_system.university_system.modules.domain.academics.gui import academic_calendar_gui
+        from education_system.university_system.modules.domain.academics.gui import academic_calendar as academic_calendar_gui
         assert hasattr(academic_calendar_gui, 'CalendarGUI')
 
     def test_module_has_error_classes(self):
@@ -378,7 +378,7 @@ class TestModuleStructure:
         if not GUI_AVAILABLE:
             pytest.skip("GUI module not available")
 
-        from education_system.university_system.modules.domain.academics.gui import academic_calendar_gui
+        from education_system.university_system.modules.domain.academics.gui import academic_calendar as academic_calendar_gui
 
         error_classes = [
             'CalendarError', 'ValidationError', 'DatabaseError',

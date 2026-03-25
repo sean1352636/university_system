@@ -53,7 +53,7 @@ class TestSetAuth:
 class TestGetDBConnection:
     """Test database connection function"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.restaurant_core.get_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.restaurant_core.get_connection')
     def test_get_db_connection_success(self, mock_get_connection):
         """Test successful database connection"""
         mock_conn = Mock()
@@ -62,7 +62,7 @@ class TestGetDBConnection:
         result = restaurant_core.get_db_connection()
         assert result == mock_conn
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.restaurant_core.sqlite3.connect')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.restaurant_core.sqlite3.connect')
     def test_get_db_connection_with_database_file(self, mock_connect, test_db):
         """Test database connection with DATABASE_FILE"""
         mock_conn = Mock()
@@ -107,7 +107,7 @@ class TestSafeDBOperation:
 class TestInitDB:
     """Test database initialization"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.restaurant_core.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.restaurant_core.get_db_connection')
     def test_init_db_success(self, mock_get_conn, test_db, capsys):
         """Test successful database initialization"""
         conn = sqlite3.connect(test_db)
@@ -129,7 +129,7 @@ class TestInitDB:
         captured = capsys.readouterr()
         assert 'initialized successfully' in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.restaurant_core.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.restaurant_core.get_db_connection')
     def test_init_db_failure(self, mock_get_conn, capsys):
         """Test database initialization failure"""
         mock_get_conn.side_effect = sqlite3.Error("Cannot create database")
@@ -219,7 +219,7 @@ class TestInitializeDefaultData:
 class TestDisplayMainMenu:
     """Test main menu display function"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.display_menu_items_menu')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.display_menu_items_menu')
     @patch('builtins.input')
     def test_display_main_menu_menu_items(self, mock_input, mock_display_menu, mock_auth, capsys):
         """Test selecting menu items option"""
@@ -232,7 +232,7 @@ class TestDisplayMainMenu:
 
         mock_display_menu.assert_called_once()
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.menu.menu_management.display_orders_menu')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.menu.menu_management.display_orders_menu')
     @patch('builtins.input')
     def test_display_main_menu_orders(self, mock_input, mock_display_orders, mock_auth):
         """Test selecting orders option"""

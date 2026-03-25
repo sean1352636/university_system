@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/admin/finance/services/finance_service.py
+# hypothesis_version: 6.151.9
+
+[500, ' AND category = ?', ' ORDER BY department', '2025/2026', 'balance', 'catering', 'donations', 'equipment', 'exams', 'expense', 'fundraising', 'government_funding', 'id', 'income', 'insurance', 'it_services', 'lettings', 'maintenance', 'other_expense', 'other_income', 'pupil_premium', 'resources', 'salaries', 'supplies', 'total', 'total_expense', 'total_income', 'training', 'transport', 'trips', 'tuition_fees', 'utilities']

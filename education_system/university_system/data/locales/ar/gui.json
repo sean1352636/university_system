@@ -135,7 +135,34 @@
     "security": "الأمان",
     "users": "المستخدمون",
     "roles": "الأدوار",
-    "permissions": "الصلاحيات"
+    "permissions": "الصلاحيات",
+    "switch_system": {
+      "title": "تبديل النظام",
+      "header": "التبديل إلى نظام آخر",
+      "choose_system": "اختر نظاماً لتشغيله:",
+      "failed": "فشل في تبديل النظام: {error}",
+      "college": "نظام كلية المرحلة السادسة",
+      "secondary": "نظام المدرسة الثانوية",
+      "primary": "نظام المدرسة الابتدائية"
+    },
+    "mfa": {
+      "verification_status_disabled": "معطل (كلمة المرور فقط)",
+      "verification_status_enabled": "مفعل",
+      "login_verification_label": "التحقق من تسجيل الدخول: ",
+      "configured": "تم التكوين",
+      "primary_method": "رئيسي",
+      "turned_off_success": "تم إيقاف MFA.\n\nتم حفظ إعداداتك.\nيمكنك استعادتها لاحقاً من هذه القائمة.",
+      "module_not_available": "وحدة MFA غير متوفرة: {error}",
+      "error_opening_setup": "خطأ في فتح إعداد MFA: {error}",
+      "error_opening_wizard": "خطأ في فتح معالج MFA: {error}",
+      "reenable_email_subject": "تم إعادة تفعيل MFA لحسابك",
+      "reenable_email_body": "مرحباً {username}،\n\nتم إعادة تفعيل المصادقة متعددة العوامل (MFA) لحسابك باستخدام إعداداتك المحفوظة سابقاً.\n\nالتفاصيل:\n- الحساب: {username}\n- البريد الإلكتروني: {email}\n- الطرق المستعادة: {methods_count}\n\nإذا لم تقم بهذا التغيير، يرجى الاتصال بالدعم فوراً وتغيير كلمة المرور.\n\nشكراً،\nفريق أمان النظام الجامعي",
+      "reenabled_title": "تم إعادة تفعيل MFA",
+      "reenabled_with_email": "تم إعادة تفعيل MFA بنجاح باستخدام إعداداتك المحفوظة.\n\nتم إرسال بريد تأكيد إلى:\n{email}",
+      "reenabled_no_email": "تم إعادة تفعيل MFA بنجاح باستخدام إعداداتك المحفوظة.\n\n(تعذر إرسال إشعار البريد الإلكتروني)",
+      "reenabled_email_error": "تم إعادة تفعيل MFA بنجاح باستخدام إعداداتك المحفوظة.\n\n(تعذر إرسال بريد التأكيد: {error})",
+      "reenabled_simple": "تم إعادة تفعيل MFA بنجاح باستخدام إعداداتك المحفوظة."
+    }
   },
   "nav": {
     "categories": {

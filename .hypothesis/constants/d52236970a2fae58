@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/housing/gui/housing_accommodation_gui/inventory_manager.py
+# hypothesis_version: 6.151.9
+
+[110, 130, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '15', '400x320', '<Double-1>', 'Accessible', 'All', 'Arial', 'Available', 'Building', 'Building:', 'Capacity', 'Close', 'Current Occupants', 'Database Error', 'Floor', 'Maintenance', 'Mark Available', 'Mark Maintenance', 'Mark Occupied', 'Monthly Rent', 'N/A', 'No', 'No Selection', 'No data loaded', 'Occupants', 'Occupied', 'Refresh', 'Room', 'Room ID', 'Room Inventory', 'Status', 'Status Updated', 'Status:', 'Type', 'Update Failed', 'Yes', 'bold', 'center', 'end', 'headings', 'italic', 'r.building_id = ?', 'r.is_accessible = 1', 'r.status = ?', 'readonly', 'values', 'w']

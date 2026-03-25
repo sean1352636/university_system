@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/batch_operations/mixins/api_service.py
+# hypothesis_version: 6.151.9
+
+[100, 200, 400, 404, 500, 5000, ' AND course = ?', ' AND status = ?', '/api/health', '/api/import', '/api/students', '1.0', 'Active', 'GENERAL', 'GET', 'Missing update data', 'POST', 'PUT', 'UniversityBatchAPI', 'address', 'count', 'course', 'date_of_birth', 'email', 'enrollment_date', 'error', 'errors', 'failed_imports', 'first_name', 'healthy', 'last_name', 'limit', 'localhost', 'offset', 'phone_number', 'records', 'service', 'status', 'student', 'student_id', 'students', 'success', 'successful_imports', 'timestamp', 'total_records', 'type', 'updated_fields', 'version']

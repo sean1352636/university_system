@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/security/remember_me.py
+# hypothesis_version: 6.151.9
+
+['RememberMeManager', 'RememberMeToken', 'created_at', 'device', 'expires_at', 'last_used', 'remember_me', 'remember_me_manager', 'security_alert', 'token_id', 'unknown', 'use_count', 'utf-8']

@@ -4,14 +4,14 @@ Authentication manager for CLI system.
 Handles user authentication, permission management, and user setup.
 """
 
-from .imports import (
+from education_system.university_system.modules.shared.cli.imports import (
     logging, sqlite3, hashlib, secrets, datetime, DB_PATH, logger, _t,
     log_activity, get_auth, set_auth, UserAuth, get_global_auth, set_global_auth,
     set_auth_instance, defaults
 )
 
 # Import exception types
-from education_system.university_system.infrastructure.exceptions import DatabaseError
+from education_system.university_system.infrastructure.exceptions import DatabaseError, ValidationError
 
 # Check if auth instance is available and import flags
 try:

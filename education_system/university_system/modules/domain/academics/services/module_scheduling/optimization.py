@@ -1,6 +1,7 @@
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from datetime import datetime, timedelta
-from .constants import DAYS_OF_WEEK, TIME_SLOTS
+from education_system.university_system.modules.domain.academics.services.module_scheduling.constants import DAYS_OF_WEEK, TIME_SLOTS
 
 
 class OptimizationMixin:
@@ -195,7 +196,7 @@ class OptimizationMixin:
         # Add filters
         if 'module_code' in filters and filters['module_code']:
             base_query += " AND ms.module_code LIKE ?"
-            params.append(f"%{filters['module_code']}%")
+            params.append(f"%{escape_like(filters['module_code'])}%")
 
         if 'day' in filters and filters['day']:
             base_query += " AND ms.day_of_week = ?"
@@ -215,11 +216,11 @@ class OptimizationMixin:
 
         if 'instructor' in filters and filters['instructor']:
             base_query += " AND (i.first_name LIKE ? OR i.last_name LIKE ?)"
-            params.extend([f"%{filters['instructor']}%", f"%{filters['instructor']}%"])
+            params.extend([f"%{escape_like(filters['instructor'])}%", f"%{escape_like(filters['instructor'])}%"])
 
         if 'building' in filters and filters['building']:
             base_query += " AND r.building LIKE ?"
-            params.append(f"%{filters['building']}%")
+            params.append(f"%{escape_like(filters['building'])}%")
 
         if 'room_type' in filters and filters['room_type']:
             base_query += " AND r.room_type = ?"

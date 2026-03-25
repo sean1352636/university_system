@@ -1,6 +1,6 @@
-from .menu import display_plagiarism_checker_menu, safe_input
-from .submission import submit_document, view_my_documents
-from .checking import check_document, get_module_selection, view_results
-from .search import search_repository, get_author_selection, get_module_selection_by_name
-from .reporting import view_statistics, display_document_details, display_result_details, display_check_result
-from .admin import manage_repository, delete_document_interactive, check_repository_integrity
+from education_system.university_system.modules.domain.academics.services.plagiarism.cli.menu import display_plagiarism_checker_menu, safe_input
+from education_system.university_system.modules.domain.academics.services.plagiarism.cli.submission import submit_document, view_my_documents
+from education_system.university_system.modules.domain.academics.services.plagiarism.cli.checking import check_document, get_module_selection, view_results
+from education_system.university_system.modules.domain.academics.services.plagiarism.cli.search import search_repository, get_author_selection, get_module_selection_by_name
+from education_system.university_system.modules.domain.academics.services.plagiarism.cli.reporting import view_statistics, display_document_details, display_result_details, display_check_result
+from education_system.university_system.modules.domain.academics.services.plagiarism.cli.admin import manage_repository, delete_document_interactive, check_repository_integrity

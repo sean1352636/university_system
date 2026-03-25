@@ -66,34 +66,34 @@ GEOFENCING_SUPPORT = True
 FACE_RECOGNITION_SUPPORT = True
 
 # Import modular tab functions
-from . import dashboard_tab
-from . import attendance_tab
-from . import students_tab
-from . import reports_tab
-from . import analytics_tab
-from . import settings_admin_tabs
-from . import misc_tab
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker import dashboard_tab
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker import attendance_tab
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker import students_tab
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker import reports_tab
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker import analytics_tab
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker import settings_admin_tabs
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker import misc_tab
 
 # Import window classes
-from .attendance_windows import (
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker.attendance_windows import (
     ManualAttendanceWindow, BatchAttendanceWindow, EditAttendanceWindow, StudentAddWindow
 )
-from .qr_windows import QRAttendanceWindow, QRGeneratorWindow
-from .face_recognition_windows import (
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker.qr_windows import QRAttendanceWindow, QRGeneratorWindow
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker.face_recognition_windows import (
     FaceRecognitionAttendanceWindow, FaceRecognitionWindow
 )
-from .admin_windows import APIManagementWindow, AuditLogsViewer, SystemDiagnosticsWindow
-from .backup_database_windows import (
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker.admin_windows import APIManagementWindow, AuditLogsViewer, SystemDiagnosticsWindow
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker.backup_database_windows import (
     BackupRecoveryWindow, BackupSettingsDialog, DatabaseMaintenanceWindow
 )
-from .alerts_predictive_windows import (
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker.alerts_predictive_windows import (
     AlertsWindow, CreateAlertDialog, AlertDetailsWindow,
     PredictiveAnalyticsWindow, SinglePredictionDialog
 )
-from .notifications_windows import (
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker.notifications_windows import (
     ParentNotificationWindow, ParentContactDialog, NotificationSettingsWindow
 )
-from .misc_windows import (
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker.misc_windows import (
     GeofencingWindow, LMSIntegrationWindow, CalendarSyncWindow,
     GamificationWindow, CustomReportWindow, ImportDataWindow,
     ExportDataWindow, ReportWindow, AttendancePoliciesWindow, HelpWindow

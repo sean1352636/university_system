@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 import os
 import sys
 import shutil
+import sqlite3
 
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
@@ -873,7 +874,7 @@ def get_connection():
             print_error(f"Database connection error: {e}")
             return None
 
-from .base import AdvancedSearchGUI
+from education_system.university_system.modules.shared.gui.advanced_search.base import AdvancedSearchGUI
 
 def show_user_permissions_manager(self):
     """Show user permissions management interface"""

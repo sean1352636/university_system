@@ -55,7 +55,7 @@ def mock_db():
 class TestLMSGUIInitialization:
     """Test LMSGUI initialization"""
 
-    @patch('university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
     @patch('tkinter.Toplevel')
     def test_initialization_instructor(self, mock_toplevel, mock_init_db, mock_root, mock_auth):
         """Test initialization with instructor role"""
@@ -72,7 +72,7 @@ class TestLMSGUIInitialization:
         assert gui.user_id == 'inst001'
         mock_init_db.assert_called_once()
 
-    @patch('university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
     @patch('tkinter.Toplevel')
     def test_initialization_student(self, mock_toplevel, mock_init_db, mock_root, mock_auth_student):
         """Test initialization with student role"""
@@ -92,10 +92,10 @@ class TestLMSGUIInitialization:
 class TestCourseManagement:
     """Test course management functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
-    @patch('university_system.modules.domain.academics.gui.lms_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.get_connection')
     @patch('tkinter.Toplevel')
-    @patch('university_system.modules.domain.academics.gui.lms_gui.LMSCourseManager')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.LMSCourseManager')
     def test_load_courses_instructor(self, mock_course_mgr, mock_toplevel, mock_get_conn, mock_init_db, mock_root, mock_auth, mock_db):
         """Test loading courses for instructor"""
         from education_system.university_system.modules.domain.academics.gui.lms_gui import LMSGUI
@@ -126,10 +126,10 @@ class TestCourseManagement:
         # Verify course manager was called
         mock_course_mgr.get_instructor_courses.assert_called_once_with('inst001')
 
-    @patch('university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
     @patch('tkinter.Toplevel')
-    @patch('university_system.modules.domain.academics.gui.lms_gui.LMSCourseManager')
-    @patch('university_system.modules.domain.academics.gui.lms_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.LMSCourseManager')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.messagebox')
     def test_create_course_success(self, mock_msgbox, mock_course_mgr, mock_toplevel, mock_init_db, mock_root, mock_auth):
         """Test successful course creation"""
         from education_system.university_system.modules.domain.academics.gui.lms_gui import LMSGUI
@@ -146,10 +146,10 @@ class TestCourseManagement:
         # This is tested through the actual method call
         assert gui is not None
 
-    @patch('university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
     @patch('tkinter.Toplevel')
-    @patch('university_system.modules.domain.academics.gui.lms_gui.LMSCourseManager')
-    @patch('university_system.modules.domain.academics.gui.lms_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.LMSCourseManager')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.messagebox')
     def test_publish_course_success(self, mock_msgbox, mock_course_mgr, mock_toplevel, mock_init_db, mock_root, mock_auth):
         """Test successful course publishing"""
         from education_system.university_system.modules.domain.academics.gui.lms_gui import LMSGUI
@@ -172,9 +172,9 @@ class TestCourseManagement:
 class TestContentManagement:
     """Test content management functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
     @patch('tkinter.Toplevel')
-    @patch('university_system.modules.domain.academics.gui.lms_gui.LMSContentManager')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.LMSContentManager')
     def test_load_course_content(self, mock_content_mgr, mock_toplevel, mock_init_db, mock_root, mock_auth):
         """Test loading course content"""
         from education_system.university_system.modules.domain.academics.gui.lms_gui import LMSGUI
@@ -209,8 +209,8 @@ class TestContentManagement:
 class TestDiscussionManagement:
     """Test discussion forum functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
-    @patch('university_system.modules.domain.academics.gui.lms_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.get_connection')
     @patch('tkinter.Toplevel')
     def test_load_forums(self, mock_toplevel, mock_get_conn, mock_init_db, mock_root, mock_auth, mock_db):
         """Test loading discussion forums"""
@@ -237,9 +237,9 @@ class TestDiscussionManagement:
 
         assert cursor.execute.called
 
-    @patch('university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
     @patch('tkinter.Toplevel')
-    @patch('university_system.modules.domain.academics.gui.lms_gui.LMSDiscussionManager')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.LMSDiscussionManager')
     def test_view_forum_posts(self, mock_discussion_mgr, mock_toplevel, mock_init_db, mock_root, mock_auth):
         """Test viewing forum posts"""
         from education_system.university_system.modules.domain.academics.gui.lms_gui import LMSGUI
@@ -270,8 +270,8 @@ class TestDiscussionManagement:
 class TestQuizManagement:
     """Test quiz management functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
-    @patch('university_system.modules.domain.academics.gui.lms_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.get_connection')
     @patch('tkinter.Toplevel')
     def test_load_quizzes(self, mock_toplevel, mock_get_conn, mock_init_db, mock_root, mock_auth, mock_db):
         """Test loading quizzes"""
@@ -302,9 +302,9 @@ class TestQuizManagement:
 class TestGradebookManagement:
     """Test gradebook functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
     @patch('tkinter.Toplevel')
-    @patch('university_system.modules.domain.academics.gui.lms_gui.LMSGradebookManager')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.LMSGradebookManager')
     def test_load_student_grades(self, mock_gradebook_mgr, mock_toplevel, mock_init_db, mock_root, mock_auth):
         """Test loading student grades"""
         from education_system.university_system.modules.domain.academics.gui.lms_gui import LMSGUI
@@ -339,10 +339,10 @@ class TestGradebookManagement:
 
         mock_gradebook_mgr.get_student_grades.assert_called_once_with(1, 'S001')
 
-    @patch('university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
     @patch('tkinter.Toplevel')
-    @patch('university_system.modules.domain.academics.gui.lms_gui.LMSGradebookManager')
-    @patch('university_system.modules.domain.academics.gui.lms_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.LMSGradebookManager')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.messagebox')
     def test_calculate_course_grade(self, mock_msgbox, mock_gradebook_mgr, mock_toplevel, mock_init_db, mock_root, mock_auth):
         """Test calculating course grade"""
         from education_system.university_system.modules.domain.academics.gui.lms_gui import LMSGUI
@@ -367,8 +367,8 @@ class TestGradebookManagement:
 class TestStudentView:
     """Test student view functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
-    @patch('university_system.modules.domain.academics.gui.lms_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.initialize_lms_database')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.get_connection')
     @patch('tkinter.Toplevel')
     def test_load_student_courses(self, mock_toplevel, mock_get_conn, mock_init_db, mock_root, mock_auth_student, mock_db):
         """Test loading enrolled courses for student"""
@@ -397,8 +397,8 @@ class TestStudentView:
 class TestLaunchFunction:
     """Test launch function"""
 
-    @patch('university_system.modules.domain.academics.gui.lms_gui.LMSGUI')
-    @patch('university_system.modules.domain.academics.gui.lms_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.LMSGUI')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.messagebox')
     def test_launch_lms_gui_success(self, mock_msgbox, mock_lmsgui_class):
         """Test successful LMS GUI launch"""
         from education_system.university_system.modules.domain.academics.gui.lms_gui import launch_lms_gui
@@ -411,7 +411,7 @@ class TestLaunchFunction:
 
         mock_lmsgui_class.assert_called_once_with(mock_root, mock_auth)
 
-    @patch('university_system.modules.domain.academics.gui.lms_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.lms_gui.messagebox')
     def test_launch_lms_gui_no_auth(self, mock_msgbox):
         """Test LMS GUI launch without authentication"""
         from education_system.university_system.modules.domain.academics.gui.lms_gui import launch_lms_gui

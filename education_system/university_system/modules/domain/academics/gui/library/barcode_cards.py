@@ -5,6 +5,7 @@ Backwards compatible with existing database and auth systems
 """
 
 
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
@@ -114,7 +115,7 @@ except ImportError:
 _AUDIT_LOG_COLUMNS_CACHE: Optional[List[str]] = None
 _STUDENT_COLUMNS_CACHE: Optional[List[str]] = None
 
-from .base import LibraryGUI
+from education_system.university_system.modules.domain.academics.gui.library.base import LibraryGUI
 
 def show_barcode_generator(self):
     """Show barcode generator interface"""
@@ -367,7 +368,7 @@ def show_library_cards_generator(self):
             cursor.execute('''
                 SELECT student_id, first_name, last_name, email_address, course
                 FROM students WHERE student_id = ? OR email_address LIKE ?
-            ''', (user_id, f"%{user_id}%"))
+            ''', (user_id, f"%{escape_like(user_id)}%"))
 
             user = cursor.fetchone()
             conn.close()

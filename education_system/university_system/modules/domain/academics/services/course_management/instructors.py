@@ -4,7 +4,7 @@ from education_system.university_system.modules.shared.utils.simple_activity_log
     log_create,
     log_read,
 )
-from .validation import validate_email
+from education_system.university_system.modules.domain.academics.services.course_management.validation import validate_email
 
 
 @log_create(module="course_management", description="Creating instructor")

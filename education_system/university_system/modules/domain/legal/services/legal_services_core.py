@@ -13,7 +13,7 @@ import traceback
 
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 from education_system.university_system.modules.shared.utils.activity_logger import log_activity
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier, escape_like
 
 # Service fee structure (in GBP)
 SERVICE_FEES = {
@@ -101,49 +101,17 @@ def init_legal_services_db():
                 )
             ''')
 
-            # Legal documents table
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS legal_documents (
-                    document_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    case_id INTEGER,
-                    document_type TEXT NOT NULL,
-                    document_name TEXT NOT NULL,
-                    file_path TEXT,
-                    file_content TEXT,
-                    version INTEGER DEFAULT 1,
-                    created_by TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    notes TEXT,
-                    FOREIGN KEY (case_id) REFERENCES legal_cases(case_id)
-                )
-            ''')
+            # Legal documents now use the unified documents table with source_type = 'legal'
+            # No separate legal_documents table needed
 
-            # Legal payments table
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS legal_payments (
-                    payment_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    case_id INTEGER,
-                    consultation_id INTEGER,
-                    client_id TEXT NOT NULL,
-                    client_email TEXT,
-                    amount DECIMAL(10,2) NOT NULL,
-                    payment_type TEXT NOT NULL,
-                    payment_method TEXT,
-                    transaction_reference TEXT,
-                    status TEXT DEFAULT 'completed',
-                    receipt_sent INTEGER DEFAULT 0,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    processed_by TEXT,
-                    FOREIGN KEY (case_id) REFERENCES legal_cases(case_id),
-                    FOREIGN KEY (consultation_id) REFERENCES legal_consultations(consultation_id)
-                )
-            ''')
+            # Legal payments now use the unified payments table with source_type = 'legal'
+            # No separate legal_payments table needed
 
             # Create indexes for performance
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_legal_cases_client ON legal_cases(client_id)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_legal_cases_status ON legal_cases(status)')
             cursor.execute('CREATE INDEX IF NOT EXISTS idx_legal_consultations_date ON legal_consultations(scheduled_date)')
-            cursor.execute('CREATE INDEX IF NOT EXISTS idx_legal_payments_client ON legal_payments(client_id)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_payments_legal_student ON payments(student_id) WHERE source_type = \'legal\'')
 
             print("Legal services database initialized successfully")
             return True
@@ -245,7 +213,7 @@ class CaseManager:
                     params.append(filters['assigned_lawyer'])
                 if 'search' in filters and filters['search']:
                     query += ' AND (case_title LIKE ? OR client_name LIKE ? OR case_number LIKE ?)'
-                    search_term = f"%{filters['search']}%"
+                    search_term = f"%{escape_like(filters['search'])}%"
                     params.extend([search_term, search_term, search_term])
 
             query += ' ORDER BY created_at DESC'
@@ -521,10 +489,13 @@ class DocumentManager:
             with transaction() as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
-                    INSERT INTO legal_documents
-                    (case_id, document_type, document_name, file_path, file_content, created_by, notes)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (case_id, document_type, document_name, file_path, file_content, created_by, notes))
+                    INSERT INTO documents
+                    (source_type, reference_id, reference_type, document_type,
+                     document_name, file_path, file_content, version_number,
+                     uploaded_by, notes)
+                    VALUES ('legal', ?, 'case', ?, ?, ?, ?, 1, ?, ?)
+                ''', (str(case_id), document_type, document_name, file_path,
+                      file_content, created_by, notes))
 
                 document_id = cursor.lastrowid
 
@@ -547,9 +518,19 @@ class DocumentManager:
             with get_connection() as conn:
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
-                cursor.execute('SELECT * FROM legal_documents WHERE document_id = ?', (document_id,))
+                cursor.execute(
+                    "SELECT * FROM documents WHERE document_id = ? AND source_type = 'legal'",
+                    (document_id,))
                 row = cursor.fetchone()
-                return dict(row) if row else None
+                if not row:
+                    return None
+                d = dict(row)
+                # Map unified columns back to legacy names for compatibility
+                d['case_id'] = int(d['reference_id']) if d.get('reference_id') else None
+                d['version'] = d.get('version_number', 1)
+                d['created_by'] = d.get('uploaded_by')
+                d['created_at'] = d.get('upload_date')
+                return d
         except sqlite3.Error as e:
             print(f"Error getting document: {e}")
             return None
@@ -562,11 +543,19 @@ class DocumentManager:
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
                 cursor.execute('''
-                    SELECT * FROM legal_documents
-                    WHERE case_id = ?
-                    ORDER BY created_at DESC
-                ''', (case_id,))
-                return [dict(row) for row in cursor.fetchall()]
+                    SELECT * FROM documents
+                    WHERE source_type = 'legal' AND reference_id = ? AND reference_type = 'case'
+                    ORDER BY upload_date DESC
+                ''', (str(case_id),))
+                results = []
+                for row in cursor.fetchall():
+                    d = dict(row)
+                    d['case_id'] = int(d['reference_id']) if d.get('reference_id') else None
+                    d['version'] = d.get('version_number', 1)
+                    d['created_by'] = d.get('uploaded_by')
+                    d['created_at'] = d.get('upload_date')
+                    results.append(d)
+                return results
 
         except sqlite3.Error as e:
             print(f"Error getting case documents: {e}")
@@ -580,11 +569,20 @@ class DocumentManager:
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
                 cursor.execute('''
-                    SELECT * FROM legal_documents
-                    WHERE document_name = ? AND case_id = ?
-                    ORDER BY version DESC
-                ''', (document_name, case_id))
-                return [dict(row) for row in cursor.fetchall()]
+                    SELECT * FROM documents
+                    WHERE source_type = 'legal' AND document_name = ?
+                      AND reference_id = ? AND reference_type = 'case'
+                    ORDER BY version_number DESC
+                ''', (document_name, str(case_id)))
+                results = []
+                for row in cursor.fetchall():
+                    d = dict(row)
+                    d['case_id'] = int(d['reference_id']) if d.get('reference_id') else None
+                    d['version'] = d.get('version_number', 1)
+                    d['created_by'] = d.get('uploaded_by')
+                    d['created_at'] = d.get('upload_date')
+                    results.append(d)
+                return results
 
         except sqlite3.Error as e:
             print(f"Error getting document history: {e}")
@@ -601,14 +599,22 @@ class DocumentManager:
 
             # Increment version if content changed
             if 'file_content' in updates or 'file_path' in updates:
-                updates['version'] = current['version'] + 1
+                updates['version_number'] = current['version'] + 1
 
-            set_clause = ', '.join([validate_identifier(k, "column") + " = ?" for k in updates.keys()])
-            values = list(updates.values()) + [document_id]
+            # Map legacy field names to unified column names
+            field_map = {'version': 'version_number', 'created_by': 'uploaded_by'}
+            mapped_updates = {}
+            for k, v in updates.items():
+                mapped_updates[field_map.get(k, k)] = v
+
+            set_clause = ', '.join([validate_identifier(k, "column") + " = ?" for k in mapped_updates.keys()])
+            values = list(mapped_updates.values()) + [document_id]
 
             with transaction() as conn:
                 cursor = conn.cursor()
-                cursor.execute('UPDATE legal_documents SET ' + set_clause + ' WHERE document_id = ?', values)
+                cursor.execute(
+                    'UPDATE documents SET ' + set_clause +
+                    " WHERE document_id = ? AND source_type = 'legal'", values)
 
             return True
 
@@ -628,17 +634,25 @@ class PaymentManager:
         try:
             transaction_ref = f"LEG-{datetime.now().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:6].upper()}"
 
+            # Build notes with consultation_id if provided
+            notes_parts = [f'Legal Services Fee - {transaction_ref}']
+            if consultation_id:
+                notes_parts.append(f'consultation_id={consultation_id}')
+            notes_text = '; '.join(notes_parts)
+
             with transaction() as conn:
                 cursor = conn.cursor()
 
-                # Insert into legal_payments
+                # Insert into unified payments table with source_type = 'legal'
                 cursor.execute('''
-                    INSERT INTO legal_payments
-                    (case_id, consultation_id, client_id, client_email, amount,
-                     payment_type, payment_method, transaction_reference, processed_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (case_id, consultation_id, client_id, client_email, amount,
-                      payment_type, payment_method, transaction_ref, processed_by))
+                    INSERT INTO payments
+                    (source_type, reference_id, reference_type, student_id, customer_email, amount,
+                     payment_type, payment_method, payment_reference, status, receipt_sent,
+                     processed_by, notes, created_at)
+                    VALUES ('legal', ?, 'case', ?, ?, ?, ?, ?, ?, 'completed', 0, ?, ?, ?)
+                ''', (str(case_id) if case_id else None, client_id, client_email, amount,
+                      payment_type, payment_method, transaction_ref, processed_by,
+                      notes_text, datetime.now().isoformat()))
 
                 payment_id = cursor.lastrowid
 
@@ -657,18 +671,6 @@ class PaymentManager:
                         SET payment_status = 'paid', payment_id = ?
                         WHERE consultation_id = ?
                     ''', (str(payment_id), consultation_id))
-
-                # Also record in main payments table for finance system integration
-                try:
-                    cursor.execute('''
-                        INSERT INTO payments
-                        (student_id, amount, payment_method, payment_date, status, notes, created_by, created_at)
-                        VALUES (?, ?, ?, ?, 'completed', ?, ?, ?)
-                    ''', (client_id, amount, payment_method, datetime.now().strftime('%Y-%m-%d'),
-                          f'Legal Services Fee - {transaction_ref}', processed_by, datetime.now().isoformat()))
-                except sqlite3.OperationalError:
-                    # payments table may not exist in all setups
-                    pass
 
             log_activity('payment', 'legal_services', details={
                 'payment_id': payment_id,
@@ -690,9 +692,25 @@ class PaymentManager:
             with get_connection() as conn:
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
-                cursor.execute('SELECT * FROM legal_payments WHERE payment_id = ?', (payment_id,))
+                cursor.execute("SELECT * FROM payments WHERE payment_id = ? AND source_type = 'legal'", (payment_id,))
                 row = cursor.fetchone()
-                return dict(row) if row else None
+                if not row:
+                    return None
+                d = dict(row)
+                # Map unified column names back to legacy names for compatibility
+                d['client_id'] = d.get('student_id')
+                d['client_email'] = d.get('customer_email')
+                d['transaction_reference'] = d.get('payment_reference')
+                d['case_id'] = int(d['reference_id']) if d.get('reference_id') and d.get('reference_type') == 'case' else None
+                # Extract consultation_id from notes if present
+                d['consultation_id'] = None
+                notes = d.get('notes', '') or ''
+                if 'consultation_id=' in notes:
+                    try:
+                        d['consultation_id'] = int(notes.split('consultation_id=')[1].split(';')[0].strip())
+                    except (ValueError, IndexError):
+                        pass
+                return d
         except sqlite3.Error as e:
             print(f"Error getting payment: {e}")
             return None
@@ -701,16 +719,17 @@ class PaymentManager:
     def get_all_payments(filters: Optional[Dict] = None) -> List[Dict]:
         """Get all payments with optional filters"""
         try:
-            query = 'SELECT * FROM legal_payments WHERE 1=1'
+            query = "SELECT * FROM payments WHERE source_type = 'legal'"
             params = []
 
             if filters:
                 if 'client_id' in filters and filters['client_id']:
-                    query += ' AND client_id = ?'
+                    query += ' AND student_id = ?'
                     params.append(filters['client_id'])
                 if 'case_id' in filters and filters['case_id']:
-                    query += ' AND case_id = ?'
-                    params.append(filters['case_id'])
+                    query += ' AND reference_id = ? AND reference_type = ?'
+                    params.append(str(filters['case_id']))
+                    params.append('case')
                 if 'status' in filters and filters['status']:
                     query += ' AND status = ?'
                     params.append(filters['status'])
@@ -727,7 +746,23 @@ class PaymentManager:
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
                 cursor.execute(query, params)
-                return [dict(row) for row in cursor.fetchall()]
+                results = []
+                for row in cursor.fetchall():
+                    d = dict(row)
+                    # Map unified column names back to legacy names
+                    d['client_id'] = d.get('student_id')
+                    d['client_email'] = d.get('customer_email')
+                    d['transaction_reference'] = d.get('payment_reference')
+                    d['case_id'] = int(d['reference_id']) if d.get('reference_id') and d.get('reference_type') == 'case' else None
+                    d['consultation_id'] = None
+                    notes = d.get('notes', '') or ''
+                    if 'consultation_id=' in notes:
+                        try:
+                            d['consultation_id'] = int(notes.split('consultation_id=')[1].split(';')[0].strip())
+                        except (ValueError, IndexError):
+                            pass
+                    results.append(d)
+                return results
 
         except sqlite3.Error as e:
             print(f"Error getting payments: {e}")
@@ -740,8 +775,8 @@ class PaymentManager:
             with transaction() as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
-                    UPDATE legal_payments SET receipt_sent = 1
-                    WHERE payment_id = ?
+                    UPDATE payments SET receipt_sent = 1
+                    WHERE payment_id = ? AND source_type = 'legal'
                 ''', (payment_id,))
             return True
         except sqlite3.Error as e:
@@ -761,9 +796,9 @@ class PaymentManager:
 
                 # Update payment status
                 cursor.execute('''
-                    UPDATE legal_payments
+                    UPDATE payments
                     SET status = 'refunded'
-                    WHERE payment_id = ?
+                    WHERE payment_id = ? AND source_type = 'legal'
                 ''', (payment_id,))
 
                 # Update case amount_paid if applicable
@@ -802,35 +837,29 @@ class PaymentManager:
             with get_connection() as conn:
                 cursor = conn.cursor()
 
-                base_query = 'SELECT * FROM legal_payments WHERE status = "completed"'
                 params = []
-
-                if start_date:
-                    base_query += ' AND DATE(created_at) >= ?'
-                    params.append(start_date)
-                if end_date:
-                    base_query += ' AND DATE(created_at) <= ?'
-                    params.append(end_date)
 
                 # Build date filter clause
                 date_filter = ''
                 if start_date:
                     date_filter += ' AND DATE(created_at) >= ?'
+                    params.append(start_date)
                 if end_date:
                     date_filter += ' AND DATE(created_at) <= ?'
+                    params.append(end_date)
 
                 # Total revenue
                 cursor.execute(
-                    "SELECT SUM(amount) FROM legal_payments"
-                    " WHERE status = 'completed'" + date_filter,
+                    "SELECT SUM(amount) FROM payments"
+                    " WHERE source_type = 'legal' AND status = 'completed'" + date_filter,
                     params)
                 total_revenue = cursor.fetchone()[0] or 0
 
                 # Revenue by payment type
                 cursor.execute(
                     "SELECT payment_type, SUM(amount) as total, COUNT(*) as count"
-                    " FROM legal_payments"
-                    " WHERE status = 'completed'" + date_filter +
+                    " FROM payments"
+                    " WHERE source_type = 'legal' AND status = 'completed'" + date_filter +
                     " GROUP BY payment_type",
                     params)
                 by_type = {row[0]: {'total': row[1], 'count': row[2]} for row in cursor.fetchall()}
@@ -838,8 +867,8 @@ class PaymentManager:
                 # Revenue by method
                 cursor.execute(
                     "SELECT payment_method, SUM(amount) as total, COUNT(*) as count"
-                    " FROM legal_payments"
-                    " WHERE status = 'completed'" + date_filter +
+                    " FROM payments"
+                    " WHERE source_type = 'legal' AND status = 'completed'" + date_filter +
                     " GROUP BY payment_method",
                     params)
                 by_method = {row[0]: {'total': row[1], 'count': row[2]} for row in cursor.fetchall()}
@@ -847,8 +876,8 @@ class PaymentManager:
                 # Refunds
                 cursor.execute(
                     "SELECT SUM(amount), COUNT(*)"
-                    " FROM legal_payments"
-                    " WHERE status = 'refunded'" + date_filter,
+                    " FROM payments"
+                    " WHERE source_type = 'legal' AND status = 'refunded'" + date_filter,
                     params)
                 refund_data = cursor.fetchone()
 

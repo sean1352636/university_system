@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/parent_portal/academics.py
+# hypothesis_version: 6.151.9
+
+[100, '\nAll Events:', '\nAvailable Reports:', '\nNew Announcements:', '\nRecent Absences:', '\nStudent Alerts:', '\nUpcoming Events:', '\nYour children:', '%A', '%Y-%m', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '0', '00:00', '08:00', '09:00', '1', '1. Upcoming Events', '17:00', '2', '2023-09-04', '2023-09-20', '2023-10-16', '2023-11-23', '2023-12-15', '20:00', '23:59', '3', '3. All Events', '4', '=', 'All Campuses', 'End of Fall Semester', 'Examination Halls', 'Fall Break', 'Invalid choice.', 'Main Hall', 'Midterm Exams Begin', 'Parents Evening', 'academic', 'admin', 'all', 'holiday', 'id', 'limited', 'minimal', 'normal', 'parent', 'parents', 'role', 'view_announcements', 'view_child_grades', 'view_child_timetable', 'view_school_calendar', 'view_teacher_reports', 'y']

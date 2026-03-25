@@ -64,7 +64,7 @@ except ImportError:
     DATABASE_FILE = str(DEFAULT_DB_PATH)
 
 # Import RestaurantManagementGUI for main() function
-from .core.main_gui import RestaurantManagementGUI
+from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.core.main_gui import RestaurantManagementGUI
 
 
 def main():

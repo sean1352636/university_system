@@ -55,6 +55,18 @@ class SessionManager:
                 self.invalidate_session(token)
                 return None
 
+            # Periodically clean up expired sessions (1 in 20 chance per validation)
+            import random
+            if random.randint(1, 20) == 1:
+                try:
+                    conn.execute(
+                        "DELETE FROM sessions WHERE expires_at < ? OR is_active = 0",
+                        (datetime.utcnow().isoformat(),),
+                    )
+                    conn.commit()
+                except Exception:
+                    pass  # Non-critical cleanup
+
             return {
                 "user_id": row["user_id"],
                 "username": row["username"],

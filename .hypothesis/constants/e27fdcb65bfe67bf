@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/academic_calendar/dashboard.py
+# hypothesis_version: 6.151.9
+
+[100, 200, 300, '#0', '%Y-%m-%d', '...', 'Arial', 'Date', 'Description', 'Header.TLabel', 'Type', 'bold', 'common.none', 'current_semester', 'dashboard', 'date', 'date_start', 'description', 'end', 'event_type', 'events_by_type', 'name', 'tree headings', 'upcoming_events']

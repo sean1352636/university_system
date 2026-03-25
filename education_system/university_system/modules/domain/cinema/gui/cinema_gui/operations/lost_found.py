@@ -3,6 +3,7 @@ Cinema Booking System - Lost & Found Management
 """
 import tkinter as tk
 from tkinter import ttk, messagebox
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 
@@ -12,7 +13,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_lost_found_page(self):
     """Display lost and found management page."""
@@ -46,26 +47,28 @@ def show_lost_found_page(self):
         self.lf_tree.column(col, width=100)
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    query = "SELECT id, found_date, item_description, category, location_found, status, created_at FROM lost_found"
-    if self.lf_filter == 'unclaimed':
-        query += " WHERE status = 'unclaimed'"
-    elif self.lf_filter == 'claimed':
-        query += " WHERE status = 'claimed'"
-    query += " ORDER BY found_date DESC"
+        query = "SELECT id, found_date, item_description, category, location_found, status, created_at FROM lost_found"
+        if self.lf_filter == 'unclaimed':
+            query += " WHERE status = 'unclaimed'"
+        elif self.lf_filter == 'claimed':
+            query += " WHERE status = 'claimed'"
+        query += " ORDER BY found_date DESC"
 
-    cursor.execute(query)
-    for row in cursor.fetchall():
-        days_held = "-"
-        if row[1]:
-            try:
-                found_date = datetime.strptime(row[1], "%Y-%m-%d")
-                days_held = (datetime.now() - found_date).days
-            except (ValueError, TypeError):
-                pass
-        self.lf_tree.insert("", "end", values=(row[0], row[1], row[2][:30] if row[2] else "", row[3], row[4] or "-", row[5].upper(), days_held))
-    conn.close()
+        cursor.execute(query)
+        for row in cursor.fetchall():
+            days_held = "-"
+            if row[1]:
+                try:
+                    found_date = datetime.strptime(row[1], "%Y-%m-%d")
+                    days_held = (datetime.now() - found_date).days
+                except (ValueError, TypeError):
+                    pass
+            self.lf_tree.insert("", "end", values=(row[0], row[1], row[2][:30] if row[2] else "", row[3], row[4] or "-", row[5].upper(), days_held))
+    finally:
+        conn.close()
 
     self.lf_tree.pack(fill="both", expand=True, side="left")
     scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.lf_tree.yview)
@@ -81,14 +84,16 @@ def show_lost_found_page(self):
     stats_frame.pack(fill="x", pady=10)
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM lost_found WHERE status = 'unclaimed'")
-    unclaimed = cursor.fetchone()[0]
-    cursor.execute("SELECT COUNT(*) FROM lost_found WHERE status = 'claimed'")
-    claimed = cursor.fetchone()[0]
-    cursor.execute("SELECT COUNT(*) FROM lost_found WHERE status = 'unclaimed' AND found_date <= date('now', '-30 days')")
-    over_30_days = cursor.fetchone()[0]
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM lost_found WHERE status = 'unclaimed'")
+        unclaimed = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM lost_found WHERE status = 'claimed'")
+        claimed = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM lost_found WHERE status = 'unclaimed' AND found_date <= date('now', '-30 days')")
+        over_30_days = cursor.fetchone()[0]
+    finally:
+        conn.close()
 
     tk.Label(stats_frame, text=f"Unclaimed: {unclaimed} | Claimed: {claimed} | Over 30 days: {over_30_days}",
             bg="#ffffff", fg="#7f8c8d").pack(anchor="w")
@@ -173,15 +178,17 @@ def log_found_item(self):
                 pass
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO lost_found (item_description, category, location_found, screen_number,
-                                    found_date, found_time, storage_location, notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (desc, fields['cat_var'].get(), fields['location'].get(), screen,
-              fields['date'].get(), fields['time'].get(), fields['storage'].get(), fields['notes'].get()))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO lost_found (item_description, category, location_found, screen_number,
+                                        found_date, found_time, storage_location, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (desc, fields['cat_var'].get(), fields['location'].get(), screen,
+                  fields['date'].get(), fields['time'].get(), fields['storage'].get(), fields['notes'].get()))
+            conn.commit()
+        finally:
+            conn.close()
 
         messagebox.showinfo(_t("cinema.common.success"), "Item logged successfully!")
         form.destroy()
@@ -234,24 +241,26 @@ def search_lost_items(self):
         category = cat_var.get()
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        query = "SELECT id, found_date, item_description, category, location_found, status FROM lost_found WHERE status = 'unclaimed'"
-        params = []
+            query = "SELECT id, found_date, item_description, category, location_found, status FROM lost_found WHERE status = 'unclaimed'"
+            params = []
 
-        if search_term:
-            query += " AND item_description LIKE ?"
-            params.append(f"%{search_term}%")
-        if category != "all":
-            query += " AND category = ?"
-            params.append(category)
+            if search_term:
+                query += " AND item_description LIKE ?"
+                params.append(f"%{escape_like(search_term)}%")
+            if category != "all":
+                query += " AND category = ?"
+                params.append(category)
 
-        query += " ORDER BY found_date DESC"
+            query += " ORDER BY found_date DESC"
 
-        cursor.execute(query, params)
-        for row in cursor.fetchall():
-            tree.insert("", "end", values=(row[0], row[1], row[2][:30], row[3], row[4] or "-", row[5]))
-        conn.close()
+            cursor.execute(query, params)
+            for row in cursor.fetchall():
+                tree.insert("", "end", values=(row[0], row[1], row[2][:30], row[3], row[4] or "-", row[5]))
+        finally:
+            conn.close()
 
     ttk.Button(search_frame, text=_t("cinema.buttons.search"), style="Primary.TButton", command=search).pack(side="left", padx=10)
 
@@ -267,10 +276,12 @@ def process_claim(self):
     item_id = self.lf_tree.item(selected[0])['values'][0]
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM lost_found WHERE id = ?", (item_id,))
-    item = cursor.fetchone()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM lost_found WHERE id = ?", (item_id,))
+        item = cursor.fetchone()
+    finally:
+        conn.close()
 
     if not item:
         messagebox.showerror(_t("cinema.common.error"), "Item not found")
@@ -315,16 +326,18 @@ def process_claim(self):
             return
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute('''
-            UPDATE lost_found
-            SET claimed = 1, claimed_by_name = ?, claimed_by_email = ?, claimed_by_phone = ?,
-                claim_date = ?, identification_method = ?, status = 'claimed'
-            WHERE id = ?
-        ''', (name_e.get(), email_e.get(), phone_e.get(), datetime.now().strftime("%Y-%m-%d"),
-              method_var.get(), item_id))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE lost_found
+                SET claimed = 1, claimed_by_name = ?, claimed_by_email = ?, claimed_by_phone = ?,
+                    claim_date = ?, identification_method = ?, status = 'claimed'
+                WHERE id = ?
+            ''', (name_e.get(), email_e.get(), phone_e.get(), datetime.now().strftime("%Y-%m-%d"),
+                  method_var.get(), item_id))
+            conn.commit()
+        finally:
+            conn.close()
 
         messagebox.showinfo(_t("cinema.common.success"), "Claim processed successfully!")
         form.destroy()
@@ -342,10 +355,12 @@ def view_lf_details(self):
     item_id = self.lf_tree.item(selected[0])['values'][0]
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM lost_found WHERE id = ?", (item_id,))
-    item = cursor.fetchone()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM lost_found WHERE id = ?", (item_id,))
+        item = cursor.fetchone()
+    finally:
+        conn.close()
 
     if not item:
         messagebox.showerror(_t("cinema.common.error"), "Item not found")
@@ -399,10 +414,12 @@ def dispose_lf_item(self):
         return
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("UPDATE lost_found SET status = 'disposed' WHERE id = ?", (item_id,))
-    conn.commit()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE lost_found SET status = 'disposed' WHERE id = ?", (item_id,))
+        conn.commit()
+    finally:
+        conn.close()
 
     messagebox.showinfo(_t("cinema.common.success"), "Item marked as disposed")
     self.show_lost_found_page()

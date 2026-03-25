@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/student_support/core/status_manager.py
+# hypothesis_version: 6.151.9
+
+['\nNew Status:', ' = ?', ' WHERE ticket_id = ?', ' 🔒', ' 🤖', '%Y-%m-%d %H:%M:%S', ', ', '=', 'Closed', 'Resolved', 'admin', 'assigned_to', 'attachment', 'audit', 'changed_by', 'closed_at', 'column', 'creation', 'data', 'datetime', 'id', 'is_auto_generated', 'is_internal', 'new_status', 'old_status', 'resolved_at', 'responder_role', 'response', 'role', 'satisfaction', 'staff', 'status', 'status_change', 'survey_type', 'ticket', 'ticket_id', 'tickets', 'timeline', 'type', 'unknown', 'username', 'y']

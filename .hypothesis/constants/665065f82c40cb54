@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance_management_gui.py
+# hypothesis_version: 6.151.9
+
+[100, 800, 1200, '#f0f0f0', '1400x900', 'admin', 'layout', 'manage_finances', 'record_payments', 'role', 'set_auth', 'show_tab', 'view_own_finances']

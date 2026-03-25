@@ -1,3 +1,4 @@
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from datetime import datetime
 import json
@@ -169,7 +170,7 @@ def execute_search(auth, criteria):
     # Text search
     if 'text' in criteria:
         where_conditions.append("(t.subject LIKE ? OR t.message LIKE ?)")
-        text_param = f"%{criteria['text']}%"
+        text_param = f"%{escape_like(criteria['text'])}%"
         params.extend([text_param, text_param])
 
     # Status filter

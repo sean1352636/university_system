@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/cinema_cli/booking.py
+# hypothesis_version: 6.151.9
+
+[0.0, 100, '\n❌ No bookings found', '\n🍿 Snacks:', '\n🎫 TICKET TYPES:', '\n💺 SEAT SELECTION', ' (PREMIUM)', ' [COMBO]', ',', '0', '100', '200', '500', 'BOOKING CONFIRMED!', 'BOOKING SUMMARY', 'amount', 'booking_ref', 'cinema_booking', 'create', 'email', 'full_name', 'is_combo', 'movie', 'movie_title', 'name', 'num_tickets', 'points_balance', 'premium', 'price', 'quantity', 'screening_date', 'screening_time', 'subtotal', 'ticket_type', 'total_amount', 'user_name', 'username', 'yes', '❌ Booking cancelled', '🍿 Snacks:']

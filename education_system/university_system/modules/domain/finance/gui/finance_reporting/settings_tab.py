@@ -91,7 +91,7 @@ def create_settings_tab(self):
     export_frame = ttk.Frame(system_frame)
     export_frame.grid(row=3, column=0, sticky=(tk.W, tk.E), pady=(5, 0))
 
-    self.export_path = tk.StringVar(value=str(paths.EXPORTS_DIR))
+    self.export_path = tk.StringVar(value=str(paths.EXPORTS_REPORTS_DIR))
     ttk.Entry(export_frame, textvariable=self.export_path, width=40).grid(row=0, column=0, sticky=(tk.W, tk.E))
     ttk.Button(export_frame, text=_("common.browse"), command=self.browse_export_path).grid(row=0, column=1, padx=(5, 0))
 

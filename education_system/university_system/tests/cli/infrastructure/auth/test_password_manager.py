@@ -170,9 +170,9 @@ class TestChangeUserPassword:
         db_manager.get_connection.return_value = conn
         return db_manager, conn, cursor
 
-    @patch("university_system.infrastructure.auth.managers.password_manager.hash_password")
-    @patch("university_system.infrastructure.auth.managers.password_manager.verify_password", return_value=True)
-    @patch("university_system.infrastructure.auth.managers.password_manager.validate_password", return_value=True)
+    @patch("education_system.university_system.infrastructure.auth.managers.password_manager.hash_password")
+    @patch("education_system.university_system.infrastructure.auth.managers.password_manager.verify_password", return_value=True)
+    @patch("education_system.university_system.infrastructure.auth.managers.password_manager.validate_password", return_value=True)
     def test_successful_password_change(self, mock_validate, mock_verify, mock_hash):
         """Password change succeeds when old password is correct and new is valid."""
         mock_hash.return_value = ("newsalt", "newhash")
@@ -184,22 +184,22 @@ class TestChangeUserPassword:
         assert result is True
         conn.commit.assert_called_once()
 
-    @patch("university_system.infrastructure.auth.managers.password_manager.validate_password", return_value=False)
+    @patch("education_system.university_system.infrastructure.auth.managers.password_manager.validate_password", return_value=False)
     def test_invalid_new_password_returns_false(self, mock_validate):
         """Returns False when new password fails validation."""
         db_manager = Mock()
         result = change_user_password(db_manager, "alice", "OldPass1!", "short")
         assert result is False
 
-    @patch("university_system.infrastructure.auth.managers.password_manager.validate_password", return_value=True)
+    @patch("education_system.university_system.infrastructure.auth.managers.password_manager.validate_password", return_value=True)
     def test_user_not_found_returns_false(self, mock_validate):
         """Returns False when user does not exist in DB."""
         db_manager, conn, cursor = self._make_db_manager(user_row=None)
         result = change_user_password(db_manager, "ghost", "OldPass1!", "NewPass1!")
         assert result is False
 
-    @patch("university_system.infrastructure.auth.managers.password_manager.verify_password", return_value=False)
-    @patch("university_system.infrastructure.auth.managers.password_manager.validate_password", return_value=True)
+    @patch("education_system.university_system.infrastructure.auth.managers.password_manager.verify_password", return_value=False)
+    @patch("education_system.university_system.infrastructure.auth.managers.password_manager.validate_password", return_value=True)
     def test_wrong_current_password_returns_false(self, mock_validate, mock_verify):
         """Returns False when old password does not match stored hash."""
         db_manager, conn, cursor = self._make_db_manager(
@@ -209,9 +209,9 @@ class TestChangeUserPassword:
         assert result is False
         conn.commit.assert_not_called()
 
-    @patch("university_system.infrastructure.auth.managers.password_manager.hash_password")
-    @patch("university_system.infrastructure.auth.managers.password_manager.verify_password", return_value=True)
-    @patch("university_system.infrastructure.auth.managers.password_manager.validate_password", return_value=True)
+    @patch("education_system.university_system.infrastructure.auth.managers.password_manager.hash_password")
+    @patch("education_system.university_system.infrastructure.auth.managers.password_manager.verify_password", return_value=True)
+    @patch("education_system.university_system.infrastructure.auth.managers.password_manager.validate_password", return_value=True)
     def test_activity_logger_called_on_success(self, mock_validate, mock_verify, mock_hash):
         """log_activity_func is called when password change succeeds."""
         mock_hash.return_value = ("newsalt", "newhash")
@@ -224,9 +224,9 @@ class TestChangeUserPassword:
                              log_activity_func=log_func)
         log_func.assert_called_once_with("alice", "Password changed", None, 10)
 
-    @patch("university_system.infrastructure.auth.managers.password_manager.hash_password")
-    @patch("university_system.infrastructure.auth.managers.password_manager.verify_password", return_value=True)
-    @patch("university_system.infrastructure.auth.managers.password_manager.validate_password", return_value=True)
+    @patch("education_system.university_system.infrastructure.auth.managers.password_manager.hash_password")
+    @patch("education_system.university_system.infrastructure.auth.managers.password_manager.verify_password", return_value=True)
+    @patch("education_system.university_system.infrastructure.auth.managers.password_manager.validate_password", return_value=True)
     def test_current_user_flag_cleared(self, mock_validate, mock_verify, mock_hash):
         """password_reset_required is set to 0 on the current_user dict."""
         mock_hash.return_value = ("newsalt", "newhash")
@@ -255,8 +255,8 @@ class TestResetUserPassword:
         conn.cursor.return_value = cursor
         return conn, cursor
 
-    @patch("university_system.infrastructure.auth.managers.password_manager.hash_password")
-    @patch("university_system.infrastructure.auth.managers.password_manager.generate_temp_password",
+    @patch("education_system.university_system.infrastructure.auth.managers.password_manager.hash_password")
+    @patch("education_system.university_system.infrastructure.auth.managers.password_manager.generate_temp_password",
            return_value="TempPass123!")
     def test_successful_reset(self, mock_temp, mock_hash):
         """Returns (True, temp_password) on successful reset."""
@@ -283,8 +283,8 @@ class TestResetUserPassword:
         assert success is False
         assert temp is None
 
-    @patch("university_system.infrastructure.auth.managers.password_manager.hash_password")
-    @patch("university_system.infrastructure.auth.managers.password_manager.generate_temp_password",
+    @patch("education_system.university_system.infrastructure.auth.managers.password_manager.hash_password")
+    @patch("education_system.university_system.infrastructure.auth.managers.password_manager.generate_temp_password",
            return_value="TempPass123!")
     def test_user_not_found_returns_false(self, mock_temp, mock_hash):
         """Returns (False, None) when target user does not exist."""
@@ -298,8 +298,8 @@ class TestResetUserPassword:
         assert success is False
         assert temp is None
 
-    @patch("university_system.infrastructure.auth.managers.password_manager.hash_password")
-    @patch("university_system.infrastructure.auth.managers.password_manager.generate_temp_password",
+    @patch("education_system.university_system.infrastructure.auth.managers.password_manager.hash_password")
+    @patch("education_system.university_system.infrastructure.auth.managers.password_manager.generate_temp_password",
            return_value="TempPass123!")
     def test_activity_logger_called_on_success(self, mock_temp, mock_hash):
         """log_activity_func is invoked after a successful reset."""
@@ -315,8 +315,8 @@ class TestResetUserPassword:
 
         log_func.assert_called_once_with("admin", "Password reset for user: alice", None, 99)
 
-    @patch("university_system.infrastructure.auth.managers.password_manager.hash_password")
-    @patch("university_system.infrastructure.auth.managers.password_manager.generate_temp_password",
+    @patch("education_system.university_system.infrastructure.auth.managers.password_manager.hash_password")
+    @patch("education_system.university_system.infrastructure.auth.managers.password_manager.generate_temp_password",
            return_value="TempPass123!")
     def test_uses_custom_connection_func(self, mock_temp, mock_hash):
         """Uses create_configured_connection_func when provided."""

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/gui/internship_management/notifications.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '1.0', '700x500', 'Arial', 'Close', 'Decision Email Sent', 'Email Sent', 'Internship', 'accepted', 'action_date', 'action_text', 'applied', 'bold', 'both', 'company', 'company_name', 'decision', 'decision_date', 'description', 'disabled', 'first_name', 'internship_id', 'internship_title', 'last_name', 'message', 'next_steps', 'reason', 'requirements', 'send_email', 'status_text', 'student_id', 'student_name', 'submitted', 'title', 'withdrawn']

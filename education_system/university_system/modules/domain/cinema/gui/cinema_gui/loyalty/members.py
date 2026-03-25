@@ -4,6 +4,7 @@ Cinema Booking System - Membership/Loyalty Program Management
 
 import tkinter as tk
 from tkinter import ttk, messagebox
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import sqlite3
 try:
     from education_system.university_system.modules.shared.utils.i18n import get_text as _t
@@ -11,8 +12,8 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
-from ..constants import MEMBERSHIP_TIERS
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.constants import MEMBERSHIP_TIERS
 
 def show_members_page(self):
     """Display members/loyalty program management page."""
@@ -79,26 +80,28 @@ def show_members_page(self):
 
         query = search_entry.get().strip()
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        if query:
-            cursor.execute('''
-                SELECT id, name, email, tier, points, total_spent, bookings_count, status
-                FROM members WHERE name LIKE ? OR email LIKE ?
-                ORDER BY points DESC
-            ''', (f"%{query}%", f"%{query}%"))
-        else:
-            cursor.execute('''
-                SELECT id, name, email, tier, points, total_spent, bookings_count, status
-                FROM members ORDER BY points DESC LIMIT 100
-            ''')
+            if query:
+                cursor.execute('''
+                    SELECT id, name, email, tier, points, total_spent, bookings_count, status
+                    FROM members WHERE name LIKE ? OR email LIKE ?
+                    ORDER BY points DESC
+                ''', (f"%{escape_like(query)}%", f"%{escape_like(query)}%"))
+            else:
+                cursor.execute('''
+                    SELECT id, name, email, tier, points, total_spent, bookings_count, status
+                    FROM members ORDER BY points DESC LIMIT 100
+                ''')
 
-        for row in cursor.fetchall():
-            self.member_tree.insert("", "end", values=(
-                row[0], row[1], row[2], row[3], row[4],
-                f"£{row[5]:.2f}", row[6], row[7].upper()
-            ))
-        conn.close()
+            for row in cursor.fetchall():
+                self.member_tree.insert("", "end", values=(
+                    row[0], row[1], row[2], row[3], row[4],
+                    f"£{row[5]:.2f}", row[6], row[7].upper()
+                ))
+        finally:
+            conn.close()
 
     ttk.Button(search_frame, text=_t("cinema.buttons.search"), style="Primary.TButton",
               command=search_members).pack(side="left", padx=5)
@@ -234,10 +237,12 @@ def show_member_lookup(self):
             return
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM members WHERE email = ?", (email,))
-        member = cursor.fetchone()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM members WHERE email = ?", (email,))
+            member = cursor.fetchone()
+        finally:
+            conn.close()
 
         if member:
             tier_colors = {"Bronze": "#cd7f32", "Silver": "#c0c0c0", "Gold": "#ffd700", "Platinum": "#e5e4e2"}
@@ -276,21 +281,23 @@ def view_member_details(self):
     member_id = self.member_tree.item(selected[0])['values'][0]
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM members WHERE id = ?", (member_id,))
-    member = cursor.fetchone()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM members WHERE id = ?", (member_id,))
+        member = cursor.fetchone()
 
-    # Get booking history
-    cursor.execute('''
-        SELECT b.booking_ref, m.title, s.show_time, b.total_amount, b.status
-        FROM bookings b
-        JOIN screenings s ON b.screening_id = s.id
-        JOIN movies m ON s.movie_id = m.id
-        WHERE b.customer_email = ?
-        ORDER BY b.booking_time DESC LIMIT 10
-    ''', (member[1],))
-    bookings = cursor.fetchall()
-    conn.close()
+        # Get booking history
+        cursor.execute('''
+            SELECT b.booking_ref, m.title, s.show_time, b.total_amount, b.status
+            FROM bookings b
+            JOIN screenings s ON b.screening_id = s.id
+            JOIN movies m ON s.movie_id = m.id
+            WHERE b.customer_email = ?
+            ORDER BY b.booking_time DESC LIMIT 10
+        ''', (member[1],))
+        bookings = cursor.fetchall()
+    finally:
+        conn.close()
 
     if not member:
         return
@@ -374,21 +381,23 @@ def add_member_points(self):
             return
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("UPDATE members SET points = points + ? WHERE id = ?", (points, member_id))
+        try:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE members SET points = points + ? WHERE id = ?", (points, member_id))
 
-        # Update tier based on new points
-        cursor.execute("SELECT points FROM members WHERE id = ?", (member_id,))
-        new_points = cursor.fetchone()[0]
+            # Update tier based on new points
+            cursor.execute("SELECT points FROM members WHERE id = ?", (member_id,))
+            new_points = cursor.fetchone()[0]
 
-        new_tier = "Bronze"
-        for tier, info in MEMBERSHIP_TIERS.items():
-            if new_points >= info['min_points']:
-                new_tier = tier
+            new_tier = "Bronze"
+            for tier, info in MEMBERSHIP_TIERS.items():
+                if new_points >= info['min_points']:
+                    new_tier = tier
 
-        cursor.execute("UPDATE members SET tier = ? WHERE id = ?", (new_tier, member_id))
-        conn.commit()
-        conn.close()
+            cursor.execute("UPDATE members SET tier = ? WHERE id = ?", (new_tier, member_id))
+            conn.commit()
+        finally:
+            conn.close()
 
         messagebox.showinfo(_t("cinema.common.success"), f"Added {points} points. New tier: {new_tier}")
         dialog.destroy()
@@ -410,19 +419,23 @@ def deactivate_member(self):
         return
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("UPDATE members SET status = 'inactive' WHERE id = ?", (member_id,))
-    conn.commit()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE members SET status = 'inactive' WHERE id = ?", (member_id,))
+        conn.commit()
+    finally:
+        conn.close()
 
     self.show_members_page()
 
 def get_member_discount(self, email):
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT tier FROM members WHERE email = ? AND status = 'active'", (email,))
-    result = cursor.fetchone()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT tier FROM members WHERE email = ? AND status = 'active'", (email,))
+        result = cursor.fetchone()
+    finally:
+        conn.close()
     if result:
         return MEMBERSHIP_TIERS.get(result[0], {}).get('discount', 0)
     return 0

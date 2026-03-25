@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/managers/role_manager.py
+# hypothesis_version: 6.151.9
+
+[' = ?', ' WHERE id = ?', '%Y-%m-%d %H:%M:%S', ', ', 'ROLES', 'Role not found.', 'RoleManager', 'UPDATE roles SET ', 'admin', 'column', 'created_at', 'id', 'instructor', 'manage_roles', 'parent', 'permissions', 'role_name', 'staff', 'student', 'updated_at = ?', 'user_count', 'username']

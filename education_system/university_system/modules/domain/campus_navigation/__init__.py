@@ -20,9 +20,9 @@ Sub-modules:
 - gui: Graphical user interface with interactive map
 """
 
-from .services.navigation_service import NavigationService
-from .cli.navigation_cli import NavigationCLI
-from .gui.navigation_gui import NavigationGUI
+from education_system.university_system.modules.domain.campus_navigation.services.navigation_service import NavigationService
+from education_system.university_system.modules.domain.campus_navigation.cli.navigation_cli import NavigationCLI
+from education_system.university_system.modules.domain.campus_navigation.gui.navigation_gui import NavigationGUI
 
 __all__ = [
     'NavigationService',

@@ -1,12 +1,12 @@
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional, List
-from .exceptions import ValidationError, DatabaseError
-from .validators import validate_date
-from .utils import convert_to_user_error
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.exceptions import ValidationError, DatabaseError
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.validators import validate_date
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.utils import convert_to_user_error
 
 # Import DatabaseManager for type hints and to access database operations.
-from .database import DatabaseManager
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.database import DatabaseManager
 
 gui_logger = logging.getLogger(__name__)
 

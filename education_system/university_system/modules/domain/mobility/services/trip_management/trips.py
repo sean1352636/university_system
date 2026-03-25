@@ -1,6 +1,6 @@
-from . import _common
-from ._common import sqlite3, get_text, logging, datetime, log_create, log_read, log_update, log_delete
-from .database import safe_db_operation
+from education_system.university_system.modules.domain.mobility.services.trip_management import _common
+from education_system.university_system.modules.domain.mobility.services.trip_management._common import sqlite3, get_text, logging, datetime, log_create, log_read, log_update, log_delete
+from education_system.university_system.modules.domain.mobility.services.trip_management.database import safe_db_operation
 
 
 def view_trips_with_calendar():
@@ -29,7 +29,7 @@ def view_trips_with_calendar():
             FROM trips t
             LEFT JOIN trip_participants tp ON t.id = tp.trip_id AND tp.status = 'registered'
             LEFT JOIN trip_calendar_events tce ON t.id = tce.trip_id
-            LEFT JOIN events e ON tce.event_id = e.id
+            LEFT JOIN unified_events e ON tce.event_id = e.event_id
             GROUP BY t.id
             ORDER BY t.start_date ASC
             ''')

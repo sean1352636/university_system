@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/reporting/revenue_analytics/scholarships.py
+# hypothesis_version: 6.151.9
+
+[100, 120, '%Y-%m', '%Y-%m-%d %H:%M:%S', '-', '1', '2', '3', '4', '5', '=', 'Forecast Data', 'Forecast Revenue', 'Generated:', 'Historical Data', 'Month', 'Revenue', 'SCHOLARSHIP REPORTS', 'w']

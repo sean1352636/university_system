@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/i18n/__init__.py
+# hypothesis_version: 6.151.9
+
+['SUPPORTED_LANGUAGES', 'add_locale_dir', 'get_current_language', 'get_text', 'init_i18n', 'load_saved_language', 'reload_translations', 'set_language', 't']

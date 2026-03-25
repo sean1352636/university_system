@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 from datetime import datetime, timedelta
+from education_system.university_system.core.sql_safety import escape_like
 
 
 class AppointmentsMixin:
@@ -240,7 +241,7 @@ class AppointmentsMixin:
 
             if student_filter:
                 query += " AND ha.student_id LIKE ?"
-                params.append(f"%{student_filter}%")
+                params.append(f"%{escape_like(student_filter)}%")
 
             if not self.auth.check_permission('manage_health_appointments'):
                 if self.auth.current_user['role'] == 'student':

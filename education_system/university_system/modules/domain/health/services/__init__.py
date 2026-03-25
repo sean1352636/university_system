@@ -96,12 +96,38 @@ from education_system.university_system.modules.domain.health.services.vitals im
 from education_system.university_system.modules.domain.health.services.health_db_backup import (
     create_sqlite_backup,
     ensure_templates_schema,
+    _sqlite_main_db_path,
 )
 
 # Security functions
 from education_system.university_system.modules.domain.health.services.security import (
     validate_csv_format,
+    encrypt_sensitive_data,
+    decrypt_sensitive_data,
+    truthy,
 )
+
+# Context (encryption)
+from education_system.university_system.modules.domain.health.services.health_context import (
+    cipher_suite,
+)
+
+# Report functions
+from education_system.university_system.modules.domain.health.services.reports import (
+    generate_student_health_summary,
+    generate_vaccination_status_report,
+    generate_appointment_schedule_report,
+    generate_health_condition_analysis,
+    generate_provider_performance_report,
+)
+
+# Backup utility
+try:
+    from education_system.university_system.infrastructure.database.data_backup import backup_before_operation
+except ImportError:
+    import logging as _logging
+    def backup_before_operation(operation_type):
+        _logging.info(f"Backup requested for {operation_type} but backup module not available")
 
 # Database connection (re-export from infrastructure)
 from education_system.university_system.infrastructure.database.db import get_connection

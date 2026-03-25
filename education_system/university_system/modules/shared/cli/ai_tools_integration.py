@@ -5,7 +5,7 @@ This module handles AI detector and plagiarism checker integration,
 including text analysis, submission tracking, and reporting.
 """
 
-from .imports import (
+from education_system.university_system.modules.shared.cli.imports import (
     logging, time, datetime, DB_PATH, _t, logger,
     log_activity, AIDetector, validate_column_definition
 )

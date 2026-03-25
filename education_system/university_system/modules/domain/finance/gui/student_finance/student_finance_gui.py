@@ -210,8 +210,8 @@ class StudentFinanceGUI:
                     rows = conn.execute(
                         "SELECT created_at, transaction_type, description, "
                         "amount, balance_after "
-                        "FROM student_finance_transactions "
-                        "WHERE student_id = ? "
+                        "FROM transactions "
+                        "WHERE source_type = 'student_finance' AND student_id = ? "
                         "ORDER BY created_at DESC",
                         (self.student_id,),
                     ).fetchall()
@@ -219,8 +219,8 @@ class StudentFinanceGUI:
                     rows = conn.execute(
                         "SELECT created_at, transaction_type, description, "
                         "amount, balance_after "
-                        "FROM student_finance_transactions "
-                        "WHERE student_id = ? AND transaction_type = ? "
+                        "FROM transactions "
+                        "WHERE source_type = 'student_finance' AND student_id = ? AND transaction_type = ? "
                         "ORDER BY created_at DESC",
                         (self.student_id, txn_type),
                     ).fetchall()

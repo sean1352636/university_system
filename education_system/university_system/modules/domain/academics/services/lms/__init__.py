@@ -5,7 +5,7 @@ This module provides comprehensive LMS functionality including course management
 content delivery, quizzes, discussions, and gradebook integration.
 """
 
-from .lms_core import (
+from education_system.university_system.modules.domain.academics.services.lms.lms_core import (
     LMSCourseManager,
     LMSContentManager,
     LMSDiscussionManager,

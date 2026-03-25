@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/cli/student_search.py
+# hypothesis_version: 6.151.9
+
+["Enter student's ID: ", '^[0-9]+$', '^[a-zA-Z]+$', 'id', 'view_any_student', 'view_own_record']

@@ -95,23 +95,7 @@ def init_carrental_db():
                 )
             ''')
 
-            # Transactions table
-            conn.execute('''
-                CREATE TABLE IF NOT EXISTS carrental_transactions (
-                    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    rental_id INTEGER,
-                    customer_id TEXT NOT NULL,
-                    amount DECIMAL(10,2) NOT NULL,
-                    transaction_type TEXT NOT NULL,
-                    payment_method TEXT,
-                    reference_number TEXT,
-                    status TEXT DEFAULT 'completed',
-                    notes TEXT,
-                    processed_by TEXT,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (rental_id) REFERENCES carrental_rentals(rental_id)
-                )
-            ''')
+            # Car rental transactions now use unified 'transactions' table with source_type='car_rental'
 
             # Maintenance records
             conn.execute('''
@@ -483,10 +467,10 @@ class TransactionManager:
 
             with transaction() as conn:
                 cursor = conn.execute('''
-                    INSERT INTO carrental_transactions
-                    (rental_id, customer_id, amount, transaction_type, payment_method,
+                    INSERT INTO transactions
+                    (source_type, reference_id, reference_type, customer_id, amount, transaction_type, payment_method,
                      reference_number, status, processed_by)
-                    VALUES (?, ?, ?, 'payment', ?, ?, 'completed', ?)
+                    VALUES ('car_rental', ?, 'rental', ?, ?, 'payment', ?, ?, 'completed', ?)
                 ''', (rental_id, customer_id, amount, payment_method, ref_number, processed_by))
 
                 # Update rental payment status
@@ -520,10 +504,10 @@ class TransactionManager:
 
             with transaction() as conn:
                 cursor = conn.execute('''
-                    INSERT INTO carrental_transactions
-                    (rental_id, customer_id, amount, transaction_type, payment_method,
+                    INSERT INTO transactions
+                    (source_type, reference_id, reference_type, customer_id, amount, transaction_type, payment_method,
                      reference_number, status, notes, processed_by)
-                    VALUES (?, ?, ?, 'refund', 'refund', ?, 'completed', ?, ?)
+                    VALUES ('car_rental', ?, 'rental', ?, ?, 'refund', 'refund', ?, 'completed', ?, ?)
                 ''', (rental_id, customer_id, amount, ref_number, reason, processed_by))
 
                 return cursor.lastrowid
@@ -539,12 +523,13 @@ class TransactionManager:
                 conn.row_factory = sqlite3.Row
                 if rental_id:
                     cursor = conn.execute(
-                        'SELECT * FROM carrental_transactions WHERE rental_id = ? ORDER BY created_at DESC',
-                        (rental_id,)
+                        'SELECT * FROM transactions WHERE source_type = ? AND reference_id = ? AND reference_type = ? ORDER BY created_at DESC',
+                        ('car_rental', rental_id, 'rental')
                     )
                 else:
                     cursor = conn.execute(
-                        'SELECT * FROM carrental_transactions ORDER BY created_at DESC LIMIT 100'
+                        'SELECT * FROM transactions WHERE source_type = ? ORDER BY created_at DESC LIMIT 100',
+                        ('car_rental',)
                     )
                 return [dict(row) for row in cursor.fetchall()]
         except Exception as e:

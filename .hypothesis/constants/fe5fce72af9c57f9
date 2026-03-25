@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/library/fines/payments.py
+# hypothesis_version: 6.151.9
+
+[0.0, 110, '$', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '400x300', '600x500', 'Account Created', 'Arial', 'Book Title', 'By Loan ID', 'By User ID', 'Card', 'Cash', 'Cash/Card', 'Check', 'Created', 'Days Overdue', 'Finance Account', 'Find Loan with Fine', 'Fine Amount', 'Insufficient Balance', 'Library', 'Loan ID', 'No Account', 'No Finance Account', 'No Fines', 'Outstanding Fines', 'Payment Failed', 'Payment Method:', 'Process Fine Payment', 'Process Payment', 'System', 'Top Up', 'User', 'bold', 'book_loans', 'card', 'cash', 'check', 'common.close', 'common.demo', 'common.error', 'common.search', 'common.success', 'common.warning', 'email_sent', 'end', 'finance_account', 'headings', 'loan_id', 'message', 'new_balance', 'payments', 'success', 'user_id', 'values']

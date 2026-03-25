@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/database/schemas/campus_events_schemas.py
+# hypothesis_version: 6.151.9
+
+['Campus Events', 'Campus Events Hub', 'INTEGER', 'INTEGER DEFAULT 0', 'REAL', 'REAL DEFAULT 0', 'Smart Timetable', 'TEXT', 'attendance_status', 'building', 'check_out_time', 'checked_in_at', 'club_id', 'conn', 'cpd_credits', 'created_by', 'event_fee', 'feedback_comment', 'feedback_rating', 'is_waitlisted', 'notes', 'num_guests', 'organizer_name', 'payment_amount', 'payment_method', 'payment_required', 'payment_status', 'qr_code', 'qr_code_path', 'registration_date', 'schemas.init_error', 'schemas.initializing', 'source_event_id', 'source_type', 'unified_events', 'updated_at', 'user_id', 'user_type', 'virtual_link', 'waitlist_enabled']

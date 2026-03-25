@@ -10,10 +10,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..core import ReportingSystemGUI
-from ..core import show_directory_settings as standalone_show_directory_settings
-from ..core import show_theme_settings as standalone_show_theme_settings
-from ..core import validate_email_settings
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import ReportingSystemGUI
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import show_directory_settings as standalone_show_directory_settings
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import show_theme_settings as standalone_show_theme_settings
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import validate_email_settings
 
 
 def show_backup_restore_dialog(gui: ReportingSystemGUI) -> None:

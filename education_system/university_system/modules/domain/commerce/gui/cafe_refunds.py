@@ -10,7 +10,7 @@ from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
-from .cafe_system_gui import get_db_connection, EMAIL_SERVICE_AVAILABLE
+from education_system.university_system.modules.domain.commerce.gui.cafe_system_gui import get_db_connection, EMAIL_SERVICE_AVAILABLE
 
 
 class CafeRefundsMixin:
@@ -94,28 +94,29 @@ class CafeRefundsMixin:
             if search_term:
                 cursor.execute('''
                     SELECT
-                        order_id,
+                        id,
                         order_date,
                         COALESCE(customer_name, 'N/A') as customer_name,
                         COALESCE(student_id, 'N/A') as student_id,
                         total_amount,
                         COALESCE(payment_method, 'Cash') as payment_method,
-                        COALESCE(status, 'completed') as status
-                    FROM cafe_orders
-                    WHERE CAST(order_id AS TEXT) LIKE ? OR customer_name LIKE ? OR student_id LIKE ?
+                        COALESCE(order_status, 'completed') as order_status
+                    FROM orders
+                    WHERE source_type = 'cafe' AND (CAST(id AS TEXT) LIKE ? OR customer_name LIKE ? OR student_id LIKE ?)
                     ORDER BY order_date DESC
                 ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%'))
             else:
                 cursor.execute('''
                     SELECT
-                        order_id,
+                        id,
                         order_date,
                         COALESCE(customer_name, 'N/A') as customer_name,
                         COALESCE(student_id, 'N/A') as student_id,
                         total_amount,
                         COALESCE(payment_method, 'Cash') as payment_method,
-                        COALESCE(status, 'completed') as status
-                    FROM cafe_orders
+                        COALESCE(order_status, 'completed') as order_status
+                    FROM orders
+                    WHERE source_type = 'cafe'
                     ORDER BY order_date DESC
                     LIMIT 100
                 ''')
@@ -257,34 +258,21 @@ Status: {values[6]}
                 cursor = conn.cursor()
 
                 cursor.execute('''
-                    UPDATE cafe_orders
-                    SET status = 'refunded'
-                    WHERE order_id = ?
+                    UPDATE orders
+                    SET order_status = 'refunded'
+                    WHERE id = ? AND source_type = 'cafe'
                 ''', (order_id,))
 
                 # Generate refund reference
                 import uuid
                 refund_ref = f"CAFE-REFUND-{uuid.uuid4().hex[:12].upper()}"
 
-                # Record refund in cafe_refunds table
+                # Record refund in unified_refunds table
                 cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS cafe_refunds (
-                        refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        order_id INTEGER,
-                        refund_amount REAL,
-                        refund_method TEXT,
-                        refund_reference TEXT,
-                        student_id TEXT,
-                        refund_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (order_id) REFERENCES cafe_orders(order_id)
-                    )
-                ''')
-
-                cursor.execute('''
-                    INSERT INTO cafe_refunds
-                    (order_id, refund_amount, refund_method, refund_reference, student_id)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (order_id, amount, refund_method, refund_ref, student_id))
+                    INSERT INTO unified_refunds
+                    (source_type, reference_id, reference_type, amount, refund_method, refund_reference, student_id, refund_date)
+                    VALUES ('cafe', ?, 'order', ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ''', (str(order_id), amount, refund_method, refund_ref, student_id))
 
                 conn.commit()
                 conn.close()
@@ -420,10 +408,10 @@ Status: {values[6]}
 
             # Record transaction
             cursor.execute('''
-                INSERT INTO student_finance_transactions
-                (account_id, student_id, transaction_type, amount, balance_before,
+                INSERT INTO transactions
+                (source_type, account_id, student_id, transaction_type, amount, balance_before,
                  balance_after, description, created_at)
-                VALUES (?, ?, 'credit', ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ''', (account_id, student_id, amount, balance_before, balance_after,
                   f'Cafe Refund - Order: {order_id}'))
 
@@ -508,20 +496,8 @@ Status: {values[6]}
 
             cursor = conn.cursor()
 
-            # Try to insert into finance refunds table if it exists
-            try:
-                cursor.execute('''
-                    INSERT INTO finance_refunds
-                    (student_id, refund_amount, refund_method, refund_reason,
-                     refund_date, reference_number, status, processed_by, department)
-                    VALUES (?, ?, ?, ?, date('now'), ?, 'completed', 'cafe', 'cafe')
-                ''', (student_id or f'order_{order_id}', amount, method,
-                      f'Cafe Order #{order_id} Refund', refund_ref))
-                conn.commit()
-                print(f"[Cafe] Refund recorded in finance system: {refund_ref}")
-            except Exception:
-                # Table might not exist, that's okay
-                pass
+            # Refund already recorded in unified_refunds table
+            print(f"[Cafe] Refund recorded in finance system: {refund_ref}")
 
             conn.close()
         except Exception as e:

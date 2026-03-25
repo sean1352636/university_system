@@ -1,300 +1,147 @@
-# Makefile for University Management System
-# This file provides convenient commands for development, testing, and deployment
+# Education Management System - Makefile
+# Development commands for all 4 subsystems
 
-.PHONY: help install install-dev clean test test-coverage lint format type-check security-check run run-cli run-gui backup docs build deploy
+.PHONY: help install install-dev clean test test-all test-cov test-shared test-university test-college test-secondary test-primary test-integration test-security test-gui test-auth lint format run seed portal docker
 
-# Default target
 .DEFAULT_GOAL := help
 
-# Python and pip executables
-PYTHON := python3
-PIP := pip3
+VENV := /home/seancatchpole989/venv/bin
+PYTHON := $(VENV)/python
+PIP := $(VENV)/pip
+PYTEST := $(VENV)/pytest
 
-# Project directories
-SRC_DIR := university_system
-TEST_DIR := university_system/tests
+SRC := education_system
+TESTS := $(SRC)/shared/tests $(SRC)/university_system/tests $(SRC)/college_system/tests $(SRC)/secondary_school/tests $(SRC)/primary_school/tests
 
-help: ## Show this help message
-	@echo "University Management System - Make Commands"
-	@echo "============================================="
-	@echo ""
+help: ## Show this help
+	@echo "Education Management System"
+	@echo "==========================="
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 # ==========================================
-# Installation & Setup
+# Setup
 # ==========================================
 
 install: ## Install production dependencies
 	$(PIP) install -r requirements.txt
 
-install-dev: ## Install development dependencies
-	$(PIP) install -r requirements.txt
-	$(PIP) install -e ".[dev]"
-	$(PIP) install pytest pytest-cov pytest-xdist pytest-timeout pytest-benchmark hypothesis black ruff mypy pre-commit
-
-setup: install-dev ## Complete development setup
-	pre-commit install
-	mkdir -p logs backups data uploads
-	@echo "Development environment setup complete!"
+install-dev: install ## Install dev dependencies
+	$(PIP) install pytest pytest-cov pytest-timeout ruff bandit[toml] mypy
 
 # ==========================================
-# Cleaning
+# Running
 # ==========================================
 
-clean: ## Remove build artifacts and cache files
-	find . -type d -name "__pycache__" -exec rm -rf {} +
-	find . -type f -name "*.pyc" -delete
-	find . -type f -name "*.pyo" -delete
-	find . -type f -name "*.pyd" -delete
-	find . -type d -name "*.egg-info" -exec rm -rf {} +
-	find . -type d -name ".pytest_cache" -exec rm -rf {} +
-	find . -type d -name ".ruff_cache" -exec rm -rf {} +
-	find . -type d -name ".mypy_cache" -exec rm -rf {} +
-	rm -rf build/ dist/ htmlcov/ .coverage .tox/
-	@echo "Cleaned build artifacts and cache files"
+run: ## Run interactive launcher
+	$(PYTHON) run.py
 
-clean-all: clean ## Remove all generated files including logs and databases
-	rm -rf logs/ backups/ uploads/ temp/
-	@echo "Cleaned all generated files"
+run-cli: ## Run CLI mode
+	$(PYTHON) run.py --cli
+
+run-gui: ## Run GUI mode
+	$(PYTHON) run.py --gui
+
+run-api: ## Run college API server
+	$(PYTHON) -m education_system.college_system.api.api_server
+
+portal: ## Run self-service web portal
+	$(PYTHON) run.py --portal
+
+seed: ## Seed databases with demo data
+	$(PYTHON) run.py --seed
 
 # ==========================================
 # Testing
 # ==========================================
 
 test: ## Run all tests
-	$(PYTHON) -m pytest $(TEST_DIR) -v
+	$(PYTEST) $(TESTS) -v -m "not slow and not gui" --timeout=60
 
-test-fast: ## Run tests with multiple workers
-	$(PYTHON) -m pytest $(TEST_DIR) -n auto -v
+test-all: ## Run all tests including slow
+	$(PYTEST) $(TESTS) -v --timeout=120
 
-test-coverage: ## Run tests with coverage report
-	$(PYTHON) -m pytest $(TEST_DIR) --cov=$(SRC_DIR) --cov-report=html --cov-report=term
+test-cov: ## Run tests with coverage
+	$(PYTEST) $(TESTS) -v --cov=$(SRC) --cov-report=term-missing --cov-report=html:htmlcov -m "not slow and not gui" --timeout=60
 
-test-unit: ## Run only unit tests
-	$(PYTHON) -m pytest $(TEST_DIR) -m unit -v
+test-shared: ## Run shared module tests
+	$(PYTEST) $(SRC)/shared/tests/ -v --timeout=60
 
-test-integration: ## Run only integration tests
-	$(PYTHON) -m pytest $(TEST_DIR) -m integration -v
+test-university: ## Run university tests
+	$(PYTEST) $(SRC)/university_system/tests/ -v --timeout=60
+
+test-college: ## Run college tests
+	$(PYTEST) $(SRC)/college_system/tests/ -v --timeout=60
+
+test-secondary: ## Run secondary school tests
+	$(PYTEST) $(SRC)/secondary_school/tests/ -v --timeout=60
+
+test-primary: ## Run primary school tests
+	$(PYTEST) $(SRC)/primary_school/tests/ -v --timeout=60
+
+test-integration: ## Run cross-system integration tests
+	$(PYTEST) $(SRC)/shared/tests/test_cross_system.py -v --timeout=60
 
 test-security: ## Run security tests
-	$(PYTHON) -m pytest $(TEST_DIR) -m security -v
+	$(PYTEST) -m security -v --timeout=60
 
-test-watch: ## Run tests in watch mode
-	$(PYTHON) -m pytest $(TEST_DIR) -f -v
+test-gui: ## Run GUI tests (mocked tkinter)
+	$(PYTEST) -m gui -v --timeout=60
 
-test-workflows: ## Run integration workflow tests
-	$(PYTHON) -m pytest $(TEST_DIR)/test_integration_workflows.py -v
-
-test-e2e: ## Run end-to-end journey tests
-	$(PYTHON) -m pytest $(TEST_DIR)/test_end_to_end_journeys.py -v
-
-test-performance: ## Run performance benchmark tests
-	$(PYTHON) -m pytest $(TEST_DIR)/test_performance_benchmarks.py -v -s
-
-test-property: ## Run property-based tests (requires hypothesis)
-	$(PYTHON) -m pytest $(TEST_DIR)/test_performance_benchmarks.py::TestPropertyBasedTesting -v
-
-test-all-new: ## Run all new test suites (workflows + e2e + performance)
-	$(PYTHON) -m pytest $(TEST_DIR)/test_integration_workflows.py $(TEST_DIR)/test_end_to_end_journeys.py $(TEST_DIR)/test_performance_benchmarks.py -v
+test-auth: ## Run shared auth infrastructure tests
+	$(PYTEST) $(SRC)/shared/tests/test_auth_core.py $(SRC)/shared/tests/test_password_manager.py $(SRC)/shared/tests/test_mfa_service.py $(SRC)/shared/tests/test_session_manager.py $(SRC)/shared/tests/test_security.py -v --timeout=60
 
 # ==========================================
 # Code Quality
 # ==========================================
 
-lint: ## Run linter (ruff)
-	ruff check $(SRC_DIR)
-	ruff check run.py
+lint: ## Lint all code
+	$(VENV)/ruff check $(SRC)/
 
-lint-fix: ## Fix linting issues automatically
-	ruff check --fix $(SRC_DIR)
-	ruff check --fix run.py
+lint-fix: ## Fix linting issues
+	$(VENV)/ruff check --fix $(SRC)/
 
-format: ## Format code with black
-	black $(SRC_DIR) run.py --line-length 100
-	isort $(SRC_DIR) run.py
+format: ## Format code
+	$(VENV)/ruff format $(SRC)/
 
-format-check: ## Check code formatting without making changes
-	black $(SRC_DIR) run.py --check --line-length 100
-	isort $(SRC_DIR) run.py --check-only
+type-check: ## Type check
+	$(VENV)/mypy $(SRC)/ --ignore-missing-imports
 
-type-check: ## Run static type checking with mypy
-	mypy $(SRC_DIR)
+security-scan: ## Run bandit security scan
+	$(VENV)/bandit -r $(SRC)/ -c pyproject.toml -lll
 
-security-check: ## Run security vulnerability checks
-	pip-audit
-	bandit -r $(SRC_DIR) -ll
-
-security-scan-local: ## Run comprehensive local security scan
-	@chmod +x scripts/security_scan.sh
-	@./scripts/security_scan.sh
-
-security-scan-detailed: ## Run detailed security scan with all findings
-	@chmod +x scripts/security_scan.sh
-	@./scripts/security_scan.sh --detailed
-
-security-reports: ## Generate security reports
-	@mkdir -p security-reports
-	@echo "Generating security reports..."
-	@bandit -r $(SRC_DIR) -f json -o security-reports/bandit.json --exclude $(TEST_DIR)
-	@safety check --json > security-reports/safety.json || true
-	@pip-audit --format json > security-reports/pip-audit.json || true
-	@echo "Reports generated in security-reports/"
-
-check: lint type-check ## Run all code quality checks
-	@echo "All code quality checks passed!"
+check: lint test ## Run lint + tests
 
 # ==========================================
-# Running the Application
+# Cleanup
 # ==========================================
 
-run: ## Run with interactive menu
-	$(PYTHON) run.py
+clean: ## Remove cache and build artifacts
+	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	find . -type f -name "*.pyc" -delete 2>/dev/null || true
+	rm -rf .pytest_cache .ruff_cache .mypy_cache htmlcov .coverage build dist *.egg-info
 
-run-cli: ## Run in CLI mode
-	$(PYTHON) run.py --cli
-
-run-gui: ## Run in GUI mode
-	$(PYTHON) run.py --gui
-
-run-tests-all: ## Run all test suite
-	$(PYTHON) $(TEST_DIR)/run_all_tests.py
+clean-logs: ## Remove log files
+	find $(SRC) -name "*.log" -delete 2>/dev/null || true
 
 # ==========================================
-# Database Operations
+# Docker
 # ==========================================
 
-db-backup: ## Create database backup
-	@mkdir -p backups
-	@$(PYTHON) -c "from university_system.infrastructure.database.database_utils import backup_database; backup_database()"
-	@echo "Database backup created"
+docker-build: ## Build Docker image
+	docker build -t education-system .
 
-db-restore: ## Restore database from backup (specify BACKUP_FILE=path/to/backup.db)
-	@if [ -z "$(BACKUP_FILE)" ]; then \
-		echo "Error: BACKUP_FILE not specified. Usage: make db-restore BACKUP_FILE=path/to/backup.db"; \
-		exit 1; \
-	fi
-	@$(PYTHON) -c "from university_system.infrastructure.database.database_utils import restore_database; restore_database('$(BACKUP_FILE)')"
-	@echo "Database restored from $(BACKUP_FILE)"
+docker-up: ## Start with docker-compose
+	docker compose up -d
 
-db-reset: ## Reset database (WARNING: Deletes all data!)
-	@echo "WARNING: This will delete all database data!"
-	@read -p "Are you sure? [y/N] " -n 1 -r; \
-	echo; \
-	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		rm -f university_system.db; \
-		$(PYTHON) -c "from university_system.infrastructure.database.database_utils import init_db; init_db()"; \
-		echo "Database reset complete"; \
-	fi
+docker-down: ## Stop docker-compose
+	docker compose down
+
+docker-logs: ## View docker logs
+	docker compose logs -f app
 
 # ==========================================
-# Documentation
+# CI Simulation
 # ==========================================
 
-docs: ## Generate documentation
-	@echo "Generating documentation..."
-	# Add your documentation generation command here
-	# e.g., sphinx-build -b html docs/ docs/_build/
-
-docs-serve: ## Serve documentation locally
-	@echo "Serving documentation..."
-	# Add your documentation server command here
-	# e.g., cd docs/_build && python -m http.server 8000
-
-# ==========================================
-# Building & Distribution
-# ==========================================
-
-build: clean ## Build distribution packages
-	$(PYTHON) -m build
-	@echo "Build complete! Packages in dist/"
-
-build-wheel: ## Build wheel package only
-	$(PYTHON) -m build --wheel
-
-# ==========================================
-# Development Utilities
-# ==========================================
-
-shell: ## Start Python shell with project context
-	$(PYTHON) -i -c "import sys; sys.path.insert(0, '.'); from university_system import *"
-
-deps-list: ## List all installed dependencies
-	$(PIP) list
-
-deps-outdated: ## Check for outdated dependencies
-	$(PIP) list --outdated
-
-deps-update: ## Update all dependencies (use with caution)
-	$(PIP) install --upgrade -r requirements.txt
-
-deps-freeze: ## Freeze current dependencies to requirements-lock.txt
-	$(PIP) freeze > requirements-lock.txt
-	@echo "Dependencies frozen to requirements-lock.txt"
-
-# ==========================================
-# Git Helpers
-# ==========================================
-
-pre-commit: format lint test ## Run pre-commit checks
-	@echo "Pre-commit checks passed!"
-
-git-clean: ## Remove untracked files (dry run)
-	git clean -xdn
-
-git-clean-force: ## Remove untracked files (WARNING: irreversible!)
-	git clean -xdf
-
-# ==========================================
-# CI/CD Simulation
-# ==========================================
-
-ci: clean install-dev lint type-check test-coverage ## Simulate CI pipeline
-	@echo "CI pipeline simulation complete!"
-
-# ==========================================
-# Monitoring & Logs
-# ==========================================
-
-logs: ## View application logs
-	@if [ -f logs/university_system.log ]; then \
-		tail -f logs/university_system.log; \
-	else \
-		echo "No log file found at logs/university_system.log"; \
-	fi
-
-logs-tail: ## Tail last 50 lines of logs
-	@if [ -f logs/university_system.log ]; then \
-		tail -n 50 logs/university_system.log; \
-	else \
-		echo "No log file found at logs/university_system.log"; \
-	fi
-
-logs-clear: ## Clear all log files
-	@rm -f logs/*.log
-	@echo "Log files cleared"
-
-# ==========================================
-# Performance & Profiling
-# ==========================================
-
-profile: ## Run profiler on main application
-	$(PYTHON) -m cProfile -o profile.stats run.py --cli
-	@echo "Profile saved to profile.stats"
-
-profile-view: ## View profiling results
-	$(PYTHON) -m pstats profile.stats
-
-# ==========================================
-# Project Information
-# ==========================================
-
-info: ## Display project information
-	@echo "University Management System"
-	@echo "============================"
-	@echo "Python Version: $$($(PYTHON) --version)"
-	@echo "Pip Version: $$($(PIP) --version)"
-	@echo "Project Structure:"
-	@tree -L 2 -d $(SRC_DIR) || echo "  (install 'tree' command for directory listing)"
-	@echo ""
-	@echo "Lines of Code:"
-	@find $(SRC_DIR) -name "*.py" | xargs wc -l | tail -1
+ci: clean lint test-cov security-scan ## Simulate full CI pipeline
+	@echo "CI pipeline passed!"

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/staff_hr/gui/__init__.py
+# hypothesis_version: 6.151.9
+
+['AppraisalGUI', 'CommHubGUI', 'CommitteeGUI', 'ContractGUI', 'CoverGUI', 'CurriculumGUI', 'DirectoryGUI', 'EquipmentGUI', 'ExitGUI', 'ExpenseGUI', 'FacultyScheduleGUI', 'GrantBudgetGUI', 'GrievanceGUI', 'IPGUI', 'LeaveManagementGUI', 'MentoringGUI', 'OnboardingGUI', 'PayrollGUI', 'PeerReviewGUI', 'SabbaticalGUI', 'StaffHRGUI', 'TeachingLoadGUI', 'TimeAttendanceGUI', 'TrainingGUI', 'TravelGUI', 'WorkloadGUI']

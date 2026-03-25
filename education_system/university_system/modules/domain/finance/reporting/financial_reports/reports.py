@@ -7,11 +7,11 @@ from education_system.university_system.modules.domain.finance.reporting.revenue
     generate_financial_forecasting, generate_budget_variance_report, generate_financial_dashboard as financial_dashboard
 )
 
-from . import _common
-from .alerts import FinancialAlertSystem
-from .ml import PaymentPredictionML, AnomalyDetector
-from .forecasting import CashFlowForecaster
-from .analyzers import StudentLifecycleAnalyzer, ComparativeAnalyzer
+from education_system.university_system.modules.domain.finance.reporting.financial_reports import _common
+from education_system.university_system.modules.domain.finance.reporting.financial_reports.alerts import FinancialAlertSystem
+from education_system.university_system.modules.domain.finance.reporting.financial_reports.ml import PaymentPredictionML, AnomalyDetector
+from education_system.university_system.modules.domain.finance.reporting.financial_reports.forecasting import CashFlowForecaster
+from education_system.university_system.modules.domain.finance.reporting.financial_reports.analyzers import StudentLifecycleAnalyzer, ComparativeAnalyzer
 
 
 def generate_advanced_financial_forecasting():

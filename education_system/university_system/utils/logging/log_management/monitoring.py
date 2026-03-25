@@ -4,7 +4,7 @@ import time
 import queue
 import threading
 
-from .database import LogDatabase
+from education_system.university_system.utils.logging.log_management.database import LogDatabase
 
 
 class RealTimeMonitor:

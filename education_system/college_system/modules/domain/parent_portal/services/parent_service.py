@@ -182,6 +182,26 @@ class ParentService:
         finally:
             conn.close()
 
+    def delete_link(self, link_id: int) -> bool:
+        """Delete a parent-student link by ID."""
+        conn = self._conn()
+        try:
+            result = conn.execute(
+                "DELETE FROM parent_links WHERE id = ?", (link_id,)
+            )
+            conn.commit()
+            if result.rowcount == 0:
+                raise ParentPortalError(f"Link {link_id} not found.")
+            logger.info("Parent link deleted: id=%d", link_id)
+            return True
+        except ParentPortalError:
+            raise
+        except Exception as e:
+            conn.rollback()
+            raise ParentPortalError(f"Failed to delete link: {e}") from e
+        finally:
+            conn.close()
+
     def admin_link_parent(self, parent_user_id: int, student_id: int,
                           relationship: str = "parent") -> dict:
         """Admin creates a parent-student link."""

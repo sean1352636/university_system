@@ -14,21 +14,21 @@ Available Services:
 - And many more...
 
 Usage:
-    from education_system.university_system.services.gui import health_portal_gui
-    from education_system.university_system.services.gui import integration_marketplace_gui
+    from education_system.university_system.modules.services.gui import health_portal_gui
+    from education_system.university_system.modules.services.gui import integration_marketplace_gui
 """
 
 # Import all GUI services
 __all__ = []
 
 try:
-    from .health_portal_gui import HealthPortalGUI
+    from education_system.university_system.modules.services.gui.health_portal_gui import HealthPortalGUI
     __all__.append('HealthPortalGUI')
 except ImportError:
     pass
 
 try:
-    from .integration_marketplace_gui import launch_integration_marketplace_gui
+    from education_system.university_system.modules.services.gui.integration_marketplace_gui import launch_integration_marketplace_gui
     __all__.append('launch_integration_marketplace_gui')
 except ImportError:
     pass

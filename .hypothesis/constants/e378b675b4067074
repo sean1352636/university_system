@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/social_matching_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/social-matching', '/matches', '/profiles', 'GET', 'POST', 'bio', 'compatibility_score', 'create', 'display_name', 'interests', 'is_active', 'is_active = ?', 'items', 'match_reasons', 'personality_type', 'profile_id_1', 'profile_id_2', 'search', 'social_matches', 'social_matching', 'social_profiles', 'status', 'status = ?', 'student_id', 'student_id = ?', 'sub', 'total', 'view']

@@ -508,16 +508,22 @@ class PlanningService:
 
         all_prereqs_list = list(all_prereqs)
 
-        # Cache the result
-        with transaction() as conn:
-            conn.execute("""
-                INSERT INTO prerequisite_graph_cache
-                (course_id, all_prerequisites_json, depth_level)
-                VALUES (?, ?, ?)
-                ON CONFLICT(course_id) DO UPDATE SET
-                    all_prerequisites_json = excluded.all_prerequisites_json,
-                    last_updated = CURRENT_TIMESTAMP
-            """, (course_id, json.dumps(all_prereqs_list), len(all_prereqs_list)))
+        # Cache the result (disable FK checks — cache table has FK to courses
+        # but course_id may come from modules/course_prerequisites)
+        try:
+            with transaction() as conn:
+                conn.execute("PRAGMA foreign_keys = OFF")
+                conn.execute("""
+                    INSERT INTO prerequisite_graph_cache
+                    (course_id, all_prerequisites_json, depth_level)
+                    VALUES (?, ?, ?)
+                    ON CONFLICT(course_id) DO UPDATE SET
+                        all_prerequisites_json = excluded.all_prerequisites_json,
+                        last_updated = CURRENT_TIMESTAMP
+                """, (course_id, json.dumps(all_prereqs_list), len(all_prereqs_list)))
+                conn.execute("PRAGMA foreign_keys = ON")
+        except Exception:
+            pass  # Cache failure is non-critical
 
         return all_prereqs_list
 

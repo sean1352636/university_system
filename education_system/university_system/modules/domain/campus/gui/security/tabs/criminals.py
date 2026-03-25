@@ -5,7 +5,7 @@ from tkinter import ttk, messagebox
 
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
-from ..dialogs.criminal import CriminalDialog
+from education_system.university_system.modules.domain.campus.gui.security.dialogs.criminal import CriminalDialog
 
 
 class CriminalsMixin:

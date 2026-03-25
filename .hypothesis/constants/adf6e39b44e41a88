@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/exam_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' = ?', ' AND ', ' WHERE ', ' WHERE id = ?', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', ', ', '/<int:exam_id>', '/api/exams', 'GET', 'POST', 'PUT', 'SELECT * FROM exams', 'UPDATE exams SET ', 'create', 'date', 'date >= ?', 'end_time', 'exam', 'exam_accommodations', 'exams', 'instructor_id', 'instructor_name', 'items', 'module_code', 'module_code = ?', 'module_name', 'room', 'start_time', 'sub', 'total', 'upcoming', 'update', 'updated_at = ?', 'view']

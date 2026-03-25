@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/email/email_templates.py
+# hypothesis_version: 6.151.9
+
+['announcement', 'attendance_alert', 'body', 'html_body', 'notification', 'password_reset', 'subject', 'welcome']

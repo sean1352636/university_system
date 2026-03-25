@@ -1,4 +1,4 @@
-from ._common import (
+from education_system.university_system.modules.shared.utils.document_manager._common import (
     os, zipfile, datetime, sqlite3,
     get_connection, _t, paths,
 )
@@ -28,7 +28,7 @@ class BackupMixin:
     def create_full_backup(self):
         """Create a full system backup"""
         try:
-            backup_dir = 'backups'
+            backup_dir = str(paths.BACKUP_FILES_DIR)
             os.makedirs(backup_dir, exist_ok=True)
 
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -74,7 +74,7 @@ class BackupMixin:
     def restore_from_backup(self):
         """Restore system from a backup file"""
         try:
-            backup_dir = 'backups'
+            backup_dir = str(paths.BACKUP_FILES_DIR)
 
             if not os.path.exists(backup_dir):
                 print("No backup directory found.")
@@ -130,7 +130,7 @@ class BackupMixin:
     def view_backup_history(self):
         """View history of backups"""
         try:
-            backup_dir = 'backups'
+            backup_dir = str(paths.BACKUP_FILES_DIR)
 
             if not os.path.exists(backup_dir):
                 print("No backup directory found.")

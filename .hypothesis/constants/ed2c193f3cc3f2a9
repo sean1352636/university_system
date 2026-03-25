@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/financial_aid/student_portal/dashboard.py
+# hypothesis_version: 6.151.9
+
+[0.0, 100, 120, 300, 'Browse Scholarships', 'Date', 'Deadlines', 'Documents', 'My Applications', 'My Awards', 'My Profile', 'Name', 'No recent activity', 'Pending Applications', 'Quick Actions', 'Recent Activity', 'Recommendations', 'Status', 'Title.TLabel', 'Total Awards', 'Total Disbursed', 'Type', 'both', 'count', 'date', 'end', 'ew', 'info', 'name', 'pending_apps', 'primary', 'red', 'status', 'success', 'total', 'total_awards', 'total_disbursed', 'type', 'w', 'warning', 'x']

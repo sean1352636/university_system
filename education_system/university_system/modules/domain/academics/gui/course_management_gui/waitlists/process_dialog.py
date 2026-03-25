@@ -1,5 +1,5 @@
 # ProcessWaitlistDialog – process waitlists and enroll students
-from ._imports import _, messagebox, tk, ttk, sqlite3, DEFAULT_DB_PATH
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.waitlists._imports import _, messagebox, tk, ttk, sqlite3, DEFAULT_DB_PATH
 
 
 class ProcessWaitlistDialog:
@@ -52,19 +52,20 @@ class ProcessWaitlistDialog:
         ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def load_waitlist_data(self):
+        conn = None
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0)
             cursor = conn.cursor()
 
             cursor.execute("""
-            SELECT c.id, c.course_code, c.course_name,
+            SELECT c.id, COALESCE(c.course_code, c.code), COALESCE(c.course_name, c.name),
                    (COALESCE(c.max_enrollment, 0) - COALESCE(c.current_enrollment, 0)) as available_spots,
                    COUNT(w.id) as waitlist_count
             FROM courses c
             LEFT JOIN course_waitlist w ON c.id = w.course_id AND LOWER(w.status) = 'waiting'
             WHERE LOWER(COALESCE(c.status, 'active')) = 'active'
               AND COALESCE(c.current_enrollment, 0) < COALESCE(c.max_enrollment, 0)
-            GROUP BY c.id, c.course_code, c.course_name, c.current_enrollment, c.max_enrollment
+            GROUP BY c.id
             HAVING waitlist_count > 0
             ORDER BY available_spots DESC, waitlist_count DESC
             """)
@@ -77,9 +78,11 @@ class ProcessWaitlistDialog:
             for course in courses:
                 self.waitlist_tree.insert("", tk.END, values=course)
 
-            conn.close()
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to load waitlist data: {e}")
+        finally:
+            if conn:
+                conn.close()
 
     def process_selected(self):
         selection = self.waitlist_tree.selection()
@@ -106,14 +109,15 @@ class ProcessWaitlistDialog:
             self.load_waitlist_data()
 
     def process_course_waitlist(self, course_id, show_messages=True):
+        conn = None
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0)
             cursor = conn.cursor()
 
             # Get course info and available spots
             cursor.execute("""
-            SELECT course_code, course_name,
-                   current_enrollment, max_enrollment
+            SELECT COALESCE(course_code, code), COALESCE(course_name, name),
+                   COALESCE(current_enrollment, 0), COALESCE(max_enrollment, 0)
             FROM courses WHERE id = ?
             """, (course_id,))
 
@@ -149,39 +153,9 @@ class ProcessWaitlistDialog:
                 cursor.execute("UPDATE course_waitlist SET status = 'Enrolled' WHERE id = ?", (waitlist_id,))
                 enrolled_count += 1
 
-                # Send enrollment confirmation email
-                try:
-                    cursor.execute(
-                        "SELECT email_address, first_name FROM students WHERE student_id = ?",
-                        (student_id,)
-                    )
-                    stu_row = cursor.fetchone()
-                    if stu_row and stu_row[0]:
-                        from education_system.university_system.infrastructure.email.template_utils import render_template
-                        from education_system.university_system.infrastructure.email.email_service import send_email
-                        try:
-                            subj, body = render_template("course_waitlist_enrolled", {
-                                "first_name": stu_row[1] or "Student",
-                                "course_code": code or "",
-                                "course_name": name or "",
-                            })
-                            if not subj or not body:
-                                raise ValueError("Template returned empty subject/body")
-                        except Exception:
-                            subj = f"Enrollment Confirmed: {code} - {name}"
-                            body = (
-                                f"Dear {stu_row[1] or 'Student'},\n\n"
-                                f"You have been enrolled in {code} - {name} from the waitlist.\n\n"
-                                f"Please check your course schedule for class times and locations.\n\n"
-                                f"Best regards,\nAcademic Administration"
-                            )
-                        send_email(stu_row[0], subj, body)
-                except Exception as email_err:
-                    print(f"Waitlist enrollment email failed for {student_id}: {email_err}")
-
             # Update course enrollment
             cursor.execute("""
-            UPDATE courses SET current_enrollment = current_enrollment + ?
+            UPDATE courses SET current_enrollment = COALESCE(current_enrollment, 0) + ?
             WHERE id = ?
             """, (enrolled_count, course_id))
 
@@ -193,7 +167,31 @@ class ProcessWaitlistDialog:
             """, (enrolled_count, course_id))
 
             conn.commit()
-            conn.close()
+
+            # Send enrollment emails after commit (outside the transaction)
+            for waitlist_id, student_id in waitlist_students:
+                try:
+                    email_conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=10.0)
+                    email_cur = email_conn.cursor()
+                    email_cur.execute(
+                        "SELECT email_address, first_name FROM students WHERE student_id = ?",
+                        (student_id,)
+                    )
+                    stu_row = email_cur.fetchone()
+                    email_conn.close()
+
+                    if stu_row and stu_row[0]:
+                        from education_system.university_system.infrastructure.email.email_service import send_email
+                        subj = f"Enrollment Confirmed: {code} - {name}"
+                        body = (
+                            f"Dear {stu_row[1] or 'Student'},\n\n"
+                            f"You have been enrolled in {code} - {name} from the waitlist.\n\n"
+                            f"Please check your course schedule for class times and locations.\n\n"
+                            f"Best regards,\nAcademic Administration"
+                        )
+                        send_email(recipient_email=stu_row[0], subject=subj, body=body)
+                except Exception as email_err:
+                    print(f"Waitlist enrollment email failed for {student_id}: {email_err}")
 
             if show_messages:
                 messagebox.showinfo(_("common.success"), f"Enrolled {enrolled_count} students from waitlist for {code}")
@@ -204,3 +202,6 @@ class ProcessWaitlistDialog:
             if show_messages:
                 messagebox.showerror(_("common.database_error"), f"Failed to process waitlist: {e}")
             return False
+        finally:
+            if conn:
+                conn.close()

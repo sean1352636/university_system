@@ -1,7 +1,7 @@
 from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.modules.shared.utils.simple_activity_logger import log_create, log_update, log_read
-from . import config
+from education_system.university_system.modules.domain.commerce.services.shop_management import config
 
 
 @log_create(module="shop", description="Creating new discount")
@@ -121,7 +121,7 @@ def create_discount():
 
         if applicable_choice == '2':
             # Get categories
-            cursor.execute("SELECT DISTINCT category FROM shop_products ORDER BY category")
+            cursor.execute("SELECT DISTINCT category FROM products WHERE source_type = 'shop' ORDER BY category")
             categories = cursor.fetchall()
 
             if not categories:
@@ -144,7 +144,7 @@ def create_discount():
             # Custom product list
             product_list = []
 
-            cursor.execute("SELECT product_id, name FROM shop_products WHERE is_active = 1 ORDER BY name")
+            cursor.execute("SELECT source_product_id as product_id, name FROM products WHERE source_type = 'shop' AND is_active = 1 ORDER BY name")
             products = cursor.fetchall()
 
             if not products:
@@ -161,7 +161,7 @@ def create_discount():
                         break
 
                     # Verify product exists
-                    cursor.execute("SELECT 1 FROM shop_products WHERE product_id = ? AND is_active = 1", [product_id])
+                    cursor.execute("SELECT 1 FROM products WHERE source_type = 'shop' AND source_product_id = ? AND is_active = 1", [product_id])
                     if cursor.fetchone():
                         if product_id not in product_list:
                             product_list.append(product_id)
@@ -396,7 +396,7 @@ def edit_discount():
                 applicable_products = 'all'
             elif applicable_choice == '2':
                 # Get categories
-                cursor.execute("SELECT DISTINCT category FROM shop_products ORDER BY category")
+                cursor.execute("SELECT DISTINCT category FROM products WHERE source_type = 'shop' ORDER BY category")
                 categories = cursor.fetchall()
 
                 if not categories:
@@ -420,7 +420,7 @@ def edit_discount():
                 # Custom product list
                 product_list = []
 
-                cursor.execute("SELECT product_id, name FROM shop_products WHERE is_active = 1 ORDER BY name")
+                cursor.execute("SELECT source_product_id as product_id, name FROM products WHERE source_type = 'shop' AND is_active = 1 ORDER BY name")
                 products = cursor.fetchall()
 
                 if not products:
@@ -438,7 +438,7 @@ def edit_discount():
                             break
 
                         # Verify product exists
-                        cursor.execute("SELECT 1 FROM shop_products WHERE product_id = ? AND is_active = 1", [product_id])
+                        cursor.execute("SELECT 1 FROM products WHERE source_type = 'shop' AND source_product_id = ? AND is_active = 1", [product_id])
                         if cursor.fetchone():
                             if product_id not in product_list:
                                 product_list.append(product_id)
@@ -737,7 +737,7 @@ def view_all_discounts():
                 # Get product details
                 placeholders = ','.join(['?'] * len(product_ids))
                 cursor.execute(
-                    f"SELECT product_id, name FROM shop_products WHERE product_id IN ({placeholders})",
+                    f"SELECT source_product_id as product_id, name FROM products WHERE source_type = 'shop' AND source_product_id IN ({placeholders})",
                     product_ids
                 )
                 products = cursor.fetchall()
@@ -752,7 +752,7 @@ def view_all_discounts():
 
                 # Count products in this category
                 cursor.execute(
-                    "SELECT COUNT(*) FROM shop_products WHERE category = ? AND is_active = 1",
+                    "SELECT COUNT(*) FROM products WHERE source_type = 'shop' AND category = ? AND is_active = 1",
                     [discount['applicable_products']]
                 )
                 count = cursor.fetchone()[0]

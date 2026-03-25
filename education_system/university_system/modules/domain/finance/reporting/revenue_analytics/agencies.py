@@ -26,7 +26,7 @@ def manage_collection_agencies():
         elif choice == '4':
             deactivate_collection_agency()
         elif choice == '5':
-            from .collection_reports import agency_performance_report
+            from education_system.university_system.modules.domain.finance.reporting.revenue_analytics.collection_reports import agency_performance_report
             agency_performance_report()
         elif choice == '6':
             return

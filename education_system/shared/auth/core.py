@@ -56,7 +56,7 @@ class UserAuth:
 
             if not user["is_active"]:
                 logger.warning("Login attempt on deactivated account: '%s'", username)
-                raise AuthError("Account is deactivated.")
+                raise AuthError("Invalid username or password.")
 
             # Check lockout
             if user["locked_until"]:
@@ -78,10 +78,21 @@ class UserAuth:
                 if attempts >= MAX_LOGIN_ATTEMPTS:
                     lockout = datetime.utcnow() + timedelta(minutes=LOCKOUT_DURATION_MINUTES)
                     updates["locked_until"] = lockout.isoformat()
+                    logger.critical(
+                        "SECURITY ALERT: Account '%s' locked after %d failed login attempts. "
+                        "Lockout expires at %s.",
+                        username, attempts, updates["locked_until"],
+                    )
+                    self._notify_lockout(username, attempts)
 
+                # Keys are from a fixed whitelist (failed_login_attempts, locked_until)
+                _valid_keys = {"failed_login_attempts", "locked_until"}
+                for k in updates:
+                    if k not in _valid_keys:
+                        raise ValueError(f"Unexpected update key: {k!r}")
                 set_parts = ", ".join(f"{k} = ?" for k in updates)
                 conn.execute(
-                    f"UPDATE users SET {set_parts} WHERE id = ?",
+                    f"UPDATE users SET {set_parts} WHERE id = ?",  # nosec B608 - keys validated against allowlist
                     (*updates.values(), user["id"]),
                 )
                 conn.commit()
@@ -131,6 +142,7 @@ class UserAuth:
         token = self.session_manager.create_session(user["id"])
 
         self._current_user = {
+            "id": user["id"],
             "user_id": user["id"],
             "username": user["username"],
             "display_name": user["display_name"] or user["username"],
@@ -173,6 +185,7 @@ class UserAuth:
         token = self.session_manager.create_session(user["id"])
 
         self._current_user = {
+            "id": user["id"],
             "user_id": user["id"],
             "username": user["username"],
             "display_name": user["display_name"] or user["username"],
@@ -210,6 +223,7 @@ class UserAuth:
         token = self.session_manager.create_session(user["id"])
 
         self._current_user = {
+            "id": user["id"],
             "user_id": user["id"],
             "username": user["username"],
             "display_name": user["display_name"] or user["username"],
@@ -277,7 +291,8 @@ class UserAuth:
             conn.rollback()
             if "UNIQUE" in str(e):
                 raise AuthError(f"Username '{username}' already exists.") from e
-            raise AuthError(f"Failed to create user: {e}") from e
+            logger.error("Failed to create user '%s': %s", username, e)
+            raise AuthError("Failed to create user.") from e
         finally:
             conn.close()
 
@@ -301,13 +316,91 @@ class UserAuth:
 
             new_hash = hash_password(new_password)
             conn.execute(
-                "UPDATE users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?",
+                "UPDATE users SET password_hash = ?, password_changed_at = datetime('now'), updated_at = datetime('now') WHERE id = ?",
                 (new_hash, user_id),
             )
             conn.commit()
             logger.info("Password changed for user_id=%d", user_id)
 
             self.session_manager.invalidate_user_sessions(user_id)
+        finally:
+            conn.close()
+
+    def check_password_expiry(self, user_id: int, max_age_days: int = 90) -> bool:
+        """Check if a user's password has expired. Returns True if expired."""
+        conn = self._conn()
+        try:
+            row = conn.execute(
+                "SELECT password_changed_at FROM users WHERE id = ?", (user_id,)
+            ).fetchone()
+            if not row or not row["password_changed_at"]:
+                return True  # Never set = expired
+            changed = datetime.fromisoformat(row["password_changed_at"])
+            return (datetime.now() - changed).days > max_age_days
+        except Exception:
+            return False
+        finally:
+            conn.close()
+
+    def _notify_lockout(self, username: str, attempts: int):
+        """Send an alert when an account is locked out."""
+        try:
+            from education_system.shared.email.otp_sender import send_otp
+            from education_system.shared.email.config import load_email_config
+
+            cfg = load_email_config()
+            admin_email = cfg.get("sender_email", "")
+            if admin_email:
+                from email.mime.text import MIMEText
+                import smtplib
+
+                smtp_server = cfg.get("smtp_server", "")
+                smtp_port = cfg.get("smtp_port", 587)
+                smtp_user = cfg.get("smtp_username", "")
+                smtp_pass = cfg.get("smtp_password", "")
+                use_tls = cfg.get("use_tls", True)
+
+                if all([smtp_server, smtp_user, smtp_pass]):
+                    msg = MIMEText(
+                        f"Account '{username}' has been locked after {attempts} "
+                        f"failed login attempts at {datetime.utcnow().isoformat()}.\n\n"
+                        f"The account will be unlocked automatically after "
+                        f"{LOCKOUT_DURATION_MINUTES} minutes.",
+                    )
+                    msg["Subject"] = f"Security Alert: Account '{username}' locked"
+                    msg["From"] = smtp_user
+                    msg["To"] = admin_email
+
+                    server = smtplib.SMTP(smtp_server, smtp_port, timeout=10)
+                    if use_tls:
+                        server.starttls()
+                    server.login(smtp_user, smtp_pass)
+                    server.sendmail(smtp_user, [admin_email], msg.as_string())
+                    server.quit()
+                    logger.info("Lockout alert email sent for '%s'", username)
+        except Exception as exc:
+            logger.debug("Could not send lockout alert email: %s", exc)
+
+    def force_legacy_password_reset(self) -> int:
+        """Deactivate all accounts still using legacy PBKDF2 hashes.
+
+        These accounts have a non-NULL ``legacy_salt``, meaning they have
+        never logged in since the bcrypt migration.  Returns the number
+        of accounts affected.
+        """
+        conn = self._conn()
+        try:
+            cursor = conn.execute(
+                "UPDATE users SET is_active = 0 WHERE legacy_salt IS NOT NULL AND is_active = 1",
+            )
+            affected = cursor.rowcount
+            conn.commit()
+            if affected:
+                logger.warning(
+                    "Deactivated %d accounts with legacy PBKDF2 hashes — password reset required",
+                    affected,
+                )
+            return affected
         finally:
             conn.close()
 

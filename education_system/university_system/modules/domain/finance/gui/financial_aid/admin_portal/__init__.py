@@ -12,6 +12,6 @@ Split into submodules for maintainability:
 - fafsa_import: FAFSA data import
 """
 
-from .portal import AdminPortal
+from education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.portal import AdminPortal
 
 __all__ = ['AdminPortal']

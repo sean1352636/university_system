@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/email/email_manager_management_gui.py
+# hypothesis_version: 6.151.9
+
+['#f0f0f0', '1200x800', 'current_user', 'permissions', 'send_emails', 'view_messages']

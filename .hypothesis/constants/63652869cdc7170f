@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/staff_hr/services/managers/performance_manager.py
+# hypothesis_version: 6.151.9
+
+[1.0, 100, 'active', 'appraisal_cycle', 'category', 'completed', 'create', 'cycle_id', 'description', 'development_plan', 'draft', 'final_rating', 'manager_review', 'performance', 'reviewer', 'self_review', 'self_review_deadline', 'status', 'strengths', 'submit', 'target_date', 'user_id', 'weight']

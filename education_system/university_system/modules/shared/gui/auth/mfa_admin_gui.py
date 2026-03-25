@@ -884,18 +884,20 @@ class MFAAdminPanel(tk.Toplevel):
                     return
 
                 conn = sqlite3.connect(self.mfa_service.db_path)
-                cursor = conn.cursor()
+                try:
+                    cursor = conn.cursor()
 
-                # Update or insert policy
-                cursor.execute("""
-                    INSERT OR REPLACE INTO mfa_policies
-                    (policy_id, policy_name, roles, allowed_methods, timeout_minutes, enforcement)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """, (policy_id, name_var.get(), ','.join(selected_roles),
-                      ','.join(selected_methods), int(timeout_var.get()), enforcement_var.get()))
+                    # Update or insert policy
+                    cursor.execute("""
+                        INSERT OR REPLACE INTO mfa_policies
+                        (policy_id, policy_name, roles, allowed_methods, timeout_minutes, enforcement)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    """, (policy_id, name_var.get(), ','.join(selected_roles),
+                          ','.join(selected_methods), int(timeout_var.get()), enforcement_var.get()))
 
-                conn.commit()
-                conn.close()
+                    conn.commit()
+                finally:
+                    conn.close()
 
                 messagebox.showinfo(_("common.success"), _("mfa_admin.messages.policy_updated"))
                 dialog.destroy()
@@ -1100,18 +1102,20 @@ class MFAAdminPanel(tk.Toplevel):
                 deadline = datetime.now() + timedelta(days=int(grace_var.get()))
 
                 conn = sqlite3.connect(self.mfa_service.db_path)
-                cursor = conn.cursor()
+                try:
+                    cursor = conn.cursor()
 
-                # Create or update MFA enforcement record
-                cursor.execute("""
-                    INSERT OR REPLACE INTO mfa_enforcement
-                    (user_id, required_method, deadline, created_at, notified)
-                    VALUES (?, ?, ?, ?, ?)
-                """, (user_id, method_var.get(), deadline.isoformat(),
-                      datetime.now().isoformat(), notify_var.get()))
+                    # Create or update MFA enforcement record
+                    cursor.execute("""
+                        INSERT OR REPLACE INTO mfa_enforcement
+                        (user_id, required_method, deadline, created_at, notified)
+                        VALUES (?, ?, ?, ?, ?)
+                    """, (user_id, method_var.get(), deadline.isoformat(),
+                          datetime.now().isoformat(), notify_var.get()))
 
-                conn.commit()
-                conn.close()
+                    conn.commit()
+                finally:
+                    conn.close()
 
                 if notify_var.get():
                     # Log notification (actual email would be sent by email service)
@@ -1208,26 +1212,28 @@ class MFAAdminPanel(tk.Toplevel):
 
             # Save to database
             conn = sqlite3.connect(self.mfa_service.db_path)
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            # Create settings table if not exists
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS mfa_settings (
-                    setting_key TEXT PRIMARY KEY,
-                    setting_value TEXT,
-                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-
-            # Insert or update each setting
-            for key, value in settings.items():
+                # Create settings table if not exists
                 cursor.execute("""
-                    INSERT OR REPLACE INTO mfa_settings (setting_key, setting_value, updated_at)
-                    VALUES (?, ?, datetime('now'))
-                """, (key, value))
+                    CREATE TABLE IF NOT EXISTS mfa_settings (
+                        setting_key TEXT PRIMARY KEY,
+                        setting_value TEXT,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
 
-            conn.commit()
-            conn.close()
+                # Insert or update each setting
+                for key, value in settings.items():
+                    cursor.execute("""
+                        INSERT OR REPLACE INTO mfa_settings (setting_key, setting_value, updated_at)
+                        VALUES (?, ?, datetime('now'))
+                    """, (key, value))
+
+                conn.commit()
+            finally:
+                conn.close()
 
             messagebox.showinfo(_("common.success"), _("mfa_admin.messages.settings_saved"))
 

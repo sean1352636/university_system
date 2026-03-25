@@ -10,7 +10,7 @@ from tkinter import ttk, messagebox
 
 from education_system.primary_school.core.logs import setup_logging
 from education_system.primary_school.core.paths import DB_FILE
-from education_system.primary_school.infrastructure.database.schema import initialise_database, seed_default_users
+from education_system.primary_school.infrastructure.database.schema import initialise_database, seed_default_users, seed_default_staff
 from education_system.primary_school.infrastructure.auth.core import UserAuth
 from education_system.primary_school.seed_subjects import seed_subjects
 
@@ -21,86 +21,6 @@ HEADER_BG = "#1a5276"
 SIDEBAR_BG = "#2c3e50"
 MAIN_BG = "#ecf0f1"
 ACCENT = "#2980b9"
-
-
-# ══════════════════════════════════════════════════════════════════════════
-#  Login window
-# ══════════════════════════════════════════════════════════════════════════
-
-class LoginWindow(tk.Toplevel):
-    """Modal login dialog."""
-
-    def __init__(self, parent, db_path):
-        super().__init__(parent)
-        self.title("Primary School - Login")
-        self.geometry("380x280")
-        self.resizable(False, False)
-        self.configure(bg=MAIN_BG)
-        self._db_path = db_path
-        self._auth = UserAuth(db_path)
-        self.user = None
-
-        # Centre on screen
-        self.update_idletasks()
-        x = (self.winfo_screenwidth() - 380) // 2
-        y = (self.winfo_screenheight() - 280) // 2
-        self.geometry(f"+{x}+{y}")
-
-        # Header
-        hdr = tk.Frame(self, bg=HEADER_BG, height=50)
-        hdr.pack(fill="x")
-        hdr.pack_propagate(False)
-        tk.Label(hdr, text="Primary School Management System",
-                 bg=HEADER_BG, fg="white", font=("Helvetica", 13, "bold")).pack(expand=True)
-
-        # Form
-        frm = tk.Frame(self, bg=MAIN_BG, pady=15)
-        frm.pack(expand=True)
-
-        tk.Label(frm, text="Username:", bg=MAIN_BG, font=("Helvetica", 11)).grid(
-            row=0, column=0, sticky="e", padx=10, pady=8)
-        self._username = tk.Entry(frm, width=22, font=("Helvetica", 11))
-        self._username.grid(row=0, column=1, pady=8)
-
-        tk.Label(frm, text="Password:", bg=MAIN_BG, font=("Helvetica", 11)).grid(
-            row=1, column=0, sticky="e", padx=10, pady=8)
-        self._password = tk.Entry(frm, width=22, show="*", font=("Helvetica", 11))
-        self._password.grid(row=1, column=1, pady=8)
-        self._password.bind("<Return>", lambda e: self._login())
-
-        tk.Button(frm, text="Login", command=self._login, width=14,
-                  font=("Helvetica", 10, "bold"), bg=ACCENT, fg="white").grid(
-            row=2, column=0, columnspan=2, pady=12)
-
-        tk.Label(frm, text="Default: admin / Admin@123", bg=MAIN_BG,
-                 fg="#7f8c8d", font=("Helvetica", 9)).grid(row=3, column=0, columnspan=2)
-
-        self._username.focus_set()
-
-        self.protocol("WM_DELETE_WINDOW", self._on_close)
-        self.transient(parent)
-        self.deiconify()
-        self.grab_set()
-
-    def _login(self):
-        username = self._username.get().strip()
-        password = self._password.get()
-        if not username or not password:
-            messagebox.showwarning("Login", "Please enter both username and password.", parent=self)
-            return
-        user = self._auth.login(username, password)
-        if user:
-            self.user = user
-            self.user["_auth"] = self._auth
-            self.destroy()
-        else:
-            messagebox.showerror("Login Failed",
-                                 "Invalid credentials or account is locked.", parent=self)
-            self._password.delete(0, tk.END)
-
-    def _on_close(self):
-        self.user = None
-        self.master.destroy()
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -116,8 +36,8 @@ class DashboardFrame(tk.Frame):
         self._auth = auth
 
         # Welcome
-        user_name = auth.current_user["display_name"] if auth and auth.current_user else "User"
-        role = auth.current_user["role"] if auth and auth.current_user else ""
+        user_name = auth.current_user.get("display_name", "User") if auth and auth.current_user else "User"
+        role = auth.current_user.get("role", "") if auth and auth.current_user else ""
         tk.Label(self, text=f"Welcome, {user_name}",
                  font=("Helvetica", 18, "bold"), bg=MAIN_BG).pack(pady=(25, 2))
         tk.Label(self, text=f"Role: {role.title()}",
@@ -216,10 +136,11 @@ class MainApplication(tk.Tk):
                   bg="#1a252f", fg="white", bd=0, pady=8,
                   activebackground="#34495e", activeforeground="white",
                   command=self._switch_to_cli).pack(fill="x")
-        tk.Button(bottom, text="Switch System", font=("Helvetica", 9),
-                  bg="#1a252f", fg="white", bd=0, pady=8,
-                  activebackground="#34495e", activeforeground="white",
-                  command=self._switch_system).pack(fill="x")
+        if self._is_superadmin():
+            tk.Button(bottom, text="Switch System", font=("Helvetica", 9),
+                      bg="#1a252f", fg="white", bd=0, pady=8,
+                      activebackground="#34495e", activeforeground="white",
+                      command=self._switch_system).pack(fill="x")
         tk.Button(bottom, text="Logout", font=("Helvetica", 9),
                   bg="#1a252f", fg="white", bd=0, pady=8,
                   activebackground="#34495e", activeforeground="white",
@@ -279,7 +200,10 @@ class MainApplication(tk.Tk):
         # Instantiate frames
         for name, frame_cls in modules:
             try:
-                frame = frame_cls(self._content, self._db_path, auth=self._auth)
+                if frame_cls is MisconductFrame:
+                    frame = frame_cls(self._content, self._db_path, auth=self._auth, system_key='primary')
+                else:
+                    frame = frame_cls(self._content, self._db_path, auth=self._auth)
                 self._frames[name] = frame
             except Exception as e:
                 logger.error("Failed to load module %s: %s", name, e, exc_info=True)
@@ -316,6 +240,7 @@ class MainApplication(tk.Tk):
         from education_system.primary_school.modules.domain.admin.settings.gui.settings_gui import SettingsFrame
         from education_system.primary_school.modules.domain.admin.admissions.gui.admissions_gui import AdmissionsFrame
         from education_system.primary_school.modules.domain.admin.finance.gui.finance_gui import FinanceFrame
+        from education_system.primary_school.modules.domain.admin.payroll.gui.payroll_gui import PayrollFrame
         from education_system.primary_school.modules.domain.admin.data_export.gui.data_export_gui import DataExportFrame
         from education_system.primary_school.modules.domain.admin.audit_log.gui.audit_log_gui import AuditLogFrame
         from education_system.primary_school.modules.domain.admin.policies.gui.policy_gui import PolicyFrame
@@ -338,6 +263,39 @@ class MainApplication(tk.Tk):
         from education_system.primary_school.modules.domain.facilities.assets.gui.asset_gui import AssetFrame
         from education_system.primary_school.modules.domain.facilities.visitors.gui.visitor_gui import VisitorFrame
         from education_system.primary_school.modules.domain.facilities.incidents.gui.incident_gui import IncidentFrame
+        from education_system.primary_school.modules.shared.gui.mfa_gui import MFASettingsFrame
+        from education_system.shared.notifications.gui import CrossSystemNotificationsFrame
+        from education_system.shared.cross_system.journey_dashboard import JourneyDashboardFrame
+        from education_system.shared.analytics.analytics_gui import AnalyticsDashboardFrame
+        from education_system.shared.outcomes.outcomes_gui import OutcomeTrackingFrame
+        from education_system.shared.predictive.predictive_gui import PredictiveAlertsFrame
+        from education_system.shared.bulk_transfer.bulk_transfer_gui import BulkTransferFrame
+        from education_system.shared.transfer_docs.transfer_docs_gui import TransferDocumentsFrame
+        from education_system.shared.reverse_lookup.reverse_lookup_gui import ReverseLookupFrame
+        from education_system.shared.parent_continuity.parent_gui import ParentContinuityFrame
+        from education_system.shared.calendar.calendar_gui import CrossSystemCalendarFrame
+        from education_system.shared.messaging.messaging_gui import InterSystemMessagingFrame
+        from education_system.shared.admin_portal.admin_gui import CentralAdminFrame
+        from education_system.shared.gdpr.gdpr_gui import GDPRComplianceFrame
+        from education_system.shared.documents.document_gui import SharedDocumentsFrame
+        from education_system.shared.student_portal.portal_gui import StudentSelfServiceFrame
+        from education_system.shared.transcript.transcript_gui import DigitalTranscriptFrame
+        from education_system.shared.certificates.certificates_gui import CertificatesGUI
+        from education_system.shared.extras.extras_frame import ExtrasFrame
+        from education_system.shared.academic_misconduct.misconduct_frame import MisconductFrame
+        from education_system.shared.lms.lms_gui import LMSFrame
+        # New modules
+        from education_system.primary_school.modules.domain.pastoral_care.pupil_wellbeing.gui.pupil_wellbeing_gui import PupilWellbeingFrame
+        from education_system.primary_school.modules.domain.communication.feedback.gui.feedback_gui import FeedbackFrame
+        from education_system.primary_school.modules.domain.admin.complaints.gui.complaints_gui import ComplaintsFrame
+        from education_system.primary_school.modules.domain.admin.gdpr.gui.gdpr_gui import GDPRFrame
+        from education_system.primary_school.modules.domain.admin.data_dashboard.gui.data_dashboard_gui import DataDashboardFrame
+        from education_system.primary_school.modules.domain.staff.appraisals.gui.appraisals_gui import AppraisalsFrame
+        from education_system.primary_school.modules.domain.staff.observations.gui.observations_gui import ObservationsFrame
+        from education_system.primary_school.modules.domain.staff.staff_wellbeing.gui.staff_wellbeing_gui import StaffWellbeingFrame
+        from education_system.primary_school.modules.domain.staff.lesson_plans.gui.lesson_plans_gui import LessonPlansFrame
+        from education_system.primary_school.modules.domain.academics.portfolio.gui.portfolio_gui import PortfolioFrame
+        from education_system.primary_school.modules.domain.academics.skills_tracker.gui.skills_tracker_gui import SkillsTrackerFrame
 
         # All modules in display order
         all_modules = [
@@ -385,6 +343,7 @@ class MainApplication(tk.Tk):
             # ── Admin ─────────────────────
             ("Admissions", AdmissionsFrame),
             ("Finance", FinanceFrame),
+            ("Payroll", PayrollFrame),
             ("Policies", PolicyFrame),
             ("Documents", DocumentFrame),
             ("Users", UserFrame),
@@ -396,13 +355,54 @@ class MainApplication(tk.Tk):
             ("Assets", AssetFrame),
             ("Visitors", VisitorFrame),
             ("Incidents", IncidentFrame),
+            # ── Security ──────────────────
+            ("MFA Settings", MFASettingsFrame),
+            # ── Cross-System ─────────────
+            ("Cross-System Notifications", CrossSystemNotificationsFrame),
+            ("Student Journey", JourneyDashboardFrame),
+            # ── Shared Modules ───────────
+            ("Analytics Dashboard", AnalyticsDashboardFrame),
+            ("Outcome Tracking", OutcomeTrackingFrame),
+            ("Predictive Alerts", PredictiveAlertsFrame),
+            ("Bulk Transfer", BulkTransferFrame),
+            ("Transfer Documents", TransferDocumentsFrame),
+            ("Reverse Lookup", ReverseLookupFrame),
+            ("Parent Continuity", ParentContinuityFrame),
+            ("Cross-System Calendar", CrossSystemCalendarFrame),
+            ("Inter-System Messaging", InterSystemMessagingFrame),
+            ("Central Admin Portal", CentralAdminFrame),
+            ("GDPR Compliance", GDPRComplianceFrame),
+            ("Shared Documents", SharedDocumentsFrame),
+            ("Student Self-Service", StudentSelfServiceFrame),
+            ("Digital Transcript", DigitalTranscriptFrame),
+            ("Certificates", CertificatesGUI),
+            # ── Extras ─────────────────
+            ("Extras & Tools", ExtrasFrame),
+            ("Academic Misconduct", MisconductFrame),
+            # ── Learning Management ──
+            ("LMS", LMSFrame),
+            # ── New Modules ──
+            ("Pupil Wellbeing", PupilWellbeingFrame),
+            ("Feedback", FeedbackFrame),
+            ("Complaints", ComplaintsFrame),
+            ("GDPR", GDPRFrame),
+            ("Data Dashboard", DataDashboardFrame),
+            ("Appraisals", AppraisalsFrame),
+            ("Observations", ObservationsFrame),
+            ("Staff Wellbeing", StaffWellbeingFrame),
+            ("Lesson Plans", LessonPlansFrame),
+            ("Portfolio", PortfolioFrame),
+            ("Skills Tracker", SkillsTrackerFrame),
         ]
 
         # Role-based filtering
         admin_only = {
-            "HR", "CPD", "Cover", "Finance", "Users", "Settings",
+            "HR", "CPD", "Cover", "Finance", "Payroll", "Users", "Settings",
             "Audit Log", "Data Export", "Safeguarding", "Policies",
-            "Assets", "Visitors",
+            "Assets", "Visitors", "Academic Misconduct",
+            "Central Admin Portal", "GDPR Compliance",
+            "Complaints", "GDPR", "Data Dashboard",
+            "Appraisals", "Observations",
         }
         staff_modules = {
             "Dashboard", "Pupils", "Subjects", "Classes", "Assessment",
@@ -413,9 +413,14 @@ class MainApplication(tk.Tk):
             "Consent", "Announcements", "Calendar", "Notifications",
             "Email", "Parents Evening", "Communication Log",
             "Admissions", "Documents", "Room Bookings", "Incidents",
+            "MFA Settings",
+            "Certificates", "LMS",
+            "Pupil Wellbeing", "Feedback", "Lesson Plans",
+            "Staff Wellbeing", "Portfolio", "Skills Tracker",
         }
         parent_modules = {
             "Dashboard", "Announcements", "Calendar", "Notifications",
+            "MFA Settings",
         }
 
         if role == "admin":
@@ -481,8 +486,25 @@ class MainApplication(tk.Tk):
         tk.Button(body, text="Secondary School System",
                   bg="#8e44ad", activebackground="#9b59b6", activeforeground="white",
                   command=lambda: self._do_switch(picker, "school"), **btn_style).pack(pady=5)
+
+        # Super Admin Dashboard button (only for superadmin users)
+        if self._is_superadmin():
+            ttk.Separator(body, orient="horizontal").pack(fill="x", pady=10)
+            tk.Button(body, text="Super Admin Dashboard",
+                      bg="#2c3e50", activebackground="#34495e", activeforeground="white",
+                      command=lambda: self._do_switch(picker, "__superadmin__"), **btn_style).pack(pady=5)
+
         tk.Button(body, text="Cancel", font=("Helvetica", 12), relief=tk.FLAT,
                   padx=20, pady=4, cursor="hand2", command=picker.destroy).pack(pady=(10, 0))
+
+    def _is_superadmin(self):
+        """Check if current user has admin access to all 4 systems."""
+        user = getattr(self, "_user", None) or {}
+        systems = user.get("systems", [])
+        if not systems:
+            return False
+        admin_keys = {s["system_key"] for s in systems if s.get("role") == "admin"}
+        return admin_keys >= {"university", "college", "school", "primary"}
 
     def _do_switch(self, picker, system_key):
         picker.destroy()
@@ -534,6 +556,7 @@ def run(user_info=None, role=None, shared_auth=None):
         # Initialise database
         initialise_database(db_path)
         seed_default_users(db_path)
+        seed_default_staff(db_path)
         seed_subjects(db_path)
     except Exception as e:
         logger.error("Failed to initialise database: %s", e, exc_info=True)
@@ -549,6 +572,7 @@ def run(user_info=None, role=None, shared_auth=None):
                 "username": user_info.get("username"),
                 "role": role,
                 "display_name": user_info.get("display_name", user_info.get("username")),
+                "systems": user_info.get("systems", []),
                 "_auth": auth,
             }
             # Set current_user on the auth object so property checks work
@@ -558,24 +582,27 @@ def run(user_info=None, role=None, shared_auth=None):
             app.mainloop()
             return
 
-        # Standard login flow
-        root = tk.Tk()
-        root.report_callback_exception = _tk_exception_handler
-        root.withdraw()
+        # Standalone launch — use the universal login window
+        from education_system.shared.gui.login_gui import UniversalLoginWindow
+        login = UniversalLoginWindow()
+        login.mainloop()
 
-        login = LoginWindow(root, db_path)
-        root.wait_window(login)
+        if login.user_info is None:
+            return
 
-        if login.user:
-            root.destroy()
-            app = MainApplication(login.user, db_path)
-            app.report_callback_exception = _tk_exception_handler
-            app.mainloop()
-        else:
-            try:
-                root.destroy()
-            except tk.TclError:
-                pass
+        auth = login.auth or UserAuth(db_path)
+        user = {
+            "id": login.user_info.get("user_id"),
+            "username": login.user_info.get("username"),
+            "role": login.system_role or "admin",
+            "display_name": login.user_info.get("display_name", login.user_info.get("username")),
+            "systems": login.user_info.get("systems", []),
+            "_auth": auth,
+        }
+        auth._current_user = user
+        app = MainApplication(user, db_path)
+        app.report_callback_exception = _tk_exception_handler
+        app.mainloop()
     except Exception as e:
         logger.error("Application error: %s", e, exc_info=True)
         traceback.print_exc()

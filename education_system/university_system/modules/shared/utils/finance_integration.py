@@ -62,23 +62,8 @@ def _ensure_finance_tables_exist():
             )
             ''')
 
-            # Student finance transactions table
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS student_finance_transactions (
-                transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                account_id INTEGER NOT NULL,
-                student_id TEXT NOT NULL,
-                transaction_type TEXT NOT NULL,
-                amount DECIMAL(10,2) NOT NULL,
-                balance_before DECIMAL(10,2),
-                balance_after DECIMAL(10,2),
-                description TEXT,
-                reference_id TEXT,
-                processed_by TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (account_id) REFERENCES student_finance_accounts(account_id)
-            )
-            ''')
+            # Note: student_finance_transactions now uses the unified 'transactions' table
+            # with source_type = 'student_finance'. No separate table creation needed.
 
             # Main payments table for finance GUI
             cursor.execute('''
@@ -98,6 +83,32 @@ def _ensure_finance_tables_exist():
                 created_at TEXT,
                 fraud_score DECIMAL(3,2),
                 is_suspicious BOOLEAN DEFAULT 0
+            )
+            ''')
+
+            # Unified refunds table - replaces both finance_refunds and refunds tables
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS unified_refunds (
+                refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_id TEXT,
+                refund_reference TEXT,
+                source_type TEXT NOT NULL DEFAULT 'general',
+                department TEXT,
+                reference_id TEXT,
+                reference_type TEXT,
+                amount DECIMAL(10,2) NOT NULL,
+                refund_type TEXT,
+                refund_method TEXT,
+                reason TEXT,
+                status TEXT DEFAULT 'pending',
+                refund_date TEXT,
+                request_date TEXT,
+                approval_date TEXT,
+                requested_by TEXT,
+                approved_by TEXT,
+                processed_by TEXT,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             ''')
 
@@ -171,7 +182,7 @@ def record_payment_to_finance(
 
             payment_id = cursor.lastrowid
 
-        logger.info(f"Recorded payment to finance: {transaction_source} - {transaction_ref} - £{amount} (Payment ID: {payment_id})")
+        logger.info(f"Recorded payment to finance: {transaction_source} - {transaction_ref} - \u00a3{amount} (Payment ID: {payment_id})")
 
         return payment_id
 
@@ -223,32 +234,41 @@ def record_refund_to_finance(
         # Generate refund reference
         refund_reference = f"{transaction_source.upper()}-{transaction_ref}"
 
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
         with transaction() as conn:
             cursor = conn.cursor()
 
-            # Insert refund into finance_refunds table (main finance GUI table)
+            # Insert refund into unified_refunds table
             cursor.execute('''
-            INSERT INTO finance_refunds (
-                student_id, refund_reference, department, transaction_id,
-                amount, refund_method, refund_date, refund_time,
-                processed_by, notes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO unified_refunds (
+                student_id, refund_reference, source_type, department,
+                reference_id, reference_type, amount, refund_type,
+                refund_method, reason, status, refund_date,
+                request_date, processed_by, notes, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 student_id,
                 refund_reference,
+                transaction_source.lower().replace(' ', '_'),
                 transaction_source,
                 str(original_payment_id) if original_payment_id else None,
+                'payment' if original_payment_id else None,
                 round(float(refund_amount), 2),
+                refund_type,
                 refund_method.lower().replace(' ', '_'),
-                datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                datetime.now().strftime('%H:%M:%S'),
+                refund_reason,
+                'processed',
+                now,
+                now,
                 requested_by or "System",
-                full_notes
+                full_notes,
+                now
             ))
 
             refund_id = cursor.lastrowid
 
-        logger.info(f"Recorded refund to finance_refunds: {transaction_source} - {transaction_ref} - £{refund_amount} (Refund ID: {refund_id})")
+        logger.info(f"Recorded refund to unified_refunds: {transaction_source} - {transaction_ref} - \u00a3{refund_amount} (Refund ID: {refund_id})")
 
         return refund_id
 
@@ -326,11 +346,11 @@ def get_student_financial_summary(student_id: str) -> Dict[str, Any]:
             ''', (student_id,))
             payment_count, total_paid = cursor.fetchone()
 
-            # Get total refunds
+            # Get total refunds from unified_refunds
             cursor.execute('''
-            SELECT COUNT(*), COALESCE(SUM(refund_amount), 0)
-            FROM refunds
-            WHERE student_id = ? AND status = 'processed'
+            SELECT COUNT(*), COALESCE(SUM(amount), 0)
+            FROM unified_refunds
+            WHERE student_id = ? AND status IN ('processed', 'approved', 'completed')
             ''', (student_id,))
             refund_count, total_refunded = cursor.fetchone()
 
@@ -661,9 +681,9 @@ def send_payment_receipt_email(
 
 This is a confirmation of your recent payment from your Student Finance Account.
 
-═══════════════════════════════════════════════════════
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
                     PAYMENT RECEIPT
-═══════════════════════════════════════════════════════
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 Transaction Details:
 --------------------
@@ -672,15 +692,15 @@ Date & Time:        {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 Source:             {transaction_source}
 Description:        {description}
 
-Payment Amount:     £{amount:.2f}
+Payment Amount:     \u00a3{amount:.2f}
 
 Account Summary:
 ----------------
-Previous Balance:   £{balance_before:.2f}
-Payment Amount:     -£{amount:.2f}
-Current Balance:    £{balance_after:.2f}
+Previous Balance:   \u00a3{balance_before:.2f}
+Payment Amount:     -\u00a3{amount:.2f}
+Current Balance:    \u00a3{balance_after:.2f}
 
-═══════════════════════════════════════════════════════
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 If you did not make this payment or have any questions, please contact the Finance Office immediately.
 
@@ -748,30 +768,30 @@ def send_topup_confirmation_email(
 
 Your Student Finance Account has been successfully topped up.
 
-═══════════════════════════════════════════════════════
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
               ACCOUNT TOP-UP CONFIRMATION
-═══════════════════════════════════════════════════════
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 Top-Up Details:
 ---------------
 Date & Time:        {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 Payment Method:     {payment_method.replace('_', ' ').title()}
-Amount Added:       £{amount:.2f}
+Amount Added:       \u00a3{amount:.2f}
 
 Account Summary:
 ----------------
-Previous Balance:   £{balance_before:.2f}
-Amount Added:       +£{amount:.2f}
-═══════════════════════════════════════════════════════
-NEW BALANCE:        £{balance_after:.2f}
-═══════════════════════════════════════════════════════
+Previous Balance:   \u00a3{balance_before:.2f}
+Amount Added:       +\u00a3{amount:.2f}
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+NEW BALANCE:        \u00a3{balance_after:.2f}
+\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 
 Your funds are now available for use at:
-• Campus Shop
-• University Restaurant & Dining
-• Library (fines & printing)
-• Student Union activities
-• Housing payments
+\u2022 Campus Shop
+\u2022 University Restaurant & Dining
+\u2022 Library (fines & printing)
+\u2022 Student Union activities
+\u2022 Housing payments
 
 If you did not authorize this top-up, please contact the Finance Office immediately.
 
@@ -784,7 +804,7 @@ This is an automated confirmation. Please do not reply to this email.
 
             result = send_email(student_email, subject, body)
             if result:
-                logger.info(f"Top-up confirmation email sent to {student_email} for £{amount:.2f}")
+                logger.info(f"Top-up confirmation email sent to {student_email} for \u00a3{amount:.2f}")
                 return True
             else:
                 logger.warning(f"Failed to send top-up confirmation email to {student_email}")
@@ -829,8 +849,8 @@ def send_low_balance_email(student_id: str, current_balance: float, threshold: f
 
 This is an automated notification to inform you that your Student Finance Account balance is running low.
 
-Current Balance: £{current_balance:.2f}
-Low Balance Threshold: £{threshold:.2f}
+Current Balance: \u00a3{current_balance:.2f}
+Low Balance Threshold: \u00a3{threshold:.2f}
 
 We recommend topping up your account to ensure uninterrupted access to university services including:
 - Campus shop purchases
@@ -936,7 +956,7 @@ def process_student_finance_account_payment(
 
             # Check sufficient balance
             if check_balance and current_balance < amount:
-                result['message'] = f"Insufficient balance. Current: £{current_balance:.2f}, Required: £{amount:.2f}"
+                result['message'] = f"Insufficient balance. Current: \u00a3{current_balance:.2f}, Required: \u00a3{amount:.2f}"
                 return result
 
             # Calculate new balance
@@ -949,15 +969,15 @@ def process_student_finance_account_payment(
                 WHERE student_id = ?
             ''', (new_balance, student_id))
 
-            # Record transaction in student_finance_transactions
+            # Record transaction in transactions table
             transaction_id = f"{transaction_source}_{transaction_ref}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
             payment_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
             cursor.execute('''
-                INSERT INTO student_finance_transactions
-                (account_id, student_id, transaction_type, amount, balance_before, balance_after,
+                INSERT INTO transactions
+                (source_type, account_id, student_id, transaction_type, amount, balance_before, balance_after,
                  description, processed_by)
-                VALUES (?, ?, 'payment', ?, ?, ?, ?, ?)
+                VALUES ('student_finance', ?, ?, 'payment', ?, ?, ?, ?, ?)
             ''', (account_id, student_id, amount, current_balance, new_balance,
                   f"[{transaction_source}] {description}", processed_by))
 
@@ -971,11 +991,11 @@ def process_student_finance_account_payment(
                   f"[{transaction_source}] {description}", processed_by, payment_date))
 
         result['success'] = True
-        result['message'] = f"Payment of £{amount:.2f} processed successfully"
+        result['message'] = f"Payment of \u00a3{amount:.2f} processed successfully"
         result['new_balance'] = new_balance
         result['transaction_id'] = transaction_id
 
-        logger.info(f"Finance account payment: {student_id} - £{amount:.2f} for {transaction_source} (Ref: {transaction_ref})")
+        logger.info(f"Finance account payment: {student_id} - \u00a3{amount:.2f} for {transaction_source} (Ref: {transaction_ref})")
 
         # Send payment receipt email
         result['receipt_sent'] = send_payment_receipt_email(
@@ -1063,17 +1083,17 @@ def top_up_student_finance_account(
             # Record transaction
             desc = description or f'Top up via {payment_method}'
             cursor.execute('''
-                INSERT INTO student_finance_transactions
-                (account_id, student_id, transaction_type, amount, balance_before, balance_after,
+                INSERT INTO transactions
+                (source_type, account_id, student_id, transaction_type, amount, balance_before, balance_after,
                  description, processed_by)
-                VALUES (?, ?, 'top_up', ?, ?, ?, ?, ?)
+                VALUES ('student_finance', ?, ?, 'top_up', ?, ?, ?, ?, ?)
             ''', (account_id, student_id, amount, current_balance, new_balance, desc, processed_by))
 
         result['success'] = True
-        result['message'] = f"Account topped up with £{amount:.2f}"
+        result['message'] = f"Account topped up with \u00a3{amount:.2f}"
         result['new_balance'] = new_balance
 
-        logger.info(f"Finance account top-up: {student_id} - £{amount:.2f} via {payment_method}")
+        logger.info(f"Finance account top-up: {student_id} - \u00a3{amount:.2f} via {payment_method}")
 
         # Send top-up confirmation email
         result['email_sent'] = send_topup_confirmation_email(

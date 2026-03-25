@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, Toplevel
 from tkinter.scrolledtext import ScrolledText
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
 init_i18n()
@@ -99,7 +100,6 @@ except ImportError:
 
 # Import academic system launchers
 try:
-    from education_system.university_system.modules.domain.academics.services.lms.lms_core import launch_lms_gui
     from education_system.university_system.modules.domain.academics.services.degree_audit.degree_audit_core import launch_degree_audit_gui
     from education_system.university_system.modules.domain.academics.services.evaluation.course_evaluation_core import launch_course_evaluation_gui
     ACADEMIC_SYSTEMS_AVAILABLE = True
@@ -147,7 +147,7 @@ def apply_search_results(self, search_criteria):
             elif value and (isinstance(value, str) and value.strip()):
                 if field == "keyword":
                     query += " AND (course_code LIKE ? OR course_name LIKE ? OR description LIKE ?)"
-                    search_param = f"%{value}%"
+                    search_param = f"%{escape_like(value)}%"
                     params.extend([search_param, search_param, search_param])
                 elif field == "min_credits":
                     query += " AND credit_hours >= ?"
@@ -157,15 +157,17 @@ def apply_search_results(self, search_criteria):
                     params.append(float(value))
                 elif field not in ["available_only"]:
                     query += f" AND {field} LIKE ?"
-                    params.append(f"%{value}%")
+                    params.append(f"%{escape_like(value)}%")
         
         query += " ORDER BY course_code"
         
         conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-        cursor = conn.cursor()
-        cursor.execute(query, params)
-        courses = cursor.fetchall()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(query, params)
+            courses = cursor.fetchall()
+        finally:
+            conn.close()
         
         # Populate results
         for course in courses:
@@ -401,16 +403,16 @@ class AdvancedCourseSearchDialog:
                 search_in = self.search_in_var.get()
                 if search_in == "all":
                     conditions.append("(course_code LIKE ? OR course_name LIKE ? OR description LIKE ?)")
-                    params.extend([f"%{keyword}%", f"%{keyword}%", f"%{keyword}%"])
+                    params.extend([f"%{escape_like(keyword)}%", f"%{escape_like(keyword)}%", f"%{escape_like(keyword)}%"])
                 elif search_in == "name":
                     conditions.append("course_name LIKE ?")
-                    params.append(f"%{keyword}%")
+                    params.append(f"%{escape_like(keyword)}%")
                 elif search_in == "description":
                     conditions.append("description LIKE ?")
-                    params.append(f"%{keyword}%")
+                    params.append(f"%{escape_like(keyword)}%")
                 elif search_in == "code":
                     conditions.append("course_code LIKE ?")
-                    params.append(f"%{keyword}%")
+                    params.append(f"%{escape_like(keyword)}%")
             
             # Quick filters
             if self.only_active.get():
@@ -585,15 +587,16 @@ class AdvancedSearchDialog:
     def __init__(self, parent):
         self.parent = parent
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Advanced Search")
         self.dialog.geometry("500x400")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         self.create_widgets()
         self.dialog.focus_set()
+        self.dialog.wait_window()
     
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)

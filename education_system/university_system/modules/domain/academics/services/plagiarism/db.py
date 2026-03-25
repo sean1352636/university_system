@@ -3,7 +3,7 @@ from education_system.university_system.modules.shared.constants.paths import DE
 from education_system.university_system.utils.logging.log_config import configure_logging
 from contextlib import contextmanager
 
-from .exceptions import DatabaseError
+from education_system.university_system.modules.domain.academics.services.plagiarism.exceptions import DatabaseError
 
 logger = configure_logging(name=__name__)
 

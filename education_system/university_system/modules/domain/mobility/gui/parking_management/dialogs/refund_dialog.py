@@ -67,15 +67,16 @@ class RefundDialog:
             try:
                 from education_system.university_system.modules.shared.utils.finance_integration import get_student_finance_account_balance
                 current_balance = get_student_finance_account_balance(student_id)
-                new_balance = current_balance + float(self.payment_data[2])
+                if current_balance is not None:
+                    new_balance = current_balance + float(self.payment_data[2])
 
-                balance_frame = ttk.Frame(method_frame)
-                balance_frame.pack(fill=tk.X, pady=(0, 10))
+                    balance_frame = ttk.Frame(method_frame)
+                    balance_frame.pack(fill=tk.X, pady=(0, 10))
 
-                ttk.Label(balance_frame, text=f"Current Student Account Balance: ${current_balance:.2f}",
-                         foreground='blue', font=('Arial', 10)).pack()
-                ttk.Label(balance_frame, text=f"New Balance After Refund: ${new_balance:.2f}",
-                         foreground='green', font=('Arial', 10)).pack()
+                    ttk.Label(balance_frame, text=f"Current Student Account Balance: ${current_balance:.2f}",
+                             foreground='blue', font=('Arial', 10)).pack()
+                    ttk.Label(balance_frame, text=f"New Balance After Refund: ${new_balance:.2f}",
+                             foreground='green', font=('Arial', 10)).pack()
             except Exception as e:
                 logging.warning(f"Could not get student balance: {e}")
 

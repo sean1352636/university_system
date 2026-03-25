@@ -1,12 +1,12 @@
 from typing import Dict, Optional
-from .config import CalendarConfig
+from education_system.university_system.modules.domain.academics.services.academic_calendar.config import CalendarConfig
 
 
 # Factory function for easy setup
 def create_calendar_manager(db_file: str = None,
                           config_overrides: Optional[Dict] = None):
     """Factory function to create a properly configured calendar manager"""
-    from .calendar_core import AcademicCalendarManager
+    from education_system.university_system.modules.domain.academics.services.academic_calendar.calendar_core import AcademicCalendarManager
 
     # Create configuration
     config = CalendarConfig()

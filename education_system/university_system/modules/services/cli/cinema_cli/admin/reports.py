@@ -4,7 +4,7 @@ import logging
 
 from education_system.university_system.infrastructure.database.db import get_connection
 
-from ..utils import print_subheader
+from education_system.university_system.modules.services.cli.cinema_cli.utils import print_subheader
 
 logger = logging.getLogger(__name__)
 

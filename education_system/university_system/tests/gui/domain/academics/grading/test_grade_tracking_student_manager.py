@@ -49,7 +49,7 @@ def mock_app(mock_root, mock_auth, mock_conn):
 @pytest.fixture
 def student_manager(mock_app):
     """Create StudentManager instance with mocked dependencies"""
-    with patch('university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection', return_value=mock_app.conn):
+    with patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection', return_value=mock_app.conn):
         from education_system.university_system.modules.domain.academics.gui.grade_tracking.student_manager import StudentManager
         manager = StudentManager(mock_app)
         return manager
@@ -59,7 +59,7 @@ class TestStudentManagerInitialization:
 
     def test_initialization_with_valid_app(self, mock_app):
         """Test initialization with valid app object"""
-        with patch('university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection', return_value=mock_app.conn):
+        with patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection', return_value=mock_app.conn):
             from education_system.university_system.modules.domain.academics.gui.grade_tracking.student_manager import StudentManager
             manager = StudentManager(mock_app)
 
@@ -85,7 +85,7 @@ class TestDatabaseOperations:
         """Test get_cursor creates new connection when needed"""
         mock_app.conn = None
 
-        with patch('university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection') as mock_get_conn:
+        with patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection') as mock_get_conn:
             new_conn = Mock(spec=sqlite3.Connection)
             new_cursor = Mock(spec=sqlite3.Cursor)
             new_conn.cursor.return_value = new_cursor
@@ -97,7 +97,7 @@ class TestDatabaseOperations:
 
             assert cursor is not None
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection')
     def test_refresh_students(self, mock_get_conn, student_manager, mock_conn):
         """Test refresh students functionality"""
         cursor = Mock()
@@ -121,7 +121,7 @@ class TestDatabaseOperations:
 class TestStudentSearch:
     """Test student search functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection')
     def test_search_students_with_term(self, mock_get_conn, student_manager, mock_conn):
         """Test searching students with search term"""
         cursor = Mock()
@@ -143,7 +143,7 @@ class TestStudentSearch:
         # Verify search query was executed
         cursor.execute.assert_called_once()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection')
     def test_search_students_empty_term(self, mock_get_conn, student_manager, mock_conn):
         """Test searching students with empty search term"""
         cursor = Mock()
@@ -166,10 +166,10 @@ class TestStudentSearch:
 class TestImportExport:
     """Test import and export functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.student_manager.filedialog')
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.student_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.student_manager.filedialog')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.student_manager.messagebox')
     @patch('builtins.open', create=True)
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection')
     def test_import_students_success(self, mock_get_conn, mock_open_func, mock_msgbox, mock_filedialog, student_manager, mock_conn):
         """Test successful student import"""
         mock_filedialog.askopenfilename.return_value = '/path/to/students.csv'
@@ -193,10 +193,10 @@ class TestImportExport:
         # For now, we'll just test that the file dialog is called
         assert mock_filedialog is not None
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.student_manager.filedialog')
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.student_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.student_manager.filedialog')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.student_manager.messagebox')
     @patch('builtins.open', create=True)
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection')
     def test_export_students_success(self, mock_get_conn, mock_open_func, mock_msgbox, mock_filedialog, student_manager, mock_conn):
         """Test successful student export"""
         mock_filedialog.asksaveasfilename.return_value = '/path/to/export.csv'
@@ -221,8 +221,8 @@ class TestImportExport:
 class TestReportGeneration:
     """Test report generation functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection')
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.student_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.student_manager.messagebox')
     def test_generate_student_progress_report(self, mock_msgbox, mock_get_conn, student_manager, mock_conn):
         """Test student progress report generation"""
         cursor = Mock()
@@ -240,8 +240,8 @@ class TestReportGeneration:
         # Verify database queries were executed
         assert cursor.execute.called
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection')
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.student_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.student_manager.messagebox')
     def test_generate_at_risk_report(self, mock_msgbox, mock_get_conn, student_manager, mock_conn):
         """Test at-risk students report generation"""
         cursor = Mock()
@@ -295,7 +295,7 @@ class TestFilterFunctionality:
 class TestHelperFunctions:
     """Test helper functions"""
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection')
     def test_init_basic_database(self, mock_get_conn, mock_conn):
         """Test basic database initialization"""
         from education_system.university_system.modules.domain.academics.gui.grade_tracking.student_manager import init_basic_database
@@ -309,7 +309,7 @@ class TestHelperFunctions:
         assert result is True
         assert cursor.execute.called
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.student_manager.get_connection')
     def test_init_enhanced_grades_db(self, mock_get_conn, mock_conn):
         """Test enhanced grades database initialization"""
         from education_system.university_system.modules.domain.academics.gui.grade_tracking.student_manager import init_enhanced_grades_db

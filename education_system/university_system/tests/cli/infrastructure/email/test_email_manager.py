@@ -118,7 +118,7 @@ class TestDisplayChatRoomsMenu:
         # Should not raise error
         display_chat_rooms_menu('arg1', 'arg2', key='value')
 
-    @patch('university_system.infrastructure.email.email_manager.logger')
+    @patch('education_system.university_system.infrastructure.email.email_manager.logger')
     def test_display_chat_rooms_menu_logging(self, mock_logger):
         """Test that menu display is logged"""
         from education_system.university_system.infrastructure.email.email_manager import display_chat_rooms_menu
@@ -459,7 +459,7 @@ class TestGetQueuedEmails:
         assert emails[1]['subject'] == 'Test 8'
         assert emails[2]['subject'] == 'Test 9'
 
-    @patch('university_system.infrastructure.email.email_manager.logger')
+    @patch('education_system.university_system.infrastructure.email.email_manager.logger')
     def test_get_queued_emails_logging(self, mock_logger, reset_email_queue):
         """Test that retrieval is logged"""
         from education_system.university_system.infrastructure.email.email_manager import (
@@ -504,7 +504,7 @@ class TestClearEmailQueue:
         assert count == 5
         assert len(_email_queue) == 0
 
-    @patch('university_system.infrastructure.email.email_manager.logger')
+    @patch('education_system.university_system.infrastructure.email.email_manager.logger')
     def test_clear_queue_logging(self, mock_logger, reset_email_queue):
         """Test that clearing is logged"""
         from education_system.university_system.infrastructure.email.email_manager import (

@@ -1,3 +1,4 @@
+from education_system.university_system.core.sql_safety import escape_like
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext, simpledialog
 import threading
@@ -16,8 +17,8 @@ from education_system.university_system.modules.shared.utils.gui_language_select
     show_gui_language_selector,
 )
 
-from .config import GuiConfig
-from .common import (
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.config import GuiConfig
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.common import (
     logger,
     get_authenticated_user_auth,
     download_nltk_data,
@@ -31,19 +32,19 @@ from .common import (
     SetupTestingDialog,
     get_safe_db_connection,
 )
-from .dialogs.submission import DocumentSubmissionDialog
-from .dialogs.check import PlagiarismCheckDialog
-from .dialogs.search import RepositorySearchDialog
-from .dialogs.advanced_search import AdvancedRepositorySearchDialog
-from .dialogs.bulk_operations import BulkOperationsDialog
-from .dialogs.system_testing import SystemTestingDialog
-from .dialogs.comparison import DocumentComparisonDialog
-from .dialogs.converter import FileFormatConverterDialog
-from .dialogs.backup_restore import BackupRestoreDialog
-from .dialogs.workflow import DocumentWorkflowDialog
-from .dialogs.results import CheckResultDialog, ResultDetailsDialog
-from .dialogs.statistics import StatisticsDialog
-from .dialogs.document_details import DocumentDetailsDialog
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.dialogs.submission import DocumentSubmissionDialog
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.dialogs.check import PlagiarismCheckDialog
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.dialogs.search import RepositorySearchDialog
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.dialogs.advanced_search import AdvancedRepositorySearchDialog
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.dialogs.bulk_operations import BulkOperationsDialog
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.dialogs.system_testing import SystemTestingDialog
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.dialogs.comparison import DocumentComparisonDialog
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.dialogs.converter import FileFormatConverterDialog
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.dialogs.backup_restore import BackupRestoreDialog
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.dialogs.workflow import DocumentWorkflowDialog
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.dialogs.results import CheckResultDialog, ResultDetailsDialog
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.dialogs.statistics import StatisticsDialog
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.dialogs.document_details import DocumentDetailsDialog
 
 try:
     import textract
@@ -781,7 +782,7 @@ class PlagiarismCheckerGUI:
                 FROM users
                 WHERE first_name LIKE ? OR last_name LIKE ?
                 ORDER BY last_name, first_name
-                ''', (f"%{author_name}%", f"%{author_name}%"))
+                ''', (f"%{escape_like(author_name)}%", f"%{escape_like(author_name)}%"))
 
                 authors = cursor.fetchall()
 
@@ -848,7 +849,7 @@ class PlagiarismCheckerGUI:
                 FROM modules
                 WHERE module_code LIKE ? OR module_name LIKE ?
                 ORDER BY module_code
-                ''', (f"%{module_name}%", f"%{module_name}%"))
+                ''', (f"%{escape_like(module_name)}%", f"%{escape_like(module_name)}%"))
 
                 modules = cursor.fetchall()
 

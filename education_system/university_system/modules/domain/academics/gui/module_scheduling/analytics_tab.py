@@ -61,7 +61,7 @@ except ImportError:
     except Exception:
         class ModuleScheduler: pass
 
-from .main_gui import ModuleSchedulingGUI
+from education_system.university_system.modules.domain.academics.gui.module_scheduling.main_gui import ModuleSchedulingGUI
 
 def create_analytics_tab(self):
     """Create the analytics and reporting tab"""
@@ -142,7 +142,7 @@ def show_room_utilization(self):
         self.update_activity_log("Generated room utilization report")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate room utilization report: {str(e)}")
+        messagebox.showerror("Error", f"Failed to generate room utilization report: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.show_room_utilization = show_room_utilization
 
@@ -193,7 +193,7 @@ def show_instructor_workload(self):
         self.update_activity_log("Generated instructor workload report")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate instructor workload report: {str(e)}")
+        messagebox.showerror("Error", f"Failed to generate instructor workload report: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.show_instructor_workload = show_instructor_workload
 
@@ -237,7 +237,7 @@ def show_peak_usage(self):
         self.update_activity_log("Generated peak usage analysis")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate peak usage analysis: {str(e)}")
+        messagebox.showerror("Error", f"Failed to generate peak usage analysis: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.show_peak_usage = show_peak_usage
 
@@ -266,17 +266,17 @@ def generate_charts(self):
             )
 
             # Ask if user wants to open charts
-            if messagebox.askyesno("Open Charts", f"Charts generated successfully!\n\nPath: {chart_path}\n\nWould you like to open the charts?"):
+            if messagebox.askyesno("Open Charts", f"Charts generated successfully!\n\nPath: {chart_path}\n\nWould you like to open the charts?", parent=self.root):
                 webbrowser.open(f"file://{os.path.abspath(chart_path)}")
 
             self.update_activity_log("Generated utilization charts")
         else:
-            messagebox.showinfo("Info", "Charts generated. Check the analytics folder.")
+            messagebox.showinfo("Info", "Charts generated. Check the analytics folder.", parent=self.root)
 
         self.update_status("Ready")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate charts: {str(e)}")
+        messagebox.showerror("Error", f"Failed to generate charts: {str(e)}", parent=self.root)
         self.update_status("Ready")
 
 ModuleSchedulingGUI.generate_charts = generate_charts
@@ -305,7 +305,7 @@ def generate_room_utilization_report(self):
         room_data = cursor.fetchall()
 
     if not room_data:
-        messagebox.showinfo("No Data", "No room data available.")
+        messagebox.showinfo("No Data", "No room data available.", parent=self.root)
         return
 
     # Calculate utilization metrics
@@ -690,7 +690,7 @@ This email was automatically sent from the Module Scheduling GUI Management tab.
 
             messagebox.showinfo("Reports Generated & Emailed",
                               f"✅ Reports generated and automatically emailed to {admin_email}\n\n"
-                              f"A detailed report window has also been opened for your review.")
+                              f"A detailed report window has also been opened for your review.", parent=self.root)
 
             self.update_activity_log(f"Generated comprehensive reports and emailed to {admin_email}")
 
@@ -698,13 +698,13 @@ This email was automatically sent from the Module Scheduling GUI Management tab.
             print(f"Note: Could not auto-send email: {email_error}")
             messagebox.showinfo("Reports Generated",
                               "Reports generated successfully!\n\n"
-                              "Note: Automatic email failed. You can send manually from the report window.")
+                              "Note: Automatic email failed. You can send manually from the report window.", parent=self.root)
             self.update_activity_log("Generated comprehensive reports")
 
         self.update_status("Ready")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate reports: {str(e)}")
+        messagebox.showerror("Error", f"Failed to generate reports: {str(e)}", parent=self.root)
         self.update_status("Ready")
 
 ModuleSchedulingGUI.generate_reports = generate_reports
@@ -789,11 +789,11 @@ def _show_report_with_email_option(self, report_title, report_text, report_type=
                               command=select_admin).pack(pady=10)
                 else:
                     email_var.set(admins[0][1])
-                    messagebox.showinfo("Admin Email", f"Using admin email: {admins[0][1]}")
+                    messagebox.showinfo("Admin Email", f"Using admin email: {admins[0][1]}", parent=self.root)
             else:
-                messagebox.showwarning("No Admins", "No admin users found in database.")
+                messagebox.showwarning("No Admins", "No admin users found in database.", parent=self.root)
         except Exception as e:
-            messagebox.showerror("Database Error", f"Could not fetch admin emails: {str(e)}")
+            messagebox.showerror("Database Error", f"Could not fetch admin emails: {str(e)}", parent=self.root)
 
     ttk.Button(email_input_frame, text="🔄", command=refresh_admin_email, width=3).pack(side=tk.LEFT)
 
@@ -803,7 +803,7 @@ def _show_report_with_email_option(self, report_title, report_text, report_type=
             recipient_email = email_var.get().strip()
 
             if not recipient_email or '@' not in recipient_email:
-                messagebox.showwarning("Invalid Email", "Please enter a valid admin email address.")
+                messagebox.showwarning("Invalid Email", "Please enter a valid admin email address.", parent=self.root)
                 return
 
             # Render email from template
@@ -848,13 +848,13 @@ This email was sent from the Module Scheduling GUI.
 
             messagebox.showinfo("Email Sent",
                               f"✅ Report sent successfully to {recipient_email}\n\n"
-                              f"Report: {report_title}")
+                              f"Report: {report_title}", parent=self.root)
             self.update_activity_log(f"Emailed {report_type} report to {recipient_email}")
 
         except Exception as e:
             messagebox.showerror("Email Error",
                                f"Failed to send email: {str(e)}\n\n"
-                               f"Please check email configuration.")
+                               f"Please check email configuration.", parent=self.root)
             print(f"Email error: {str(e)}")
 
     # Buttons

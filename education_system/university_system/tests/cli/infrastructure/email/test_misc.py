@@ -28,7 +28,7 @@ class TestDebugFunctionDefinition:
         # Should have called print multiple times
         assert mock_print.call_count > 0
 
-    @patch('university_system.infrastructure.email.email_manager.display_chat_rooms_menu')
+    @patch('education_system.university_system.infrastructure.email.email_manager.display_chat_rooms_menu')
     def test_debug_checks_function_exists(self, mock_function):
         """Test that debug checks for function existence"""
         with patch('builtins.print'):

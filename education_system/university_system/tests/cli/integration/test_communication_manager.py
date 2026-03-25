@@ -165,7 +165,7 @@ class TestCommunicationManagerInit:
 
     def test_initialization_with_default_path(self):
         """Test initialization with default database path."""
-        with patch('university_system.modules.shared.services.communication.communication_manager.DEFAULT_DB_PATH', '/tmp/test.db'):
+        with patch('education_system.university_system.modules.shared.services.communication.communication_manager.DEFAULT_DB_PATH', '/tmp/test.db'):
             manager = CommunicationManager()
             assert manager.db_path is not None
 

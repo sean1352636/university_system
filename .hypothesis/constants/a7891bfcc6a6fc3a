@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/batch_operations/mixins/duplicates.py
+# hypothesis_version: 6.151.9
+
+[0.0, 0.7, 10.0, 30.0, 40.0, 100.0, 100, 'Active', 'GENERAL', 'address', 'attendance', 'confidence', 'course', 'date_of_birth', 'dob', 'email', 'email_address', 'enrollment_date', 'enrollments', 'error', 'existing_record', 'first_name', 'grades', 'id', 'import_record', 'last_name', 'match_type', 'name', 'overwrite', 'phone_number', 'skip', 'status', 'student1', 'student2', 'student_id', 'student_modules', 'update']

@@ -22,7 +22,7 @@ from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 
 from education_system.university_system.infrastructure.database import data_backup
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 @pytest.fixture
 def temp_db():
@@ -266,7 +266,7 @@ class TestDatabaseOperations:
     def test_get_database_tables(self, temp_db):
         """Test getting list of database tables."""
         # Temporarily set the default path
-        with patch('university_system.infrastructure.database.data_backup.operations.get_connection') as mock_conn:
+        with patch('education_system.university_system.infrastructure.database.data_backup.operations.get_connection') as mock_conn:
             mock_connection = MagicMock()
             mock_cursor = MagicMock()
             mock_cursor.fetchall.return_value = [('students',), ('courses',)]
@@ -294,7 +294,7 @@ class TestDatabaseOperations:
         """Test creating backup of selected tables."""
         backup_path = os.path.join(temp_backup_dir, "selective_backup.db")
 
-        with patch('university_system.infrastructure.database.data_backup.operations.get_connection') as mock_conn:
+        with patch('education_system.university_system.infrastructure.database.data_backup.operations.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
             result = data_backup.create_selective_backup(['students'], backup_path)
@@ -315,7 +315,7 @@ class TestDatabaseOperations:
         """Test creating schema-only backup."""
         backup_path = os.path.join(temp_backup_dir, "schema_backup.db")
 
-        with patch('university_system.infrastructure.database.data_backup.operations.get_connection') as mock_conn:
+        with patch('education_system.university_system.infrastructure.database.data_backup.operations.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
             result = data_backup.create_schema_only_backup(backup_path)
@@ -335,12 +335,12 @@ class TestDatabaseOperations:
 class TestBackupCreation:
     """Test backup creation functions."""
 
-    @patch('university_system.infrastructure.database.data_backup.operations.DEFAULT_DB_PATH')
+    @patch('education_system.university_system.infrastructure.database.data_backup.operations.DEFAULT_DB_PATH')
     def test_create_manual_backup(self, mock_path, temp_db, temp_backup_dir):
         """Test creating a manual backup."""
         mock_path.return_value = temp_db
 
-        with patch('university_system.infrastructure.database.data_backup.operations.ensure_backup_directory') as mock_dir:
+        with patch('education_system.university_system.infrastructure.database.data_backup.operations.ensure_backup_directory') as mock_dir:
             mock_dir.return_value = Path(temp_backup_dir)
 
             backup_path = data_backup.create_enhanced_backup(manual=True)
@@ -468,7 +468,7 @@ class TestBackupConfiguration:
         original_dir = data_backup.config.get("backup_directory")
         data_backup.config["backup_directory"] = temp_backup_dir
 
-        with patch('university_system.infrastructure.database.data_backup.config.DATA_DIR', Path(temp_backup_dir)):
+        with patch('education_system.university_system.infrastructure.database.data_backup.config.DATA_DIR', Path(temp_backup_dir)):
             data_backup.save_config()
 
             config_file = Path(temp_backup_dir) / "backup_config.json"
@@ -508,7 +508,7 @@ class TestBackupTemplates:
 class TestNotifications:
     """Test notification functions."""
 
-    @patch('university_system.infrastructure.email.smtp.send_email_via_smtp')
+    @patch('education_system.university_system.infrastructure.email.smtp.send_email_via_smtp')
     def test_send_email_notification(self, mock_send):
         """Test sending email notifications."""
         mock_send.return_value = True
@@ -558,7 +558,7 @@ class TestCleanup:
 class TestBackupRestoration:
     """Test backup restoration functions."""
 
-    @patch('university_system.infrastructure.database.data_backup.operations.DEFAULT_DB_PATH')
+    @patch('education_system.university_system.infrastructure.database.data_backup.operations.DEFAULT_DB_PATH')
     def test_restore_from_backup(self, mock_path, temp_db, temp_backup_dir):
         """Test restoring from a backup file."""
         backup_file = os.path.join(temp_backup_dir, "restore_test.db")
@@ -567,7 +567,7 @@ class TestBackupRestoration:
         target_db = os.path.join(temp_backup_dir, "restored.db")
         mock_path.return_value = target_db
 
-        with patch('university_system.infrastructure.database.data_backup.operations.create_enhanced_backup') as mock_backup:
+        with patch('education_system.university_system.infrastructure.database.data_backup.operations.create_enhanced_backup') as mock_backup:
             mock_backup.return_value = None  # Skip creating pre-restore backup
 
             result = data_backup.restore_from_backup(backup_file)

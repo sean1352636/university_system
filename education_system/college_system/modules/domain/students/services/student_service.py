@@ -1,5 +1,7 @@
 """Student management service."""
 
+import json
+import sqlite3
 from datetime import datetime
 
 from education_system.college_system.core.exceptions import StudentError, ValidationError
@@ -9,6 +11,7 @@ from education_system.college_system.infrastructure.validation.validators import
     validate_email, validate_non_empty, validate_student_id,
 )
 
+from education_system.college_system.core.sql_safety import validate_identifier, escape_like
 import logging
 
 logger = logging.getLogger(__name__)
@@ -28,12 +31,10 @@ class StudentService:
         conn = self._conn()
         try:
             row = conn.execute(
-                "SELECT student_id FROM students ORDER BY id DESC LIMIT 1"
+                "SELECT MAX(CAST(REPLACE(student_id, ?, '') AS INTEGER)) AS max_num FROM students",
+                (STUDENT_ID_PREFIX,),
             ).fetchone()
-            if row:
-                num = int(row["student_id"].replace(STUDENT_ID_PREFIX, "")) + 1
-            else:
-                num = 1
+            num = (row["max_num"] or 0) + 1
             return f"{STUDENT_ID_PREFIX}{num:04d}"
         finally:
             conn.close()
@@ -108,7 +109,8 @@ class StudentService:
             params.append(form_group)
         if search:
             sql += " AND (first_name LIKE ? OR last_name LIKE ? OR student_id LIKE ?)"
-            term = f"%{search}%"
+            escaped = escape_like(search)
+            term = f"%{escaped}%"
             params.extend([term, term, term])
 
         sql += " ORDER BY student_id LIMIT ? OFFSET ?"
@@ -136,7 +138,7 @@ class StudentService:
 
         updates["updated_at"] = datetime.utcnow().isoformat()
 
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [student_pk]
 
         conn = self._conn()
@@ -224,16 +226,217 @@ class StudentService:
         finally:
             conn.close()
 
-    def count_students(self, status: str | None = None) -> int:
-        """Count total students, optionally filtered by status."""
+    def count_students(self, status: str | None = None,
+                       search: str | None = None) -> int:
+        """Count total students, optionally filtered by status and/or search term."""
+        sql = "SELECT COUNT(*) as cnt FROM students WHERE 1=1"
+        params: list = []
+        if status:
+            sql += " AND status = ?"
+            params.append(status)
+        if search:
+            sql += " AND (first_name LIKE ? OR last_name LIKE ? OR student_id LIKE ?)"
+            escaped = escape_like(search)
+            term = f"%{escaped}%"
+            params.extend([term, term, term])
         conn = self._conn()
         try:
-            if status:
-                row = conn.execute(
-                    "SELECT COUNT(*) as cnt FROM students WHERE status = ?", (status,)
-                ).fetchone()
-            else:
-                row = conn.execute("SELECT COUNT(*) as cnt FROM students").fetchone()
+            row = conn.execute(sql, params).fetchone()
             return row["cnt"]
         finally:
             conn.close()
+
+    # ------------------------------------------------------------------
+    # Cross-system transfer helpers
+    # ------------------------------------------------------------------
+
+    def fetch_secondary_students(self, secondary_db_path: str) -> list[dict]:
+        """Fetch active students from the secondary school database.
+
+        Returns a list of dicts with student info suitable for import selection.
+        """
+        conn = sqlite3.connect(str(secondary_db_path))
+        try:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                "SELECT id, student_id, first_name, last_name, date_of_birth, "
+                "address, parent_phone, sen_status "
+                "FROM students WHERE status = 'active' ORDER BY last_name, first_name"
+            ).fetchall()
+            return [dict(r) for r in rows]
+        finally:
+            conn.close()
+
+    def import_from_secondary(self, student_pk: int, imported_data: dict,
+                              secondary_db_path: str) -> None:
+        """Store academic transfer history and set previous_system fields.
+
+        Args:
+            student_pk: The primary key of the newly created college student.
+            imported_data: Dict of the secondary school student record
+                           (must contain 'id' and optionally 'student_id').
+            secondary_db_path: Path to the secondary school database file.
+        """
+        from education_system.shared.transfer.academic_history import extract_secondary_history
+
+        # 1) Extract and store academic history
+        try:
+            history = extract_secondary_history(
+                str(secondary_db_path), imported_data['id']
+            )
+            if history:
+                conn = self._conn()
+                try:
+                    conn.execute(
+                        "INSERT INTO academic_transfer_history "
+                        "(student_id, source_system, data_json, transferred_at) "
+                        "VALUES (?, ?, ?, datetime('now'))",
+                        (student_pk, 'school', json.dumps(history)),
+                    )
+                    conn.commit()
+                finally:
+                    conn.close()
+        except Exception:
+            logger.warning(
+                "Failed to extract/store academic transfer history from secondary school",
+                exc_info=True,
+            )
+
+        # 2) Set previous_system fields on the student record
+        try:
+            conn = self._conn()
+            try:
+                conn.execute(
+                    "UPDATE students SET previous_system = ?, previous_system_id = ? "
+                    "WHERE id = ?",
+                    ('school', imported_data.get('student_id', ''), student_pk),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+        except Exception:
+            logger.warning(
+                "Failed to set previous_system fields on transferred student",
+                exc_info=True,
+            )
+
+    def mark_secondary_as_transferred(self, secondary_student_pk: int,
+                                      secondary_db_path: str) -> None:
+        """Mark a student as 'transferred' in the secondary school database.
+
+        Args:
+            secondary_student_pk: The id (PK) of the student in the secondary DB.
+            secondary_db_path: Path to the secondary school database file.
+        """
+        conn = sqlite3.connect(str(secondary_db_path))
+        try:
+            conn.execute(
+                "UPDATE students SET status = 'transferred' WHERE id = ?",
+                (secondary_student_pk,),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    def notify_transfer(self, student_id: str, imported_data: dict,
+                        auth_info, secondary_db_path: str) -> None:
+        """Send transfer notifications to secondary school admins.
+
+        Sends both a cross-system notification and local notifications/emails
+        in the secondary school database.
+
+        Args:
+            student_id: The new college student ID (e.g. SFC0002).
+            imported_data: Dict of the secondary school student record.
+            auth_info: The auth object or dict for determining the sender.
+            secondary_db_path: Path to the secondary school database file.
+        """
+        imp_name = (
+            f"{imported_data.get('first_name', '')} "
+            f"{imported_data.get('last_name', '')}"
+        )
+        _transfer_title = f"Student Transfer: {imp_name} moved to College"
+        _transfer_msg = (
+            f"Student {imported_data.get('student_id', '')} ({imp_name}) "
+            f"has been transferred from the Secondary School "
+            f"to the College System.\n\n"
+            f"New College Student ID: {student_id}\n"
+            f"The student's secondary school record has been "
+            f"marked as 'transferred'."
+        )
+
+        # Determine sender user id
+        _sender_id = None
+        if auth_info and hasattr(auth_info, 'current_user') and auth_info.current_user:
+            _sender_id = auth_info.current_user.get('user_id')
+
+        # 1) Cross-system notification
+        try:
+            from education_system.shared.notifications.service import (
+                CrossSystemNotificationService,
+            )
+            _xn_svc = CrossSystemNotificationService()
+            _xn_svc.send_to_role(
+                sender_user_id=_sender_id or 0,
+                sender_system='college',
+                target_system='school',
+                target_role='admin',
+                title=_transfer_title,
+                message=_transfer_msg,
+                priority='high',
+            )
+        except Exception:
+            logger.warning(
+                "Failed to send cross-system transfer notification "
+                "to secondary school admins",
+                exc_info=True,
+            )
+
+        # 2) Secondary-local notification + email
+        try:
+            from education_system.shared.auth.db import AUTH_DB_FILE
+            _auth_conn = sqlite3.connect(str(AUTH_DB_FILE))
+            try:
+                _auth_conn.row_factory = sqlite3.Row
+                _admins = _auth_conn.execute(
+                    "SELECT u.username FROM users u "
+                    "JOIN user_systems us ON u.id = us.user_id "
+                    "WHERE us.system_key = 'school' AND us.role = 'admin' "
+                    "AND u.is_active = 1"
+                ).fetchall()
+            finally:
+                _auth_conn.close()
+
+            _sec_conn = sqlite3.connect(str(secondary_db_path))
+            try:
+                _sec_conn.row_factory = sqlite3.Row
+                _admin_ids = []
+                for _admin in _admins:
+                    _local = _sec_conn.execute(
+                        "SELECT id FROM users WHERE username = ?",
+                        (_admin['username'],),
+                    ).fetchone()
+                    if _local:
+                        _admin_ids.append(_local['id'])
+                        _sec_conn.execute(
+                            "INSERT INTO notifications (user_id, title, message) "
+                            "VALUES (?, ?, ?)",
+                            (_local['id'], _transfer_title, _transfer_msg),
+                        )
+                # Also insert into emails table
+                _msg_sender = _admin_ids[0] if _admin_ids else 1
+                for _aid in _admin_ids:
+                    _sec_conn.execute(
+                        "INSERT INTO emails (sender_id, recipient_id, subject, body) "
+                        "VALUES (?, ?, ?, ?)",
+                        (_msg_sender, _aid, _transfer_title, _transfer_msg),
+                    )
+                _sec_conn.commit()
+            finally:
+                _sec_conn.close()
+        except Exception:
+            logger.warning(
+                "Failed to send local notifications/emails "
+                "to secondary school admins",
+                exc_info=True,
+            )

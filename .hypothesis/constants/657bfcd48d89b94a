@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/secondary_school/infrastructure/database/constants.py
+# hypothesis_version: 6.151.9
+
+[100, 5000, '-8000', '1', '10', '11', '2', '3', '4', '5', '6', '7', '8', '9', 'Autumn', 'KS3', 'KS4', 'NORMAL', 'ON', 'Spring', 'Summer', 'U', 'WAL', 'absent', 'achievement', 'authorised_absent', 'bullying', 'busy_timeout', 'cache_size', 'certificate', 'commendation', 'defiance', 'detention', 'disruption', 'effort', 'exclusion', 'foreign_keys', 'homework', 'homework_missing', 'isolation', 'journal_mode', 'kindness', 'late', 'merit', 'negative', 'positive', 'present', 'prize', 'suspension', 'synchronous', 'unauthorised_absent', 'uniform', 'verbal_warning']

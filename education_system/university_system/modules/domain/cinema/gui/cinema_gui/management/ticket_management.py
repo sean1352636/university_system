@@ -4,6 +4,7 @@ Cinema Booking System - Ticket Management
 
 import tkinter as tk
 from tkinter import ttk, messagebox
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import sqlite3
 try:
     from education_system.university_system.modules.shared.utils.i18n import get_text as _t
@@ -11,7 +12,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_ticket_management(self):
     """Display ticket/booking management page."""
@@ -68,33 +69,35 @@ def show_ticket_management(self):
         status = status_var.get()
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        sql = '''
-            SELECT b.id, b.booking_ref, b.customer_name, b.customer_email,
-                   m.title, s.show_time,
-                   (SELECT COUNT(*) FROM booked_seats WHERE booking_id = b.id),
-                   b.total_amount, b.status
-            FROM bookings b
-            JOIN screenings s ON b.screening_id = s.id
-            JOIN movies m ON s.movie_id = m.id
-            WHERE 1=1
-        '''
-        params = []
+            sql = '''
+                SELECT b.id, b.booking_ref, b.customer_name, b.customer_email,
+                       m.title, s.show_time,
+                       (SELECT COUNT(*) FROM booked_seats WHERE booking_id = b.id),
+                       b.total_amount, b.status
+                FROM bookings b
+                JOIN screenings s ON b.screening_id = s.id
+                JOIN movies m ON s.movie_id = m.id
+                WHERE 1=1
+            '''
+            params = []
 
-        if query:
-            sql += " AND (b.booking_ref LIKE ? OR b.customer_name LIKE ? OR b.customer_email LIKE ?)"
-            params.extend([f"%{query}%", f"%{query}%", f"%{query}%"])
+            if query:
+                sql += " AND (b.booking_ref LIKE ? OR b.customer_name LIKE ? OR b.customer_email LIKE ?)"
+                params.extend([f"%{escape_like(query)}%", f"%{escape_like(query)}%", f"%{escape_like(query)}%"])
 
-        if status != "all":
-            sql += " AND b.status = ?"
-            params.append(status)
+            if status != "all":
+                sql += " AND b.status = ?"
+                params.append(status)
 
-        sql += " ORDER BY b.booking_time DESC LIMIT 100"
+            sql += " ORDER BY b.booking_time DESC LIMIT 100"
 
-        cursor.execute(sql, params)
-        tickets = cursor.fetchall()
-        conn.close()
+            cursor.execute(sql, params)
+            tickets = cursor.fetchall()
+        finally:
+            conn.close()
 
         for ticket in tickets:
             self.ticket_tree.insert("", "end", values=(
@@ -151,16 +154,18 @@ def edit_selected_ticket(self):
     booking_id = self.ticket_tree.item(selected[0])['values'][0]
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT b.*, m.title, s.show_time
-        FROM bookings b
-        JOIN screenings s ON b.screening_id = s.id
-        JOIN movies m ON s.movie_id = m.id
-        WHERE b.id = ?
-    ''', (booking_id,))
-    booking = cursor.fetchone()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT b.*, m.title, s.show_time
+            FROM bookings b
+            JOIN screenings s ON b.screening_id = s.id
+            JOIN movies m ON s.movie_id = m.id
+            WHERE b.id = ?
+        ''', (booking_id,))
+        booking = cursor.fetchone()
+    finally:
+        conn.close()
 
     if not booking:
         messagebox.showerror(_t("cinema.common.error"), _t("cinema.messages.errors.booking_not_found"))

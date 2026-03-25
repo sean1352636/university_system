@@ -21,13 +21,13 @@ from education_system.university_system.infrastructure.email.email_manager impor
 from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH, TICKET_TEMPLATES_DIR, UPLOAD_DIR
 from education_system.university_system.utils.logging.log_config import get_log_file
 
-from ..config import (
+from education_system.university_system.modules.domain.student_affairs.services.student_support.config import (
     SUPPORT_DB, TICKET_STATUSES, TICKET_PRIORITIES, SUPPORT_CATEGORIES,
     NotificationType, TicketSentiment, FileType, SupportConfig
 )
-from .. import auth as _auth_mod
-from ..auth import get_current_user_safe, require_auth, has_staff_permissions
-from ..utils.audit import audit_action
+from education_system.university_system.modules.domain.student_affairs.services.student_support import auth as _auth_mod
+from education_system.university_system.modules.domain.student_affairs.services.student_support.auth import get_current_user_safe, require_auth, has_staff_permissions
+from education_system.university_system.modules.domain.student_affairs.services.student_support.utils.audit import audit_action
 
 logger = logging.getLogger(__name__)
 
@@ -390,54 +390,56 @@ def show_template_statistics(support):
         print("="*50)
         
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-        cursor = conn.cursor()
-        
-        # Check if tables exist
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='ticket_templates'")
-        has_ticket_templates = cursor.fetchone() is not None
-        
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='response_templates'")
-        has_response_templates = cursor.fetchone() is not None
-        
-        # Ticket template stats
-        print("🎫 TICKET TEMPLATES:")
-        if has_ticket_templates:
-            cursor.execute('''
-            SELECT name, usage_count, created_datetime 
-            FROM ticket_templates 
-            WHERE is_active = 1 
-            ORDER BY usage_count DESC
-            ''')
-            ticket_templates = cursor.fetchall()
-            
-            if ticket_templates:
-                for name, usage_count, created_date in ticket_templates:
-                    print(f"   📋 {name}: {usage_count} uses (created {created_date})")
+        try:
+            cursor = conn.cursor()
+
+            # Check if tables exist
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='ticket_templates'")
+            has_ticket_templates = cursor.fetchone() is not None
+
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='response_templates'")
+            has_response_templates = cursor.fetchone() is not None
+
+            # Ticket template stats
+            print("🎫 TICKET TEMPLATES:")
+            if has_ticket_templates:
+                cursor.execute('''
+                SELECT name, usage_count, created_datetime 
+                FROM ticket_templates 
+                WHERE is_active = 1 
+                ORDER BY usage_count DESC
+                ''')
+                ticket_templates = cursor.fetchall()
+
+                if ticket_templates:
+                    for name, usage_count, created_date in ticket_templates:
+                        print(f"   📋 {name}: {usage_count} uses (created {created_date})")
+                else:
+                    print("   📭 No ticket templates found.")
             else:
-                print("   📭 No ticket templates found.")
-        else:
-            print("   📭 Ticket templates table not found.")
-        
-        # Response template stats
-        print("\n💬 RESPONSE TEMPLATES:")
-        if has_response_templates:
-            cursor.execute('''
-            SELECT name, usage_count, created_datetime 
-            FROM response_templates 
-            WHERE is_active = 1 
-            ORDER BY usage_count DESC
-            ''')
-            response_templates = cursor.fetchall()
-            
-            if response_templates:
-                for name, usage_count, created_date in response_templates:
-                    print(f"   💬 {name}: {usage_count} uses (created {created_date})")
+                print("   📭 Ticket templates table not found.")
+
+            # Response template stats
+            print("\n💬 RESPONSE TEMPLATES:")
+            if has_response_templates:
+                cursor.execute('''
+                SELECT name, usage_count, created_datetime 
+                FROM response_templates 
+                WHERE is_active = 1 
+                ORDER BY usage_count DESC
+                ''')
+                response_templates = cursor.fetchall()
+
+                if response_templates:
+                    for name, usage_count, created_date in response_templates:
+                        print(f"   💬 {name}: {usage_count} uses (created {created_date})")
+                else:
+                    print("   📭 No response templates found.")
             else:
-                print("   📭 No response templates found.")
-        else:
-            print("   📭 Response templates table not found.")
-        
-        conn.close()
+                print("   📭 Response templates table not found.")
+
+        finally:
+            conn.close()
         
     except Exception as e:
         print(f"❌ Error getting template statistics: {e}")

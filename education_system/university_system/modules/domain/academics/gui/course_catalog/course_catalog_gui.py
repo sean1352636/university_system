@@ -9,6 +9,7 @@ import logging
 import tkinter as tk
 from tkinter import ttk, messagebox
 
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 from education_system.university_system.modules.shared.utils.simple_activity_logger import log_activity
 
@@ -121,17 +122,16 @@ class CourseCatalogGUI:
             with get_connection() as conn:
                 query = (
                     "SELECT m.module_code, m.module_name, m.credits, m.module_type, "
-                    "m.instructor, m.capacity, "
                     "(SELECT COUNT(*) FROM student_modules sm "
                     "  WHERE sm.module_code = m.module_code AND sm.status = 'Enrolled') "
                     "  AS enrolled "
-                    "FROM modules m WHERE m.is_active = 1"
+                    "FROM modules m WHERE 1=1"
                 )
                 params = []
 
                 if search_term:
                     query += " AND (m.module_code LIKE ? OR m.module_name LIKE ?)"
-                    like = f"%{search_term}%"
+                    like = f"%{escape_like(search_term)}%"
                     params.extend([like, like])
 
                 if type_filter and type_filter != 'All':
@@ -158,21 +158,15 @@ class CourseCatalogGUI:
                     name = row['module_name'] or ''
                     credits = row['credits'] or ''
                     mtype = row['module_type'] or ''
-                    instructor = row['instructor'] or ''
-                    capacity = row['capacity'] or 0
                     enrolled = row['enrolled'] or 0
-
-                    enrolled_cap = f"{enrolled}/{capacity}" if capacity else str(enrolled)
 
                     if code in enrolled_set:
                         status = 'Enrolled'
-                    elif capacity and enrolled >= capacity:
-                        status = 'Full'
                     else:
                         status = 'Available'
 
                     self.tree.insert('', tk.END, values=(
-                        code, name, credits, mtype, instructor, enrolled_cap, status,
+                        code, name, credits, mtype, '', str(enrolled), status,
                     ))
                     count += 1
 

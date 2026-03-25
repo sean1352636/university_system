@@ -947,8 +947,8 @@ except Exception as e:
 
 # ── internal logging config ─────────────────────────────────────────────────
 try:
-    from education_system.university_system.utils.logging.config import configure_logging
-    from education_system.university_system.utils.logging.config import get_log_file
+    from education_system.university_system.utils.logging.log_config import configure_logging
+    from education_system.university_system.utils.logging.log_config import get_log_file
 except ImportError:
     # Fallback stubs if logging config not available
     def configure_logging(name=None):

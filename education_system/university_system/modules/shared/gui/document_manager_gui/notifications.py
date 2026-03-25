@@ -664,7 +664,7 @@ class NotificationManager:
                         cursor.execute('''
                             SELECT DISTINCT s.student_id, s.email_address
                             FROM students s
-                            JOIN student_documents sd ON s.student_id = sd.student_id
+                            JOIN documents sd ON s.student_id = sd.owner_id AND sd.source_type = 'student'
                             WHERE sd.expiry_date <= date('now', '+30 days')
                                 AND sd.expiry_date > date('now')
                                 AND s.email_address IS NOT NULL
@@ -673,7 +673,7 @@ class NotificationManager:
                         cursor.execute('''
                             SELECT DISTINCT s.student_id, s.email_address
                             FROM students s
-                            LEFT JOIN student_documents sd ON s.student_id = sd.student_id
+                            LEFT JOIN documents sd ON s.student_id = sd.owner_id AND sd.source_type = 'student'
                             WHERE sd.document_id IS NULL AND s.email_address IS NOT NULL
                         ''')
 

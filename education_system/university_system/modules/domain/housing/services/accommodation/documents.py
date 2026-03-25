@@ -79,10 +79,11 @@ def upload_accommodation_document(accommodation_id):
         with sqlite3.connect(DB_PATH) as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                INSERT INTO accommodation_documents
-                (accommodation_id, document_name, document_path, uploaded_by, uploaded_at)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (accommodation_id, document_name, destination_path, user, now))
+                INSERT INTO documents
+                (source_type, reference_id, reference_type, document_name,
+                 file_path, uploaded_by, upload_date)
+                VALUES ('accommodation', ?, 'accommodation', ?, ?, ?, ?)
+            ''', (str(accommodation_id), document_name, destination_path, user, now))
             conn.commit()
 
         print(get_text("housing.accommodation.success.document_uploaded", "Document uploaded and recorded successfully."))

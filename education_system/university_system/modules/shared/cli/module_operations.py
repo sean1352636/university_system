@@ -4,7 +4,8 @@ Module/Course operations for CLI system.
 Handles course module CRUD operations and management.
 """
 
-from .imports import (
+from education_system.university_system.core.sql_safety import escape_like
+from education_system.university_system.modules.shared.cli.imports import (
     logging, sqlite3, datetime, DB_PATH, logger, _t,
     log_activity, log_create, log_update, log_delete, get_auth
 )
@@ -430,7 +431,7 @@ def search_module_by_module_name():
         cursor.execute('''
         SELECT module_code, module_name FROM modules
         WHERE LOWER(module_name) LIKE LOWER(?)
-        ''', (f"%{module_name}%",))
+        ''', (f"%{escape_like(module_name)}%",))
         
         modules = cursor.fetchall()
         

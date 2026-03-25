@@ -48,7 +48,7 @@ def mock_auth():
 class TestCreateClub:
     """Test club creation functionality."""
 
-    @patch('university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
     @patch('builtins.input', side_effect=['Test Club', 'A test club', 'Academic', 'S123', 'S124', 'S125'])
     def test_create_club_success(self, mock_input, mock_get_conn, mock_auth):
         """Test successfully creating a club."""
@@ -74,7 +74,7 @@ class TestCreateClub:
             # Should print error message
             assert any('empty' in str(call).lower() for call in mock_print.call_args_list)
 
-    @patch('university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
     @patch('builtins.input', side_effect=['Test Club', 'Description', 'Academic', 'S123'])
     def test_create_club_duplicate_name(self, mock_input, mock_get_conn, mock_auth):
         """Test creating club with duplicate name."""
@@ -90,7 +90,7 @@ class TestCreateClub:
             # Should print error message
             assert any('exists' in str(call).lower() for call in mock_print.call_args_list)
 
-    @patch('university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
     @patch('builtins.input', side_effect=['Test Club', 'Description', 'Academic', 'INVALID'])
     def test_create_club_invalid_president(self, mock_input, mock_get_conn, mock_auth):
         """Test creating club with invalid president ID."""
@@ -119,7 +119,7 @@ class TestCreateClub:
 class TestViewClubs:
     """Test club viewing functionality."""
 
-    @patch('university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
     def test_view_clubs_success(self, mock_get_conn, mock_auth):
         """Test successfully viewing clubs."""
         mock_conn = Mock()
@@ -136,7 +136,7 @@ class TestViewClubs:
         mock_cursor.execute.assert_called_once()
         mock_cursor.fetchall.assert_called_once()
 
-    @patch('university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
     def test_view_clubs_empty(self, mock_get_conn, mock_auth):
         """Test viewing clubs when none exist."""
         mock_conn = Mock()
@@ -163,9 +163,9 @@ class TestViewClubs:
 class TestJoinClub:
     """Test club joining functionality."""
 
-    @patch('university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
-    @patch('university_system.modules.domain.student_affairs.student_union.clubs.club_management.view_clubs')
-    @patch('university_system.modules.domain.student_affairs.student_union.clubs.club_management.send_confirmation_email')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management.view_clubs')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management.send_confirmation_email')
     @patch('builtins.input', return_value='1')
     def test_join_club_success(self, mock_input, mock_email, mock_view, mock_get_conn, mock_auth):
         """Test successfully joining a club."""
@@ -186,8 +186,8 @@ class TestJoinClub:
         mock_conn.commit.assert_called_once()
         mock_email.assert_called_once()
 
-    @patch('university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
-    @patch('university_system.modules.domain.student_affairs.student_union.clubs.club_management.view_clubs')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management.view_clubs')
     @patch('builtins.input', return_value='invalid')
     def test_join_club_invalid_id(self, mock_input, mock_view, mock_get_conn, mock_auth):
         """Test joining club with invalid ID."""
@@ -203,8 +203,8 @@ class TestJoinClub:
             # Should print error message
             assert any('invalid' in str(call).lower() for call in mock_print.call_args_list)
 
-    @patch('university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
-    @patch('university_system.modules.domain.student_affairs.student_union.clubs.club_management.view_clubs')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management.view_clubs')
     @patch('builtins.input', return_value='1')
     def test_join_club_already_member(self, mock_input, mock_view, mock_get_conn, mock_auth):
         """Test joining club when already a member."""
@@ -227,7 +227,7 @@ class TestJoinClub:
 class TestViewMyClubs:
     """Test viewing user's clubs."""
 
-    @patch('university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
     def test_view_my_clubs_success(self, mock_get_conn, mock_auth):
         """Test successfully viewing user's clubs."""
         mock_conn = Mock()
@@ -245,7 +245,7 @@ class TestViewMyClubs:
         assert mock_cursor.execute.call_count >= 2
         mock_cursor.fetchall.assert_called_once()
 
-    @patch('university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
     def test_view_my_clubs_empty(self, mock_get_conn, mock_auth):
         """Test viewing clubs when user has none."""
         mock_conn = Mock()
@@ -264,7 +264,7 @@ class TestViewMyClubs:
 class TestManageClub:
     """Test club management functionality."""
 
-    @patch('university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
     @patch('builtins.input', side_effect=['1', '1', '6'])
     def test_manage_club_view_details(self, mock_input, mock_get_conn, mock_auth):
         """Test viewing club details."""
@@ -285,7 +285,7 @@ class TestManageClub:
 
         assert mock_cursor.execute.call_count >= 2
 
-    @patch('university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
     @patch('builtins.input', side_effect=['1', '2', '6'])
     def test_manage_club_view_members(self, mock_input, mock_get_conn, mock_auth):
         """Test viewing club members."""
@@ -304,7 +304,7 @@ class TestManageClub:
 
         assert mock_cursor.execute.call_count >= 3
 
-    @patch('university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
     @patch('builtins.input', side_effect=['1', '3', '1', 'S999', '6'])
     def test_manage_club_add_member(self, mock_input, mock_get_conn, mock_auth):
         """Test adding a club member."""
@@ -340,7 +340,7 @@ class TestAuthSetup:
 class TestEdgeCases:
     """Test edge cases and error handling."""
 
-    @patch('university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection')
     def test_database_error_handling(self, mock_get_conn, mock_auth):
         """Test handling of database errors."""
         mock_conn = Mock()
@@ -357,7 +357,7 @@ class TestEdgeCases:
 
     def test_no_student_record(self, mock_auth):
         """Test handling when user has no student record."""
-        with patch('university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection') as mock_get_conn:
+        with patch('education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management.get_connection') as mock_get_conn:
             mock_conn = Mock()
             mock_cursor = Mock()
             mock_cursor.fetchone.return_value = None

@@ -56,7 +56,7 @@ except (ImportError, ModuleNotFoundError):
     CLI_AVAILABLE = False
 
 # Import navigation functions to be bound to class
-from .navigation import (
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.core.navigation import (
     change_language as _change_language,
     refresh_ui_text as _refresh_ui_text,
     add_sidebar_header as _add_sidebar_header,
@@ -70,7 +70,7 @@ from .navigation import (
 )
 
 # Import dashboard functions to be bound to class
-from .dashboard import (
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.core.dashboard import (
     show_main_dashboard as _show_main_dashboard,
     show_dashboard_content as _show_dashboard_content,
     _render_dashboard_tab as _render_dashboard_tab_func,
@@ -78,20 +78,21 @@ from .dashboard import (
 )
 
 # Import utility functions to be bound to class
-from .utilities import (
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.core.utilities import (
     _get_all_student_emails as _get_all_student_emails_func,
     _send_email_via_gui as _send_email_via_gui_func,
     _show_email_fallback as _show_email_fallback_func,
+    DatabaseQueryDialog as _DatabaseQueryDialog,
 )
 
 # Import misc functions to be bound to class
-from ..misc import (
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.misc import (
     _on_mousewheel as _on_mousewheel_func,
     open_event_attendance_dialog as _open_event_attendance_dialog,
 )
 
 # Import profile functions
-from .profile import (
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.core.profile import (
     show_profile as _show_profile,
     show_database_info as _show_database_info,
     show_about as _show_about,
@@ -99,34 +100,37 @@ from .profile import (
 )
 
 # Import club functions
-from ..clubs.club_views import (
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.clubs.club_views import (
     show_clubs_content as _show_clubs_content,
     _render_clubs_tab as _render_clubs_tab_func,
     on_club_select as _on_club_select,
     refresh_clubs_list as _refresh_clubs_list,
 )
-from ..clubs.club_actions import (
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.clubs.club_actions import (
     join_selected_club as _join_selected_club,
+    create_club_dialog as _create_club_dialog,
 )
 
 # Import event functions
-from ..events.event_views import (
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.events.event_views import (
     show_events_content as _show_events_content,
     _render_events_tab as _render_events_tab_func,
     refresh_events_list as _refresh_events_list,
     show_my_events as _show_my_events,
+    view_event_details as _view_event_details,
 )
-from ..events.event_actions import (
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.events.event_actions import (
     _register_event_operation as _register_event_operation_func,
     create_event_dialog as _create_event_dialog,
+    register_for_selected_event as _register_for_selected_event,
 )
-from ..events.event_virtual import open_virtual_events_dialog as _open_virtual_events_dialog
-from ..events.event_finance import open_event_financial_tracking_dialog as _open_event_financial_tracking_dialog
-from ..events.event_ticketing import open_event_ticketing_dialog as _open_event_ticketing_dialog
-from ..events.event_recurring import open_recurring_events_dialog as _open_recurring_events_dialog
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.events.event_virtual import open_virtual_events_dialog as _open_virtual_events_dialog
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.events.event_finance import open_event_financial_tracking_dialog as _open_event_financial_tracking_dialog
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.events.event_ticketing import open_event_ticketing_dialog as _open_event_ticketing_dialog
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.events.event_recurring import open_recurring_events_dialog as _open_recurring_events_dialog
 
 # Import facility functions
-from ..facilities.facility_booking import (
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.facilities.facility_booking import (
     show_facilities_content as _show_facilities_content,
     _render_facilities_tab as _render_facilities_tab_func,
     open_approve_facility_bookings_dialog as _open_approve_facility_bookings_dialog,
@@ -136,7 +140,7 @@ from ..facilities.facility_booking import (
 )
 
 # Import admin functions
-from ..admin.admin_panel import (
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.admin.admin_panel import (
     show_admin_content as _show_admin_content,
     _render_admin_tab as _render_admin_tab_func,
     setup_users_management as _setup_users_management,
@@ -154,96 +158,101 @@ from ..admin.admin_panel import (
 )
 
 # Import payment functions
-from ..payments.payment_processing import (
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.payments.payment_processing import (
     show_club_payments_content as _show_club_payments_content,
     _create_payment_overview_tab as _create_payment_overview_tab_func,
     _create_payment_history_tab as _create_payment_history_tab_func,
     _create_payment_reports_tab as _create_payment_reports_tab_func,
     _create_record_payment_tab as _create_record_payment_tab_func,
+    _create_refunds_tab as _create_refunds_tab_func,
 )
 
 # Import election functions
-from ..elections.election_core import open_elections_dialog as _open_elections_dialog
-from ..elections.election_campaigns import (
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.elections.election_core import open_elections_dialog as _open_elections_dialog
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.elections.election_campaigns import (
     open_campaign_expenses_dialog as _open_campaign_expenses_dialog,
     open_candidate_profiles_dialog as _open_candidate_profiles_dialog,
 )
-from ..elections.election_voting_methods import (
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.elections.election_voting_methods import (
     open_manage_enhanced_voting_dialog as _open_manage_enhanced_voting_dialog,
     open_ranked_choice_voting_dialog as _open_ranked_choice_voting_dialog,
     open_configure_voting_methods_dialog as _open_configure_voting_methods_dialog,
 )
-from ..elections.election_setup import open_setup_election_dialog as _open_setup_election_dialog
-from ..elections.election_accessibility import open_election_accessibility_dialog as _open_election_accessibility_dialog
-from ..elections.election_compliance import (
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.elections.election_setup import open_setup_election_dialog as _open_setup_election_dialog
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.elections.election_accessibility import open_election_accessibility_dialog as _open_election_accessibility_dialog
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.elections.election_compliance import (
     open_campaign_compliance_dialog as _open_campaign_compliance_dialog,
     open_election_security_dialog as _open_election_security_dialog,
     open_vote_integrity_dialog as _open_vote_integrity_dialog,
 )
 
 # Import volunteer functions
-from ..volunteer.volunteer import (
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.volunteer.volunteer import (
     open_volunteer_opportunities_dialog as _open_volunteer_opportunities_dialog,
     open_community_service_hours_dialog as _open_community_service_hours_dialog,
     open_community_engagement_dialog as _open_community_engagement_dialog,
 )
 
 # Import competition functions
-from ..competitions.interclub_competitions import open_interclub_competitions_dialog as _open_interclub_competitions_dialog
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.competitions.interclub_competitions import open_interclub_competitions_dialog as _open_interclub_competitions_dialog
 
 # Import analytics functions
-from ..analytics.analytics import (
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.analytics.analytics import (
     open_advanced_analytics_dialog as _open_advanced_analytics_dialog,
     open_engagement_trends_dialog as _open_engagement_trends_dialog,
     open_retention_insights_dialog as _open_retention_insights_dialog,
 )
 
 # Import equipment functions
-from ..equipment.equipment_admin import (
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.equipment.equipment_admin import (
     open_manage_equipment_system_dialog as _open_manage_equipment_system_dialog,
     open_add_new_equipment_dialog as _open_add_new_equipment_dialog,
     open_update_equipment_status_dialog as _open_update_equipment_status_dialog,
     open_equipment_maintenance_tracking_dialog as _open_equipment_maintenance_tracking_dialog,
     open_generate_equipment_reports_dialog as _open_generate_equipment_reports_dialog,
 )
-from ..equipment.equipment_browse import (
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.equipment.equipment_browse import (
     open_browse_available_equipment_dialog as _open_browse_available_equipment_dialog,
     open_view_equipment_details_dialog as _open_view_equipment_details_dialog,
     open_search_equipment_dialog as _open_search_equipment_dialog,
 )
-from ..equipment.equipment_checkout import (
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.equipment.equipment_checkout import (
     open_checkout_equipment_dialog as _open_checkout_equipment_dialog,
     open_return_equipment_dialog as _open_return_equipment_dialog,
     open_my_equipment_checkouts_dialog as _open_my_equipment_checkouts_dialog,
 )
 
 # Import support functions
-from ..support.peer_support import open_peer_support_wellness_dialog as _open_peer_support_wellness_dialog
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.support.peer_support import open_peer_support_wellness_dialog as _open_peer_support_wellness_dialog
 
 # Import academic functions
-from ..academic.academic_support import open_academic_support_dialog as _open_academic_support_dialog
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.academic.academic_support import open_academic_support_dialog as _open_academic_support_dialog
 
 # Import green initiatives functions
-from ..green.green_initiatives import open_green_initiatives_dialog as _open_green_initiatives_dialog
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.green.green_initiatives import open_green_initiatives_dialog as _open_green_initiatives_dialog
 
 # Import integration functions
-from ..integrations.external_integrations import (
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.integrations.external_integrations import (
     open_calendar_with_club_events as _open_calendar_with_club_events,
     _add_club_events_to_calendar as _add_club_events_to_calendar_func,
     open_shop_gui_direct as _open_shop_gui_direct,
     open_shop_for_club_merchandise as _open_shop_for_club_merchandise,
     open_restaurant_for_club_booking as _open_restaurant_for_club_booking,
-    open_trip_gui_direct as _open_trip_gui_direct,
+)
+
+# Import trip management dialog
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.trips.trips import (
+    open_trip_management_dialog as _open_trip_management_dialog,
 )
 
 # Import streaming functions
-from ..streaming.live_streaming import open_live_streaming_dialog as _open_live_streaming_dialog
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.streaming.live_streaming import open_live_streaming_dialog as _open_live_streaming_dialog
 
 # Import conference functions
-from ..conferences.conferences import open_academic_conferences_dialog as _open_academic_conferences_dialog
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.conferences.conferences import open_academic_conferences_dialog as _open_academic_conferences_dialog
 
 # Import knowledge sharing functions
-from ..knowledge.knowledge_sharing import open_knowledge_sharing_dialog as _open_knowledge_sharing_dialog
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.knowledge.knowledge_sharing import open_knowledge_sharing_dialog as _open_knowledge_sharing_dialog
 
 class StudentUnionGUI:
     """Main GUI application for Student Union Management System"""
@@ -270,6 +279,9 @@ class StudentUnionGUI:
     _get_all_student_emails = _get_all_student_emails_func
     _send_email_via_gui = _send_email_via_gui_func
     _show_email_fallback = _show_email_fallback_func
+    send_event_notification_to_all_students = _DatabaseQueryDialog.send_event_notification_to_all_students
+    send_new_club_announcement = _DatabaseQueryDialog.send_new_club_announcement
+    send_club_join_confirmation = _DatabaseQueryDialog.send_club_join_confirmation
 
     # Bind misc functions as methods
     _on_mousewheel = _on_mousewheel_func
@@ -287,6 +299,7 @@ class StudentUnionGUI:
     on_club_select = _on_club_select
     refresh_clubs_list = _refresh_clubs_list
     join_selected_club = _join_selected_club
+    create_club_dialog = _create_club_dialog
 
     # Bind event functions
     show_events_content = _show_events_content
@@ -299,6 +312,8 @@ class StudentUnionGUI:
     refresh_events_list = _refresh_events_list
     create_event_dialog = _create_event_dialog
     show_my_events = _show_my_events
+    register_for_selected_event = _register_for_selected_event
+    view_event_details = _view_event_details
 
     # Bind facility functions
     show_facilities_content = _show_facilities_content
@@ -330,6 +345,7 @@ class StudentUnionGUI:
     _create_payment_history_tab = _create_payment_history_tab_func
     _create_payment_reports_tab = _create_payment_reports_tab_func
     _create_record_payment_tab = _create_record_payment_tab_func
+    _create_refunds_tab = _create_refunds_tab_func
 
     # Bind election functions
     open_elections_dialog = _open_elections_dialog
@@ -385,7 +401,7 @@ class StudentUnionGUI:
     open_shop_gui_direct = _open_shop_gui_direct
     open_shop_for_club_merchandise = _open_shop_for_club_merchandise
     open_restaurant_for_club_booking = _open_restaurant_for_club_booking
-    open_trip_gui_direct = _open_trip_gui_direct
+    open_trip_management_dialog = _open_trip_management_dialog
 
     # Bind streaming functions
     open_live_streaming_dialog = _open_live_streaming_dialog
@@ -526,125 +542,127 @@ class StudentUnionGUI:
                     print(f"Warning: failed to initialize enhanced student union database: {e}")
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-
-            # Create basic tables if they don't exist
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username TEXT UNIQUE NOT NULL,
-                    password_hash TEXT NOT NULL,
-                    email TEXT,
-                    role TEXT DEFAULT 'student',
-                    created_at TEXT,
-                    last_login TEXT
-                )
-            ''')
-
-            # Add last_login column if it doesn't exist (migration)
             try:
-                cursor.execute("SELECT last_login FROM users LIMIT 1")
-            except sqlite3.OperationalError:
-                cursor.execute("ALTER TABLE users ADD COLUMN last_login TEXT")
+                cursor = conn.cursor()
+
+                # Create basic tables if they don't exist
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS users (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        username TEXT UNIQUE NOT NULL,
+                        password_hash TEXT NOT NULL,
+                        email TEXT,
+                        role TEXT DEFAULT 'student',
+                        created_at TEXT,
+                        last_login TEXT
+                    )
+                ''')
+
+                # Add last_login column if it doesn't exist (migration)
+                try:
+                    cursor.execute("SELECT last_login FROM users LIMIT 1")
+                except sqlite3.OperationalError:
+                    cursor.execute("ALTER TABLE users ADD COLUMN last_login TEXT")
+                    conn.commit()
+
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS students (
+                        student_id TEXT PRIMARY KEY,
+                        first_name TEXT NOT NULL,
+                        last_name TEXT NOT NULL,
+                        email_address TEXT UNIQUE NOT NULL,
+                        course TEXT,
+                        year_of_study INTEGER,
+                        enrollment_date TEXT
+                    )
+                ''')
+
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS student_clubs (
+                        club_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        club_name TEXT UNIQUE NOT NULL,
+                        description TEXT,
+                        category TEXT,
+                        member_count INTEGER DEFAULT 0,
+                        president_id TEXT,
+                        treasurer_id TEXT,
+                        secretary_id TEXT,
+                        status TEXT DEFAULT 'active',
+                        created_date TEXT,
+                        FOREIGN KEY (president_id) REFERENCES students (student_id),
+                        FOREIGN KEY (treasurer_id) REFERENCES students (student_id),
+                        FOREIGN KEY (secretary_id) REFERENCES students (student_id)
+                    )
+                ''')
+
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS union_events (
+                        event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        event_name TEXT NOT NULL,
+                        description TEXT,
+                        organizer_id INTEGER,
+                        event_date TEXT,
+                        start_time TEXT,
+                        end_time TEXT,
+                        location TEXT,
+                        category TEXT,
+                        max_attendees INTEGER,
+                        current_attendees INTEGER DEFAULT 0,
+                        status TEXT DEFAULT 'upcoming',
+                        created_at TEXT,
+                        FOREIGN KEY (organizer_id) REFERENCES student_clubs (club_id)
+                    )
+                ''')
+
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS club_members (
+                        member_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        club_id INTEGER,
+                        student_id TEXT,
+                        role TEXT DEFAULT 'member',
+                        join_date TEXT,
+                        FOREIGN KEY (club_id) REFERENCES student_clubs (club_id),
+                        FOREIGN KEY (student_id) REFERENCES students (student_id)
+                    )
+                ''')
+
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS facility_bookings (
+                        booking_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        facility_name TEXT,
+                        user_id INTEGER,
+                        booking_date TEXT,
+                        start_time TEXT,
+                        end_time TEXT,
+                        purpose TEXT,
+                        status TEXT DEFAULT 'pending',
+                        created_at TEXT,
+                        FOREIGN KEY (user_id) REFERENCES users (id)
+                    )
+                ''')
+
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS union_events (
+                        event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        event_name TEXT NOT NULL,
+                        description TEXT,
+                        organizer_id INTEGER,
+                        event_date TEXT,
+                        start_time TEXT,
+                        end_time TEXT,
+                        location TEXT,
+                        category TEXT,
+                        max_attendees INTEGER,
+                        current_attendees INTEGER DEFAULT 0,
+                        status TEXT DEFAULT 'upcoming',
+                        created_at TEXT,
+                        FOREIGN KEY (organizer_id) REFERENCES student_clubs (club_id)
+                    )
+                ''')
+
                 conn.commit()
-            
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS students (
-                    student_id TEXT PRIMARY KEY,
-                    first_name TEXT NOT NULL,
-                    last_name TEXT NOT NULL,
-                    email_address TEXT UNIQUE NOT NULL,
-                    course TEXT,
-                    year_of_study INTEGER,
-                    enrollment_date TEXT
-                )
-            ''')
-            
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS student_clubs (
-                    club_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    club_name TEXT UNIQUE NOT NULL,
-                    description TEXT,
-                    category TEXT,
-                    member_count INTEGER DEFAULT 0,
-                    president_id TEXT,
-                    treasurer_id TEXT,
-                    secretary_id TEXT,
-                    status TEXT DEFAULT 'active',
-                    created_date TEXT,
-                    FOREIGN KEY (president_id) REFERENCES students (student_id),
-                    FOREIGN KEY (treasurer_id) REFERENCES students (student_id),
-                    FOREIGN KEY (secretary_id) REFERENCES students (student_id)
-                )
-            ''')
-
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS union_events (
-                    event_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    event_name TEXT NOT NULL,
-                    description TEXT,
-                    organizer_id INTEGER,
-                    event_date TEXT,
-                    start_time TEXT,
-                    end_time TEXT,
-                    location TEXT,
-                    category TEXT,
-                    max_attendees INTEGER,
-                    current_attendees INTEGER DEFAULT 0,
-                    status TEXT DEFAULT 'upcoming',
-                    created_at TEXT,
-                    FOREIGN KEY (organizer_id) REFERENCES student_clubs (club_id)
-                )
-            ''')
-
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS club_members (
-                    member_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    club_id INTEGER,
-                    student_id TEXT,
-                    role TEXT DEFAULT 'member',
-                    join_date TEXT,
-                    FOREIGN KEY (club_id) REFERENCES student_clubs (club_id),
-                    FOREIGN KEY (student_id) REFERENCES students (student_id)
-                )
-            ''')
-
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS facility_bookings (
-                    booking_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    facility_name TEXT,
-                    user_id INTEGER,
-                    booking_date TEXT,
-                    start_time TEXT,
-                    end_time TEXT,
-                    purpose TEXT,
-                    status TEXT DEFAULT 'pending',
-                    created_at TEXT,
-                    FOREIGN KEY (user_id) REFERENCES users (id)
-                )
-            ''')
-            
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS union_events (
-                    event_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    event_name TEXT NOT NULL,
-                    description TEXT,
-                    organizer_id INTEGER,
-                    event_date TEXT,
-                    start_time TEXT,
-                    end_time TEXT,
-                    location TEXT,
-                    category TEXT,
-                    max_attendees INTEGER,
-                    current_attendees INTEGER DEFAULT 0,
-                    status TEXT DEFAULT 'upcoming',
-                    created_at TEXT,
-                    FOREIGN KEY (organizer_id) REFERENCES student_clubs (club_id)
-                )
-            ''')
-            
-            conn.commit()
-            conn.close()
+            finally:
+                conn.close()
             
         except sqlite3.Error as e:
             messagebox.showerror("Database Error", f"Failed to initialize database: {e}")
@@ -833,7 +851,7 @@ class StudentUnionGUI:
         self.add_sidebar_button("University Shop", self.open_shop_gui_direct, "🛒")
         self.add_sidebar_button("University Restaurant", lambda: self.open_restaurant_for_club_booking("General"), "🍽️")
         self.add_sidebar_button("Student Union Calendar", self.open_calendar_with_club_events, "📅")
-        self.add_sidebar_button("Trip Management", self.open_trip_gui_direct, "🧳")
+        self.add_sidebar_button("Trip Management", self.open_trip_management_dialog, "🧳")
 
         # Advanced Features
         self.add_sidebar_separator()

@@ -36,9 +36,9 @@ class TestMobileAppPWAGUI(unittest.TestCase):
         except Exception:
             pass
 
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth')
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction')
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_connection')
     def test_gui_initialization(self, mock_conn, mock_transaction, mock_auth):
         """Test GUI initialization"""
         from education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui import MobileAppPWAGUI
@@ -55,8 +55,8 @@ class TestMobileAppPWAGUI(unittest.TestCase):
             # If auth check fails, that's expected in test environment
             pass
 
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_connection')
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction')
     def test_database_initialization(self, mock_transaction, mock_conn):
         """Test database table initialization"""
         from education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui import MobileAppPWAGUI
@@ -64,7 +64,7 @@ class TestMobileAppPWAGUI(unittest.TestCase):
         mock_transaction.return_value.__enter__ = Mock(return_value=Mock())
         mock_transaction.return_value.__exit__ = Mock()
 
-        with patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
+        with patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
                    return_value=self.mock_auth):
             try:
                 app = MobileAppPWAGUI(self.root, self.mock_auth)
@@ -73,7 +73,7 @@ class TestMobileAppPWAGUI(unittest.TestCase):
             except Exception:
                 pass
 
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_connection')
     def test_load_devices(self, mock_conn):
         """Test loading mobile devices"""
         from education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui import MobileAppPWAGUI
@@ -90,9 +90,9 @@ class TestMobileAppPWAGUI(unittest.TestCase):
         mock_connection.__exit__ = Mock()
         mock_conn.return_value = mock_connection
 
-        with patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
+        with patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
                    return_value=self.mock_auth):
-            with patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction'):
+            with patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction'):
                 try:
                     app = MobileAppPWAGUI(self.root, self.mock_auth)
                     if hasattr(app, 'load_devices'):
@@ -100,9 +100,9 @@ class TestMobileAppPWAGUI(unittest.TestCase):
                 except Exception:
                     pass
 
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction')
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.log_activity')
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.messagebox')
     def test_register_device(self, mock_msgbox, mock_log, mock_transaction):
         """Test device registration"""
         from education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui import MobileAppPWAGUI
@@ -116,14 +116,14 @@ class TestMobileAppPWAGUI(unittest.TestCase):
         mock_transaction.return_value.__enter__ = Mock(return_value=mock_conn)
         mock_transaction.return_value.__exit__ = Mock()
 
-        with patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
+        with patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
                    return_value=self.mock_auth):
             try:
                 app = MobileAppPWAGUI(self.root, self.mock_auth)
             except Exception:
                 pass
 
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_connection')
     def test_load_sessions(self, mock_conn):
         """Test loading mobile sessions"""
         mock_cursor = Mock()
@@ -138,9 +138,9 @@ class TestMobileAppPWAGUI(unittest.TestCase):
         mock_connection.__exit__ = Mock()
         mock_conn.return_value = mock_connection
 
-        with patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
+        with patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
                    return_value=self.mock_auth):
-            with patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction'):
+            with patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction'):
                 try:
                     from education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui import MobileAppPWAGUI
                     app = MobileAppPWAGUI(self.root, self.mock_auth)
@@ -149,7 +149,7 @@ class TestMobileAppPWAGUI(unittest.TestCase):
                 except Exception:
                     pass
 
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_connection')
     def test_load_sync_queue(self, mock_conn):
         """Test loading offline sync queue"""
         mock_cursor = Mock()
@@ -164,9 +164,9 @@ class TestMobileAppPWAGUI(unittest.TestCase):
         mock_connection.__exit__ = Mock()
         mock_conn.return_value = mock_connection
 
-        with patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
+        with patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
                    return_value=self.mock_auth):
-            with patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction'):
+            with patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction'):
                 try:
                     from education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui import MobileAppPWAGUI
                     app = MobileAppPWAGUI(self.root, self.mock_auth)
@@ -175,7 +175,7 @@ class TestMobileAppPWAGUI(unittest.TestCase):
                 except Exception:
                     pass
 
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_connection')
     def test_load_installations(self, mock_conn):
         """Test loading app installations"""
         mock_cursor = Mock()
@@ -189,9 +189,9 @@ class TestMobileAppPWAGUI(unittest.TestCase):
         mock_connection.__exit__ = Mock()
         mock_conn.return_value = mock_connection
 
-        with patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
+        with patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
                    return_value=self.mock_auth):
-            with patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction'):
+            with patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction'):
                 try:
                     from education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui import MobileAppPWAGUI
                     app = MobileAppPWAGUI(self.root, self.mock_auth)
@@ -200,7 +200,7 @@ class TestMobileAppPWAGUI(unittest.TestCase):
                 except Exception:
                     pass
 
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_connection')
     def test_load_analytics(self, mock_conn):
         """Test loading mobile analytics"""
         mock_cursor = Mock()
@@ -215,9 +215,9 @@ class TestMobileAppPWAGUI(unittest.TestCase):
         mock_connection.__exit__ = Mock()
         mock_conn.return_value = mock_connection
 
-        with patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
+        with patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
                    return_value=self.mock_auth):
-            with patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction'):
+            with patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction'):
                 try:
                     from education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui import MobileAppPWAGUI
                     app = MobileAppPWAGUI(self.root, self.mock_auth)
@@ -226,7 +226,7 @@ class TestMobileAppPWAGUI(unittest.TestCase):
                 except Exception:
                     pass
 
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_connection')
     def test_load_preferences(self, mock_conn):
         """Test loading mobile preferences"""
         mock_cursor = Mock()
@@ -240,9 +240,9 @@ class TestMobileAppPWAGUI(unittest.TestCase):
         mock_connection.__exit__ = Mock()
         mock_conn.return_value = mock_connection
 
-        with patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
+        with patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
                    return_value=self.mock_auth):
-            with patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction'):
+            with patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction'):
                 try:
                     from education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui import MobileAppPWAGUI
                     app = MobileAppPWAGUI(self.root, self.mock_auth)
@@ -251,15 +251,15 @@ class TestMobileAppPWAGUI(unittest.TestCase):
                 except Exception:
                     pass
 
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction')
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.log_activity')
     def test_deactivate_device(self, mock_log, mock_transaction):
         """Test deactivating a device"""
         mock_conn = Mock()
         mock_transaction.return_value.__enter__ = Mock(return_value=mock_conn)
         mock_transaction.return_value.__exit__ = Mock()
 
-        with patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
+        with patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
                    return_value=self.mock_auth):
             try:
                 from education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui import MobileAppPWAGUI
@@ -267,15 +267,15 @@ class TestMobileAppPWAGUI(unittest.TestCase):
             except Exception:
                 pass
 
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction')
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.log_activity')
     def test_end_session(self, mock_log, mock_transaction):
         """Test ending a mobile session"""
         mock_conn = Mock()
         mock_transaction.return_value.__enter__ = Mock(return_value=mock_conn)
         mock_transaction.return_value.__exit__ = Mock()
 
-        with patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
+        with patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
                    return_value=self.mock_auth):
             try:
                 from education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui import MobileAppPWAGUI
@@ -283,15 +283,15 @@ class TestMobileAppPWAGUI(unittest.TestCase):
             except Exception:
                 pass
 
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction')
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.log_activity')
     def test_process_sync_item(self, mock_log, mock_transaction):
         """Test processing a sync queue item"""
         mock_conn = Mock()
         mock_transaction.return_value.__enter__ = Mock(return_value=mock_conn)
         mock_transaction.return_value.__exit__ = Mock()
 
-        with patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
+        with patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
                    return_value=self.mock_auth):
             try:
                 from education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui import MobileAppPWAGUI
@@ -299,8 +299,8 @@ class TestMobileAppPWAGUI(unittest.TestCase):
             except Exception:
                 pass
 
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_connection')
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.messagebox')
     def test_show_installation_stats(self, mock_msgbox, mock_conn):
         """Test showing installation statistics"""
         mock_cursor = Mock()
@@ -312,9 +312,9 @@ class TestMobileAppPWAGUI(unittest.TestCase):
         mock_connection.__exit__ = Mock()
         mock_conn.return_value = mock_connection
 
-        with patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
+        with patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth',
                    return_value=self.mock_auth):
-            with patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction'):
+            with patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction'):
                 try:
                     from education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui import MobileAppPWAGUI
                     app = MobileAppPWAGUI(self.root, self.mock_auth)
@@ -345,8 +345,8 @@ class TestMobileAppStyles(unittest.TestCase):
         except Exception:
             pass
 
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth')
-    @patch('university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.get_centralized_auth')
+    @patch('education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui.transaction')
     def test_styles_configured(self, mock_transaction, mock_auth):
         """Test that styles are properly configured"""
         mock_auth_obj = Mock()

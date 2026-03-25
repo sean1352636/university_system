@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/gui/parking_management/tabs/vehicles.py
+# hypothesis_version: 6.151.9
+
+[100, ':', '<KeyRelease>', 'Color', 'Confirm Delete', 'Edit Vehicle', 'Error', 'ID', 'License Plate', 'Make', 'Model', 'Owner', 'Register New Vehicle', 'Type', 'Warning', 'Year', '__iter__', 'color', 'common.refresh', 'common.search', 'gray', 'headings', 'hidden', 'license_plate', 'make', 'model', 'owner_id', 'registration_state', 'values', 'vehicle_type', 'year']

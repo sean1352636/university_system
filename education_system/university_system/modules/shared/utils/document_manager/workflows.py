@@ -1,4 +1,4 @@
-from ._common import datetime, sqlite3, get_connection, _t
+from education_system.university_system.modules.shared.utils.document_manager._common import datetime, sqlite3, get_connection, _t
 
 
 class WorkflowMixin:
@@ -36,9 +36,9 @@ class WorkflowMixin:
                    s.first_name || ' ' || s.last_name as student_name,
                    dw.step_name, dw.assigned_to, dw.status
             FROM document_workflow dw
-            JOIN student_documents sd ON dw.document_id = sd.document_id
+            JOIN documents sd ON dw.document_id = sd.document_id
             JOIN document_types dt ON sd.type_id = dt.type_id
-            JOIN students s ON sd.student_id = s.student_id
+            JOIN students s ON sd.owner_id = s.student_id
             WHERE dw.status = 'pending'
             ORDER BY dw.step_order
             ''')
@@ -77,7 +77,7 @@ class WorkflowMixin:
             SELECT dw.workflow_id, dw.step_name, dw.assigned_to,
                    sd.document_id, dt.type_name
             FROM document_workflow dw
-            JOIN student_documents sd ON dw.document_id = sd.document_id
+            JOIN documents sd ON dw.document_id = sd.document_id
             JOIN document_types dt ON sd.type_id = dt.type_id
             WHERE dw.workflow_id = ? AND dw.status = 'pending'
             ''', (workflow_id,))
@@ -123,7 +123,7 @@ class WorkflowMixin:
 
                 if remaining_steps == 0:
                     cursor.execute('''
-                    UPDATE student_documents
+                    UPDATE documents
                     SET workflow_status = 'completed'
                     WHERE document_id = ?
                     ''', (doc_id,))
@@ -143,7 +143,7 @@ class WorkflowMixin:
                       self.current_user, workflow_id))
 
                 cursor.execute('''
-                UPDATE student_documents
+                UPDATE documents
                 SET workflow_status = 'rejected'
                 WHERE document_id = ?
                 ''', (doc_id,))
@@ -369,7 +369,7 @@ class WorkflowMixin:
             ) as avg_days
             FROM (
                 SELECT dw.document_id,
-                       (SELECT upload_date FROM student_documents WHERE document_id = dw.document_id) as created_date,
+                       (SELECT upload_date FROM documents WHERE document_id = dw.document_id) as created_date,
                        dw.completed_date
                 FROM document_workflow dw
                 WHERE dw.status = 'completed'
@@ -399,7 +399,7 @@ class WorkflowMixin:
             cursor.execute('''
             SELECT step_name, AVG(
                 julianday(completed_date) - julianday(
-                    (SELECT MIN(created_date) FROM student_documents WHERE document_id = document_workflow.document_id)
+                    (SELECT MIN(created_date) FROM documents WHERE document_id = document_workflow.document_id)
                 )
             ) as avg_days
             FROM document_workflow

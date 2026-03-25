@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/logging/gui/tabs/config.py
+# hypothesis_version: 6.151.9
+
+[100, 587, '*', '<Configure>', 'alert_email', 'all', 'api_enabled', 'api_secret_key', 'auto_archive_days', 'both', 'enable_alerts', 'enable_analytics', 'enable_encryption', 'enable_real_time', 'left', 'max_log_size_mb', 'nw', 'retention_days', 'right', 'smtp_password', 'smtp_port', 'smtp_server', 'smtp_username', 'vertical', 'w', 'webhook_secret', 'y', '⚙️ ', '💾 ', '🔄 ']

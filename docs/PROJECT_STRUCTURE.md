@@ -1,0 +1,794 @@
+# Project Structure
+
+> Back to [README](../README.md)
+
+## Project Structure
+
+```
+education_system/                         # Root education platform
+├── university_system/                    # University Management System (3,420+ files)
+├── college_system/                       # Sixth Form College System (930+ files)
+├── secondary_school/                     # Secondary School System (290+ files)
+├── primary_school/                       # Primary School System (280+ files)
+├── shared/                              # Shared modules across all 4 systems
+│   ├── auth/                            # Unified authentication (bcrypt, MFA, sessions)
+│   ├── cli/                             # Universal CLI login & system selection
+│   ├── gui/                             # Universal GUI login window
+│   └── data/db_files/auth.db            # Central authentication database
+├── docs/                                # Centralised documentation
+│   ├── university_system/               # University system docs
+│   ├── college_system/                  # College system docs
+│   ├── secondary_school/               # Secondary school docs
+│   └── primary_school/                 # Primary school docs
+├── switch.py                             # Runtime system/mode switching
+└── __init__.py
+
+run.py                                    # Unified launcher (CLI & GUI system selector)
+pyproject.toml                            # Project configuration
+```
+
+### University System Structure
+
+```
+education_system/university_system/
+│
+├── api/                               # REST API server (Flask)
+│   ├── api_server.py                  # App factory & runner
+│   ├── auth.py                        # JWT authentication (token_required, admin_required)
+│   ├── config.py                      # API configuration loader
+│   ├── errors.py                      # Exception-to-HTTP status mapping
+│   ├── pagination.py                  # Pagination helpers
+│   ├── validators.py                  # Input validation (35+ validators)
+│   ├── static/                        # Web portal static assets
+│   │   ├── index.html                 # SPA HTML shell (login, app layout, modal, toasts)
+│   │   ├── css/style.css              # Full UI stylesheet (responsive, dark sidebar)
+│   │   └── js/app.js                  # SPA JavaScript (routing, auth, CRUD pages)
+│   └── routes/                        # 60+ route files (blueprint per domain)
+│       ├── web_routes.py              # Web portal (/portal)
+│       ├── auth_routes.py             # Login, logout, refresh, me
+│       ├── student_routes.py          # Student CRUD
+│       ├── finance_routes.py          # Financial services
+│       ├── hr_routes.py               # Staff HR management
+│       ├── helpdesk_routes.py         # Support tickets
+│       └── ...                        # 55 more route files
+│
+├── infrastructure/                     # Core infrastructure layer
+│   ├── ai/                            # AI/ML services (chatbot, analytics)
+│   ├── analytics/                     # Analytics and reporting engine
+│   ├── async_utils/                   # Asynchronous utilities
+│   ├── auth/                          # Authentication & authorization
+│   │   ├── cli/                       # Auth CLI components
+│   │   ├── core_utils/                # Core auth utilities
+│   │   ├── integrations/              # Auth integrations
+│   │   ├── managers/                  # Auth manager classes
+│   │   ├── sso_providers/             # SSO provider configurations
+│   │   ├── biometric_service.py       # Face & fingerprint auth (v5.40.0)
+│   │   ├── sso_service.py            # SAML 2.0 & OIDC integration (v5.40.0)
+│   │   └── webauthn_service.py       # FIDO2/security key auth (v5.40.0)
+│   ├── cache/                         # LRU cache with TTL
+│   ├── communication/                 # Communication services (SMS, notifications)
+│   ├── database/                      # Database connection & management
+│   │   ├── db.py                      # Connection pooling, transactions
+│   │   ├── data_backup/               # Backup system (13 modules + storage/)
+│   │   ├── gui/                       # Database management GUI
+│   │   ├── migrations/                # Schema version migrations
+│   │   └── schemas/                   # Database schema definitions
+│   ├── data_management/               # Automated backup scheduling
+│   ├── email/                         # Email service integration
+│   │   ├── admin/                     # Admin email tools (13 modules)
+│   │   ├── email_service/             # Async queue & SMTP (7 modules + notifications/)
+│   │   └── gui/                       # Email management GUI
+│   ├── ml/                            # Machine learning infrastructure
+│   ├── monitoring/                    # Observability (metrics, health checks, alerts)
+│   ├── performance/                   # Performance optimization (caching)
+│   ├── realtime/                      # WebSocket & real-time services
+│   ├── repositories/                  # Data access repositories
+│   ├── search/                        # Search infrastructure (Elasticsearch)
+│   ├── security/                      # Security features
+│   │   ├── data_encryption.py         # Field-level encryption
+│   │   ├── rate_limiter.py            # Request rate limiting
+│   │   ├── session_management.py      # Secure session handling
+│   │   ├── audit_trail.py             # Comprehensive audit logging
+│   │   ├── immutable_audit_log.py     # Tamper-proof audit logs
+│   │   └── remember_me.py            # Remember Me token system
+│   ├── validation/                    # Input validation & sanitization
+│   ├── workflows/                     # Business process automation
+│   ├── exceptions.py                  # Centralized exceptions
+│   └── shared_context.py             # Global application context
+│
+├── modules/                           # Main application modules
+│   ├── core/                          # Core business entities
+│   │   └── services/                  # Core services
+│   │
+│   ├── domain/                        # Domain layer (55+ business domains)
+│   │   │
+│   │   │  ── ACADEMIC DOMAINS ──
+│   │   │
+│   │   ├── academics/                 # Core academic module
+│   │   │   ├── cli/                   # Academic CLI modules
+│   │   │   │   ├── office_hours_cli.py # Office hours CLI
+│   │   │   │   └── ta_management_cli.py # TA management CLI
+│   │   │   ├── grading/               # Grading services
+│   │   │   │   ├── grade_calculation/ # Grade calc package (16 modules)
+│   │   │   │   ├── learning_outcomes/ # Learning outcomes package (5 modules)
+│   │   │   ├── gui/
+│   │   │   │   ├── academic_calendar/  # Calendar GUI (10+ files)
+│   │   │   │   ├── ai_detector/        # AI detection GUI (16 views)
+│   │   │   │   ├── assignment_system/  # Assignment GUI (19 managers)
+│   │   │   │   │   ├── assignment_manager/ # Manager package (11 modules)
+│   │   │   │   │   └── group_manager/     # Group mgmt package (5 modules)
+│   │   │   │   ├── attendance_grade/   # Attendance-grade integration
+│   │   │   │   ├── attendance_tracker/ # Attendance GUI (11 files)
+│   │   │   │   ├── bulk_grade_import/  # Bulk grade import from CSV
+│   │   │   │   ├── course_catalog/     # Course catalog & self-registration
+│   │   │   │   ├── course_forums/      # Course discussion forums
+│   │   │   │   ├── course_health/      # Course health dashboard
+│   │   │   │   ├── course_management_gui/ # Course mgmt (15 submodules)
+│   │   │   │   │   ├── core/             # Main GUI (11 mixin modules)
+│   │   │   │   │   ├── recommendations/  # Recommendations (12 modules)
+│   │   │   │   │   └── waitlists/        # Waitlist dialogs (7 modules)
+│   │   │   │   ├── course_messaging/   # Course-targeted messaging
+│   │   │   │   ├── degree_progress/    # Degree progress tracker
+│   │   │   │   ├── gpa_calculator/     # What-if GPA calculator
+│   │   │   │   ├── grade_tracking/     # Grade tracking (24 files)
+│   │   │   │   │   └── analytics_manager/ # Analytics package (12 modules)
+│   │   │   │   ├── grades_breakdown/   # Grades breakdown by module
+│   │   │   │   ├── exam_scheduler/     # Exam scheduler (7 modules + tabs/)
+│   │   │   │   ├── grade_tracking_management_gui/ # Grade mgmt (13 mixin modules)
+│   │   │   │   ├── library/            # Library GUI (17 components)
+│   │   │   │   │   └── fines/          # Fines package (10 modules)
+│   │   │   │   ├── misconduct/         # Academic misconduct (18 modules)
+│   │   │   │   ├── module_scheduling/  # Scheduling (8 tabs)
+│   │   │   │   ├── office_hours/       # Office hours management
+│   │   │   │   ├── parent_portal/      # Parent portal (20+ files)
+│   │   │   │   ├── plagiarism_main_gui/ # Plagiarism GUI (20 files)
+│   │   │   │   ├── roster_viewer/      # Class roster viewer & export
+│   │   │   │   ├── semester_analytics/ # Semester comparison analytics
+│   │   │   │   ├── ta_management/      # TA management & evaluation
+│   │   │   │   ├── blockchain_credentials_gui.py
+│   │   │   │   ├── course_evaluation_gui.py
+│   │   │   │   ├── degree_audit_gui.py
+│   │   │   │   ├── lms_gui.py
+│   │   │   │   └── virtual_classroom_gui.py
+│   │   │   └── services/
+│   │   │       ├── academic_calendar/  # Calendar services (23 files)
+│   │   │       ├── assignments/        # Assignment services
+│   │   │       │   ├── assignment_submission.py # Core submission logic
+│   │   │       │   ├── analytics/      # Assignment analytics
+│   │   │       │   ├── assignments/    # CRUD & submissions
+│   │   │       │   ├── core/           # Database, permissions, utils
+│   │   │       │   ├── extensions/     # Extension requests
+│   │   │       │   ├── grading/        # Grading operations
+│   │   │       │   ├── groups/         # Group management
+│   │   │       │   ├── maintenance/    # System maintenance
+│   │   │       │   ├── notifications/  # Messaging
+│   │   │       │   ├── peer_review/    # Peer review system
+│   │   │       │   └── templates/      # Assignment templates
+│   │   │       ├── attendance/         # Attendance services (14+ modules)
+│   │   │       │   ├── cli/            # Attendance CLI (13 modules)
+│   │   │       │   ├── qr_system.py    # QR attendance
+│   │   │       │   ├── face_recognition_system.py
+│   │   │       │   ├── geofencing.py   # Location-based attendance
+│   │   │       │   └── gamification.py # Attendance rewards
+│   │   │       ├── course_management/  # Course mgmt package (16 modules)
+│   │   │       ├── degree_audit/       # Degree audit
+│   │   │       ├── evaluation/         # Course evaluation
+│   │   │       ├── library/            # Library services
+│   │   │       ├── lms/                # Learning management
+│   │   │       ├── module_scheduling/  # Module scheduling package (17 modules)
+│   │   │       ├── office_hours/       # Office hours services
+│   │   │       ├── parent_portal/      # Parent portal package (15 modules)
+│   │   │       ├── plagiarism/         # Plagiarism detection (7 modules + cli/)
+│   │   │       ├── ta_management/      # TA management services
+│   │   │       ├── timetable/          # Timetable services
+│   │   │       └── virtual_classroom/  # Virtual classroom
+│   │   │
+│   │   ├── admissions/                # Admissions processing
+│   │   │   ├── gui/                   # Admissions CRM GUI
+│   │   │   └── services/
+│   │   │
+│   │   ├── research/                  # Research & grants management
+│   │   │   ├── gui/                   # Research grants GUI
+│   │   │   └── services/
+│   │   │
+│   │   │  ── FINANCIAL DOMAINS ──
+│   │   │
+│   │   ├── finance/                   # Financial services
+│   │   │   ├── billing/               # Fee structure, payment plans
+│   │   │   ├── core/                  # Core finance (13 files)
+│   │   │   ├── gui/
+│   │   │   │   ├── finance/           # Finance mgmt GUI
+│   │   │   │   │   ├── budget_manager/    # Budget mgmt package (13 modules)
+│   │   │   │   │   ├── expense_manager/   # Expense mgmt package (6 modules)
+│   │   │   │   │   ├── layout/            # Layout mixins (24 modules)
+│   │   │   │   │   ├── settings/          # Settings package (9 modules)
+│   │   │   │   │   └── transaction_manager/ # Transactions package (12 modules)
+│   │   │   │   ├── finance_reporting/ # Reporting GUI (16 files)
+│   │   │   │   │   └── archive_backup/  # Archive & backup package (6 modules)
+│   │   │   │   ├── financial_aid/     # Aid portal GUI
+│   │   │   │   │   ├── admin_portal/  # Admin portal package (10 modules)
+│   │   │   │   │   └── student_portal/ # Student portal package (11 modules)
+│   │   │   │   └── student_finance/   # Student financial dashboard
+│   │   │   ├── reporting/             # Budget, revenue, reports
+│   │   │   │   ├── financial_reports/ # Reports package (12 modules)
+│   │   │   │   └── revenue_analytics/ # Revenue package (10 modules)
+│   │   │   ├── scholarships/          # Scholarship programs
+│   │   │   └── services/              # Financial aid services
+│   │   │
+│   │   │  ── STUDENT LIFE DOMAINS ──
+│   │   │
+│   │   ├── student_affairs/           # Student affairs
+│   │   │   ├── gui/
+│   │   │   │   ├── account_security/  # Account security dashboard
+│   │   │   │   ├── alumni/            # Alumni GUI (13 components)
+│   │   │   │   ├── document_center/   # Personal document center
+│   │   │   │   ├── help_center/       # Integrated help center
+│   │   │   │   ├── helpdesk/          # Helpdesk GUI
+│   │   │   │   ├── internship_management/ # Internship GUI package (12 modules)
+│   │   │   │   ├── messaging_hub/     # Student messaging hub
+│   │   │   │   ├── notification_prefs/ # Notification preferences
+│   │   │   │   ├── student_profile/   # Student profile center
+│   │   │   │   ├── student_support/   # Support GUI (8 files)
+│   │   │   │   └── student_union_gui/ # Union GUI (26 subdirectories)
+│   │   │   ├── services/
+│   │   │   │   ├── alumni_management/ # Alumni package (19 modules)
+│   │   │   │   ├── early_warning/     # Early warning system
+│   │   │   │   ├── helpdesk/          # Helpdesk package (10 modules + 3 subdirs)
+│   │   │   │   ├── mental_health/     # Mental health services
+│   │   │   │   └── student_support/   # Support system (20+ files)
+│   │   │   └── student_union/         # Union services
+│   │   │       └── clubs/
+│   │   │           └── club_management/ # Club mgmt package (12 modules)
+│   │   │
+│   │   ├── housing/                   # Housing & accommodation
+│   │   │   ├── gui/
+│   │   │   │   └── housing_accommodation_gui/ # Housing GUI package
+│   │   │   └── services/
+│   │   │       ├── accommodation/     # Accommodation package (13 modules)
+│   │   │       └── housing_accommodation/ # Housing package (12 modules)
+│   │   │
+│   │   │  ── STAFF & HR DOMAINS ──
+│   │   │
+│   │   ├── staff_hr/                  # Staff HR management
+│   │   │   ├── cli/
+│   │   │   │   ├── staff_hr_cli.py    # Main CLI entry
+│   │   │   │   └── menus/             # 19 menu modules
+│   │   │   ├── gui/                   # 29 GUI windows
+│   │   │   └── services/
+│   │   │       └── managers/          # 31 specialized managers
+│   │   │
+│   │   │  ── HEALTH DOMAINS ──
+│   │   │
+│   │   ├── health/                    # Health services
+│   │   │   ├── appointments/          # Appointment booking
+│   │   │   ├── gui/                   # Health portal & management GUIs
+│   │   │   │   ├── health_portal/     # Portal package (14 modules + reports/)
+│   │   │   │   │   └── reports/       # Health reports package (5 modules)
+│   │   │   │   └── medical_accommodation/ # Accommodation GUI (12+ modules)
+│   │   │   ├── portal/                # Health portal services
+│   │   │   ├── records/               # Medical records (10 subpackages)
+│   │   │   │   ├── admin/             # Admin, permissions, advisories
+│   │   │   │   ├── analytics/         # Population, provider, trends
+│   │   │   │   ├── clinical/          # Allergies, care plans, prescriptions
+│   │   │   │   ├── db/                # Schema, audit
+│   │   │   │   ├── records/           # CRUD, reports, templates
+│   │   │   │   ├── screening/         # Schedules, results, reminders
+│   │   │   │   ├── student/           # Dashboard, insurance, wellness
+│   │   │   │   ├── vaccinations/      # Tracking, management, reports
+│   │   │   │   └── wellness/          # Programs, challenges, resources
+│   │   │   └── services/
+│   │   │
+│   │   │  ── CAMPUS & FACILITIES ──
+│   │   │
+│   │   ├── campus/                    # Campus services
+│   │   │   ├── gui/
+│   │   │   │   ├── community/         # Church management
+│   │   │   │   └── security/          # Police, security desk (dialogs/ + tabs/)
+│   │   │   └── services/              # Campus events
+│   │   │
+│   │   ├── facilities/                # Facility management
+│   │   │   ├── gui/                   # Facilities GUI
+│   │   │   └── services/
+│   │   │
+│   │   ├── career/                    # Career services
+│   │   │   ├── gui/                   # Career services GUI
+│   │   │   └── services/
+│   │   │
+│   │   │  ── COMMERCE & DINING ──
+│   │   │
+│   │   ├── commerce/                  # Commerce & dining services
+│   │   │   ├── gui/
+│   │   │   │   ├── restaurant_management_gui/ # Restaurant (35+ files)
+│   │   │   │   ├── shop_management_gui/       # Shop mgmt package
+│   │   │   │   ├── bar_gui.py
+│   │   │   │   ├── cafe_system_gui.py         # Cafe GUI (+ 7 module files)
+│   │   │   │   ├── grocery_gui.py
+│   │   │   │   └── takeaway_gui.py
+│   │   │   └── services/
+│   │   │       ├── restaurant/        # Restaurant (25 files)
+│   │   │       ├── grocery/           # Grocery services
+│   │   │       ├── shop_management/   # Shop mgmt package (12 modules)
+│   │   │       ├── takeaway/          # Takeaway services
+│   │   │       └── restaurant_management.py
+│   │   │
+│   │   │  ── MOBILITY & TRANSPORT ──
+│   │   │
+│   │   ├── mobility/                  # Transportation services
+│   │   │   ├── gui/
+│   │   │   │   ├── parking_management/ # Parking GUI package (4+ modules + dialogs/ + tabs/)
+│   │   │   │   ├── trip_management_gui/ # Trip GUI package (12 modules)
+│   │   │   │   ├── taxi_booking_gui.py
+│   │   │   │   ├── train_station_gui.py
+│   │   │   │   └── mobile_app_pwa_gui.py
+│   │   │   └── services/
+│   │   │       ├── parking_management/ # Parking service package (12 modules)
+│   │   │       └── trip_management/   # Trip service package (12 modules)
+│   │   │
+│   │   │  ── BUSINESS SERVICES ──
+│   │   │
+│   │   ├── barber/                    # Barber shop (features/ + tabs/ packages)
+│   │   ├── betting/                   # Betting shop
+│   │   ├── blockchain/                # Blockchain credentials
+│   │   ├── butcher/                   # Butcher shop
+│   │   ├── carrental/                 # Car rental
+│   │   ├── cinema/                    # Cinema (59-file package)
+│   │   │   └── gui/cinema_gui/        # Modular cinema GUI
+│   │   │       └── reports/           # Sales reports (6 split modules)
+│   │   ├── dentist/                   # Dental services
+│   │   ├── equipment/                 # Equipment rental
+│   │   ├── gym/                       # Gym & fitness
+│   │   ├── legal/                     # Legal services (7 mixin modules)
+│   │   ├── mail/                      # Mail/post services
+│   │   ├── musicshop/                 # Music shop
+│   │   ├── nailbar/                   # Nail bar/salon
+│   │   ├── phoneshop/                 # Phone shop
+│   │   │
+│   │   │  ── STUDENT SUCCESS (23 modules) ──
+│   │   │
+│   │   ├── advising/                  # Academic Advising Portal
+│   │   ├── student_id/                # Digital Student ID Card
+│   │   ├── study_rooms/               # Study Room Booking
+│   │   ├── printing/                  # Printing Services
+│   │   ├── textbooks/                 # Textbook & Course Materials Store
+│   │   ├── ai_study/                  # AI Study Companion
+│   │   ├── study_matching/            # Peer Study Matching
+│   │   ├── academic_progress/         # Academic Progress Dashboard
+│   │   ├── course_planning/           # Course Planning Assistant
+│   │   ├── student_jobs/              # Student Job Board
+│   │   ├── budget/                    # Budget Tracker
+│   │   ├── scholarship_finder/        # Scholarship Finder
+│   │   ├── roommate_finder/           # Roommate Finder
+│   │   ├── campus_navigation/         # Campus Navigation (gui/ split: 5 mixin modules + tabs/)
+│   │   ├── lost_found/                # Lost & Found System
+│   │   ├── marketplace/               # Student Marketplace
+│   │   ├── wellness/                  # Mental Health & Wellness Hub
+│   │   ├── accessibility/             # Accessibility Services Portal
+│   │   ├── events/                    # Event Discovery Engine
+│   │   ├── social_matching/           # Interest-Based Social Matching (services/ split: 9 mixin modules)
+│   │   ├── portfolio/                 # Achievement & Portfolio System
+│   │   ├── notifications/             # Smart Notifications Hub
+│   │   ├── feedback/                  # Feedback & Suggestion Box
+│   │   │   (each with cli/, gui/, and services/ subdirectories)
+│   │   │
+│   │   └── alumni/                    # Alumni services
+│   │
+│   ├── services/                      # Application services layer
+│   │   ├── cli/                       # 28 CLI service modules
+│   │   │   ├── academic_misconduct_cli.py
+│   │   │   ├── barber_cli.py          # Barber shop CLI
+│   │   │   ├── betting_shop_cli/      # Betting shop CLI package (9 modules)
+│   │   │   ├── butcher_cli.py         # Butcher shop CLI
+│   │   │   ├── cafe_system_cli.py     # Cafe system CLI
+│   │   │   ├── charity_shop_cli/      # Charity shop CLI package (12 modules)
+│   │   │   ├── cinema_cli/            # Cinema CLI package (11 modules + admin/)
+│   │   │   ├── degree_audit_cli.py    # Degree audit CLI
+│   │   │   ├── health_portal.py       # Health portal CLI
+│   │   │   ├── nailbar_cli.py         # Nail bar CLI
+│   │   │   └── ...                    # 18 more CLI modules
+│   │   └── gui/                       # GUI service components
+│   │       ├── charity_shop_gui/      # Charity shop GUI package (11 modules)
+│   │       └── integration_marketplace_gui/ # Marketplace GUI (17 modules)
+│   │
+│   └── shared/                        # Shared utilities & components
+│       ├── cli/                       # Main CLI application
+│       ├── config/                    # Configuration management
+│       │   └── templates/             # Config templates
+│       ├── constants/                 # Centralized paths & constants
+│       │   └── paths.py              # Single source of truth for ALL paths
+│       ├── gui/                       # Shared GUI components
+│       │   ├── main/                  # Main application GUI
+│       │   │   ├── main_gui.py        # Main GUI application
+│       │   │   ├── admin/             # Admin management GUIs
+│       │   │   ├── core/              # Core GUI setup
+│       │   │   ├── dashboard/         # Role-based dashboards
+│       │   │   │   ├── admin_dashboard.py       # Admin dashboard
+│       │   │   │   ├── instructor_dashboard.py  # Instructor dashboard
+│       │   │   │   ├── student_dashboard.py     # Student dashboard
+│       │   │   │   ├── student_widgets.py       # Student summary widgets
+│       │   │   │   ├── login_analytics_dashboard.py # Login analytics
+│       │   │   │   ├── operations_dashboard.py  # Operational metrics
+│       │   │   │   ├── system_health_dashboard.py # System health (live)
+│       │   │   │   └── dashboard_gui.py         # Dashboard framework
+│       │   │   ├── email/             # Email GUI components
+│       │   │   ├── features/          # Feature-specific GUIs
+│       │   │   ├── imports/           # Import management
+│       │   │   ├── staff/             # Staff management GUIs
+│       │   │   └── students/          # Student management GUIs
+│       │   ├── admin/                 # Admin configuration GUIs
+│       │   │   ├── alert_config_gui.py          # Alert & notification config
+│       │   │   ├── branding_config_gui.py       # Institution branding
+│       │   │   └── department_management_gui.py # Department & org management
+│       │   ├── auth/                  # Authentication GUIs (MFA wizard)
+│       │   ├── advanced_search/       # Advanced search interface
+│       │   ├── batch_operations/      # Batch operations GUI
+│       │   │   └── mixins/            # Batch operation mixins (15 modules)
+│       │   ├── database/              # Database management GUI
+│       │   ├── document_manager_gui/  # Document management (26 files)
+│       │   ├── email/                 # Email management GUI
+│       │   ├── enhanced_reporting/    # Enhanced reporting (tabs, dialogs)
+│       │   ├── logic/                 # GUI logic layer
+│       │   ├── simple_activity_logger_gui/ # Activity logger (6 modules + tabs/)
+│       │   ├── student_analytics_gui/ # Student analytics (10 modules)
+│       │   └── tools/                 # Tool GUIs
+│       ├── services/                  # Shared services
+│       │   ├── ai_features/           # AI features (with GUI)
+│       │   ├── analytics/             # Analytics & advanced search
+│       │   │   ├── advanced_search/   # Search package (18 modules)
+│       │   │   ├── enhanced_reporting/ # Reporting package (14 modules)
+│       │   │   └── student_analytics/ # Analytics package (16 modules)
+│       │   ├── business_intelligence/ # BI services
+│       │   ├── communication/         # Communication services
+│       │   ├── dashboard/             # Dashboard data services
+│       │   ├── integrations/          # Integration services
+│       │   │   └── integration_marketplace_core/ # Marketplace (18 modules)
+│       │   └── pdf_export/            # PDF export (4 files)
+│       └── utils/                     # Utility functions
+│           ├── activity_logger.py     # Audit trail logging
+│           ├── batch_operations/      # Batch ops package (14 modules)
+│           ├── config.py              # Configuration management
+│           ├── document_manager/      # Doc manager package (22 modules)
+│           ├── simple_activity_logger/ # Logger package (9 modules + plugins/)
+│           └── validation.py          # Input validation
+│
+├── utils/                             # Cross-cutting utilities
+│   ├── ai/                            # AI & chatbot
+│   │   ├── university_chatbot/        # Chatbot package (17 modules)
+│   │   └── gui/                       # Chatbot GUI (11 modules + features/ + screens/)
+│   └── logging/                       # Logging infrastructure
+│       ├── log_management/            # Log mgmt package (9 modules + api/ + cli/)
+│       └── gui/                       # Log GUI (4 modules + features/ + tabs/)
+│
+├── data/                              # Application data directory
+│   ├── analytics/                     # Analytics outputs
+│   │   └── plots/                     # Generated plots
+│   ├── chatbot/                       # Chatbot data & models
+│   ├── config/                        # Runtime configuration
+│   ├── db_files/                      # Database files
+│   │   ├── student_records.db         # Main SQLite database
+│   │   └── exports/                   # Database exports
+│   ├── email/                         # Email queue
+│   ├── locales/                       # i18n translations (10 languages)
+│   │   ├── ar/                        # Arabic
+│   │   ├── de/                        # German
+│   │   ├── en/                        # English (14 JSON files)
+│   │   ├── es/                        # Spanish
+│   │   ├── fr/                        # French
+│   │   ├── ja/                        # Japanese
+│   │   ├── ko/                        # Korean
+│   │   ├── pt/                        # Portuguese
+│   │   ├── ru/                        # Russian
+│   │   └── zh/                        # Chinese
+│   ├── reports/                       # Generated reports (PDF, Excel)
+│   │   └── timetable_reports/
+│   ├── submissions/                   # Assignment submissions
+│   │   ├── submitted/                 # Student submissions
+│   │   ├── graded/                    # Graded work
+│   │   ├── feedback/                  # Submission feedback
+│   │   └── templates/                 # Submission templates
+│   └── uploads/                       # User uploads
+│       ├── accommodation/
+│       ├── lost_found/
+│       ├── marketplace/
+│       └── tickets/
+│
+├── tests/                             # Comprehensive test suite
+│   ├── cli/                           # CLI tests
+│   ├── gui/                           # GUI tests
+│   ├── conftest.py                    # Pytest configuration
+│   ├── run_all_tests.py               # Test runner
+│   ├── test_end_to_end_journeys.py
+│   ├── test_integration_workflows.py
+│   ├── test_mfa_unique_contacts.py
+│   ├── test_performance_benchmarks.py
+│   ├── test_remember_me.py
+│   └── test_staff_crud.py
+│
+├── templates/                         # All templates (consolidated)
+│   ├── assignments/                   # Assignment templates
+│   ├── backup_templates/              # 6 pre-configured backup templates
+│   ├── course_evaluation/             # Evaluation templates
+│   ├── email/                         # 358 email templates in 40 categories
+│   │   ├── academics/
+│   │   ├── authentication/
+│   │   ├── finance/
+│   │   ├── health/
+│   │   ├── housing/
+│   │   ├── security/
+│   │   └── ...                        # 34 more category directories
+│   ├── finance_templates/
+│   ├── medical_templates/
+│   ├── reports_templates/
+│   ├── resources/
+│   └── ticket_templates/
+│
+├── extras/                            # Extras & Tools module
+│   ├── launcher.py                    # GUI launcher for all extras
+│   ├── games/                         # Python games collection
+│   │   ├── standalone-games/          # Single-file games
+│   │   ├── Aeroblasters/              # 30+ game projects with assets:
+│   │   ├── Bounce/                    # Bounce, Cave Story, Dino,
+│   │   ├── Flappy Bird/               # Flappy Bird, GhostBusters,
+│   │   ├── Snake/                     # Hangman, Jungle Dash,
+│   │   ├── Tetris/                    # Pong, Snake, Tetris, etc.
+│   │   └── ...
+│   ├── standalone-utilities/          # Calculator, countdown, network tools
+│   ├── python-utilities/              # 16 utility projects
+│   │   ├── file-explorer/             # File explorer, image viewer,
+│   │   ├── paint/                     # paint, text editor, note-taking,
+│   │   ├── webapps/                   # Flask/FastAPI/Django webapps
+│   │   └── ...
+│   └── 91_Python_Mini_Projects-main/  # 91 mini projects collection
+│
+├── logs/                              # Application logs
+├── backups/                           # Database backups
+├── qr_codes/                          # Generated QR codes
+├── scripts/                           # Utility scripts
+├── extensions/                        # Extensions directory
+│
+├── CHANGELOG.md                       # Version history
+├── docker-compose.yml                 # Docker Compose configuration
+├── Dockerfile                         # Docker build configuration
+├── LICENSE                            # MIT License
+├── Makefile                           # Development commands
+├── pyproject.toml                     # Project configuration
+├── README.md                          # This file
+├── requirements.txt                   # Python dependencies
+└── run.py                             # Main entry point (legacy)
+```
+
+### College System Structure
+
+```
+education_system/college_system/
+│
+├── api/                               # REST API Layer (Flask)
+│   ├── api_server.py                  # Main API server
+│   ├── auth.py                        # Authentication handlers
+│   ├── config.py                      # API configuration
+│   ├── errors.py                      # Error handling
+│   ├── pagination.py                  # Pagination utilities
+│   ├── validators.py                  # Input validators
+│   └── routes/ (59 route files)       # API endpoints per domain
+│
+├── modules/
+│   ├── domain/                        # 110 domain modules
+│   │   ├── [Academic & Learning]      # 29 modules: apprenticeships, assignments,
+│   │   │                              #   attendance, courses, enrollment, exams,
+│   │   │                              #   functional_skills, grades, lesson_plans,
+│   │   │                              #   markbook, observations, study_programmes,
+│   │   │                              #   timetable, tlevel, tutorial, ucas,
+│   │   │                              #   value_added, work_journal, etc.
+│   │   ├── [Student Support]          # 15 modules: behaviour, counseling,
+│   │   │                              #   enrichment, safeguarding, send,
+│   │   │                              #   prevent_duty, peer_mentoring,
+│   │   │                              #   student_wellbeing, wellness, etc.
+│   │   ├── [Staff Management]         # 11 modules: appraisals, cpd, cover,
+│   │   │                              #   dbs_checks, recruitment, staff_hr,
+│   │   │                              #   staff_wellbeing, staff_absence, etc.
+│   │   ├── [Admin & Governance]       # 15 modules: compliance, gdpr,
+│   │   │                              #   quality_assurance, self_assessment,
+│   │   │                              #   kpi_dashboard, risk_management, etc.
+│   │   ├── [Campus & Facilities]      # 8 modules: assets, equipment, facilities,
+│   │   │                              #   lettings, resource_booking, visitors, etc.
+│   │   ├── [Communication]            # 7 modules: announcements, calendar,
+│   │   │                              #   feedback, messaging, notifications, etc.
+│   │   ├── [Finance & Funding]        # 6 modules: bursary, finance, funding,
+│   │   │                              #   meal_ordering, print_credits, etc.
+│   │   └── [Specialist Services]      # careers, destinations, marketing,
+│   │                                  #   onboarding, alumni, departments, etc.
+│   └── shared/
+│       ├── cli/                       # Shared CLI components
+│       └── gui/                       # Shared GUI (login, MFA, dashboard)
+│
+├── core/                              # Core utilities (exceptions, i18n, paths)
+├── infrastructure/                    # Auth, database, security, validation
+├── data/                              # Data and configuration files
+├── tests/ (59 test files)             # Test suite
+└── __init__.py
+```
+
+### Secondary School Structure
+
+```
+education_system/secondary_school/
+│
+├── modules/
+│   ├── domain/                        # 7 domain categories, 51 modules
+│   │   ├── academics/                 # 12 modules: students, subjects, enrollment,
+│   │   │                              #   grades, attendance, timetable, homework,
+│   │   │                              #   exams, progress, interventions, reports
+│   │   ├── pastoral_care/             # 8 modules: behaviour, detentions,
+│   │   │                              #   exclusions, rewards, pastoral,
+│   │   │                              #   safeguarding, send
+│   │   ├── staff/                     # 5 modules: hr, cpd, cover, staff_directory
+│   │   ├── admin/                     # 9 modules: users, settings, admissions,
+│   │   │                              #   finance, data_export, audit_log,
+│   │   │                              #   policies, documents
+│   │   ├── student_life/              # 10 modules: clubs, meals, transport, trips,
+│   │   │                              #   careers, library, medical, form_groups,
+│   │   │                              #   consent
+│   │   ├── facilities/                # 6 modules: room_booking, assets,
+│   │   │                              #   seating_plans, visitors, incidents
+│   │   └── communication/             # 7 modules: email, notifications,
+│   │                                  #   announcements, calendar,
+│   │                                  #   communication_log, parents_evening
+│   └── shared/
+│       └── gui/                       # Shared GUI components
+│
+├── core/                              # Core utilities (defaults, exceptions, paths)
+├── infrastructure/                    # Auth, database, validation
+├── main_gui.py                        # Entry point with login/tabbed interface
+├── seed_subjects.py                   # Subject seeding utility
+├── data/                              # Data files
+├── tests/                             # Test suite
+└── __init__.py
+```
+
+### Primary School Structure
+
+```
+education_system/primary_school/
+│
+├── modules/
+│   ├── domain/                        # 7 domain categories, 46 modules
+│   │   ├── academics/                 # 11 modules: pupils, subjects, classes,
+│   │   │                              #   assessment, attendance, timetable,
+│   │   │                              #   homework, sats, phonics,
+│   │   │                              #   reading_records, progress
+│   │   ├── pastoral_care/             # 5 modules: behaviour, rewards,
+│   │   │                              #   safeguarding, send, pastoral
+│   │   ├── staff/                     # 4 modules: hr, cpd, cover,
+│   │   │                              #   staff_directory
+│   │   ├── admin/                     # 8 modules: users, settings, admissions,
+│   │   │                              #   finance, data_export, audit_log,
+│   │   │                              #   policies, documents
+│   │   ├── pupil_life/                # 8 modules: clubs, meals, transport,
+│   │   │                              #   trips, library, medical,
+│   │   │                              #   class_groups, consent
+│   │   ├── facilities/                # 4 modules: room_booking, assets,
+│   │   │                              #   visitors, incidents
+│   │   └── communication/             # 6 modules: email, notifications,
+│   │                                  #   announcements, calendar,
+│   │                                  #   parents_evening, communication_log
+│   └── shared/
+│       └── gui/                       # Shared GUI components
+│
+├── cli/                               # CLI interface
+├── core/                              # Core utilities (defaults, exceptions, paths)
+├── infrastructure/                    # Auth, database, validation
+├── main_gui.py                        # GUI entry point with login/tabbed interface
+├── data/                              # Data files
+│   └── db_files/primary_school.db     # SQLite database
+├── tests/                             # Test suite
+└── __init__.py
+```
+
+### Documentation Structure
+
+```
+education_system/docs/
+│
+├── university_system/                    # University system documentation
+│   ├── README.md                        # Documentation index
+│   ├── QUICK_START.md                   # Get running in 5 minutes
+│   ├── TROUBLESHOOTING.md              # Common issues and solutions
+│   ├── ai/                             # AI feature documentation
+│   │   ├── AI_DEPENDENCIES.md
+│   │   └── VOICE_FEATURES.md
+│   ├── development/                     # Developer documentation
+│   │   ├── README.md                   # Development overview
+│   │   ├── API.md                      # REST API reference
+│   │   ├── EXCEPTION_HANDLING.md       # Error handling patterns
+│   │   ├── MIGRATION_GUIDE.md          # Module restructuring reference
+│   │   └── TESTING_GUIDE.md            # Testing framework guide
+│   ├── guides/                         # User guides (60+)
+│   │   ├── README.md                   # Guides index
+│   │   ├── academics/                  # Academic feature guides
+│   │   ├── administration/             # Admin & system guides
+│   │   ├── campus/                     # Campus service guides
+│   │   ├── commerce/                   # Commerce & dining guides
+│   │   ├── health/                     # Health service guides
+│   │   ├── student/                    # Student life guides
+│   │   └── technical/                  # Technical guides
+│   ├── infrastructure/                  # Infrastructure guides
+│   │   ├── DATABASE.md                 # Database schema and usage
+│   │   ├── EMAIL_SCHEDULER.md          # Automated email system
+│   │   ├── ENHANCEMENTS_GUIDE.md       # Enhancement documentation
+│   │   └── TRANSACTIONS.md            # Transaction safety guide
+│   ├── modules/                        # Module documentation
+│   │   └── README.md                  # Module overview
+│   └── security/                       # Security documentation
+│       ├── AUTHENTICATION.md           # Authentication guide
+│       ├── AUTH_QUICK_REFERENCE.md     # Quick auth reference
+│       ├── MFA_QUICK_START.md          # MFA setup guide
+│       ├── MFA_SYSTEM_DOCUMENTATION.md # Complete MFA guide
+│       └── SECURITY.md               # Security best practices
+│
+├── college_system/                      # College system documentation (planned)
+│
+└── secondary_school/                    # Secondary school documentation (planned)
+```
+
+### Directory Consolidation Notes (January-February 2026)
+
+**Recent architectural improvements** have consolidated and reorganized the entire codebase:
+
+1. **Domain-Driven Design**: All GUIs moved into their respective domain folders
+   - Academic GUIs: `modules/domain/academics/gui/`
+   - Finance GUIs: `modules/domain/finance/gui/`
+   - Health GUIs: `modules/domain/health/gui/`
+   - Student Affairs GUIs: `modules/domain/student_affairs/gui/`
+   - Commerce GUIs: `modules/domain/commerce/gui/`
+   - Mobility GUIs: `modules/domain/mobility/gui/` (taxi, train, parking, trips)
+   - Campus GUIs: `modules/domain/campus/gui/`
+   - Career GUIs: `modules/domain/career/gui/`
+   - Admissions GUIs: `modules/domain/admissions/gui/`
+   - Facilities GUIs: `modules/domain/facilities/gui/`
+   - Research GUIs: `modules/domain/research/gui/`
+   - Additional Services: barber, betting, butcher, carrental, dentist, equipment, gym, legal, mail, musicshop, nailbar, phoneshop
+
+2. **Eliminated `modules/interfaces/` layer**: All interfaces now live within their domains
+   - Previous: `modules/interfaces/gui/finance/` → Now: `modules/domain/finance/gui/`
+   - Previous: `modules/interfaces/gui/assignment_system/` → Now: `modules/domain/academics/gui/assignment_system/`
+
+3. **Shared Components**: Consolidated to `modules/shared/`
+   - Shared GUIs: `modules/shared/gui/` (main_gui.py, advanced_search_gui.py, etc.)
+   - Shared Services: `modules/shared/services/`
+   - Shared Utils: `modules/shared/utils/`
+
+4. **Data Directories**: All runtime data consolidated
+   - Backups: `backups/`
+   - QR Codes: `qr_codes/`
+   - Analytics: `data/analytics/`
+   - Templates: `templates/`
+   - Reports: `data/reports/`
+   - Database: `data/db_files/student_records.db`
+
+**Path Management**: All file paths are managed through `modules/shared/constants/paths.py` as the single source of truth. Always use these constants instead of hardcoded paths:
+
+```python
+from education_system.university_system.modules.shared.constants import paths
+
+# Correct usage
+backup_dir = paths.BACKUP_DIR
+analytics_plots = paths.ANALYTICS_PLOTS_DIR
+qr_codes = paths.QR_CODES_DIR
+templates = paths.TEMPLATES_DIR
+db_path = paths.DEFAULT_DB_PATH
+```
+
+**Internationalization (i18n)**: All user-facing strings should use the translation function for multi-language support:
+
+```python
+from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+
+# Correct usage - all UI text uses translation keys
+button_text = _t("common.save")           # "Save"
+error_msg = _t("errors.login_required")   # "You must be logged in..."
+domain_text = _t("taxi.book_ride")        # "Book a Ride"
+```
+
+This ensures consistency across all modules and prevents path-related errors.
+
+---
+

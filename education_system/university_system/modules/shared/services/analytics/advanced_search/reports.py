@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from . import _globals
+from education_system.university_system.modules.shared.services.analytics.advanced_search import _globals
 
 
 def generate_custom_reports():

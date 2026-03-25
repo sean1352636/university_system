@@ -1,4 +1,5 @@
-from ._imports import (
+from education_system.university_system.core.sql_safety import escape_like
+from education_system.university_system.modules.domain.mobility.gui.trip_management_gui._imports import (
     tk, ttk, messagebox, scrolledtext,
     sqlite3, logging, time, datetime, timedelta,
     init_i18n, _t,
@@ -10,17 +11,17 @@ from ._imports import (
 )
 
 if CALENDAR_AVAILABLE:
-    from ._imports import CalendarConfig, AcademicCalendarManager
+    from education_system.university_system.modules.domain.mobility.gui.trip_management_gui._imports import CalendarConfig, AcademicCalendarManager
 
-from .trip_dialogs import TripDetailsDialog, CreateTripDialog, UpdateTripDialog, TripSelectionDialog
-from .registration_dialogs import CancelRegistrationDialog, RegisterForTripDialog, PaymentStatusDialog, ParticipantStatusDialog
-from .itinerary_dialogs import ViewItineraryDialog, ItineraryDialog
-from .expense_dialogs import AddExpenseDialog, EditExpenseDialog
-from .staff_dialogs import AssignStaffDialog
-from .report_dialogs import ReportGeneratorDialog
-from .calendar_dialogs import CreateCalendarEventDialog
-from .export_dialog import ExportDataDialog
-from .about_dialog import AboutDialog
+from education_system.university_system.modules.domain.mobility.gui.trip_management_gui.trip_dialogs import TripDetailsDialog, CreateTripDialog, UpdateTripDialog, TripSelectionDialog
+from education_system.university_system.modules.domain.mobility.gui.trip_management_gui.registration_dialogs import CancelRegistrationDialog, RegisterForTripDialog, PaymentStatusDialog, ParticipantStatusDialog
+from education_system.university_system.modules.domain.mobility.gui.trip_management_gui.itinerary_dialogs import ViewItineraryDialog, ItineraryDialog
+from education_system.university_system.modules.domain.mobility.gui.trip_management_gui.expense_dialogs import AddExpenseDialog, EditExpenseDialog
+from education_system.university_system.modules.domain.mobility.gui.trip_management_gui.staff_dialogs import AssignStaffDialog
+from education_system.university_system.modules.domain.mobility.gui.trip_management_gui.report_dialogs import ReportGeneratorDialog
+from education_system.university_system.modules.domain.mobility.gui.trip_management_gui.calendar_dialogs import CreateCalendarEventDialog
+from education_system.university_system.modules.domain.mobility.gui.trip_management_gui.export_dialog import ExportDataDialog
+from education_system.university_system.modules.domain.mobility.gui.trip_management_gui.about_dialog import AboutDialog
 
 # Import all original functions and classes
 # Note: In a real implementation, you would import these from the original file
@@ -577,7 +578,7 @@ class TripManagementGUI:
             return
 
         search_term = search_raw.lower()
-        like_term = f"%{search_term}%"
+        like_term = f"%{escape_like(search_term)}%"
 
         def filter_trips_operation(conn):
             cursor = conn.cursor()
@@ -608,9 +609,9 @@ class TripManagementGUI:
                     like_term,
                     like_term,
                     like_term,
-                    f"%{search_raw}%",
-                    f"%{search_raw}%",
-                    f"%{search_raw}%",
+                    f"%{escape_like(search_raw)}%",
+                    f"%{escape_like(search_raw)}%",
+                    f"%{escape_like(search_raw)}%",
                 ),
             )
             return cursor.fetchall()
@@ -1483,7 +1484,7 @@ class TripManagementGUI:
                    e.id as calendar_event_id
             FROM trips t
             LEFT JOIN trip_calendar_events tce ON t.id = tce.trip_id
-            LEFT JOIN events e ON tce.event_id = e.id
+            LEFT JOIN unified_events e ON tce.event_id = e.event_id
             ORDER BY t.start_date ASC
             ''')
 

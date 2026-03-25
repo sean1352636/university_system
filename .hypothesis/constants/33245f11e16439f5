@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/gui/student_union_gui/clubs/club_discussions.py
+# hypothesis_version: 6.151.9
+
+[1.0, 100, 200, 300, '/', '1000x700', '600x500', '<<ComboboxSelected>>', '<Double-1>', 'Arial', 'Author', 'Cancel', 'Caption', 'Close', 'Club Discussions', 'Club Media Gallery', 'Confirm', 'Content:', 'Date', 'Delete Selected', 'Discussion Topics', 'Error', 'Event', 'File Name', 'ID', 'Mark as Announcement', 'Media Files', 'New Discussion', 'Pin to Top', 'Pinned', 'Post', 'Preview', 'Select Club:', 'Success', 'Title', 'Title:', 'Type', 'Unknown', 'Upload Date', 'Upload Media', 'Uploader', 'View Full Discussion', 'View Media', 'View/Download', 'Warning', 'bold', 'both', 'end', 'id', 'left', 'right', 'tags', 'tree headings', 'values', 'vertical', 'w', 'x', 'y']

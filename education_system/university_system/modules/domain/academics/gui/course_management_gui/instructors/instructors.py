@@ -99,7 +99,6 @@ except ImportError:
 
 # Import academic system launchers
 try:
-    from education_system.university_system.modules.domain.academics.services.lms.lms_core import launch_lms_gui
     from education_system.university_system.modules.domain.academics.services.degree_audit.degree_audit_core import launch_degree_audit_gui
     from education_system.university_system.modules.domain.academics.services.evaluation.course_evaluation_core import launch_course_evaluation_gui
     ACADEMIC_SYSTEMS_AVAILABLE = True
@@ -513,45 +512,47 @@ class AssignInstructorDialog:
             
             # Create schedule table if it doesn't exist and assign instructor
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-            CREATE TABLE IF NOT EXISTS course_schedule (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                course_id INTEGER NOT NULL,
-                semester TEXT NOT NULL,
-                year INTEGER NOT NULL,
-                start_time TEXT,
-                end_time TEXT,
-                days_of_week TEXT,
-                classroom TEXT,
-                instructor_id INTEGER,
-                created_at TEXT NOT NULL,
-                FOREIGN KEY (course_id) REFERENCES courses (id),
-                UNIQUE(course_id, semester, year)
-            )
-            ''')
-            
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            
-            # Check if schedule exists
-            cursor.execute("SELECT id FROM course_schedule WHERE course_id = ? AND semester = ? AND year = ?",
-                          (course_id, semester, year_int))
-            existing = cursor.fetchone()
-            
-            if existing:
-                # Update existing schedule
-                cursor.execute("UPDATE course_schedule SET instructor_id = ? WHERE id = ?",
-                              (instructor_id, existing[0]))
-            else:
-                # Create new schedule
+            try:
+                cursor = conn.cursor()
+
                 cursor.execute('''
-                INSERT INTO course_schedule (course_id, semester, year, instructor_id, created_at)
-                VALUES (?, ?, ?, ?, ?)
-                ''', (course_id, semester, year_int, instructor_id, timestamp))
-            
-            conn.commit()
-            conn.close()
+                CREATE TABLE IF NOT EXISTS course_schedule (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    course_id INTEGER NOT NULL,
+                    semester TEXT NOT NULL,
+                    year INTEGER NOT NULL,
+                    start_time TEXT,
+                    end_time TEXT,
+                    days_of_week TEXT,
+                    classroom TEXT,
+                    instructor_id INTEGER,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY (course_id) REFERENCES courses (id),
+                    UNIQUE(course_id, semester, year)
+                )
+                ''')
+
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                # Check if schedule exists
+                cursor.execute("SELECT id FROM course_schedule WHERE course_id = ? AND semester = ? AND year = ?",
+                              (course_id, semester, year_int))
+                existing = cursor.fetchone()
+
+                if existing:
+                    # Update existing schedule
+                    cursor.execute("UPDATE course_schedule SET instructor_id = ? WHERE id = ?",
+                                  (instructor_id, existing[0]))
+                else:
+                    # Create new schedule
+                    cursor.execute('''
+                    INSERT INTO course_schedule (course_id, semester, year, instructor_id, created_at)
+                    VALUES (?, ?, ?, ?, ?)
+                    ''', (course_id, semester, year_int, instructor_id, timestamp))
+
+                conn.commit()
+            finally:
+                conn.close()
             
             messagebox.showinfo(_("common.success"), f"Instructor assigned to {course_text} for {semester} {year}")
             self.result = True

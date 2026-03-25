@@ -3,7 +3,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from .constants import logger
+from education_system.university_system.modules.domain.finance.gui.finance.budget_manager.constants import logger
 
 
 class TextbooksMixin:

@@ -141,7 +141,7 @@ class TestDashboardManagerInit:
 class TestDashboardRefresh:
     """Test dashboard refresh functionality"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.dashboard.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.dashboard.get_connection')
     def test_refresh_dashboard_calculates_revenue(self, mock_conn, dashboard_manager, test_db_with_dashboard_data, capsys):
         """Test that refresh_dashboard calculates total revenue"""
         mock_conn.return_value = test_db_with_dashboard_data
@@ -160,7 +160,7 @@ class TestDashboardRefresh:
         captured = capsys.readouterr()
         assert 'Dashboard refreshed successfully' in captured.out or True
 
-    @patch('university_system.modules.domain.finance.gui.finance.dashboard.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.dashboard.get_connection')
     def test_refresh_dashboard_counts_active_students(self, mock_conn, dashboard_manager, test_db_with_dashboard_data):
         """Test that refresh_dashboard counts active students"""
         mock_conn.return_value = test_db_with_dashboard_data
@@ -182,7 +182,7 @@ class TestDashboardRefresh:
         # Should not crash
         assert True
 
-    @patch('university_system.modules.domain.finance.gui.finance.dashboard.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.dashboard.get_connection')
     def test_refresh_dashboard_handles_errors(self, mock_conn, dashboard_manager, capsys):
         """Test that refresh_dashboard handles errors gracefully"""
         mock_conn.side_effect = Exception("Database error")
@@ -208,7 +208,7 @@ class TestStatCardCreation:
 class TestDashboardStats:
     """Test dashboard statistics updates"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.dashboard.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.dashboard.get_connection')
     def test_update_dashboard_stats(self, mock_conn, dashboard_manager, test_db_with_dashboard_data):
         """Test updating dashboard statistics"""
         mock_conn.return_value = test_db_with_dashboard_data
@@ -235,7 +235,7 @@ class TestDashboardStats:
 class TestRecentActivity:
     """Test recent activity loading"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.dashboard.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.dashboard.get_connection')
     def test_load_recent_activity(self, mock_conn, dashboard_manager, test_db_with_dashboard_data):
         """Test loading recent activity"""
         mock_conn.return_value = test_db_with_dashboard_data
@@ -261,7 +261,7 @@ class TestRecentActivity:
         dashboard_manager.activity_listbox.delete.assert_called()
         dashboard_manager.activity_listbox.insert.assert_called()
 
-    @patch('university_system.modules.domain.finance.gui.finance.dashboard.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.dashboard.get_connection')
     def test_load_recent_activity_handles_errors(self, mock_conn, dashboard_manager, capsys):
         """Test that load_recent_activity handles errors"""
         mock_conn.side_effect = Exception("Database error")
@@ -313,7 +313,7 @@ class TestQuickActions:
         # Should show info message
         mock_info.assert_called()
 
-    @patch('university_system.modules.domain.finance.gui.finance.dashboard.launch_financial_gui')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.dashboard.launch_financial_gui')
     def test_launch_reporting_gui(self, mock_launch, dashboard_manager):
         """Test launching reporting GUI"""
         dashboard_manager.launch_reporting_gui()
@@ -338,7 +338,7 @@ class TestQuickActions:
 class TestUpdateQuickStats:
     """Test quick stats updates"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.dashboard.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.dashboard.get_connection')
     def test_update_quick_stats(self, mock_conn, dashboard_manager, test_db_with_dashboard_data):
         """Test updating quick statistics display"""
         mock_conn.return_value = test_db_with_dashboard_data

@@ -3,6 +3,7 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import AbsenceRequestError, ValidationError
 from education_system.college_system.infrastructure.database.db import connect
+from education_system.college_system.core.sql_safety import validate_identifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -29,10 +30,21 @@ class AbsenceRequestService:
             raise ValidationError("end_date is required.")
         conn = self._conn()
         try:
+            # Build INSERT with only non-None values so DB defaults apply
+            fields = {k: v for k, v in {
+                'staff_id': kwargs.get('staff_id'),
+                'absence_type': kwargs.get('absence_type'),
+                'start_date': kwargs.get('start_date'),
+                'end_date': kwargs.get('end_date'),
+                'reason': kwargs.get('reason'),
+                'status': kwargs.get('status'),
+                'approved_by': kwargs.get('approved_by'),
+            }.items() if v is not None}
+            cols = ", ".join(fields.keys())
+            placeholders = ", ".join("?" for _ in fields)
             conn.execute(
-                """INSERT INTO absence_requests (staff_id, absence_type, start_date, end_date, reason, status, approved_by)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                (kwargs.get('staff_id'), kwargs.get('absence_type'), kwargs.get('start_date'), kwargs.get('end_date'), kwargs.get('reason'), kwargs.get('status'), kwargs.get('approved_by'),),
+                f"INSERT INTO absence_requests ({cols}) VALUES ({placeholders})",
+                list(fields.values()),
             )
             conn.commit()
             row = conn.execute(
@@ -64,7 +76,7 @@ class AbsenceRequestService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -82,7 +94,7 @@ class AbsenceRequestService:
         if not updates:
             raise ValidationError("No valid fields to update.")
         updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [pk]
         conn = self._conn()
         try:
@@ -120,7 +132,7 @@ class AbsenceRequestService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         conn = self._conn()
         try:

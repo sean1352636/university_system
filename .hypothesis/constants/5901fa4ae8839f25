@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/gui/parking_management/tabs/dashboard.py
+# hypothesis_version: 6.151.9
+
+[1.0, ':', 'Arial', 'Error', 'Loading...', 'No recent activity', 'active_permits', 'available_spaces', 'bold', 'total_vehicles', 'unpaid_violations', 'w']

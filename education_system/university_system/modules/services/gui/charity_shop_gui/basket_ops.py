@@ -1,6 +1,6 @@
 """Charity Shop - Basket operations mixin for CharityShopApp."""
 
-from ._imports import (
+from education_system.university_system.modules.services.gui.charity_shop_gui._imports import (
     messagebox, datetime, json, sqlite3,
     FINANCE_INTEGRATION_AVAILABLE, ACTIVITY_LOGGER_AVAILABLE, EMAIL_SERVICE_AVAILABLE,
     DEFAULT_DB_PATH,
@@ -16,7 +16,7 @@ class BasketOpsMixin:
 
     def show_basket_window(self):
         """Show the basket window."""
-        from .basket import BasketWindow
+        from education_system.university_system.modules.services.gui.charity_shop_gui.basket import BasketWindow
 
         if self.basket_window is None or not self.basket_window.winfo_exists():
             self.basket_window = BasketWindow(self.root, self)
@@ -80,7 +80,7 @@ class BasketOpsMixin:
 
     def checkout(self):
         """Open checkout dialog to complete purchase."""
-        from .dialogs import CheckoutDialog
+        from education_system.university_system.modules.services.gui.charity_shop_gui.dialogs import CheckoutDialog
 
         if not self.basket:
             messagebox.showwarning("Empty Basket", "Please add items to basket before checkout.")
@@ -245,18 +245,7 @@ class BasketOpsMixin:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
-            # Create transactions table if it doesn't exist
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS charity_shop_transactions (
-                    transaction_id TEXT PRIMARY KEY,
-                    transaction_date TEXT NOT NULL,
-                    student_id TEXT,
-                    total_amount REAL NOT NULL,
-                    payment_method TEXT NOT NULL,
-                    status TEXT DEFAULT 'completed',
-                    items_json TEXT
-                )
-            ''')
+            # Charity shop transactions now use unified 'transactions' table with source_type='charity_shop'
 
             # Convert basket items to JSON string
             items_json = json.dumps([{
@@ -268,11 +257,11 @@ class BasketOpsMixin:
 
             # Insert transaction
             cursor.execute('''
-                INSERT INTO charity_shop_transactions
-                (transaction_id, transaction_date, student_id, total_amount, payment_method, status, items_json)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (transaction_ref, datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                  student_id, total_amount, payment_method, 'completed', items_json))
+                INSERT INTO transactions
+                (source_type, reference_number, customer_id, amount, payment_method, status, notes, created_at)
+                VALUES ('charity_shop', ?, ?, ?, ?, 'completed', ?, ?)
+            ''', (transaction_ref, student_id, total_amount, payment_method, items_json,
+                  datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
             conn.commit()
             conn.close()

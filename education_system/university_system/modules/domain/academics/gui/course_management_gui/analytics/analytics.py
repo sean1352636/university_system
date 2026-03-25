@@ -99,7 +99,6 @@ except ImportError:
 
 # Import academic system launchers
 try:
-    from education_system.university_system.modules.domain.academics.services.lms.lms_core import launch_lms_gui
     from education_system.university_system.modules.domain.academics.services.degree_audit.degree_audit_core import launch_degree_audit_gui
     from education_system.university_system.modules.domain.academics.services.evaluation.course_evaluation_core import launch_course_evaluation_gui
     ACADEMIC_SYSTEMS_AVAILABLE = True
@@ -144,44 +143,48 @@ def generate_analytics(self):
             analytics_text = "COURSE ANALYTICS DASHBOARD\n"
             analytics_text += "=" * 50 + "\n\n"
 
+            # Get total enrolled from student_modules
+            cursor.execute("SELECT COUNT(*) FROM student_modules WHERE status = 'Enrolled'")
+            total_enrolled = cursor.fetchone()[0] or 0
+
             # Overall statistics
             cursor.execute("""
             SELECT
                 COUNT(*) as total_courses,
-                SUM(COALESCE(current_enrollment, 0)) as total_students,
-                SUM(COALESCE(max_enrollment, 0)) as total_capacity,
-                AVG(COALESCE(current_enrollment, 0)) as avg_enrollment
+                SUM(COALESCE(max_enrollment, 0)) as total_capacity
             FROM courses
-            WHERE course_code IS NOT NULL
-              AND course_name IS NOT NULL
-            WHERE course_code IS NOT NULL
-              AND course_name IS NOT NULL
+            WHERE COALESCE(course_code, code) IS NOT NULL
+              AND COALESCE(course_name, name) IS NOT NULL
               AND LOWER(COALESCE(status, 'active')) = 'active'
             """)
 
             stats = cursor.fetchone()
             if stats:
+                total_courses = stats[0] or 0
+                total_capacity = stats[1] or 0
+                avg_enrollment = total_enrolled / max(total_courses, 1)
                 analytics_text += "OVERALL STATISTICS:\n"
-                analytics_text += f"Total Active Courses: {stats[0]}\n"
-                analytics_text += f"Total Students Enrolled: {stats[1]}\n"
-                analytics_text += f"Total System Capacity: {stats[2]}\n"
-                analytics_text += f"Average Enrollment per Course: {stats[3]:.1f}\n"
-                if stats[2] > 0:
-                    fill_rate = (stats[1] / stats[2]) * 100
+                analytics_text += f"Total Active Courses: {total_courses}\n"
+                analytics_text += f"Total Students Enrolled: {total_enrolled}\n"
+                analytics_text += f"Total System Capacity: {total_capacity}\n"
+                analytics_text += f"Average Enrollment per Course: {avg_enrollment:.1f}\n"
+                if total_capacity > 0:
+                    fill_rate = (total_enrolled / total_capacity) * 100
                     analytics_text += f"System Fill Rate: {fill_rate:.1f}%\n"
-                analytics_text += f"Available Spots: {stats[2] - stats[1]}\n\n"
+                analytics_text += f"Available Spots: {total_capacity - total_enrolled}\n\n"
 
             # Department breakdown
             cursor.execute("""
             SELECT
-                COALESCE(department, 'Unknown') as dept,
-                COUNT(*) as course_count,
-                SUM(COALESCE(current_enrollment, 0)) as total_students
-            FROM courses
-            WHERE course_code IS NOT NULL
-              AND course_name IS NOT NULL
-              AND LOWER(COALESCE(status, 'active')) = 'active'
-            GROUP BY department
+                COALESCE(c.department, 'Unknown') as dept,
+                COUNT(DISTINCT c.id) as course_count,
+                COUNT(DISTINCT sm.student_id) as total_students
+            FROM courses c
+            LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+            WHERE COALESCE(c.course_code, c.code) IS NOT NULL
+              AND COALESCE(c.course_name, c.name) IS NOT NULL
+              AND LOWER(COALESCE(c.status, 'active')) = 'active'
+            GROUP BY c.department
             ORDER BY total_students DESC
             """)
 
@@ -196,11 +199,14 @@ def generate_analytics(self):
 
             # Most popular courses
             cursor.execute("""
-            SELECT course_code, course_name, COALESCE(current_enrollment, 0) as enrolled
-            FROM courses
-            WHERE course_code IS NOT NULL
-              AND course_name IS NOT NULL
-              AND LOWER(COALESCE(status, 'active')) = 'active'
+            SELECT COALESCE(c.course_code, c.code), COALESCE(c.course_name, c.name),
+                   COUNT(sm.student_id) as enrolled
+            FROM courses c
+            LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+            WHERE COALESCE(c.course_code, c.code) IS NOT NULL
+              AND COALESCE(c.course_name, c.name) IS NOT NULL
+              AND LOWER(COALESCE(c.status, 'active')) = 'active'
+            GROUP BY c.id
             ORDER BY enrolled DESC
             LIMIT 10
             """)
@@ -211,6 +217,8 @@ def generate_analytics(self):
                 analytics_text += f"{'Code':<10} {'Name':<30} {'Enrolled':<10}\n"
                 analytics_text += "-" * 50 + "\n"
                 for code, name, enrolled in popular:
+                    code = code or "N/A"
+                    name = name or "N/A"
                     name_short = name[:27] + "..." if len(name) > 30 else name
                     analytics_text += f"{code:<10} {name_short:<30} {enrolled:<10}\n"
                 analytics_text += "\n"
@@ -219,17 +227,22 @@ def generate_analytics(self):
             cursor.execute("""
             SELECT COUNT(*)
             FROM courses
-            WHERE course_code IS NOT NULL
-              AND course_name IS NOT NULL
+            WHERE COALESCE(course_code, code) IS NOT NULL
+              AND COALESCE(course_name, name) IS NOT NULL
               AND LOWER(COALESCE(status, 'active')) = 'active'
-              AND COALESCE(current_enrollment, 0) < COALESCE(max_enrollment, 0)
+              AND COALESCE(max_enrollment, 0) > 0
             """)
             available_count = cursor.fetchone()[0]
             analytics_text += f"COURSE AVAILABILITY:\n"
             analytics_text += f"Courses with Available Spots: {available_count}\n\n"
 
             # Status breakdown
-            cursor.execute("SELECT status, COUNT(*) FROM courses GROUP BY status")
+            cursor.execute("""
+            SELECT status, COUNT(*) FROM courses
+            WHERE COALESCE(course_code, code) IS NOT NULL
+              AND COALESCE(course_name, name) IS NOT NULL
+            GROUP BY status
+            """)
             status_data = cursor.fetchall()
             if status_data:
                 analytics_text += "COURSE STATUS BREAKDOWN:\n"
@@ -281,39 +294,41 @@ def generate_enrollment_report(self, report_type):
             report_text += "=" * 60 + "\n\n"
 
             if report_type == "Summary":
+                cursor.execute("SELECT COUNT(*) FROM student_modules WHERE status = 'Enrolled'")
+                total_enrolled = cursor.fetchone()[0] or 0
                 cursor.execute("""
-                SELECT
-                    COUNT(*) as total_courses,
-                    SUM(COALESCE(current_enrollment, 0)) as total_enrolled,
-                    SUM(COALESCE(max_enrollment, 0)) as total_capacity,
-                    AVG(COALESCE(current_enrollment, 0)) as avg_enrollment
+                SELECT COUNT(*) as total_courses,
+                       SUM(COALESCE(max_enrollment, 0)) as total_capacity
                 FROM courses
-                WHERE course_code IS NOT NULL
-                  AND course_name IS NOT NULL
+                WHERE COALESCE(course_code, code) IS NOT NULL
+                  AND COALESCE(course_name, name) IS NOT NULL
                   AND LOWER(COALESCE(status, 'active')) = 'active'
                 """)
-
                 summary = cursor.fetchone()
-                report_text += f"Total Active Courses: {summary[0]}\n"
-                report_text += f"Total Students Enrolled: {summary[1]}\n"
-                report_text += f"Total System Capacity: {summary[2]}\n"
-                report_text += f"Average Enrollment per Course: {summary[3]:.1f}\n"
-                if summary[2] > 0:
-                    report_text += f"System Fill Rate: {(summary[1]/summary[2]*100):.1f}%\n"
-                report_text += f"Available Spots: {summary[2] - summary[1]}\n"
+                total_courses = summary[0] or 0
+                total_capacity = summary[1] or 0
+                avg_enrollment = total_enrolled / max(total_courses, 1)
+                report_text += f"Total Active Courses: {total_courses}\n"
+                report_text += f"Total Students Enrolled: {total_enrolled}\n"
+                report_text += f"Total System Capacity: {total_capacity}\n"
+                report_text += f"Average Enrollment per Course: {avg_enrollment:.1f}\n"
+                if total_capacity > 0:
+                    report_text += f"System Fill Rate: {(total_enrolled/total_capacity*100):.1f}%\n"
+                report_text += f"Available Spots: {total_capacity - total_enrolled}\n"
 
             elif report_type == "Department":
                 cursor.execute("""
                 SELECT
-                    COALESCE(department, 'Unknown') as dept,
-                    COUNT(*) as course_count,
-                    SUM(COALESCE(current_enrollment, 0)) as total_students,
-                    SUM(COALESCE(max_enrollment, 0)) as total_capacity
-                FROM courses
-                WHERE course_code IS NOT NULL
-                  AND course_name IS NOT NULL
-                  AND LOWER(COALESCE(status, 'active')) = 'active'
-                GROUP BY department
+                    COALESCE(c.department, 'Unknown') as dept,
+                    COUNT(DISTINCT c.id) as course_count,
+                    COUNT(DISTINCT sm.student_id) as total_students,
+                    SUM(COALESCE(c.max_enrollment, 0)) as total_capacity
+                FROM courses c
+                LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+                WHERE COALESCE(c.course_code, c.code) IS NOT NULL
+                  AND COALESCE(c.course_name, c.name) IS NOT NULL
+                  AND LOWER(COALESCE(c.status, 'active')) = 'active'
+                GROUP BY c.department
                 ORDER BY total_students DESC
                 """)
 
@@ -327,22 +342,25 @@ def generate_enrollment_report(self, report_type):
 
             elif report_type == "Detailed":
                 cursor.execute("""
-                SELECT course_code, course_name, department, level,
-                       COALESCE(current_enrollment, 0), COALESCE(max_enrollment, 0),
-                       course_type, credit_hours
-                FROM courses
-                WHERE course_code IS NOT NULL
-                  AND course_name IS NOT NULL
-                  AND LOWER(COALESCE(status, 'active')) = 'active'
-                ORDER BY current_enrollment DESC
+                SELECT COALESCE(c.course_code, c.code), COALESCE(c.course_name, c.name),
+                       c.department, c.level,
+                       COUNT(sm.student_id) as enrolled, COALESCE(c.max_enrollment, 0) as capacity
+                FROM courses c
+                LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+                WHERE COALESCE(c.course_code, c.code) IS NOT NULL
+                  AND COALESCE(c.course_name, c.name) IS NOT NULL
+                  AND LOWER(COALESCE(c.status, 'active')) = 'active'
+                GROUP BY c.id
+                ORDER BY enrolled DESC
                 """)
 
                 course_data = cursor.fetchall()
                 report_text += f"{'Code':<8} {'Name':<25} {'Dept':<12} {'Level':<12} {'Enrolled':<10} {'Fill Rate':<10}\n"
                 report_text += "-" * 77 + "\n"
 
-                for course in course_data:
-                    code, name, dept, level, enrolled, capacity = course[:6]
+                for code, name, dept, level, enrolled, capacity in course_data:
+                    code = code or "N/A"
+                    name = name or "N/A"
                     name_short = name[:22] + "..." if len(name) > 25 else name
                     dept_short = dept[:9] + "..." if dept and len(dept) > 12 else dept or "N/A"
                     level_short = level[:9] + "..." if level and len(level) > 12 else level or "N/A"
@@ -353,22 +371,27 @@ def generate_enrollment_report(self, report_type):
 
             elif report_type == "Capacity":
                 cursor.execute("""
-                SELECT course_code, course_name, department,
-                       COALESCE(current_enrollment, 0) as enrolled,
-                       COALESCE(max_enrollment, 0) as capacity,
-                       COALESCE(max_enrollment, 0) - COALESCE(current_enrollment, 0) as available
-                FROM courses
-                WHERE course_code IS NOT NULL
-                  AND course_name IS NOT NULL
-                  AND LOWER(COALESCE(status, 'active')) = 'active'
-                ORDER BY available DESC
+                SELECT COALESCE(c.course_code, c.code), COALESCE(c.course_name, c.name),
+                       c.department,
+                       COUNT(sm.student_id) as enrolled,
+                       COALESCE(c.max_enrollment, 0) as capacity
+                FROM courses c
+                LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+                WHERE COALESCE(c.course_code, c.code) IS NOT NULL
+                  AND COALESCE(c.course_name, c.name) IS NOT NULL
+                  AND LOWER(COALESCE(c.status, 'active')) = 'active'
+                GROUP BY c.id
+                ORDER BY (COALESCE(c.max_enrollment, 0) - COUNT(sm.student_id)) DESC
                 """)
 
                 capacity_data = cursor.fetchall()
                 report_text += f"{'Code':<8} {'Name':<30} {'Department':<15} {'Enrolled':<10} {'Capacity':<10} {'Available':<10}\n"
                 report_text += "-" * 83 + "\n"
 
-                for code, name, dept, enrolled, capacity, available in capacity_data:
+                for code, name, dept, enrolled, capacity in capacity_data:
+                    code = code or "N/A"
+                    name = name or "N/A"
+                    available = capacity - enrolled
                     name_short = name[:27] + "..." if len(name) > 30 else name
                     dept_short = dept[:12] + "..." if dept and len(dept) > 15 else dept or "N/A"
                     report_text += f"{code:<8} {name_short:<30} {dept_short:<15} {enrolled:<10} {capacity:<10} {available:<10}\n"
@@ -456,19 +479,18 @@ def visualize_report(self):
 
 def _create_summary_charts(self, notebook, cursor):
     """Create summary report charts"""
-    # Get summary data
+    cursor.execute("SELECT COUNT(*) FROM student_modules WHERE status = 'Enrolled'")
+    total_enrolled = cursor.fetchone()[0] or 0
     cursor.execute("""
-    SELECT
-        COUNT(*) as total_courses,
-        SUM(COALESCE(current_enrollment, 0)) as total_enrolled,
-        SUM(COALESCE(max_enrollment, 0)) as total_capacity,
-        AVG(COALESCE(current_enrollment, 0)) as avg_enrollment
+    SELECT COUNT(*) as total_courses,
+           SUM(COALESCE(max_enrollment, 0)) as total_capacity
     FROM courses
-            WHERE course_code IS NOT NULL
-              AND course_name IS NOT NULL
-              AND LOWER(COALESCE(status, 'active')) = 'active'
+    WHERE COALESCE(course_code, code) IS NOT NULL
+      AND COALESCE(course_name, name) IS NOT NULL
+      AND LOWER(COALESCE(status, 'active')) = 'active'
     """)
-    summary = cursor.fetchone()
+    row = cursor.fetchone()
+    summary = (row[0], total_enrolled, row[1] or 0, total_enrolled / max(row[0], 1))
 
     # Chart 1: Enrollment Overview (Bar Chart)
     frame1 = ttk.Frame(notebook)
@@ -517,15 +539,16 @@ def _create_department_charts(self, notebook, cursor):
     """Create department report charts"""
     cursor.execute("""
     SELECT
-        COALESCE(department, 'Unknown') as dept,
-        COUNT(*) as course_count,
-        SUM(COALESCE(current_enrollment, 0)) as total_students,
-        SUM(COALESCE(max_enrollment, 0)) as total_capacity
-    FROM courses
-            WHERE course_code IS NOT NULL
-              AND course_name IS NOT NULL
-              AND LOWER(COALESCE(status, 'active')) = 'active'
-    GROUP BY department
+        COALESCE(c.department, 'Unknown') as dept,
+        COUNT(DISTINCT c.id) as course_count,
+        COUNT(DISTINCT sm.student_id) as total_students,
+        SUM(COALESCE(c.max_enrollment, 0)) as total_capacity
+    FROM courses c
+    LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+    WHERE COALESCE(c.course_code, c.code) IS NOT NULL
+      AND COALESCE(c.course_name, c.name) IS NOT NULL
+      AND LOWER(COALESCE(c.status, 'active')) = 'active'
+    GROUP BY c.department
     ORDER BY total_students DESC
     """)
     dept_data = cursor.fetchall()
@@ -595,13 +618,15 @@ def _create_department_charts(self, notebook, cursor):
 def _create_detailed_charts(self, notebook, cursor):
     """Create detailed report charts"""
     cursor.execute("""
-    SELECT course_code, course_name, department,
-           COALESCE(current_enrollment, 0), COALESCE(max_enrollment, 0)
-    FROM courses
-            WHERE course_code IS NOT NULL
-              AND course_name IS NOT NULL
-              AND LOWER(COALESCE(status, 'active')) = 'active'
-    ORDER BY current_enrollment DESC
+    SELECT COALESCE(c.course_code, c.code), COALESCE(c.course_name, c.name), c.department,
+           COUNT(sm.student_id) as enrolled, COALESCE(c.max_enrollment, 0) as capacity
+    FROM courses c
+    LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+    WHERE COALESCE(c.course_code, c.code) IS NOT NULL
+      AND COALESCE(c.course_name, c.name) IS NOT NULL
+      AND LOWER(COALESCE(c.status, 'active')) = 'active'
+    GROUP BY c.id
+    ORDER BY enrolled DESC
     LIMIT 15
     """)
     course_data = cursor.fetchall()
@@ -663,14 +688,16 @@ def _create_detailed_charts(self, notebook, cursor):
 def _create_capacity_charts(self, notebook, cursor):
     """Create capacity report charts"""
     cursor.execute("""
-    SELECT course_code, course_name, department,
-           COALESCE(current_enrollment, 0) as enrolled,
-           COALESCE(max_enrollment, 0) as capacity,
-           COALESCE(max_enrollment, 0) - COALESCE(current_enrollment, 0) as available
-    FROM courses
-            WHERE course_code IS NOT NULL
-              AND course_name IS NOT NULL
-              AND LOWER(COALESCE(status, 'active')) = 'active'
+    SELECT COALESCE(c.course_code, c.code), COALESCE(c.course_name, c.name), c.department,
+           COUNT(sm.student_id) as enrolled,
+           COALESCE(c.max_enrollment, 0) as capacity,
+           (COALESCE(c.max_enrollment, 0) - COUNT(sm.student_id)) as available
+    FROM courses c
+    LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+    WHERE COALESCE(c.course_code, c.code) IS NOT NULL
+      AND COALESCE(c.course_name, c.name) IS NOT NULL
+      AND LOWER(COALESCE(c.status, 'active')) = 'active'
+    GROUP BY c.id
     ORDER BY available DESC
     LIMIT 15
     """)
@@ -950,15 +977,16 @@ def show_department_stats(self):
                     # All departments overview
                     cursor.execute("""
                     SELECT
-                        COALESCE(department, 'Unknown') as dept,
-                        COUNT(*) as course_count,
-                        SUM(COALESCE(current_enrollment, 0)) as total_students,
-                        SUM(COALESCE(max_enrollment, 0)) as total_capacity,
-                        COUNT(CASE WHEN LOWER(COALESCE(status, 'active')) = 'active' THEN 1 END) as active_courses
-                    FROM courses
-                    WHERE course_code IS NOT NULL
-                      AND course_name IS NOT NULL
-                    GROUP BY department
+                        COALESCE(c.department, 'Unknown') as dept,
+                        COUNT(DISTINCT c.id) as course_count,
+                        COUNT(DISTINCT sm.student_id) as total_students,
+                        SUM(COALESCE(c.max_enrollment, 0)) as total_capacity,
+                        COUNT(DISTINCT CASE WHEN LOWER(COALESCE(c.status, 'active')) = 'active' THEN c.id END) as active_courses
+                    FROM courses c
+                    LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+                    WHERE COALESCE(c.course_code, c.code) IS NOT NULL
+                      AND COALESCE(c.course_name, c.name) IS NOT NULL
+                    GROUP BY c.department
                     ORDER BY total_students DESC
                     """)
 
@@ -976,30 +1004,36 @@ def show_department_stats(self):
                     # Single department stats
                     cursor.execute("""
                     SELECT
-                        COUNT(*) as total_courses,
-                        SUM(COALESCE(current_enrollment, 0)) as total_students,
-                        SUM(COALESCE(max_enrollment, 0)) as total_capacity,
-                        AVG(COALESCE(current_enrollment, 0)) as avg_enrollment,
-                        AVG(credit_hours) as avg_credits,
-                        COUNT(CASE WHEN LOWER(COALESCE(status, 'active')) = 'active' THEN 1 END) as active_courses
-                    FROM courses
-                    WHERE course_code IS NOT NULL
-                      AND course_name IS NOT NULL
-                      AND department = ?
+                        COUNT(DISTINCT c.id) as total_courses,
+                        COUNT(DISTINCT sm.student_id) as total_students,
+                        SUM(COALESCE(c.max_enrollment, 0)) as total_capacity,
+                        AVG(COALESCE(c.credit_hours, c.credits, 0)) as avg_credits,
+                        COUNT(DISTINCT CASE WHEN LOWER(COALESCE(c.status, 'active')) = 'active' THEN c.id END) as active_courses
+                    FROM courses c
+                    LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+                    WHERE COALESCE(c.course_code, c.code) IS NOT NULL
+                      AND COALESCE(c.course_name, c.name) IS NOT NULL
+                      AND c.department = ?
                     """, (selected_dept,))
 
                     stats = cursor.fetchone()
+                    total_courses = stats[0] or 0
+                    total_students = stats[1] or 0
+                    total_capacity = stats[2] or 0
+                    avg_credits = stats[3] or 0.0
+                    active_courses = stats[4] or 0
+                    avg_enrollment = total_students / max(total_courses, 1)
 
                     stats_text.insert(tk.END, f"STATISTICS FOR {selected_dept.upper()} DEPARTMENT\n")
                     stats_text.insert(tk.END, "=" * 60 + "\n\n")
-                    stats_text.insert(tk.END, f"Total Courses: {stats[0]}\n")
-                    stats_text.insert(tk.END, f"Active Courses: {stats[5]}\n")
-                    stats_text.insert(tk.END, f"Total Students: {stats[1]}\n")
-                    stats_text.insert(tk.END, f"Total Capacity: {stats[2]}\n")
-                    stats_text.insert(tk.END, f"Average Enrollment: {stats[3]:.1f}\n")
-                    stats_text.insert(tk.END, f"Average Credit Hours: {stats[4]:.1f}\n")
-                    if stats[2] > 0:
-                        stats_text.insert(tk.END, f"Department Fill Rate: {(stats[1]/stats[2]*100):.1f}%\n")
+                    stats_text.insert(tk.END, f"Total Courses: {total_courses}\n")
+                    stats_text.insert(tk.END, f"Active Courses: {active_courses}\n")
+                    stats_text.insert(tk.END, f"Total Students: {total_students}\n")
+                    stats_text.insert(tk.END, f"Total Capacity: {total_capacity}\n")
+                    stats_text.insert(tk.END, f"Average Enrollment: {avg_enrollment:.1f}\n")
+                    stats_text.insert(tk.END, f"Average Credit Hours: {avg_credits:.1f}\n")
+                    if total_capacity > 0:
+                        stats_text.insert(tk.END, f"Department Fill Rate: {(total_students/total_capacity*100):.1f}%\n")
 
         ttk.Button(selection_frame, text="Update", command=update_stats).pack(side=tk.LEFT, padx=5)
         ttk.Button(main_frame, text="Close", command=stats_window.destroy).pack(pady=10)
@@ -1212,22 +1246,28 @@ class CourseAnalyticsDialog:
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
-            
+
+            # Get total enrolled from student_modules
+            cursor.execute("SELECT COUNT(*) FROM student_modules WHERE status = 'Enrolled'")
+            total_students = cursor.fetchone()[0] or 0
+
             # Get key metrics
             cursor.execute("""
-            SELECT 
+            SELECT
                 COUNT(*) as total_courses,
-                SUM(COALESCE(current_enrollment, 0)) as total_students,
                 SUM(COALESCE(max_enrollment, 0)) as total_capacity,
-                AVG(COALESCE(current_enrollment, 0)) as avg_enrollment,
                 COUNT(CASE WHEN LOWER(COALESCE(status, 'active')) = 'active' THEN 1 END) as active_courses
             FROM courses
+            WHERE COALESCE(course_code, code) IS NOT NULL
+            AND COALESCE(course_name, name) IS NOT NULL
             """)
-            
+
             metrics = cursor.fetchone()
             if metrics:
-                total_courses, total_students, total_capacity, avg_enrollment, active_courses = metrics
-                available_spots = total_capacity - total_students if total_capacity and total_students else 0
+                total_courses, total_capacity, active_courses = metrics
+                total_capacity = total_capacity or 0
+                avg_enrollment = total_students / max(total_courses, 1)
+                available_spots = total_capacity - total_students if total_capacity else 0
                 avg_fill_rate = (total_students / total_capacity * 100) if total_capacity > 0 else 0
                 
                 self.total_courses_label.config(text=f"Total Courses: {total_courses}")
@@ -1296,17 +1336,18 @@ class CourseAnalyticsDialog:
             
             # Department statistics
             cursor.execute("""
-            SELECT 
-                COUNT(*) as total_courses,
-                SUM(COALESCE(current_enrollment, 0)) as total_students,
-                SUM(COALESCE(max_enrollment, 0)) as total_capacity,
-                AVG(COALESCE(current_enrollment, 0)) as avg_enrollment,
-                AVG(credit_hours) as avg_credits,
-                COUNT(CASE WHEN LOWER(COALESCE(status, 'active')) = 'active' THEN 1 END) as active_courses
-            FROM courses 
-            WHERE course_code IS NOT NULL
-              AND course_name IS NOT NULL
-              AND COALESCE(department, 'Unknown') = ?
+            SELECT
+                COUNT(DISTINCT c.id) as total_courses,
+                COUNT(DISTINCT sm.student_id) as total_students,
+                SUM(COALESCE(c.max_enrollment, 0)) as total_capacity,
+                CAST(COUNT(DISTINCT sm.student_id) AS REAL) / MAX(COUNT(DISTINCT c.id), 1) as avg_enrollment,
+                AVG(COALESCE(c.credit_hours, c.credits, 0)) as avg_credits,
+                COUNT(DISTINCT CASE WHEN LOWER(COALESCE(c.status, 'active')) = 'active' THEN c.id END) as active_courses
+            FROM courses c
+            LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+            WHERE COALESCE(c.course_code, c.code) IS NOT NULL
+              AND COALESCE(c.course_name, c.name) IS NOT NULL
+              AND COALESCE(c.department, 'Unknown') = ?
             """, (selected_dept,))
             
             stats = cursor.fetchone()
@@ -1324,18 +1365,20 @@ class CourseAnalyticsDialog:
             
             # Top courses in department
             cursor.execute("""
-            SELECT course_code, course_name, COALESCE(current_enrollment, 0) as enrolled,
-                   COALESCE(max_enrollment, 0) as capacity
-            FROM courses 
-            WHERE course_code IS NOT NULL
-              AND course_name IS NOT NULL
-              AND COALESCE(department, 'Unknown') = ?
-              AND LOWER(COALESCE(status, 'active')) = 'active'
-              AND COALESCE(max_enrollment, 0) > 0
+            SELECT COALESCE(c.course_code, c.code), COALESCE(c.course_name, c.name),
+                   COUNT(sm.student_id) as enrolled,
+                   COALESCE(c.max_enrollment, 0) as capacity
+            FROM courses c
+            LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+            WHERE COALESCE(c.course_code, c.code) IS NOT NULL
+              AND COALESCE(c.course_name, c.name) IS NOT NULL
+              AND COALESCE(c.department, 'Unknown') = ?
+              AND LOWER(COALESCE(c.status, 'active')) = 'active'
+            GROUP BY c.id
             ORDER BY enrolled DESC
             LIMIT 5
             """, (selected_dept,))
-            
+
             popular_courses = cursor.fetchall()
             self.dept_details.insert(tk.END, "Most Popular Courses:\n")
             for code, name, enrolled, capacity in popular_courses:
@@ -1344,15 +1387,18 @@ class CourseAnalyticsDialog:
 
             self.dept_details.insert(tk.END, "\nCourses with Low Enrollment:\n")
             cursor.execute("""
-            SELECT course_code, course_name, COALESCE(current_enrollment, 0) as enrolled,
-                   COALESCE(max_enrollment, 0) as capacity
-            FROM courses
-            WHERE course_code IS NOT NULL
-              AND course_name IS NOT NULL
-              AND COALESCE(department, 'Unknown') = ?
-              AND LOWER(COALESCE(status, 'active')) = 'active'
-              AND COALESCE(max_enrollment, 0) > 0
-              AND COALESCE(current_enrollment, 0) < (COALESCE(max_enrollment, 0) * 0.3)
+            SELECT COALESCE(c.course_code, c.code), COALESCE(c.course_name, c.name),
+                   COUNT(sm.student_id) as enrolled,
+                   COALESCE(c.max_enrollment, 0) as capacity
+            FROM courses c
+            LEFT JOIN student_modules sm ON sm.module_code = COALESCE(c.course_code, c.code) AND sm.status = 'Enrolled'
+            WHERE COALESCE(c.course_code, c.code) IS NOT NULL
+              AND COALESCE(c.course_name, c.name) IS NOT NULL
+              AND COALESCE(c.department, 'Unknown') = ?
+              AND LOWER(COALESCE(c.status, 'active')) = 'active'
+              AND COALESCE(c.max_enrollment, 0) > 0
+            GROUP BY c.id
+            HAVING COUNT(sm.student_id) < (COALESCE(c.max_enrollment, 0) * 0.3)
             ORDER BY enrolled ASC
             LIMIT 5
             """, (selected_dept,))
@@ -1368,8 +1414,9 @@ class CourseAnalyticsDialog:
             messagebox.showerror(_("common.database_error"), f"Failed to load department data: {e}")
 
     def load_trends_data(self):
+        conn = None
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0)
             cursor = conn.cursor()
 
             self.trends_text.delete(1.0, tk.END)
@@ -1380,11 +1427,15 @@ class CourseAnalyticsDialog:
             self.trends_text.insert(tk.END, "ENROLLMENT TRENDS:\n\n")
 
             cursor.execute("""
-            SELECT course_code, course_name, COALESCE(current_enrollment, 0) as enrollment
-            FROM courses
-            WHERE course_code IS NOT NULL
-              AND course_name IS NOT NULL
-              AND LOWER(COALESCE(status, 'active')) = 'active'
+            SELECT COALESCE(c.course_code, c.code), COALESCE(c.course_name, c.name),
+                   COUNT(s.student_id) as enrollment
+            FROM courses c
+            LEFT JOIN students s ON UPPER(s.course) = UPPER(COALESCE(c.course_code, c.code))
+            WHERE COALESCE(c.course_code, c.code) IS NOT NULL
+              AND COALESCE(c.course_name, c.name) IS NOT NULL
+              AND COALESCE(c.course_type, '') = 'Degree Program'
+              AND LOWER(COALESCE(c.status, 'active')) = 'active'
+            GROUP BY c.id
             ORDER BY enrollment DESC
             LIMIT 10
             """)
@@ -1397,15 +1448,19 @@ class CourseAnalyticsDialog:
 
             self.trends_text.insert(tk.END, "\nCourses with Available Seats:\n")
             cursor.execute("""
-            SELECT course_code, course_name,
-                   COALESCE(current_enrollment, 0) as enrolled,
-                   COALESCE(max_enrollment, 0) as capacity,
-                   (COALESCE(max_enrollment, 0) - COALESCE(current_enrollment, 0)) as available
-            FROM courses
-            WHERE course_code IS NOT NULL
-              AND course_name IS NOT NULL
-              AND LOWER(COALESCE(status, 'active')) = 'active'
-              AND COALESCE(max_enrollment, 0) > COALESCE(current_enrollment, 0)
+            SELECT COALESCE(c.course_code, c.code), COALESCE(c.course_name, c.name),
+                   COUNT(s.student_id) as enrolled,
+                   COALESCE(c.max_enrollment, 0) as capacity,
+                   (COALESCE(c.max_enrollment, 0) - COUNT(s.student_id)) as available
+            FROM courses c
+            LEFT JOIN students s ON UPPER(s.course) = UPPER(COALESCE(c.course_code, c.code))
+            WHERE COALESCE(c.course_code, c.code) IS NOT NULL
+              AND COALESCE(c.course_name, c.name) IS NOT NULL
+              AND COALESCE(c.course_type, '') = 'Degree Program'
+              AND LOWER(COALESCE(c.status, 'active')) = 'active'
+              AND COALESCE(c.max_enrollment, 0) > 0
+            GROUP BY c.id
+            HAVING COUNT(s.student_id) < COALESCE(c.max_enrollment, 0)
             ORDER BY available DESC
             LIMIT 10
             """)
@@ -1414,10 +1469,11 @@ class CourseAnalyticsDialog:
             for code, name, enrolled, capacity, available in available_courses:
                 self.trends_text.insert(tk.END, f"  {code} - {name}: {available} seats available ({enrolled}/{capacity})\n")
 
-            conn.close()
-
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to load trends data: {e}")
+        finally:
+            if conn:
+                conn.close()
 
     def export_report(self):
         filename = filedialog.asksaveasfilename(
@@ -1458,16 +1514,17 @@ class EnrollmentReportDialog:
     def __init__(self, parent):
         self.parent = parent
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Generate Enrollment Report")
         self.dialog.geometry("400x300")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         self.create_widgets()
         self.dialog.focus_set()
-    
+        self.dialog.wait_window()
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)

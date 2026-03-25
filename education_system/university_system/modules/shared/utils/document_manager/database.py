@@ -1,4 +1,4 @@
-from ._common import (
+from education_system.university_system.modules.shared.utils.document_manager._common import (
     datetime, hashlib, sqlite3,
     get_connection, _t, log_activity,
     ACTIVITY_LOGGER_AVAILABLE,
@@ -66,11 +66,12 @@ class DatabaseMixin:
             )
             ''')
 
-            # Enhanced student_documents table with versioning
+            # Enhanced documents table with versioning
             cursor.execute('''
-            CREATE TABLE IF NOT EXISTS student_documents (
+            CREATE TABLE IF NOT EXISTS documents (
                 document_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                student_id TEXT,
+                source_type TEXT DEFAULT 'student',
+                owner_id TEXT,
                 type_id INTEGER,
                 file_path TEXT,
                 original_filename TEXT,
@@ -88,9 +89,8 @@ class DatabaseMixin:
                 is_current_version BOOLEAN DEFAULT 1,
                 workflow_status TEXT DEFAULT 'pending',
                 priority INTEGER DEFAULT 0,
-                FOREIGN KEY (student_id) REFERENCES students (student_id),
                 FOREIGN KEY (type_id) REFERENCES document_types (type_id),
-                FOREIGN KEY (parent_document_id) REFERENCES student_documents (document_id),
+                FOREIGN KEY (parent_document_id) REFERENCES documents (document_id),
                 FOREIGN KEY (uploaded_by) REFERENCES users (username)
             )
             ''')
@@ -107,7 +107,7 @@ class DatabaseMixin:
                 comments TEXT,
                 completed_date TEXT,
                 completed_by TEXT,
-                FOREIGN KEY (document_id) REFERENCES student_documents (document_id)
+                FOREIGN KEY (document_id) REFERENCES documents (document_id)
             )
             ''')
 
@@ -125,7 +125,7 @@ class DatabaseMixin:
                 is_sent BOOLEAN DEFAULT 0,
                 priority TEXT DEFAULT 'normal',
                 related_document_id INTEGER,
-                FOREIGN KEY (related_document_id) REFERENCES student_documents (document_id)
+                FOREIGN KEY (related_document_id) REFERENCES documents (document_id)
             )
             ''')
 

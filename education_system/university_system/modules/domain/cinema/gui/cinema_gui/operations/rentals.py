@@ -13,7 +13,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_rentals_page(self):
     self.clear_content()
@@ -32,11 +32,13 @@ def show_rentals_page(self):
     for col in columns:
         self.rental_tree.heading(col, text=col)
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM private_rentals ORDER BY rental_date DESC")
-    for row in cursor.fetchall():
-        self.rental_tree.insert("", "end", values=(row[0], row[1], f"Screen {row[4]}", row[5], row[6], row[8], f"\u00a3{row[14]:.2f}", row[17].upper()))
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM private_rentals ORDER BY rental_date DESC")
+        for row in cursor.fetchall():
+            self.rental_tree.insert("", "end", values=(row[0], row[1], f"Screen {row[4]}", row[5], row[6], row[8], f"\u00a3{row[14]:.2f}", row[17].upper()))
+    finally:
+        conn.close()
     self.rental_tree.pack(fill="both", expand=True, side="left")
     scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.rental_tree.yview)
     self.rental_tree.configure(yscrollcommand=scrollbar.set)
@@ -79,11 +81,13 @@ def create_rental(self):
             guests, screen = 50, 1
         base = 299.00
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO private_rentals (customer_name, customer_email, customer_phone, screen_number, rental_date, start_time, end_time, guest_count, base_price, total_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                      (entries['name'].get(), entries['email'].get(), entries['phone'].get(), screen, entries['date'].get(), entries['start'].get(), entries['end'].get(), guests, base, base))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO private_rentals (customer_name, customer_email, customer_phone, screen_number, rental_date, start_time, end_time, guest_count, base_price, total_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                          (entries['name'].get(), entries['email'].get(), entries['phone'].get(), screen, entries['date'].get(), entries['start'].get(), entries['end'].get(), guests, base, base))
+            conn.commit()
+        finally:
+            conn.close()
         messagebox.showinfo(_t("cinema.messages.success.submitted"), f"Rental request submitted!\nDate: {entries['date'].get()}\nTotal: \u00a3{base:.2f}")
         form.destroy()
         self.show_rentals_page()
@@ -96,10 +100,12 @@ def confirm_rental(self):
         return
     rental_id = self.rental_tree.item(selected[0])['values'][0]
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("UPDATE private_rentals SET status = 'confirmed' WHERE id = ?", (rental_id,))
-    conn.commit()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE private_rentals SET status = 'confirmed' WHERE id = ?", (rental_id,))
+        conn.commit()
+    finally:
+        conn.close()
     messagebox.showinfo(_t("cinema.common.success"), "Rental confirmed!")
     self.show_rentals_page()
 
@@ -112,8 +118,10 @@ def cancel_rental(self):
         return
     rental_id = self.rental_tree.item(selected[0])['values'][0]
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("UPDATE private_rentals SET status = 'cancelled' WHERE id = ?", (rental_id,))
-    conn.commit()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE private_rentals SET status = 'cancelled' WHERE id = ?", (rental_id,))
+        conn.commit()
+    finally:
+        conn.close()
     self.show_rentals_page()

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/community/coming_soon.py
+# hypothesis_version: 6.151.9
+
+[120, 500, '#333333', '#e74c3c', '#ecf0f1', '#ffffff', '%Y-%m-%d', '-', '.', '500x450', 'Card.TFrame', 'Countdown', 'Danger.TButton', 'Delete this movie?', 'Description:', 'Director:', 'Genre', 'Genre:', 'Helvetica', 'ID', 'Main.TFrame', 'Movie Duration', 'Movie added!', 'No trailer available', 'Notify', 'Primary.TButton', 'Rating', 'Rating:', 'Release Date', 'Release Date:*', 'Released!', 'Select a movie', 'Status', 'Subtitle.TLabel', 'Success.TButton', 'TBA', 'Title', 'Title:*', 'Trailer URL:', 'Warning.TButton', "You'll be notified!", '_', 'bold', 'both', 'cinema.btn.notify_me', 'cinema.buttons.save', 'cinema.common.info', 'desc', 'director', 'end', 'genre', 'headings', 'left', 'rating', 'release', 'right', 'title', 'trailer', 'values', 'vertical', 'w', 'x', 'y']

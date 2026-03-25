@@ -267,7 +267,7 @@ class TestTOTPMethods:
 
         conn.close()
 
-    @patch('university_system.infrastructure.auth.mfa_service.pyotp.TOTP')
+    @patch('education_system.university_system.infrastructure.auth.mfa_service.pyotp.TOTP')
     def test_verify_totp_success(self, mock_totp_class, temp_db):
         """Test successful TOTP verification"""
         service = MFAService(db_path=temp_db)
@@ -286,7 +286,7 @@ class TestTOTPMethods:
         assert result['success'] is True
         assert result['method'] == 'totp'
 
-    @patch('university_system.infrastructure.auth.mfa_service.pyotp.TOTP')
+    @patch('education_system.university_system.infrastructure.auth.mfa_service.pyotp.TOTP')
     def test_verify_totp_invalid_code(self, mock_totp_class, temp_db):
         """Test TOTP verification with invalid code"""
         service = MFAService(db_path=temp_db)
@@ -313,7 +313,7 @@ class TestTOTPMethods:
         assert result['success'] is False
         assert 'not configured' in result['error']
 
-    @patch('university_system.infrastructure.auth.mfa_service.pyotp.TOTP')
+    @patch('education_system.university_system.infrastructure.auth.mfa_service.pyotp.TOTP')
     def test_verify_totp_with_device_trust(self, mock_totp_class, temp_db):
         """Test TOTP verification with device trust"""
         service = MFAService(db_path=temp_db)
@@ -812,7 +812,7 @@ class TestMFAEnforcementMethods:
 class TestVerificationAttemptLogging:
     """Test verification attempt logging"""
 
-    @patch('university_system.infrastructure.auth.mfa_service.pyotp.TOTP')
+    @patch('education_system.university_system.infrastructure.auth.mfa_service.pyotp.TOTP')
     def test_log_successful_verification(self, mock_totp_class, temp_db):
         """Test that successful verifications are logged"""
         service = MFAService(db_path=temp_db)
@@ -842,7 +842,7 @@ class TestVerificationAttemptLogging:
         assert row[0] == 1  # success
         assert row[1] == 'totp'
 
-    @patch('university_system.infrastructure.auth.mfa_service.pyotp.TOTP')
+    @patch('education_system.university_system.infrastructure.auth.mfa_service.pyotp.TOTP')
     def test_log_failed_verification(self, mock_totp_class, temp_db):
         """Test that failed verifications are logged"""
         service = MFAService(db_path=temp_db)

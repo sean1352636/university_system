@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/grade_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' = ?', ' AND ', ' WHERE ', ' WHERE grade_id = ?', '%Y-%m-%d %H:%M:%S', ', ', '/<int:grade_id>', '/api/grades', 'GET', 'POST', 'PUT', 'SELECT * FROM grades', 'UPDATE grades SET ', 'assessment_id', 'assessment_id = ?', 'comments', 'create', 'grade', 'grades', 'items', 'letter_grade', 'score', 'student_id', 'student_id = ?', 'sub', 'total', 'update', 'view']

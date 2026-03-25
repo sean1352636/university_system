@@ -27,6 +27,15 @@ from education_system.university_system.modules.domain.student_affairs.services.
     set_auth,
 )
 
+
+def _ensure_student(cursor, student_id, first_name='Test', last_name='User', email='test@email.com'):
+    """Insert a student record if needed (to satisfy alumni FK constraint)."""
+    cursor.execute(
+        'INSERT OR IGNORE INTO students (student_id, first_name, last_name, email) VALUES (?, ?, ?, ?)',
+        (student_id, first_name, last_name, email),
+    )
+
+
 @pytest.fixture
 def setup_alumni_database():
     """Set up test database with alumni tables"""
@@ -35,26 +44,33 @@ def setup_alumni_database():
 
     yield
 
-    # Cleanup
-    conn = get_connection()
-    cursor = conn.cursor()
+    # Cleanup — use a short timeout to avoid blocking the test suite
+    try:
+        conn = get_connection(timeout=2)
+    except sqlite3.OperationalError:
+        return  # DB locked by a leaked connection; skip cleanup
 
-    tables = [
-        'alumni', 'alumni_events', 'event_registrations', 'donations',
-        'alumni_mentorships', 'alumni_photos', 'class_reunions',
-        'alumni_chapters', 'alumni_businesses', 'fundraising_campaigns',
-        'campaign_donations', 'alumni_connections', 'alumni_newsletters',
-        'alumni_forum_posts', 'alumni_forum_replies', 'job_board'
-    ]
+    try:
+        cursor = conn.cursor()
 
-    for table in tables:
-        try:
-            cursor.execute(f'DELETE FROM {table}')
-        except sqlite3.OperationalError:
-            pass  # Table might not exist
+        # Delete child tables first to avoid FK constraint violations
+        tables = [
+            'unified_event_registrations', 'donations', 'mentorships',
+            'photo_gallery', 'forum_replies', 'alumni_forum',
+            'networking_connections', 'newsletters', 'job_postings',
+            'class_reunions', 'regional_chapters', 'business_directory',
+            'fundraising_campaigns', 'unified_events', 'alumni',
+        ]
 
-    conn.commit()
-    conn.close()
+        for table in tables:
+            try:
+                cursor.execute(f'DELETE FROM {table}')
+            except (sqlite3.OperationalError, sqlite3.IntegrityError):
+                pass  # Table might not exist or FK issue
+
+        conn.commit()
+    finally:
+        conn.close()
 
 @pytest.fixture
 def mock_auth():
@@ -113,45 +129,69 @@ class TestDatabaseSetup:
     def test_init_alumni_db(self, setup_alumni_database):
         """Test database initialization creates required tables"""
         conn = get_connection()
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        # Check key tables exist
-        cursor.execute("""
-            SELECT name FROM sqlite_master
-            WHERE type='table' AND name='alumni'
-        """)
-        assert cursor.fetchone() is not None
+            # Check key tables exist
+            cursor.execute("""
+                SELECT name FROM sqlite_master
+                WHERE type='table' AND name='alumni'
+            """)
+            assert cursor.fetchone() is not None
 
-        cursor.execute("""
-            SELECT name FROM sqlite_master
-            WHERE type='table' AND name='alumni_events'
-        """)
-        assert cursor.fetchone() is not None
-
-        conn.close()
+            cursor.execute("""
+                SELECT name FROM sqlite_master
+                WHERE type='table' AND name='unified_events'
+            """)
+            assert cursor.fetchone() is not None
+        finally:
+            conn.close()
 
     def test_setup_alumni_permissions(self, setup_alumni_database):
         """Test permissions setup"""
+        conn = get_connection()
         try:
-            setup_alumni_permissions()
-
-            conn = get_connection()
             cursor = conn.cursor()
+            # Ensure permissions and roles tables exist
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS permissions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    permission_name TEXT UNIQUE NOT NULL,
+                    description TEXT,
+                    created_at TEXT
+                )
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS roles (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    role_name TEXT UNIQUE NOT NULL
+                )
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS role_permissions (
+                    role_id INTEGER,
+                    permission_id INTEGER,
+                    FOREIGN KEY (role_id) REFERENCES roles(id),
+                    FOREIGN KEY (permission_id) REFERENCES permissions(id)
+                )
+            """)
+            conn.commit()
+        finally:
+            conn.close()
 
-            # Verify some key permissions were created
+        setup_alumni_permissions()
+
+        conn = get_connection()
+        try:
+            cursor = conn.cursor()
             cursor.execute("""
                 SELECT COUNT(*) FROM permissions
                 WHERE permission_name IN ('manage_alumni', 'view_alumni', 'make_donation')
             """)
             count = cursor.fetchone()[0]
-
-            # Should have at least these 3 permissions
             assert count >= 3
-
+        finally:
             conn.close()
-        except Exception as e:
-            # Might fail if permissions/roles tables don't exist
-            pytest.skip(f"Permissions setup skipped: {e}")
 
 class TestAlumniRegistration:
     """Tests for alumni registration functionality"""
@@ -184,21 +224,19 @@ class TestAlumniRegistration:
             'n',               # privacy
             'n'                # ambassador
         ]):
-            with patch('university_system.modules.domain.student_affairs.services.alumni_management.profiles.auth', mock_auth):
-                try:
-                    from education_system.university_system.modules.domain.student_affairs.services.alumni_management import register_alumni
-                    register_alumni()
+            with patch('education_system.university_system.modules.domain.student_affairs.services.alumni_management.profiles.auth', mock_auth):
+                from education_system.university_system.modules.domain.student_affairs.services.alumni_management import register_alumni
+                register_alumni()
 
-                    # Verify alumni was created
-                    conn = get_connection()
+                # Verify alumni was created
+                conn = get_connection()
+                try:
                     cursor = conn.cursor()
                     cursor.execute('SELECT * FROM alumni WHERE alumni_id = ?', ('ALU999',))
                     result = cursor.fetchone()
-                    conn.close()
-
                     assert result is not None
-                except Exception as e:
-                    pytest.skip(f"Registration test skipped: {e}")
+                finally:
+                    conn.close()
 
 class TestAlumniEvents:
     """Tests for alumni events functionality"""
@@ -206,71 +244,76 @@ class TestAlumniEvents:
     def test_create_event_basic(self, setup_alumni_database):
         """Test creating an alumni event"""
         conn = get_connection()
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('''
-            INSERT INTO alumni_events (
-                event_name, event_date, event_location, event_description,
-                registration_required, max_attendees, created_date
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            'Test Event',
-            '2025-12-01',
-            'Test Venue',
-            'Test Description',
-            1,
-            100,
-            datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        ))
+            cursor.execute('''
+                INSERT INTO unified_events (
+                    title, start_datetime, location, description,
+                    registration_required, max_capacity, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                'Test Event',
+                '2025-12-01',
+                'Test Venue',
+                'Test Description',
+                1,
+                100,
+                datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            ))
 
-        event_id = cursor.lastrowid
-        conn.commit()
+            event_id = cursor.lastrowid
+            conn.commit()
 
-        # Verify event was created
-        cursor.execute('SELECT * FROM alumni_events WHERE event_id = ?', (event_id,))
-        event = cursor.fetchone()
-        conn.close()
+            # Verify event was created
+            cursor.execute('SELECT * FROM unified_events WHERE event_id = ?', (event_id,))
+            event = cursor.fetchone()
 
-        assert event is not None
-        assert event['event_name'] == 'Test Event'
-        assert event['max_attendees'] == 100
+            assert event is not None
+            assert event['title'] == 'Test Event'
+            assert event['max_capacity'] == 100
+        finally:
+            conn.close()
 
     def test_event_registration(self, setup_alumni_database):
         """Test alumni event registration"""
         conn = get_connection()
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        # First create an alumni
-        cursor.execute('''
-            INSERT INTO alumni (alumni_id, student_id, first_name, last_name, email_address)
-            VALUES (?, ?, ?, ?, ?)
-        ''', ('ALU001', 'S001', 'John', 'Doe', 'john@email.com'))
+            # First create an alumni
+            _ensure_student(cursor, 'S001', 'John', 'Doe', 'john@email.com')
+            cursor.execute('''
+                INSERT INTO alumni (alumni_id, student_id, first_name, last_name, email_address)
+                VALUES (?, ?, ?, ?, ?)
+            ''', ('ALU001', 'S001', 'John', 'Doe', 'john@email.com'))
 
-        # Create an event
-        cursor.execute('''
-            INSERT INTO alumni_events (event_name, event_date, event_location)
-            VALUES (?, ?, ?)
-        ''', ('Test Event', '2025-12-01', 'Test Location'))
-        event_id = cursor.lastrowid
+            # Create an event
+            cursor.execute('''
+                INSERT INTO unified_events (title, start_datetime, location)
+                VALUES (?, ?, ?)
+            ''', ('Test Event', '2025-12-01', 'Test Location'))
+            event_id = cursor.lastrowid
 
-        # Register for event
-        cursor.execute('''
-            INSERT INTO event_registrations (event_id, alumni_id, registration_date)
-            VALUES (?, ?, ?)
-        ''', (event_id, 'ALU001', datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            # Register for event
+            cursor.execute('''
+                INSERT INTO unified_event_registrations (event_id, user_id, user_type, registration_date)
+                VALUES (?, ?, ?, ?)
+            ''', (event_id, 'ALU001', 'alumni', datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
-        conn.commit()
+            conn.commit()
 
-        # Verify registration
-        cursor.execute('''
-            SELECT * FROM event_registrations
-            WHERE event_id = ? AND alumni_id = ?
-        ''', (event_id, 'ALU001'))
-        registration = cursor.fetchone()
-        conn.close()
+            # Verify registration
+            cursor.execute('''
+                SELECT * FROM unified_event_registrations
+                WHERE event_id = ? AND user_id = ?
+            ''', (event_id, 'ALU001'))
+            registration = cursor.fetchone()
 
-        assert registration is not None
-        assert registration['event_id'] == event_id
+            assert registration is not None
+            assert registration['event_id'] == event_id
+        finally:
+            conn.close()
 
 class TestDonations:
     """Tests for donation functionality"""
@@ -278,70 +321,76 @@ class TestDonations:
     def test_record_donation(self, setup_alumni_database):
         """Test recording a donation"""
         conn = get_connection()
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        # Create alumni first
-        cursor.execute('''
-            INSERT INTO alumni (alumni_id, student_id, first_name, last_name, email_address)
-            VALUES (?, ?, ?, ?, ?)
-        ''', ('ALU002', 'S002', 'Jane', 'Smith', 'jane@email.com'))
+            # Create alumni first
+            _ensure_student(cursor, 'S002', 'Jane', 'Smith', 'jane@email.com')
+            cursor.execute('''
+                INSERT INTO alumni (alumni_id, student_id, first_name, last_name, email_address)
+                VALUES (?, ?, ?, ?, ?)
+            ''', ('ALU002', 'S002', 'Jane', 'Smith', 'jane@email.com'))
 
-        # Record donation
-        cursor.execute('''
-            INSERT INTO donations (
-                alumni_id, donation_amount, donation_date,
-                donation_purpose, payment_method
-            ) VALUES (?, ?, ?, ?, ?)
-        ''', (
-            'ALU002',
-            100.00,
-            datetime.now().strftime('%Y-%m-%d'),
-            'General Fund',
-            'Credit Card'
-        ))
+            # Record donation
+            cursor.execute('''
+                INSERT INTO donations (
+                    alumni_id, amount, donation_date,
+                    campaign, payment_method
+                ) VALUES (?, ?, ?, ?, ?)
+            ''', (
+                'ALU002',
+                100.00,
+                datetime.now().strftime('%Y-%m-%d'),
+                'General Fund',
+                'Credit Card'
+            ))
 
-        donation_id = cursor.lastrowid
-        conn.commit()
+            donation_id = cursor.lastrowid
+            conn.commit()
 
-        # Verify donation
-        cursor.execute('SELECT * FROM donations WHERE donation_id = ?', (donation_id,))
-        donation = cursor.fetchone()
-        conn.close()
+            # Verify donation
+            cursor.execute('SELECT * FROM donations WHERE donation_id = ?', (donation_id,))
+            donation = cursor.fetchone()
 
-        assert donation is not None
-        assert donation['donation_amount'] == 100.00
-        assert donation['alumni_id'] == 'ALU002'
+            assert donation is not None
+            assert donation['amount'] == 100.00
+            assert donation['alumni_id'] == 'ALU002'
+        finally:
+            conn.close()
 
     def test_view_alumni_donations(self, setup_alumni_database):
         """Test viewing donations for an alumni"""
         conn = get_connection()
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        # Create alumni
-        cursor.execute('''
-            INSERT INTO alumni (alumni_id, student_id, first_name, last_name, email_address)
-            VALUES (?, ?, ?, ?, ?)
-        ''', ('ALU003', 'S003', 'Bob', 'Jones', 'bob@email.com'))
-
-        # Record multiple donations
-        for amount in [50.00, 100.00, 150.00]:
+            # Create alumni
+            _ensure_student(cursor, 'S003', 'Bob', 'Jones', 'bob@email.com')
             cursor.execute('''
-                INSERT INTO donations (alumni_id, donation_amount, donation_date, donation_purpose)
-                VALUES (?, ?, ?, ?)
-            ''', ('ALU003', amount, datetime.now().strftime('%Y-%m-%d'), 'Test'))
+                INSERT INTO alumni (alumni_id, student_id, first_name, last_name, email_address)
+                VALUES (?, ?, ?, ?, ?)
+            ''', ('ALU003', 'S003', 'Bob', 'Jones', 'bob@email.com'))
 
-        conn.commit()
+            # Record multiple donations
+            for amt in [50.00, 100.00, 150.00]:
+                cursor.execute('''
+                    INSERT INTO donations (alumni_id, amount, donation_date, campaign)
+                    VALUES (?, ?, ?, ?)
+                ''', ('ALU003', amt, datetime.now().strftime('%Y-%m-%d'), 'Test'))
 
-        # Query donations
-        cursor.execute('''
-            SELECT * FROM donations WHERE alumni_id = ? ORDER BY donation_amount
-        ''', ('ALU003',))
-        donations = cursor.fetchall()
-        conn.close()
+            conn.commit()
 
-        assert len(donations) == 3
-        assert donations[0]['donation_amount'] == 50.00
-        assert donations[2]['donation_amount'] == 150.00
+            # Query donations
+            cursor.execute('''
+                SELECT * FROM donations WHERE alumni_id = ? ORDER BY amount
+            ''', ('ALU003',))
+            donations = cursor.fetchall()
+
+            assert len(donations) == 3
+            assert donations[0]['amount'] == 50.00
+            assert donations[2]['amount'] == 150.00
+        finally:
+            conn.close()
 
 class TestMentorship:
     """Tests for mentorship functionality"""
@@ -349,44 +398,44 @@ class TestMentorship:
     def test_create_mentorship(self, setup_alumni_database):
         """Test creating a mentorship relationship"""
         conn = get_connection()
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        # Create alumni (mentor)
-        cursor.execute('''
-            INSERT INTO alumni (alumni_id, student_id, first_name, last_name, email_address, is_mentor)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', ('ALU_MENTOR', 'S_MENTOR', 'Mentor', 'Smith', 'mentor@email.com', 1))
+            # Create alumni (mentor)
+            _ensure_student(cursor, 'S_MENTOR', 'Mentor', 'Smith', 'mentor@email.com')
+            cursor.execute('''
+                INSERT INTO alumni (alumni_id, student_id, first_name, last_name, email_address, is_mentor)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', ('ALU_MENTOR', 'S_MENTOR', 'Mentor', 'Smith', 'mentor@email.com', 1))
 
-        # Create student record (mentee)
-        cursor.execute('''
-            INSERT INTO students (student_id, first_name, last_name, email_address)
-            VALUES (?, ?, ?, ?)
-        ''', ('S_MENTEE', 'Student', 'Jones', 'student@email.com'))
+            # Create student record (mentee)
+            _ensure_student(cursor, 'S_MENTEE', 'Student', 'Jones', 'student@email.com')
 
-        # Create mentorship
-        cursor.execute('''
-            INSERT INTO alumni_mentorships (
-                mentor_alumni_id, mentee_student_id, start_date, status, focus_area
-            ) VALUES (?, ?, ?, ?, ?)
-        ''', (
-            'ALU_MENTOR',
-            'S_MENTEE',
-            datetime.now().strftime('%Y-%m-%d'),
-            'active',
-            'Career Development'
-        ))
+            # Create mentorship
+            cursor.execute('''
+                INSERT INTO mentorships (
+                    mentor_id, mentee_id, start_date, status, focus_area
+                ) VALUES (?, ?, ?, ?, ?)
+            ''', (
+                'ALU_MENTOR',
+                'S_MENTEE',
+                datetime.now().strftime('%Y-%m-%d'),
+                'active',
+                'Career Development'
+            ))
 
-        mentorship_id = cursor.lastrowid
-        conn.commit()
+            mentorship_id = cursor.lastrowid
+            conn.commit()
 
-        # Verify mentorship
-        cursor.execute('SELECT * FROM alumni_mentorships WHERE mentorship_id = ?', (mentorship_id,))
-        mentorship = cursor.fetchone()
-        conn.close()
+            # Verify mentorship
+            cursor.execute('SELECT * FROM mentorships WHERE mentorship_id = ?', (mentorship_id,))
+            mentorship = cursor.fetchone()
 
-        assert mentorship is not None
-        assert mentorship['status'] == 'active'
-        assert mentorship['focus_area'] == 'Career Development'
+            assert mentorship is not None
+            assert mentorship['status'] == 'active'
+            assert mentorship['focus_area'] == 'Career Development'
+        finally:
+            conn.close()
 
 class TestJobBoard:
     """Tests for job board functionality"""
@@ -394,78 +443,84 @@ class TestJobBoard:
     def test_post_job(self, setup_alumni_database):
         """Test posting a job opportunity"""
         conn = get_connection()
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        # Create alumni who will post job
-        cursor.execute('''
-            INSERT INTO alumni (alumni_id, student_id, first_name, last_name, email_address)
-            VALUES (?, ?, ?, ?, ?)
-        ''', ('ALU_EMPLOYER', 'S_EMP', 'Employer', 'Corp', 'employer@email.com'))
+            # Create alumni who will post job
+            _ensure_student(cursor, 'S_EMP', 'Employer', 'Corp', 'employer@email.com')
+            cursor.execute('''
+                INSERT INTO alumni (alumni_id, student_id, first_name, last_name, email_address)
+                VALUES (?, ?, ?, ?, ?)
+            ''', ('ALU_EMPLOYER', 'S_EMP', 'Employer', 'Corp', 'employer@email.com'))
 
-        # Post job
-        cursor.execute('''
-            INSERT INTO job_board (
-                job_title, company_name, location, job_description,
-                requirements, salary_range, posted_by, posted_date, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            'Software Engineer',
-            'TechCorp',
-            'London',
-            'Great opportunity',
-            'Python, JavaScript',
-            '50000-70000',
-            'ALU_EMPLOYER',
-            datetime.now().strftime('%Y-%m-%d'),
-            'active'
-        ))
+            # Post job
+            cursor.execute('''
+                INSERT INTO job_postings (
+                    job_title, company_name, location, job_description,
+                    requirements, salary_range, posted_by, post_date, is_active
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                'Software Engineer',
+                'TechCorp',
+                'London',
+                'Great opportunity',
+                'Python, JavaScript',
+                '50000-70000',
+                'ALU_EMPLOYER',
+                datetime.now().strftime('%Y-%m-%d'),
+                1
+            ))
 
-        job_id = cursor.lastrowid
-        conn.commit()
+            job_id = cursor.lastrowid
+            conn.commit()
 
-        # Verify job posting
-        cursor.execute('SELECT * FROM job_board WHERE job_id = ?', (job_id,))
-        job = cursor.fetchone()
-        conn.close()
+            # Verify job posting
+            cursor.execute('SELECT * FROM job_postings WHERE job_id = ?', (job_id,))
+            job = cursor.fetchone()
 
-        assert job is not None
-        assert job['job_title'] == 'Software Engineer'
-        assert job['status'] == 'active'
+            assert job is not None
+            assert job['job_title'] == 'Software Engineer'
+            assert job['is_active'] == 1
+        finally:
+            conn.close()
 
     def test_search_jobs(self, setup_alumni_database):
         """Test searching job board"""
         conn = get_connection()
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        # Create alumni
-        cursor.execute('''
-            INSERT INTO alumni (alumni_id, student_id, first_name, last_name, email_address)
-            VALUES (?, ?, ?, ?, ?)
-        ''', ('ALU_POST', 'S_POST', 'Post', 'User', 'post@email.com'))
-
-        # Post multiple jobs
-        jobs = [
-            ('Software Engineer', 'TechCorp', 'London'),
-            ('Data Scientist', 'DataCo', 'Manchester'),
-            ('Web Developer', 'WebCorp', 'London')
-        ]
-
-        for title, company, location in jobs:
+            # Create alumni
+            _ensure_student(cursor, 'S_POST', 'Post', 'User', 'post@email.com')
             cursor.execute('''
-                INSERT INTO job_board (job_title, company_name, location, posted_by, posted_date, status)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (title, company, location, 'ALU_POST', datetime.now().strftime('%Y-%m-%d'), 'active'))
+                INSERT INTO alumni (alumni_id, student_id, first_name, last_name, email_address)
+                VALUES (?, ?, ?, ?, ?)
+            ''', ('ALU_POST', 'S_POST', 'Post', 'User', 'post@email.com'))
 
-        conn.commit()
+            # Post multiple jobs
+            jobs = [
+                ('Software Engineer', 'TechCorp', 'London'),
+                ('Data Scientist', 'DataCo', 'Manchester'),
+                ('Web Developer', 'WebCorp', 'London')
+            ]
 
-        # Search for London jobs
-        cursor.execute('''
-            SELECT * FROM job_board WHERE location = ? AND status = ?
-        ''', ('London', 'active'))
-        london_jobs = cursor.fetchall()
-        conn.close()
+            for title, company, location in jobs:
+                cursor.execute('''
+                    INSERT INTO job_postings (job_title, company_name, location, posted_by, post_date, is_active)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (title, company, location, 'ALU_POST', datetime.now().strftime('%Y-%m-%d'), 1))
 
-        assert len(london_jobs) == 2
+            conn.commit()
+
+            # Search for London jobs
+            cursor.execute('''
+                SELECT * FROM job_postings WHERE location = ? AND is_active = ?
+            ''', ('London', 1))
+            london_jobs = cursor.fetchall()
+
+            assert len(london_jobs) == 2
+        finally:
+            conn.close()
 
 class TestAlumniForum:
     """Tests for alumni forum functionality"""
@@ -473,71 +528,77 @@ class TestAlumniForum:
     def test_create_forum_post(self, setup_alumni_database):
         """Test creating a forum post"""
         conn = get_connection()
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        # Create alumni
-        cursor.execute('''
-            INSERT INTO alumni (alumni_id, student_id, first_name, last_name, email_address)
-            VALUES (?, ?, ?, ?, ?)
-        ''', ('ALU_FORUM', 'S_FORUM', 'Forum', 'User', 'forum@email.com'))
+            # Create alumni
+            _ensure_student(cursor, 'S_FORUM', 'Forum', 'User', 'forum@email.com')
+            cursor.execute('''
+                INSERT INTO alumni (alumni_id, student_id, first_name, last_name, email_address)
+                VALUES (?, ?, ?, ?, ?)
+            ''', ('ALU_FORUM', 'S_FORUM', 'Forum', 'User', 'forum@email.com'))
 
-        # Create forum post
-        cursor.execute('''
-            INSERT INTO alumni_forum_posts (
-                alumni_id, post_title, post_content, category, posted_datetime
-            ) VALUES (?, ?, ?, ?, ?)
-        ''', (
-            'ALU_FORUM',
-            'Welcome Post',
-            'Hello everyone!',
-            'General',
-            datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        ))
+            # Create forum post
+            cursor.execute('''
+                INSERT INTO alumni_forum (
+                    author_id, title, content, category, post_date
+                ) VALUES (?, ?, ?, ?, ?)
+            ''', (
+                'ALU_FORUM',
+                'Welcome Post',
+                'Hello everyone!',
+                'General',
+                datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            ))
 
-        post_id = cursor.lastrowid
-        conn.commit()
+            post_id = cursor.lastrowid
+            conn.commit()
 
-        # Verify post
-        cursor.execute('SELECT * FROM alumni_forum_posts WHERE post_id = ?', (post_id,))
-        post = cursor.fetchone()
-        conn.close()
+            # Verify post
+            cursor.execute('SELECT * FROM alumni_forum WHERE post_id = ?', (post_id,))
+            post = cursor.fetchone()
 
-        assert post is not None
-        assert post['post_title'] == 'Welcome Post'
+            assert post is not None
+            assert post['title'] == 'Welcome Post'
+        finally:
+            conn.close()
 
     def test_forum_replies(self, setup_alumni_database):
         """Test replying to forum posts"""
         conn = get_connection()
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        # Create alumni
-        cursor.execute('''
-            INSERT INTO alumni (alumni_id, student_id, first_name, last_name, email_address)
-            VALUES (?, ?, ?, ?, ?)
-        ''', ('ALU_REPLY', 'S_REPLY', 'Reply', 'User', 'reply@email.com'))
+            # Create alumni
+            _ensure_student(cursor, 'S_REPLY', 'Reply', 'User', 'reply@email.com')
+            cursor.execute('''
+                INSERT INTO alumni (alumni_id, student_id, first_name, last_name, email_address)
+                VALUES (?, ?, ?, ?, ?)
+            ''', ('ALU_REPLY', 'S_REPLY', 'Reply', 'User', 'reply@email.com'))
 
-        # Create post
-        cursor.execute('''
-            INSERT INTO alumni_forum_posts (alumni_id, post_title, post_content, category, posted_datetime)
-            VALUES (?, ?, ?, ?, ?)
-        ''', ('ALU_REPLY', 'Test Post', 'Test Content', 'General', datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-        post_id = cursor.lastrowid
+            # Create post
+            cursor.execute('''
+                INSERT INTO alumni_forum (author_id, title, content, category, post_date)
+                VALUES (?, ?, ?, ?, ?)
+            ''', ('ALU_REPLY', 'Test Post', 'Test Content', 'General', datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            post_id = cursor.lastrowid
 
-        # Add reply
-        cursor.execute('''
-            INSERT INTO alumni_forum_replies (post_id, alumni_id, reply_content, replied_datetime)
-            VALUES (?, ?, ?, ?)
-        ''', (post_id, 'ALU_REPLY', 'Test Reply', datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            # Add reply
+            cursor.execute('''
+                INSERT INTO forum_replies (post_id, author_id, content, reply_date)
+                VALUES (?, ?, ?, ?)
+            ''', (post_id, 'ALU_REPLY', 'Test Reply', datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
-        conn.commit()
+            conn.commit()
 
-        # Verify reply
-        cursor.execute('SELECT * FROM alumni_forum_replies WHERE post_id = ?', (post_id,))
-        replies = cursor.fetchall()
-        conn.close()
+            # Verify reply
+            cursor.execute('SELECT * FROM forum_replies WHERE post_id = ?', (post_id,))
+            replies = cursor.fetchall()
 
-        assert len(replies) == 1
-        assert replies[0]['reply_content'] == 'Test Reply'
+            assert len(replies) == 1
+            assert replies[0]['content'] == 'Test Reply'
+        finally:
+            conn.close()
 
 class TestUtilityFunctions:
     """Tests for utility functions"""
@@ -545,44 +606,51 @@ class TestUtilityFunctions:
     def test_get_db_connection(self):
         """Test database connection utility"""
         conn = get_db_connection()
-        assert conn is not None
-        cursor = conn.cursor()
-        cursor.execute('SELECT 1')
-        result = cursor.fetchone()
-        conn.close()
-        assert result[0] == 1
+        try:
+            assert conn is not None
+            cursor = conn.cursor()
+            cursor.execute('SELECT 1')
+            result = cursor.fetchone()
+            assert result[0] == 1
+        finally:
+            conn.close()
 
     def test_safe_execute_success(self, setup_alumni_database):
         """Test safe_execute with successful query"""
         conn = get_db_connection()
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        safe_execute(cursor, 'SELECT 1')
-        result = cursor.fetchone()
-        conn.close()
+            safe_execute(cursor, 'SELECT 1')
+            result = cursor.fetchone()
 
-        assert result[0] == 1
+            assert result[0] == 1
+        finally:
+            conn.close()
 
     def test_safe_execute_with_params(self, setup_alumni_database):
         """Test safe_execute with parameters"""
-        conn = get_db_connection()
-        cursor = conn.cursor()
+        conn = get_connection()
+        try:
+            cursor = conn.cursor()
 
-        # Create test alumni
-        safe_execute(cursor, '''
-            INSERT INTO alumni (alumni_id, student_id, first_name, last_name, email_address)
-            VALUES (?, ?, ?, ?, ?)
-        ''', ('ALU_SAFE', 'S_SAFE', 'Safe', 'User', 'safe@email.com'))
+            # Create student then alumni
+            _ensure_student(cursor, 'S_SAFE', 'Safe', 'User', 'safe@email.com')
+            safe_execute(cursor, '''
+                INSERT INTO alumni (alumni_id, student_id, first_name, last_name, email_address)
+                VALUES (?, ?, ?, ?, ?)
+            ''', ('ALU_SAFE', 'S_SAFE', 'Safe', 'User', 'safe@email.com'))
 
-        conn.commit()
+            conn.commit()
 
-        # Query with safe_execute
-        safe_execute(cursor, 'SELECT * FROM alumni WHERE alumni_id = ?', ('ALU_SAFE',))
-        result = cursor.fetchone()
-        conn.close()
+            # Query with safe_execute
+            safe_execute(cursor, 'SELECT * FROM alumni WHERE alumni_id = ?', ('ALU_SAFE',))
+            result = cursor.fetchone()
 
-        assert result is not None
-        assert result['alumni_id'] == 'ALU_SAFE'
+            assert result is not None
+            assert result['alumni_id'] == 'ALU_SAFE'
+        finally:
+            conn.close()
 
 class TestIntegrationScenarios:
     """Integration tests for complete workflows"""
@@ -590,53 +658,55 @@ class TestIntegrationScenarios:
     def test_alumni_lifecycle(self, setup_alumni_database):
         """Test complete alumni lifecycle: register, donate, attend event"""
         conn = get_connection()
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        # 1. Register alumni
-        cursor.execute('''
-            INSERT INTO alumni (alumni_id, student_id, first_name, last_name, email_address, graduation_year)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', ('ALU_LIFE', 'S_LIFE', 'Life', 'Cycle', 'lifecycle@email.com', 2020))
+            # 1. Register alumni
+            _ensure_student(cursor, 'S_LIFE', 'Life', 'Cycle', 'lifecycle@email.com')
+            cursor.execute('''
+                INSERT INTO alumni (alumni_id, student_id, first_name, last_name, email_address, graduation_year)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', ('ALU_LIFE', 'S_LIFE', 'Life', 'Cycle', 'lifecycle@email.com', 2020))
 
-        # 2. Make donation
-        cursor.execute('''
-            INSERT INTO donations (alumni_id, donation_amount, donation_date, donation_purpose)
-            VALUES (?, ?, ?, ?)
-        ''', ('ALU_LIFE', 250.00, datetime.now().strftime('%Y-%m-%d'), 'Scholarship Fund'))
+            # 2. Make donation
+            cursor.execute('''
+                INSERT INTO donations (alumni_id, amount, donation_date, campaign)
+                VALUES (?, ?, ?, ?)
+            ''', ('ALU_LIFE', 250.00, datetime.now().strftime('%Y-%m-%d'), 'Scholarship Fund'))
 
-        # Update alumni donor status
-        cursor.execute('UPDATE alumni SET is_donor = 1 WHERE alumni_id = ?', ('ALU_LIFE',))
+            # Update alumni donor status
+            cursor.execute('UPDATE alumni SET is_donor = 1 WHERE alumni_id = ?', ('ALU_LIFE',))
 
-        # 3. Create and register for event
-        cursor.execute('''
-            INSERT INTO alumni_events (event_name, event_date, event_location)
-            VALUES (?, ?, ?)
-        ''', ('Annual Gala', '2025-11-20', 'Grand Hall'))
-        event_id = cursor.lastrowid
+            # 3. Create and register for event
+            cursor.execute('''
+                INSERT INTO unified_events (title, start_datetime, location)
+                VALUES (?, ?, ?)
+            ''', ('Annual Gala', '2025-11-20', 'Grand Hall'))
+            event_id = cursor.lastrowid
 
-        cursor.execute('''
-            INSERT INTO event_registrations (event_id, alumni_id, registration_date)
-            VALUES (?, ?, ?)
-        ''', (event_id, 'ALU_LIFE', datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            cursor.execute('''
+                INSERT INTO unified_event_registrations (event_id, user_id, user_type, registration_date)
+                VALUES (?, ?, ?, ?)
+            ''', (event_id, 'ALU_LIFE', 'alumni', datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
-        conn.commit()
+            conn.commit()
 
-        # Verify complete lifecycle
-        cursor.execute('SELECT * FROM alumni WHERE alumni_id = ?', ('ALU_LIFE',))
-        alumni = cursor.fetchone()
+            # Verify complete lifecycle
+            cursor.execute('SELECT * FROM alumni WHERE alumni_id = ?', ('ALU_LIFE',))
+            alumni = cursor.fetchone()
 
-        cursor.execute('SELECT COUNT(*) FROM donations WHERE alumni_id = ?', ('ALU_LIFE',))
-        donation_count = cursor.fetchone()[0]
+            cursor.execute('SELECT COUNT(*) FROM donations WHERE alumni_id = ?', ('ALU_LIFE',))
+            donation_count = cursor.fetchone()[0]
 
-        cursor.execute('SELECT COUNT(*) FROM event_registrations WHERE alumni_id = ?', ('ALU_LIFE',))
-        event_count = cursor.fetchone()[0]
+            cursor.execute('SELECT COUNT(*) FROM unified_event_registrations WHERE user_id = ?', ('ALU_LIFE',))
+            event_count = cursor.fetchone()[0]
 
-        conn.close()
-
-        assert alumni is not None
-        assert alumni['is_donor'] == 1
-        assert donation_count == 1
-        assert event_count == 1
+            assert alumni is not None
+            assert alumni['is_donor'] == 1
+            assert donation_count == 1
+            assert event_count == 1
+        finally:
+            conn.close()
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

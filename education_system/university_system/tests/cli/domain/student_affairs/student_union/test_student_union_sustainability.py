@@ -56,7 +56,7 @@ class TestTrackCarbonFootprint:
         'Used reusable materials'  # notes
     ])
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.sustainability.auto_award_points')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.sustainability.auto_award_points')
     def test_track_footprint_success(self, mock_award, mock_print, mock_input,
                                      mock_cursor, mock_conn, sample_events):
         """Test successfully tracking carbon footprint."""
@@ -101,7 +101,7 @@ class TestWasteReductionTracking:
 
     @patch('builtins.input', side_effect=['1', '1', '10', '8'])
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.sustainability.auto_award_points')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.sustainability.auto_award_points')
     def test_log_waste_data_success(self, mock_award, mock_print, mock_input,
                                     mock_cursor, mock_conn):
         """Test logging waste data successfully."""
@@ -147,7 +147,7 @@ class TestGreenTransportTracking:
 
     @patch('builtins.input', side_effect=['1', '1', '5'])  # Log walking 5km
     @patch('builtins.print')
-    @patch('university_system.modules.core.services.student_union_misc.sustainability.auto_award_points')
+    @patch('education_system.university_system.modules.core.services.student_union_misc.sustainability.auto_award_points')
     def test_log_sustainable_transport(self, mock_award, mock_print, mock_input,
                                        mock_cursor, mock_conn):
         """Test logging sustainable transport."""

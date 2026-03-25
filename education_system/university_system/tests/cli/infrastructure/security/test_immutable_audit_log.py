@@ -48,8 +48,8 @@ def in_memory_audit_log():
     """Create an ImmutableAuditLog backed by an in-memory SQLite DB."""
     from education_system.university_system.infrastructure.security.immutable_audit_log import ImmutableAuditLog
 
-    with patch("university_system.infrastructure.security.immutable_audit_log.transaction") as mock_tx, \
-         patch("university_system.infrastructure.security.immutable_audit_log.get_connection") as mock_gc:
+    with patch("education_system.university_system.infrastructure.security.immutable_audit_log.transaction") as mock_tx, \
+         patch("education_system.university_system.infrastructure.security.immutable_audit_log.get_connection") as mock_gc:
 
         # Create a real in-memory SQLite DB
         conn = sqlite3.connect(":memory:")
@@ -117,7 +117,7 @@ class TestAuditAction:
 # ---------------------------------------------------------------------------
 
 class TestImmutableAuditLogInit:
-    @patch("university_system.infrastructure.security.immutable_audit_log.transaction")
+    @patch("education_system.university_system.infrastructure.security.immutable_audit_log.transaction")
     def test_init_with_explicit_secret(self, mock_tx):
         from education_system.university_system.infrastructure.security.immutable_audit_log import ImmutableAuditLog
         mock_tx.return_value.__enter__ = MagicMock(return_value=MagicMock())
@@ -126,7 +126,7 @@ class TestImmutableAuditLogInit:
         log = ImmutableAuditLog(secret_key="my-secret")
         assert ImmutableAuditLog._SECRET_KEY == b"my-secret"
 
-    @patch("university_system.infrastructure.security.immutable_audit_log.transaction")
+    @patch("education_system.university_system.infrastructure.security.immutable_audit_log.transaction")
     @patch.dict(os.environ, {"AUDIT_LOG_SECRET": "env-secret"})
     def test_init_from_env(self, mock_tx):
         from education_system.university_system.infrastructure.security.immutable_audit_log import ImmutableAuditLog
@@ -136,7 +136,7 @@ class TestImmutableAuditLogInit:
         log = ImmutableAuditLog()
         assert ImmutableAuditLog._SECRET_KEY == b"env-secret"
 
-    @patch("university_system.infrastructure.security.immutable_audit_log.transaction")
+    @patch("education_system.university_system.infrastructure.security.immutable_audit_log.transaction")
     @patch.dict(os.environ, {}, clear=True)
     def test_init_generates_random_key_when_no_secret(self, mock_tx):
         from education_system.university_system.infrastructure.security.immutable_audit_log import ImmutableAuditLog
@@ -155,7 +155,7 @@ class TestImmutableAuditLogInit:
 # ---------------------------------------------------------------------------
 
 class TestCalculateHash:
-    @patch("university_system.infrastructure.security.immutable_audit_log.transaction")
+    @patch("education_system.university_system.infrastructure.security.immutable_audit_log.transaction")
     def test_deterministic(self, mock_tx):
         from education_system.university_system.infrastructure.security.immutable_audit_log import ImmutableAuditLog
         mock_tx.return_value.__enter__ = MagicMock(return_value=MagicMock())
@@ -166,7 +166,7 @@ class TestCalculateHash:
         h2 = log._calculate_hash("prev", "2024-01-01", "user", "LOGIN", None, None, "{}", None)
         assert h1 == h2
 
-    @patch("university_system.infrastructure.security.immutable_audit_log.transaction")
+    @patch("education_system.university_system.infrastructure.security.immutable_audit_log.transaction")
     def test_different_input_different_hash(self, mock_tx):
         from education_system.university_system.infrastructure.security.immutable_audit_log import ImmutableAuditLog
         mock_tx.return_value.__enter__ = MagicMock(return_value=MagicMock())
@@ -177,7 +177,7 @@ class TestCalculateHash:
         h2 = log._calculate_hash("prev", "2024-01-01", "user2", "LOGIN", None, None, "{}", None)
         assert h1 != h2
 
-    @patch("university_system.infrastructure.security.immutable_audit_log.transaction")
+    @patch("education_system.university_system.infrastructure.security.immutable_audit_log.transaction")
     def test_returns_64_char_hex(self, mock_tx):
         from education_system.university_system.infrastructure.security.immutable_audit_log import ImmutableAuditLog
         mock_tx.return_value.__enter__ = MagicMock(return_value=MagicMock())
@@ -194,7 +194,7 @@ class TestCalculateHash:
 # ---------------------------------------------------------------------------
 
 class TestCalculateHmac:
-    @patch("university_system.infrastructure.security.immutable_audit_log.transaction")
+    @patch("education_system.university_system.infrastructure.security.immutable_audit_log.transaction")
     def test_deterministic(self, mock_tx):
         from education_system.university_system.infrastructure.security.immutable_audit_log import ImmutableAuditLog
         mock_tx.return_value.__enter__ = MagicMock(return_value=MagicMock())
@@ -205,7 +205,7 @@ class TestCalculateHmac:
         h2 = log._calculate_hmac("test data")
         assert h1 == h2
 
-    @patch("university_system.infrastructure.security.immutable_audit_log.transaction")
+    @patch("education_system.university_system.infrastructure.security.immutable_audit_log.transaction")
     def test_different_data_different_hmac(self, mock_tx):
         from education_system.university_system.infrastructure.security.immutable_audit_log import ImmutableAuditLog
         mock_tx.return_value.__enter__ = MagicMock(return_value=MagicMock())
@@ -216,7 +216,7 @@ class TestCalculateHmac:
         h2 = log._calculate_hmac("data2")
         assert h1 != h2
 
-    @patch("university_system.infrastructure.security.immutable_audit_log.transaction")
+    @patch("education_system.university_system.infrastructure.security.immutable_audit_log.transaction")
     def test_matches_manual_hmac(self, mock_tx):
         from education_system.university_system.infrastructure.security.immutable_audit_log import ImmutableAuditLog
         mock_tx.return_value.__enter__ = MagicMock(return_value=MagicMock())

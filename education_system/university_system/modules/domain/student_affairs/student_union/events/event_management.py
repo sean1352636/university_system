@@ -143,8 +143,8 @@ def register_for_event():
         
         # Check if already registered
         cursor.execute('''
-        SELECT COUNT(*) FROM event_registrations
-        WHERE event_id = ? AND student_id = ?
+        SELECT COUNT(*) FROM unified_event_registrations
+        WHERE event_id = ? AND user_id = ?
         ''', (event_id, student_id))
         
         if cursor.fetchone()[0] > 0:
@@ -162,9 +162,10 @@ def register_for_event():
         registration_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         
         cursor.execute('''
-        INSERT INTO event_registrations (event_id, student_id, registration_date, attendance_status)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO unified_event_registrations (event_id, user_id, user_type, registration_date, attendance_status)
+        VALUES (?, ?, 'student', ?, ?)
         ''', (event_id, student_id, registration_date, 'registered'))
+
         
         # Update attendee count
         cursor.execute('''
@@ -212,8 +213,8 @@ def view_my_events():
                c.club_name, r.registration_date, r.attendance_status
         FROM union_events e
         JOIN student_clubs c ON e.organizer_id = c.club_id
-        JOIN event_registrations r ON e.event_id = r.event_id
-        WHERE r.student_id = ?
+        JOIN unified_event_registrations r ON e.event_id = r.event_id
+        WHERE r.user_id = ?
         ORDER BY e.event_date, e.start_time
         ''', (student_id,))
         
@@ -768,9 +769,9 @@ def manage_event_attendance():
             if action == '1':
                 # Generate QR codes for registered attendees
                 cursor.execute('''
-                SELECT r.student_id, s.first_name, s.last_name
-                FROM event_registrations r
-                JOIN students s ON r.student_id = s.student_id
+                SELECT r.user_id, s.first_name, s.last_name
+                FROM unified_event_registrations r
+                JOIN students s ON r.user_id = s.student_id
                 WHERE r.event_id = ? AND r.attendance_status = 'registered'
                 ''', (event_id,))
                 
@@ -787,16 +788,16 @@ def manage_event_attendance():
                     
                     # Check if attendance record already exists
                     cursor.execute('''
-                    SELECT COUNT(*) FROM event_attendance
-                    WHERE event_id = ? AND student_id = ?
+                    SELECT COUNT(*) FROM unified_event_registrations
+                    WHERE event_id = ? AND user_id = ? AND qr_code IS NOT NULL
                     ''', (event_id, attendee[0]))
-                    
+
                     if cursor.fetchone()[0] == 0:
                         cursor.execute('''
-                        INSERT INTO event_attendance (
-                            event_id, student_id, qr_code
-                        ) VALUES (?, ?, ?)
-                        ''', (event_id, attendee[0], qr_code))
+                        UPDATE unified_event_registrations
+                        SET qr_code = ?
+                        WHERE event_id = ? AND user_id = ?
+                        ''', (qr_code, event_id, attendee[0]))
                     
                     print(f"{attendee[1]} {attendee[2]} ({attendee[0]}): QR-{qr_code}")
                 
@@ -810,17 +811,17 @@ def manage_event_attendance():
                 if qr_or_id.startswith('QR-'):
                     qr_code = qr_or_id[3:]  # Remove 'QR-' prefix
                     cursor.execute('''
-                    SELECT a.student_id, s.first_name, s.last_name
-                    FROM event_attendance a
-                    JOIN students s ON a.student_id = s.student_id
+                    SELECT a.user_id, s.first_name, s.last_name
+                    FROM unified_event_registrations a
+                    JOIN students s ON a.user_id = s.student_id
                     WHERE a.event_id = ? AND a.qr_code = ?
                     ''', (event_id, qr_code))
                 else:
                     cursor.execute('''
-                    SELECT a.student_id, s.first_name, s.last_name
-                    FROM event_attendance a
-                    JOIN students s ON a.student_id = s.student_id
-                    WHERE a.event_id = ? AND a.student_id = ?
+                    SELECT a.user_id, s.first_name, s.last_name
+                    FROM unified_event_registrations a
+                    JOIN students s ON a.user_id = s.student_id
+                    WHERE a.event_id = ? AND a.user_id = ?
                     ''', (event_id, qr_or_id))
                 
                 attendee = cursor.fetchone()
@@ -831,8 +832,8 @@ def manage_event_attendance():
                 
                 # Check if already checked in
                 cursor.execute('''
-                SELECT check_in_time FROM event_attendance
-                WHERE event_id = ? AND student_id = ?
+                SELECT checked_in_at FROM unified_event_registrations
+                WHERE event_id = ? AND user_id = ?
                 ''', (event_id, attendee[0]))
                 
                 check_in_data = cursor.fetchone()
@@ -845,30 +846,29 @@ def manage_event_attendance():
                 check_in_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 
                 cursor.execute('''
-                UPDATE event_attendance 
-                SET check_in_time = ?, attendance_verified = 1
-                WHERE event_id = ? AND student_id = ?
+                UPDATE unified_event_registrations
+                SET checked_in_at = ?, attendance_status = 'verified'
+                WHERE event_id = ? AND user_id = ?
                 ''', (check_in_time, event_id, attendee[0]))
                 
                 # Update registration status
                 cursor.execute('''
-                UPDATE event_registrations 
+                UPDATE unified_event_registrations
                 SET attendance_status = 'attended'
-                WHERE event_id = ? AND student_id = ?
+                WHERE event_id = ? AND user_id = ?
                 ''', (event_id, attendee[0]))
-                
+
                 conn.commit()
                 print(f"✓ {attendee[1]} {attendee[2]} checked in successfully at {check_in_time}")
             
             elif action == '3':
                 # View attendance report
                 cursor.execute('''
-                SELECT 
+                SELECT
                     COUNT(*) as total_registered,
-                    COUNT(CASE WHEN a.check_in_time IS NOT NULL THEN 1 END) as attended,
-                    COUNT(CASE WHEN a.check_in_time IS NULL THEN 1 END) as no_show
-                FROM event_registrations r
-                LEFT JOIN event_attendance a ON r.event_id = a.event_id AND r.student_id = a.student_id
+                    COUNT(CASE WHEN r.checked_in_at IS NOT NULL THEN 1 END) as attended,
+                    COUNT(CASE WHEN r.checked_in_at IS NULL THEN 1 END) as no_show
+                FROM unified_event_registrations r
                 WHERE r.event_id = ?
                 ''', (event_id,))
                 
@@ -890,12 +890,11 @@ def manage_event_attendance():
                 print("-" * 75)
                 
                 cursor.execute('''
-                SELECT r.student_id, s.first_name, s.last_name, 
-                       COALESCE(a.check_in_time, 'Not checked in') as check_in,
-                       CASE WHEN a.check_in_time IS NOT NULL THEN 'Attended' ELSE 'No Show' END as status
-                FROM event_registrations r
-                JOIN students s ON r.student_id = s.student_id
-                LEFT JOIN event_attendance a ON r.event_id = a.event_id AND r.student_id = a.student_id
+                SELECT r.user_id, s.first_name, s.last_name,
+                       COALESCE(r.checked_in_at, 'Not checked in') as check_in,
+                       CASE WHEN r.checked_in_at IS NOT NULL THEN 'Attended' ELSE 'No Show' END as status
+                FROM unified_event_registrations r
+                JOIN students s ON r.user_id = s.student_id
                 WHERE r.event_id = ?
                 ORDER BY s.last_name, s.first_name
                 ''', (event_id,))
@@ -927,8 +926,8 @@ def manage_event_attendance():
                     try:
                         # Check if student is registered
                         cursor.execute('''
-                        SELECT COUNT(*) FROM event_registrations
-                        WHERE event_id = ? AND student_id = ?
+                        SELECT COUNT(*) FROM unified_event_registrations
+                        WHERE event_id = ? AND user_id = ?
                         ''', (event_id, sid))
                         
                         if cursor.fetchone()[0] == 0:
@@ -937,16 +936,16 @@ def manage_event_attendance():
                         
                         # Create or update attendance record
                         cursor.execute('''
-                        INSERT OR REPLACE INTO event_attendance (
-                            event_id, student_id, check_in_time, attendance_verified
-                        ) VALUES (?, ?, ?, ?)
-                        ''', (event_id, sid, check_in_time, 1))
-                        
+                        UPDATE unified_event_registrations
+                        SET checked_in_at = ?, attendance_status = 'verified'
+                        WHERE event_id = ? AND user_id = ?
+                        ''', (check_in_time, event_id, sid))
+
                         # Update registration status
                         cursor.execute('''
-                        UPDATE event_registrations 
+                        UPDATE unified_event_registrations
                         SET attendance_status = 'attended'
-                        WHERE event_id = ? AND student_id = ?
+                        WHERE event_id = ? AND user_id = ?
                         ''', (event_id, sid))
                         
                         successful_checkins += 1
@@ -969,9 +968,9 @@ def manage_event_attendance():
                     continue
                 
                 cursor.execute('''
-                UPDATE event_attendance 
+                UPDATE unified_event_registrations
                 SET cpd_credits = ?
-                WHERE event_id = ? AND attendance_verified = 1
+                WHERE event_id = ? AND attendance_status = 'verified'
                 ''', (cpd_credits, event_id))
                 
                 affected_rows = cursor.rowcount

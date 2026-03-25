@@ -61,21 +61,7 @@ def init_db() -> bool:
             )
         ''')
 
-        # Create orders table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS restaurant_orders (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                customer_id TEXT NOT NULL,
-                items TEXT NOT NULL,
-                total_amount REAL NOT NULL,
-                status TEXT DEFAULT 'pending',
-                order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                delivery_address TEXT,
-                special_instructions TEXT,
-                payment_method TEXT,
-                completed_at TIMESTAMP
-            )
-        ''')
+        # restaurant_orders table removed - now using unified 'orders' table with source_type='restaurant'
 
         # Create inventory table
         cursor.execute('''
@@ -336,7 +322,7 @@ def view_all_orders():
 
         cursor.execute('''
             SELECT id, customer_id, total_amount, status, order_date
-            FROM restaurant_orders
+            FROM orders
             ORDER BY order_date DESC
             LIMIT 50
         ''')
@@ -367,7 +353,7 @@ def view_pending_orders():
 
         cursor.execute('''
             SELECT id, customer_id, total_amount, order_date, special_instructions
-            FROM restaurant_orders
+            FROM orders
             WHERE status = 'pending'
             ORDER BY order_date ASC
         ''')
@@ -422,7 +408,7 @@ def sales_reports(auth):
         # Today's sales
         cursor.execute('''
             SELECT COUNT(*), SUM(total_amount)
-            FROM restaurant_orders
+            FROM orders
             WHERE DATE(order_date) = DATE('now')
         ''')
         today_stats = cursor.fetchone()
@@ -430,7 +416,7 @@ def sales_reports(auth):
         # This week's sales
         cursor.execute('''
             SELECT COUNT(*), SUM(total_amount)
-            FROM restaurant_orders
+            FROM orders
             WHERE DATE(order_date) >= DATE('now', '-7 days')
         ''')
         week_stats = cursor.fetchone()
@@ -438,7 +424,7 @@ def sales_reports(auth):
         # Popular items (placeholder)
         cursor.execute('''
             SELECT COUNT(*) as total_orders
-            FROM restaurant_orders
+            FROM orders
         ''')
         total_orders = cursor.fetchone()[0]
 
@@ -494,7 +480,7 @@ def update_order_status():
         cursor = conn.cursor()
 
         cursor.execute('''
-            UPDATE restaurant_orders
+            UPDATE orders
             SET status = ?, completed_at = CASE WHEN ? IN ('delivered', 'cancelled') THEN CURRENT_TIMESTAMP ELSE completed_at END
             WHERE id = ?
         ''', (new_status, new_status, order_id))
@@ -526,7 +512,7 @@ def view_order_details():
         cursor.execute('''
             SELECT id, customer_id, items, total_amount, status, order_date,
                    delivery_address, special_instructions, payment_method, completed_at
-            FROM restaurant_orders
+            FROM orders
             WHERE id = ?
         ''', (order_id,))
 
@@ -564,7 +550,7 @@ def daily_order_summary():
 
         cursor.execute('''
             SELECT status, COUNT(*), SUM(total_amount)
-            FROM restaurant_orders
+            FROM orders
             WHERE DATE(order_date) = DATE('now')
             GROUP BY status
         ''')

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/legal/services/__init__.py
+# hypothesis_version: 6.151.9
+
+['CASE_STATUSES', 'CASE_TYPES', 'CaseManager', 'ConsultationManager', 'DocumentManager', 'PAYMENT_STATUSES', 'PaymentManager', 'SERVICE_FEES']

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/reporting/financial_reports/compliance.py
+# hypothesis_version: 6.151.9
+
+[0.25, 0.5, 2.5, 100, '-', '=', 'ALIGN', 'BACKGROUND', 'BOTTOMPADDING', 'Check', 'Compliance Summary', 'Details', 'FAIL', 'FONTNAME', 'GRID', 'Heading2', 'Helvetica-Bold', 'LEFT', 'No orphaned records', 'Normal', 'PASS', 'Payments reconciled', 'Status', 'Status: COMPLIANT', 'TEXTCOLOR', 'Title', 'WARNING', 'check', 'details', 'manage_finances', 'status', 'y', '⚠', '✓', '✗']

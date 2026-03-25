@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/course_management/search.py
+# hypothesis_version: 6.151.9
+
+[100, ' AND ', ' WHERE ', '-', 'Enter course type: ', 'Enter department: ', 'Enter level: ', 'Invalid course ID.', 'Searching courses', 'conn', 'course_management', 'course_type LIKE ?', 'credit_hours <= ?', 'credit_hours >= ?', 'department LIKE ?', 'level LIKE ?', 'status = ?', 'view_courses', 'y']

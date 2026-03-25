@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/database/data_backup/notifications.py
+# hypothesis_version: 6.151.9
+
+[200, 204, '%Y-%m-%d %H:%M:%S', 'backup_failed', 'backup_path', 'backup_success', 'content', 'discord_webhook', 'email_notifications', 'operation', 'slack_webhook', 'text', 'timestamp']

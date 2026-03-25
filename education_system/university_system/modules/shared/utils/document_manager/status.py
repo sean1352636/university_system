@@ -1,4 +1,4 @@
-from ._common import (
+from education_system.university_system.modules.shared.utils.document_manager._common import (
     datetime, timedelta, sqlite3,
     get_connection, _t, log_event,
     EMAIL_SYSTEM_AVAILABLE, send_email, render_template,
@@ -23,11 +23,11 @@ class StatusMixin:
 
             # Find expiring documents
             cursor.execute('''
-            SELECT sd.document_id, sd.student_id, s.first_name, s.last_name, s.email_address,
+            SELECT sd.document_id, sd.owner_id as student_id, s.first_name, s.last_name, s.email_address,
                    dt.type_name, sd.expiry_date, sd.original_filename,
                    julianday(sd.expiry_date) - julianday('now') as days_until_expiry
-            FROM student_documents sd
-            JOIN students s ON sd.student_id = s.student_id
+            FROM documents sd
+            JOIN students s ON sd.owner_id = s.student_id
             JOIN document_types dt ON sd.type_id = dt.type_id
             WHERE sd.expiry_date BETWEEN ? AND ?
             AND sd.verification_status = 'Verified'
@@ -39,10 +39,10 @@ class StatusMixin:
 
             # Find already expired documents
             cursor.execute('''
-            SELECT sd.document_id, sd.student_id, s.first_name, s.last_name, s.email_address,
+            SELECT sd.document_id, sd.owner_id as student_id, s.first_name, s.last_name, s.email_address,
                    dt.type_name, sd.expiry_date, sd.original_filename
-            FROM student_documents sd
-            JOIN students s ON sd.student_id = s.student_id
+            FROM documents sd
+            JOIN students s ON sd.owner_id = s.student_id
             JOIN document_types dt ON sd.type_id = dt.type_id
             WHERE sd.expiry_date < ?
             AND sd.verification_status != 'Expired'
@@ -108,7 +108,7 @@ class StatusMixin:
 
                         # Mark as expired in database
                         cursor.execute('''
-                        UPDATE student_documents
+                        UPDATE documents
                         SET verification_status = 'Expired'
                         WHERE document_id = ?
                         ''', (doc_id,))
@@ -159,10 +159,10 @@ class StatusMixin:
 
             # Get document details
             cursor.execute('''
-            SELECT sd.document_id, sd.student_id, s.first_name, s.last_name, s.email_address,
+            SELECT sd.document_id, sd.owner_id as student_id, s.first_name, s.last_name, s.email_address,
                    dt.type_name, sd.verification_status, sd.original_filename
-            FROM student_documents sd
-            JOIN students s ON sd.student_id = s.student_id
+            FROM documents sd
+            JOIN students s ON sd.owner_id = s.student_id
             JOIN document_types dt ON sd.type_id = dt.type_id
             WHERE sd.document_id = ? AND sd.is_current_version = 1
             ''', (document_id,))
@@ -210,7 +210,7 @@ class StatusMixin:
             verification_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S') if new_status != 'Pending' else None
 
             cursor.execute('''
-            UPDATE student_documents
+            UPDATE documents
             SET verification_status = ?, verification_date = ?, verification_notes = ?
             WHERE document_id = ?
             ''', (new_status, verification_date, notes, doc_id))

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/attendance/records.py
+# hypothesis_version: 6.151.9
+
+[' AND ar.date <= ?', ' AND ar.date >= ?', 'System', 'attended', 'module_name', 'name', 'overall_percentage', 'percentage', 'sessions', 'student_id', 'students', 'total_sessions', 'total_students']

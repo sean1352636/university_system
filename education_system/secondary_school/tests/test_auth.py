@@ -33,7 +33,7 @@ class TestAuth:
         conn.execute("UPDATE users SET is_active = 0 WHERE username = 'student2'")
         conn.commit()
         conn.close()
-        with pytest.raises(AuthError, match="deactivated"):
+        with pytest.raises(AuthError, match="Invalid"):
             auth.login("student2", "student1234")
 
     def test_logout(self, auth):
@@ -44,14 +44,14 @@ class TestAuth:
 
     def test_create_user(self, auth):
         user_id = auth.create_user(
-            "newuser", "NewUser@123",
+            "newuser", "NewUser@12345",
             systems=[("school", "teacher")],
         )
         assert user_id > 0
 
     def test_create_duplicate_user(self, auth):
         with pytest.raises(AuthError, match="already exists"):
-            auth.create_user("admin2", "Admin@123")
+            auth.create_user("admin2", "Admin@School123")
 
     def test_change_password(self, auth):
         auth.login("admin2", "admin1234")

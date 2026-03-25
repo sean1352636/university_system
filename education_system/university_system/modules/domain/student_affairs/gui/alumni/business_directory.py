@@ -1,3 +1,4 @@
+from education_system.university_system.core.sql_safety import escape_like
 import tkinter as tk
 from education_system.university_system.infrastructure.email.template_utils import render_template
 from tkinter import ttk, messagebox, simpledialog, filedialog
@@ -187,7 +188,7 @@ class BusinessDirectoryMixin:
                     keyword = self.biz_search_keyword.get().strip()
                     if keyword:
                         query += " AND (business_name LIKE ? OR description LIKE ? OR services LIKE ?)"
-                        params.extend([f"%{keyword}%", f"%{keyword}%", f"%{keyword}%"])
+                        params.extend([f"%{escape_like(keyword)}%", f"%{escape_like(keyword)}%", f"%{escape_like(keyword)}%"])
 
                     # Add industry filter
                     industry = self.biz_search_industry.get()
@@ -199,7 +200,7 @@ class BusinessDirectoryMixin:
                     location = self.biz_search_location.get().strip()
                     if location:
                         query += " AND location LIKE ?"
-                        params.append(f"%{location}%")
+                        params.append(f"%{escape_like(location)}%")
 
                     query += " ORDER BY business_name"
 

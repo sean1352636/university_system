@@ -2,7 +2,7 @@
 Aid types display mixin for AdminPortal.
 """
 
-from ._imports import (
+from education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal._imports import (
     ttk, logging,
     get_connection,
     clear_frame, create_data_table,

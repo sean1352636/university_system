@@ -104,6 +104,25 @@ class BursaryService:
         finally:
             conn.close()
 
+    def delete_application(self, application_id: int) -> bool:
+        """Delete a bursary application by ID."""
+        conn = self._conn()
+        try:
+            result = conn.execute(
+                "DELETE FROM bursary_records WHERE id = ?", (application_id,)
+            )
+            conn.commit()
+            if result.rowcount == 0:
+                raise BursaryError(f"Bursary application {application_id} not found.")
+            return True
+        except BursaryError:
+            raise
+        except Exception as e:
+            conn.rollback()
+            raise BursaryError(f"Failed to delete bursary application: {e}")
+        finally:
+            conn.close()
+
     # --- Meal Eligibility ---
 
     def set_meal_eligibility(self, student_id: int, eligible: int = 1,

@@ -1,8 +1,9 @@
 import logging
 from functools import wraps
 from typing import Any, Callable, Optional, Dict
+import tkinter as tk
 from tkinter import messagebox
-from .exceptions import CalendarError, ValidationError, DatabaseError, AuthenticationError, PermissionError, ExportError, SyncError
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.exceptions import CalendarError, ValidationError, DatabaseError, AuthenticationError, PermissionError, ExportError, SyncError
 from education_system.university_system.modules.shared.utils.i18n import get_text as _
 
 gui_logger = logging.getLogger(__name__)
@@ -193,25 +194,30 @@ def convert_to_user_error(error: Exception, context: Optional[Dict[str, Any]] = 
 
 def safe_grab_set(dialog, parent=None):
     """
-    Safely set grab on dialog, handling grab conflicts
-    
+    Safely set grab on dialog, waiting until the window is viewable.
+
     Args:
         dialog: The dialog window to grab
         parent: Parent window (optional)
     """
     try:
-        # Small delay to ensure parent dialog operations complete
-        dialog.after_idle(lambda: _attempt_grab(dialog))
-    except Exception as e:
-        gui_logger.warning(f"Failed to set grab on dialog: {e}")
+        dialog.after(50, lambda d=dialog: _attempt_grab(d, retries=5))
+    except Exception:
+        pass
 
 
-def _attempt_grab(dialog):
-    """Attempt to grab dialog with error handling"""
+def _attempt_grab(dialog, retries=5):
+    """Attempt to grab dialog, retrying if not yet viewable"""
     try:
-        dialog.grab_set()
-    except Exception as e:
-        gui_logger.warning(f"Grab failed: {e}")
+        if not dialog.winfo_exists():
+            return
+        if dialog.winfo_viewable():
+            dialog.grab_set()
+        elif retries > 0:
+            dialog.after(50, lambda d=dialog, r=retries: _attempt_grab(d, retries=r - 1))
+    except (tk.TclError, Exception):
+        # Dialog was destroyed before timer fired — silently ignore
+        pass
 
 
 def safe_show_error(title, message, parent=None):

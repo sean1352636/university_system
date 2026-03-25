@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS users (
     created_at      TEXT    NOT NULL DEFAULT (datetime('now')),
     updated_at      TEXT    NOT NULL DEFAULT (datetime('now')),
     last_login      TEXT,
-    legacy_salt     TEXT
+    legacy_salt     TEXT,
+    password_changed_at TEXT
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
@@ -59,9 +60,30 @@ CREATE TABLE IF NOT EXISTS user_systems (
     FOREIGN KEY (user_id) REFERENCES users(id),
     UNIQUE(user_id, system_key)
 );
+
+CREATE TABLE IF NOT EXISTS cross_system_notifications (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    sender_user_id      INTEGER NOT NULL,
+    sender_system       TEXT    NOT NULL,
+    recipient_user_id   INTEGER NOT NULL,
+    recipient_system    TEXT    NOT NULL,
+    title               TEXT    NOT NULL,
+    message             TEXT,
+    priority            TEXT    DEFAULT 'normal',
+    is_read             INTEGER DEFAULT 0,
+    created_at          TEXT    DEFAULT (datetime('now')),
+    read_at             TEXT,
+    FOREIGN KEY (sender_user_id)    REFERENCES users(id),
+    FOREIGN KEY (recipient_user_id) REFERENCES users(id)
+);
 """
 
 # ── Default account definitions ──────────────────────────────────────────────
+#
+# ⚠  WARNING — DEV/DEMO ONLY ⚠
+# These passwords are intentionally weak for local development and demos.
+# They MUST be changed before any production or internet-facing deployment.
+# Consider using environment variables or a secrets manager in production.
 #
 # 13 accounts total:
 #   1  Super Admin   — all 4 systems as admin
@@ -213,6 +235,10 @@ def seed_default_users(db_path: str | None = None):
                 )
             conn.commit()
             logger.info("Seeded %d default auth accounts", len(_DEFAULT_ACCOUNTS))
+            logger.warning(
+                "Default accounts use WEAK passwords (e.g. admin123, staff1234). "
+                "Change them before any production or internet-facing deployment."
+            )
         else:
             # Existing database — ensure new accounts and system access exist
             _ensure_default_accounts(conn)

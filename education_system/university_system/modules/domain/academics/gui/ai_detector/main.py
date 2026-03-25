@@ -40,21 +40,21 @@ except ImportError:
 from education_system.university_system.modules.shared.utils.i18n import get_text, _
 
 # Import view functions from modular files
-from . import alerts_course_view
-from . import analysis_view
-from . import api_visual_view
-from . import batch_processing_view
-from . import blockchain_adversarial_view
-from . import compliance_bias_view
-from . import export_import_view
-from . import history_view
-from . import misc_view
-from . import model_security_view
-from . import multimodal_citation_view
-from . import realtime_federated_view
-from . import settings_advanced_view
-from . import statistics_view
-from . import student_analytics_view
+from education_system.university_system.modules.domain.academics.gui.ai_detector import alerts_course_view
+from education_system.university_system.modules.domain.academics.gui.ai_detector import analysis_view
+from education_system.university_system.modules.domain.academics.gui.ai_detector import api_visual_view
+from education_system.university_system.modules.domain.academics.gui.ai_detector import batch_processing_view
+from education_system.university_system.modules.domain.academics.gui.ai_detector import blockchain_adversarial_view
+from education_system.university_system.modules.domain.academics.gui.ai_detector import compliance_bias_view
+from education_system.university_system.modules.domain.academics.gui.ai_detector import export_import_view
+from education_system.university_system.modules.domain.academics.gui.ai_detector import history_view
+from education_system.university_system.modules.domain.academics.gui.ai_detector import misc_view
+from education_system.university_system.modules.domain.academics.gui.ai_detector import model_security_view
+from education_system.university_system.modules.domain.academics.gui.ai_detector import multimodal_citation_view
+from education_system.university_system.modules.domain.academics.gui.ai_detector import realtime_federated_view
+from education_system.university_system.modules.domain.academics.gui.ai_detector import settings_advanced_view
+from education_system.university_system.modules.domain.academics.gui.ai_detector import statistics_view
+from education_system.university_system.modules.domain.academics.gui.ai_detector import student_analytics_view
 
 class AIDetectorGUI:
     """Modern GUI interface for the AI Detector system"""

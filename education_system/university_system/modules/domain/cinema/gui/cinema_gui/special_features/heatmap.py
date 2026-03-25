@@ -13,7 +13,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_heatmap_page(self):
     self.clear_content()
@@ -21,16 +21,18 @@ def show_heatmap_page(self):
 
     # Get seat booking frequency
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT s.row || s.seat_number as seat_name
-        FROM booked_seats bs
-        JOIN seats s ON bs.seat_id = s.id
-        JOIN bookings b ON bs.booking_id = b.id
-        WHERE b.status = 'active' OR b.payment_status = 'paid'
-    """)
-    bookings = cursor.fetchall()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT s.row || s.seat_number as seat_name
+            FROM booked_seats bs
+            JOIN seats s ON bs.seat_id = s.id
+            JOIN bookings b ON bs.booking_id = b.id
+            WHERE b.status = 'active' OR b.payment_status = 'paid'
+        """)
+        bookings = cursor.fetchall()
+    finally:
+        conn.close()
 
     seat_counts = {}
     for booking in bookings:

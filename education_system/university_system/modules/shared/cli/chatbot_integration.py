@@ -5,7 +5,7 @@ This module handles the university chatbot integration, conversation management,
 and chatbot administration features.
 """
 
-from .imports import (
+from education_system.university_system.modules.shared.cli.imports import (
     logging, time, datetime, DB_PATH, _t, logger,
     log_activity
 )

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/services/reports.py
+# hypothesis_version: 6.151.9
+
+[30.0, '\nBy record type:', ' AND', '-', '--:--', '30d', 'WHERE', 'WHERE 1=1', '] ', 'common.na', 'common.unknown', 'general', 'health_appointments', 'health_records', 'id', 'n/a', 'report', 'scheduled', 'student', 'summary', 'vaccination_records']

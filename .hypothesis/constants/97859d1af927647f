@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/assignment_system/db_manager.py
+# hypothesis_version: 6.151.9
+
+['BOOLEAN DEFAULT 0', 'DATETIME', 'INTEGER', 'INTEGER DEFAULT 0', 'TEXT', 'TEXT DEFAULT "info"', 'assessments', 'assignment_id', 'assignments', 'created_at', 'created_date', 'duration_minutes', 'id', 'is_archived', 'is_deleted_by_sender', 'is_read', 'messages', 'modules', 'notification_id', 'notification_type', 'notifications', 'read_at', 'recipient_id', 'recipient_type', 'reviewee_id', 'sent', 'sent_at', 'status', 'students', 'submission_id', 'template_id', 'type', 'updated_at', 'users']

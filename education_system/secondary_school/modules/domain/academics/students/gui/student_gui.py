@@ -1,6 +1,7 @@
 """Student management GUI for the Secondary School Management System."""
 
 import random
+import secrets
 import tkinter as tk
 from tkinter import ttk, messagebox
 
@@ -9,6 +10,7 @@ from education_system.secondary_school.modules.domain.academics.subjects.service
 from education_system.secondary_school.modules.domain.academics.enrollment.services.enrollment_service import EnrollmentService
 from education_system.secondary_school.infrastructure.auth.core import UserAuth
 from education_system.secondary_school.core.exceptions import StudentError, ValidationError, EnrollmentError, AuthError
+from education_system.primary_school.core.paths import DB_FILE as PRIMARY_DB_FILE
 
 # Core subject codes that every student is auto-enrolled into
 CORE_CODES_KS3 = ("MATH01", "ENG01", "ENG02", "SCI01")
@@ -26,6 +28,7 @@ class _StudentDialog(tk.Toplevel):
         self.result: dict | None = None
         self._student = student
         self._option_subjects = option_subjects  # non-core subjects for the key stage
+        self._imported_primary_pupil = None
         self._build_ui()
         self._center(parent)
 
@@ -35,8 +38,88 @@ class _StudentDialog(tk.Toplevel):
         py = parent.winfo_rooty() + parent.winfo_height() // 2
         self.geometry(f"+{px - self.winfo_width() // 2}+{py - self.winfo_height() // 2}")
 
+    def _import_from_primary(self):
+        """Show dialog to select a pupil from the primary school system."""
+        try:
+            svc = StudentService(None)
+            pupils = svc.fetch_primary_pupils(str(PRIMARY_DB_FILE))
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not load primary school pupils:\n{e}")
+            return
+        if not pupils:
+            messagebox.showinfo("Import", "No active pupils found in the primary school system.")
+            return
+        sel_dlg = tk.Toplevel(self)
+        sel_dlg.title("Select Primary School Pupil")
+        sel_dlg.geometry("550x400")
+        sel_dlg.transient(self)
+        sel_dlg.grab_set()
+        tk.Label(sel_dlg, text="Select a pupil from the Primary School:",
+                 font=('Helvetica', 11, 'bold')).pack(padx=10, pady=(10, 5))
+        srch_frame = tk.Frame(sel_dlg)
+        srch_frame.pack(fill="x", padx=10)
+        tk.Label(srch_frame, text="Search:").pack(side="left")
+        srch_var = tk.StringVar()
+        ttk.Entry(srch_frame, textvariable=srch_var, width=30).pack(side="left", padx=5)
+        lf = tk.Frame(sel_dlg)
+        lf.pack(fill="both", expand=True, padx=10, pady=5)
+        lb_scroll = tk.Scrollbar(lf)
+        lb_scroll.pack(side="right", fill="y")
+        lb = tk.Listbox(lf, yscrollcommand=lb_scroll.set, font=('Courier', 10))
+        lb.pack(fill="both", expand=True)
+        lb_scroll.config(command=lb.yview)
+        _pupil_map = {}
+        def _populate(ft=""):
+            lb.delete(0, tk.END)
+            _pupil_map.clear()
+            for p in pupils:
+                name = f"{p['first_name']} {p['last_name']}"
+                if ft and ft.lower() not in name.lower() and ft.lower() not in (p['pupil_id'] or '').lower():
+                    continue
+                pos = lb.size()
+                lb.insert(tk.END, f"{p['pupil_id']}  {p['first_name']:15s} {p['last_name']:15s}  DOB: {p['date_of_birth'] or 'N/A'}")
+                _pupil_map[pos] = p
+        _populate()
+        srch_var.trace_add("write", lambda *_: _populate(srch_var.get()))
+        def _on_pick():
+            sel = lb.curselection()
+            if not sel:
+                messagebox.showwarning("Selection", "Please select a pupil.", parent=sel_dlg)
+                return
+            p = _pupil_map[sel[0]]
+            self._vars['first_name'].set(p['first_name'] or '')
+            self._vars['last_name'].set(p['last_name'] or '')
+            if p['date_of_birth']:
+                self._vars['date_of_birth'].set(p['date_of_birth'])
+            if p['address']:
+                self._vars['address'].set(p['address'])
+            if p['parent1_name']:
+                self._vars['parent_name'].set(p['parent1_name'])
+            if p['parent1_email']:
+                self._vars['parent_email'].set(p['parent1_email'])
+            if p['parent1_phone']:
+                self._vars['parent_phone'].set(p['parent1_phone'])
+            if p['emergency_contact_name']:
+                self._vars['emergency_contact_name'].set(p['emergency_contact_name'])
+            if p['emergency_contact_phone']:
+                self._vars['emergency_contact_phone'].set(p['emergency_contact_phone'])
+            self._imported_primary_pupil = dict(p)
+            sel_dlg.destroy()
+        bf = tk.Frame(sel_dlg)
+        bf.pack(pady=10)
+        ttk.Button(bf, text="Select & Import", command=_on_pick).pack(side="left", padx=5)
+        ttk.Button(bf, text="Cancel", command=sel_dlg.destroy).pack(side="left", padx=5)
+
     def _build_ui(self):
         pad = {"padx": 10, "pady": 5}
+
+        # Import from Primary School button (add mode only)
+        if not self._student:
+            import_frame = tk.Frame(self, padx=20, pady=(10, 0))
+            import_frame.pack(fill="x")
+            ttk.Button(import_frame, text="Import from Primary School",
+                       command=self._import_from_primary).pack(anchor="w")
+
         container = tk.Frame(self, padx=20, pady=15)
         container.pack(fill="both", expand=True)
 
@@ -210,6 +293,8 @@ class _StudentDialog(tk.Toplevel):
 
     def _on_save(self):
         self.result = {k: v.get().strip() for k, v in self._vars.items()}
+        if self._imported_primary_pupil:
+            self.result["_imported_primary_pupil"] = self._imported_primary_pupil
         self.result["pupil_premium"] = self._pp_var.get()
         if self._status_var:
             self.result["status"] = self._status_var.get()
@@ -394,7 +479,7 @@ class StudentFrame(tk.Frame):
 
         # Create user account
         auth = UserAuth(self._db_path)
-        digits = f"{random.randint(0, 9999):04d}"
+        digits = f"{secrets.randbelow(10000):04d}"
         password = f"{first_name.capitalize()}{digits}!"
 
         try:
@@ -462,6 +547,36 @@ class StudentFrame(tk.Frame):
             parts.append(f"\n({failed} enrollment(s) failed)")
 
         messagebox.showinfo("Student Account Created", "\n".join(parts))
+
+        # Transfer academic history from primary school if imported
+        imported = data.get("_imported_primary_pupil")
+        if imported:
+            self._svc.import_from_primary(
+                student["id"], imported, str(PRIMARY_DB_FILE)
+            )
+
+        # Mark imported pupil as transferred in primary school if applicable
+        if imported:
+            imp_name = f"{imported.get('first_name', '')} {imported.get('last_name', '')}"
+            if messagebox.askyesno(
+                "Transfer Pupil",
+                f"Mark {imp_name} as transferred in the Primary School?",
+            ):
+                try:
+                    self._svc.mark_primary_as_transferred(
+                        imported['id'], str(PRIMARY_DB_FILE)
+                    )
+                    print(f"[AUDIT] Pupil {imported.get('pupil_id', '')} ({imp_name}) "
+                          f"transferred from primary school to secondary as {student_id}")
+                    self._svc.notify_transfer(
+                        student_id, imported, self._auth, str(PRIMARY_DB_FILE)
+                    )
+                except Exception as exc:
+                    messagebox.showwarning(
+                        "Import",
+                        f"Student created but could not mark as transferred in primary school:\n{exc}",
+                    )
+
         self._load_students()
 
     def _on_edit(self):

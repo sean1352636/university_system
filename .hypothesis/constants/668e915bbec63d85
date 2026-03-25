@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/admin/settings/services/settings_service.py
+# hypothesis_version: 6.151.9
+
+[' AND category = ?', '-1', '08:40', '08:50', '1', '10', '15:10', '2025-09-01', '2025-12-19', '2025/2026', '2026-01-05', '2026-03-27', '2026-04-13', '2026-07-17', '6', 'Autumn term end date', 'Headteacher name', 'Main email address', 'Main phone number', 'Name of the school', 'School address', 'School day end time', 'Secondary School', 'Spring term end date', 'Summer term end date', 'academic', 'academic_year', 'attendance', 'autumn_term_end', 'autumn_term_start', 'behaviour', 'communication', 'display', 'general', 'headteacher', 'periods_per_day', 'registration_time', 'school_address', 'school_email', 'school_end_time', 'school_name', 'school_phone', 'school_start_time', 'spring_term_end', 'spring_term_start', 'summer_term_end', 'summer_term_start', 'value']

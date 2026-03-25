@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/loyalty/members.py
+# hypothesis_version: 6.151.9
+
+[100, 150, 200, '#27ae60', '#2c3e50', '#333333', '#7f8c8d', '#c0c0c0', '#cd7f32', '#dc3545', '#e5e4e2', '#e74c3c', '#ecf0f1', '#ffd700', '#ffffff', '.', '100', '300x150', '450x400', '500x400', '600x500', 'Add New Member', 'Add Points', 'Bookings', 'Bronze', 'Card.TFrame', 'Danger.TButton', 'Email', 'Gold', 'Helvetica', 'ID', 'Invalid points value', 'Main.TFrame', 'Member Lookup', 'Name', 'Platinum', 'Points', 'Primary.TButton', 'Secondary.TButton', 'Silver', 'Status', 'Subtitle.TLabel', 'Success.TButton', 'Tier', 'Total Spent', 'YYYY-MM-DD', '_', 'bold', 'both', 'cinema.common.error', 'cinema.common.info', 'cinema.members.title', 'discount', 'end', 'headings', 'left', 'min_points', 'right', 'values', 'vertical', 'w', 'x', 'y']

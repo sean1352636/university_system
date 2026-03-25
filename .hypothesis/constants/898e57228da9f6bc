@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/mfa_routes.py
+# hypothesis_version: 6.151.9
+
+[400, 500, '/api/mfa', '/disable', '/enable', '/recovery-codes', '/setup/email', '/setup/email/verify', '/setup/sms', '/setup/sms/verify', '/setup/totp', '/setup/totp/verify', '/status', '/trusted-devices', 'DELETE', 'Device trust revoked', 'Failed to enable MFA', 'Failed to send SMS', 'Failed to send email', 'GET', 'Invalid code', 'POST', 'TOTP setup failed', 'code', 'codes', 'devices', 'email', 'email_failed', 'enabled', 'error', 'expires_at', 'message', 'methods', 'mfa', 'mfa_enabled', 'phone', 'provisioning_uri', 'recovery_codes', 'secret', 'sms_failed', 'status', 'sub', 'success', 'user_id']

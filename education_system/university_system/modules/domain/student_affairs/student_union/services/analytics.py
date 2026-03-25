@@ -68,7 +68,7 @@ def activity_correlation_analysis(cursor):
             s.student_id
         FROM students s
         LEFT JOIN club_members cm ON s.student_id = cm.student_id
-        LEFT JOIN event_registrations er ON s.student_id = er.student_id
+        LEFT JOIN unified_event_registrations er ON s.student_id = er.user_id
         GROUP BY s.student_id
         HAVING clubs_joined > 0 OR events_attended > 0
         ''')
@@ -112,7 +112,7 @@ def activity_correlation_analysis(cursor):
             COUNT(DISTINCT cm2.club_id) as clubs_joined
         FROM students s
         LEFT JOIN club_members cm ON s.student_id = cm.student_id
-        LEFT JOIN event_registrations er ON s.student_id = er.student_id
+        LEFT JOIN unified_event_registrations er ON s.student_id = er.user_id
         LEFT JOIN club_members cm2 ON s.student_id = cm2.student_id
         GROUP BY s.student_id
         ''')
@@ -144,7 +144,7 @@ def activity_correlation_analysis(cursor):
             e.category,
             COUNT(*) as attendance_count
         FROM students s
-        JOIN event_registrations er ON s.student_id = er.student_id
+        JOIN unified_event_registrations er ON s.student_id = er.user_id
         JOIN union_events e ON er.event_id = e.event_id
         GROUP BY s.course, e.category
         HAVING COUNT(*) >= 3
@@ -194,7 +194,7 @@ def generate_personalized_recommendations(cursor):
         FROM students s
         LEFT JOIN club_members cm ON s.student_id = cm.student_id
         LEFT JOIN student_clubs c ON cm.club_id = c.club_id
-        LEFT JOIN event_registrations er ON s.student_id = er.student_id
+        LEFT JOIN unified_event_registrations er ON s.student_id = er.user_id
         LEFT JOIN union_events e ON er.event_id = e.event_id
         WHERE s.student_id = ?
         ''', (student_id,))
@@ -246,7 +246,7 @@ def generate_personalized_recommendations(cursor):
             AND e.event_date >= date('now')
             AND e.status = 'upcoming'
             AND e.event_id NOT IN (
-                SELECT event_id FROM event_registrations WHERE student_id = ?
+                SELECT event_id FROM unified_event_registrations WHERE user_id = ?
             )
             ORDER BY e.event_date
             LIMIT 5
@@ -309,7 +309,7 @@ def performance_benchmarking(cursor):
         FROM student_clubs c
         LEFT JOIN union_events e ON c.club_id = e.organizer_id 
             AND e.event_date >= date('now', '-12 months')
-        LEFT JOIN event_registrations er ON e.event_id = er.event_id
+        LEFT JOIN unified_event_registrations er ON e.event_id = er.event_id
         WHERE c.status = 'active'
         GROUP BY c.club_id, c.club_name, c.member_count
         HAVING c.member_count >= 5
@@ -391,7 +391,7 @@ def performance_benchmarking(cursor):
                 COUNT(DISTINCT er.event_id) as event_count
             FROM students s2
             LEFT JOIN club_members cm ON s2.student_id = cm.student_id
-            LEFT JOIN event_registrations er ON s2.student_id = er.student_id
+            LEFT JOIN unified_event_registrations er ON s2.student_id = er.user_id
             GROUP BY s2.student_id
             HAVING club_count >= 2 AND event_count >= 3
         ) engagement ON s.student_id = engagement.student_id
@@ -411,7 +411,7 @@ def performance_benchmarking(cursor):
                 COUNT(DISTINCT er.event_id) as event_count
             FROM students s2
             LEFT JOIN club_members cm ON s2.student_id = cm.student_id
-            LEFT JOIN event_registrations er ON s2.student_id = er.student_id
+            LEFT JOIN unified_event_registrations er ON s2.student_id = er.user_id
             GROUP BY s2.student_id
             HAVING (club_count = 1 AND event_count >= 1) OR (club_count >= 1 AND event_count BETWEEN 1 AND 2)
         ) engagement ON s.student_id = engagement.student_id

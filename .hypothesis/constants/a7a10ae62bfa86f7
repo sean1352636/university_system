@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/records/screening/guidelines.py
+# hypothesis_version: 6.151.9
+
+[100, '-', '18-21', '18-21 Years', '22-25', '22-29 Years', '26-30', '30+', '30-39 Years', '40+ Years', '=', 'Annual eye exam', 'Annual spirometry', 'Asthma', 'Blood pressure check', 'Depression', 'Diabetes', 'Diabetes screening', 'Foot exam', 'Hypertension', 'Immunization review', 'Peak flow monitoring', 'STI testing', 'id', 'screening', 'y']

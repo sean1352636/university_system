@@ -4,8 +4,8 @@ import time
 from datetime import datetime
 
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from . import _globals
-from .db import insert_search_analytics_record
+from education_system.university_system.modules.shared.services.analytics.advanced_search import _globals
+from education_system.university_system.modules.shared.services.analytics.advanced_search.db import insert_search_analytics_record
 
 
 def log_search(search_type, criteria, result_count):

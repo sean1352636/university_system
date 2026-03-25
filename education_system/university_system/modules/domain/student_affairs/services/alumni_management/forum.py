@@ -1,7 +1,7 @@
 from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from .core import safe_execute, auth
-from .gamification import award_engagement_points
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.core import safe_execute, auth
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.gamification import award_engagement_points
 
 
 def manage_alumni_forum():

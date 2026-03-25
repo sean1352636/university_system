@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/parent_portal/health_and_behavior.py
+# hypothesis_version: 6.151.9
+
+['\nIncident Reports:', '\nOptions:', '\nReport Absence:', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', '1', '3. Back to menu', 'Additional notes: ', 'Description: ', 'Doctor contact: ', 'Emergency contact: ', 'Invalid choice.', 'Open', 'Reason for absence: ', 'Resolved', 'Select option: ', 'id', 'major', 'manage_medical_info', 'minor', 'parent', 'positive', 'report_absence', 'role', 'severe', 'today', 'y']

@@ -3,6 +3,7 @@ Chat Manager
 Handles virtual session chat and Q&A
 """
 
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import sqlite3
 import json
 from datetime import datetime
@@ -233,7 +234,7 @@ class ChatManager:
                     AND is_deleted = 0
                     ORDER BY timestamp DESC
                     LIMIT ?
-                """, (session_id, f"%{search_term}%", limit))
+                """, (session_id, f"%{escape_like(search_term)}%", limit))
 
                 columns = [d[0] for d in cursor.description]
 

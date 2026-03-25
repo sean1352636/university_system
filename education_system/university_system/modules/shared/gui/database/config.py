@@ -8,7 +8,7 @@ from education_system.university_system.modules.shared.gui.database.shared_impor
 
 # Initialize basic config if not available
 config = {
-    "backup_directory": str(BACKUP_DIR),
+    "backup_directory": str(BACKUP_DIR / "database"),
     "scheduled_backup_time": "02:00",
     "backup_frequency": "daily",
     "max_backups": 10,

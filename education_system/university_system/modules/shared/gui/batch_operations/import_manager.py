@@ -9,13 +9,13 @@ import pandas as pd
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 
-from .constants import (
+from education_system.university_system.modules.shared.gui.batch_operations.constants import (
     _t, logger,
     compulsory_module_1, compulsory_module_2,
     CS_optional_module_1, CS_optional_module_2,
     DS_optional_module_1, DS_optional_module_2,
 )
-from .progress_dialog import GUIProgressDialog
+from education_system.university_system.modules.shared.gui.batch_operations.progress_dialog import GUIProgressDialog
 
 
 class ImportManager:
@@ -595,11 +595,14 @@ Modules that will be assigned to DS students:
         dialog.geometry("+%d+%d" % (self.gui.root.winfo_rootx() + 100, self.gui.root.winfo_rooty() + 100))
 
         # Header
-        if result.successful_imports > 0:
-            header_text = f"\u2705 {operation_type} Completed Successfully"
+        if result.successful_imports > 0 and result.failed_imports == 0:
+            header_text = f"\u2705 {result.successful_imports} student(s) added/updated successfully"
             header_color = "green"
+        elif result.successful_imports > 0:
+            header_text = f"\u26a0\ufe0f {result.successful_imports} student(s) added/updated, {result.failed_imports} failed"
+            header_color = "orange"
         else:
-            header_text = f"\u274c {operation_type} Failed"
+            header_text = f"\u274c No students were added — {result.failed_imports} record(s) failed"
             header_color = "red"
 
         header = ttk.Label(dialog, text=header_text, font=("Arial", 14, "bold"))
@@ -631,7 +634,15 @@ Processing Time: {duration:.1f} seconds"""
             error_text.pack(fill=tk.BOTH, expand=True)
 
             for i, error in enumerate(result.errors[:20], 1):  # Show first 20 errors
-                error_text.insert(tk.END, f"{i}. {error.get('error', 'Unknown error')}\n")
+                if isinstance(error, dict):
+                    row = error.get('row', '?')
+                    # Support both 'errors' (list) and 'error' (string) keys
+                    err_detail = error.get('errors', error.get('error', 'Unknown error'))
+                    if isinstance(err_detail, list):
+                        err_detail = '; '.join(str(e) for e in err_detail)
+                    error_text.insert(tk.END, f"{i}. Row {row}: {err_detail}\n")
+                else:
+                    error_text.insert(tk.END, f"{i}. {error}\n")
 
             if len(result.errors) > 20:
                 error_text.insert(tk.END, f"\n... and {len(result.errors) - 20} more errors")
@@ -657,7 +668,14 @@ Processing Time: {duration:.1f} seconds"""
                             f.write(f"{operation_type} Error Report\n")
                             f.write(f"Generated: {datetime.datetime.now()}\n\n")
                             for i, error in enumerate(result.errors, 1):
-                                f.write(f"{i}. {error.get('error', 'Unknown error')}\n")
+                                if isinstance(error, dict):
+                                    row = error.get('row', '?')
+                                    err_detail = error.get('errors', error.get('error', 'Unknown error'))
+                                    if isinstance(err_detail, list):
+                                        err_detail = '; '.join(str(e) for e in err_detail)
+                                    f.write(f"{i}. Row {row}: {err_detail}\n")
+                                else:
+                                    f.write(f"{i}. {error}\n")
                         messagebox.showinfo(_t("batch_ops.msg_titles.exported"), f"Error report saved to {error_file}")
                     except Exception as e:
                         messagebox.showerror(_t("batch_ops.msg_titles.error"), _t("batch_ops.errors.generic_error", error=str(e)))

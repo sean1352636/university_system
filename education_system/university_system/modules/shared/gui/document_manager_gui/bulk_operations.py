@@ -3,6 +3,8 @@ from tkinter import ttk, messagebox, filedialog
 import os
 import csv
 import json
+
+from education_system.university_system.core.sql_safety import escape_like
 import zipfile
 from datetime import datetime
 import logging
@@ -94,13 +96,13 @@ class BulkOperationsManager:
                 # Build query based on criteria
                 if criteria == "type":
                     cursor.execute('''
-                    SELECT sd.document_id FROM student_documents sd
+                    SELECT sd.document_id FROM documents sd
                     JOIN document_types dt ON sd.type_id = dt.type_id
                     WHERE dt.type_name LIKE ? AND sd.is_current_version = 1
                     ''', (f'%{filter_value}%',))
                 elif criteria == "status":
                     cursor.execute('''
-                    SELECT document_id FROM student_documents
+                    SELECT document_id FROM documents
                     WHERE verification_status = ? AND is_current_version = 1
                     ''', (filter_value,))
                 elif criteria == "date":
@@ -108,7 +110,7 @@ class BulkOperationsManager:
                     date_parts = filter_value.split(' to ')
                     if len(date_parts) == 2:
                         cursor.execute('''
-                        SELECT document_id FROM student_documents
+                        SELECT document_id FROM documents
                         WHERE DATE(upload_date) BETWEEN ? AND ? AND is_current_version = 1
                         ''', (date_parts[0], date_parts[1]))
                     else:
@@ -134,7 +136,7 @@ class BulkOperationsManager:
 
                 for doc_id in doc_ids:
                     cursor.execute('''
-                    UPDATE student_documents
+                    UPDATE documents
                     SET verification_status = ?, verification_date = ?, verification_notes = ?
                     WHERE document_id = ?
                     ''', (new_status, verification_date, f"Bulk update: {notes}" if notes else "Bulk update", doc_id))
@@ -258,7 +260,7 @@ class BulkOperationsManager:
                 if export_documents.get():
                     cursor.execute('''
                         SELECT sd.*, dt.type_name
-                        FROM student_documents sd
+                        FROM documents sd
                         LEFT JOIN document_types dt ON sd.type_id = dt.type_id
                     ''')
                     data = cursor.fetchall()
@@ -282,8 +284,8 @@ class BulkOperationsManager:
                                COUNT(DISTINCT sd.document_id) as submitted_docs
                         FROM students s
                         CROSS JOIN document_types dt
-                        LEFT JOIN student_documents sd ON s.student_id = sd.student_id
-                            AND dt.type_id = sd.type_id AND sd.is_current_version = 1
+                        LEFT JOIN documents sd ON s.student_id = sd.owner_id
+                            AND sd.source_type = 'student' AND dt.type_id = sd.type_id AND sd.is_current_version = 1
                         WHERE dt.is_required = 1
                         GROUP BY s.student_id
                     ''')
@@ -485,7 +487,7 @@ class BulkOperationsManager:
                     for item in selected:
                         doc_id = self.gui.docs_tree.item(item)['values'][0]
                         cursor.execute('''
-                            UPDATE student_documents
+                            UPDATE documents
                             SET tags = ?
                             WHERE document_id = ?
                         ''', (tags, doc_id))
@@ -549,7 +551,7 @@ class BulkOperationsManager:
 
                 cursor.execute('''
                 SELECT original_filename, file_path
-                FROM student_documents
+                FROM documents
                 WHERE document_id = ?
                 ''', (doc_id,))
 
@@ -640,7 +642,7 @@ class BulkOperationsManager:
                     for item in selected:
                         doc_id = self.gui.docs_tree.item(item)['values'][0]
                         cursor.execute('''
-                            UPDATE student_documents
+                            UPDATE documents
                             SET expiry_date = ?
                             WHERE document_id = ?
                         ''', (new_expiry, doc_id))
@@ -972,7 +974,7 @@ class BulkOperationsManager:
 
             if student_id:
                 query += " AND student_id LIKE ?"
-                params.append(f"%{student_id}%")
+                params.append(f"%{escape_like(student_id)}%")
             if doc_type != 'All':
                 query += " AND document_type = ?"
                 params.append(doc_type)

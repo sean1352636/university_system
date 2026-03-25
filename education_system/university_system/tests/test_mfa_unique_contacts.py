@@ -4,15 +4,11 @@ Test MFA Unique Contacts Enforcement
 Verifies that email addresses and phone numbers can only be linked to one user account.
 """
 
-import os
 import sys
-from education_system.university_system.infrastructure.database.db import sqlite3
+from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from datetime import datetime
 
-# Add path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 from education_system.university_system.infrastructure.auth.mfa_service import MFAService
-from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
 
 def test_unique_email_enforcement():
     """Test that email addresses must be unique across users"""
@@ -212,7 +208,7 @@ def cleanup_test_data():
     print("Cleaning up test data...")
     print("="*80)
 
-    conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+    conn = get_connection()
     cursor = conn.cursor()
 
     try:
@@ -240,7 +236,7 @@ def main():
     print("\n" + "="*80)
     print("MFA UNIQUE CONTACTS ENFORCEMENT TEST SUITE")
     print("="*80)
-    print(f"Database: {DEFAULT_DB_PATH}")
+    print("Database: (isolated test DB)")
     print(f"Time: {datetime.now().isoformat()}")
 
     # Clean up any existing test data

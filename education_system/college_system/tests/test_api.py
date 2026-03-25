@@ -14,30 +14,30 @@ class TestHealthCheck:
 class TestAuthAPI:
     def test_login(self, api_client):
         resp = api_client.post("/api/auth/login", json={
-            "username": "admin", "password": "Admin@123",
+            "username": "admin1", "password": "admin1234",
         })
         assert resp.status_code == 200
         data = resp.get_json()
         assert "token" in data
-        assert data["user"]["username"] == "admin"
+        assert data["user"]["username"] == "admin1"
 
     def test_login_wrong_password(self, api_client):
         resp = api_client.post("/api/auth/login", json={
-            "username": "admin", "password": "wrong",
+            "username": "admin1", "password": "wrong",
         })
         assert resp.status_code == 401
 
-    def test_register(self, api_client):
+    def test_register(self, api_client, auth_headers):
         resp = api_client.post("/api/auth/register", json={
-            "username": "newstudent", "password": "Student@123",
-            "role": "student",
-        })
+            "username": "newstudent", "password": "Student@12345",
+            "systems": [{"system_key": "college", "role": "student"}],
+        }, headers=auth_headers)
         assert resp.status_code == 201
 
     def test_me(self, api_client, auth_headers):
         resp = api_client.get("/api/auth/me", headers=auth_headers)
         assert resp.status_code == 200
-        assert resp.get_json()["user"]["username"] == "admin"
+        assert resp.get_json()["user"]["username"] == "admin1"
 
     def test_unauthorized(self, api_client):
         resp = api_client.get("/api/auth/me")

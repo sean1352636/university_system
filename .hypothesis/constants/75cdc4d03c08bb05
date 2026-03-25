@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/student_life/meals/services/meals_service.py
+# hypothesis_version: 6.151.9
+
+[' AND mb.date = ?', 'breakfast', 'cnt', 'gluten_free', 'halal', 'kosher', 'lunch', 'other', 'snack', 'standard', 'vegan', 'vegetarian']

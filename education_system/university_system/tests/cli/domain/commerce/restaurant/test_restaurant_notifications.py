@@ -44,7 +44,7 @@ class TestNotificationsModule(unittest.TestCase):
              None, 'Low', 'Features', 0),
         ]
 
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
     @patch('builtins.input', side_effect=['1'])  # All notifications
     def test_view_notifications_all(self, mock_input, mock_get_conn):
         """Test viewing all notifications"""
@@ -65,7 +65,7 @@ class TestNotificationsModule(unittest.TestCase):
 
         self.mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
     @patch('builtins.input', side_effect=['2'])  # Unread notifications
     def test_view_notifications_unread(self, mock_input, mock_get_conn):
         """Test viewing unread notifications"""
@@ -83,7 +83,7 @@ class TestNotificationsModule(unittest.TestCase):
         sql_call = str(self.mock_cursor.execute.call_args)
         assert 'read_date IS NULL' in sql_call
 
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
     @patch('builtins.input', side_effect=['3', 'High'])  # By priority
     def test_view_notifications_by_priority(self, mock_input, mock_get_conn):
         """Test viewing notifications by priority"""
@@ -103,7 +103,7 @@ class TestNotificationsModule(unittest.TestCase):
         assert 'priority = ?' in str(execute_calls[0])
         assert 'High' in str(execute_calls[0])
 
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
     @patch('builtins.input', side_effect=['4', 'Orders'])  # By category
     def test_view_notifications_by_category(self, mock_input, mock_get_conn):
         """Test viewing notifications by category"""
@@ -121,7 +121,7 @@ class TestNotificationsModule(unittest.TestCase):
         execute_calls = self.mock_cursor.execute.call_args_list
         assert 'category = ?' in str(execute_calls[0])
 
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
     @patch('builtins.input')
     def test_view_notifications_empty(self, mock_input, mock_get_conn):
         """Test viewing notifications when none exist"""
@@ -138,11 +138,11 @@ class TestNotificationsModule(unittest.TestCase):
         # Verify appropriate handling
         self.mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.ctx')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.backup_before_operation')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.log_audit_action')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.datetime')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.backup_before_operation')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.log_audit_action')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.datetime')
     @patch('builtins.input')
     def test_create_notification_system_wide(self, mock_input, mock_datetime, mock_log_audit,
                                             mock_backup, mock_ctx, mock_get_conn):
@@ -187,11 +187,11 @@ class TestNotificationsModule(unittest.TestCase):
         self.mock_conn.commit.assert_called_once()
         self.mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.ctx')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.backup_before_operation')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.log_audit_action')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.datetime')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.backup_before_operation')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.log_audit_action')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.datetime')
     @patch('builtins.input')
     def test_create_notification_specific_user(self, mock_input, mock_datetime, mock_log_audit,
                                                mock_backup, mock_ctx, mock_get_conn):
@@ -220,7 +220,7 @@ class TestNotificationsModule(unittest.TestCase):
         insert_call = str(self.mock_cursor.execute.call_args_list[-1])
         assert 'USER123' in insert_call or "'USER123'" in insert_call
 
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.ctx')
     @patch('builtins.input')
     def test_create_notification_no_auth(self, mock_input, mock_ctx):
         """Test creating notification without authentication"""
@@ -235,9 +235,9 @@ class TestNotificationsModule(unittest.TestCase):
         # Should return early without input
         mock_input.assert_not_called()
 
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.ctx')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.backup_before_operation')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.backup_before_operation')
     @patch('builtins.input')
     def test_create_notification_missing_title(self, mock_input, mock_backup, mock_ctx, mock_get_conn):
         """Test creating notification with missing title"""
@@ -257,10 +257,10 @@ class TestNotificationsModule(unittest.TestCase):
         # Should not reach INSERT
         self.mock_cursor.execute.assert_not_called()
 
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.ctx')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.log_audit_action')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.datetime')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.log_audit_action')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.datetime')
     @patch('builtins.input', return_value='NOT001')
     def test_mark_notification_read(self, mock_input, mock_datetime, mock_log_audit,
                                    mock_ctx, mock_get_conn):
@@ -290,8 +290,8 @@ class TestNotificationsModule(unittest.TestCase):
         self.mock_conn.commit.assert_called_once()
         mock_log_audit.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.ctx')
     @patch('builtins.input', return_value='NOT999')
     def test_mark_notification_read_not_found(self, mock_input, mock_ctx, mock_get_conn):
         """Test marking non-existent notification as read"""
@@ -309,8 +309,8 @@ class TestNotificationsModule(unittest.TestCase):
         self.mock_conn.commit.assert_not_called()
         self.mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.ctx')
     @patch('builtins.input', return_value='NOT002')
     def test_mark_notification_already_read(self, mock_input, mock_ctx, mock_get_conn):
         """Test marking already-read notification"""
@@ -330,10 +330,10 @@ class TestNotificationsModule(unittest.TestCase):
                        if 'UPDATE' in str(call)]
         assert len(update_calls) == 0
 
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.ctx')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.backup_before_operation')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.log_audit_action')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.backup_before_operation')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.log_audit_action')
     @patch('builtins.input', side_effect=['1'])  # Clear read notifications older than 30 days
     def test_clear_old_notifications_option1(self, mock_input, mock_log_audit, mock_backup,
                                             mock_ctx, mock_get_conn):
@@ -357,10 +357,10 @@ class TestNotificationsModule(unittest.TestCase):
 
         self.mock_conn.commit.assert_called_once()
 
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.ctx')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.backup_before_operation')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.log_audit_action')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.backup_before_operation')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.log_audit_action')
     @patch('builtins.input', side_effect=['2'])  # Clear all older than 90 days
     def test_clear_old_notifications_option2(self, mock_input, mock_log_audit, mock_backup,
                                             mock_ctx, mock_get_conn):
@@ -381,10 +381,10 @@ class TestNotificationsModule(unittest.TestCase):
                        if 'DELETE' in str(call)]
         assert len(delete_calls) == 1
 
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.ctx')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.backup_before_operation')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.log_audit_action')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.backup_before_operation')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.log_audit_action')
     @patch('builtins.input', side_effect=['3', 'Low'])  # Clear by priority
     def test_clear_old_notifications_by_priority(self, mock_input, mock_log_audit, mock_backup,
                                                  mock_ctx, mock_get_conn):
@@ -406,7 +406,7 @@ class TestNotificationsModule(unittest.TestCase):
         assert len(delete_calls) == 1
         assert 'priority = ?' in str(delete_calls[0])
 
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.ctx')
     def test_clear_old_notifications_no_permission(self, mock_ctx):
         """Test clearing notifications without admin permission"""
         from education_system.university_system.modules.domain.commerce.services.restaurant.operations.notifications import clear_old_notifications
@@ -436,11 +436,11 @@ class TestNotificationsModule(unittest.TestCase):
 class TestNotificationsIntegration(unittest.TestCase):
     """Integration tests for notification operations"""
 
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.ctx')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.backup_before_operation')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.log_audit_action')
-    @patch('university_system.modules.core.services.restaurant_misc.notifications.datetime')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.get_db_connection')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.ctx')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.backup_before_operation')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.log_audit_action')
+    @patch('education_system.university_system.modules.core.services.restaurant_misc.notifications.datetime')
     def test_create_and_mark_read_workflow(self, mock_datetime, mock_log_audit, mock_backup,
                                           mock_ctx, mock_get_conn):
         """Test creating and marking notification as read"""

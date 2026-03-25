@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
 
-from .. import get_connection
+from education_system.university_system.modules.domain.mobility.gui.parking_management import get_connection
 
 
 class PaymentDialog:
@@ -69,7 +69,8 @@ class PaymentDialog:
             try:
                 from education_system.university_system.modules.shared.utils.finance_integration import get_student_finance_account_balance
                 current_balance = get_student_finance_account_balance(student_id)
-                new_balance = current_balance - float(self.violation_data[4])
+                if current_balance is not None:
+                    new_balance = current_balance - float(self.violation_data[4])
             except Exception as e:
                 logging.warning(f"Could not get student balance: {e}")
 
@@ -124,15 +125,17 @@ class PaymentDialog:
         ttk.Button(main_frame, text="Cancel", command=self.dialog.destroy).pack(pady=(10, 0))
 
     def get_student_id_from_violation(self):
-        """Get student ID from violation license plate"""
+        """Get student ID (username or student_id) from violation license plate"""
         try:
             conn = get_connection()
             cursor = conn.cursor()
 
-            # Get vehicle owner from license plate
+            # Get vehicle owner and resolve to the identifier used by finance accounts
             cursor.execute("""
-                SELECT owner_id FROM vehicles
-                WHERE license_plate = ?
+                SELECT COALESCE(u.student_id, u.username)
+                FROM vehicles v
+                JOIN users u ON v.owner_id = u.id
+                WHERE v.license_plate = ?
             """, (self.violation_data[1],))
 
             result = cursor.fetchone()

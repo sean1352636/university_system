@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/ai/ai_detector/cli/enhanced_detection.py
+# hypothesis_version: 6.151.9
+
+['\nAnalysis cancelled.', '\nComparing drafts...', '-', '=', 'Enter student ID: ', 'analyses', 'artifacts_found', 'current_analysis', 'detected_language', 'error', 'fingerprint', 'has_ai_artifacts', 'inconsistencies', 'indicators', 'is_authentic', 'is_consistent', 'is_likely_translated', 'is_paraphrased', 'is_suspicious', 'likely_tool', 'sentence_metrics', 'suspicion_reasons', 'suspicious_jumps', 'vocabulary_metrics', '❌ No text provided.', '🔴 NO', '🔴 YES', '🟢 NO', '🟢 YES']

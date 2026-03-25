@@ -19,21 +19,21 @@ except ImportError:
     get_current_language = lambda: "en"
 
 # Import all mixins
-from .styles import StylesMixin
-from .context import ContextMixin
-from .events import EventsMixin
-from .status_bar import StatusBarMixin
-from .menu import MenuMixin
-from .screens.chat import ChatScreenMixin
-from .screens.settings import SettingsScreenMixin
-from .screens.admin import AdminPanelMixin
-from .features.messaging import MessagingMixin
-from .features.dashboard import DashboardMixin
-from .features.voice import VoiceMixin
-from .features.search import SearchMixin
-from .features.notifications import NotificationsMixin
-from .features.session import SessionMixin
-from .features.export import ExportMixin
+from education_system.university_system.utils.ai.gui.styles import StylesMixin
+from education_system.university_system.utils.ai.gui.context import ContextMixin
+from education_system.university_system.utils.ai.gui.events import EventsMixin
+from education_system.university_system.utils.ai.gui.status_bar import StatusBarMixin
+from education_system.university_system.utils.ai.gui.menu import MenuMixin
+from education_system.university_system.utils.ai.gui.screens.chat import ChatScreenMixin
+from education_system.university_system.utils.ai.gui.screens.settings import SettingsScreenMixin
+from education_system.university_system.utils.ai.gui.screens.admin import AdminPanelMixin
+from education_system.university_system.utils.ai.gui.features.messaging import MessagingMixin
+from education_system.university_system.utils.ai.gui.features.dashboard import DashboardMixin
+from education_system.university_system.utils.ai.gui.features.voice import VoiceMixin
+from education_system.university_system.utils.ai.gui.features.search import SearchMixin
+from education_system.university_system.utils.ai.gui.features.notifications import NotificationsMixin
+from education_system.university_system.utils.ai.gui.features.session import SessionMixin
+from education_system.university_system.utils.ai.gui.features.export import ExportMixin
 
 # Configure logging
 logger = logging.getLogger(__name__)

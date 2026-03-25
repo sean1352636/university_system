@@ -7,7 +7,7 @@ from reportlab.lib.units import inch
 
 from education_system.university_system.infrastructure.database.db import get_connection
 
-from . import _common
+from education_system.university_system.modules.domain.finance.reporting.financial_reports import _common
 
 
 def compliance_audit_system():

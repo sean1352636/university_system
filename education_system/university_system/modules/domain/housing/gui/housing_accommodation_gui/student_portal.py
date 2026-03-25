@@ -9,6 +9,10 @@ from datetime import datetime
 from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.modules.shared.utils.simple_activity_logger import log_activity
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.modules.domain.housing.services.housing_accommodation import generate_id
+from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.application_manager import create_new_application_form, create_applications_list
+from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.maintenance_manager import create_maintenance_list
+from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.payment_manager import create_payment_history
 
 def show_student_dashboard(self):
         """Show student dashboard"""
@@ -134,12 +138,12 @@ def show_student_application(self):
         # My applications tab
         my_apps_frame = ttk.Frame(notebook, padding="10")
         notebook.add(my_apps_frame, text="My Applications")
-        self.show_my_applications(my_apps_frame)
+        show_my_applications(self, my_apps_frame)
         
         # New application tab
         new_app_frame = ttk.Frame(notebook, padding="10")
         notebook.add(new_app_frame, text="Apply for Housing")
-        self.create_new_application_form(new_app_frame)
+        create_new_application_form(self, new_app_frame)
     
 def show_my_applications(self, parent):
         """Show student's applications"""
@@ -299,10 +303,10 @@ def show_student_assignment(self):
             payment_frame.pack(fill='both', expand=True)
             
             cursor.execute('''
-            SELECT p.payment_id, p.amount, p.payment_date, p.payment_method,
+            SELECT p.source_payment_id, p.amount, p.payment_date, p.payment_method,
                    p.payment_period_start, p.payment_period_end, p.status
-            FROM housing_payments p
-            WHERE p.student_id = ?
+            FROM payments p
+            WHERE p.source_type = 'housing' AND p.student_id = ?
             ORDER BY p.payment_date DESC
             LIMIT 10
             ''', (student_id,))
@@ -352,12 +356,12 @@ def show_student_maintenance(self):
         # My requests tab
         my_requests_frame = ttk.Frame(notebook, padding="10")
         notebook.add(my_requests_frame, text="My Requests")
-        self.show_my_maintenance_requests(my_requests_frame)
+        show_my_maintenance_requests(self, my_requests_frame)
         
         # New request tab
         new_request_frame = ttk.Frame(notebook, padding="10")
         notebook.add(new_request_frame, text="New Request")
-        self.create_student_maintenance_form(new_request_frame)
+        create_student_maintenance_form(self, new_request_frame)
     
 def show_my_maintenance_requests(self, parent):
         """Show student's maintenance requests"""
@@ -519,7 +523,7 @@ def create_student_maintenance_form(self, parent):
             
             # Submit button
             ttk.Button(form_frame, text="Submit Request", 
-                      command=self.submit_student_maintenance_request).grid(row=3, column=0, pady=20)
+                      command=lambda: submit_student_maintenance_request(self)).grid(row=3, column=0, pady=20)
             
         except Exception as e:
             ttk.Label(parent, text=f"Error loading form: {str(e)}",
@@ -668,7 +672,7 @@ def show_applications_view(self):
                  font=('Arial', 16, 'bold')).pack(pady=(0, 20))
         
         # Simple applications list
-        self.create_applications_list(self.content_frame)
+        create_applications_list(self, self.content_frame)
     
 def show_assignments_view(self):
         """Show assignments view for staff with view-only permissions"""
@@ -731,7 +735,7 @@ def show_maintenance_view(self):
                  font=('Arial', 16, 'bold')).pack(pady=(0, 20))
         
         # Create read-only maintenance list
-        self.create_maintenance_list(self.content_frame)
+        create_maintenance_list(self, self.content_frame)
     
 def show_payments_view(self):
         """Show payments view for staff with view-only permissions"""
@@ -741,5 +745,5 @@ def show_payments_view(self):
                  font=('Arial', 16, 'bold')).pack(pady=(0, 20))
         
         # Create read-only payment history
-        self.create_payment_history(self.content_frame)
+        create_payment_history(self, self.content_frame)
     

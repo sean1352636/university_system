@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import get_connection
-from .constants import DAYS_OF_WEEK, TIME_SLOTS
+from education_system.university_system.modules.domain.academics.services.module_scheduling.constants import DAYS_OF_WEEK, TIME_SLOTS
 import os
 from datetime import datetime
 import pandas as pd

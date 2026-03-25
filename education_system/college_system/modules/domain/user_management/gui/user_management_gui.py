@@ -5,6 +5,7 @@ from tkinter import ttk, messagebox
 
 from education_system.college_system.modules.domain.user_management.services.user_management_service import UserManagementService
 from education_system.college_system.core.exceptions import UserManagementError
+from education_system.college_system.core.i18n import t
 
 
 class _TemplateDialog(tk.Toplevel):
@@ -56,8 +57,8 @@ class _TemplateDialog(tk.Toplevel):
 
         btn_frame = tk.Frame(container)
         btn_frame.grid(row=99, column=0, columnspan=2, pady=(15, 0))
-        ttk.Button(btn_frame, text="Save", command=self._on_save).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.destroy).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text=t("common.save"), command=self._on_save).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text=t("common.cancel"), command=self.destroy).pack(side="left", padx=5)
 
     def _on_save(self):
         self.result = {k: v.get().strip() for k, v in self._vars.items()}
@@ -80,16 +81,17 @@ class UserManagementFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="User Management",
+        tk.Label(header, text=t("user_management.management"),
                  font=("Helvetica", 15, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=10)
 
         toolbar = tk.Frame(self, bg="#ecf0f1", pady=8)
         toolbar.pack(fill="x", padx=15)
-        ttk.Button(toolbar, text="Add", command=self._on_add).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Edit", command=self._on_edit).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Delete", command=self._on_delete).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Refresh", command=self._load_items).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.add"), command=self._on_add).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.edit"), command=self._on_edit).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.delete"), command=self._on_delete).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=t("common.refresh"), command=self._load_items).pack(side="left", padx=4)
+        ttk.Button(toolbar, text="Export CSV", command=self._export_csv).pack(side="left", padx=4)
 
         tree_frame = tk.Frame(self)
         tree_frame.pack(fill="both", expand=True, padx=15, pady=(0, 15))
@@ -111,9 +113,13 @@ class UserManagementFrame(tk.Frame):
         self._tree.pack(side="left", fill="both", expand=True)
         vsb.pack(side="right", fill="y")
 
-        self._status_var = tk.StringVar(value="Ready")
+        self._status_var = tk.StringVar(value=t("common.ready"))
         tk.Label(self, textvariable=self._status_var, bg="#ecf0f1", anchor="w",
                  font=("Helvetica", 9), fg="#7f8c8d").pack(fill="x", padx=15, pady=(0, 8))
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._tree, "user_management.csv")
 
     def refresh(self):
         self._load_items()
@@ -126,14 +132,14 @@ class UserManagementFrame(tk.Frame):
                 self._tree.insert("", "end", iid=item["id"], values=(
                     item.get("template_name", ""), item.get("role", ""), item.get("permissions", ""), item.get("description", ""),
                 ))
-            self._status_var.set(f"{len(items)} item(s) loaded")
+            self._status_var.set(t("common.count_loaded", count=len(items)))
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load:\n{exc}")
+            messagebox.showerror(t("common.error"), f"Failed to load:\n{exc}")
 
     def _selected_pk(self) -> int | None:
         sel = self._tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select an item first.")
+            messagebox.showwarning(t("common.selection_required"), t("common.select_first"))
             return None
         return int(sel[0])
 
@@ -144,10 +150,10 @@ class UserManagementFrame(tk.Frame):
             return
         try:
             self._svc.create_template(**dlg.result)
-            messagebox.showinfo("Success", "Template created.")
+            messagebox.showinfo(t("common.success"), t("user_management.template_created", default="Template created."))
             self._load_items()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_edit(self):
         pk = self._selected_pk()
@@ -155,7 +161,7 @@ class UserManagementFrame(tk.Frame):
             return
         item = self._svc.get_template(pk)
         if not item:
-            messagebox.showerror("Error", "Template not found.")
+            messagebox.showerror(t("common.error"), t("user_management.template_not_found", default="Template not found."))
             return
         dlg = _TemplateDialog(self, title="Edit Template", item=item)
         self.wait_window(dlg)
@@ -163,20 +169,20 @@ class UserManagementFrame(tk.Frame):
             return
         try:
             self._svc.update_template(pk, **dlg.result)
-            messagebox.showinfo("Success", "Template updated.")
+            messagebox.showinfo(t("common.success"), t("user_management.template_updated", default="Template updated."))
             self._load_items()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     def _on_delete(self):
         pk = self._selected_pk()
         if pk is None:
             return
-        if not messagebox.askyesno("Confirm", "Delete this template?"):
+        if not messagebox.askyesno(t("common.confirm"), t("user_management.delete_template_confirm", default="Delete this template?")):
             return
         try:
             self._svc.delete_template(pk)
-            messagebox.showinfo("Success", "Template deleted.")
+            messagebox.showinfo(t("common.success"), t("user_management.template_deleted", default="Template deleted."))
             self._load_items()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))

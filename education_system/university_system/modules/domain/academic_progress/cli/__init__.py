@@ -1,5 +1,5 @@
 """Academic Progress CLI package."""
 
-from .progress_cli import AcademicProgressCLI
+from education_system.university_system.modules.domain.academic_progress.cli.progress_cli import AcademicProgressCLI
 
 __all__ = ['AcademicProgressCLI']

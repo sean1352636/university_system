@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/reporting/revenue_by_source_report.py
+# hypothesis_version: 6.151.9
+
+[100, '\nPeriod 1:', '\nPeriod 2:', '\n❌ Export failed', ' AND date_col <= ?', ' AND date_col >= ?', '-', '1', '12', '2', '3', '4', '5', '5. Export to CSV', '6', '6. Back to Main Menu', '=', 'All Time', 'Average Transaction', 'Enter source name: ', 'Max Amount', 'Min Amount', 'Source', 'TOTAL', 'Total Revenue', 'Transaction Count', 'average', 'changes', 'count', 'end', 'max', 'min', 'period1', 'period2', 'revenue', 'revenue_amount', 'revenue_pct', 'source', 'start', 'total', 'transaction_count', 'transaction_pct', 'transactions', 'w', 'y']

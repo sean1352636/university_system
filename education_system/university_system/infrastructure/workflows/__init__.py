@@ -24,12 +24,12 @@ Common Use Cases:
 - Research grant applications
 """
 
-from .workflow_engine import (
+from education_system.university_system.infrastructure.workflows.workflow_engine import (
     WorkflowEngine,
     get_workflow_engine,
 )
 
-from .models import (
+from education_system.university_system.infrastructure.workflows.models import (
     Workflow,
     WorkflowStep,
     WorkflowInstance,
@@ -38,7 +38,7 @@ from .models import (
     ApprovalStatus,
 )
 
-from .steps import (
+from education_system.university_system.infrastructure.workflows.steps import (
     ApprovalStep,
     AutomatedStep,
     ConditionalStep,
@@ -46,7 +46,7 @@ from .steps import (
     NotificationStep,
 )
 
-from .templates import (
+from education_system.university_system.infrastructure.workflows.templates import (
     WorkflowTemplates,
     create_scholarship_workflow,
     create_leave_request_workflow,
@@ -56,7 +56,7 @@ from .templates import (
     get_workflow_template,
 )
 
-from .monitoring import (
+from education_system.university_system.infrastructure.workflows.monitoring import (
     WorkflowMonitor,
     WorkflowAnalytics,
     get_workflow_monitor,

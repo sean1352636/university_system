@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/management/promo_management.py
+# hypothesis_version: 6.151.9
+
+[100, '#333333', '#e74c3c', '#ecf0f1', '#ffffff', '%Y-%m-%d', '.', '0', '450x400', 'Add Promo Code', 'Card.TFrame', 'Code', 'Danger.TButton', 'Helvetica', 'ID', 'Main.TFrame', 'Max Uses', 'Min Purchase', 'No limit', 'Promo code created!', 'Secondary.TButton', 'Status', 'Subtitle.TLabel', 'Success.TButton', 'Type', 'Uses', 'Valid Until', 'Value', '_', 'bold', 'both', 'cinema.buttons.save', 'cinema.common.error', 'cinema.common.info', 'cinema.promo.title', 'end', 'fixed', 'headings', 'left', 'percentage', 'right', 'values', 'vertical', 'w', 'x', 'y', '∞']

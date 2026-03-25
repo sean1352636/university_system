@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/carrental_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/carrental', '/rentals', '/vehicles', 'GET', 'POST', 'carrental', 'carrental_rentals', 'carrental_vehicles', 'category', 'category = ?', 'color', 'create', 'customer_email', 'customer_id', 'customer_id = ?', 'customer_name', 'customer_phone', 'daily_rate', 'features', 'fuel_type', 'items', 'license_number', 'make', 'mileage', 'model', 'pickup_date', 'pickup_location', 'pickup_time', 'registration_number', 'return_date', 'return_location', 'return_time', 'search', 'seats', 'status', 'status = ?', 'sub', 'total', 'transmission', 'vehicle_id', 'view', 'year']

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/cinema_cli/seats.py
+# hypothesis_version: 6.151.9
+
+['\n🎬 SCREEN', ' ♦️ ', ' ⬛', ' ⬜', '=', 'A', 'AUTO', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'available', 'number', 'premium', 'row', 'standard', 'status', 'type', '❌ Seat already taken', '❌ Seat not found']

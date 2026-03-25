@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/gui/student_union_gui/clubs/club_views.py
+# hypothesis_version: 6.151.9
+
+[1.0, '<<ListboxSelect>>', 'Arial', 'bold', 'both', 'common.refresh', 'horizontal', 'left', 'notebook', 'right', 'x', 'y']

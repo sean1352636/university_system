@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/helpdesk/admin/admin_workflows.py
+# hypothesis_version: 6.151.9
+
+['\nActions:', '\nCreate New Workflow', '\nEnter your choice: ', '\nTrigger types:', '\nWorkflow Management', '\nWorkflows:', '%Y-%m-%d %H:%M:%S', ', ', '1', '1. View workflows', '1. ticket_created', '2', '2. status_changed', '3', '3. Edit workflow', '3. reply_added', '4', '4. time_based', '=', '==================', 'Description: ', 'Name is required.', 'No', 'No changes made.', 'No workflows found.', 'Workflow name: ', 'Workflow not found.', 'Yes', 'activated', 'assign_to_department', 'category', 'deactivated', 'description = ?', 'high', 'id', 'low', 'medium', 'name = ?', 'reply_added', 'set_priority', 'status_changed', 'ticket_created', 'time_based']

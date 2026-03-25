@@ -426,37 +426,39 @@ def export_club_data(self):
             return
         
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            SELECT c.club_name, c.category, c.member_count, c.status, c.created_date,
-                   p.first_name || ' ' || p.last_name as president
-            FROM student_clubs c
-            LEFT JOIN students p ON c.president_id = p.student_id
-            ORDER BY c.club_name
-        ''')
-        
-        clubs = cursor.fetchall()
-        
-        with open(filename, 'w', newline='', encoding='utf-8') as f:
-            if filename.endswith('.csv'):
-                import csv
-                writer = csv.writer(f)
-                writer.writerow(['Club Name', 'Category', 'Members', 'Status', 'Created', 'President'])
-                writer.writerows(clubs)
-            else:
-                f.write("CLUB DATA EXPORT\n")
-                f.write("=" * 50 + "\n\n")
-                for club in clubs:
-                    f.write(f"Club: {club[0]}\n")
-                    f.write(f"Category: {club[1] or 'Not specified'}\n")
-                    f.write(f"Members: {club[2]}\n")
-                    f.write(f"Status: {club[3]}\n")
-                    f.write(f"Created: {club[4] or 'Unknown'}\n")
-                    f.write(f"President: {club[5] or 'Vacant'}\n")
-                    f.write("-" * 30 + "\n")
-        
-        conn.close()
+        try:
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT c.club_name, c.category, c.member_count, c.status, c.created_date,
+                       p.first_name || ' ' || p.last_name as president
+                FROM student_clubs c
+                LEFT JOIN students p ON c.president_id = p.student_id
+                ORDER BY c.club_name
+            ''')
+
+            clubs = cursor.fetchall()
+
+            with open(filename, 'w', newline='', encoding='utf-8') as f:
+                if filename.endswith('.csv'):
+                    import csv
+                    writer = csv.writer(f)
+                    writer.writerow(['Club Name', 'Category', 'Members', 'Status', 'Created', 'President'])
+                    writer.writerows(clubs)
+                else:
+                    f.write("CLUB DATA EXPORT\n")
+                    f.write("=" * 50 + "\n\n")
+                    for club in clubs:
+                        f.write(f"Club: {club[0]}\n")
+                        f.write(f"Category: {club[1] or 'Not specified'}\n")
+                        f.write(f"Members: {club[2]}\n")
+                        f.write(f"Status: {club[3]}\n")
+                        f.write(f"Created: {club[4] or 'Unknown'}\n")
+                        f.write(f"President: {club[5] or 'Vacant'}\n")
+                        f.write("-" * 30 + "\n")
+
+        finally:
+            conn.close()
         messagebox.showinfo("Success", f"Club data exported to {filename}")
         
     except sqlite3.Error as e:
@@ -548,7 +550,7 @@ def backup_database(self):
             defaultextension=".db",
             filetypes=[("Database files", "*.db"), ("All files", "*.*")],
             title="Save Database Backup",
-            initialvalue=f"student_union_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
+            initialfile=f"student_union_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
         )
         
         if not backup_filename:

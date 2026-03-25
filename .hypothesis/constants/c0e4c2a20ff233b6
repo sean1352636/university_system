@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/academic_calendar/timezone.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d', '%Y-%m-%d %H:%M:%S %Z', 'CST', 'EST', 'Event not found', 'MST', 'PST', 'UTC', 'converted_event', 'date', 'date_end', 'date_start', 'error', 'fall_back', 'from_offset', 'original_timezone', 'spring_forward', 'success', 'target_timezone', 'timezone_name', 'to_offset', 'type']

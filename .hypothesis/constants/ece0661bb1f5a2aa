@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/course_management_gui/core/db.py
+# hypothesis_version: 6.151.9
+
+[0.0, 3.0, 4.0, 50.0, '%Y-%m-%d %H:%M:%S', "'0/30' as enrollment", "'Active' as status", "'N/A' as department", "'N/A' as level", '3.0 as credit_hours', 'Active', 'BIO101', 'Biology', 'CS101', 'Calculus I', 'Computer Science', 'Core', 'ENG102', 'English', 'English Composition', 'Fall,Spring', 'Fall,Spring,Summer', 'General Biology', 'General Education', 'HIST150', 'History', 'MATH201', 'Mathematics', 'Undergraduate', 'World History', 'academic_year_id', 'code', 'common.error', 'credit_hours', 'credits', 'current_enrollment', 'date_added', 'department', 'instructor_id', 'is_active', 'level', 'max_enrollment', 'max_hours_per_week', 'name', 'preferred_days', 'preferred_times', 'science,lab', 'semester_id', 'status']

@@ -154,6 +154,10 @@ class IncidentError(SchoolSystemError):
     """Error related to incident operations."""
 
 
+class PayrollError(SchoolSystemError):
+    """Error related to payroll operations."""
+
+
 # ── Validation ────────────────────────────────────────────────────────────
 class ValidationError(SchoolSystemError):
     """Error related to input validation."""

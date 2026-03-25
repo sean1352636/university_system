@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/database/dialogs/comparison.py
+# hypothesis_version: 6.151.9
+
+[1.0, 1024, 3600, 86400, '%Y%m%d_%H%M%S', '-', '600x400', '600x500', '=', 'Close', 'Compare', 'Compare Backups', 'Comparison Results', 'DETAILED ANALYSIS:\n', 'Detailed Error', 'Error Details', 'First Backup:', 'No Selection', 'Possible reasons:\n', 'Same Backup', 'Second Backup:', 'Size unchanged\n', 'both', 'path', 'readonly', 'record_changes', 'records_added', 'records_modified', 'records_removed', 'size', 'tables_added', 'tables_modified', 'tables_removed', 'timestamp', 'values', 'w', 'x', '❌ COMPARISON ERROR\n', '❌ COMPARISON FAILED\n']

@@ -32,10 +32,10 @@ Usage:
 """
 
 # Import main entry point
-from .cli_main import main, initialize_system, auth
+from education_system.university_system.modules.shared.cli.cli_main import main, initialize_system, auth
 
 # Import DB_PATH from imports
-from .imports import DB_PATH
+from education_system.university_system.modules.shared.cli.imports import DB_PATH
 
 # Import finance menu (for backward compatibility)
 try:
@@ -46,7 +46,7 @@ except ImportError:
     display_finance_menu = None
 
 # Import from database_manager
-from .database_manager import (
+from education_system.university_system.modules.shared.cli.database_manager import (
     get_db_connection,
     safe_db_operation_with_retry,
     enhanced_db_operation,
@@ -69,7 +69,7 @@ from .database_manager import (
 )
 
 # Import from auth_manager
-from .auth_manager import (
+from education_system.university_system.modules.shared.cli.auth_manager import (
     ensure_default_users_exist_once,
     create_default_user_if_needed,
     ensure_user_in_communication_system,
@@ -77,7 +77,7 @@ from .auth_manager import (
 )
 
 # Import from student_operations
-from .student_operations import (
+from education_system.university_system.modules.shared.cli.student_operations import (
     create_student_record,
     view_student_record,
     update_student_record,
@@ -90,7 +90,7 @@ from .student_operations import (
 )
 
 # Import from student_search
-from .student_search import (
+from education_system.university_system.modules.shared.cli.student_search import (
     search_student_by_first_name,
     search_student_by_last_name,
     search_student_by_student_id,
@@ -98,7 +98,7 @@ from .student_search import (
 )
 
 # Import from module_operations
-from .module_operations import (
+from education_system.university_system.modules.shared.cli.module_operations import (
     create_module,
     edit_module,
     delete_module,
@@ -108,7 +108,7 @@ from .module_operations import (
 )
 
 # Import from export_manager
-from .export_manager import (
+from education_system.university_system.modules.shared.cli.export_manager import (
     get_file_path,
     export_to_csv,
     export_to_excel,
@@ -119,7 +119,7 @@ from .export_manager import (
 )
 
 # Import from integration_manager
-from .integration_manager import (
+from education_system.university_system.modules.shared.cli.integration_manager import (
     link_attendance_to_calendar_events,
     create_integrated_dashboard_data,
     display_integrated_system_dashboard,
@@ -134,7 +134,7 @@ from .integration_manager import (
 )
 
 # Import from chatbot_integration
-from .chatbot_integration import (
+from education_system.university_system.modules.shared.cli.chatbot_integration import (
     initialize_chatbot_integration,
     display_chatbot_menu,
     start_chat_session,
@@ -150,7 +150,7 @@ from .chatbot_integration import (
 )
 
 # Import from ai_tools_integration
-from .ai_tools_integration import (
+from education_system.university_system.modules.shared.cli.ai_tools_integration import (
     integrate_ai_detector_with_main,
     create_minimal_ai_detector,
     display_ai_detector_menu_from_main,
@@ -166,7 +166,7 @@ from .ai_tools_integration import (
 )
 
 # Import from menu_router
-from .menu_router import (
+from education_system.university_system.modules.shared.cli.menu_router import (
     display_menu,
     display_virtual_classroom_menu,
     display_financial_aid_menu,
@@ -179,7 +179,7 @@ from .menu_router import (
 )
 
 # Import from system_monitoring
-from .system_monitoring import (
+from education_system.university_system.modules.shared.cli.system_monitoring import (
     view_system_health,
     view_application_metrics,
     view_recent_alerts,
@@ -192,7 +192,7 @@ from .system_monitoring import (
 )
 
 # Import from admin_tools
-from .admin_tools import (
+from education_system.university_system.modules.shared.cli.admin_tools import (
     display_admin_tools_menu,
     display_database_statistics,
     display_analytics_menu,
@@ -200,14 +200,14 @@ from .admin_tools import (
 )
 
 # Import from utils
-from .utils import (
+from education_system.university_system.modules.shared.cli.utils import (
     safe_auth_check,
     suppress_duplicate_messages,
     cleanup_connections,
 )
 
 # Import availability flags from imports module
-from .imports import (
+from education_system.university_system.modules.shared.cli.imports import (
     HAS_PANDAS,
     HAS_REPORTLAB,
     ACADEMIC_MISCONDUCT_AVAILABLE,

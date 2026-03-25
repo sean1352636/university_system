@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/services/parking_management/lots.py
+# hypothesis_version: 6.151.9
+
+[100, '-', '1. ', '2. ', '24/7', '3. ', '4. ', '5. ', ':', '=', '?', 'Enter location: ', 'Enter lot name: ', 'Enter new location: ', 'Enter new lot name: ', 'Enter zone code: ', 'add_lot', 'available_spaces', 'delete_lot', 'manage_parking_lots', 'parking.menu.zone', 'total_spaces', 'update_lot', 'y']

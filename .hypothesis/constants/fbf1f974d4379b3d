@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/records/vaccinations/reports.py
+# hypothesis_version: 6.151.9
+
+[100, '%Y-%m-%d', '-', '=', 'COVID-19', 'Hepatitis B', 'Influenza (Flu)', 'MMR', 'Tdap', 'VERIFICATION RATES']

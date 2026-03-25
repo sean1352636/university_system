@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.college_system.modules.domain.safeguarding.services.safeguarding_service import SafeguardingService
+from education_system.college_system.core.i18n import t
 
 
 class SafeguardingFrame(tk.Frame):
@@ -20,7 +21,7 @@ class SafeguardingFrame(tk.Frame):
         header = tk.Frame(self, bg="#c0392b", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Safeguarding", font=("Helvetica", 14, "bold"),
+        tk.Label(header, text=t("safeguarding.title"), font=("Helvetica", 14, "bold"),
                  bg="#c0392b", fg="white").pack(side="left", padx=20, pady=10)
 
         self._nb = ttk.Notebook(self)
@@ -28,12 +29,12 @@ class SafeguardingFrame(tk.Frame):
 
         # Report tab
         self._report_tab = tk.Frame(self._nb)
-        self._nb.add(self._report_tab, text="Report Concern")
+        self._nb.add(self._report_tab, text=t("safeguarding.report_concern"))
         self._build_report_tab()
 
         # Log tab
         self._log_tab = tk.Frame(self._nb)
-        self._nb.add(self._log_tab, text="Concerns Log")
+        self._nb.add(self._log_tab, text=t("safeguarding.concerns_log"))
         self._build_log_tab()
 
     def _build_report_tab(self):
@@ -42,27 +43,27 @@ class SafeguardingFrame(tk.Frame):
 
         fields = {}
         row = 0
-        for label, key in [("Student ID*:", "student_id"), ("Category*:", "category")]:
+        for label, key in [(t("common.student_id_required"), "student_id"), (t("safeguarding.category_required"), "category")]:
             tk.Label(form, text=label).grid(row=row, column=0, sticky="e", padx=5, pady=5)
             e = tk.Entry(form, width=30)
             e.grid(row=row, column=1, sticky="w", padx=5, pady=5)
             fields[key] = e
             row += 1
 
-        tk.Label(form, text="Severity:").grid(row=row, column=0, sticky="e", padx=5, pady=5)
+        tk.Label(form, text=t("common.severity_colon")).grid(row=row, column=0, sticky="e", padx=5, pady=5)
         self._severity_var = tk.StringVar(value="low")
         ttk.Combobox(form, textvariable=self._severity_var,
                       values=["low", "medium", "high", "critical"],
                       state="readonly", width=27).grid(row=row, column=1, sticky="w", padx=5, pady=5)
         row += 1
 
-        tk.Label(form, text="Description*:").grid(row=row, column=0, sticky="ne", padx=5, pady=5)
+        tk.Label(form, text=t("common.description_required")).grid(row=row, column=0, sticky="ne", padx=5, pady=5)
         desc_text = tk.Text(form, width=40, height=6)
         desc_text.grid(row=row, column=1, sticky="w", padx=5, pady=5)
         fields["description"] = desc_text
         row += 1
 
-        tk.Label(form, text="Immediate Action:").grid(row=row, column=0, sticky="ne", padx=5, pady=5)
+        tk.Label(form, text=t("safeguarding.immediate_action")).grid(row=row, column=0, sticky="ne", padx=5, pady=5)
         action_text = tk.Text(form, width=40, height=3)
         action_text.grid(row=row, column=1, sticky="w", padx=5, pady=5)
         fields["immediate_action"] = action_text
@@ -80,28 +81,29 @@ class SafeguardingFrame(tk.Frame):
                     description=desc_text.get("1.0", "end").strip(),
                     severity=self._severity_var.get(),
                     immediate_action=action_text.get("1.0", "end").strip() or None)
-                messagebox.showinfo("Success", "Concern reported")
+                messagebox.showinfo(t("common.success"), t("safeguarding.concern_reported"))
                 for w in [fields["student_id"], fields["category"]]:
                     w.delete(0, "end")
                 desc_text.delete("1.0", "end")
                 action_text.delete("1.0", "end")
                 self._load_concerns()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
-        ttk.Button(form, text="Submit Concern", command=submit).grid(row=row, column=0, columnspan=2, pady=15)
+        ttk.Button(form, text=t("safeguarding.submit_concern"), command=submit).grid(row=row, column=0, columnspan=2, pady=15)
 
     def _build_log_tab(self):
         toolbar = tk.Frame(self._log_tab)
         toolbar.pack(fill="x", padx=5, pady=5)
 
-        tk.Label(toolbar, text="Status:").pack(side="left", padx=5)
+        tk.Label(toolbar, text=t("common.status_colon")).pack(side="left", padx=5)
         self._log_status_var = tk.StringVar(value="All")
         ttk.Combobox(toolbar, textvariable=self._log_status_var,
                       values=["All", "open", "investigating", "referred", "resolved", "closed"],
                       state="readonly", width=15).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="Filter", command=self._load_concerns).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="Update Selected", command=self._update_concern).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("common.filter"), command=self._load_concerns).pack(side="left", padx=5)
+        ttk.Button(toolbar, text="Export CSV", command=self._export_csv).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("common.update_selected"), command=self._update_concern).pack(side="right", padx=5)
 
         cols = ("id", "student", "category", "severity", "status", "date")
         self._log_tree = ttk.Treeview(self._log_tab, columns=cols, show="headings", height=15)
@@ -128,7 +130,7 @@ class SafeguardingFrame(tk.Frame):
                     c.get("severity", ""), c.get("status", ""),
                     c.get("reported_date", "")))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _on_concern_select(self, _event=None):
         sel = self._log_tree.selection()
@@ -149,24 +151,24 @@ class SafeguardingFrame(tk.Frame):
     def _update_concern(self):
         sel = self._log_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a concern")
+            messagebox.showwarning(t("common.warning"), t("safeguarding.select_concern"))
             return
         concern_id = int(sel[0])
         win = tk.Toplevel(self)
-        win.title("Update Concern")
+        win.title(t("safeguarding.update_concern"))
         win.geometry("400x300")
         row = 0
-        tk.Label(win, text="Status:").grid(row=row, column=0, padx=10, pady=5, sticky="e")
+        tk.Label(win, text=t("common.status_colon")).grid(row=row, column=0, padx=10, pady=5, sticky="e")
         status_var = tk.StringVar(value="investigating")
         ttk.Combobox(win, textvariable=status_var,
                       values=["open", "investigating", "referred", "resolved", "closed"],
                       state="readonly", width=20).grid(row=row, column=1, padx=10, pady=5)
         row += 1
-        tk.Label(win, text="Outcome:").grid(row=row, column=0, padx=10, pady=5, sticky="ne")
+        tk.Label(win, text=t("safeguarding.outcome_colon")).grid(row=row, column=0, padx=10, pady=5, sticky="ne")
         outcome = tk.Text(win, width=30, height=3)
         outcome.grid(row=row, column=1, padx=10, pady=5)
         row += 1
-        tk.Label(win, text="Notes:").grid(row=row, column=0, padx=10, pady=5, sticky="ne")
+        tk.Label(win, text=t("common.notes_colon")).grid(row=row, column=0, padx=10, pady=5, sticky="ne")
         notes = tk.Text(win, width=30, height=3)
         notes.grid(row=row, column=1, padx=10, pady=5)
         row += 1
@@ -184,8 +186,12 @@ class SafeguardingFrame(tk.Frame):
                 win.destroy()
                 self._load_concerns()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
-        ttk.Button(win, text="Save", command=save).grid(row=row, column=0, columnspan=2, pady=15)
+                messagebox.showerror(t("common.error"), str(e))
+        ttk.Button(win, text=t("common.save"), command=save).grid(row=row, column=0, columnspan=2, pady=15)
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._log_tree, default_filename="safeguarding.csv")
 
     def refresh(self):
         self._load_concerns()

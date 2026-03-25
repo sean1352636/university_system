@@ -7,6 +7,8 @@ def init_enhanced_attendance_db():
     """Initialize enhanced attendance tracking database with all new features"""
     try:
         conn = get_connection()
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
         cursor = conn.cursor()
 
         # Original attendance records table (enhanced)
@@ -277,6 +279,8 @@ def create_missing_tables():
     """Create missing tables needed by reporting system"""
     try:
         conn = get_connection()
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
         cursor = conn.cursor()
 
         # Create student_attendance table from attendance_records

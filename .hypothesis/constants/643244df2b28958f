@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/academic_calendar/dialogs_resources.py
+# hypothesis_version: 6.151.9
+
+[1.0, 480, 550, '#0', '%Y-%m-%d', '(None)', '00', '09', '10', '15', '30', '400x350', '45', '500x250', '520x600', '800x600', '900x600', ':', 'Arial', 'Auditorium', 'Capacity', 'Classroom', 'Code', 'Course:', 'Credits', 'Date:', 'Department', 'End Time:', 'Equipment', 'Event:', 'Laboratory', 'Link', 'Link Course to Event', 'Location', 'N/A', 'Other', 'Start Time:', 'Status', 'Type', 'User', 'Vehicle', '_auth', 'auth', 'bold', 'capacity', 'code', 'common.cancel', 'common.close', 'common.error', 'common.success', 'common.warning', 'credits', 'current_user', 'department', 'email', 'end', 'end_time', 'event_id', 'id', 'location', 'name', 'notes', 'readonly', 'resource_id', 'start_time', 'status', 'text', 'tree headings', 'type', 'username', 'values']

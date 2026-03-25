@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/security/audit_helpers.py
+# hypothesis_version: 6.151.9
+
+['***', ',', 'User-Agent', 'X-Forwarded-For', 'X-Real-IP', 'current_user', 'get_api_context', 'get_current_user_id', 'get_gui_context', 'headers', 'id', 'key', 'mask_sensitive_data', 'password', 'remote_addr', 'secret', 'session_id', 'token']

@@ -139,10 +139,40 @@ class EncryptionManager:
         Returns:
             Master encryption key as bytes
         """
-        master_key_path = os.path.join(
+        logger.warning(
+            "Using FILE-BASED encryption key storage. "
+            "This is NOT recommended for production. "
+            "Set USE_KMS=true and configure a KMS provider for secure key management."
+        )
+
+        # Store keys in a separate .keys directory under the project root,
+        # NOT alongside the database files
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        keys_dir = os.path.join(project_root, '.keys')
+        os.makedirs(keys_dir, exist_ok=True)
+        # Restrict directory permissions
+        try:
+            os.chmod(keys_dir, 0o700)
+        except OSError:
+            logger.warning("Could not set restrictive permissions on keys directory: %s", keys_dir)
+
+        master_key_path = os.path.join(keys_dir, '.encryption_master_key')
+
+        # Support legacy key location for backward compatibility
+        legacy_key_path = os.path.join(
             os.path.dirname(self.db_path),
             '.encryption_master_key'
         )
+        if not os.path.exists(master_key_path) and os.path.exists(legacy_key_path):
+            logger.info("Migrating encryption key from legacy location to %s", keys_dir)
+            try:
+                import shutil
+                shutil.move(legacy_key_path, master_key_path)
+                os.chmod(master_key_path, 0o600)
+            except Exception as e:
+                logger.error("Failed to migrate legacy key file: %s", e)
+                # Fall back to legacy path if migration fails
+                master_key_path = legacy_key_path
 
         # Try to load existing key
         if os.path.exists(master_key_path):
@@ -674,10 +704,11 @@ class EncryptionManager:
             backup_conn = get_connection(db_path=backup_path, row_factory=False)
             source_conn = get_connection(db_path=self.db_path, row_factory=False)
 
-            source_conn.backup(backup_conn)
-
-            backup_conn.close()
-            source_conn.close()
+            try:
+                source_conn.backup(backup_conn)
+            finally:
+                backup_conn.close()
+                source_conn.close()
 
             # Encrypt backup
             encrypt_result = self.encrypt_file(

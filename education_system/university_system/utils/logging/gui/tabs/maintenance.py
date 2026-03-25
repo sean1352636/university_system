@@ -86,15 +86,17 @@ class MaintenanceMixin:
 
                 # Get record counts
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-                cursor = conn.cursor()
+                try:
+                    cursor = conn.cursor()
 
-                cursor.execute("SELECT COUNT(*) FROM activity_log")
-                log_count = cursor.fetchone()[0]
+                    cursor.execute("SELECT COUNT(*) FROM activity_log")
+                    log_count = cursor.fetchone()[0]
 
-                cursor.execute("SELECT COUNT(*) FROM alerts")
-                alert_count = cursor.fetchone()[0]
+                    cursor.execute("SELECT COUNT(*) FROM alerts")
+                    alert_count = cursor.fetchone()[0]
 
-                conn.close()
+                finally:
+                    conn.close()
 
                 info_text = f"""Database Information
 ====================
@@ -170,10 +172,12 @@ Average log size: {size_bytes / max(log_count, 1):.0f} bytes
                 size_before = os.path.getsize(self.log_manager.db.db_path)
 
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-                cursor = conn.cursor()
+                try:
+                    cursor = conn.cursor()
 
-                cursor.execute("VACUUM")
-                conn.close()
+                    cursor.execute("VACUUM")
+                finally:
+                    conn.close()
 
                 # Get size after
                 size_after = os.path.getsize(self.log_manager.db.db_path)

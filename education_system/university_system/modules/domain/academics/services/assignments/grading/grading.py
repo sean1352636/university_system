@@ -69,26 +69,28 @@ class GradingMixin:
 
             # Save to database
             conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            cursor.execute('''
-            INSERT INTO rubrics (name, description, total_points, created_by, created_at)
-            VALUES (?, ?, ?, ?, ?)
-            ''', (name, description, total_points, self.auth.current_user['id'], timestamp))
-
-            rubric_id = cursor.lastrowid
-
-            # Add criteria
-            for i, criterion in enumerate(criteria):
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 cursor.execute('''
-                INSERT INTO rubric_criteria (rubric_id, criteria_name, criteria_description, max_points, weight, order_index)
-                VALUES (?, ?, ?, ?, ?, ?)
-                ''', (rubric_id, criterion['name'], criterion['description'],
-                      criterion['points'], criterion['weight'], i))
+                INSERT INTO rubrics (name, description, total_points, created_by, created_at)
+                VALUES (?, ?, ?, ?, ?)
+                ''', (name, description, total_points, self.auth.current_user['id'], timestamp))
 
-            conn.commit()
-            conn.close()
+                rubric_id = cursor.lastrowid
+
+                # Add criteria
+                for i, criterion in enumerate(criteria):
+                    cursor.execute('''
+                    INSERT INTO rubric_criteria (rubric_id, criteria_name, criteria_description, max_points, weight, order_index)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    ''', (rubric_id, criterion['name'], criterion['description'],
+                          criterion['points'], criterion['weight'], i))
+
+                conn.commit()
+            finally:
+                conn.close()
 
             print(f"\nRubric '{name}' created successfully!")
             print(f"Total points: {total_points}")
@@ -265,22 +267,24 @@ class GradingMixin:
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
             conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('''
-                UPDATE assignment_submissions
-                SET grade = ?, feedback = ?, graded_by = ?, graded_at = ?, status = 'graded'
-                WHERE id = ?
-            ''', (grade, feedback, grader_id, timestamp, submission_id))
+                cursor.execute('''
+                    UPDATE assignment_submissions
+                    SET grade = ?, feedback = ?, graded_by = ?, graded_at = ?, status = 'graded'
+                    WHERE id = ?
+                ''', (grade, feedback, grader_id, timestamp, submission_id))
 
-            conn.commit()
-            self._log_action('update', 'assignment_submissions', submission_id, {'grade': grade})
+                conn.commit()
+                self._log_action('update', 'assignment_submissions', submission_id, {'grade': grade})
 
-            cursor.execute('SELECT student_id FROM assignment_submissions WHERE id = ?', (submission_id,))
-            student_id = cursor.fetchone()[0]
-            self._send_notification(student_id, "Grade Released", f"Your submission has been graded: {grade}", "grade_released", submission_id)
+                cursor.execute('SELECT student_id FROM assignment_submissions WHERE id = ?', (submission_id,))
+                student_id = cursor.fetchone()[0]
+                self._send_notification(student_id, "Grade Released", f"Your submission has been graded: {grade}", "grade_released", submission_id)
 
-            conn.close()
+            finally:
+                conn.close()
 
             print("Grade submitted successfully!")
             return True
@@ -415,18 +419,20 @@ class GradingMixin:
                 export_path = os.path.join(self.submission_dir, 'exports', f'grades_{assignment_id}.csv')
 
             conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('''
-                SELECT
-                    student_id, grade, feedback, graded_at, graded_by
-                FROM assignment_submissions
-                WHERE assignment_id = ? AND status = 'graded'
-                ORDER BY student_id
-            ''', (assignment_id,))
+                cursor.execute('''
+                    SELECT
+                        student_id, grade, feedback, graded_at, graded_by
+                    FROM assignment_submissions
+                    WHERE assignment_id = ? AND status = 'graded'
+                    ORDER BY student_id
+                ''', (assignment_id,))
 
-            grades = cursor.fetchall()
-            conn.close()
+                grades = cursor.fetchall()
+            finally:
+                conn.close()
 
             with open(export_path, 'w', newline='') as csvfile:
                 writer = csv.writer(csvfile)

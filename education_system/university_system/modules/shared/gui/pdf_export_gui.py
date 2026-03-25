@@ -134,7 +134,7 @@ class PDFExportGUI:
             from datetime import datetime
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            default_path = os.path.join(str(paths.EXPORTS_DIR), f"database_export_{timestamp}.pdf")
+            default_path = os.path.join(str(paths.EXPORTS_PDF_DIR), f"database_export_{timestamp}.pdf")
             self.output_path_var.set(default_path)
         except Exception:
             self.output_path_var.set("database_export.pdf")

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/notification_center_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/notifications', '/preferences', 'GET', 'POST', 'channel', 'channel = ?', 'create', 'email_enabled', 'is_read', 'is_read = ?', 'items', 'message', 'notification_center', 'notifications', 'priority', 'priority = ?', 'push_enabled', 'search', 'sms_enabled', 'sub', 'title', 'total', 'user_id', 'user_id = ?', 'view']

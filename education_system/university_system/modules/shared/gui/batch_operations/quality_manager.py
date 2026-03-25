@@ -7,8 +7,8 @@ import threading
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 
-from .constants import _t, logger, sqlite3, DEFAULT_DB_PATH, csv
-from .progress_dialog import GUIProgressDialog
+from education_system.university_system.modules.shared.gui.batch_operations.constants import _t, logger, sqlite3, DEFAULT_DB_PATH, csv
+from education_system.university_system.modules.shared.gui.batch_operations.progress_dialog import GUIProgressDialog
 
 
 class QualityManager:
@@ -75,12 +75,19 @@ class QualityManager:
             issues_tree.column("name", width=200)
             issues_tree.column("issues", width=300)
 
-            # Add issues data
+            # Add issues data - handle varying dict formats from validation
             for issue in issues:
+                student_id = issue.get('student_id', issue.get('id', 'N/A'))
+                name = issue.get('name', issue.get('field', issue.get('type', '')))
+                issue_list = issue.get('issues', [])
+                if not issue_list:
+                    # Build description from available fields
+                    desc = issue.get('description', issue.get('action', ''))
+                    issue_list = [desc] if desc else ['Unknown issue']
                 issues_tree.insert('', 'end', values=(
-                    issue['student_id'],
-                    issue['name'],
-                    '; '.join(issue['issues'])
+                    student_id,
+                    name,
+                    '; '.join(str(i) for i in issue_list)
                 ))
 
             # Scrollbar
@@ -103,13 +110,23 @@ class QualityManager:
                             writer = csv.writer(f)
                             writer.writerow(["Student ID", "Name", "Issues"])
                             for issue in issues:
-                                writer.writerow([issue['student_id'], issue['name'], '; '.join(issue['issues'])])
+                                student_id = issue.get('student_id', issue.get('id', 'N/A'))
+                                name = issue.get('name', issue.get('field', issue.get('type', '')))
+                                issue_list = issue.get('issues', [])
+                                if not issue_list:
+                                    desc = issue.get('description', issue.get('action', ''))
+                                    issue_list = [desc] if desc else ['Unknown issue']
+                                writer.writerow([student_id, name, '; '.join(str(i) for i in issue_list)])
                         messagebox.showinfo(_t("batch_ops.msg_titles.exported"), f"Validation report saved to {file_path}")
                     except Exception as e:
                         messagebox.showerror(_t("batch_ops.msg_titles.error"), _t("batch_ops.errors.generic_error", error=str(e)))
 
-            export_btn = ttk.Button(dialog, text=_t("batch_ops.buttons.export_report"), command=export_issues)
-            export_btn.pack(pady=10)
+            btn_frame = ttk.Frame(dialog)
+            btn_frame.pack(pady=10)
+
+            ttk.Button(btn_frame, text=_t("batch_ops.buttons.export_report"), command=export_issues).pack(side=tk.LEFT, padx=10)
+            ttk.Button(btn_frame, text="Email Report to Admin",
+                       command=lambda: self._email_validation_report_to_admin(issues)).pack(side=tk.LEFT, padx=10)
 
         # Close button
         ttk.Button(dialog, text=_t("batch_ops.buttons.close"), command=dialog.destroy).pack(pady=10)
@@ -215,6 +232,8 @@ class QualityManager:
 
             ttk.Button(action_frame, text=_t("batch_ops.buttons.merge"), command=merge_duplicates).pack(side=tk.LEFT, padx=10)
             ttk.Button(action_frame, text=_t("batch_ops.buttons.export_report"), command=export_duplicates).pack(side=tk.LEFT, padx=10)
+            ttk.Button(action_frame, text="Email Report to Admin",
+                       command=lambda: self._email_duplicate_report_to_admin(duplicates)).pack(side=tk.LEFT, padx=10)
 
         # Close button
         ttk.Button(dialog, text=_t("batch_ops.buttons.close"), command=dialog.destroy).pack(pady=10)
@@ -495,3 +514,144 @@ Quality Improvements: {data.get('quality_improvements', 0)}
 
 🚨 ALERTS
 {data.get('alerts', ['No alerts'])}"""
+
+    # ------------------------------------------------------------------
+    # Email report helpers
+    # ------------------------------------------------------------------
+
+    def _get_admin_emails(self):
+        """Retrieve admin email addresses from the university database."""
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT email FROM users WHERE role = 'admin' AND email IS NOT NULL AND email != ''"
+            )
+            rows = cursor.fetchall()
+            conn.close()
+            return [row[0] for row in rows]
+        except Exception as e:
+            logger.error(f"Failed to retrieve admin emails: {e}")
+            return []
+
+    def _email_validation_report_to_admin(self, issues):
+        """Format the validation report and email it to admin users."""
+        admin_emails = self._get_admin_emails()
+        if not admin_emails:
+            messagebox.showerror(
+                _t("batch_ops.msg_titles.error"),
+                "No admin email addresses found in the database."
+            )
+            return
+
+        # Build plain-text report body
+        lines = [
+            "DATA VALIDATION REPORT",
+            f"Generated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            f"Total issues found: {len(issues)}",
+            "",
+            "=" * 60,
+        ]
+
+        # Severity summary
+        severity_counts = {}
+        for issue in issues:
+            sev = issue.get('severity', 'unknown')
+            severity_counts[sev] = severity_counts.get(sev, 0) + 1
+        lines.append("SEVERITY BREAKDOWN:")
+        for sev, count in sorted(severity_counts.items()):
+            lines.append(f"  {sev.title()}: {count}")
+        lines.append("")
+
+        # Issue details (cap at 50 to keep email reasonable)
+        lines.append("ISSUE DETAILS (first 50):")
+        lines.append("-" * 60)
+        for issue in issues[:50]:
+            student_id = issue.get('student_id', issue.get('id', 'N/A'))
+            desc = issue.get('description', issue.get('action', 'No description'))
+            sev = issue.get('severity', '')
+            lines.append(f"  [{sev.upper()}] Student {student_id}: {desc}")
+
+        if len(issues) > 50:
+            lines.append(f"  ... and {len(issues) - 50} more issues")
+
+        body = "\n".join(lines)
+        subject = f"Data Validation Report - {len(issues)} issues found - {datetime.datetime.now().strftime('%Y-%m-%d')}"
+
+        self._send_report_email(admin_emails, subject, body)
+
+    def _email_duplicate_report_to_admin(self, duplicates):
+        """Format the duplicate detection report and email it to admin users."""
+        admin_emails = self._get_admin_emails()
+        if not admin_emails:
+            messagebox.showerror(
+                _t("batch_ops.msg_titles.error"),
+                "No admin email addresses found in the database."
+            )
+            return
+
+        # Build plain-text report body
+        lines = [
+            "DUPLICATE DETECTION REPORT",
+            f"Generated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            f"Potential duplicate pairs found: {len(duplicates)}",
+            "",
+            "=" * 60,
+        ]
+
+        for i, dup in enumerate(duplicates, 1):
+            s1 = dup['student1']
+            s2 = dup['student2']
+            lines.append(f"Pair {i} (Confidence: {dup['confidence']:.0%}):")
+            lines.append(f"  Student 1: {s1['name']} (ID: {s1['id']}, Email: {s1.get('email', 'N/A')})")
+            lines.append(f"  Student 2: {s2['name']} (ID: {s2['id']}, Email: {s2.get('email', 'N/A')})")
+            lines.append("")
+
+        body = "\n".join(lines)
+        subject = f"Duplicate Detection Report - {len(duplicates)} pairs found - {datetime.datetime.now().strftime('%Y-%m-%d')}"
+
+        self._send_report_email(admin_emails, subject, body)
+
+    def _send_report_email(self, admin_emails, subject, body):
+        """Send a report email to all admin addresses."""
+        try:
+            from education_system.university_system.infrastructure.email.email_service import send_email
+        except ImportError:
+            messagebox.showerror(
+                _t("batch_ops.msg_titles.error"),
+                "Email service is not available."
+            )
+            return
+
+        success = 0
+        failed = []
+        for email_addr in admin_emails:
+            try:
+                result = send_email(
+                    recipient_email=email_addr,
+                    subject=subject,
+                    body=body,
+                )
+                if result is not False:
+                    success += 1
+                else:
+                    failed.append(email_addr)
+            except Exception as e:
+                logger.error(f"Failed to email report to {email_addr}: {e}")
+                failed.append(email_addr)
+
+        if success and not failed:
+            messagebox.showinfo(
+                "Email Sent",
+                f"Report emailed to {success} admin(s):\n" + "\n".join(admin_emails)
+            )
+        elif success:
+            messagebox.showwarning(
+                "Partial Success",
+                f"Sent to {success} admin(s), failed for:\n" + "\n".join(failed)
+            )
+        else:
+            messagebox.showerror(
+                _t("batch_ops.msg_titles.error"),
+                "Failed to send report to any admin address."
+            )

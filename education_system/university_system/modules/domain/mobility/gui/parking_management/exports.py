@@ -2,11 +2,11 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 
-from . import _t, DEFAULT_DB_PATH
+from education_system.university_system.modules.domain.mobility.gui.parking_management import _t, DEFAULT_DB_PATH
 
 # These service functions are only available when PARKING_MANAGEMENT_AVAILABLE is True
 try:
-    from . import (
+    from education_system.university_system.modules.domain.mobility.gui.parking_management import (
         export_permits, export_vehicles, export_violations, export_parking_lots, export_users,
     )
 except ImportError:

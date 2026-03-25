@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/special_features/occupancy.py
+# hypothesis_version: 6.151.9
+
+[100, 150, 250, 500, 5000, '#1a1a2e', '#27ae60', '#333333', '#4ecca3', '#666666', '#7f8c8d', '#e74c3c', '#e94560', '#ecf0f1', '#f4a261', '#ffffff', '%H:%M', '%Y-%m-%d', '%Y-%m-%d %H:%M', '.', '600x400', 'Card.TFrame', 'Courier', 'Helvetica', 'Main.TFrame', 'Primary.TButton', 'Secondary.TButton', 'Subtitle.TLabel', '_', 'auto_refresh_var', 'bold', 'booked', 'both', 'cinema.status.booked', 'left', 'movie', 'nsew', 'occupancy', 'occupancy_refresh_id', 'right', 'screening_id', 'time', 'total', 'w', 'white', 'x']

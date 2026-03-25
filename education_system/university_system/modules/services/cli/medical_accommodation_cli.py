@@ -7,6 +7,7 @@ with full feature parity to the GUI version.
 
 import os
 import sys
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 import csv
@@ -100,7 +101,7 @@ class MedicalAccommodationCLI:
 
     def clear_screen(self):
         """Clear the terminal screen"""
-        os.system('cls' if os.name == 'nt' else 'clear')
+        print("\033[2J\033[H", end="", flush=True)
 
     def pause(self):
         """Pause and wait for user input"""
@@ -478,9 +479,10 @@ class MedicalAccommodationCLI:
                 with get_connection() as conn:
                     cursor = conn.cursor()
                     cursor.execute('''
-                        SELECT COUNT(*) FROM accommodation_documents
-                        WHERE accommodation_id = ?
-                    ''', (acc_id,))
+                        SELECT COUNT(*) FROM documents
+                        WHERE source_type = 'accommodation'
+                          AND reference_id = ? AND reference_type = 'accommodation'
+                    ''', (str(acc_id),))
                     doc_count = cursor.fetchone()[0]
 
                 if doc_count > 0:
@@ -648,7 +650,10 @@ class MedicalAccommodationCLI:
             with get_connection() as conn:
                 cursor = conn.cursor()
                 # Delete associated documents first
-                cursor.execute('DELETE FROM accommodation_documents WHERE accommodation_id = ?', (acc_id,))
+                cursor.execute(
+                    "DELETE FROM documents WHERE source_type = 'accommodation'"
+                    " AND reference_id = ? AND reference_type = 'accommodation'",
+                    (str(acc_id),))
                 # Delete accommodation
                 cursor.execute('DELETE FROM accommodations WHERE id = ?', (acc_id,))
                 conn.commit()
@@ -828,7 +833,7 @@ class MedicalAccommodationCLI:
             params.append(end_before)
         if keyword:
             query += " AND (a.description LIKE ? OR a.notes LIKE ?)"
-            params.extend([f"%{keyword}%", f"%{keyword}%"])
+            params.extend([f"%{escape_like(keyword)}%", f"%{escape_like(keyword)}%"])
 
         query += " ORDER BY a.created_at DESC"
 
@@ -1552,11 +1557,13 @@ class MedicalAccommodationCLI:
             with get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
-                    SELECT id, document_name, document_path, uploaded_by, uploaded_at
-                    FROM accommodation_documents
-                    WHERE accommodation_id = ?
-                    ORDER BY uploaded_at DESC
-                ''', (acc_id,))
+                    SELECT document_id as id, document_name, file_path as document_path,
+                           uploaded_by, upload_date as uploaded_at
+                    FROM documents
+                    WHERE source_type = 'accommodation'
+                      AND reference_id = ? AND reference_type = 'accommodation'
+                    ORDER BY upload_date DESC
+                ''', (str(acc_id),))
 
                 documents = cursor.fetchall()
 

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/financial_aid/financial_aid_gui.py
+# hypothesis_version: 6.151.9
+
+['1200x800', 'Arial', 'Card.TFrame', 'Primary.TButton', 'Secondary.TButton', 'Success.TButton', 'Unknown', '__main__', 'bold', 'both', 'center', 'common.error', 'financial_aid.title', 'left', 'manage_financial_aid', 'primary', 'raised', 'return_to_main_menu', 'right', 'success', 'to_dict', 'username', 'x']

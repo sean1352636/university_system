@@ -3,6 +3,7 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import ProgressDashboardError, ValidationError
 from education_system.college_system.infrastructure.database.db import connect
+from education_system.college_system.core.sql_safety import validate_identifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -23,10 +24,21 @@ class ProgressDashboardService:
             raise ValidationError("student_id is required.")
         conn = self._conn()
         try:
+            # Build INSERT with only non-None values so DB defaults apply
+            fields = {k: v for k, v in {
+                'student_id': kwargs.get('student_id'),
+                'snapshot_date': kwargs.get('snapshot_date'),
+                'attendance_percent': kwargs.get('attendance_percent'),
+                'average_grade': kwargs.get('average_grade'),
+                'assignments_due': kwargs.get('assignments_due'),
+                'assignments_overdue': kwargs.get('assignments_overdue'),
+                'trajectory': kwargs.get('trajectory'),
+            }.items() if v is not None}
+            cols = ", ".join(fields.keys())
+            placeholders = ", ".join("?" for _ in fields)
             conn.execute(
-                """INSERT INTO progress_snapshots (student_id, snapshot_date, attendance_percent, average_grade, assignments_due, assignments_overdue, trajectory)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                (kwargs.get('student_id'), kwargs.get('snapshot_date'), kwargs.get('attendance_percent'), kwargs.get('average_grade'), kwargs.get('assignments_due'), kwargs.get('assignments_overdue'), kwargs.get('trajectory'),),
+                f"INSERT INTO progress_snapshots ({cols}) VALUES ({placeholders})",
+                list(fields.values()),
             )
             conn.commit()
             row = conn.execute(
@@ -58,7 +70,7 @@ class ProgressDashboardService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -76,7 +88,7 @@ class ProgressDashboardService:
         if not updates:
             raise ValidationError("No valid fields to update.")
         updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [pk]
         conn = self._conn()
         try:
@@ -114,7 +126,7 @@ class ProgressDashboardService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         conn = self._conn()
         try:

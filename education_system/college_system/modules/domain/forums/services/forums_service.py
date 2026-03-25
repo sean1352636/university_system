@@ -5,6 +5,7 @@ from datetime import datetime
 from education_system.college_system.core.exceptions import ForumError
 from education_system.college_system.infrastructure.database.db import connect
 
+from education_system.college_system.core.sql_safety import escape_like
 import logging
 
 logger = logging.getLogger(__name__)
@@ -178,7 +179,8 @@ class ForumService:
                 params.append(status)
             if search:
                 conditions.append("t.title LIKE ?")
-                params.append(f"%{search}%")
+                escaped = escape_like(search)
+                params.append(f"%{escaped}%")
 
             sql = """SELECT t.*, u.username AS author_name,
                             c.name AS category_name

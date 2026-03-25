@@ -2,14 +2,12 @@
 Grades and Transcript mixins - detailed grade table and printable transcript.
 """
 
-from .common_imports import (
-    tk,
-    ttk,
-    messagebox,
-    scrolledtext,
-    filedialog,
-    datetime,
-    logging,
+import tkinter as tk
+from tkinter import ttk, messagebox, scrolledtext, filedialog
+from datetime import datetime
+import logging
+
+from education_system.university_system.modules.domain.academics.gui.student_grades.common_imports import (
     get_connection,
     format_grade,
     COLORS,
@@ -113,13 +111,15 @@ class GradesMixin:
         self._populate_grades_tree()
 
     def _populate_grades_tree(self):
-        """Fetch grades from the database and populate the Treeview."""
+        """Fetch grades from module_grades + assignment_submissions and populate the Treeview."""
         for item in self._grades_tree.get_children():
             self._grades_tree.delete(item)
 
         try:
             with get_connection() as conn:
                 cursor = conn.cursor()
+
+                # Module grades (traditional)
                 cursor.execute(
                     '''SELECT mg.module_code, m.module_name, mg.final_grade
                        FROM module_grades mg
@@ -127,18 +127,31 @@ class GradesMixin:
                        WHERE mg.student_id = ?''',
                     (self.student_id,),
                 )
-                rows = cursor.fetchall()
+                module_rows = cursor.fetchall()
 
-            if not rows:
+                # Assignment submission grades (per-assignment, not averaged)
+                cursor.execute(
+                    '''SELECT a.module_code, a.title, sub.grade
+                       FROM assignment_submissions sub
+                       JOIN assignments a ON sub.assignment_id = a.id
+                       WHERE sub.student_id = ? AND sub.grade IS NOT NULL
+                       ORDER BY sub.graded_date DESC''',
+                    (self.student_id,),
+                )
+                assignment_rows = cursor.fetchall()
+
+            all_rows = list(module_rows) + list(assignment_rows)
+
+            if not all_rows:
                 self._grades_tree.insert('', 'end', values=('--', 'No grades found', '--', '--', '--'))
                 return
 
-            for module_code, module_name, grade in rows:
+            for code_or_module, name, grade in all_rows:
                 letter = _to_letter(grade)
                 points = _gpa_points(grade)
                 self._grades_tree.insert('', 'end', values=(
-                    module_code,
-                    module_name,
+                    code_or_module,
+                    name,
                     format_grade(grade),
                     letter,
                     f'{points:.2f}',
@@ -225,6 +238,8 @@ class TranscriptMixin:
         try:
             with get_connection() as conn:
                 cursor = conn.cursor()
+
+                # Module grades
                 cursor.execute(
                     '''SELECT mg.module_code, m.module_name, mg.final_grade
                        FROM module_grades mg
@@ -232,19 +247,32 @@ class TranscriptMixin:
                        WHERE mg.student_id = ?''',
                     (self.student_id,),
                 )
-                rows = cursor.fetchall()
+                module_rows = cursor.fetchall()
+
+                # Assignment submission grades
+                cursor.execute(
+                    '''SELECT a.module_code, a.title, sub.grade
+                       FROM assignment_submissions sub
+                       JOIN assignments a ON sub.assignment_id = a.id
+                       WHERE sub.student_id = ? AND sub.grade IS NOT NULL
+                       ORDER BY sub.graded_date DESC''',
+                    (self.student_id,),
+                )
+                assignment_rows = cursor.fetchall()
+
+            rows = list(module_rows) + list(assignment_rows)
 
             if not rows:
                 lines.append('No grade records found.')
             else:
                 total_points = 0.0
-                for module_code, module_name, grade in rows:
+                for code, name, grade in rows:
                     letter = _to_letter(grade)
                     points = _gpa_points(grade)
                     total_points += points
                     total_modules += 1
                     lines.append(
-                        f'{module_code:<14} {module_name:<30} {format_grade(grade):<10} {letter:<10} {points:<8.2f}'
+                        f'{code:<14} {name:<30} {format_grade(grade):<10} {letter:<10} {points:<8.2f}'
                     )
 
                 if total_modules > 0:

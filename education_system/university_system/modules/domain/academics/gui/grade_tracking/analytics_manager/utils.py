@@ -2,7 +2,7 @@
 
 import tkinter as tk
 
-from .constants import GRADE_SYSTEMS
+from education_system.university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.constants import GRADE_SYSTEMS
 
 
 def percentage_to_letter(percentage):

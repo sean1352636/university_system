@@ -1,17 +1,17 @@
 """Charity Shop - Main application class."""
 
-from ._imports import (
+from education_system.university_system.modules.services.gui.charity_shop_gui._imports import (
     tk, ttk, messagebox,
     init_i18n, _t,
     get_auth, get_current_user,
     ACTIVITY_LOGGER_AVAILABLE, log_activity,
 )
-from .database import Database
-from .dialogs import ItemDialog
-from .sales import SalesMixin
-from .basket_ops import BasketOpsMixin
-from .reports import ReportsMixin
-from .refunds import RefundsMixin
+from education_system.university_system.modules.services.gui.charity_shop_gui.database import Database
+from education_system.university_system.modules.services.gui.charity_shop_gui.dialogs import ItemDialog
+from education_system.university_system.modules.services.gui.charity_shop_gui.sales import SalesMixin
+from education_system.university_system.modules.services.gui.charity_shop_gui.basket_ops import BasketOpsMixin
+from education_system.university_system.modules.services.gui.charity_shop_gui.reports import ReportsMixin
+from education_system.university_system.modules.services.gui.charity_shop_gui.refunds import RefundsMixin
 
 
 class CharityShopApp(SalesMixin, BasketOpsMixin, ReportsMixin, RefundsMixin):

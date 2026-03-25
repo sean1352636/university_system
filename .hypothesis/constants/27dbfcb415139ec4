@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/library/settings.py
+# hypothesis_version: 6.151.9
+
+[0.0, 100, 365, '-', '0', '0.50', '1', '10', '14', '2', '3', '4', '7', '=', 'admin', 'allow_self_checkout', 'amount', 'amount_paid', 'badges', 'books_per_year', 'books_read', 'borrow_books', 'cash', 'cli_user', 'common.yes', 'configure_settings', 'create_reading_lists', 'current_user', 'fine_payment', 'fine_per_day', 'instructor', 'issues', 'librarian', 'manage_inventory', 'manage_users', 'max_books_per_user', 'max_loan_days', 'max_renewals', 'message', 'method', 'pages_per_day', 'process_fines', 'reading_streak', 'receipt_id', 'reviews_written', 'role', 'student', 'success', 'true', 'user_id', 'valid', 'view_own_history', 'view_reports']

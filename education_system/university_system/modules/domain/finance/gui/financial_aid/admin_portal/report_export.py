@@ -2,7 +2,7 @@
 Report export and email mixin for AdminPortal.
 """
 
-from ._imports import (
+from education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal._imports import (
     tk, ttk, messagebox, filedialog, scrolledtext,
     csv, logging, datetime,
     get_connection, log_activity,

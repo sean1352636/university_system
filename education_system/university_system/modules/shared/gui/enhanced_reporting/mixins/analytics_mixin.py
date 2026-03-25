@@ -1,6 +1,6 @@
 """Analytics methods mixin for the enhanced reporting GUI."""
 
-from ..standalone.constants import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.standalone.constants import (
     tk, ttk, filedialog, messagebox,
     ScrolledText,
     threading, webbrowser, os, json, logging,

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/database/dialogs/restore.py
+# hypothesis_version: 6.151.9
+
+[120, '300x400', '600x500', '600x700', 'Available Tables', 'Cancel', 'Clear All', 'Confirm Restore', 'Date', 'Error', 'File', 'Full Restore', 'No Selection', 'No Tables', 'OK', 'Restore', 'Restore Options', 'Restore from Backup', 'Select All', 'Select Backup', 'Select Tables', 'Size', 'Success', 'Type', 'backup_type', 'both', 'date_formatted', 'end', 'filename', 'full', 'headings', 'left', 'partial', 'path', 'right', 'size_formatted', 'table_vars', 'vertical', 'w', 'x', 'y']

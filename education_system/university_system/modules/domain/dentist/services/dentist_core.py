@@ -13,7 +13,7 @@ from typing import Optional, List, Dict, Any, Tuple
 
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 from education_system.university_system.modules.shared.utils.activity_logger import log_activity
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier, escape_like
 
 # Constants
 TREATMENT_TYPES = {
@@ -168,25 +168,8 @@ def init_dentist_db():
                 )
             ''')
 
-            # Transactions table
-            conn.execute('''
-                CREATE TABLE IF NOT EXISTS dentist_transactions (
-                    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    reference TEXT UNIQUE NOT NULL,
-                    patient_id INTEGER NOT NULL,
-                    user_id TEXT NOT NULL,
-                    treatment_id INTEGER,
-                    transaction_type TEXT NOT NULL,
-                    amount DECIMAL(10,2) NOT NULL,
-                    payment_method TEXT,
-                    status TEXT DEFAULT 'completed',
-                    receipt_sent INTEGER DEFAULT 0,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    processed_by TEXT,
-                    FOREIGN KEY (patient_id) REFERENCES dentist_patients(patient_id),
-                    FOREIGN KEY (treatment_id) REFERENCES dentist_treatments(treatment_id)
-                )
-            ''')
+            # NOTE: dentist transactions now use the unified 'transactions' table
+            # with source_type = 'dentist'
 
         return True
     except Exception as e:
@@ -294,7 +277,7 @@ class PatientManager:
         """Search patients by name or number."""
         try:
             with get_connection() as conn:
-                search = f"%{search_term}%"
+                search = f"%{escape_like(search_term)}%"
                 cursor = conn.execute('''
                     SELECT * FROM dentist_patients
                     WHERE patient_number LIKE ? OR user_name LIKE ? OR user_email LIKE ?
@@ -681,12 +664,13 @@ class TransactionManager:
 
             with transaction() as conn:
                 conn.execute('''
-                    INSERT INTO dentist_transactions
-                    (reference, patient_id, user_id, treatment_id, transaction_type,
+                    INSERT INTO transactions
+                    (source_type, reference_number, customer_id, user_id,
+                     reference_id, reference_type, transaction_type,
                      amount, payment_method, processed_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (reference, patient_id, user_id, treatment_id, transaction_type,
-                      amount, payment_method, processed_by))
+                    VALUES ('dentist', ?, ?, ?, ?, 'treatment', ?, ?, ?, ?)
+                ''', (reference, patient_id, user_id, treatment_id,
+                      transaction_type, amount, payment_method, processed_by))
 
                 transaction_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
 
@@ -711,7 +695,7 @@ class TransactionManager:
         try:
             with get_connection() as conn:
                 cursor = conn.execute('''
-                    SELECT * FROM dentist_transactions WHERE patient_id = ?
+                    SELECT * FROM transactions WHERE source_type = 'dentist' AND customer_id = ?
                     ORDER BY created_at DESC LIMIT ?
                 ''', (patient_id, limit))
                 columns = [desc[0] for desc in cursor.description]
@@ -743,8 +727,8 @@ class ReportManager:
                 completed = cursor.fetchone()[0]
 
                 cursor = conn.execute('''
-                    SELECT COALESCE(SUM(amount), 0) FROM dentist_transactions
-                    WHERE DATE(created_at) = ?
+                    SELECT COALESCE(SUM(amount), 0) FROM transactions
+                    WHERE source_type = 'dentist' AND DATE(created_at) = ?
                 ''', (date,))
                 revenue = cursor.fetchone()[0]
 
@@ -783,8 +767,8 @@ class ReportManager:
                 by_type = {row[0]: {'count': row[1], 'revenue': row[2]} for row in cursor.fetchall()}
 
                 cursor = conn.execute('''
-                    SELECT COALESCE(SUM(amount), 0) FROM dentist_transactions
-                    WHERE strftime('%Y', created_at) = ? AND strftime('%m', created_at) = ?
+                    SELECT COALESCE(SUM(amount), 0) FROM transactions
+                    WHERE source_type = 'dentist' AND strftime('%Y', created_at) = ? AND strftime('%m', created_at) = ?
                 ''', (str(year), f"{month:02d}"))
                 total_revenue = cursor.fetchone()[0]
 

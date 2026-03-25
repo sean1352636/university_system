@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/managers/login_manager.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d %H:%M:%S', '127.0.0.1', 'ACCOUNT_DEACTIVATED', 'DB_LOGIN_ERROR', 'INVALID_SSO_IDENTITY', 'Invalid 2FA code.', 'LoginManager', 'SSO_LOGIN_ERROR', 'SSO_USER_NOT_FOUND', 'Unknown', 'User login', 'User logout', 'User not found.', 'WEBAUTHN_LOGIN_ERROR', 'account_id', 'assertion_data', 'auth_method', 'authentication', 'biometric', 'biometric_type', 'display_name', 'email', 'error_type', 'face', 'id', 'invalid_password', 'locked_until', 'match', 'password', 'permissions', 'provider_id', 'reason', 'requires_2fa', 'role', 'session', 'sso', 'sso_identity', 'sso_provider_id', 'student_id', 'success', 'template_data', 'user_id', 'user_not_found', 'username', 'wait_minutes', 'webauthn']

@@ -15,7 +15,7 @@ sys.path.insert(
     0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 )
 
-from education_system.university_system.api.errors import _error_response, register_error_handlers
+from education_system.shared.api.university.errors import _error_response, register_error_handlers
 from education_system.university_system.core.exceptions import (
     AlreadyEnrolledError,
     AuthenticationError,

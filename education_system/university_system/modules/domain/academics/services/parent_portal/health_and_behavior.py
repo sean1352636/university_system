@@ -11,7 +11,7 @@ class HealthAndBehaviorMixin:
             print("You must be logged in to report an absence.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         
@@ -193,7 +193,7 @@ class HealthAndBehaviorMixin:
             print("You must be logged in to view behavior reports.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         
@@ -289,7 +289,7 @@ class HealthAndBehaviorMixin:
             print("You must be logged in to view medical information.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         

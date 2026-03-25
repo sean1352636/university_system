@@ -86,7 +86,7 @@ class TestModuleDialog:
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.module_dialog.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.module_dialog.messagebox')
     def test_save_module_missing_required_fields(self, mock_msgbox, root):
         """Test validation for missing required fields"""
         dialog = ModuleDialog(root, "Add Module", data=None)
@@ -107,7 +107,7 @@ class TestModuleDialog:
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.module_dialog.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.module_dialog.messagebox')
     def test_save_module_invalid_credits(self, mock_msgbox, root):
         """Test validation for non-numeric credits"""
         dialog = ModuleDialog(root, "Add Module", data=None)

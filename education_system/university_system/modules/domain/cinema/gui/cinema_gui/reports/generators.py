@@ -7,35 +7,37 @@ Each function queries the database and renders results into self.report_display.
 import tkinter as tk
 from tkinter import ttk
 
-from ._imports import sqlite3, DB_FILE, _t, MATPLOTLIB_AVAILABLE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.reports._imports import sqlite3, DB_FILE, _t, MATPLOTLIB_AVAILABLE
 
 
 def generate_sales_summary(self, from_date, to_date):
     """Generate sales summary report."""
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    cursor.execute('''
-        SELECT
-            COUNT(*) as total_bookings,
-            SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active,
-            SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled,
-            COALESCE(SUM(CASE WHEN status = 'active' THEN total_amount ELSE 0 END), 0) as total_revenue,
-            COALESCE(AVG(CASE WHEN status = 'active' THEN total_amount END), 0) as avg_booking
-        FROM bookings
-        WHERE date(booking_time) BETWEEN ? AND ?
-    ''', (from_date, to_date))
-    summary = cursor.fetchone()
+        cursor.execute('''
+            SELECT
+                COUNT(*) as total_bookings,
+                SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active,
+                SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled,
+                COALESCE(SUM(CASE WHEN status = 'active' THEN total_amount ELSE 0 END), 0) as total_revenue,
+                COALESCE(AVG(CASE WHEN status = 'active' THEN total_amount END), 0) as avg_booking
+            FROM bookings
+            WHERE date(booking_time) BETWEEN ? AND ?
+        ''', (from_date, to_date))
+        summary = cursor.fetchone()
 
-    cursor.execute('''
-        SELECT COUNT(bs.id)
-        FROM booked_seats bs
-        JOIN bookings b ON bs.booking_id = b.id
-        WHERE b.status = 'active' AND date(b.booking_time) BETWEEN ? AND ?
-    ''', (from_date, to_date))
-    tickets_sold = cursor.fetchone()[0] or 0
+        cursor.execute('''
+            SELECT COUNT(bs.id)
+            FROM booked_seats bs
+            JOIN bookings b ON bs.booking_id = b.id
+            WHERE b.status = 'active' AND date(b.booking_time) BETWEEN ? AND ?
+        ''', (from_date, to_date))
+        tickets_sold = cursor.fetchone()[0] or 0
 
-    conn.close()
+    finally:
+        conn.close()
 
     summary_frame = ttk.Frame(self.report_display, style="Card.TFrame", padding=20)
     summary_frame.pack(fill="x", pady=10)
@@ -73,20 +75,22 @@ def generate_sales_summary(self, from_date, to_date):
 def generate_revenue_by_movie(self, from_date, to_date):
     """Generate revenue by movie report with chart."""
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    cursor.execute('''
-        SELECT m.title,
-               COUNT(b.id) as bookings,
-               COALESCE(SUM(CASE WHEN b.status = 'active' THEN b.total_amount ELSE 0 END), 0) as revenue
-        FROM movies m
-        LEFT JOIN screenings s ON m.id = s.movie_id
-        LEFT JOIN bookings b ON s.id = b.screening_id AND date(b.booking_time) BETWEEN ? AND ?
-        GROUP BY m.id, m.title
-        ORDER BY revenue DESC
-    ''', (from_date, to_date))
-    data = cursor.fetchall()
-    conn.close()
+        cursor.execute('''
+            SELECT m.title,
+                   COUNT(b.id) as bookings,
+                   COALESCE(SUM(CASE WHEN b.status = 'active' THEN b.total_amount ELSE 0 END), 0) as revenue
+            FROM movies m
+            LEFT JOIN screenings s ON m.id = s.movie_id
+            LEFT JOIN bookings b ON s.id = b.screening_id AND date(b.booking_time) BETWEEN ? AND ?
+            GROUP BY m.id, m.title
+            ORDER BY revenue DESC
+        ''', (from_date, to_date))
+        data = cursor.fetchall()
+    finally:
+        conn.close()
 
     tree_frame = ttk.Frame(self.report_display, style="Card.TFrame")
     tree_frame.pack(fill="x", pady=10)
@@ -118,19 +122,21 @@ def generate_revenue_by_movie(self, from_date, to_date):
 def generate_daily_sales(self, from_date, to_date):
     """Generate daily sales report with chart."""
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    cursor.execute('''
-        SELECT date(booking_time) as date,
-               COUNT(*) as bookings,
-               COALESCE(SUM(CASE WHEN status = 'active' THEN total_amount ELSE 0 END), 0) as revenue
-        FROM bookings
-        WHERE date(booking_time) BETWEEN ? AND ?
-        GROUP BY date(booking_time)
-        ORDER BY date(booking_time)
-    ''', (from_date, to_date))
-    data = cursor.fetchall()
-    conn.close()
+        cursor.execute('''
+            SELECT date(booking_time) as date,
+                   COUNT(*) as bookings,
+                   COALESCE(SUM(CASE WHEN status = 'active' THEN total_amount ELSE 0 END), 0) as revenue
+            FROM bookings
+            WHERE date(booking_time) BETWEEN ? AND ?
+            GROUP BY date(booking_time)
+            ORDER BY date(booking_time)
+        ''', (from_date, to_date))
+        data = cursor.fetchall()
+    finally:
+        conn.close()
 
     tree_frame = ttk.Frame(self.report_display, style="Card.TFrame")
     tree_frame.pack(fill="x", pady=10)
@@ -159,21 +165,23 @@ def generate_daily_sales(self, from_date, to_date):
 def generate_occupancy_report(self, from_date, to_date):
     """Generate seat occupancy report."""
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    cursor.execute('''
-        SELECT m.title,
-               COUNT(CASE WHEN seats.status = 'booked' THEN 1 END) as booked,
-               COUNT(CASE WHEN seats.status = 'available' THEN 1 END) as available,
-               COUNT(seats.id) as total
-        FROM movies m
-        JOIN screenings s ON m.id = s.movie_id
-        JOIN seats ON s.id = seats.screening_id
-        WHERE date(s.show_time) BETWEEN ? AND ?
-        GROUP BY m.id, m.title
-    ''', (from_date, to_date))
-    data = cursor.fetchall()
-    conn.close()
+        cursor.execute('''
+            SELECT m.title,
+                   COUNT(CASE WHEN seats.status = 'booked' THEN 1 END) as booked,
+                   COUNT(CASE WHEN seats.status = 'available' THEN 1 END) as available,
+                   COUNT(seats.id) as total
+            FROM movies m
+            JOIN screenings s ON m.id = s.movie_id
+            JOIN seats ON s.id = seats.screening_id
+            WHERE date(s.show_time) BETWEEN ? AND ?
+            GROUP BY m.id, m.title
+        ''', (from_date, to_date))
+        data = cursor.fetchall()
+    finally:
+        conn.close()
 
     tree_frame = ttk.Frame(self.report_display, style="Card.TFrame")
     tree_frame.pack(fill="x", pady=10)
@@ -205,19 +213,21 @@ def generate_occupancy_report(self, from_date, to_date):
 def generate_payment_methods_report(self, from_date, to_date):
     """Generate payment methods report with pie chart."""
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    cursor.execute('''
-        SELECT COALESCE(payment_method, 'Unknown') as method,
-               COUNT(*) as count,
-               COALESCE(SUM(total_amount), 0) as total
-        FROM bookings
-        WHERE status = 'active' AND date(booking_time) BETWEEN ? AND ?
-        GROUP BY payment_method
-        ORDER BY count DESC
-    ''', (from_date, to_date))
-    data = cursor.fetchall()
-    conn.close()
+        cursor.execute('''
+            SELECT COALESCE(payment_method, 'Unknown') as method,
+                   COUNT(*) as count,
+                   COALESCE(SUM(total_amount), 0) as total
+            FROM bookings
+            WHERE status = 'active' AND date(booking_time) BETWEEN ? AND ?
+            GROUP BY payment_method
+            ORDER BY count DESC
+        ''', (from_date, to_date))
+        data = cursor.fetchall()
+    finally:
+        conn.close()
 
     tree_frame = ttk.Frame(self.report_display, style="Card.TFrame")
     tree_frame.pack(fill="x", pady=10)
@@ -244,16 +254,18 @@ def generate_payment_methods_report(self, from_date, to_date):
 def generate_booking_status_report(self, from_date, to_date):
     """Generate booking status report with pie chart."""
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    cursor.execute('''
-        SELECT status, COUNT(*) as count
-        FROM bookings
-        WHERE date(booking_time) BETWEEN ? AND ?
-        GROUP BY status
-    ''', (from_date, to_date))
-    data = cursor.fetchall()
-    conn.close()
+        cursor.execute('''
+            SELECT status, COUNT(*) as count
+            FROM bookings
+            WHERE date(booking_time) BETWEEN ? AND ?
+            GROUP BY status
+        ''', (from_date, to_date))
+        data = cursor.fetchall()
+    finally:
+        conn.close()
 
     tree_frame = ttk.Frame(self.report_display, style="Card.TFrame")
     tree_frame.pack(fill="x", pady=10)

@@ -24,7 +24,7 @@ from typing import Dict
 import pandas as pd
 import schedule
 
-from .constants import (
+from education_system.university_system.modules.shared.gui.batch_operations.constants import (
     DEFAULT_DB_PATH,
     IMPORT_HISTORY_PATH,
     EXTERNAL_DB_CONFIG_PATH,
@@ -62,7 +62,7 @@ class ReportManager:
         def load_dashboard():
             try:
                 data = self.gui.get_quality_dashboard_data()
-                from .quality_manager import QualityManager
+                from education_system.university_system.modules.shared.gui.batch_operations.quality_manager import QualityManager
                 content = self.gui.quality_mgr.format_quality_dashboard(data)
                 text_widget.config(state='normal')
                 text_widget.delete(1.0, tk.END)
@@ -499,7 +499,7 @@ Last scheduled task run: {'N/A'}
             raise
 
     def generate_success_rate_report(self):
-        """Generate success rate report"""
+        """Generate success rate report and prompt for export location."""
         if not self.gui.backend.import_history:
             try:
                 with open(IMPORT_HISTORY_PATH, 'r') as f:
@@ -508,21 +508,95 @@ Last scheduled task run: {'N/A'}
                 self.gui.backend.import_history = []
 
         total_operations = len(self.gui.backend.import_history)
-        total_records = sum(op['total_records'] for op in self.gui.backend.import_history)
-        total_successful = sum(op['successful_imports'] for op in self.gui.backend.import_history)
+        total_records = sum(op.get('total_records', 0) for op in self.gui.backend.import_history)
+        total_successful = sum(op.get('successful_imports', 0) for op in self.gui.backend.import_history)
+        total_failed = total_records - total_successful
 
         success_rate = (total_successful / total_records * 100) if total_records > 0 else 0
 
-        filename = f"success_rate_report_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        now = datetime.datetime.now()
         report = {
+            'report_type': 'success_rate',
+            'generated': now.isoformat(),
             'total_operations': total_operations,
             'total_records': total_records,
+            'total_successful': total_successful,
+            'total_failed': total_failed,
             'success_rate': round(success_rate, 2),
-            'generated': datetime.datetime.now().isoformat()
+            'operations': []
         }
 
-        with open(filename, 'w') as f:
-            json.dump(report, f, indent=2)
+        # Per-operation breakdown
+        for op in self.gui.backend.import_history:
+            op_total = op.get('total_records', 0)
+            op_success = op.get('successful_imports', 0)
+            op_rate = (op_success / op_total * 100) if op_total > 0 else 0
+            report['operations'].append({
+                'timestamp': op.get('timestamp', 'N/A'),
+                'filename': op.get('filename', 'N/A'),
+                'total_records': op_total,
+                'successful': op_success,
+                'failed': op_total - op_success,
+                'success_rate': round(op_rate, 2),
+            })
+
+        default_name = f"success_rate_report_{now.strftime('%Y%m%d_%H%M%S')}"
+        file_path = filedialog.asksaveasfilename(
+            title="Export Success Rate Report",
+            initialfile=default_name,
+            defaultextension=".json",
+            filetypes=[
+                ("JSON files", "*.json"),
+                ("CSV files", "*.csv"),
+                ("Text files", "*.txt"),
+                ("All files", "*.*"),
+            ]
+        )
+        if not file_path:
+            return
+
+        ext = os.path.splitext(file_path)[1].lower()
+
+        if ext == '.csv':
+            with open(file_path, 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(["Timestamp", "Filename", "Total Records",
+                                 "Successful", "Failed", "Success Rate (%)"])
+                for op in report['operations']:
+                    writer.writerow([
+                        op['timestamp'], op['filename'], op['total_records'],
+                        op['successful'], op['failed'], op['success_rate'],
+                    ])
+                writer.writerow([])
+                writer.writerow(["TOTALS", "", total_records, total_successful,
+                                 total_failed, round(success_rate, 2)])
+        elif ext == '.txt':
+            with open(file_path, 'w') as f:
+                f.write("SUCCESS RATE REPORT\n")
+                f.write(f"Generated: {now.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write("=" * 60 + "\n\n")
+                f.write(f"Total Operations: {total_operations}\n")
+                f.write(f"Total Records:    {total_records}\n")
+                f.write(f"Successful:       {total_successful}\n")
+                f.write(f"Failed:           {total_failed}\n")
+                f.write(f"Success Rate:     {success_rate:.2f}%\n\n")
+                f.write("-" * 60 + "\n")
+                f.write("PER-OPERATION BREAKDOWN:\n")
+                f.write("-" * 60 + "\n")
+                for op in report['operations']:
+                    f.write(f"  {op['timestamp']}  {op['filename']}\n")
+                    f.write(f"    Records: {op['total_records']}  "
+                            f"Success: {op['successful']}  "
+                            f"Failed: {op['failed']}  "
+                            f"Rate: {op['success_rate']}%\n")
+        else:
+            with open(file_path, 'w') as f:
+                json.dump(report, f, indent=2)
+
+        messagebox.showinfo(
+            _t("batch_ops.msg_titles.exported"),
+            f"Success rate report saved to:\n{file_path}"
+        )
 
     def generate_error_analysis_report(self):
         """Generate error analysis report"""

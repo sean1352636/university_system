@@ -66,10 +66,10 @@ class TestReportManager(unittest.TestCase):
         manager = ReportManager(gui_without_system)
         self.assertIsNone(manager.finance_system)
 
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.tk.Frame')
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.ttk.Frame')
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.ttk.LabelFrame')
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.ScrolledText')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.tk.Frame')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.ttk.Frame')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.ttk.LabelFrame')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.ScrolledText')
     def test_create_reports_tab(self, mock_scrolled_text, mock_label_frame, mock_ttk_frame, mock_frame):
         """Test creating reports tab"""
         self.manager.create_reports_tab()
@@ -80,9 +80,9 @@ class TestReportManager(unittest.TestCase):
         # Verify report_text widget was created
         self.assertTrue(hasattr(self.manager, 'report_text'))
 
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.tk.Frame')
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.tk.Label')
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.tk.Button')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.tk.Frame')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.tk.Label')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.tk.Button')
     def test_create_report_card(self, mock_button, mock_label, mock_frame):
         """Test creating a report card"""
         parent = Mock()
@@ -97,12 +97,12 @@ class TestReportManager(unittest.TestCase):
         mock_frame.assert_called_once()
         mock_card_frame.grid.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.get_connection')
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.messagebox.showinfo')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.messagebox.showinfo')
     def test_gui_revenue_summary_report(self, mock_showinfo, mock_get_connection):
         """Test revenue summary report generation"""
         # Create mock dialog
-        with patch('university_system.modules.domain.finance.gui.finance.report_manager.tk.Toplevel') as mock_toplevel:
+        with patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.tk.Toplevel') as mock_toplevel:
             mock_dialog = Mock()
             mock_toplevel.return_value = mock_dialog
 
@@ -117,7 +117,7 @@ class TestReportManager(unittest.TestCase):
             mock_toplevel.assert_called_once()
             mock_dialog.title.assert_called_with("Revenue Summary Report")
 
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.get_connection')
     def test_gui_outstanding_fees_report_with_data(self, mock_get_connection):
         """Test outstanding fees report with data"""
         # Mock database connection
@@ -145,7 +145,7 @@ class TestReportManager(unittest.TestCase):
         self.manager.report_text.delete.assert_called()
         self.manager.report_text.insert.assert_called()
 
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.get_connection')
     def test_gui_outstanding_fees_report_no_data(self, mock_get_connection):
         """Test outstanding fees report with no data"""
         # Mock database connection
@@ -168,8 +168,8 @@ class TestReportManager(unittest.TestCase):
         call_args = self.manager.report_text.insert.call_args[0]
         self.assertIn("No outstanding fees", call_args[1])
 
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.get_connection')
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.messagebox.showerror')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.messagebox.showerror')
     def test_gui_outstanding_fees_report_error(self, mock_error, mock_get_connection):
         """Test outstanding fees report error handling"""
         mock_get_connection.side_effect = Exception("Database error")
@@ -178,7 +178,7 @@ class TestReportManager(unittest.TestCase):
 
         mock_error.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.get_connection')
     def test_gui_payment_collection_report(self, mock_get_connection):
         """Test payment collection report"""
         # Mock database connection
@@ -206,7 +206,7 @@ class TestReportManager(unittest.TestCase):
         call_args = self.manager.report_text.insert.call_args[0]
         self.assertIn("Payment Collection Report", call_args[1])
 
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.get_connection')
     def test_gui_student_account_summary(self, mock_get_connection):
         """Test student account summary report"""
         # Mock database connection
@@ -233,7 +233,7 @@ class TestReportManager(unittest.TestCase):
         call_args = self.manager.report_text.insert.call_args[0]
         self.assertIn("Student Account Summary", call_args[1])
 
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.get_connection')
     def test_gui_fee_type_analysis(self, mock_get_connection):
         """Test fee type analysis report"""
         # Mock database connection
@@ -258,7 +258,7 @@ class TestReportManager(unittest.TestCase):
         # Verify report was generated
         self.manager.report_text.insert.assert_called()
 
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.get_connection')
     def test_gui_payment_method_analysis(self, mock_get_connection):
         """Test payment method analysis report"""
         # Mock database connection
@@ -296,9 +296,9 @@ class TestReportManager(unittest.TestCase):
         self.manager.report_text.delete.assert_called_once_with('1.0', tk.END)
         self.manager.update_status.assert_called_once_with("Report cleared")
 
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.filedialog.asksaveasfilename')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.filedialog.asksaveasfilename')
     @patch('builtins.open', new_callable=mock_open)
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.messagebox.showinfo')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.messagebox.showinfo')
     def test_export_report_csv_success(self, mock_showinfo, mock_file, mock_filedialog):
         """Test successful CSV export"""
         self.manager.report_text = Mock()
@@ -311,7 +311,7 @@ class TestReportManager(unittest.TestCase):
         mock_file.assert_called_once()
         mock_showinfo.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.filedialog.asksaveasfilename')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.filedialog.asksaveasfilename')
     def test_export_report_csv_cancelled(self, mock_filedialog):
         """Test CSV export when user cancels"""
         self.manager.report_text = Mock()
@@ -322,8 +322,8 @@ class TestReportManager(unittest.TestCase):
         # Should not raise any exceptions
         self.manager.export_report_csv()
 
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.filedialog.asksaveasfilename')
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.messagebox.showerror')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.filedialog.asksaveasfilename')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.messagebox.showerror')
     def test_export_report_csv_no_content(self, mock_error, mock_filedialog):
         """Test CSV export with no report content"""
         self.manager.report_text = Mock()
@@ -333,8 +333,8 @@ class TestReportManager(unittest.TestCase):
 
         mock_error.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.filedialog.asksaveasfilename')
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.messagebox.showerror')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.filedialog.asksaveasfilename')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.messagebox.showerror')
     def test_export_report_excel_no_data(self, mock_error, mock_filedialog):
         """Test Excel export with no data"""
         self.manager.current_report_data = None
@@ -345,8 +345,8 @@ class TestReportManager(unittest.TestCase):
 
     def test_show_text_window(self):
         """Test showing content in a text window"""
-        with patch('university_system.modules.domain.finance.gui.finance.report_manager.tk.Toplevel') as mock_toplevel:
-            with patch('university_system.modules.domain.finance.gui.finance.report_manager.ScrolledText') as mock_text:
+        with patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.tk.Toplevel') as mock_toplevel:
+            with patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.ScrolledText') as mock_text:
                 mock_window = Mock()
                 mock_toplevel.return_value = mock_window
 
@@ -355,7 +355,7 @@ class TestReportManager(unittest.TestCase):
                 mock_toplevel.assert_called_once()
                 mock_window.title.assert_called_with("Test Title")
 
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.threading.Thread')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.threading.Thread')
     def test_gui_generate_revenue_forecast(self, mock_thread):
         """Test revenue forecast generation"""
         self.manager.update_status = Mock()
@@ -408,7 +408,7 @@ class TestReportManagerCompliance(unittest.TestCase):
 
         self.manager = ReportManager(self.mock_gui)
 
-    @patch('university_system.modules.domain.finance.gui.finance.report_manager.messagebox.showwarning')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.messagebox.showwarning')
     def test_gui_aging_analysis_report_not_available(self, mock_warning):
         """Test aging analysis when compliance manager not available"""
         delattr(self.mock_gui, 'compliance')

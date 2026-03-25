@@ -154,56 +154,48 @@ class BatchUpdatesMixin:
         return self.update_batch_records_with_progress(records)
 
     def update_student_modules(self, cursor, student_id: str, new_course: str):
-        """Update student module enrollments when course changes"""
+        """Update student module enrollments when course changes.
+
+        Modules are stored in the student_modules table, not as columns
+        on the students table.
+        """
         try:
-            # Get current modules
-            cursor.execute(
-                "SELECT compulsory_module_1, compulsory_module_2 FROM students WHERE student_id = ?",
-                (student_id,)
-            )
-            current = cursor.fetchone()
-
-            if not current:
-                logger.warning(f"Student {student_id} not found for module update")
-                return
-
             # Determine new modules based on course
             if new_course == 'COMPUTER SCIENCE':
-                optional_1 = CS_optional_module_1
-                optional_2 = CS_optional_module_2
-                optional_3 = CS_optional_module_3
-                optional_4 = CS_optional_module_4
+                optional_modules = [CS_optional_module_1, CS_optional_module_2,
+                                    CS_optional_module_3, CS_optional_module_4]
             elif new_course == 'DATA SCIENCE':
-                optional_1 = DS_optional_module_1
-                optional_2 = DS_optional_module_2
-                optional_3 = DS_optional_module_3
-                optional_4 = DS_optional_module_4
+                optional_modules = [DS_optional_module_1, DS_optional_module_2,
+                                    DS_optional_module_3, DS_optional_module_4]
             else:
-                # Default modules for general or other courses
-                optional_1 = optional_module_1
-                optional_2 = optional_module_2
-                optional_3 = optional_module_3
-                optional_4 = optional_module_4
+                optional_modules = [optional_module_1, optional_module_2,
+                                    optional_module_3, optional_module_4]
 
-            # Update modules
-            cursor.execute("""
-                UPDATE students
-                SET compulsory_module_1 = ?,
-                    compulsory_module_2 = ?,
-                    optional_module_1 = ?,
-                    optional_module_2 = ?,
-                    optional_module_3 = ?,
-                    optional_module_4 = ?
-                WHERE student_id = ?
-            """, (
-                compulsory_module_1,
-                compulsory_module_2,
-                optional_1,
-                optional_2,
-                optional_3,
-                optional_4,
-                student_id
-            ))
+            compulsory_modules = [compulsory_module_1, compulsory_module_2]
+
+            # Remove existing module enrollments for this student
+            cursor.execute(
+                "DELETE FROM student_modules WHERE student_id = ?",
+                (student_id,)
+            )
+
+            # Insert compulsory modules
+            for mod in compulsory_modules:
+                cursor.execute(
+                    """INSERT INTO student_modules
+                       (student_id, module_code, module_name, module_type, status)
+                       VALUES (?, ?, ?, 'compulsory', 'enrolled')""",
+                    (student_id, mod['code'], mod['name'])
+                )
+
+            # Insert optional modules
+            for mod in optional_modules:
+                cursor.execute(
+                    """INSERT INTO student_modules
+                       (student_id, module_code, module_name, module_type, status)
+                       VALUES (?, ?, ?, 'optional', 'enrolled')""",
+                    (student_id, mod['code'], mod['name'])
+                )
 
             logger.info(f"Updated modules for student {student_id} to {new_course} track")
 

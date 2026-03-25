@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/database/schemas/__init__.py
+# hypothesis_version: 6.151.9
+
+['init_ai_tables', 'init_all_schemas', 'init_alumni_tables', 'init_audit_tables', 'init_auth_tables', 'init_career_tables', 'init_commerce_tables', 'init_courses_tables', 'init_email_system_db', 'init_finance_tables', 'init_grade_system_db', 'init_health_tables', 'init_housing_tables', 'init_library_tables', 'init_lms_system_db', 'init_other_tables', 'init_parent_tables', 'init_parking_tables', 'init_social_tables', 'init_support_tables', 'init_travel_tables', 'init_wellness_tables']

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/feedback_system_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/feedback', '/categories', '/categories/<int:id>', '/responses', '/responses/<int:id>', '/submissions', 'GET', 'POST', 'category_id', 'category_id = ?', 'create', 'description', 'feedback_categories', 'feedback_responses', 'feedback_submissions', 'feedback_system', 'icon', 'is_anonymous', 'items', 'medium', 'name', 'priority', 'responder_id', 'responder_id = ?', 'responder_name', 'response_text', 'search', 'status', 'status = ?', 'sub', 'submission_id', 'submission_id = ?', 'title', 'total', 'type', 'type = ?', 'user_id', 'user_id = ?', 'view']

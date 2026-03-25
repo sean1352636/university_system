@@ -5,7 +5,7 @@ This module contains helper functions, formatting utilities, and common operatio
 used throughout the CLI system.
 """
 
-from .imports import (
+from education_system.university_system.modules.shared.cli.imports import (
     logging, time, datetime, re, contextlib, io,
     logger, DB_PATH, _t, Any
 )

@@ -39,7 +39,7 @@ except ImportError:
 
 # Import window classes
 try:
-    from .misc_windows import ReportPreviewWindow, CustomReportDialog, ReportWindow, CustomReportWindow
+    from education_system.university_system.modules.domain.academics.gui.attendance_tracker.misc_windows import ReportPreviewWindow, CustomReportDialog, ReportWindow, CustomReportWindow
     WINDOWS_AVAILABLE = True
 except ImportError as e:
     print(f"Warning: Could not import window classes: {e}")
@@ -417,14 +417,14 @@ def generate_at_risk_report(self):
             self.report_preview.insert(tk.END, "=" * 50 + "\n\n")
 
             if not at_risk_df.empty:
-                for _, row in at_risk_df.iterrows():
+                for _idx, row in at_risk_df.iterrows():
                     self.report_preview.insert(tk.END,
                         f"{row['student_id']} - {row['name']}: {row['attendance_rate']:.1f}%\n")
 
                 # Send email alerts if requested
                 if send_emails:
                     at_risk_students = []
-                    for _, row in at_risk_df.iterrows():
+                    for _idx, row in at_risk_df.iterrows():
                         at_risk_students.append({
                             'student_id': row['student_id'],
                             'name': row['name'],
@@ -439,149 +439,201 @@ def generate_at_risk_report(self):
             messagebox.showerror(_("common.error"), f"Failed to generate at-risk report: {e}")
 
 def generate_trends_report(self):
-        """Generate attendance trends report"""
-        # Create trends analysis window
+        """Generate attendance trends report in a separate window with export/email"""
         trends_window = tk.Toplevel(self.root)
         trends_window.title(_("attendance.trends.title"))
-        trends_window.geometry("900x700")
+        trends_window.geometry("900x750")
         trends_window.transient(self.root)
-        trends_window.grab_set()
 
         # Title
         title_frame = ttk.Frame(trends_window)
-        title_frame.pack(fill='x', padx=20, pady=20)
-        ttk.Label(title_frame, text=_("attendance.trends.header"), style='Title.TLabel').pack()
+        title_frame.pack(fill='x', padx=20, pady=(15, 10))
+        ttk.Label(title_frame, text=_("attendance.trends.header"), font=('Arial', 14, 'bold')).pack(side=tk.LEFT)
 
-        # Analysis controls
-        controls_frame = ttk.LabelFrame(trends_window, text=_("attendance.trends.parameters"), padding="15")
-        controls_frame.pack(fill='x', padx=20, pady=(0, 15))
+        # Controls
+        controls_frame = ttk.LabelFrame(trends_window, text=_("attendance.trends.parameters"), padding=10)
+        controls_frame.pack(fill='x', padx=20, pady=(0, 10))
 
-        # Time period selection
         ttk.Label(controls_frame, text=_("attendance.trends.period")).grid(row=0, column=0, sticky='w', padx=(0, 10))
-        period_var = tk.StringVar(value=_("attendance.trends.last_30_days"))
+        period_var = tk.StringVar(value="Last 30 Days")
         ttk.Combobox(controls_frame, textvariable=period_var,
-                    values=[_("attendance.trends.last_7_days"), _("attendance.trends.last_30_days"), _("attendance.trends.last_semester"), _("attendance.trends.academic_year")],
-                    width=20).grid(row=0, column=1, sticky='w')
+                    values=["Last 7 Days", "Last 30 Days", "Last Semester", "Academic Year"],
+                    width=20, state='readonly').grid(row=0, column=1, sticky='w')
 
         ttk.Label(controls_frame, text=_("attendance.trends.module_filter")).grid(row=0, column=2, sticky='w', padx=(20, 10))
-        module_filter_var = tk.StringVar(value=_("attendance.trends.all_modules"))
+        module_filter_var = tk.StringVar(value="All Modules")
+
+        # Load actual modules for filter
+        module_values = ["All Modules"]
+        try:
+            if ORIGINAL_FUNCTIONS_AVAILABLE:
+                for code, name in get_modules():
+                    module_values.append(f"{code} - {name}")
+        except Exception:
+            pass
         ttk.Combobox(controls_frame, textvariable=module_filter_var,
-                    values=[_("attendance.trends.all_modules"), "CS101", "MATH201", "ENG102"],
-                    width=20).grid(row=0, column=3, sticky='w')
+                    values=module_values, width=25, state='readonly').grid(row=0, column=3, sticky='w')
 
-        # Generate button
+        # Results area
+        results_frame = ttk.LabelFrame(trends_window, text=_("attendance.trends.results"), padding=10)
+        results_frame.pack(fill='both', expand=True, padx=20, pady=(0, 10))
+
+        report_text = scrolledtext.ScrolledText(results_frame, wrap='word', height=20)
+        report_text.pack(fill='both', expand=True)
+
+        # Store report content for export/email
+        self._trends_report_content = ""
+
         def generate_analysis():
-            # Clear previous results
-            for widget in results_frame.winfo_children():
-                widget.destroy()
+            report_text.config(state='normal')
+            report_text.delete('1.0', tk.END)
 
-            # Create analysis text display
-            analysis_text = tk.Text(results_frame, wrap='word', height=25)
-            analysis_text.pack(fill='both', expand=True, padx=10, pady=10)
+            period = period_var.get()
+            mod_filter = module_filter_var.get()
+            now = datetime.datetime.now()
 
-            # Add scrollbar
-            scrollbar = ttk.Scrollbar(results_frame, orient='vertical', command=analysis_text.yview)
-            scrollbar.pack(side='right', fill='y')
-            analysis_text.config(yscrollcommand=scrollbar.set)
+            # Try to generate from real data
+            report_lines = []
+            report_lines.append("ATTENDANCE TRENDS ANALYSIS REPORT")
+            report_lines.append("=" * 50)
+            report_lines.append(f"\nAnalysis Period: {period}")
+            report_lines.append(f"Module Filter: {mod_filter}")
+            report_lines.append(f"Generated: {now.strftime('%Y-%m-%d %H:%M:%S')}\n")
 
-            from datetime import datetime
-            trends_data = f"""
-ATTENDANCE TRENDS ANALYSIS REPORT
-================================
+            try:
+                conn = get_db_connection() if MAIN_DB_AVAILABLE else None
+                if conn:
+                    cursor = conn.cursor()
 
-Analysis Period: {period_var.get()}
-Module Filter: {module_filter_var.get()}
-Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+                    # Determine date range
+                    if "7" in period:
+                        days_back = 7
+                    elif "30" in period:
+                        days_back = 30
+                    elif "Semester" in period:
+                        days_back = 120
+                    else:
+                        days_back = 365
 
-OVERALL STATISTICS:
-• Average Attendance Rate: 87.3%
-• Trend Direction: ↗ Improving (+2.1% vs previous period)
-• Best Day: Tuesday (92.1% average)
-• Worst Day: Friday (81.7% average)
-• Peak Time: 10:00 AM - 11:00 AM
-• Low Time: 4:00 PM - 5:00 PM
+                    start_date = (now - datetime.timedelta(days=days_back)).strftime('%Y-%m-%d')
 
-WEEKLY BREAKDOWN:
-Week 1: 89.2% (↗ +1.5%)
-Week 2: 86.8% (↘ -2.4%)
-Week 3: 88.9% (↗ +2.1%)
-Week 4: 84.3% (↘ -4.6%)
+                    # Overall stats
+                    query = "SELECT COUNT(*) as total, SUM(CASE WHEN status IN ('Present', 'Late') THEN 1 ELSE 0 END) as attended FROM attendance_records WHERE date >= ?"
+                    params = [start_date]
+                    if mod_filter != "All Modules":
+                        mod_code = mod_filter.split(' - ')[0]
+                        query += " AND module_code = ?"
+                        params.append(mod_code)
 
-MODULE PERFORMANCE:
-1. MATH201 - 91.2% (Excellent)
-2. CS101 - 88.7% (Good)
-3. ENG102 - 85.1% (Fair)
-4. PHYS301 - 82.9% (Needs Attention)
+                    cursor.execute(query, params)
+                    row = cursor.fetchone()
+                    total = row[0] or 0
+                    attended = row[1] or 0
+                    rate = (attended / total * 100) if total > 0 else 0
 
-DAILY PATTERNS:
-Monday: 86.2% (Slow start effect)
-Tuesday: 92.1% (Peak performance)
-Wednesday: 89.8% (Mid-week consistency)
-Thursday: 87.5% (Afternoon decline)
-Friday: 81.7% (Weekend anticipation)
+                    report_lines.append("OVERALL STATISTICS:")
+                    report_lines.append(f"  Total Records: {total}")
+                    report_lines.append(f"  Attended: {attended}")
+                    report_lines.append(f"  Average Attendance Rate: {rate:.1f}%\n")
 
-PATTERN ANALYSIS:
-• Monday Morning Effect: 15% lower attendance in first period
-• Mid-week Peak: Tuesday-Wednesday show highest engagement
-• Weather Correlation: 23% drop during rainy days
-• Assignment Due Dates: 8% increase day before submissions
+                    # Module breakdown
+                    cursor.execute(f"""
+                        SELECT module_code,
+                               COUNT(*) as total,
+                               SUM(CASE WHEN status IN ('Present', 'Late') THEN 1 ELSE 0 END) as attended
+                        FROM attendance_records
+                        WHERE date >= ?
+                        GROUP BY module_code
+                        ORDER BY module_code
+                    """, (start_date,))
 
-RISK INDICATORS:
-⚠ 12 students with attendance <70%
-⚠ CS101 showing declining trend (-5% over 3 weeks)
-⚠ Friday afternoon sessions consistently underperforming
+                    report_lines.append("MODULE PERFORMANCE:")
+                    for mrow in cursor.fetchall():
+                        m_total = mrow[1] or 0
+                        m_att = mrow[2] or 0
+                        m_rate = (m_att / m_total * 100) if m_total > 0 else 0
+                        rating = "Excellent" if m_rate >= 90 else "Good" if m_rate >= 80 else "Fair" if m_rate >= 70 else "Needs Attention"
+                        report_lines.append(f"  {mrow[0]}: {m_rate:.1f}% ({rating}) - {m_total} sessions")
 
-RECOMMENDATIONS:
-✓ Implement incentives for Friday attendance
-✓ Review CS101 delivery method
-✓ Consider weather-based virtual sessions
-✓ Targeted intervention for at-risk students
-✓ Flexible scheduling for working students
+                    # At-risk students
+                    report_lines.append("\nAT-RISK STUDENTS (below 70%):")
+                    cursor.execute(f"""
+                        SELECT student_id,
+                               COUNT(*) as total,
+                               SUM(CASE WHEN status IN ('Present', 'Late') THEN 1 ELSE 0 END) as attended
+                        FROM attendance_records
+                        WHERE date >= ?
+                        GROUP BY student_id
+                        HAVING (CAST(attended AS REAL) / total) < 0.7
+                        ORDER BY (CAST(attended AS REAL) / total) ASC
+                    """, (start_date,))
+                    at_risk = cursor.fetchall()
+                    if at_risk:
+                        for sr in at_risk:
+                            s_rate = (sr[2] / sr[1] * 100) if sr[1] > 0 else 0
+                            report_lines.append(f"  {sr[0]}: {s_rate:.1f}% ({sr[2]}/{sr[1]} sessions)")
+                    else:
+                        report_lines.append("  No students below 70% threshold.")
 
-HOURLY BREAKDOWN:
-8:00 AM: 79.2% (Early struggle)
-9:00 AM: 88.7% (Recovery)
-10:00 AM: 94.1% (Peak performance)
-11:00 AM: 91.8% (Maintained high)
-12:00 PM: 85.3% (Lunch dip)
-1:00 PM: 89.7% (Afternoon recovery)
-2:00 PM: 87.2% (Steady)
-3:00 PM: 82.1% (Decline begins)
-4:00 PM: 78.9% (Low point)
-5:00 PM: 76.3% (End of day fatigue)
+                    conn.close()
+                else:
+                    report_lines.append("DATABASE NOT AVAILABLE - showing sample data\n")
+                    report_lines.append("MODULE PERFORMANCE:")
+                    report_lines.append("  CS101: 88.7% (Good)")
+                    report_lines.append("  MATH201: 91.2% (Excellent)")
+                    report_lines.append("  ENG102: 85.1% (Fair)")
 
-STUDENT INSIGHTS:
-• Consistent Attendees: 78 students (66.1%)
-• Sporadic Attendees: 23 students (19.5%)
-• Declining Trend: 12 students (10.2%)
-• Improving Trend: 8 students (6.8%)
+            except Exception as e:
+                report_lines.append(f"\nError generating report: {e}")
 
-CORRELATION ANALYSIS:
-• Academic Performance vs Attendance: 0.78 correlation
-• Study Group Participants: +12% attendance
-• International Students: -5% average (timezone factors)
-• Part-time Workers: -8% average (scheduling conflicts)
-• Sports Team Members: +3% average (discipline factor)
-"""
+            report_lines.append(f"\n{'=' * 50}")
+            report_lines.append(f"Report generated at {now.strftime('%Y-%m-%d %H:%M:%S')}")
 
-            analysis_text.insert('1.0', trends_data)
-            analysis_text.config(state='disabled')
+            content = "\n".join(report_lines)
+            self._trends_report_content = content
+            report_text.insert('1.0', content)
+            report_text.config(state='disabled')
 
-            messagebox.showinfo(_("attendance.messages.analysis_complete"), _("attendance.messages.analysis_complete_message"))
+        # Buttons
+        btn_frame = ttk.Frame(trends_window)
+        btn_frame.pack(fill='x', padx=20, pady=(0, 15))
 
-        ttk.Button(controls_frame, text=_("attendance.trends.generate"), command=generate_analysis).grid(row=1, column=0, columnspan=4, pady=(15, 0))
+        ttk.Button(btn_frame, text=_("attendance.trends.generate"), command=generate_analysis).pack(side=tk.LEFT, padx=(0, 10))
 
-        # Results frame
-        results_frame = ttk.LabelFrame(trends_window, text=_("attendance.trends.results"), padding="15")
-        results_frame.pack(fill='both', expand=True, padx=20, pady=(0, 20))
+        def export_txt():
+            if not self._trends_report_content:
+                messagebox.showwarning(_("common.warning"), "Generate a report first.", parent=trends_window)
+                return
+            filename = filedialog.asksaveasfilename(
+                title="Export Trends Report",
+                defaultextension=".txt",
+                filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+                parent=trends_window)
+            if filename:
+                with open(filename, 'w', encoding='utf-8') as f:
+                    f.write(self._trends_report_content)
+                messagebox.showinfo(_("common.success"), f"Report exported to {filename}", parent=trends_window)
 
-        # Initial message
-        initial_label = ttk.Label(results_frame, text=_("attendance.trends.click_generate"),
-                                 font=('Arial', 12), anchor='center')
-        initial_label.pack(expand=True)
+        ttk.Button(btn_frame, text="Export as TXT", command=export_txt).pack(side=tk.LEFT, padx=(0, 10))
 
-        # Close button
-        ttk.Button(trends_window, text=_("common.close"), command=trends_window.destroy).pack(pady=10)
+        def email_to_admin():
+            if not self._trends_report_content:
+                messagebox.showwarning(_("common.warning"), "Generate a report first.", parent=trends_window)
+                return
+            try:
+                from education_system.university_system.infrastructure.email.email_service import queue_email
+                queue_email(
+                    to="admin@university.ac.uk",
+                    subject=f"Attendance Trends Report - {datetime.datetime.now().strftime('%Y-%m-%d')}",
+                    body=self._trends_report_content)
+                messagebox.showinfo(_("common.success"), "Report emailed to admin.", parent=trends_window)
+            except ImportError:
+                messagebox.showerror(_("common.error"), "Email service not available.", parent=trends_window)
+            except Exception as e:
+                messagebox.showerror(_("common.error"), f"Failed to send email: {e}", parent=trends_window)
+
+        ttk.Button(btn_frame, text="Email to Admin", command=email_to_admin).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(btn_frame, text=_("common.close"), command=trends_window.destroy).pack(side=tk.RIGHT)
 
 def _show_attendance_email_fallback(self, name, email, subject, message, attendance_rate):
         """Show fallback dialog for attendance alert email"""

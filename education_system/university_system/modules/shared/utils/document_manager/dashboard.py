@@ -1,4 +1,4 @@
-from ._common import datetime, timedelta, sqlite3, get_connection
+from education_system.university_system.modules.shared.utils.document_manager._common import datetime, timedelta, sqlite3, get_connection
 
 
 class DashboardMixin:
@@ -36,20 +36,20 @@ class DashboardMixin:
         print("-" * 50)
 
         # Total documents
-        cursor.execute('SELECT COUNT(*) FROM student_documents WHERE is_current_version = 1')
+        cursor.execute('SELECT COUNT(*) FROM documents WHERE is_current_version = 1')
         total_docs = cursor.fetchone()[0]
 
         # Total students with documents
-        cursor.execute('SELECT COUNT(DISTINCT student_id) FROM student_documents')
+        cursor.execute("SELECT COUNT(DISTINCT owner_id) FROM documents WHERE source_type = 'student'")
         students_with_docs = cursor.fetchone()[0]
 
         # Pending documents
-        cursor.execute('SELECT COUNT(*) FROM student_documents WHERE verification_status = "Pending" AND is_current_version = 1')
+        cursor.execute('SELECT COUNT(*) FROM documents WHERE verification_status = "Pending" AND is_current_version = 1')
         pending_docs = cursor.fetchone()[0]
 
         # Documents uploaded today
         today = datetime.now().strftime('%Y-%m-%d')
-        cursor.execute('SELECT COUNT(*) FROM student_documents WHERE DATE(upload_date) = ?', (today,))
+        cursor.execute('SELECT COUNT(*) FROM documents WHERE DATE(upload_date) = ?', (today,))
         today_uploads = cursor.fetchone()[0]
 
         print(f"Total Documents: {total_docs}")
@@ -64,7 +64,7 @@ class DashboardMixin:
 
         cursor.execute('''
         SELECT verification_status, COUNT(*) as count
-        FROM student_documents
+        FROM documents
         WHERE is_current_version = 1
         GROUP BY verification_status
         ORDER BY count DESC
@@ -88,7 +88,7 @@ class DashboardMixin:
         cursor.execute('''
         SELECT DATE(sd.upload_date) as upload_day,
                COUNT(*) as daily_count
-        FROM student_documents sd
+        FROM documents sd
         WHERE DATE(sd.upload_date) >= ?
         GROUP BY DATE(sd.upload_date)
         ORDER BY upload_day DESC
@@ -115,7 +115,7 @@ class DashboardMixin:
 
         cursor.execute('''
         SELECT COUNT(*)
-        FROM student_documents sd
+        FROM documents sd
         WHERE sd.expiry_date BETWEEN ? AND ?
         AND sd.verification_status != 'Expired'
         AND sd.is_current_version = 1
@@ -126,7 +126,7 @@ class DashboardMixin:
         # Already expired documents
         cursor.execute('''
         SELECT COUNT(*)
-        FROM student_documents sd
+        FROM documents sd
         WHERE sd.expiry_date < ?
         AND sd.verification_status != 'Expired'
         AND sd.is_current_version = 1
@@ -154,7 +154,7 @@ class DashboardMixin:
                 ELSE NULL
             END
         ) as avg_processing_days
-        FROM student_documents
+        FROM documents
         WHERE verification_date IS NOT NULL
         ''')
 
@@ -176,7 +176,8 @@ class DashboardMixin:
                    COUNT(dt.type_id) - COUNT(sd.document_id) as missing_count
             FROM students s
             CROSS JOIN document_types dt
-            LEFT JOIN student_documents sd ON s.student_id = sd.student_id
+            LEFT JOIN documents sd ON s.student_id = sd.owner_id
+                AND sd.source_type = 'student'
                 AND dt.type_id = sd.type_id
                 AND sd.is_current_version = 1
             WHERE dt.is_required = 1

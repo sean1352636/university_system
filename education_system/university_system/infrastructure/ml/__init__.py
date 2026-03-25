@@ -9,28 +9,28 @@ This module provides advanced ML capabilities including:
 - Learning path optimization
 """
 
-from .course_recommender import (
+from education_system.university_system.infrastructure.ml.course_recommender import (
     CourseRecommender,
     RecommendationEngine,
     get_course_recommender,
 )
-from .essay_grader import (
+from education_system.university_system.infrastructure.ml.essay_grader import (
     EssayGrader,
     GradingRubric,
     EssayFeedback,
     get_essay_grader,
 )
-from .plagiarism_detector import (
+from education_system.university_system.infrastructure.ml.plagiarism_detector import (
     AdvancedPlagiarismDetector,
     CodePlagiarismDetector,
     get_plagiarism_detector,
 )
-from .predictive_analytics import (
+from education_system.university_system.infrastructure.ml.predictive_analytics import (
     StudentSuccessPredictor,
     CoursePerformancePredictor,
     get_success_predictor,
 )
-from .learning_path_optimizer import (
+from education_system.university_system.infrastructure.ml.learning_path_optimizer import (
     LearningPathOptimizer,
     get_path_optimizer,
 )

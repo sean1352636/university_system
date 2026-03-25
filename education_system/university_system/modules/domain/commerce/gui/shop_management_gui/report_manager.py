@@ -267,15 +267,15 @@ def get_top_products_data(self, limit=20, days=30):
         cursor = conn.cursor()
         
         cursor.execute("""
-            SELECT p.product_id, p.name, p.category,
+            SELECT p.source_product_id as product_id, p.name, p.category,
                    SUM(ti.quantity) as total_quantity,
                    SUM(ti.subtotal) as total_revenue,
                    COUNT(DISTINCT ti.transaction_id) as transaction_count
             FROM shop_transaction_items ti
-            JOIN shop_products p ON ti.product_id = p.product_id
-            JOIN shop_transactions t ON ti.transaction_id = t.transaction_id
-            WHERE t.transaction_date >= ?
-            GROUP BY p.product_id
+            JOIN products p ON ti.product_id = p.source_product_id AND p.source_type = 'shop'
+            JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
+            WHERE t.created_at >= ?
+            GROUP BY p.source_product_id
             ORDER BY total_revenue DESC
             LIMIT ?
         """, [start_date.strftime('%Y-%m-%d %H:%M:%S'), limit])
@@ -393,14 +393,14 @@ def get_product_performance_data(self, start_date, end_date):
         cursor = conn.cursor()
         
         cursor.execute("""
-            SELECT p.product_id, p.name, p.category,
+            SELECT p.source_product_id as product_id, p.name, p.category,
                    SUM(ti.quantity) as units_sold,
                    SUM(ti.subtotal) as revenue
             FROM shop_transaction_items ti
-            JOIN shop_products p ON ti.product_id = p.product_id
-            JOIN shop_transactions t ON ti.transaction_id = t.transaction_id
-            WHERE DATE(t.transaction_date) BETWEEN ? AND ?
-            GROUP BY p.product_id
+            JOIN products p ON ti.product_id = p.source_product_id AND p.source_type = 'shop'
+            JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
+            WHERE DATE(t.created_at) BETWEEN ? AND ?
+            GROUP BY p.source_product_id
             ORDER BY revenue DESC
         """, [start_date, end_date])
         
@@ -483,9 +483,9 @@ def get_category_analysis_data(self, start_date, end_date):
                    SUM(ti.quantity) as units_sold,
                    SUM(ti.subtotal) as revenue
             FROM shop_transaction_items ti
-            JOIN shop_products p ON ti.product_id = p.product_id
-            JOIN shop_transactions t ON ti.transaction_id = t.transaction_id
-            WHERE DATE(t.transaction_date) BETWEEN ? AND ?
+            JOIN products p ON ti.product_id = p.source_product_id AND p.source_type = 'shop'
+            JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
+            WHERE DATE(t.created_at) BETWEEN ? AND ?
             GROUP BY p.category
             ORDER BY revenue DESC
         """, [start_date, end_date])
@@ -576,9 +576,9 @@ def get_customer_analysis_data(self, start_date, end_date):
                 SELECT user_id,
                        COUNT(*) as orders_per_customer,
                        SUM(total_amount) as spend_per_customer
-                FROM shop_transactions
-                WHERE DATE(transaction_date) BETWEEN ? AND ?
-                GROUP BY user_id
+                FROM transactions
+                WHERE source_type = 'shop' AND DATE(created_at) BETWEEN ? AND ?
+                GROUP BY customer_id
             )
         """, [start_date, end_date])
         
@@ -589,9 +589,9 @@ def get_customer_analysis_data(self, start_date, end_date):
             SELECT u.username, u.student_id,
                    COUNT(t.transaction_id) as order_count,
                    SUM(t.total_amount) as total_spent
-            FROM shop_transactions t
-            JOIN users u ON t.user_id = u.id
-            WHERE DATE(t.transaction_date) BETWEEN ? AND ?
+            FROM transactions t
+            JOIN users u ON t.customer_id = u.id
+            WHERE t.source_type = 'shop' AND DATE(t.created_at) BETWEEN ? AND ?
             GROUP BY u.id
             ORDER BY total_spent DESC
             LIMIT 10

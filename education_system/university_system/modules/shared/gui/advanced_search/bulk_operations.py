@@ -873,7 +873,7 @@ def get_connection():
             print_error(f"Database connection error: {e}")
             return None
 
-from .base import AdvancedSearchGUI
+from education_system.university_system.modules.shared.gui.advanced_search.base import AdvancedSearchGUI
 
 def show_bulk_operations(self):
     """Show bulk operations menu"""
@@ -1716,17 +1716,7 @@ def show_mass_email(self):
 
         if messagebox.askyesno(_t("advanced_search.bulk_operations.confirm_send_title"), confirmation):
             try:
-                # Import email service
-                try:
-                    from education_system.university_system.infrastructure.email.email_service import send_email
-                    EMAIL_AVAILABLE = True
-                except ImportError:
-                    EMAIL_AVAILABLE = False
-
-                if not EMAIL_AVAILABLE:
-                    messagebox.showerror(_t("advanced_search.bulk_operations.email_unavailable_title"),
-                                       _t("advanced_search.bulk_operations.email_unavailable_msg"))
-                    return
+                from education_system.university_system.infrastructure.email.email_service import send_email
 
                 # Send emails to all recipients
                 success_count = 0
@@ -1735,16 +1725,20 @@ def show_mass_email(self):
 
                 for recipient_email in recipients:
                     try:
-                        send_email(
+                        result = send_email(
                             recipient_email=recipient_email,
                             subject=subject,
                             body=message
                         )
-                        success_count += 1
+                        if result is not False:
+                            success_count += 1
+                        else:
+                            failed_count += 1
+                            failed_addresses.append(recipient_email)
                     except Exception as e:
                         failed_count += 1
                         failed_addresses.append(recipient_email)
-                        print(f"Failed to send to {recipient_email}: {str(e)}")
+                        print_error(f"Failed to send to {recipient_email}: {str(e)}")
 
                 # Show results
                 result_message = _t("advanced_search.bulk_operations.mass_email_results_msg",

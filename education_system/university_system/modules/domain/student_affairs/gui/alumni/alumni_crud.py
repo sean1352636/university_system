@@ -1,3 +1,4 @@
+from education_system.university_system.core.sql_safety import escape_like
 import tkinter as tk
 from education_system.university_system.infrastructure.email.template_utils import render_template
 from tkinter import ttk, messagebox, simpledialog, filedialog
@@ -467,7 +468,7 @@ class AlumniCRUDMixin:
 
                 conn = self._get_db_connection()
                 cursor = conn.cursor()
-                like_term = f"%{search_term}%"
+                like_term = f"%{escape_like(search_term)}%"
 
                 cursor.execute(
                     """

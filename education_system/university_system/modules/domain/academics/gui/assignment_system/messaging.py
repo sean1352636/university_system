@@ -1,5 +1,6 @@
 """Messaging system"""
 
+from education_system.university_system.core.sql_safety import escape_like
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 import os
@@ -43,21 +44,22 @@ class MessagingManager:
         """Load assignments for message reference"""
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('SELECT id, title, module_code FROM assignments WHERE is_active = 1 ORDER BY due_date DESC')
-            assignments = cursor.fetchall()
+                cursor.execute('SELECT id, title, module_code FROM assignments WHERE is_active = 1 ORDER BY due_date DESC')
+                assignments = cursor.fetchall()
 
-            assignment_list = ["None"] + [f"{title} ({module})" for aid, title, module in assignments]
-            combo['values'] = assignment_list
-            combo.set("None")
+                assignment_list = ["None"] + [f"{title} ({module})" for aid, title, module in assignments]
+                combo['values'] = assignment_list
+                combo.set("None")
 
-            # Create mapping for assignment IDs
-            self.message_assignment_map = {"None": None}
-            for aid, title, module in assignments:
-                self.message_assignment_map[f"{title} ({module})"] = aid
-
-            conn.close()
+                # Create mapping for assignment IDs
+                self.message_assignment_map = {"None": None}
+                for aid, title, module in assignments:
+                    self.message_assignment_map[f"{title} ({module})"] = aid
+            finally:
+                conn.close()
 
         except Exception as e:
             print(f"Error loading assignments: {e}")
@@ -66,22 +68,24 @@ class MessagingManager:
         """Load assignments for message compose"""
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('''
-                SELECT id, title, module_code
-                FROM assignments
-                WHERE is_active = 1
-                ORDER BY due_date DESC
-                LIMIT 50
-            ''')
+                cursor.execute('''
+                    SELECT id, title, module_code
+                    FROM assignments
+                    WHERE is_active = 1
+                    ORDER BY due_date DESC
+                    LIMIT 50
+                ''')
 
-            assignments = cursor.fetchall()
-            conn.close()
+                assignments = cursor.fetchall()
 
-            values = ["(No Assignment)"] + [f"{a[0]}: {a[1]} ({a[2]})" for a in assignments]
-            assignment_combo['values'] = values
-            assignment_combo.current(0)
+                values = ["(No Assignment)"] + [f"{a[0]}: {a[1]} ({a[2]})" for a in assignments]
+                assignment_combo['values'] = values
+                assignment_combo.current(0)
+            finally:
+                conn.close()
 
         except Exception as e:
             print(f"Error loading assignments: {e}")
@@ -161,23 +165,24 @@ class MessagingManager:
         
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            
-            if recipient_type == "module":
-                cursor.execute('SELECT module_code, module_name FROM modules ORDER BY module_code')
-                options = [f"{code} - {name}" for code, name in cursor.fetchall()]
-            elif recipient_type == "student":
-                cursor.execute('SELECT student_id, first_name, last_name FROM students ORDER BY last_name, first_name')
-                options = [f"{sid} - {fname} {lname}" for sid, fname, lname in cursor.fetchall()]
-            else:  # instructors
-                options = ["All Instructors"]
-            
-            self.recipient_combo['values'] = options
-            if options:
-                self.recipient_combo.set(options[0])
-            
-            conn.close()
-            
+            try:
+                cursor = conn.cursor()
+
+                if recipient_type == "module":
+                    cursor.execute('SELECT module_code, module_name FROM modules ORDER BY module_code')
+                    options = [f"{code} - {name}" for code, name in cursor.fetchall()]
+                elif recipient_type == "student":
+                    cursor.execute('SELECT student_id, first_name, last_name FROM students ORDER BY last_name, first_name')
+                    options = [f"{sid} - {fname} {lname}" for sid, fname, lname in cursor.fetchall()]
+                else:  # instructors
+                    options = ["All Instructors"]
+
+                self.recipient_combo['values'] = options
+                if options:
+                    self.recipient_combo.set(options[0])
+            finally:
+                conn.close()
+
         except Exception as e:
             print(f"Error updating recipient options: {e}")
     
@@ -203,106 +208,88 @@ class MessagingManager:
             assignment_id = self.message_assignment_map.get(self.message_assignment_var.get())
             
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            
-            recipients = []
-            
-            if recipient_type == "module":
-                # Get module code
-                module_code = selection.split(' - ')[0]
-                cursor.execute('''
-                SELECT u.id FROM users u
-                JOIN students s ON u.student_id = s.student_id
-                JOIN student_modules sm ON s.student_id = sm.student_id
-                WHERE sm.module_code = ?
-                ''', (module_code,))
-                recipients = [row[0] for row in cursor.fetchall()]
-                
-            elif recipient_type == "student":
-                # Get specific student
-                student_id = selection.split(' - ')[0]
-                cursor.execute('SELECT u.id FROM users u WHERE u.student_id = ?', (student_id,))
-                result = cursor.fetchone()
-                if result:
-                    recipients = [result[0]]
-                    
-            elif recipient_type == "instructors":
-                # Get all instructors
-                cursor.execute("SELECT id FROM users WHERE role IN ('instructor', 'admin')")
-                recipients = [row[0] for row in cursor.fetchall()]
-            
-            if not recipients:
-                messagebox.showerror("Error", "No recipients found")
-                conn.close()
-                return
-            
-            # Send messages
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            sender_id = self.auth.current_user['id']
+            try:
+                cursor = conn.cursor()
 
-            # Get sender name for email
-            cursor.execute('SELECT first_name, last_name FROM users WHERE id = ?', (sender_id,))
-            sender_result = cursor.fetchone()
-            sender_name = f"{sender_result[0]} {sender_result[1]}" if sender_result else "Instructor"
+                recipients = []
 
-            emails_sent = 0
-            emails_failed = 0
+                if recipient_type == "module":
+                    module_code = selection.split(' - ')[0]
+                    cursor.execute('''
+                    SELECT u.id FROM users u
+                    JOIN students s ON u.student_id = s.student_id
+                    JOIN student_modules sm ON s.student_id = sm.student_id
+                    WHERE sm.module_code = ?
+                    ''', (module_code,))
+                    recipients = [row[0] for row in cursor.fetchall()]
 
-            for recipient_id in recipients:
-                # Save message to database
-                cursor.execute('''
-                INSERT INTO messages (sender_id, recipient_id, subject, message, assignment_id, sent_at)
-                VALUES (?, ?, ?, ?, ?, ?)
-                ''', (sender_id, recipient_id, subject, message, assignment_id, timestamp))
+                elif recipient_type == "student":
+                    student_id = selection.split(' - ')[0]
+                    cursor.execute('SELECT u.id FROM users u WHERE u.student_id = ?', (student_id,))
+                    result = cursor.fetchone()
+                    if result:
+                        recipients = [result[0]]
 
-                # Send actual email
-                try:
-                    # Get recipient email
+                elif recipient_type == "instructors":
+                    cursor.execute("SELECT id FROM users WHERE role IN ('instructor', 'admin')")
+                    recipients = [row[0] for row in cursor.fetchall()]
+
+                if not recipients:
+                    messagebox.showerror("Error", "No recipients found")
+                    return
+
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                sender_id = self.auth.current_user['id']
+
+                cursor.execute('SELECT first_name, last_name FROM users WHERE id = ?', (sender_id,))
+                sender_result = cursor.fetchone()
+                sender_name = f"{sender_result[0]} {sender_result[1]}" if sender_result else "Instructor"
+
+                # Collect recipient email info before closing DB
+                email_recipients = []
+                for recipient_id in recipients:
+                    cursor.execute('''
+                    INSERT INTO messages (sender_id, recipient_id, subject, message, assignment_id, sent_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    ''', (sender_id, recipient_id, subject, message, assignment_id, timestamp))
+
                     cursor.execute('SELECT email, first_name FROM users WHERE id = ?', (recipient_id,))
                     recipient_result = cursor.fetchone()
-
                     if recipient_result and recipient_result[0]:
-                        recipient_email = recipient_result[0]
-                        recipient_fname = recipient_result[1]
+                        email_recipients.append({
+                            'email': recipient_result[0],
+                            'first_name': recipient_result[1]
+                        })
 
-                        # Use email template
-                        try:
-                            from education_system.university_system.infrastructure.email.template_utils import render_template
-                            assignment_note = "This message is related to an assignment.\n\n" if assignment_id else ""
-                            email_subject, email_body = render_template("assignment_system_message", {
-                                "recipient_name": recipient_fname,
-                                "sender_name": sender_name,
-                                "subject": subject,
-                                "message": message,
-                                "assignment_note": assignment_note,
-                                "timestamp": timestamp
-                            })
-                        except Exception as template_error:
-                            # Fallback to hardcoded email
-                            email_body = f"Hello {recipient_fname},\n\n"
-                            email_body += f"You have received a new message from {sender_name}:\n\n"
-                            email_body += f"Subject: {subject}\n\n"
-                            email_body += f"{message}\n\n"
-                            if assignment_id:
-                                email_body += f"This message is related to an assignment.\n\n"
-                            email_body += f"Please log in to the Assignment System to view and respond to this message.\n\n"
-                            email_body += f"Sent: {timestamp}\n"
-                            email_subject = f"[Assignment System] {subject}"
+                conn.commit()
+            finally:
+                conn.close()
 
-                        # Send email
-                        from education_system.university_system.infrastructure.email.email_service import send_email
-                        send_email(
-                            recipient_email=recipient_email,
-                            subject=email_subject,
-                            body=email_body
-                        )
-                        emails_sent += 1
+            # Send emails after DB connection is closed to avoid locks
+            emails_sent = 0
+            emails_failed = 0
+            for r in email_recipients:
+                try:
+                    email_body = (
+                        f"Hello {r['first_name']},\n\n"
+                        f"You have received a new message from {sender_name}:\n\n"
+                        f"Subject: {subject}\n\n"
+                        f"{message}\n\n"
+                    )
+                    if assignment_id:
+                        email_body += "This message is related to an assignment.\n\n"
+                    email_body += (
+                        "Please log in to the Assignment System to view and respond to this message.\n\n"
+                        f"Sent: {timestamp}\n"
+                    )
+                    email_subject = f"[Assignment System] {subject}"
+
+                    from education_system.university_system.infrastructure.email.email_service import send_email
+                    send_email(recipient_email=r['email'], subject=email_subject, body=email_body)
+                    emails_sent += 1
                 except Exception as email_error:
-                    print(f"Failed to send email to recipient {recipient_id}: {email_error}")
+                    print(f"Failed to send email to {r['email']}: {email_error}")
                     emails_failed += 1
-
-            conn.commit()
-            conn.close()
 
             # Show success message with email status
             success_msg = f"Message saved for {len(recipients)} recipients!"
@@ -317,7 +304,7 @@ class MessagingManager:
             self.message_subject_var.set('')
             self.message_body_text.delete(1.0, tk.END)
             self.message_assignment_var.set("None")
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to send message: {e}")
     
@@ -460,52 +447,53 @@ class MessagingManager:
     
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-    
-            # Build query
-            query = '''
-                SELECT m.id, m.sender_id, u.username, m.subject, m.sent_at, m.is_read
-                FROM messages m
-                JOIN users u ON m.sender_id = u.id
-                WHERE m.recipient_id = ? AND m.is_deleted_by_recipient = 0 AND m.is_archived = 0
-            '''
-            params = [user_id]
-    
-            if filter_type == "unread":
-                query += " AND m.is_read = 0"
-            elif filter_type == "read":
-                query += " AND m.is_read = 1"
-    
-            if search_text:
-                query += " AND (m.subject LIKE ? OR u.username LIKE ?)"
-                params.extend([f"%{search_text}%", f"%{search_text}%"])
-    
-            query += " ORDER BY m.sent_at DESC"
-    
-            cursor.execute(query, params)
-            messages = cursor.fetchall()
-    
-            for msg in messages:
-                msg_id, sender_id, sender_name, subject, sent_at, is_read = msg
-                status = "Read" if is_read else "Unread"
-    
-                # Format date
-                try:
-                    date_obj = datetime.fromisoformat(sent_at)
-                    formatted_date = date_obj.strftime("%Y-%m-%d %H:%M")
-                except (ValueError, TypeError):
-                    formatted_date = sent_at
-    
-                # Insert into tree with bold font for unread
-                item_id = tree.insert('', 'end', text=msg_id,
-                                     values=(status, sender_name, subject, formatted_date),
-                                     tags=('unread',) if not is_read else ())
-    
-            # Configure tag for unread messages
-            tree.tag_configure('unread', font=('TkDefaultFont', 10, 'bold'))
-    
-            conn.close()
-    
+            try:
+                cursor = conn.cursor()
+
+                # Build query
+                query = '''
+                    SELECT m.id, m.sender_id, u.username, m.subject, m.sent_at, m.is_read
+                    FROM messages m
+                    JOIN users u ON m.sender_id = u.id
+                    WHERE m.recipient_id = ? AND m.is_deleted_by_recipient = 0 AND m.is_archived = 0
+                '''
+                params = [user_id]
+
+                if filter_type == "unread":
+                    query += " AND m.is_read = 0"
+                elif filter_type == "read":
+                    query += " AND m.is_read = 1"
+
+                if search_text:
+                    query += " AND (m.subject LIKE ? OR u.username LIKE ?)"
+                    params.extend([f"%{escape_like(search_text)}%", f"%{escape_like(search_text)}%"])
+
+                query += " ORDER BY m.sent_at DESC"
+
+                cursor.execute(query, params)
+                messages = cursor.fetchall()
+
+                for msg in messages:
+                    msg_id, sender_id, sender_name, subject, sent_at, is_read = msg
+                    status = "Read" if is_read else "Unread"
+
+                    # Format date
+                    try:
+                        date_obj = datetime.fromisoformat(sent_at)
+                        formatted_date = date_obj.strftime("%Y-%m-%d %H:%M")
+                    except (ValueError, TypeError):
+                        formatted_date = sent_at
+
+                    # Insert into tree with bold font for unread
+                    item_id = tree.insert('', 'end', text=msg_id,
+                                         values=(status, sender_name, subject, formatted_date),
+                                         tags=('unread',) if not is_read else ())
+
+                # Configure tag for unread messages
+                tree.tag_configure('unread', font=('TkDefaultFont', 10, 'bold'))
+            finally:
+                conn.close()
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load messages: {str(e)}")
             print(f"Error refreshing inbox: {e}")
@@ -575,40 +563,41 @@ class MessagingManager:
     
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-    
-            query = '''
-                SELECT m.id, u.username, m.subject, m.sent_at, m.is_read
-                FROM messages m
-                JOIN users u ON m.recipient_id = u.id
-                WHERE m.sender_id = ? AND m.is_deleted_by_sender = 0
-            '''
-            params = [user_id]
-    
-            if search_text:
-                query += " AND (m.subject LIKE ? OR u.username LIKE ?)"
-                params.extend([f"%{search_text}%", f"%{search_text}%"])
-    
-            query += " ORDER BY m.sent_at DESC"
-    
-            cursor.execute(query, params)
-            messages = cursor.fetchall()
-    
-            for msg in messages:
-                msg_id, recipient_name, subject, sent_at, is_read = msg
-                status = "Read by recipient" if is_read else "Unread"
-    
-                try:
-                    date_obj = datetime.fromisoformat(sent_at)
-                    formatted_date = date_obj.strftime("%Y-%m-%d %H:%M")
-                except (ValueError, TypeError):
-                    formatted_date = sent_at
+            try:
+                cursor = conn.cursor()
 
-                tree.insert('', 'end', text=msg_id,
-                           values=(recipient_name, subject, formatted_date, status))
-    
-            conn.close()
-    
+                query = '''
+                    SELECT m.id, u.username, m.subject, m.sent_at, m.is_read
+                    FROM messages m
+                    JOIN users u ON m.recipient_id = u.id
+                    WHERE m.sender_id = ? AND m.is_deleted_by_sender = 0
+                '''
+                params = [user_id]
+
+                if search_text:
+                    query += " AND (m.subject LIKE ? OR u.username LIKE ?)"
+                    params.extend([f"%{escape_like(search_text)}%", f"%{escape_like(search_text)}%"])
+
+                query += " ORDER BY m.sent_at DESC"
+
+                cursor.execute(query, params)
+                messages = cursor.fetchall()
+
+                for msg in messages:
+                    msg_id, recipient_name, subject, sent_at, is_read = msg
+                    status = "Read by recipient" if is_read else "Unread"
+
+                    try:
+                        date_obj = datetime.fromisoformat(sent_at)
+                        formatted_date = date_obj.strftime("%Y-%m-%d %H:%M")
+                    except (ValueError, TypeError):
+                        formatted_date = sent_at
+
+                    tree.insert('', 'end', text=msg_id,
+                               values=(recipient_name, subject, formatted_date, status))
+            finally:
+                conn.close()
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load sent messages: {str(e)}")
             print(f"Error refreshing sent messages: {e}")
@@ -744,32 +733,33 @@ class MessagingManager:
     
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-    
-            cursor.execute('''
-                SELECT m.id, u.username, m.subject, m.sent_at
-                FROM messages m
-                JOIN users u ON m.sender_id = u.id
-                WHERE m.recipient_id = ? AND m.is_archived = 1 AND m.is_deleted_by_recipient = 0
-                ORDER BY m.sent_at DESC
-            ''', (user_id,))
-    
-            messages = cursor.fetchall()
-    
-            for msg in messages:
-                msg_id, sender_name, subject, sent_at = msg
-    
-                try:
-                    date_obj = datetime.fromisoformat(sent_at)
-                    formatted_date = date_obj.strftime("%Y-%m-%d %H:%M")
-                except (ValueError, TypeError):
-                    formatted_date = sent_at
+            try:
+                cursor = conn.cursor()
 
-                tree.insert('', 'end', text=msg_id,
-                           values=(sender_name, subject, formatted_date))
-    
-            conn.close()
-    
+                cursor.execute('''
+                    SELECT m.id, u.username, m.subject, m.sent_at
+                    FROM messages m
+                    JOIN users u ON m.sender_id = u.id
+                    WHERE m.recipient_id = ? AND m.is_archived = 1 AND m.is_deleted_by_recipient = 0
+                    ORDER BY m.sent_at DESC
+                ''', (user_id,))
+
+                messages = cursor.fetchall()
+
+                for msg in messages:
+                    msg_id, sender_name, subject, sent_at = msg
+
+                    try:
+                        date_obj = datetime.fromisoformat(sent_at)
+                        formatted_date = date_obj.strftime("%Y-%m-%d %H:%M")
+                    except (ValueError, TypeError):
+                        formatted_date = sent_at
+
+                    tree.insert('', 'end', text=msg_id,
+                               values=(sender_name, subject, formatted_date))
+            finally:
+                conn.close()
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load archived messages: {str(e)}")
             print(f"Error refreshing archive: {e}")
@@ -786,31 +776,31 @@ class MessagingManager:
     
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-    
-            cursor.execute('''
-                SELECT m.*, u1.username as sender_name, u2.username as recipient_name
-                FROM messages m
-                JOIN users u1 ON m.sender_id = u1.id
-                JOIN users u2 ON m.recipient_id = u2.id
-                WHERE m.id = ?
-            ''', (msg_id,))
-    
-            message = cursor.fetchone()
-    
-            if not message:
-                messagebox.showerror("Error", "Message not found")
-                conn.close()
-                return
-    
-            # Mark as read if recipient is viewing
-            if message[2] == user_id and not message[8]:  # recipient_id and is_read
+            try:
+                cursor = conn.cursor()
+
                 cursor.execute('''
-                    UPDATE messages SET is_read = 1, read_at = ? WHERE id = ?
-                ''', (datetime.now().isoformat(), msg_id))
-                conn.commit()
-    
-            conn.close()
+                    SELECT m.*, u1.username as sender_name, u2.username as recipient_name
+                    FROM messages m
+                    JOIN users u1 ON m.sender_id = u1.id
+                    JOIN users u2 ON m.recipient_id = u2.id
+                    WHERE m.id = ?
+                ''', (msg_id,))
+
+                message = cursor.fetchone()
+
+                if not message:
+                    messagebox.showerror("Error", "Message not found")
+                    return
+
+                # Mark as read if recipient is viewing
+                if message[2] == user_id and not message[8]:  # recipient_id and is_read
+                    cursor.execute('''
+                        UPDATE messages SET is_read = 1, read_at = ? WHERE id = ?
+                    ''', (datetime.now().isoformat(), msg_id))
+                    conn.commit()
+            finally:
+                conn.close()
     
             # Create detail window
             detail_window = tk.Toplevel(self.root)
@@ -886,22 +876,24 @@ class MessagingManager:
     
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-    
-            read_at = datetime.now().isoformat() if is_read else None
-            cursor.execute('''
-                UPDATE messages SET is_read = ?, read_at = ? WHERE id = ? AND recipient_id = ?
-            ''', (1 if is_read else 0, read_at, msg_id, user_id))
-    
-            conn.commit()
-            conn.close()
-    
+            try:
+                cursor = conn.cursor()
+
+                read_at = datetime.now().isoformat() if is_read else None
+                cursor.execute('''
+                    UPDATE messages SET is_read = ?, read_at = ? WHERE id = ? AND recipient_id = ?
+                ''', (1 if is_read else 0, read_at, msg_id, user_id))
+
+                conn.commit()
+            finally:
+                conn.close()
+
             # Refresh the tree
             self._refresh_inbox(tree, user_id)
-    
+
             status = "read" if is_read else "unread"
             messagebox.showinfo("Success", f"Message marked as {status}")
-    
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to update message: {str(e)}")
             print(f"Error marking message: {e}")
@@ -918,18 +910,20 @@ class MessagingManager:
     
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-    
-            cursor.execute('''
-                UPDATE messages SET is_archived = 1 WHERE id = ? AND recipient_id = ?
-            ''', (msg_id, user_id))
-    
-            conn.commit()
-            conn.close()
-    
+            try:
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                    UPDATE messages SET is_archived = 1 WHERE id = ? AND recipient_id = ?
+                ''', (msg_id, user_id))
+
+                conn.commit()
+            finally:
+                conn.close()
+
             self._refresh_inbox(tree, user_id)
             messagebox.showinfo("Success", "Message archived")
-    
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to archive message: {str(e)}")
             print(f"Error archiving message: {e}")
@@ -946,18 +940,20 @@ class MessagingManager:
     
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-    
-            cursor.execute('''
-                UPDATE messages SET is_archived = 0 WHERE id = ? AND recipient_id = ?
-            ''', (msg_id, user_id))
-    
-            conn.commit()
-            conn.close()
-    
+            try:
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                    UPDATE messages SET is_archived = 0 WHERE id = ? AND recipient_id = ?
+                ''', (msg_id, user_id))
+
+                conn.commit()
+            finally:
+                conn.close()
+
             self._refresh_archive(tree, user_id)
             messagebox.showinfo("Success", "Message moved to inbox")
-    
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to unarchive message: {str(e)}")
             print(f"Error unarchiving message: {e}")
@@ -977,28 +973,30 @@ class MessagingManager:
     
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-    
-            if user_type == 'recipient':
-                cursor.execute('''
-                    UPDATE messages SET is_deleted_by_recipient = 1 WHERE id = ? AND recipient_id = ?
-                ''', (msg_id, user_id))
-            else:  # sender
-                cursor.execute('''
-                    UPDATE messages SET is_deleted_by_sender = 1 WHERE id = ? AND sender_id = ?
-                ''', (msg_id, user_id))
-    
-            conn.commit()
-            conn.close()
-    
+            try:
+                cursor = conn.cursor()
+
+                if user_type == 'recipient':
+                    cursor.execute('''
+                        UPDATE messages SET is_deleted_by_recipient = 1 WHERE id = ? AND recipient_id = ?
+                    ''', (msg_id, user_id))
+                else:  # sender
+                    cursor.execute('''
+                        UPDATE messages SET is_deleted_by_sender = 1 WHERE id = ? AND sender_id = ?
+                    ''', (msg_id, user_id))
+
+                conn.commit()
+            finally:
+                conn.close()
+
             # Refresh the appropriate view
             if user_type == 'recipient':
                 self._refresh_inbox(tree, user_id)
             else:
                 self._refresh_sent(tree, user_id)
-    
+
             messagebox.showinfo("Success", "Message deleted")
-    
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to delete message: {str(e)}")
             print(f"Error deleting message: {e}")
@@ -1008,17 +1006,19 @@ class MessagingManager:
         """Browse and select users"""
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-    
-            cursor.execute('''
-                SELECT id, username, first_name, last_name, role
-                FROM users
-                WHERE is_active = 1
-                ORDER BY username
-            ''')
-    
-            users = cursor.fetchall()
-            conn.close()
+            try:
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                    SELECT id, username, first_name, last_name, role
+                    FROM users
+                    WHERE is_active = 1
+                    ORDER BY username
+                ''')
+
+                users = cursor.fetchall()
+            finally:
+                conn.close()
     
             # Create selection window
             select_window = tk.Toplevel(self.root)
@@ -1127,44 +1127,45 @@ class MessagingManager:
     
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-    
-            # Get recipient ID
-            cursor.execute('SELECT id FROM users WHERE username = ?', (recipient_username,))
-            recipient = cursor.fetchone()
-    
-            if not recipient:
-                messagebox.showerror("Error", f"User '{recipient_username}' not found")
+            try:
+                cursor = conn.cursor()
+
+                # Get recipient ID
+                cursor.execute('SELECT id FROM users WHERE username = ?', (recipient_username,))
+                recipient = cursor.fetchone()
+
+                if not recipient:
+                    messagebox.showerror("Error", f"User '{recipient_username}' not found")
+                    return
+
+                recipient_id = recipient[0]
+
+                # Parse assignment ID if provided
+                assignment_id = None
+                if assignment_ref and assignment_ref != "(No Assignment)":
+                    try:
+                        assignment_id = int(assignment_ref.split(':')[0])
+                    except (ValueError, IndexError):
+                        pass
+
+                # Insert message
+                cursor.execute('''
+                    INSERT INTO messages (sender_id, recipient_id, subject, message, content,
+                                        attachment_path, assignment_id, sent_at, is_read)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+                ''', (sender_id, recipient_id, subject, message_body, message_body,
+                      attachment_path if attachment_path else None, assignment_id,
+                      datetime.now().isoformat()))
+
+                conn.commit()
+            finally:
                 conn.close()
-                return
-    
-            recipient_id = recipient[0]
-    
-            # Parse assignment ID if provided
-            assignment_id = None
-            if assignment_ref and assignment_ref != "(No Assignment)":
-                try:
-                    assignment_id = int(assignment_ref.split(':')[0])
-                except (ValueError, IndexError):
-                    pass
-    
-            # Insert message
-            cursor.execute('''
-                INSERT INTO messages (sender_id, recipient_id, subject, message, content,
-                                    attachment_path, assignment_id, sent_at, is_read)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
-            ''', (sender_id, recipient_id, subject, message_body, message_body,
-                  attachment_path if attachment_path else None, assignment_id,
-                  datetime.now().isoformat()))
-    
-            conn.commit()
-            conn.close()
-    
+
             messagebox.showinfo("Success", "Message sent successfully!")
-    
+
             # Clear form
             self._clear_compose_form(recipient_entry, subject_entry, message_text, None, None)
-    
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to send message: {str(e)}")
             print(f"Error sending message: {e}")
@@ -1188,42 +1189,43 @@ class MessagingManager:
     
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-    
-            # Get recipient ID
-            cursor.execute('SELECT id FROM users WHERE username = ?', (recipient_username,))
-            recipient = cursor.fetchone()
-    
-            if not recipient:
-                messagebox.showerror("Error", f"User '{recipient_username}' not found")
+            try:
+                cursor = conn.cursor()
+
+                # Get recipient ID
+                cursor.execute('SELECT id FROM users WHERE username = ?', (recipient_username,))
+                recipient = cursor.fetchone()
+
+                if not recipient:
+                    messagebox.showerror("Error", f"User '{recipient_username}' not found")
+                    return
+
+                recipient_id = recipient[0]
+
+                # Parse assignment ID if provided
+                assignment_id = None
+                if assignment_ref and assignment_ref != "(No Assignment)":
+                    try:
+                        assignment_id = int(assignment_ref.split(':')[0])
+                    except (ValueError, IndexError):
+                        pass
+
+                # Insert message
+                cursor.execute('''
+                    INSERT INTO messages (sender_id, recipient_id, subject, message, content,
+                                        attachment_path, assignment_id, sent_at, is_read)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+                ''', (sender_id, recipient_id, subject, message_body, message_body,
+                      attachment_path if attachment_path else None, assignment_id,
+                      datetime.now().isoformat()))
+
+                conn.commit()
+            finally:
                 conn.close()
-                return
-    
-            recipient_id = recipient[0]
-    
-            # Parse assignment ID if provided
-            assignment_id = None
-            if assignment_ref and assignment_ref != "(No Assignment)":
-                try:
-                    assignment_id = int(assignment_ref.split(':')[0])
-                except (ValueError, IndexError):
-                    pass
-    
-            # Insert message
-            cursor.execute('''
-                INSERT INTO messages (sender_id, recipient_id, subject, message, content,
-                                    attachment_path, assignment_id, sent_at, is_read)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
-            ''', (sender_id, recipient_id, subject, message_body, message_body,
-                  attachment_path if attachment_path else None, assignment_id,
-                  datetime.now().isoformat()))
-    
-            conn.commit()
-            conn.close()
-    
+
             messagebox.showinfo("Success", "Message sent successfully!")
             window.destroy()
-    
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to send message: {str(e)}")
             print(f"Error sending message: {e}")
@@ -1233,24 +1235,26 @@ class MessagingManager:
         """Load recent message contacts for quick selection"""
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-    
-            # Get recent contacts (both sent to and received from)
-            cursor.execute('''
-                SELECT DISTINCT u.username, u.first_name, u.last_name
-                FROM (
-                    SELECT recipient_id as contact_id FROM messages WHERE sender_id = ?
-                    UNION
-                    SELECT sender_id as contact_id FROM messages WHERE recipient_id = ?
-                ) as contacts
-                JOIN users u ON contacts.contact_id = u.id
-                WHERE u.is_active = 1
-                ORDER BY u.username
-                LIMIT 10
-            ''', (user_id, user_id))
-    
-            contacts = cursor.fetchall()
-            conn.close()
+            try:
+                cursor = conn.cursor()
+
+                # Get recent contacts (both sent to and received from)
+                cursor.execute('''
+                    SELECT DISTINCT u.username, u.first_name, u.last_name
+                    FROM (
+                        SELECT recipient_id as contact_id FROM messages WHERE sender_id = ?
+                        UNION
+                        SELECT sender_id as contact_id FROM messages WHERE recipient_id = ?
+                    ) as contacts
+                    JOIN users u ON contacts.contact_id = u.id
+                    WHERE u.is_active = 1
+                    ORDER BY u.username
+                    LIMIT 10
+                ''', (user_id, user_id))
+
+                contacts = cursor.fetchall()
+            finally:
+                conn.close()
     
             if contacts:
                 ttk.Label(parent, text="Click to select:").pack(side='left', padx=5)
@@ -1285,13 +1289,15 @@ class MessagingManager:
         """Reply to a message"""
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-    
-            # Get original sender username
-            cursor.execute('SELECT username FROM users WHERE id = ?', (original_sender_id,))
-            sender = cursor.fetchone()
-            conn.close()
-    
+            try:
+                cursor = conn.cursor()
+
+                # Get original sender username
+                cursor.execute('SELECT username FROM users WHERE id = ?', (original_sender_id,))
+                sender = cursor.fetchone()
+            finally:
+                conn.close()
+
             if not sender:
                 messagebox.showerror("Error", "Original sender not found")
                 return
@@ -1339,21 +1345,23 @@ class MessagingManager:
     
                 try:
                     conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-                    cursor = conn.cursor()
-    
-                    cursor.execute('''
-                        INSERT INTO messages (sender_id, recipient_id, subject, message, content,
-                                            sent_at, is_read, reply_to)
-                        VALUES (?, ?, ?, ?, ?, ?, 0, ?)
-                    ''', (user_id, original_sender_id, reply_subject, message_body, message_body,
-                          datetime.now().isoformat(), original_msg_id))
-    
-                    conn.commit()
-                    conn.close()
-    
+                    try:
+                        cursor = conn.cursor()
+
+                        cursor.execute('''
+                            INSERT INTO messages (sender_id, recipient_id, subject, message, content,
+                                                sent_at, is_read, reply_to)
+                            VALUES (?, ?, ?, ?, ?, ?, 0, ?)
+                        ''', (user_id, original_sender_id, reply_subject, message_body, message_body,
+                              datetime.now().isoformat(), original_msg_id))
+
+                        conn.commit()
+                    finally:
+                        conn.close()
+
                     messagebox.showinfo("Success", "Reply sent successfully!")
                     reply_window.destroy()
-    
+
                 except Exception as e:
                     messagebox.showerror("Error", f"Failed to send reply: {str(e)}")
                     print(f"Error sending reply: {e}")
@@ -1480,12 +1488,14 @@ class MessagingManager:
         """Read single message and mark as read"""
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            # Mark as read
-            cursor.execute('UPDATE messages SET is_read = 1 WHERE id = ?', (message_id,))
-            conn.commit()
-            conn.close()
+                # Mark as read
+                cursor.execute('UPDATE messages SET is_read = 1 WHERE id = ?', (message_id,))
+                conn.commit()
+            finally:
+                conn.close()
 
         except Exception as e:
             print(f"Error marking message as read: {e}")
@@ -1495,11 +1505,13 @@ class MessagingManager:
         """Send reply to message (wrapper for _reply_to_message)"""
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('SELECT sender_id, subject FROM messages WHERE id = ?', (message_id,))
-            message = cursor.fetchone()
-            conn.close()
+                cursor.execute('SELECT sender_id, subject FROM messages WHERE id = ?', (message_id,))
+                message = cursor.fetchone()
+            finally:
+                conn.close()
 
             if message:
                 self._reply_to_message(message_id, message[0], message[1])
@@ -1517,40 +1529,41 @@ class MessagingManager:
                 return
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            # Get all students enrolled in the module
-            cursor.execute('''
-            SELECT DISTINCT s.student_id
-            FROM students s
-            JOIN student_modules sm ON s.student_id = sm.student_id
-            WHERE sm.module_code = ?
-            ''', (module_code,))
-
-            students = cursor.fetchall()
-
-            if not students:
-                messagebox.showinfo("No Students", f"No students found for module {module_code}")
-                conn.close()
-                return
-
-            # Send message to each student
-            timestamp = datetime.now().isoformat()
-            count = 0
-
-            for student_id_tuple in students:
-                student_id = student_id_tuple[0]
-
+                # Get all students enrolled in the module
                 cursor.execute('''
-                INSERT INTO messages (sender_id, recipient_id, subject, message, content,
-                                    sent_at, is_read)
-                VALUES (?, ?, ?, ?, ?, ?, 0)
-                ''', (user_id, student_id, subject, message_body, message_body, timestamp))
+                SELECT DISTINCT s.student_id
+                FROM students s
+                JOIN student_modules sm ON s.student_id = sm.student_id
+                WHERE sm.module_code = ?
+                ''', (module_code,))
 
-                count += 1
+                students = cursor.fetchall()
 
-            conn.commit()
-            conn.close()
+                if not students:
+                    messagebox.showinfo("No Students", f"No students found for module {module_code}")
+                    return
+
+                # Send message to each student
+                timestamp = datetime.now().isoformat()
+                count = 0
+
+                for student_id_tuple in students:
+                    student_id = student_id_tuple[0]
+
+                    cursor.execute('''
+                    INSERT INTO messages (sender_id, recipient_id, subject, message, content,
+                                        sent_at, is_read)
+                    VALUES (?, ?, ?, ?, ?, ?, 0)
+                    ''', (user_id, student_id, subject, message_body, message_body, timestamp))
+
+                    count += 1
+
+                conn.commit()
+            finally:
+                conn.close()
 
             messagebox.showinfo("Success", f"Message sent to {count} students in {module_code}")
 
@@ -1574,40 +1587,41 @@ class MessagingManager:
                 return
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            # Get all instructors and admins
-            cursor.execute('''
-            SELECT id FROM users
-            WHERE (role = 'Faculty' OR role = 'Admin')
-            AND is_active = 1
-            AND id != ?
-            ''', (user_id,))
-
-            recipients = cursor.fetchall()
-
-            if not recipients:
-                messagebox.showinfo("No Recipients", "No instructors/admins found")
-                conn.close()
-                return
-
-            # Send message to each recipient
-            timestamp = datetime.now().isoformat()
-            count = 0
-
-            for recipient_id_tuple in recipients:
-                recipient_id = recipient_id_tuple[0]
-
+                # Get all instructors and admins
                 cursor.execute('''
-                INSERT INTO messages (sender_id, recipient_id, subject, message, content,
-                                    sent_at, is_read)
-                VALUES (?, ?, ?, ?, ?, ?, 0)
-                ''', (user_id, recipient_id, subject, message_body, message_body, timestamp))
+                SELECT id FROM users
+                WHERE (role = 'Faculty' OR role = 'Admin')
+                AND is_active = 1
+                AND id != ?
+                ''', (user_id,))
 
-                count += 1
+                recipients = cursor.fetchall()
 
-            conn.commit()
-            conn.close()
+                if not recipients:
+                    messagebox.showinfo("No Recipients", "No instructors/admins found")
+                    return
+
+                # Send message to each recipient
+                timestamp = datetime.now().isoformat()
+                count = 0
+
+                for recipient_id_tuple in recipients:
+                    recipient_id = recipient_id_tuple[0]
+
+                    cursor.execute('''
+                    INSERT INTO messages (sender_id, recipient_id, subject, message, content,
+                                        sent_at, is_read)
+                    VALUES (?, ?, ?, ?, ?, ?, 0)
+                    ''', (user_id, recipient_id, subject, message_body, message_body, timestamp))
+
+                    count += 1
+
+                conn.commit()
+            finally:
+                conn.close()
 
             messagebox.showinfo("Success", f"Broadcast message sent to {count} instructors/admins")
 

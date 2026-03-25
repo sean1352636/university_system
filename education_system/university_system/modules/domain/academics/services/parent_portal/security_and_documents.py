@@ -10,7 +10,7 @@ class SecurityAndDocumentsMixin:
             print("You must be logged in to manage documents.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         
@@ -46,8 +46,9 @@ class SecurityAndDocumentsMixin:
                 # Get existing documents
                 cursor.execute('''
                 SELECT document_type, document_name, upload_date, status, expiry_date
-                FROM parent_documents
-                WHERE student_id = ?
+                FROM documents
+                WHERE source_type = 'parent' AND reference_id = ?
+                  AND reference_type = 'student'
                 ORDER BY upload_date DESC
                 ''', (student_id,))
                 
@@ -111,9 +112,10 @@ class SecurityAndDocumentsMixin:
                     file_path = f"/documents/{parent_id}_{student_id}_{document_name.replace(' ', '_')}.pdf"
                 
                 cursor.execute('''
-                INSERT INTO parent_documents 
-                (parent_id, student_id, document_type, document_name, file_path, upload_date, expiry_date)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO documents
+                (source_type, owner_id, owner_type, reference_id, reference_type,
+                 document_type, document_name, file_path, upload_date, expiry_date)
+                VALUES ('parent', ?, 'parent', ?, 'student', ?, ?, ?, ?, ?)
                 ''', (parent_id, student_id, doc_type, document_name, file_path, upload_date, expiry_date))
                 
                 conn.commit()
@@ -134,7 +136,7 @@ class SecurityAndDocumentsMixin:
             print("You must be logged in to manage pickup authorization.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         
@@ -275,7 +277,7 @@ class SecurityAndDocumentsMixin:
             print("You must be logged in to manage photo permissions.")
             return
         
-        if self.auth.current_user['role'] != 'parent':
+        if self.auth.current_user.get('role', '') != 'parent':
             print("This function is only available for parent accounts.")
             return
         

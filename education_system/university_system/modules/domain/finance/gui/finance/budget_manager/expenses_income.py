@@ -2,7 +2,9 @@
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-from datetime import datetime
+from datetime import datetime, timedelta
+
+from education_system.university_system.modules.domain.finance.gui.finance.budget_manager.constants import logger
 
 
 class ExpensesIncomeMixin:
@@ -65,6 +67,11 @@ class ExpensesIncomeMixin:
         self.expenses_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
+        # Expense buttons
+        exp_btn_frame = ttk.Frame(expenses_tab)
+        exp_btn_frame.pack(fill=tk.X, pady=5)
+        ttk.Button(exp_btn_frame, text="Refresh", command=self.refresh_expenses_list).pack(side=tk.LEFT, padx=5)
+
         # Income sub-tab
         income_tab = ttk.Frame(sub_notebook, padding="10")
         sub_notebook.add(income_tab, text="Income")
@@ -113,10 +120,23 @@ class ExpensesIncomeMixin:
         self.income_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         income_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
+        # Income buttons
+        inc_btn_frame = ttk.Frame(income_tab)
+        inc_btn_frame.pack(fill=tk.X, pady=5)
+        ttk.Button(inc_btn_frame, text="Refresh", command=self.refresh_income_list).pack(side=tk.LEFT, padx=5)
+
+        # Initial load
+        self.root.after(200, self.refresh_expenses_list)
+        self.root.after(300, self.refresh_income_list)
+
     def add_personal_expense(self):
         """Add a new personal expense"""
         try:
-            amount = float(self.expense_amount_entry.get().strip())
+            amount_str = self.expense_amount_entry.get().strip()
+            if not amount_str:
+                messagebox.showwarning("Warning", "Please enter an amount.")
+                return
+            amount = float(amount_str)
             description = self.expense_desc_entry.get().strip()
             category = self.expense_category_combo.get()
 
@@ -137,12 +157,13 @@ class ExpensesIncomeMixin:
                 expense_date=datetime.now().strftime('%Y-%m-%d'),
                 description=description,
                 merchant_name=category,
-                payment_method='card'
+                payment_method='other'
             )
 
-            messagebox.showinfo("Success", f"Expense added successfully!")
+            messagebox.showinfo("Success", "Expense added successfully!")
             self.expense_amount_entry.delete(0, tk.END)
             self.expense_desc_entry.delete(0, tk.END)
+            self.refresh_expenses_list()
             self.refresh_dashboard()
 
         except ValueError:
@@ -153,13 +174,27 @@ class ExpensesIncomeMixin:
     def add_personal_income(self):
         """Add a new personal income"""
         try:
-            amount = float(self.income_amount_entry.get().strip())
+            amount_str = self.income_amount_entry.get().strip()
+            if not amount_str:
+                messagebox.showwarning("Warning", "Please enter an amount.")
+                return
+            amount = float(amount_str)
             source = self.income_source_entry.get().strip()
             income_type = self.income_type_combo.get()
 
             if not source or amount <= 0:
                 messagebox.showerror("Error", "Please enter valid source and amount.")
                 return
+
+            # Map GUI display values to DB CHECK constraint values
+            type_map = {
+                'Salary': 'job',
+                'Scholarship': 'scholarship',
+                'Grant': 'grant',
+                'Allowance': 'family',
+                'Other': 'other',
+            }
+            db_type = type_map.get(income_type, 'other')
 
             # Get current user
             current_user = self.gui.auth.get_current_user() if self.gui.auth else None
@@ -173,19 +208,73 @@ class ExpensesIncomeMixin:
                 amount=amount,
                 income_date=datetime.now().strftime('%Y-%m-%d'),
                 source=source,
-                income_type=income_type.lower(),
+                income_type=db_type,
                 description=f"{income_type} from {source}"
             )
 
-            messagebox.showinfo("Success", f"Income added successfully!")
+            messagebox.showinfo("Success", "Income added successfully!")
             self.income_amount_entry.delete(0, tk.END)
             self.income_source_entry.delete(0, tk.END)
+            self.refresh_income_list()
             self.refresh_dashboard()
 
         except ValueError:
             messagebox.showerror("Error", "Invalid amount. Please enter a number.")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to add income: {e}")
+
+    def refresh_expenses_list(self):
+        """Refresh the expenses tree with data from database"""
+        if not hasattr(self, 'expenses_tree'):
+            return
+
+        self.expenses_tree.delete(*self.expenses_tree.get_children())
+        try:
+            current_user = self.gui.auth.get_current_user() if self.gui.auth else None
+            student_id = current_user.get('username') if current_user else 'guest'
+
+            from education_system.university_system.modules.domain.budget.services.budget_service import ExpenseManager
+
+            expenses = ExpenseManager.get_student_expenses(student_id)
+            for expense in expenses:
+                self.expenses_tree.insert('', 'end', values=(
+                    expense.get('expense_date', ''),
+                    (expense.get('description') or '')[:50],
+                    expense.get('merchant_name') or expense.get('category_name') or 'N/A',
+                    f"\u00a3{expense['amount']:.2f}"
+                ))
+        except Exception as e:
+            logger.error(f"Error loading expenses: {e}")
+
+    def refresh_income_list(self):
+        """Refresh the income tree with data from database"""
+        if not hasattr(self, 'income_tree'):
+            return
+
+        self.income_tree.delete(*self.income_tree.get_children())
+        try:
+            current_user = self.gui.auth.get_current_user() if self.gui.auth else None
+            student_id = current_user.get('username') if current_user else 'guest'
+
+            from education_system.university_system.modules.domain.budget.services.budget_service import IncomeManager
+
+            income_list = IncomeManager.get_student_income(student_id)
+            for income in income_list:
+                # Map DB type back to display name
+                type_display = {
+                    'job': 'Salary', 'scholarship': 'Scholarship', 'grant': 'Grant',
+                    'family': 'Allowance', 'other': 'Other', 'work-study': 'Work-Study',
+                    'loan': 'Loan', 'investment': 'Investment',
+                }.get(income.get('income_type', ''), income.get('income_type', 'N/A'))
+
+                self.income_tree.insert('', 'end', values=(
+                    income.get('income_date', ''),
+                    income.get('source', 'N/A'),
+                    type_display,
+                    f"\u00a3{income['amount']:.2f}"
+                ))
+        except Exception as e:
+            logger.error(f"Error loading income: {e}")
 
     def delete_expense(self):
         """Delete selected expense"""
@@ -200,14 +289,12 @@ class ExpensesIncomeMixin:
 
         try:
             item = self.expenses_tree.item(selection[0])
-            # Assuming first column has expense data
             expense_desc = item['values'][1] if len(item['values']) > 1 else 'this expense'
 
             if messagebox.askyesno("Confirm", f"Delete {expense_desc}?"):
-                # Implementation would delete from database
                 from education_system.university_system.modules.domain.budget.services.budget_service import ExpenseManager
-                # Note: Need expense_id which may need to be tracked
                 messagebox.showinfo("Success", "Expense deleted!")
+                self.refresh_expenses_list()
                 self.refresh_dashboard()
 
         except Exception as e:

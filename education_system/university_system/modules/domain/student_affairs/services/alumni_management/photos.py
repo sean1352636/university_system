@@ -1,7 +1,7 @@
 from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from .core import get_db_connection, safe_execute, auth
-from .gamification import award_engagement_points
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.core import get_db_connection, safe_execute, auth
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.gamification import award_engagement_points
 
 
 def view_my_photos():
@@ -129,12 +129,13 @@ def view_photo_gallery(cursor):
     """View photo gallery by events"""
     # Get events with photos
     cursor.execute('''
-        SELECT e.event_id, e.event_name, e.event_date, COUNT(p.photo_id) as photo_count
-        FROM alumni_events e
+        SELECT e.event_id, e.title, e.start_datetime, COUNT(p.photo_id) as photo_count
+        FROM unified_events e
         LEFT JOIN photo_gallery p ON e.event_id = p.event_id
+        WHERE e.source_type = 'alumni'
         GROUP BY e.event_id
         HAVING photo_count > 0
-        ORDER BY e.event_date DESC
+        ORDER BY e.start_datetime DESC
     ''')
 
     events_with_photos = cursor.fetchall()
@@ -204,10 +205,10 @@ def upload_photos(cursor):
 
     # Get recent events
     cursor.execute('''
-        SELECT event_id, event_name, event_date
-        FROM alumni_events
-        WHERE event_date >= date('now', '-30 days')
-        ORDER BY event_date DESC
+        SELECT event_id, title, start_datetime
+        FROM unified_events
+        WHERE source_type = 'alumni' AND start_datetime >= date('now', '-30 days')
+        ORDER BY start_datetime DESC
     ''')
 
     recent_events = cursor.fetchall()

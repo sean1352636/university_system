@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 
 from education_system.college_system.modules.domain.todo.services.todo_service import TodoService
+from education_system.college_system.core.i18n import t
 
 
 class TodoFrame(tk.Frame):
@@ -23,28 +24,28 @@ class TodoFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="To-Do List",
+        tk.Label(header, text=t("todo.title"),
                  font=("Helvetica", 15, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=10)
-        ttk.Button(header, text="Add Task",
+        ttk.Button(header, text=t("todo.add_task"),
                    command=self._on_add).pack(side="right", padx=20, pady=10)
 
         # Filter row
         filter_frame = tk.Frame(self, bg="#ecf0f1")
         filter_frame.pack(fill="x", padx=15, pady=(10, 5))
 
-        tk.Label(filter_frame, text="Priority:", bg="#ecf0f1").pack(side="left", padx=(0, 5))
+        tk.Label(filter_frame, text=t("todo.priority_colon"), bg="#ecf0f1").pack(side="left", padx=(0, 5))
         self._filter_priority = tk.StringVar(value="All")
         ttk.Combobox(filter_frame, textvariable=self._filter_priority,
                      values=["All", "high", "medium", "low"], state="readonly",
                      width=10).pack(side="left", padx=(0, 15))
 
         self._show_completed_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(filter_frame, text="Show Completed",
+        ttk.Checkbutton(filter_frame, text=t("todo.show_completed"),
                         variable=self._show_completed_var,
                         command=self._load_items).pack(side="left")
 
-        ttk.Button(filter_frame, text="Refresh",
+        ttk.Button(filter_frame, text=t("common.refresh"),
                    command=self._load_items).pack(side="left", padx=10)
 
         # Treeview
@@ -73,18 +74,24 @@ class TodoFrame(tk.Frame):
         # Button row
         btn_frame = tk.Frame(self, bg="#ecf0f1")
         btn_frame.pack(fill="x", padx=15, pady=(0, 10))
-        ttk.Button(btn_frame, text="Toggle Complete",
+        ttk.Button(btn_frame, text=t("todo.toggle_complete"),
                    command=self._on_toggle).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Edit",
+        ttk.Button(btn_frame, text=t("common.edit"),
                    command=self._on_edit).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Delete",
+        ttk.Button(btn_frame, text=t("common.delete"),
                    command=self._on_delete).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="Export CSV",
+                   command=self._export_csv).pack(side="left", padx=5)
 
         # Status bar
-        self._status_var = tk.StringVar(value="Ready")
+        self._status_var = tk.StringVar(value=t("common.ready"))
         tk.Label(self, textvariable=self._status_var, bg="#ecf0f1", anchor="w",
                  font=("Helvetica", 9), fg="#7f8c8d").pack(
             fill="x", padx=15, pady=(0, 8))
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._tree, "todo.csv")
 
     def refresh(self):
         self._load_items()
@@ -112,24 +119,24 @@ class TodoFrame(tk.Frame):
                 ))
             self._status_var.set(f"{len(self._tree.get_children())} item(s)")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _get_selected_id(self) -> int | None:
         sel = self._tree.selection()
         if not sel:
-            messagebox.showwarning("Select", "Please select an item first.")
+            messagebox.showwarning(t("common.selection_required"), t("todo.select_item_first"))
             return None
         return int(self._tree.item(sel[0], "values")[0])
 
     def _on_add(self):
-        dlg = _TodoDialog(self, "Add Task")
+        dlg = _TodoDialog(self, t("todo.add_task"))
         self.wait_window(dlg)
         if dlg.result:
             try:
                 self._svc.create_item(self._get_user_id(), **dlg.result)
                 self._load_items()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
     def _on_edit(self):
         item_id = self._get_selected_id()
@@ -138,17 +145,17 @@ class TodoFrame(tk.Frame):
         try:
             item = self._svc.get_item(item_id, self._get_user_id())
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
             return
 
-        dlg = _TodoDialog(self, "Edit Task", item)
+        dlg = _TodoDialog(self, t("todo.edit_task"), item)
         self.wait_window(dlg)
         if dlg.result:
             try:
                 self._svc.update_item(item_id, self._get_user_id(), **dlg.result)
                 self._load_items()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
     def _on_toggle(self):
         item_id = self._get_selected_id()
@@ -158,19 +165,19 @@ class TodoFrame(tk.Frame):
             self._svc.toggle_complete(item_id, self._get_user_id())
             self._load_items()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _on_delete(self):
         item_id = self._get_selected_id()
         if item_id is None:
             return
-        if not messagebox.askyesno("Confirm", "Delete this task?"):
+        if not messagebox.askyesno(t("common.confirm_delete"), t("todo.confirm_delete_task")):
             return
         try:
             self._svc.delete_item(item_id, self._get_user_id())
             self._load_items()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
 
 class _TodoDialog(tk.Toplevel):
@@ -187,25 +194,25 @@ class _TodoDialog(tk.Toplevel):
         frame = tk.Frame(self, padx=15, pady=15)
         frame.pack(fill="both", expand=True)
 
-        tk.Label(frame, text="Title:").grid(row=0, column=0, sticky="w", pady=3)
+        tk.Label(frame, text=t("common.title_colon")).grid(row=0, column=0, sticky="w", pady=3)
         self._title_var = tk.StringVar(value=item["title"] if item else "")
         ttk.Entry(frame, textvariable=self._title_var, width=35).grid(
             row=0, column=1, pady=3)
 
-        tk.Label(frame, text="Description:").grid(row=1, column=0, sticky="nw", pady=3)
+        tk.Label(frame, text=t("common.description_colon")).grid(row=1, column=0, sticky="nw", pady=3)
         self._desc_text = tk.Text(frame, width=27, height=3)
         self._desc_text.grid(row=1, column=1, pady=3)
         if item and item.get("description"):
             self._desc_text.insert("1.0", item["description"])
 
-        tk.Label(frame, text="Priority:").grid(row=2, column=0, sticky="w", pady=3)
+        tk.Label(frame, text=t("todo.priority_colon")).grid(row=2, column=0, sticky="w", pady=3)
         self._priority_var = tk.StringVar(
             value=item["priority"] if item else "medium")
         ttk.Combobox(frame, textvariable=self._priority_var,
                      values=["low", "medium", "high"], state="readonly",
                      width=12).grid(row=2, column=1, sticky="w", pady=3)
 
-        tk.Label(frame, text="Due Date:").grid(row=3, column=0, sticky="w", pady=3)
+        tk.Label(frame, text=t("todo.due_date_colon")).grid(row=3, column=0, sticky="w", pady=3)
         self._due_var = tk.StringVar(
             value=item.get("due_date") or "" if item else "")
         ttk.Entry(frame, textvariable=self._due_var, width=15).grid(
@@ -215,15 +222,15 @@ class _TodoDialog(tk.Toplevel):
 
         btn_frame = tk.Frame(frame)
         btn_frame.grid(row=4, column=0, columnspan=2, pady=(15, 0))
-        ttk.Button(btn_frame, text="Save", command=self._save).pack(
+        ttk.Button(btn_frame, text=t("common.save"), command=self._save).pack(
             side="left", padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.destroy).pack(
+        ttk.Button(btn_frame, text=t("common.cancel"), command=self.destroy).pack(
             side="left", padx=5)
 
     def _save(self):
         title = self._title_var.get().strip()
         if not title:
-            messagebox.showwarning("Input", "Title is required.", parent=self)
+            messagebox.showwarning(t("common.input"), t("todo.title_required"), parent=self)
             return
         self.result = {
             "title": title,

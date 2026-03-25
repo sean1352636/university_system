@@ -160,7 +160,7 @@ class TestModuleManager(unittest.TestCase):
         # Should show warning
         mock_warning.assert_called()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.module_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.module_manager.get_connection')
     def test_load_courses_for_filter(self, mock_get_connection):
         """Test load_courses_for_filter method"""
         mock_get_connection.return_value = self.conn

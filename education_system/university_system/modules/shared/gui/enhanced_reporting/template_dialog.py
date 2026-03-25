@@ -8,7 +8,7 @@ between dialog handling and the rest of the GUI code.
 
 from __future__ import annotations
 
-from .core import TemplateDialog, start_gui, start_enhanced_reporting_gui
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import TemplateDialog, start_gui, start_enhanced_reporting_gui
 
 __all__ = [
     "TemplateDialog",

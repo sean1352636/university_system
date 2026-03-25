@@ -15,7 +15,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_gift_cards_page(self):
     """Display gift cards management page."""
@@ -71,16 +71,18 @@ def refresh_gift_cards(self):
         self.gc_tree.delete(item)
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM gift_cards ORDER BY id DESC")
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM gift_cards ORDER BY id DESC")
 
-    for row in cursor.fetchall():
-        self.gc_tree.insert("", "end", values=(
-            row[0], row[1], f"£{row[2]:.2f}", f"£{row[3]:.2f}",
-            row[4] or "-", row[6] or "-",
-            row[9][:10] if row[9] else "-", row[11].upper()
-        ))
-    conn.close()
+        for row in cursor.fetchall():
+            self.gc_tree.insert("", "end", values=(
+                row[0], row[1], f"£{row[2]:.2f}", f"£{row[3]:.2f}",
+                row[4] or "-", row[6] or "-",
+                row[9][:10] if row[9] else "-", row[11].upper()
+            ))
+    finally:
+        conn.close()
 
 def create_gift_card(self):
     """Create a new gift card."""
@@ -194,10 +196,12 @@ def check_gift_card_balance(self):
     def check():
         code = code_entry.get().strip().upper()
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("SELECT current_balance, status, expiry_date FROM gift_cards WHERE code = ?", (code,))
-        result = cursor.fetchone()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT current_balance, status, expiry_date FROM gift_cards WHERE code = ?", (code,))
+            result = cursor.fetchone()
+        finally:
+            conn.close()
 
         if result:
             if result[1] != 'active':
@@ -233,9 +237,11 @@ def deactivate_gift_card(self):
         return
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("UPDATE gift_cards SET status = 'inactive' WHERE id = ?", (gc_id,))
-    conn.commit()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE gift_cards SET status = 'inactive' WHERE id = ?", (gc_id,))
+        conn.commit()
+    finally:
+        conn.close()
 
     self.refresh_gift_cards()

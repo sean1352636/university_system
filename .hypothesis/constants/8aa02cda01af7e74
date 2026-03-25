@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/batch_operations/mixins/batch_updates.py
+# hypothesis_version: 6.151.9
+
+[100, '.csv', 'Batch Update', 'COMPUTER SCIENCE', 'DATA SCIENCE', 'Executing update...', 'Merging new data...', 'No fields to update', 'Student not found', 'address', 'code', 'course', 'dob', 'email', 'email_address', 'error', 'first_name', 'gender', 'last_name', 'middle_name', 'name', 'phone_number', 'status', 'student field', 'student_id', 'unknown']

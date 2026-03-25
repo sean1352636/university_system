@@ -61,11 +61,31 @@ class CollectionsMixin:
         # Load data
         self.root.after(100, self._refresh_collections)
 
+    def _load_students_for_dropdown(self):
+        """Load students from DB for dropdown selection."""
+        students = []
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT student_id, first_name, last_name
+                FROM students
+                ORDER BY last_name, first_name
+            ''')
+            for row in cursor.fetchall():
+                sid = row[0]
+                name = f"{row[1]} {row[2]}"
+                students.append((sid, f"{sid} - {name}"))
+            conn.close()
+        except Exception as e:
+            print(f"Error loading students: {e}")
+        return students
+
     def _create_collection_case(self):
         """Create a new collection case"""
         dialog = tk.Toplevel(self.root)
         dialog.title(_("finance_gui.collections.title"))
-        dialog.geometry("500x350")
+        dialog.geometry("550x400")
         dialog.transient(self.root)
 
         tk.Label(dialog, text=_("finance_gui.collections.title"), font=('Arial', 14, 'bold')).pack(pady=10)
@@ -73,9 +93,17 @@ class CollectionsMixin:
         form_frame = tk.Frame(dialog)
         form_frame.pack(padx=20, pady=10, fill='both', expand=True)
 
+        # Student dropdown
         tk.Label(form_frame, text=_("finance_gui.common_labels.student_id")).grid(row=0, column=0, sticky='w', pady=5)
-        student_id_entry = tk.Entry(form_frame, width=30)
-        student_id_entry.grid(row=0, column=1, pady=5)
+
+        students = self._load_students_for_dropdown()
+        student_display_values = [s[1] for s in students]
+        student_id_map = {s[1]: s[0] for s in students}
+
+        student_combo = ttk.Combobox(form_frame, values=student_display_values, width=35, state='readonly')
+        student_combo.grid(row=0, column=1, pady=5)
+        if student_display_values:
+            student_combo.current(0)
 
         tk.Label(form_frame, text=_("finance_gui.collections.total_debt")).grid(row=1, column=0, sticky='w', pady=5)
         debt_entry = tk.Entry(form_frame, width=30)
@@ -87,8 +115,17 @@ class CollectionsMixin:
 
         def save_case():
             try:
-                student_id = student_id_entry.get()
-                total_debt = float(debt_entry.get())
+                selected = student_combo.get()
+                if not selected:
+                    messagebox.showwarning(_("finance_gui.messages.warning"), "Please select a student.")
+                    return
+                student_id = student_id_map.get(selected, selected)
+
+                debt_str = debt_entry.get().strip()
+                if not debt_str:
+                    messagebox.showwarning(_("finance_gui.messages.warning"), "Please enter a debt amount.")
+                    return
+                total_debt = float(debt_str)
                 notes = notes_entry.get()
 
                 conn = get_connection()
@@ -107,6 +144,8 @@ class CollectionsMixin:
                 messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.collections_tab.case_created"))
                 dialog.destroy()
                 self._refresh_collections()
+            except ValueError:
+                messagebox.showerror(_("finance_gui.messages.error"), "Please enter a valid number for the debt amount.")
             except Exception as e:
                 messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.collections_tab.failed_create_case", error=str(e)))
 
@@ -116,6 +155,32 @@ class CollectionsMixin:
                  fg='white', padx=20, pady=5).pack(side='left', padx=5)
         tk.Button(btn_frame, text=_("finance_gui.common_buttons.cancel"), command=dialog.destroy, bg=self.colors['danger'],
                  fg='white', padx=20, pady=5).pack(side='left', padx=5)
+
+    def _get_student_email(self, student_id):
+        """Look up student email and name from DB."""
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT first_name, last_name, email_address FROM students
+                WHERE student_id = ?
+            ''', (student_id,))
+            student = cursor.fetchone()
+            conn.close()
+            if student:
+                return f"{student[0]} {student[1]}", student[2]
+        except Exception:
+            pass
+        return None, None
+
+    def _send_email_to_student(self, student_email, subject, body):
+        """Send an email to a student via the university email system."""
+        try:
+            from education_system.university_system.infrastructure.email.email_service import send_email
+            return send_email(recipient_email=student_email, subject=subject, body=body)
+        except Exception as e:
+            print(f"Error sending email: {e}")
+            return False
 
     def _send_collection_notice(self):
         """Send collection notice for selected case"""
@@ -127,20 +192,28 @@ class CollectionsMixin:
         case_values = self.collections_tree.item(selection[0])['values']
         case_id = case_values[0]
         student_id = case_values[1]
-        total_debt = case_values[2]
+        try:
+            total_debt = float(case_values[2])
+        except (ValueError, TypeError):
+            total_debt = 0.0
 
-        # Create notice dialog
+        student_name, student_email = self._get_student_email(student_id)
+
+        # Create notice dialog — compact size with fixed button bar at bottom
         notice_dialog = tk.Toplevel(self.root)
         notice_dialog.title(_("finance_gui.collections_tab.send_notice_title", case_id=case_id))
-        notice_dialog.geometry("750x700")
+        notice_dialog.geometry("650x550")
         notice_dialog.transient(self.root)
         notice_dialog.grab_set()
 
-        # Create main container with canvas for scrolling
+        # Fixed button bar at the BOTTOM (packed first so it stays visible)
+        btn_frame = ttk.Frame(notice_dialog)
+        btn_frame.pack(side='bottom', fill='x', padx=10, pady=8)
+
+        # Scrollable content area
         main_container = tk.Frame(notice_dialog)
         main_container.pack(fill='both', expand=True)
 
-        # Create canvas
         canvas = tk.Canvas(main_container, bg='white')
         scrollbar = ttk.Scrollbar(main_container, orient="vertical", command=canvas.yview)
         scrollable_frame = tk.Frame(canvas, bg='white')
@@ -149,54 +222,29 @@ class CollectionsMixin:
             "<Configure>",
             lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
         )
-
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
 
-        # Pack canvas and scrollbar
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        # Mouse wheel scrolling support
-        def on_mousewheel(event):
-            canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-        canvas.bind_all("<MouseWheel>", on_mousewheel)
-
         # Case info frame
-        info_frame = ttk.LabelFrame(scrollable_frame, text=_("finance_gui.collections.case_information"), padding=15)
-        info_frame.pack(fill='x', padx=10, pady=10)
+        info_frame = ttk.LabelFrame(scrollable_frame, text=_("finance_gui.collections.case_information"), padding=10)
+        info_frame.pack(fill='x', padx=10, pady=(10, 5))
 
-        ttk.Label(info_frame, text=f"{_('finance_gui.collections.case_id')}: {case_id}", font=('Arial', 10)).pack(anchor='w')
-        ttk.Label(info_frame, text=f"{_('finance_gui.collections.student_id')}: {student_id}", font=('Arial', 10)).pack(anchor='w')
+        ttk.Label(info_frame, text=f"{_('finance_gui.collections.case_id')}: {case_id}").pack(anchor='w')
+        ttk.Label(info_frame, text=f"{_('finance_gui.collections.student_id')}: {student_id}").pack(anchor='w')
         ttk.Label(info_frame, text=f"{_('finance_gui.collections.total_debt')}: \u00a3{total_debt:.2f}", font=('Arial', 10, 'bold')).pack(anchor='w')
 
-        # Get student info
-        try:
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute('''
-                SELECT first_name, last_name, email_address FROM students
-                WHERE student_id = ?
-            ''', (student_id,))
-            student = cursor.fetchone()
+        if student_name:
+            ttk.Label(info_frame, text=f"Student: {student_name}").pack(anchor='w')
+            ttk.Label(info_frame, text=f"Email: {student_email or 'N/A'}").pack(anchor='w')
+        else:
+            ttk.Label(info_frame, text=_("finance_gui.collections.student_details_not_found"), foreground='red').pack(anchor='w')
 
-            if student:
-                student_name = f"{student[0]} {student[1]}"
-                student_email = student[2]
-                ttk.Label(info_frame, text=f"Student: {student_name}", font=('Arial', 10)).pack(anchor='w')
-                ttk.Label(info_frame, text=f"Email: {student_email}", font=('Arial', 10)).pack(anchor='w')
-            else:
-                student_email = None
-                ttk.Label(info_frame, text=_("finance_gui.collections.student_details_not_found"), font=('Arial', 10), foreground='red').pack(anchor='w')
-
-            conn.close()
-        except Exception as e:
-            student_email = None
-            ttk.Label(info_frame, text=f"Error loading student: {e}", font=('Arial', 9), foreground='red').pack(anchor='w')
-
-        # Notice type frame
-        type_frame = ttk.LabelFrame(scrollable_frame, text=_("finance_gui.collections.notice_type"), padding=15)
-        type_frame.pack(fill='x', padx=10, pady=10)
+        # Notice type frame — horizontal layout to save space
+        type_frame = ttk.LabelFrame(scrollable_frame, text=_("finance_gui.collections.notice_type"), padding=10)
+        type_frame.pack(fill='x', padx=10, pady=5)
 
         notice_type_var = tk.StringVar(value="first_notice")
         notice_types = [
@@ -208,23 +256,22 @@ class CollectionsMixin:
         ]
 
         for value, text in notice_types:
-            ttk.Radiobutton(type_frame, text=text, variable=notice_type_var, value=value).pack(anchor='w', pady=2)
+            ttk.Radiobutton(type_frame, text=text, variable=notice_type_var, value=value).pack(anchor='w', pady=1)
 
         # Message frame
-        message_frame = ttk.LabelFrame(scrollable_frame, text=_("finance_gui.collections.message"), padding=15)
-        message_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        message_frame = ttk.LabelFrame(scrollable_frame, text=_("finance_gui.collections.message"), padding=10)
+        message_frame.pack(fill='both', expand=True, padx=10, pady=5)
 
         ttk.Label(message_frame, text=_("finance_gui.collections.subject")).pack(anchor='w')
         subject_var = tk.StringVar(value=_("finance_gui.collections_tab.notice_subject_default"))
-        subject_entry = ttk.Entry(message_frame, textvariable=subject_var, font=('Arial', 11))
-        subject_entry.pack(fill='x', pady=(0, 10))
+        ttk.Entry(message_frame, textvariable=subject_var, font=('Arial', 10)).pack(fill='x', pady=(0, 5))
 
         ttk.Label(message_frame, text=_("finance_gui.collections_tab.message_body_label")).pack(anchor='w')
-        message_text = tk.Text(message_frame, height=10, font=('Arial', 10), wrap='word')
+        message_text = tk.Text(message_frame, height=6, font=('Arial', 9), wrap='word')
         message_text.pack(fill='both', expand=True)
 
-        # Default message template
-        default_message = _("finance_gui.collections_tab.default_message", **{"total_debt:.2f": f"{total_debt:.2f}"})
+        # Default message template — pass total_debt as float so i18n {total_debt:.2f} works
+        default_message = _("finance_gui.collections_tab.default_message", total_debt=total_debt)
         message_text.insert('1.0', default_message)
 
         def send_notice():
@@ -250,47 +297,32 @@ class CollectionsMixin:
                     user = auth.get_current_user()
                     username = user.get('username', 'system') if user else 'system'
 
-                # Send email using email service
-                from education_system.university_system.infrastructure.email.email_service import send_email
-
-                html_message = f"""
-                <html>
-                <body>
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #d9534f;">{_("finance_gui.email_template.collection_notice_title")}</h2>
-                <p><strong>{_("finance_gui.email_template.case_id_label")}</strong> {case_id}</p>
-                <p><strong>{_("finance_gui.email_template.outstanding_amount_label")}</strong> \u00a3{total_debt:.2f}</p>
-                <hr>
-                <div style="white-space: pre-wrap;">{message}</div>
-                <hr>
-                <p style="font-size: 12px; color: #666;">
-                {_("finance_gui.email_template.footer")}
-                </p>
-                </div>
-                </body>
-                </html>
-                """
-
-                # Send email
-                success = send_email(
-                    recipient_email=student_email,
-                    subject=subject,
-                    body=html_message
+                # Build HTML email
+                html_message = (
+                    '<html><body>'
+                    '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">'
+                    f'<h2 style="color: #d9534f;">{_("finance_gui.email_template.collection_notice_title")}</h2>'
+                    f'<p><strong>{_("finance_gui.email_template.case_id_label")}</strong> {case_id}</p>'
+                    f'<p><strong>{_("finance_gui.email_template.outstanding_amount_label")}</strong> \u00a3{total_debt:.2f}</p>'
+                    '<hr>'
+                    f'<div style="white-space: pre-wrap;">{message}</div>'
+                    '<hr>'
+                    f'<p style="font-size: 12px; color: #666;">{_("finance_gui.email_template.footer")}</p>'
+                    '</div></body></html>'
                 )
 
-                if success:
+                success = self._send_email_to_student(student_email, subject, html_message)
+
+                if success is not False:
                     # Log the notice in database
                     conn = get_connection()
                     cursor = conn.cursor()
-
                     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-                    # Check if collection_notices table exists
                     cursor.execute('''
                         SELECT name FROM sqlite_master
                         WHERE type='table' AND name='collection_notices'
                     ''')
-
                     if cursor.fetchone():
                         cursor.execute('''
                             INSERT INTO collection_notices
@@ -299,13 +331,11 @@ class CollectionsMixin:
                         ''', (case_id, student_id, notice_type, subject, message, username, now))
                         conn.commit()
 
-                    # Update case with last notice date
                     cursor.execute('''
                         UPDATE collection_cases
-                        SET last_contact_date = ?, updated_at = ?
+                        SET notes = COALESCE(notes, '') || ? , updated_at = ?
                         WHERE case_id = ?
-                    ''', (now, now, case_id))
-
+                    ''', (f'\nNotice sent: {notice_type} on {now}', now, case_id))
                     conn.commit()
                     conn.close()
 
@@ -322,40 +352,112 @@ class CollectionsMixin:
                 import traceback
                 traceback.print_exc()
 
-        # Buttons
-        btn_frame = ttk.Frame(scrollable_frame)
-        btn_frame.pack(pady=10)
-
+        # Button bar (packed at bottom of dialog, always visible)
         ttk.Button(btn_frame, text=_("finance_gui.collections_tab.send_notice_btn"), command=send_notice).pack(side='left', padx=5)
         ttk.Button(btn_frame, text=_("finance_gui.buttons.cancel"), command=notice_dialog.destroy).pack(side='left', padx=5)
 
     def _resolve_collection_case(self):
-        """Resolve selected collection case"""
+        """Resolve selected collection case and email the student the outcome"""
         selection = self.collections_tree.selection()
         if not selection:
             messagebox.showwarning(_("finance_gui.collections_tab.no_selection"), _("finance_gui.collections_tab.select_case_to_resolve"))
             return
 
-        amount_collected = simpledialog.askfloat(_("finance_gui.collections_tab.resolve_case_title"), _("finance_gui.collections_tab.enter_amount_collected"))
-        if amount_collected is None:
-            return
-
+        case_values = self.collections_tree.item(selection[0])['values']
+        case_id = case_values[0]
+        student_id = case_values[1]
         try:
-            case_id = self.collections_tree.item(selection[0])['values'][0]
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute('''
-                UPDATE collection_cases
-                SET case_status = 'resolved', amount_collected = ?,
-                    resolution_date = date('now'), updated_at = datetime('now')
-                WHERE case_id = ?
-            ''', (amount_collected, case_id))
-            conn.commit()
-            conn.close()
-            messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.collections_tab.case_resolved"))
-            self._refresh_collections()
-        except Exception as e:
-            messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.collections_tab.failed_resolve_case", error=str(e)))
+            total_debt = float(case_values[2])
+        except (ValueError, TypeError):
+            total_debt = 0.0
+
+        student_name, student_email = self._get_student_email(student_id)
+
+        resolve_dialog = tk.Toplevel(self.root)
+        resolve_dialog.title(_("finance_gui.collections_tab.resolve_case_title"))
+        resolve_dialog.geometry("450x320")
+        resolve_dialog.transient(self.root)
+        resolve_dialog.grab_set()
+
+        # Case info
+        info_frame = ttk.LabelFrame(resolve_dialog, text="Case Details", padding=10)
+        info_frame.pack(fill='x', padx=15, pady=(10, 5))
+
+        ttk.Label(info_frame, text=f"Case: {case_id} | Student: {student_id}").pack(anchor='w')
+        ttk.Label(info_frame, text=f"Total Debt: \u00a3{total_debt:.2f}", font=('Arial', 10, 'bold')).pack(anchor='w')
+        if student_name:
+            ttk.Label(info_frame, text=f"Name: {student_name} | Email: {student_email or 'N/A'}").pack(anchor='w')
+
+        # Amount collected
+        amount_frame = ttk.Frame(resolve_dialog)
+        amount_frame.pack(fill='x', padx=15, pady=5)
+
+        ttk.Label(amount_frame, text=_("finance_gui.collections_tab.enter_amount_collected"),
+                 font=('Arial', 10)).pack(anchor='w')
+        amount_entry = ttk.Entry(amount_frame, width=20, font=('Arial', 11))
+        amount_entry.pack(anchor='w', pady=5)
+        amount_entry.focus_set()
+
+        # Email notification checkbox
+        send_email_var = tk.BooleanVar(value=True)
+        ttk.Checkbutton(resolve_dialog, text="Email resolution notice to student",
+                       variable=send_email_var).pack(padx=15, anchor='w', pady=5)
+
+        def do_resolve():
+            amount_str = amount_entry.get().strip()
+            if not amount_str:
+                messagebox.showwarning(_("finance_gui.messages.warning"), "Please enter an amount.")
+                return
+            try:
+                amount_collected = float(amount_str)
+            except ValueError:
+                messagebox.showerror(_("finance_gui.messages.error"), "Please enter a valid number.")
+                return
+
+            try:
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute('''
+                    UPDATE collection_cases
+                    SET case_status = 'resolved', amount_collected = ?,
+                        resolution_date = date('now'), updated_at = datetime('now')
+                    WHERE case_id = ?
+                ''', (amount_collected, case_id))
+                conn.commit()
+                conn.close()
+
+                # Email the student the outcome
+                if send_email_var.get() and student_email:
+                    display_name = student_name or student_id
+                    remaining = total_debt - amount_collected
+                    if remaining <= 0:
+                        status_text = "Your account balance has been fully settled."
+                    else:
+                        status_text = f"Remaining balance: \u00a3{remaining:.2f}. Please contact the finance department for any queries."
+
+                    email_body = (
+                        f"Dear {display_name},\n\n"
+                        f"This is to inform you that collection case #{case_id} has been resolved.\n\n"
+                        f"Original Debt: \u00a3{total_debt:.2f}\n"
+                        f"Amount Collected: \u00a3{amount_collected:.2f}\n"
+                        f"{status_text}\n\n"
+                        f"If you have any questions, please contact the Finance Department.\n\n"
+                        f"Best regards,\nFinance Department"
+                    )
+                    self._send_email_to_student(student_email, f"Collection Case #{case_id} - Resolved", email_body)
+
+                messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.collections_tab.case_resolved"))
+                resolve_dialog.destroy()
+                self._refresh_collections()
+            except Exception as e:
+                messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.collections_tab.failed_resolve_case", error=str(e)))
+
+        btn_frame = ttk.Frame(resolve_dialog)
+        btn_frame.pack(pady=10)
+        ttk.Button(btn_frame, text="Resolve & Save", command=do_resolve).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=_("finance_gui.common_buttons.cancel"), command=resolve_dialog.destroy).pack(side='left', padx=5)
+
+        amount_entry.bind('<Return>', lambda e: do_resolve())
 
     def _refresh_collections(self):
         """Refresh collections list"""
@@ -375,7 +477,18 @@ class CollectionsMixin:
             ''')
 
             for row in cursor.fetchall():
-                self.collections_tree.insert('', 'end', values=row)
+                # Format monetary values for display
+                values = list(row)
+                # total_debt (index 2) and amount_collected (index 5)
+                try:
+                    values[2] = f"{float(values[2]):.2f}" if values[2] is not None else "0.00"
+                except (ValueError, TypeError):
+                    values[2] = "0.00"
+                try:
+                    values[5] = f"{float(values[5]):.2f}" if values[5] is not None else "0.00"
+                except (ValueError, TypeError):
+                    values[5] = "0.00"
+                self.collections_tree.insert('', 'end', values=values)
 
             conn.close()
         except Exception as e:

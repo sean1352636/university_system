@@ -4,6 +4,7 @@ import logging
 
 from education_system.primary_school.infrastructure.database.db import connect
 from education_system.primary_school.core.exceptions import HRError
+from education_system.primary_school.core.sql_safety import validate_identifier, escape_like
 import traceback
 
 logger = logging.getLogger(__name__)
@@ -107,7 +108,8 @@ class HRService:
                 params.append(status)
             if search:
                 sql += " AND (first_name LIKE ? OR last_name LIKE ? OR staff_id LIKE ?)"
-                term = f"%{search}%"
+                escaped = escape_like(search)
+                term = f"%{escaped}%"
                 params.extend([term, term, term])
             sql += " ORDER BY last_name, first_name"
             cursor.execute(sql, params)
@@ -130,7 +132,7 @@ class HRService:
             updates = {k: v for k, v in kwargs.items() if k in allowed}
             if not updates:
                 return None
-            set_clause = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
             values = list(updates.values()) + [staff_id]
             cursor.execute(
                 f"UPDATE staff SET {set_clause} WHERE staff_id = ?", values,

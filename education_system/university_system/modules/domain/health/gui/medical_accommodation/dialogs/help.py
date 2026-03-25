@@ -1,7 +1,7 @@
 # dialogs/help.py
 # Dialog for help / user guide.
 
-from .._common import tk, ttk, ScrolledText
+from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import tk, ttk, ScrolledText
 
 
 class HelpDialog:

@@ -1,7 +1,11 @@
-from ._common import (
+from education_system.university_system.modules.shared.utils.document_manager._common import (
     os, csv, datetime, timedelta, sqlite3,
     get_connection, _t,
 )
+from education_system.university_system.core import paths as _paths
+
+_EXPORT_DIR = str(_paths.EXPORTS_DIR / "documents")
+os.makedirs(_EXPORT_DIR, exist_ok=True)
 
 
 class ImportExportMixin:
@@ -94,10 +98,10 @@ class ImportExportMixin:
             upload_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
             cursor.execute('''
-            INSERT INTO student_documents
-            (student_id, type_id, file_path, original_filename, upload_date,
+            INSERT INTO documents
+            (source_type, owner_id, type_id, file_path, original_filename, upload_date,
              verification_status, version_number, uploaded_by, file_size, workflow_status)
-            VALUES (?, ?, ?, ?, ?, 'Pending', 1, 'bulk_import', ?, 'submitted')
+            VALUES ('student', ?, ?, ?, ?, ?, 'Pending', 1, 'bulk_import', ?, 'submitted')
             ''', (student_id, type_id, file_path, original_filename, upload_date, file_size))
 
             conn.commit()
@@ -134,7 +138,7 @@ class ImportExportMixin:
         """Download a template file for bulk import"""
         try:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            filename = f"import_template_{timestamp}.csv"
+            filename = os.path.join(_EXPORT_DIR, f"import_template_{timestamp}.csv")
 
             with open(filename, 'w', newline='') as f:
                 writer = csv.writer(f)
@@ -195,7 +199,7 @@ class ImportExportMixin:
             students = cursor.fetchall()
 
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            filename = f"students_export_{timestamp}.csv"
+            filename = os.path.join(_EXPORT_DIR, f"students_export_{timestamp}.csv")
 
             with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
                 writer = csv.writer(csvfile)
@@ -222,13 +226,13 @@ class ImportExportMixin:
             cursor = conn.cursor()
 
             cursor.execute('''
-            SELECT sd.document_id, sd.student_id, s.first_name, s.last_name,
+            SELECT sd.document_id, sd.owner_id as student_id, s.first_name, s.last_name,
                    dt.type_name, sd.original_filename, sd.upload_date,
                    sd.expiry_date, sd.verification_status, sd.version_number,
                    sd.tags, sd.workflow_status
-            FROM student_documents sd
+            FROM documents sd
             JOIN document_types dt ON sd.type_id = dt.type_id
-            LEFT JOIN students s ON sd.student_id = s.student_id
+            LEFT JOIN students s ON sd.owner_id = s.student_id
             WHERE sd.is_current_version = 1
             ORDER BY sd.upload_date DESC
             ''')
@@ -241,7 +245,7 @@ class ImportExportMixin:
                 return
 
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            filename = f"all_documents_{timestamp}.csv"
+            filename = os.path.join(_EXPORT_DIR, f"all_documents_{timestamp}.csv")
 
             with open(filename, 'w', newline='') as f:
                 writer = csv.writer(f)
@@ -269,7 +273,7 @@ class ImportExportMixin:
             return
 
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = f"search_results_{timestamp}.csv"
+        filename = os.path.join(_EXPORT_DIR, f"search_results_{timestamp}.csv")
 
         with open(filename, 'w', newline='') as f:
             writer = csv.writer(f)
@@ -306,7 +310,7 @@ class ImportExportMixin:
                 return
 
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            filename = f"activity_log_{timestamp}.csv"
+            filename = os.path.join(_EXPORT_DIR, f"activity_log_{timestamp}.csv")
 
             with open(filename, 'w', newline='') as f:
                 writer = csv.writer(f)
@@ -336,7 +340,8 @@ class ImportExportMixin:
                    sd.verification_status, sd.upload_date, sd.expiry_date
             FROM students s
             CROSS JOIN document_types dt
-            LEFT JOIN student_documents sd ON s.student_id = sd.student_id
+            LEFT JOIN documents sd ON s.student_id = sd.owner_id
+                AND sd.source_type = 'student'
                 AND dt.type_id = sd.type_id AND sd.is_current_version = 1
             WHERE dt.is_active = 1
             ORDER BY s.student_id, dt.category, dt.sort_order
@@ -345,7 +350,7 @@ class ImportExportMixin:
             compliance_data = cursor.fetchall()
 
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            filename = f"compliance_data_{timestamp}.csv"
+            filename = os.path.join(_EXPORT_DIR, f"compliance_data_{timestamp}.csv")
 
             with open(filename, 'w', newline='') as f:
                 writer = csv.writer(f)
@@ -381,14 +386,14 @@ class ImportExportMixin:
 
             if choice == '6':
                 query = '''
-                SELECT sd.document_id, sd.student_id, s.first_name, s.last_name,
+                SELECT sd.document_id, sd.owner_id as student_id, s.first_name, s.last_name,
                        s.program, dt.type_name, sd.original_filename, sd.upload_date,
                        sd.expiry_date, sd.verification_status, sd.verification_date,
                        sd.verification_notes, sd.version_number, sd.uploaded_by,
                        sd.tags, sd.workflow_status, sd.priority
-                FROM student_documents sd
+                FROM documents sd
                 JOIN document_types dt ON sd.type_id = dt.type_id
-                LEFT JOIN students s ON sd.student_id = s.student_id
+                LEFT JOIN students s ON sd.owner_id = s.student_id
                 WHERE sd.is_current_version = 1
                 '''
                 headers = ['Document ID', 'Student ID', 'First Name', 'Last Name', 'Program',
@@ -398,9 +403,9 @@ class ImportExportMixin:
             else:
                 print("Custom field selection not fully implemented. Using default export.")
                 query = '''
-                SELECT sd.document_id, sd.student_id, dt.type_name, sd.original_filename,
+                SELECT sd.document_id, sd.owner_id as student_id, dt.type_name, sd.original_filename,
                        sd.upload_date, sd.verification_status
-                FROM student_documents sd
+                FROM documents sd
                 JOIN document_types dt ON sd.type_id = dt.type_id
                 WHERE sd.is_current_version = 1
                 '''
@@ -411,7 +416,7 @@ class ImportExportMixin:
             data = cursor.fetchall()
 
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            filename = f"custom_export_{timestamp}.csv"
+            filename = os.path.join(_EXPORT_DIR, f"custom_export_{timestamp}.csv")
 
             with open(filename, 'w', newline='') as f:
                 writer = csv.writer(f)

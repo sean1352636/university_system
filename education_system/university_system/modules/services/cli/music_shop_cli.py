@@ -44,10 +44,12 @@ ORDER_STATUSES = ["Pending", "Processing", "Shipped", "Delivered", "Cancelled"]
 CONDITION_TYPES = ["New", "Like New", "Very Good", "Good", "Acceptable"]
 
 MUSIC_SHOP_SCHEMA = """
-CREATE TABLE IF NOT EXISTS musicshop_products (
+CREATE TABLE IF NOT EXISTS products (
     product_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_type TEXT NOT NULL DEFAULT 'music_shop',
+    source_product_id TEXT,
     sku TEXT UNIQUE NOT NULL,
-    title TEXT NOT NULL,
+    name TEXT NOT NULL,
     artist TEXT,
     category TEXT NOT NULL,
     genre TEXT,
@@ -59,8 +61,10 @@ CREATE TABLE IF NOT EXISTS musicshop_products (
     created_date TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS musicshop_orders (
+CREATE TABLE IF NOT EXISTS orders (
     order_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_type TEXT NOT NULL DEFAULT 'music_shop',
+    source_order_id TEXT,
     order_number TEXT UNIQUE NOT NULL,
     customer_name TEXT NOT NULL,
     customer_email TEXT,
@@ -73,15 +77,17 @@ CREATE TABLE IF NOT EXISTS musicshop_orders (
     order_date TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS musicshop_order_items (
+CREATE TABLE IF NOT EXISTS order_items (
     item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_type TEXT NOT NULL DEFAULT 'music_shop',
     order_id INTEGER NOT NULL,
     product_id INTEGER NOT NULL,
+    item_name TEXT,
     quantity INTEGER NOT NULL,
     unit_price REAL NOT NULL,
     subtotal REAL NOT NULL,
-    FOREIGN KEY (order_id) REFERENCES musicshop_orders (order_id),
-    FOREIGN KEY (product_id) REFERENCES musicshop_products (product_id)
+    FOREIGN KEY (order_id) REFERENCES orders (order_id),
+    FOREIGN KEY (product_id) REFERENCES products (product_id)
 );
 
 CREATE TABLE IF NOT EXISTS musicshop_wishlist (
@@ -89,7 +95,7 @@ CREATE TABLE IF NOT EXISTS musicshop_wishlist (
     customer_name TEXT NOT NULL,
     product_id INTEGER NOT NULL,
     added_date TEXT NOT NULL,
-    FOREIGN KEY (product_id) REFERENCES musicshop_products (product_id)
+    FOREIGN KEY (product_id) REFERENCES products (product_id)
 );
 """
 
@@ -100,7 +106,7 @@ def init_musicshop_database():
             conn.executescript(MUSIC_SHOP_SCHEMA)
 
             # Insert sample products if none exist
-            cursor = conn.execute("SELECT COUNT(*) FROM musicshop_products")
+            cursor = conn.execute("SELECT COUNT(*) FROM products WHERE source_type = 'music_shop'")
             if cursor.fetchone()[0] == 0:
                 sample_products = [
                     ("ALB001", "Abbey Road", "The Beatles", "Albums", "Rock", 24.99, 20, "New", "Classic album", 1969),
@@ -118,9 +124,9 @@ def init_musicshop_database():
                 ]
                 for product in sample_products:
                     conn.execute("""
-                        INSERT INTO musicshop_products
-                        (sku, title, artist, category, genre, price, stock, condition, description, release_year, created_date)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO products
+                        (source_type, sku, name, artist, category, genre, price, stock, condition, description, release_year, created_date)
+                        VALUES ('music_shop', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, (*product, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
             conn.commit()
@@ -149,28 +155,29 @@ def get_all_products(category=None, genre=None, search=None):
         with get_connection() as conn:
             if category and category != 'All':
                 cursor = conn.execute("""
-                    SELECT product_id, sku, title, artist, category, genre, price, stock, condition
-                    FROM musicshop_products WHERE category = ?
-                    ORDER BY category, title
+                    SELECT product_id, sku, name as title, artist, category, genre, price, stock, condition
+                    FROM products WHERE source_type = 'music_shop' AND category = ?
+                    ORDER BY category, name
                 """, (category,))
             elif genre and genre != 'All':
                 cursor = conn.execute("""
-                    SELECT product_id, sku, title, artist, category, genre, price, stock, condition
-                    FROM musicshop_products WHERE genre = ?
-                    ORDER BY category, title
+                    SELECT product_id, sku, name as title, artist, category, genre, price, stock, condition
+                    FROM products WHERE source_type = 'music_shop' AND genre = ?
+                    ORDER BY category, name
                 """, (genre,))
             elif search:
                 cursor = conn.execute("""
-                    SELECT product_id, sku, title, artist, category, genre, price, stock, condition
-                    FROM musicshop_products
-                    WHERE title LIKE ? OR artist LIKE ?
-                    ORDER BY category, title
+                    SELECT product_id, sku, name as title, artist, category, genre, price, stock, condition
+                    FROM products
+                    WHERE source_type = 'music_shop' AND (name LIKE ? OR artist LIKE ?)
+                    ORDER BY category, name
                 """, (f'%{search}%', f'%{search}%'))
             else:
                 cursor = conn.execute("""
-                    SELECT product_id, sku, title, artist, category, genre, price, stock, condition
-                    FROM musicshop_products
-                    ORDER BY category, title
+                    SELECT product_id, sku, name as title, artist, category, genre, price, stock, condition
+                    FROM products
+                    WHERE source_type = 'music_shop'
+                    ORDER BY category, name
                 """)
 
             products = []
@@ -190,9 +197,9 @@ def get_product_by_id(product_id):
     try:
         with get_connection() as conn:
             cursor = conn.execute("""
-                SELECT product_id, sku, title, artist, category, genre, price,
+                SELECT product_id, sku, name as title, artist, category, genre, price,
                        stock, condition, description, release_year
-                FROM musicshop_products WHERE product_id = ?
+                FROM products WHERE source_type = 'music_shop' AND product_id = ?
             """, (product_id,))
             row = cursor.fetchone()
             if row:
@@ -214,10 +221,10 @@ def create_order(order_data, cart_items):
         with get_connection() as conn:
             # Create order
             conn.execute("""
-                INSERT INTO musicshop_orders
-                (order_number, customer_name, customer_email, customer_phone, student_id,
+                INSERT INTO orders
+                (source_type, order_number, customer_name, customer_email, customer_phone, student_id,
                  total_amount, payment_method, payment_status, order_status, order_date)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES ('music_shop', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 order_data['order_number'], order_data['customer_name'],
                 order_data.get('customer_email', ''), order_data.get('customer_phone', ''),
@@ -232,17 +239,17 @@ def create_order(order_data, cart_items):
             # Add order items
             for item in cart_items:
                 conn.execute("""
-                    INSERT INTO musicshop_order_items
-                    (order_id, product_id, quantity, unit_price, subtotal)
-                    VALUES (?, ?, ?, ?, ?)
-                """, (order_id, item['product_id'], item['quantity'],
-                      item['price'], item['quantity'] * item['price']))
+                    INSERT INTO order_items
+                    (source_type, order_id, product_id, item_name, quantity, unit_price, subtotal)
+                    VALUES ('music_shop', ?, ?, ?, ?, ?, ?)
+                """, (order_id, item['product_id'], item['title'],
+                      item['quantity'], item['price'], item['quantity'] * item['price']))
 
                 # Update stock
                 conn.execute("""
-                    UPDATE musicshop_products
+                    UPDATE products
                     SET stock = stock - ?
-                    WHERE product_id = ?
+                    WHERE source_type = 'music_shop' AND product_id = ?
                 """, (item['quantity'], item['product_id']))
 
             conn.commit()
@@ -258,7 +265,8 @@ def get_all_orders():
             cursor = conn.execute("""
                 SELECT order_id, order_number, customer_name, total_amount,
                        payment_status, order_status, order_date
-                FROM musicshop_orders
+                FROM orders
+                WHERE source_type = 'music_shop'
                 ORDER BY order_date DESC
             """)
             orders = []
@@ -294,9 +302,9 @@ def get_wishlist(customer_name):
     try:
         with get_connection() as conn:
             cursor = conn.execute("""
-                SELECT w.wishlist_id, p.product_id, p.title, p.artist, p.price, p.stock
+                SELECT w.wishlist_id, p.product_id, p.name as title, p.artist, p.price, p.stock
                 FROM musicshop_wishlist w
-                JOIN musicshop_products p ON w.product_id = p.product_id
+                JOIN products p ON w.product_id = p.product_id AND p.source_type = 'music_shop'
                 WHERE w.customer_name = ?
                 ORDER BY w.added_date DESC
             """, (customer_name,))

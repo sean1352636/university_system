@@ -168,8 +168,8 @@ System Statistics:
         cli_input.focus()
 
     except Exception as e:
-        messagebox.showerror(_t("common.error"), _t("module_scheduling.cli.launch_failed", error=str(e)))
+        messagebox.showerror(_t("common.error"), _t("module_scheduling.cli.launch_failed", error=str(e)), parent=self.root)
 
 # Import the GUI class and assign the method
-from .main_gui import ModuleSchedulingGUI
+from education_system.university_system.modules.domain.academics.gui.module_scheduling.main_gui import ModuleSchedulingGUI
 ModuleSchedulingGUI.launch_cli_mode = launch_cli_mode

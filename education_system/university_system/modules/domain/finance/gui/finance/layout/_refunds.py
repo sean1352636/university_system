@@ -68,31 +68,31 @@ class RefundsMixin:
             table_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
             # Create Treeview
-            columns = ('ID', 'Reference', 'Department', 'Amount', 'Method', 'Date', 'Time',
-                      'Transaction ID', 'Processed By', 'Notes')
+            columns = ('ID', 'Reference', 'Source', 'Department', 'Amount', 'Method', 'Date',
+                      'Reference ID', 'Processed By', 'Notes')
             refunds_tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=25)
 
             # Configure columns
             refunds_tree.heading('ID', text='ID')
             refunds_tree.heading('Reference', text='Refund Reference')
+            refunds_tree.heading('Source', text='Source Type')
             refunds_tree.heading('Department', text='Department')
             refunds_tree.heading('Amount', text='Amount')
             refunds_tree.heading('Method', text='Method')
             refunds_tree.heading('Date', text='Date')
-            refunds_tree.heading('Time', text='Time')
-            refunds_tree.heading('Transaction ID', text='Transaction ID')
+            refunds_tree.heading('Reference ID', text='Reference ID')
             refunds_tree.heading('Processed By', text='Processed By')
             refunds_tree.heading('Notes', text='Notes')
 
             # Set column widths
             refunds_tree.column('ID', width=50, anchor='center')
             refunds_tree.column('Reference', width=180, anchor='w')
+            refunds_tree.column('Source', width=100, anchor='w')
             refunds_tree.column('Department', width=120, anchor='w')
             refunds_tree.column('Amount', width=100, anchor='e')
             refunds_tree.column('Method', width=120, anchor='w')
-            refunds_tree.column('Date', width=100, anchor='center')
-            refunds_tree.column('Time', width=80, anchor='center')
-            refunds_tree.column('Transaction ID', width=150, anchor='w')
+            refunds_tree.column('Date', width=120, anchor='center')
+            refunds_tree.column('Reference ID', width=150, anchor='w')
             refunds_tree.column('Processed By', width=120, anchor='w')
             refunds_tree.column('Notes', width=200, anchor='w')
 
@@ -134,61 +134,39 @@ class RefundsMixin:
             conn = get_connection()
             cursor = conn.cursor()
 
-            # Check if table exists and has correct columns
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='finance_refunds'")
+            # Check if unified_refunds table exists
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='unified_refunds'")
             if not cursor.fetchone():
-                tree.insert('', 'end', values=('No Data', 'finance_refunds table does not exist', '', '', '', '', '', '', '', ''))
+                tree.insert('', 'end', values=('No Data', 'unified_refunds table does not exist', '', '', '', '', '', '', '', ''))
                 conn.close()
                 return
 
-            # Check columns
-            cursor.execute("PRAGMA table_info(finance_refunds)")
-            columns = [col[1] for col in cursor.fetchall()]
-            has_refund_time = 'refund_time' in columns
-
             # Build query
             if search_term:
-                if has_refund_time:
-                    cursor.execute('''
-                        SELECT id, refund_reference, department, amount, refund_method,
-                               refund_date, refund_time, transaction_id, processed_by, notes
-                        FROM finance_refunds
-                        WHERE LOWER(refund_reference) LIKE ?
-                           OR LOWER(department) LIKE ?
-                           OR LOWER(transaction_id) LIKE ?
-                           OR LOWER(processed_by) LIKE ?
-                           OR LOWER(notes) LIKE ?
-                        ORDER BY id DESC
-                    ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%',
-                          f'%{search_term}%', f'%{search_term}%'))
-                else:
-                    cursor.execute('''
-                        SELECT id, refund_reference, department, amount, refund_method,
-                               refund_date, '' as refund_time, transaction_id, processed_by, notes
-                        FROM finance_refunds
-                        WHERE LOWER(refund_reference) LIKE ?
-                           OR LOWER(department) LIKE ?
-                           OR LOWER(transaction_id) LIKE ?
-                           OR LOWER(processed_by) LIKE ?
-                           OR LOWER(notes) LIKE ?
-                        ORDER BY id DESC
-                    ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%',
-                          f'%{search_term}%', f'%{search_term}%'))
+                cursor.execute('''
+                    SELECT refund_id, refund_reference, source_type,
+                           COALESCE(department, source_type) as department,
+                           amount, refund_method, refund_date,
+                           reference_id, processed_by, notes
+                    FROM unified_refunds
+                    WHERE LOWER(COALESCE(refund_reference, '')) LIKE ?
+                       OR LOWER(COALESCE(department, '')) LIKE ?
+                       OR LOWER(COALESCE(source_type, '')) LIKE ?
+                       OR LOWER(COALESCE(reference_id, '')) LIKE ?
+                       OR LOWER(COALESCE(processed_by, '')) LIKE ?
+                       OR LOWER(COALESCE(notes, '')) LIKE ?
+                    ORDER BY refund_id DESC
+                ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%',
+                      f'%{search_term}%', f'%{search_term}%', f'%{search_term}%'))
             else:
-                if has_refund_time:
-                    cursor.execute('''
-                        SELECT id, refund_reference, department, amount, refund_method,
-                               refund_date, refund_time, transaction_id, processed_by, notes
-                        FROM finance_refunds
-                        ORDER BY id DESC
-                    ''')
-                else:
-                    cursor.execute('''
-                        SELECT id, refund_reference, department, amount, refund_method,
-                               refund_date, '' as refund_time, transaction_id, processed_by, notes
-                        FROM finance_refunds
-                        ORDER BY id DESC
-                    ''')
+                cursor.execute('''
+                    SELECT refund_id, refund_reference, source_type,
+                           COALESCE(department, source_type) as department,
+                           amount, refund_method, refund_date,
+                           reference_id, processed_by, notes
+                    FROM unified_refunds
+                    ORDER BY refund_id DESC
+                ''')
 
             refunds = cursor.fetchall()
 
@@ -198,7 +176,7 @@ class RefundsMixin:
 
             # Insert data
             for refund in refunds:
-                refund_id, ref, dept, amount, method, date, time, trans_id, processed_by, notes = refund
+                refund_id, ref, source_type, dept, amount, method, date, ref_id, processed_by, notes = refund
 
                 # Format amount
                 amount_val = float(amount) if amount else 0.0
@@ -211,12 +189,12 @@ class RefundsMixin:
                 tree.insert('', 'end', values=(
                     refund_id or '',
                     ref or '',
+                    source_type or '',
                     dept or '',
                     amount_str,
                     method or '',
                     date or '',
-                    time or '',
-                    trans_id or '',
+                    ref_id or '',
                     processed_by or '',
                     notes or ''
                 ), tags=(tag,))
@@ -263,8 +241,8 @@ class RefundsMixin:
                 writer = csv.writer(f)
 
                 # Write headers
-                writer.writerow(['ID', 'Reference', 'Department', 'Amount', 'Method', 'Date', 'Time',
-                               'Transaction ID', 'Processed By', 'Notes'])
+                writer.writerow(['ID', 'Reference', 'Source Type', 'Department', 'Amount', 'Method', 'Date',
+                               'Reference ID', 'Processed By', 'Notes'])
 
                 # Write data
                 for item in tree.get_children():
@@ -322,9 +300,9 @@ class RefundsMixin:
                 cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status = 'completed'")
                 total_revenue = cursor.fetchone()[0] or 0
 
-                # Add club payments to total revenue
+                # Add club payments to total revenue (from payments table with source_type='club')
                 try:
-                    cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM club_payments WHERE status = 'completed'")
+                    cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE source_type = 'club' AND status = 'completed'")
                     club_revenue = cursor.fetchone()[0] or 0
                     total_revenue += club_revenue
                 except Exception:
@@ -332,7 +310,7 @@ class RefundsMixin:
 
                 # Add housing payments to total revenue
                 try:
-                    cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM housing_payments WHERE status = 'completed'")
+                    cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE source_type = 'housing' AND status = 'completed'")
                     housing_revenue = cursor.fetchone()[0] or 0
                     total_revenue += housing_revenue
                 except Exception:
@@ -402,7 +380,7 @@ class RefundsMixin:
 
             # Refund requests
             try:
-                cursor.execute("SELECT COUNT(*) FROM refunds WHERE status = 'pending'")
+                cursor.execute("SELECT COUNT(*) FROM unified_refunds WHERE source_type = 'general' AND status = 'pending'")
                 pending_refunds = cursor.fetchone()[0]
                 summary += f"Pending Refund Requests: {pending_refunds}\n"
             except Exception:

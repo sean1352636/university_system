@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/modules.py
+# hypothesis_version: 6.151.9
+
+['CIS0001', 'CIS0002', 'CIS1001', 'CIS1002', 'CIS1003', 'CIS1004', 'CIS2001', 'CIS2002', 'CIS2003', 'CIS2004', 'CIS3001', 'CIS3002', 'CIS3003', 'CIS3004', 'Design Patterns', 'algorithm complexity', 'code', 'data visualisation', 'name', 'python programming', 'statistical methods']

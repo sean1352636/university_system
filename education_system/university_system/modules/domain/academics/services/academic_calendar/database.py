@@ -5,7 +5,7 @@ import logging
 from typing import List, Tuple
 from education_system.university_system.utils.logging.log_config import configure_logging
 from education_system.university_system.core.sql_safety import validate_identifier
-from .exceptions import DatabaseError
+from education_system.university_system.modules.domain.academics.services.academic_calendar.exceptions import DatabaseError
 
 logger = configure_logging(name=__name__)
 

@@ -41,7 +41,7 @@ class TestSettingsManager(unittest.TestCase):
         }
 
         # Create manager
-        with patch('university_system.modules.domain.finance.gui.finance.settings.get_global_auth'):
+        with patch('education_system.university_system.modules.domain.finance.gui.finance.settings.get_global_auth'):
             self.manager = SettingsManager(self.mock_gui)
 
     def tearDown(self):
@@ -66,7 +66,7 @@ class TestSettingsManager(unittest.TestCase):
         gui_without_system.layout.tab_frames = {}
         del gui_without_system.finance_system
 
-        with patch('university_system.modules.domain.finance.gui.finance.settings.get_global_auth'):
+        with patch('education_system.university_system.modules.domain.finance.gui.finance.settings.get_global_auth'):
             manager = SettingsManager(gui_without_system)
             self.assertIsNone(manager.finance_system)
 
@@ -74,12 +74,12 @@ class TestSettingsManager(unittest.TestCase):
         """Test initialization with auth from gui"""
         self.mock_gui.auth = Mock()
 
-        with patch('university_system.modules.domain.finance.gui.finance.settings.get_global_auth') as mock_get_auth:
+        with patch('education_system.university_system.modules.domain.finance.gui.finance.settings.get_global_auth') as mock_get_auth:
             manager = SettingsManager(self.mock_gui)
             self.assertEqual(manager.auth, self.mock_gui.auth)
 
-    @patch('university_system.modules.domain.finance.gui.finance.settings.tk.Frame')
-    @patch('university_system.modules.domain.finance.gui.finance.settings.ttk.Notebook')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.settings.tk.Frame')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.settings.ttk.Notebook')
     def test_create_settings_tab(self, mock_notebook, mock_frame):
         """Test creating settings tab"""
         mock_notebook_instance = Mock()
@@ -101,10 +101,10 @@ class TestSettingsManager(unittest.TestCase):
         self.manager.create_notification_settings.assert_called_once()
         self.manager.create_maintenance_settings.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.settings.tk.LabelFrame')
-    @patch('university_system.modules.domain.finance.gui.finance.settings.tk.Label')
-    @patch('university_system.modules.domain.finance.gui.finance.settings.tk.Entry')
-    @patch('university_system.modules.domain.finance.gui.finance.settings.tk.Button')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.settings.tk.LabelFrame')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.settings.tk.Label')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.settings.tk.Entry')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.settings.tk.Button')
     def test_create_general_settings(self, mock_button, mock_entry, mock_label, mock_labelframe):
         """Test creating general settings interface"""
         parent = Mock()
@@ -140,7 +140,7 @@ class TestSettingsManager(unittest.TestCase):
         self.assertEqual(self.manager.grace_period_var.get(), "7")
         self.assertEqual(self.manager.late_fee_var.get(), "50.00")
 
-    @patch('university_system.modules.domain.finance.gui.finance.settings.tk.LabelFrame')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.settings.tk.LabelFrame')
     def test_create_currency_settings(self, mock_labelframe):
         """Test creating currency settings interface"""
         parent = Mock()
@@ -151,7 +151,7 @@ class TestSettingsManager(unittest.TestCase):
             # Just verify no exceptions raised
             self.assertTrue(True)
 
-    @patch('university_system.modules.domain.finance.gui.finance.settings.tk.LabelFrame')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.settings.tk.LabelFrame')
     def test_create_notification_settings(self, mock_labelframe):
         """Test creating notification settings interface"""
         parent = Mock()
@@ -162,7 +162,7 @@ class TestSettingsManager(unittest.TestCase):
             # Just verify no exceptions raised
             self.assertTrue(True)
 
-    @patch('university_system.modules.domain.finance.gui.finance.settings.tk.LabelFrame')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.settings.tk.LabelFrame')
     def test_create_maintenance_settings(self, mock_labelframe):
         """Test creating maintenance settings interface"""
         parent = Mock()
@@ -188,7 +188,7 @@ class TestSettingsValidation(unittest.TestCase):
         self.mock_gui.layout.tab_frames = {}
         self.mock_gui.layout.colors = {'success': '#27ae60'}
 
-        with patch('university_system.modules.domain.finance.gui.finance.settings.get_global_auth'):
+        with patch('education_system.university_system.modules.domain.finance.gui.finance.settings.get_global_auth'):
             self.manager = SettingsManager(self.mock_gui)
 
     def test_academic_year_format(self):
@@ -263,7 +263,7 @@ class TestSettingsPersistence(unittest.TestCase):
         self.mock_gui.layout.tab_frames = {}
         self.mock_gui.layout.colors = {'success': '#27ae60'}
 
-        with patch('university_system.modules.domain.finance.gui.finance.settings.get_global_auth'):
+        with patch('education_system.university_system.modules.domain.finance.gui.finance.settings.get_global_auth'):
             self.manager = SettingsManager(self.mock_gui)
 
     def test_settings_dict_structure(self):
@@ -312,11 +312,11 @@ class TestSettingsIntegration(unittest.TestCase):
             'warning': '#f39c12'
         }
 
-        with patch('university_system.modules.domain.finance.gui.finance.settings.get_global_auth'):
+        with patch('education_system.university_system.modules.domain.finance.gui.finance.settings.get_global_auth'):
             self.manager = SettingsManager(self.mock_gui)
 
-    @patch('university_system.modules.domain.finance.gui.finance.settings.tk.Frame')
-    @patch('university_system.modules.domain.finance.gui.finance.settings.ttk.Notebook')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.settings.tk.Frame')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.settings.ttk.Notebook')
     def test_full_settings_tab_creation(self, mock_notebook, mock_frame):
         """Test full settings tab creation workflow"""
         mock_notebook_instance = Mock()

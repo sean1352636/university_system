@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/core/miscellaneous.py
+# hypothesis_version: 6.151.9
+
+['add_student_credit', 'aid_by_academic_year', 'apply_aid_to_fees', 'apply_credit_to_fees', 'create_aid_type', 'deactivate_aid_type', 'edit_aid_type', 'get_student_email', 'get_student_name', 'get_student_phone', 'initialize_finance', 'manage_aid_types', 'manual_rate_update', 'process_loan_payment', 'quick_fix_database', 'send_email_aws_ses', 'send_email_sendgrid', 'send_email_smtp', 'send_sms_aws_sns', 'send_sms_twilio', 'setup_email_config', 'setup_sms_config', 'student_exists', 'test_email_service', 'test_sms_service', 'verify_fix', 'view_aid_types', 'view_credit_history', 'view_student_credits']

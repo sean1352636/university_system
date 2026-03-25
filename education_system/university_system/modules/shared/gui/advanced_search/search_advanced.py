@@ -1,5 +1,6 @@
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
-from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
+from education_system.university_system.core.sql_safety import escape_like, validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
+import sqlite3
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
@@ -873,7 +874,7 @@ def get_connection():
             print_error(f"Database connection error: {e}")
             return None
 
-from .base import AdvancedSearchGUI
+from education_system.university_system.modules.shared.gui.advanced_search.base import AdvancedSearchGUI
 
 def show_regex_search(self):
     """Show regex search dialog"""
@@ -1386,7 +1387,7 @@ def perform_search_all_fields(self, search_term):
         conn = get_connection()
         cursor = conn.cursor()
         
-        search_pattern = f"%{search_term.lower()}%"
+        search_pattern = f"%{escape_like(search_term.lower())}%"
         query = """
         SELECT * FROM students WHERE
         LOWER(student_id) LIKE ? OR
@@ -1523,28 +1524,30 @@ def perform_fuzzy_search(self, search_term, threshold, algorithm):
         conn = get_connection()
         if not conn:
             raise Exception("Database connection failed")
-        
+
+        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM students")
-        all_students = cursor.fetchall()
+        all_rows = cursor.fetchall()
         conn.close()
-        
+
         matched_students = []
         search_term_lower = search_term.lower()
-        
-        for student in all_students:
-            first_name = student[3].lower() if len(student) > 3 and student[3] else ""
-            last_name = student[5].lower() if len(student) > 5 and student[5] else ""
-            
+
+        for row in all_rows:
+            # Use named column access to avoid schema index mismatch
+            first_name = (row["first_name"] or "").lower()
+            last_name = (row["last_name"] or "").lower()
+
             best_ratio = 0
-            
+
             if algorithm in ['1', '3']:  # Standard fuzzy matching
                 first_ratio = SequenceMatcher(None, search_term_lower, first_name).ratio()
                 last_ratio = SequenceMatcher(None, search_term_lower, last_name).ratio()
                 full_name = f"{first_name} {last_name}".strip()
                 full_ratio = SequenceMatcher(None, search_term_lower, full_name).ratio()
                 best_ratio = max(first_ratio, last_ratio, full_ratio)
-            
+
             if algorithm in ['2', '3']:  # Phonetic matching
                 def simple_soundex(word):
                     if not word:
@@ -1558,19 +1561,19 @@ def perform_fuzzy_search(self, search_term, threshold, algorithm):
                                 result += value
                                 break
                     return (result + '0000')[:4]
-                
+
                 search_soundex = simple_soundex(search_term)
                 first_soundex = simple_soundex(first_name)
                 last_soundex = simple_soundex(last_name)
-                
+
                 if search_soundex == first_soundex or search_soundex == last_soundex:
                     best_ratio = max(best_ratio, 0.8)
-            
+
             if best_ratio >= threshold:
-                matched_students.append(student)
-        
+                matched_students.append(tuple(row))
+
         return matched_students
-        
+
     except Exception as e:
         raise Exception(f"Fuzzy search error: {str(e)}")
 AdvancedSearchGUI.perform_fuzzy_search = perform_fuzzy_search
@@ -1745,9 +1748,9 @@ def perform_combined_filters_search(self, filters):
 
             # Student data filters
             for field, op, val in [
-                ("student_id", "LIKE", f"%{filters['student_data'].get('student_id', '')}%"),
-                ("first_name", "LIKE LOWER", f"%{filters['student_data'].get('first_name', '')}%"),
-                ("last_name", "LIKE LOWER", f"%{filters['student_data'].get('last_name', '')}%"),
+                ("student_id", "LIKE", f"%{escape_like(filters['student_data'].get('student_id', ''))}%"),
+                ("first_name", "LIKE LOWER", f"%{escape_like(filters['student_data'].get('first_name', ''))}%"),
+                ("last_name", "LIKE LOWER", f"%{escape_like(filters['student_data'].get('last_name', ''))}%"),
             ]:
                 if filters["student_data"].get(field.replace('_', ' ').title().replace(' ', '')):
                     if "LOWER" in op:
@@ -1812,7 +1815,7 @@ def perform_combined_filters_search(self, filters):
                         query += f" AND LOWER(s.{field}) {op.replace(' LOWER', '')} ?"
                     else:
                         query += f" AND s.{field} {op} ?"
-                    params.append(f"%{filters['student_data'][filter_key]}%")
+                    params.append(f"%{escape_like(filters['student_data'][filter_key])}%")
 
             if "gender" in filters["student_data"]:
                 query += " AND LOWER(s.gender) = LOWER(?)"
@@ -1869,13 +1872,13 @@ def perform_text_search(self, pattern, search_type, field):
         elif search_type == "regex":
             # For SQLite, we'll use LIKE with basic pattern conversion
             # In a full implementation, you'd need a regex extension
-            sql_pattern = f"%{pattern}%"
+            sql_pattern = f"%{escape_like(pattern)}%"
             safe_field = validate_identifier(field, "column")
             query = "SELECT * FROM students WHERE [" + safe_field + "] LIKE ?"
             cursor.execute(query, (sql_pattern,))
-            
+
         elif search_type == "all_fields":
-            search_pattern = f"%{pattern}%"
+            search_pattern = f"%{escape_like(pattern)}%"
             query = '''
             SELECT * FROM students WHERE
             student_id LIKE ? OR
@@ -1985,28 +1988,30 @@ def perform_fuzzy_search(self, search_term, threshold, algorithm):
         conn = get_connection()
         if not conn:
             raise Exception("Database connection failed")
-        
+
+        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM students")
-        all_students = cursor.fetchall()
+        all_rows = cursor.fetchall()
         conn.close()
-        
+
         matched_students = []
         search_term_lower = search_term.lower()
-        
-        for student in all_students:
-            first_name = student[3].lower() if len(student) > 3 and student[3] else ""
-            last_name = student[5].lower() if len(student) > 5 and student[5] else ""
-            
+
+        for row in all_rows:
+            # Use named column access to avoid schema index mismatch
+            first_name = (row["first_name"] or "").lower()
+            last_name = (row["last_name"] or "").lower()
+
             best_ratio = 0
-            
+
             if algorithm in ['1', '3']:  # Standard fuzzy matching
                 first_ratio = SequenceMatcher(None, search_term_lower, first_name).ratio()
                 last_ratio = SequenceMatcher(None, search_term_lower, last_name).ratio()
                 full_name = f"{first_name} {last_name}".strip()
                 full_ratio = SequenceMatcher(None, search_term_lower, full_name).ratio()
                 best_ratio = max(first_ratio, last_ratio, full_ratio)
-            
+
             if algorithm in ['2', '3']:  # Phonetic matching
                 def simple_soundex(word):
                     if not word:
@@ -2020,19 +2025,19 @@ def perform_fuzzy_search(self, search_term, threshold, algorithm):
                                 result += value
                                 break
                     return (result + '0000')[:4]
-                
+
                 search_soundex = simple_soundex(search_term)
                 first_soundex = simple_soundex(first_name)
                 last_soundex = simple_soundex(last_name)
-                
+
                 if search_soundex == first_soundex or search_soundex == last_soundex:
                     best_ratio = max(best_ratio, 0.8)
-            
+
             if best_ratio >= threshold:
-                matched_students.append(student)
-        
+                matched_students.append(tuple(row))
+
         return matched_students
-        
+
     except Exception as e:
         raise Exception(f"Fuzzy search error: {str(e)}")
 AdvancedSearchGUI.perform_fuzzy_search = perform_fuzzy_search

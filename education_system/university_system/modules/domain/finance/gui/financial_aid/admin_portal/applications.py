@@ -2,7 +2,7 @@
 Aid application review mixin for AdminPortal.
 """
 
-from ._imports import (
+from education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal._imports import (
     tk, ttk, scrolledtext, json, logging,
     get_connection, log_activity,
     clear_frame, create_data_table, create_scrollable_frame,

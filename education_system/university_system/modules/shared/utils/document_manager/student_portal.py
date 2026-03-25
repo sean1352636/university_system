@@ -1,4 +1,4 @@
-from ._common import (
+from education_system.university_system.modules.shared.utils.document_manager._common import (
     os, hashlib, datetime, sqlite3,
     get_connection, _t,
 )
@@ -19,9 +19,9 @@ class StudentPortalMixin:
             SELECT sd.document_id, dt.type_name, sd.original_filename,
                    sd.upload_date, sd.expiry_date, sd.verification_status,
                    sd.version_number, sd.workflow_status
-            FROM student_documents sd
+            FROM documents sd
             JOIN document_types dt ON sd.type_id = dt.type_id
-            WHERE sd.student_id = ? AND sd.is_current_version = 1
+            WHERE sd.owner_id = ? AND sd.source_type = 'student' AND sd.is_current_version = 1
             ORDER BY sd.upload_date DESC
             ''', (student_id,))
 
@@ -103,10 +103,10 @@ class StudentPortalMixin:
             upload_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
             cursor.execute('''
-            INSERT INTO student_documents
-            (student_id, type_id, file_path, original_filename, upload_date, expiry_date,
+            INSERT INTO documents
+            (source_type, owner_id, type_id, file_path, original_filename, upload_date, expiry_date,
              verification_status, version_number, uploaded_by, file_size, file_hash, workflow_status)
-            VALUES (?, ?, ?, ?, ?, ?, 'Pending', 1, ?, ?, ?, 'submitted')
+            VALUES ('student', ?, ?, ?, ?, ?, ?, 'Pending', 1, ?, ?, ?, 'submitted')
             ''', (student_id, type_id, file_path, original_filename, upload_date,
                   expiry_date, student_id, file_size, file_hash))
 
@@ -156,8 +156,8 @@ class StudentPortalMixin:
             # Document statistics
             cursor.execute('''
             SELECT verification_status, COUNT(*) as count
-            FROM student_documents
-            WHERE student_id = ? AND is_current_version = 1
+            FROM documents
+            WHERE owner_id = ? AND source_type = 'student' AND is_current_version = 1
             GROUP BY verification_status
             ''', (student_id,))
 
@@ -178,8 +178,8 @@ class StudentPortalMixin:
             SELECT COUNT(DISTINCT dt.type_id) as total_required,
                    COUNT(DISTINCT CASE WHEN sd.document_id IS NOT NULL THEN dt.type_id END) as submitted
             FROM document_types dt
-            LEFT JOIN student_documents sd ON dt.type_id = sd.type_id
-                AND sd.student_id = ? AND sd.is_current_version = 1
+            LEFT JOIN documents sd ON dt.type_id = sd.type_id
+                AND sd.owner_id = ? AND sd.source_type = 'student' AND sd.is_current_version = 1
             WHERE dt.is_required = 1 AND dt.is_active = 1
             ''', (student_id,))
 
@@ -198,8 +198,8 @@ class StudentPortalMixin:
             # Expiring documents
             cursor.execute('''
             SELECT COUNT(*)
-            FROM student_documents
-            WHERE student_id = ?
+            FROM documents
+            WHERE owner_id = ? AND source_type = 'student'
             AND expiry_date IS NOT NULL
             AND expiry_date <= date('now', '+30 days')
             AND is_current_version = 1
@@ -256,8 +256,8 @@ class StudentPortalMixin:
                    CASE WHEN sd.document_id IS NOT NULL THEN 'Submitted' ELSE 'Missing' END as status,
                    sd.verification_status
             FROM document_types dt
-            LEFT JOIN student_documents sd ON dt.type_id = sd.type_id
-                AND sd.student_id = ? AND sd.is_current_version = 1
+            LEFT JOIN documents sd ON dt.type_id = sd.type_id
+                AND sd.owner_id = ? AND sd.source_type = 'student' AND sd.is_current_version = 1
             WHERE dt.is_required = 1
             ORDER BY dt.sort_order
             ''', (student_id,))
@@ -315,9 +315,9 @@ class StudentPortalMixin:
             SELECT dt.type_name, sd.upload_date, sd.verification_status,
                    sd.verification_date, sd.expiry_date, sd.verification_notes,
                    sd.version_number
-            FROM student_documents sd
+            FROM documents sd
             JOIN document_types dt ON sd.type_id = dt.type_id
-            WHERE sd.student_id = ? AND sd.is_current_version = 1
+            WHERE sd.owner_id = ? AND sd.source_type = 'student' AND sd.is_current_version = 1
             ORDER BY sd.upload_date DESC
             ''', (student_id,))
 

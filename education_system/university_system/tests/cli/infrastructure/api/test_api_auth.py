@@ -21,7 +21,7 @@ import jwt as pyjwt
 import pytest
 from flask import Flask, g, jsonify
 
-from education_system.university_system.api.auth import (
+from education_system.shared.api.university.auth import (
     _blacklisted_tokens,
     _rate_limit_store,
     admin_required,

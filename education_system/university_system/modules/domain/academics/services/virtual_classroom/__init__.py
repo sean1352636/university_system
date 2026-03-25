@@ -43,14 +43,14 @@ Example Usage:
     )
 """
 
-from .classroom_manager import VirtualClassroomManager
-from .session_manager import SessionManager
-from .participant_manager import ParticipantManager
-from .recording_manager import RecordingManager
-from .breakout_room_manager import BreakoutRoomManager
-from .poll_manager import PollManager
-from .chat_manager import ChatManager
-from .schema import create_virtual_classroom_tables
+from education_system.university_system.modules.domain.academics.services.virtual_classroom.classroom_manager import VirtualClassroomManager
+from education_system.university_system.modules.domain.academics.services.virtual_classroom.session_manager import SessionManager
+from education_system.university_system.modules.domain.academics.services.virtual_classroom.participant_manager import ParticipantManager
+from education_system.university_system.modules.domain.academics.services.virtual_classroom.recording_manager import RecordingManager
+from education_system.university_system.modules.domain.academics.services.virtual_classroom.breakout_room_manager import BreakoutRoomManager
+from education_system.university_system.modules.domain.academics.services.virtual_classroom.poll_manager import PollManager
+from education_system.university_system.modules.domain.academics.services.virtual_classroom.chat_manager import ChatManager
+from education_system.university_system.modules.domain.academics.services.virtual_classroom.schema import create_virtual_classroom_tables
 
 __all__ = [
     'VirtualClassroomManager',

@@ -77,7 +77,7 @@ class TestInvoiceManagerInit:
 class TestInvoiceGenerationDialog:
     """Test invoice generation dialog"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.invoice_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.invoice_manager.get_connection')
     def test_gui_generate_invoice_dialog_created(self, mock_get_conn, invoice_manager):
         """Test that invoice generation dialog is created"""
         try:
@@ -86,7 +86,7 @@ class TestInvoiceGenerationDialog:
             # Dialog creation may fail in test environment
             pass
 
-    @patch('university_system.modules.domain.finance.gui.finance.invoice_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.invoice_manager.get_connection')
     def test_load_student_info_success(self, mock_get_conn, invoice_manager):
         """Test loading student information"""
         mock_conn = MagicMock()
@@ -109,7 +109,7 @@ class TestInvoiceGenerationDialog:
         text_widget.insert.assert_called()
         mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.invoice_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.invoice_manager.get_connection')
     def test_load_student_info_not_found(self, mock_get_conn, invoice_manager):
         """Test loading student info when student not found"""
         mock_conn = MagicMock()
@@ -130,7 +130,7 @@ class TestInvoiceGenerationDialog:
         # Should show "not found" message
         assert any('not found' in str(call) for call in text_widget.insert.call_args_list)
 
-    @patch('university_system.modules.domain.finance.gui.finance.invoice_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.invoice_manager.get_connection')
     def test_load_student_info_no_phone(self, mock_get_conn, invoice_manager):
         """Test loading student info when phone column doesn't exist"""
         mock_conn = MagicMock()
@@ -156,7 +156,7 @@ class TestInvoiceGenerationDialog:
         # Should fallback to query without phone
         assert mock_cursor.execute.call_count == 2
 
-    @patch('university_system.modules.domain.finance.gui.finance.invoice_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.invoice_manager.get_connection')
     def test_load_student_info_empty_student_id(self, mock_get_conn, invoice_manager):
         """Test loading student info with empty student ID"""
         text_widget = Mock()
@@ -170,8 +170,8 @@ class TestInvoiceGenerationDialog:
 class TestInvoiceGeneration:
     """Test invoice content generation"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.invoice_manager.get_connection')
-    @patch('university_system.modules.domain.finance.gui.finance.invoice_manager.filedialog')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.invoice_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.invoice_manager.filedialog')
     def test_generate_invoice_content(self, mock_filedialog, mock_get_conn, invoice_manager):
         """Test generating invoice content"""
         mock_conn = MagicMock()
@@ -200,14 +200,14 @@ class TestInvoiceGeneration:
 class TestInvoiceSaving:
     """Test invoice saving functionality"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.invoice_manager.filedialog')
-    @patch('university_system.modules.domain.finance.gui.finance.invoice_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.invoice_manager.filedialog')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.invoice_manager.messagebox')
     def test_save_invoice_success(self, mock_msgbox, mock_filedialog, invoice_manager):
         """Test successful invoice saving"""
         # The save_invoice function is nested, so we test the concept
         pass
 
-    @patch('university_system.modules.domain.finance.gui.finance.invoice_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.invoice_manager.messagebox')
     def test_save_invoice_no_invoice_generated(self, mock_msgbox, invoice_manager):
         """Test saving invoice when none generated"""
         # Would show error about no invoice
@@ -217,15 +217,15 @@ class TestInvoiceSaving:
 class TestInvoiceEmailing:
     """Test invoice email functionality"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.invoice_manager.render_template')
-    @patch('university_system.modules.domain.finance.gui.finance.invoice_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.invoice_manager.render_template')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.invoice_manager.messagebox')
     def test_send_invoice_with_template(self, mock_msgbox, mock_render, invoice_manager):
         """Test sending invoice with email template"""
         # The send_invoice function is nested
         pass
 
-    @patch('university_system.modules.domain.finance.gui.finance.invoice_manager.render_template')
-    @patch('university_system.modules.domain.finance.gui.finance.invoice_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.invoice_manager.render_template')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.invoice_manager.messagebox')
     def test_send_invoice_template_fallback(self, mock_msgbox, mock_render, invoice_manager):
         """Test sending invoice with fallback when template fails"""
         mock_render.return_value = (None, None)
@@ -256,7 +256,7 @@ class TestInvoiceDialogInteraction:
         # Empty student ID should show error
         pass
 
-    @patch('university_system.modules.domain.finance.gui.finance.invoice_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.invoice_manager.get_connection')
     def test_no_outstanding_fees(self, mock_get_conn, invoice_manager):
         """Test handling when student has no outstanding fees"""
         mock_conn = MagicMock()
@@ -299,7 +299,7 @@ class TestInvoiceFormatting:
 class TestInvoiceDataRetrieval:
     """Test invoice data retrieval"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.invoice_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.invoice_manager.get_connection')
     def test_retrieve_student_fees(self, mock_get_conn, invoice_manager):
         """Test retrieving student fees for invoice"""
         mock_conn = MagicMock()
@@ -314,8 +314,8 @@ class TestInvoiceDataRetrieval:
         # Test is implicitly done through invoice generation
         pass
 
-    @patch('university_system.modules.domain.finance.gui.finance.invoice_manager.get_connection')
-    @patch('university_system.modules.domain.finance.gui.finance.invoice_manager.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.invoice_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.invoice_manager.messagebox')
     def test_handle_database_error_on_generation(self, mock_msgbox, mock_get_conn, invoice_manager):
         """Test handling database errors during invoice generation"""
         mock_get_conn.side_effect = Exception("Database connection failed")

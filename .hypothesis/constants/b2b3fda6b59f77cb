@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/database/dialogs/notifications.py
+# hypothesis_version: 6.151.9
+
+[1.0, 587, '*', '400x300', '450x250', 'Backup System Test', 'Cancel', 'Discord Webhook', 'Email Configuration', 'Error', 'Invalid Port', 'Password:', 'Port:', 'Recipients', 'SMTP Server:', 'SMTP Settings', 'Save', 'Slack Webhook', 'Success', 'Test Discord', 'Test Email', 'Test Failed', 'Test Slack', 'Test Successful', 'Username:', 'Webhook URL:', 'both', 'discord_webhook', 'email_notifications', 'email_password', 'email_username', 'left', 'right', 'slack_webhook', 'smtp.gmail.com', 'smtp_port', 'smtp_server', 'w', 'x']

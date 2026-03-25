@@ -13,8 +13,8 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
-from ..constants import BIRTHDAY_REWARD_TICKET
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.constants import BIRTHDAY_REWARD_TICKET
 
 def show_profiles_page(self):
     self.clear_content()
@@ -35,16 +35,18 @@ def show_profiles_page(self):
         self.profile_tree.column(col, width=100 if col != "Preferences" else 150)
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT cp.id, m.name, m.email, m.phone, m.birthday, cp.favorite_seats, m.bookings_count, cp.preferred_snacks
-        FROM customer_profiles cp
-        JOIN members m ON cp.member_id = m.id
-        ORDER BY m.name
-    """)
-    for row in cursor.fetchall():
-        self.profile_tree.insert("", "end", values=(row[0], row[1] or '', row[2] or '', row[3] or '', row[4] or '', row[5] or '', row[6] or 0, row[7] or ''))
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT cp.id, m.name, m.email, m.phone, m.birthday, cp.favorite_seats, m.bookings_count, cp.preferred_snacks
+            FROM customer_profiles cp
+            JOIN members m ON cp.member_id = m.id
+            ORDER BY m.name
+        """)
+        for row in cursor.fetchall():
+            self.profile_tree.insert("", "end", values=(row[0], row[1] or '', row[2] or '', row[3] or '', row[4] or '', row[5] or '', row[6] or 0, row[7] or ''))
+    finally:
+        conn.close()
 
     self.profile_tree.pack(fill="both", expand=True, side="left")
     scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.profile_tree.yview)
@@ -97,13 +99,15 @@ def create_profile(self):
             messagebox.showwarning(_t("cinema.common.warning"), "Name and email required")
             return
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("""INSERT INTO customer_profiles (name, email, phone, birthday, preferences, created_at)
-                        VALUES (?, ?, ?, ?, ?, datetime('now'))""",
-                      (name_e.get().strip(), email_e.get().strip(), phone_e.get().strip(),
-                       bday_e.get().strip(), prefs_e.get().strip()))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""INSERT INTO customer_profiles (name, email, phone, birthday, preferences, created_at)
+                            VALUES (?, ?, ?, ?, ?, datetime('now'))""",
+                          (name_e.get().strip(), email_e.get().strip(), phone_e.get().strip(),
+                           bday_e.get().strip(), prefs_e.get().strip()))
+            conn.commit()
+        finally:
+            conn.close()
         messagebox.showinfo(_t("cinema.common.success"), "Profile created")
         form.destroy()
         self.show_profiles_page()
@@ -118,10 +122,12 @@ def edit_profile(self):
     profile_id = self.profile_tree.item(selected[0])['values'][0]
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM customer_profiles WHERE id = ?", (profile_id,))
-    profile = cursor.fetchone()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM customer_profiles WHERE id = ?", (profile_id,))
+        profile = cursor.fetchone()
+    finally:
+        conn.close()
 
     if not profile:
         return
@@ -165,13 +171,15 @@ def edit_profile(self):
 
     def save():
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("""UPDATE customer_profiles SET name=?, email=?, phone=?, birthday=?, preferences=?
-                        WHERE id=?""",
-                      (name_e.get().strip(), email_e.get().strip(), phone_e.get().strip(),
-                       bday_e.get().strip(), prefs_e.get().strip(), profile_id))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""UPDATE customer_profiles SET name=?, email=?, phone=?, birthday=?, preferences=?
+                            WHERE id=?""",
+                          (name_e.get().strip(), email_e.get().strip(), phone_e.get().strip(),
+                           bday_e.get().strip(), prefs_e.get().strip(), profile_id))
+            conn.commit()
+        finally:
+            conn.close()
         messagebox.showinfo(_t("cinema.common.success"), "Profile updated")
         form.destroy()
         self.show_profiles_page()
@@ -186,12 +194,14 @@ def view_profile_history(self):
     email = self.profile_tree.item(selected[0])['values'][2]
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("""SELECT b.booking_ref, m.title, b.show_date, b.seats, b.total_price, b.created_at
-                    FROM bookings b JOIN movies m ON b.movie_id = m.id
-                    WHERE b.customer_email = ? ORDER BY b.created_at DESC LIMIT 20""", (email,))
-    bookings = cursor.fetchall()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""SELECT b.booking_ref, m.title, b.booking_time, b.ticket_types, b.total_amount, b.booking_time
+                        FROM bookings b JOIN movies m ON b.movie_id = m.id
+                        WHERE b.customer_email = ? ORDER BY b.created_at DESC LIMIT 20""", (email,))
+        bookings = cursor.fetchall()
+    finally:
+        conn.close()
 
     history = tk.Toplevel(self.root)
     history.title("Booking History")
@@ -221,10 +231,12 @@ def set_favorite_seats(self):
     seats = simpledialog.askstring("Favorite Seats", "Enter favorite seats (e.g., A1, A2, B3):")
     if seats:
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("UPDATE customer_profiles SET favorite_seats = ? WHERE id = ?", (seats, profile_id))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE customer_profiles SET favorite_seats = ? WHERE id = ?", (seats, profile_id))
+            conn.commit()
+        finally:
+            conn.close()
         self.show_profiles_page()
 
 def show_birthday_rewards(self):
@@ -232,11 +244,13 @@ def show_birthday_rewards(self):
     this_month = today.strftime("%m")
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("""SELECT id, name, email, birthday FROM customer_profiles
-                    WHERE substr(birthday, 6, 2) = ?""", (this_month,))
-    birthdays = cursor.fetchall()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""SELECT id, name, email, birthday FROM customer_profiles
+                        WHERE substr(birthday, 6, 2) = ?""", (this_month,))
+        birthdays = cursor.fetchall()
+    finally:
+        conn.close()
 
     reward_win = tk.Toplevel(self.root)
     reward_win.title("Birthday Rewards This Month")

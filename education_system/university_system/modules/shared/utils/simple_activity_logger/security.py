@@ -2,7 +2,7 @@ import re
 from datetime import datetime, timedelta
 from typing import Dict, Any
 
-from .models import LogEntry
+from education_system.university_system.modules.shared.utils.simple_activity_logger.models import LogEntry
 
 
 class PIIDetector:

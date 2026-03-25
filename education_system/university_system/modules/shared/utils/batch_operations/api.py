@@ -43,7 +43,7 @@ class ApiMixin:
 
         # Run in separate thread
         def run_server():
-            self.api_app.run(host='0.0.0.0', port=port, debug=False)
+            self.api_app.run(host='127.0.0.1', port=port, debug=False)
 
         api_thread = threading.Thread(target=run_server, daemon=True)
         api_thread.start()

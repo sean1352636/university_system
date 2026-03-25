@@ -59,7 +59,7 @@ class TestDatabaseConstants:
 class TestEnsureDbReady:
     """Test _ensure_db_ready function"""
 
-    @patch('university_system.modules.shared.utils.database.ensure_db_directory')
+    @patch('education_system.university_system.modules.shared.utils.database.ensure_db_directory')
     def test_ensure_db_ready_first_call(self, mock_ensure):
         """Test first call to _ensure_db_ready"""
         # Reset the flag
@@ -70,7 +70,7 @@ class TestEnsureDbReady:
         assert result is True
         mock_ensure.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.database.ensure_db_directory')
+    @patch('education_system.university_system.modules.shared.utils.database.ensure_db_directory')
     def test_ensure_db_ready_already_ready(self, mock_ensure):
         """Test _ensure_db_ready when already ready (fast path)"""
         import education_system.university_system.modules.shared.utils.database as db_module
@@ -83,7 +83,7 @@ class TestEnsureDbReady:
         # Should not call ensure_db_directory (fast path)
         mock_ensure.assert_not_called()
 
-    @patch('university_system.modules.shared.utils.database.ensure_db_directory')
+    @patch('education_system.university_system.modules.shared.utils.database.ensure_db_directory')
     def test_ensure_db_ready_thread_safe(self, mock_ensure):
         """Test thread safety of _ensure_db_ready"""
         import education_system.university_system.modules.shared.utils.database as db_module
@@ -118,8 +118,8 @@ class TestEnsureDbReady:
 class TestGetUnifiedConnection:
     """Test get_unified_connection function"""
 
-    @patch('university_system.modules.shared.utils.database.get_connection')
-    @patch('university_system.modules.shared.utils.database._ensure_db_ready')
+    @patch('education_system.university_system.modules.shared.utils.database.get_connection')
+    @patch('education_system.university_system.modules.shared.utils.database._ensure_db_ready')
     def test_get_unified_connection(self, mock_ensure, mock_get_conn):
         """Test get_unified_connection calls get_connection"""
         from education_system.university_system.modules.shared.utils.database import get_unified_connection
@@ -138,7 +138,7 @@ class TestGetUnifiedConnection:
 class TestSimpleDBManager:
     """Test SimpleDBManager class"""
 
-    @patch('university_system.modules.shared.utils.database._ensure_db_ready')
+    @patch('education_system.university_system.modules.shared.utils.database._ensure_db_ready')
     def test_simple_db_manager_init(self, mock_ensure):
         """Test SimpleDBManager initialization"""
         from education_system.university_system.modules.shared.utils.database import SimpleDBManager
@@ -151,7 +151,7 @@ class TestSimpleDBManager:
         assert manager.db_path is not None
         mock_ensure.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.database._ensure_db_ready')
+    @patch('education_system.university_system.modules.shared.utils.database._ensure_db_ready')
     def test_simple_db_manager_init_with_path(self, mock_ensure):
         """Test SimpleDBManager initialization with custom path"""
         from education_system.university_system.modules.shared.utils.database import SimpleDBManager
@@ -163,8 +163,8 @@ class TestSimpleDBManager:
 
         assert manager.db_path == custom_path
 
-    @patch('university_system.modules.shared.utils.database.get_connection')
-    @patch('university_system.modules.shared.utils.database._ensure_db_ready')
+    @patch('education_system.university_system.modules.shared.utils.database.get_connection')
+    @patch('education_system.university_system.modules.shared.utils.database._ensure_db_ready')
     def test_simple_db_manager_get_connection(self, mock_ensure, mock_get_conn):
         """Test SimpleDBManager get_connection method"""
         from education_system.university_system.modules.shared.utils.database import SimpleDBManager
@@ -183,7 +183,7 @@ class TestSimpleDBManager:
 class TestGetDBManager:
     """Test get_db_manager function"""
 
-    @patch('university_system.modules.shared.utils.database._ensure_db_ready')
+    @patch('education_system.university_system.modules.shared.utils.database._ensure_db_ready')
     def test_get_db_manager_singleton(self, mock_ensure):
         """Test get_db_manager returns singleton"""
         from education_system.university_system.modules.shared.utils.database import get_db_manager
@@ -200,7 +200,7 @@ class TestGetDBManager:
         # Should be the same instance
         assert manager1 is manager2
 
-    @patch('university_system.modules.shared.utils.database._ensure_db_ready')
+    @patch('education_system.university_system.modules.shared.utils.database._ensure_db_ready')
     def test_get_db_manager_thread_safe(self, mock_ensure):
         """Test get_db_manager thread safety"""
         from education_system.university_system.modules.shared.utils.database import get_db_manager
@@ -235,7 +235,7 @@ class TestGetDBManager:
 class TestExecuteDBOperation:
     """Test execute_db_operation function"""
 
-    @patch('university_system.modules.shared.utils.database.get_connection')
+    @patch('education_system.university_system.modules.shared.utils.database.get_connection')
     def test_execute_db_operation_success(self, mock_get_conn):
         """Test successful database operation"""
         from education_system.university_system.modules.shared.utils.database import execute_db_operation
@@ -251,7 +251,7 @@ class TestExecuteDBOperation:
         assert result == 'success'
         mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.database.get_connection')
+    @patch('education_system.university_system.modules.shared.utils.database.get_connection')
     def test_execute_db_operation_with_args(self, mock_get_conn):
         """Test database operation with arguments"""
         from education_system.university_system.modules.shared.utils.database import execute_db_operation
@@ -267,7 +267,7 @@ class TestExecuteDBOperation:
         assert result == 15
         mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.database.get_connection')
+    @patch('education_system.university_system.modules.shared.utils.database.get_connection')
     def test_execute_db_operation_with_kwargs(self, mock_get_conn):
         """Test database operation with keyword arguments"""
         from education_system.university_system.modules.shared.utils.database import execute_db_operation
@@ -283,7 +283,7 @@ class TestExecuteDBOperation:
         assert result == 42
         mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.shared.utils.database.get_connection')
+    @patch('education_system.university_system.modules.shared.utils.database.get_connection')
     def test_execute_db_operation_error(self, mock_get_conn, capsys):
         """Test database operation with error"""
         from education_system.university_system.modules.shared.utils.database import execute_db_operation
@@ -358,7 +358,7 @@ class TestSafeDBOperation:
 class TestInitializeEmailDB:
     """Test initialize_email_db function"""
 
-    @patch('university_system.modules.shared.utils.database._ensure_db_ready')
+    @patch('education_system.university_system.modules.shared.utils.database._ensure_db_ready')
     def test_initialize_email_db(self, mock_ensure):
         """Test initialize_email_db function"""
         from education_system.university_system.modules.shared.utils.database import initialize_email_db
@@ -397,7 +397,7 @@ class TestScheduleDatabaseMaintenance:
 class TestOptimizeDatabase:
     """Test optimize_database function"""
 
-    @patch('university_system.modules.shared.utils.database._ensure_db_ready')
+    @patch('education_system.university_system.modules.shared.utils.database._ensure_db_ready')
     def test_optimize_database(self, mock_ensure):
         """Test optimize_database function"""
         from education_system.university_system.modules.shared.utils.database import optimize_database
@@ -485,8 +485,8 @@ class TestModuleExports:
 class TestThreadSafety:
     """Test thread safety of database utilities"""
 
-    @patch('university_system.modules.shared.utils.database.get_connection')
-    @patch('university_system.modules.shared.utils.database._ensure_db_ready')
+    @patch('education_system.university_system.modules.shared.utils.database.get_connection')
+    @patch('education_system.university_system.modules.shared.utils.database._ensure_db_ready')
     def test_concurrent_get_unified_connection(self, mock_ensure, mock_get_conn):
         """Test concurrent calls to get_unified_connection"""
         from education_system.university_system.modules.shared.utils.database import get_unified_connection
@@ -511,7 +511,7 @@ class TestThreadSafety:
         # All threads should succeed
         assert len(connections) == 10
 
-    @patch('university_system.modules.shared.utils.database.get_connection')
+    @patch('education_system.university_system.modules.shared.utils.database.get_connection')
     def test_concurrent_execute_db_operation(self, mock_get_conn):
         """Test concurrent database operations"""
         from education_system.university_system.modules.shared.utils.database import execute_db_operation
@@ -546,7 +546,7 @@ class TestBackwardCompatibility:
     def test_main_dir_equals_data_dir(self):
         """Test MAIN_DIR equals DATA_DIR for backward compatibility"""
         from education_system.university_system.modules.shared.utils.database import MAIN_DIR
-        from education_system.university_system.modules.shared.constants import paths
+        from education_system.university_system.core import paths
 
         assert MAIN_DIR == str(paths.DATA_DIR)
 
@@ -556,7 +556,7 @@ class TestBackwardCompatibility:
 
         assert DB_PATH == DEFAULT_DB_PATH
 
-    @patch('university_system.modules.shared.utils.database._ensure_db_ready')
+    @patch('education_system.university_system.modules.shared.utils.database._ensure_db_ready')
     def test_simple_db_manager_default_path(self, mock_ensure):
         """Test SimpleDBManager uses DEFAULT_DB_PATH by default"""
         from education_system.university_system.modules.shared.utils.database import SimpleDBManager, DEFAULT_DB_PATH
@@ -571,7 +571,7 @@ class TestBackwardCompatibility:
 class TestEdgeCases:
     """Test edge cases and error scenarios"""
 
-    @patch('university_system.modules.shared.utils.database.get_connection')
+    @patch('education_system.university_system.modules.shared.utils.database.get_connection')
     def test_execute_db_operation_connection_error(self, mock_get_conn, capsys):
         """Test execute_db_operation when connection fails"""
         from education_system.university_system.modules.shared.utils.database import execute_db_operation
@@ -585,7 +585,7 @@ class TestEdgeCases:
 
         assert result is None
 
-    @patch('university_system.modules.shared.utils.database.get_connection')
+    @patch('education_system.university_system.modules.shared.utils.database.get_connection')
     def test_execute_db_operation_close_error(self, mock_get_conn):
         """Test execute_db_operation when close fails"""
         from education_system.university_system.modules.shared.utils.database import execute_db_operation
@@ -617,8 +617,8 @@ class TestEdgeCases:
 class TestIntegration:
     """Integration tests"""
 
-    @patch('university_system.modules.shared.utils.database.get_connection')
-    @patch('university_system.modules.shared.utils.database._ensure_db_ready')
+    @patch('education_system.university_system.modules.shared.utils.database.get_connection')
+    @patch('education_system.university_system.modules.shared.utils.database._ensure_db_ready')
     def test_full_workflow(self, mock_ensure, mock_get_conn):
         """Test full workflow of getting manager and executing operation"""
         from education_system.university_system.modules.shared.utils.database import get_db_manager, execute_db_operation

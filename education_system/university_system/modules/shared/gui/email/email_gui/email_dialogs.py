@@ -158,18 +158,37 @@ class ComposeEmailDialog:
                 messagebox.showerror("Error", "Please enter a message")
                 return
             
-            # Send emails
+            # Send emails via university email service
+            from education_system.university_system.infrastructure.email.email_service import send_email
+
             success_count = 0
+            errors = []
             for recipient in recipients:
-                if 'send_email' in globals():
-                    if send_email(recipient, subject, body, cc=cc):
+                try:
+                    result = send_email(
+                        recipient_email=recipient,
+                        subject=subject,
+                        body=body,
+                        cc=cc
+                    )
+                    if result is not False:
                         success_count += 1
-            
-            if success_count > 0:
+                    else:
+                        errors.append(recipient)
+                except Exception as send_err:
+                    errors.append(f"{recipient}: {send_err}")
+
+            if success_count > 0 and not errors:
                 messagebox.showinfo("Success", f"Email sent to {success_count} recipient(s)")
                 self.dialog.destroy()
+            elif success_count > 0:
+                messagebox.showwarning(
+                    "Partial Success",
+                    f"Sent to {success_count} recipient(s), but failed for:\n" + "\n".join(errors)
+                )
+                self.dialog.destroy()
             else:
-                messagebox.showerror("Error", "Failed to send emails")
+                messagebox.showerror("Error", "Failed to send emails:\n" + "\n".join(errors))
                 
         except Exception as e:
             messagebox.showerror("Error", f"Error sending email: {e}")

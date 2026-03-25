@@ -9,7 +9,7 @@ from typing import Dict, List, Any
 
 from education_system.university_system.infrastructure.database.db import sqlite3
 
-from .models import LogEntry
+from education_system.university_system.modules.shared.utils.simple_activity_logger.models import LogEntry
 
 _logger = logging.getLogger(__name__)
 

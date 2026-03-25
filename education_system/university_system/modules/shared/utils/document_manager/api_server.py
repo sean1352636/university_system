@@ -1,4 +1,4 @@
-from ._common import (
+from education_system.university_system.modules.shared.utils.document_manager._common import (
     datetime, timedelta, sqlite3,
     get_connection, _t,
 )
@@ -52,7 +52,7 @@ class APIServerMixin:
 
             print("\nNote: The API server runs as a separate Flask application.")
             print("To start the API server, use:")
-            print(f"  python -m university_system.api.api_server --port {port}")
+            print(f"  python -m shared.api.university.api_server --port {port}")
 
             conn.close()
 

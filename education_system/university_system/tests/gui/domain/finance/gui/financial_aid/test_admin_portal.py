@@ -37,7 +37,7 @@ class TestAdminPortalInit:
         root = tk.Tk()
         parent_frame = ttk.Frame(root)
 
-        with patch('university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_auth') as mock_get_auth:
+        with patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_auth') as mock_get_auth:
             mock_get_auth.return_value = Mock()
             portal = AdminPortal(parent_frame)
 
@@ -80,7 +80,7 @@ class TestAdminPortalInit:
 class TestAdminDashboard:
     """Test admin dashboard functionality"""
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_connection')
     def test_show_dashboard(self, mock_get_conn):
         """Test show_dashboard method"""
         root = tk.Tk()
@@ -102,7 +102,7 @@ class TestAdminDashboard:
 
         root.destroy()
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_connection')
     def test_get_admin_stats(self, mock_get_conn):
         """Test _get_admin_stats method"""
         root = tk.Tk()
@@ -132,7 +132,7 @@ class TestAdminDashboard:
 class TestAidApplications:
     """Test financial aid applications management"""
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_connection')
     def test_show_aid_applications(self, mock_get_conn):
         """Test show_aid_applications method"""
         root = tk.Tk()
@@ -151,7 +151,7 @@ class TestAidApplications:
 
         root.destroy()
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_connection')
     def test_load_aid_applications(self, mock_get_conn):
         """Test _load_aid_applications method"""
         root = tk.Tk()
@@ -180,8 +180,8 @@ class TestAidApplications:
 
         root.destroy()
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.admin_portal.log_activity')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.admin_portal.show_success')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.log_activity')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.show_success')
     def test_review_aid_application_approve(self, mock_success, mock_log):
         """Test reviewing aid application - approve"""
         root = tk.Tk()
@@ -207,8 +207,8 @@ class TestAidApplications:
 class TestAidPackages:
     """Test aid package creation and management"""
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_current_academic_year')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_academic_year_list')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_current_academic_year')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_academic_year_list')
     def test_show_create_package(self, mock_year_list, mock_current_year):
         """Test show_create_package method"""
         root = tk.Tk()
@@ -226,9 +226,9 @@ class TestAidPackages:
 
         root.destroy()
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.admin_portal.log_activity')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.admin_portal.show_success')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.admin_portal.show_error')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.log_activity')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.show_success')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.show_error')
     def test_create_aid_package_success(self, mock_error, mock_success, mock_log):
         """Test successful aid package creation"""
         root = tk.Tk()
@@ -255,7 +255,7 @@ class TestAidPackages:
 
         root.destroy()
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.admin_portal.show_error')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.show_error')
     def test_create_aid_package_missing_student_id(self, mock_error):
         """Test aid package creation with missing student ID"""
         root = tk.Tk()
@@ -282,7 +282,7 @@ class TestAidPackages:
 class TestDisbursements:
     """Test disbursement management"""
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_connection')
     def test_show_disbursements(self, mock_get_conn):
         """Test show_disbursements method"""
         root = tk.Tk()
@@ -304,7 +304,7 @@ class TestDisbursements:
 
         root.destroy()
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_connection')
     def test_load_pending_disbursements(self, mock_get_conn):
         """Test _load_pending_disbursements method"""
         root = tk.Tk()
@@ -345,9 +345,9 @@ class TestDisbursements:
 
         root.destroy()
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_current_user')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.admin_portal.log_activity')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.admin_portal.show_success')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_current_user')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.log_activity')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.show_success')
     def test_process_selected_disbursements(self, mock_success, mock_log, mock_user):
         """Test processing selected disbursements"""
         root = tk.Tk()
@@ -385,7 +385,7 @@ class TestReports:
 
         root.destroy()
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_connection')
     def test_generate_aid_distribution_report(self, mock_get_conn):
         """Test _generate_aid_distribution_report method"""
         root = tk.Tk()
@@ -431,7 +431,7 @@ class TestFAFSAImport:
 
         root.destroy()
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.admin_portal.show_warning')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.show_warning')
     def test_import_fafsa_file_no_file(self, mock_warning):
         """Test FAFSA import with no file selected"""
         root = tk.Tk()

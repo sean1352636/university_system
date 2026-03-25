@@ -322,26 +322,7 @@ def init_finance_tables():
                 )
         ''')
 
-        # Create housing_payments table
-        cursor.execute('''
-        CREATE TABLE housing_payments (
-                    payment_id TEXT PRIMARY KEY,
-                    assignment_id TEXT NOT NULL,
-                    student_id TEXT NOT NULL,
-                    amount REAL NOT NULL,
-                    payment_date TEXT NOT NULL,
-                    payment_method TEXT NOT NULL,
-                    transaction_reference TEXT,
-                    payment_period_start TEXT NOT NULL,
-                    payment_period_end TEXT NOT NULL,
-                    status TEXT NOT NULL,
-                    received_by TEXT NOT NULL,
-                    created_at TEXT NOT NULL,
-                    updated_at TEXT NOT NULL,
-                    FOREIGN KEY (assignment_id) REFERENCES housing_assignments (assignment_id),
-                    FOREIGN KEY (student_id) REFERENCES students (student_id)
-                )
-        ''')
+        # Housing payments are stored in the unified payments table with source_type = 'housing'
 
         # Create late_fees table
         cursor.execute('''
@@ -424,28 +405,34 @@ def init_finance_tables():
                 )
         ''')
 
-        # Create refunds table
+        # Create unified refunds table
         cursor.execute('''
-        CREATE TABLE refunds (
+        CREATE TABLE unified_refunds (
                     refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    student_id TEXT NOT NULL,
-                    original_payment_id INTEGER,
-                    refund_amount DECIMAL(10,2) NOT NULL,
+                    source_type TEXT NOT NULL,
+                    source_refund_id TEXT,
+                    reference_type TEXT,
+                    reference_id TEXT,
+                    student_id TEXT,
+                    customer_name TEXT,
+                    customer_email TEXT,
+                    amount DECIMAL(10,2) NOT NULL,
+                    original_amount DECIMAL(10,2),
                     currency TEXT DEFAULT 'GBP',
-                    refund_reason TEXT NOT NULL,
-                    refund_type TEXT NOT NULL, -- 'full', 'partial', 'withdrawal'
-                    refund_method TEXT, -- 'bank_transfer', 'original_payment_method', 'check'
-                    status TEXT DEFAULT 'pending', -- pending, approved, processed, rejected
+                    refund_type TEXT,
+                    refund_method TEXT,
+                    refund_reference TEXT,
+                    reason TEXT,
+                    status TEXT DEFAULT 'pending',
+                    department TEXT,
+                    processed_by TEXT,
                     requested_by TEXT,
                     approved_by TEXT,
-                    processed_by TEXT,
+                    refund_date TEXT,
                     request_date TEXT,
                     approval_date TEXT,
-                    processed_date TEXT,
                     notes TEXT,
-                    created_at TEXT,
-                    FOREIGN KEY (student_id) REFERENCES students (student_id),
-                    FOREIGN KEY (original_payment_id) REFERENCES payments (payment_id)
+                    created_at TEXT
                 )
         ''')
 

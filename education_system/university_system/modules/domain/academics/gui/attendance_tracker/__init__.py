@@ -1,4 +1,4 @@
 # Re-exports AttendanceGUI and standalone functions for backward compatibility
-from .main import AttendanceGUI, run_gui, main, start_gui, start_cli
+from education_system.university_system.modules.domain.academics.gui.attendance_tracker.main import AttendanceGUI, run_gui, main, start_gui, start_cli
 
 __all__ = ['AttendanceGUI', 'run_gui', 'main', 'start_gui', 'start_cli']

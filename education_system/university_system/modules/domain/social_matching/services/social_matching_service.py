@@ -11,21 +11,21 @@ Features:
 - Privacy controls
 """
 
-from .constants import (
+from education_system.university_system.modules.domain.social_matching.services.constants import (
     INTEREST_CATEGORIES,
     PERSONALITY_TYPES,
     GROUP_SIZE_PREFERENCES,
     ACTIVITY_LEVELS,
 )
-from .interests import InterestMixin
-from .personality import PersonalityMixin
-from .privacy import PrivacyMixin
-from .matching import MatchingMixin
-from .buddy_requests import BuddyRequestMixin
-from .teams import TeamMixin
-from .clubs import ClubMixin
-from .activities import ActivityMixin
-from .statistics import StatisticsMixin
+from education_system.university_system.modules.domain.social_matching.services.interests import InterestMixin
+from education_system.university_system.modules.domain.social_matching.services.personality import PersonalityMixin
+from education_system.university_system.modules.domain.social_matching.services.privacy import PrivacyMixin
+from education_system.university_system.modules.domain.social_matching.services.matching import MatchingMixin
+from education_system.university_system.modules.domain.social_matching.services.buddy_requests import BuddyRequestMixin
+from education_system.university_system.modules.domain.social_matching.services.teams import TeamMixin
+from education_system.university_system.modules.domain.social_matching.services.clubs import ClubMixin
+from education_system.university_system.modules.domain.social_matching.services.activities import ActivityMixin
+from education_system.university_system.modules.domain.social_matching.services.statistics import StatisticsMixin
 
 
 class SocialMatchingService(

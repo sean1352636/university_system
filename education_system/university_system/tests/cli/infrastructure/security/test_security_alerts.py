@@ -158,7 +158,7 @@ class TestFormatAlertMessage:
 # ---------------------------------------------------------------------------
 
 class TestSendEmailAlert:
-    @patch("university_system.infrastructure.security.security_alerts.smtplib.SMTP")
+    @patch("education_system.university_system.infrastructure.security.security_alerts.smtplib.SMTP")
     def test_success(self, mock_smtp_cls, manager):
         mock_server = MagicMock()
         mock_smtp_cls.return_value.__enter__ = MagicMock(return_value=mock_server)
@@ -167,7 +167,7 @@ class TestSendEmailAlert:
         result = manager._send_email_alert("HIGH", "Alert!", "message body")
         assert result is True
 
-    @patch("university_system.infrastructure.security.security_alerts.smtplib.SMTP")
+    @patch("education_system.university_system.infrastructure.security.security_alerts.smtplib.SMTP")
     def test_failure(self, mock_smtp_cls, manager):
         mock_smtp_cls.side_effect = Exception("SMTP error")
         result = manager._send_email_alert("HIGH", "Alert!", "message body")
@@ -179,7 +179,7 @@ class TestSendEmailAlert:
 # ---------------------------------------------------------------------------
 
 class TestSendSlackAlert:
-    @patch("university_system.infrastructure.security.security_alerts.requests")
+    @patch("education_system.university_system.infrastructure.security.security_alerts.requests")
     def test_success(self, mock_requests, manager):
         mock_response = MagicMock()
         mock_response.raise_for_status.return_value = None
@@ -188,7 +188,7 @@ class TestSendSlackAlert:
         result = manager._send_slack_alert("HIGH", "Alert!", "message body")
         assert result is True
 
-    @patch("university_system.infrastructure.security.security_alerts.requests")
+    @patch("education_system.university_system.infrastructure.security.security_alerts.requests")
     def test_failure(self, mock_requests, manager):
         mock_requests.post.side_effect = Exception("Network error")
         result = manager._send_slack_alert("HIGH", "Alert!", "message body")
@@ -302,7 +302,7 @@ class TestSendAlert:
 # ---------------------------------------------------------------------------
 
 class TestConvenienceFunctions:
-    @patch("university_system.infrastructure.security.security_alerts.get_alert_manager")
+    @patch("education_system.university_system.infrastructure.security.security_alerts.get_alert_manager")
     def test_send_security_alert(self, mock_get_mgr):
         mock_mgr = MagicMock()
         mock_mgr.send_alert.return_value = True
@@ -312,7 +312,7 @@ class TestConvenienceFunctions:
         assert result is True
         mock_mgr.send_alert.assert_called_once()
 
-    @patch("university_system.infrastructure.security.security_alerts.send_security_alert")
+    @patch("education_system.university_system.infrastructure.security.security_alerts.send_security_alert")
     def test_alert_suspicious_login(self, mock_send):
         alert_suspicious_login(
             user_id="u1", ip_address="1.2.3.4",
@@ -322,47 +322,47 @@ class TestConvenienceFunctions:
         call_kwargs = mock_send.call_args
         assert call_kwargs[1]["level"] == "HIGH" or call_kwargs[0][0] == "HIGH"
 
-    @patch("university_system.infrastructure.security.security_alerts.send_security_alert")
+    @patch("education_system.university_system.infrastructure.security.security_alerts.send_security_alert")
     def test_alert_brute_force_high(self, mock_send):
         alert_brute_force_attempt("admin", "1.2.3.4", attempts=5)
         call_args = mock_send.call_args
         assert call_args[1].get("level", call_args[0][0] if call_args[0] else None) == "HIGH"
 
-    @patch("university_system.infrastructure.security.security_alerts.send_security_alert")
+    @patch("education_system.university_system.infrastructure.security.security_alerts.send_security_alert")
     def test_alert_brute_force_critical(self, mock_send):
         alert_brute_force_attempt("admin", "1.2.3.4", attempts=15)
         call_args = mock_send.call_args
         assert call_args[1].get("level", call_args[0][0] if call_args[0] else None) == "CRITICAL"
         assert call_args[1].get("notify_sms", False) is True
 
-    @patch("university_system.infrastructure.security.security_alerts.send_security_alert")
+    @patch("education_system.university_system.infrastructure.security.security_alerts.send_security_alert")
     def test_alert_unauthorized_access(self, mock_send):
         alert_unauthorized_access("u1", "grades", "g123", "admin_read")
         mock_send.assert_called_once()
 
-    @patch("university_system.infrastructure.security.security_alerts.send_security_alert")
+    @patch("education_system.university_system.infrastructure.security.security_alerts.send_security_alert")
     def test_alert_data_exfiltration_high(self, mock_send):
         alert_data_exfiltration("u1", "student_records", 500, "csv")
         call_args = mock_send.call_args
         assert call_args[1].get("level") == "HIGH"
 
-    @patch("university_system.infrastructure.security.security_alerts.send_security_alert")
+    @patch("education_system.university_system.infrastructure.security.security_alerts.send_security_alert")
     def test_alert_data_exfiltration_critical(self, mock_send):
         alert_data_exfiltration("u1", "student_records", 5000, "csv")
         call_args = mock_send.call_args
         assert call_args[1].get("level") == "CRITICAL"
 
-    @patch("university_system.infrastructure.security.security_alerts.send_security_alert")
+    @patch("education_system.university_system.infrastructure.security.security_alerts.send_security_alert")
     def test_alert_account_lockout(self, mock_send):
         alert_account_lockout("u1", "1.2.3.4", 5, 30)
         mock_send.assert_called_once()
 
-    @patch("university_system.infrastructure.security.security_alerts.send_security_alert")
+    @patch("education_system.university_system.infrastructure.security.security_alerts.send_security_alert")
     def test_alert_privilege_escalation(self, mock_send):
         alert_privilege_escalation("u1", "student", "admin", "superadmin")
         mock_send.assert_called_once()
 
-    @patch("university_system.infrastructure.security.security_alerts.send_security_alert")
+    @patch("education_system.university_system.infrastructure.security.security_alerts.send_security_alert")
     def test_alert_configuration_change(self, mock_send):
         alert_configuration_change("max_sessions", "5", "10", "admin")
         mock_send.assert_called_once()

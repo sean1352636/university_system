@@ -201,10 +201,10 @@ def member_retention_insights(cursor):
             COUNT(DISTINCT cm.student_id) as member_count
         FROM club_members cm
         WHERE cm.student_id IN (
-            SELECT er.student_id
-            FROM event_registrations er
+            SELECT er.user_id
+            FROM unified_event_registrations er
             WHERE er.registration_date >= date('now', '-6 months')
-            GROUP BY er.student_id
+            GROUP BY er.user_id
             HAVING COUNT(*) >= 3
         )
 
@@ -215,10 +215,10 @@ def member_retention_insights(cursor):
             COUNT(DISTINCT cm.student_id) as member_count
         FROM club_members cm
         WHERE cm.student_id NOT IN (
-            SELECT er.student_id
-            FROM event_registrations er
+            SELECT er.user_id
+            FROM unified_event_registrations er
             WHERE er.registration_date >= date('now', '-6 months')
-            GROUP BY er.student_id
+            GROUP BY er.user_id
             HAVING COUNT(*) >= 1
         )
         ''')
@@ -239,7 +239,7 @@ def member_retention_insights(cursor):
         FROM students s
         JOIN club_members m ON s.student_id = m.student_id
         JOIN student_clubs c ON m.club_id = c.club_id
-        LEFT JOIN event_registrations er ON s.student_id = er.student_id
+        LEFT JOIN unified_event_registrations er ON s.student_id = er.user_id
         WHERE c.status = 'active'
         GROUP BY s.student_id, c.club_id
         HAVING days_since_last_activity > 90 OR days_since_last_activity IS NULL

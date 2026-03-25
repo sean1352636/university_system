@@ -2,10 +2,11 @@ import uuid
 import json
 import logging
 from datetime import datetime
+from education_system.university_system.core.sql_safety import escape_like
 from typing import Dict, List, Tuple
 from education_system.university_system.utils.logging.log_config import configure_logging
-from .exceptions import CalendarError, ValidationError
-from .config import ValidationUtils
+from education_system.university_system.modules.domain.academics.services.academic_calendar.exceptions import CalendarError, ValidationError
+from education_system.university_system.modules.domain.academics.services.academic_calendar.config import ValidationUtils
 
 logger = configure_logging(name=__name__)
 
@@ -40,7 +41,7 @@ class AdvancedSearchManager:
             if search_criteria.get('text'):
                 search_text = ValidationUtils.sanitize_string(search_criteria['text'], 200)
                 conditions.append("(e.name LIKE ? OR e.description LIKE ?)")
-                search_pattern = f"%{search_text}%"
+                search_pattern = f"%{escape_like(search_text)}%"
                 params.extend([search_pattern, search_pattern])
 
             # Date range with validation

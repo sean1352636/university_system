@@ -9,19 +9,19 @@ from education_system.university_system.modules.shared.utils.i18n import (
     get_text as _t,
 )
 
-from .auth_encryption import AuthEncryptionMixin
-from .database import DatabaseMixin
-from .ui_framework import UIFrameworkMixin
-from .health_records import HealthRecordsMixin
-from .vaccinations import VaccinationsMixin
-from .appointments import AppointmentsMixin
-from .emergency_contacts import EmergencyContactsMixin
-from .medical_history import MedicalHistoryMixin
-from .reports import ReportsMixin
-from .audit_security import AuditSecurityMixin
-from .data_management import DataManagementMixin
-from .email_integration import EmailIntegrationMixin
-from .accessibility import AccessibilityMixin
+from education_system.university_system.modules.domain.health.gui.health_portal.auth_encryption import AuthEncryptionMixin
+from education_system.university_system.modules.domain.health.gui.health_portal.database import DatabaseMixin
+from education_system.university_system.modules.domain.health.gui.health_portal.ui_framework import UIFrameworkMixin
+from education_system.university_system.modules.domain.health.gui.health_portal.health_records import HealthRecordsMixin
+from education_system.university_system.modules.domain.health.gui.health_portal.vaccinations import VaccinationsMixin
+from education_system.university_system.modules.domain.health.gui.health_portal.appointments import AppointmentsMixin
+from education_system.university_system.modules.domain.health.gui.health_portal.emergency_contacts import EmergencyContactsMixin
+from education_system.university_system.modules.domain.health.gui.health_portal.medical_history import MedicalHistoryMixin
+from education_system.university_system.modules.domain.health.gui.health_portal.reports import ReportsMixin
+from education_system.university_system.modules.domain.health.gui.health_portal.audit_security import AuditSecurityMixin
+from education_system.university_system.modules.domain.health.gui.health_portal.data_management import DataManagementMixin
+from education_system.university_system.modules.domain.health.gui.health_portal.email_integration import EmailIntegrationMixin
+from education_system.university_system.modules.domain.health.gui.health_portal.accessibility import AccessibilityMixin
 
 
 class HealthPortalGUI(

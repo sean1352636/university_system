@@ -2,7 +2,7 @@
 Betting Shop CLI - Helper/utility functions.
 """
 
-from .constants import logger, get_auth
+from education_system.university_system.modules.services.cli.betting_shop_cli.constants import logger, get_auth
 
 
 def print_header(text: str):

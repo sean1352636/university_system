@@ -29,55 +29,11 @@ except ImportError:
         """Fallback database initialization"""
         try:
             with transaction() as conn:
-                # Products table
-                conn.execute('''
-                    CREATE TABLE IF NOT EXISTS butcher_products (
-                        product_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        product_name TEXT NOT NULL,
-                        category TEXT NOT NULL,
-                        price_per_kg REAL NOT NULL,
-                        stock_kg REAL DEFAULT 0,
-                        description TEXT,
-                        status TEXT DEFAULT 'available',
-                        reorder_point REAL DEFAULT 5.0,
-                        supplier TEXT,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    )
-                ''')
+                # Products now use unified 'products' table with source_type='butcher'
 
-                # Orders table
-                conn.execute('''
-                    CREATE TABLE IF NOT EXISTS butcher_orders (
-                        order_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        order_number TEXT UNIQUE NOT NULL,
-                        user_id TEXT NOT NULL,
-                        user_name TEXT,
-                        user_email TEXT,
-                        total_amount REAL NOT NULL,
-                        payment_method TEXT DEFAULT 'cash',
-                        status TEXT DEFAULT 'pending',
-                        order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        pickup_date TEXT,
-                        completed_date TIMESTAMP,
-                        notes TEXT
-                    )
-                ''')
+                # Orders now use unified 'orders' table with source_type='butcher'
 
-                # Order items table
-                conn.execute('''
-                    CREATE TABLE IF NOT EXISTS butcher_order_items (
-                        item_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        order_id INTEGER NOT NULL,
-                        product_id INTEGER NOT NULL,
-                        product_name TEXT,
-                        quantity_kg REAL NOT NULL,
-                        unit_price REAL NOT NULL,
-                        subtotal REAL NOT NULL,
-                        FOREIGN KEY (order_id) REFERENCES butcher_orders(order_id),
-                        FOREIGN KEY (product_id) REFERENCES butcher_products(product_id)
-                    )
-                ''')
+                # Order items now use unified 'order_items' table with source_type='butcher'
 
                 # Inventory adjustments table
                 conn.execute('''
@@ -89,7 +45,7 @@ except ImportError:
                         adjusted_by TEXT NOT NULL,
                         adjustment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         notes TEXT,
-                        FOREIGN KEY (product_id) REFERENCES butcher_products(product_id)
+                        FOREIGN KEY (product_id) REFERENCES products(product_id)
                     )
                 ''')
 
@@ -102,7 +58,7 @@ except ImportError:
                         alert_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         resolved BOOLEAN DEFAULT 0,
                         resolved_date TIMESTAMP,
-                        FOREIGN KEY (product_id) REFERENCES butcher_products(product_id)
+                        FOREIGN KEY (product_id) REFERENCES products(product_id)
                     )
                 ''')
 
@@ -116,12 +72,12 @@ except ImportError:
                         expiry_date DATE NOT NULL,
                         received_date DATE DEFAULT CURRENT_DATE,
                         status TEXT DEFAULT 'active',
-                        FOREIGN KEY (product_id) REFERENCES butcher_products(product_id)
+                        FOREIGN KEY (product_id) REFERENCES products(product_id)
                     )
                 ''')
 
                 # Initialize sample products if table is empty
-                cursor = conn.execute('SELECT COUNT(*) FROM butcher_products')
+                cursor = conn.execute("SELECT COUNT(*) FROM products WHERE source_type = 'butcher'")
                 if cursor.fetchone()[0] == 0:
                     sample_products = [
                         ('Ribeye Steak', 'Beef', 24.99, 15.0, 'Premium ribeye steak', 'Prime Meats Ltd'),
@@ -141,9 +97,9 @@ except ImportError:
 
                     for product in sample_products:
                         conn.execute('''
-                            INSERT INTO butcher_products
-                            (product_name, category, price_per_kg, stock_kg, description, supplier)
-                            VALUES (?, ?, ?, ?, ?, ?)
+                            INSERT INTO products
+                            (source_type, product_name, category, price_per_kg, stock_kg, description, supplier)
+                            VALUES ('butcher', ?, ?, ?, ?, ?, ?)
                         ''', product)
 
                     logger.info("Initialized butcher shop with sample products")
@@ -275,16 +231,16 @@ def browse_products_by_category():
                 cursor = conn.execute('''
                     SELECT product_id, product_name, category, price_per_kg,
                            stock_kg, description, status
-                    FROM butcher_products
-                    WHERE category = ? AND status = 'available'
+                    FROM products
+                    WHERE source_type = 'butcher' AND category = ? AND status = 'available'
                     ORDER BY product_name
                 ''', (category_filter,))
             else:
                 cursor = conn.execute('''
                     SELECT product_id, product_name, category, price_per_kg,
                            stock_kg, description, status
-                    FROM butcher_products
-                    WHERE status = 'available'
+                    FROM products
+                    WHERE source_type = 'butcher' AND status = 'available'
                     ORDER BY category, product_name
                 ''')
 
@@ -335,11 +291,11 @@ def view_product_details():
 
         with get_connection() as conn:
             cursor = conn.execute('''
-                SELECT product_id, product_name, category, price_per_kg,
+                SELECT source_product_id as product_id, product_name, category, price_per_kg,
                        stock_kg, description, status, reorder_point, supplier,
                        created_at, updated_at
-                FROM butcher_products
-                WHERE product_id = ?
+                FROM products
+                WHERE source_product_id = ? AND source_type = 'butcher'
             ''', (product_id,))
 
             product = cursor.fetchone()
@@ -410,8 +366,8 @@ def search_products():
             cursor = conn.execute('''
                 SELECT product_id, product_name, category, price_per_kg,
                        stock_kg, description, status
-                FROM butcher_products
-                WHERE product_name LIKE ? OR description LIKE ?
+                FROM products
+                WHERE source_type = 'butcher' AND (product_name LIKE ? OR description LIKE ?)
                 ORDER BY
                     CASE WHEN product_name LIKE ? THEN 1 ELSE 2 END,
                     product_name
@@ -525,10 +481,10 @@ def add_product():
         # Add product
         with transaction() as conn:
             conn.execute('''
-                INSERT INTO butcher_products
-                (product_name, category, price_per_kg, stock_kg, description,
+                INSERT INTO products
+                (source_type, product_name, category, price_per_kg, stock_kg, description,
                  supplier, reorder_point, status, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 'available', ?, ?)
+                VALUES ('butcher', ?, ?, ?, ?, ?, ?, ?, 'available', ?, ?)
             ''', (name, category, price, stock, description, supplier,
                   reorder_point, datetime.now().isoformat(), datetime.now().isoformat()))
 
@@ -566,8 +522,8 @@ def update_product():
             cursor = conn.execute('''
                 SELECT product_name, category, price_per_kg, description,
                        supplier, reorder_point, status
-                FROM butcher_products
-                WHERE product_id = ?
+                FROM products
+                WHERE source_product_id = ? AND source_type = 'butcher'
             ''', (product_id,))
 
             product = cursor.fetchone()
@@ -661,11 +617,11 @@ def update_product():
             # Update product
             with transaction() as conn:
                 conn.execute('''
-                    UPDATE butcher_products
+                    UPDATE products
                     SET product_name = ?, category = ?, price_per_kg = ?,
                         description = ?, supplier = ?, reorder_point = ?,
                         status = ?, updated_at = ?
-                    WHERE product_id = ?
+                    WHERE source_product_id = ? AND source_type = 'butcher'
                 ''', (new_name, new_category, new_price, new_desc, new_supplier,
                       new_reorder, new_status, datetime.now().isoformat(), product_id))
 
@@ -727,9 +683,9 @@ def place_order():
         # Show available products
         with get_connection() as conn:
             cursor = conn.execute('''
-                SELECT product_id, product_name, category, price_per_kg, stock_kg
-                FROM butcher_products
-                WHERE status = 'available' AND stock_kg > 0
+                SELECT source_product_id as product_id, product_name, category, price_per_kg, stock_kg
+                FROM products
+                WHERE source_type = 'butcher' AND status = 'available' AND stock_kg > 0
                 ORDER BY category, product_name
             ''')
             products = cursor.fetchall()
@@ -786,8 +742,8 @@ def place_order():
             with get_connection() as conn:
                 cursor = conn.execute('''
                     SELECT product_name, price_per_kg, stock_kg, status
-                    FROM butcher_products
-                    WHERE product_id = ?
+                    FROM products
+                    WHERE source_product_id = ? AND source_type = 'butcher'
                 ''', (product_id,))
                 product = cursor.fetchone()
 
@@ -925,10 +881,10 @@ def place_order():
         with transaction() as conn:
             # Insert order
             conn.execute('''
-                INSERT INTO butcher_orders
-                (order_number, user_id, user_name, user_email, total_amount,
-                 payment_method, status, order_date, pickup_date, notes)
-                VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)
+                INSERT INTO orders
+                (source_type, order_number, user_id, user_name, user_email, total_amount,
+                 payment_method, order_status, order_date, pickup_date, notes)
+                VALUES ('butcher', ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)
             ''', (order_number, user.get('username'),
                   user.get('full_name', user.get('username')),
                   user.get('email', ''), total, payment_method,
@@ -939,24 +895,24 @@ def place_order():
             # Insert order items and update stock
             for item in cart:
                 conn.execute('''
-                    INSERT INTO butcher_order_items
-                    (order_id, product_id, product_name, quantity_kg, unit_price, subtotal)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    INSERT INTO order_items
+                    (source_type, order_id, product_id, item_name, quantity_kg, unit_price, subtotal)
+                    VALUES ('butcher', ?, ?, ?, ?, ?, ?)
                 ''', (order_id, item['product_id'], item['name'], item['quantity'],
                       item['price'], item['subtotal']))
 
                 # Update stock
                 conn.execute('''
-                    UPDATE butcher_products
+                    UPDATE products
                     SET stock_kg = stock_kg - ?
-                    WHERE product_id = ?
+                    WHERE source_product_id = ? AND source_type = 'butcher'
                 ''', (item['quantity'], item['product_id']))
 
                 # Check if stock is now below reorder point
                 cursor = conn.execute('''
                     SELECT stock_kg, reorder_point, product_name
-                    FROM butcher_products
-                    WHERE product_id = ? AND stock_kg <= reorder_point
+                    FROM products
+                    WHERE source_product_id = ? AND source_type = 'butcher' AND stock_kg <= reorder_point
                 ''', (item['product_id'],))
 
                 low_stock = cursor.fetchone()
@@ -1020,10 +976,10 @@ def view_my_orders():
 
         with get_connection() as conn:
             cursor = conn.execute('''
-                SELECT order_id, order_number, total_amount, status,
+                SELECT order_id, order_number, total_amount, order_status,
                        order_date, pickup_date, payment_method, notes
-                FROM butcher_orders
-                WHERE user_id = ?
+                FROM orders
+                WHERE source_type = 'butcher' AND user_id = ?
                 ORDER BY order_date DESC
                 LIMIT 50
             ''', (user.get('username'),))
@@ -1061,9 +1017,9 @@ def view_my_orders():
 
                         # Get order items
                         item_cursor = conn.execute('''
-                            SELECT product_name, quantity_kg, unit_price, subtotal
-                            FROM butcher_order_items
-                            WHERE order_id = ?
+                            SELECT item_name as product_name, quantity_kg, unit_price, subtotal
+                            FROM order_items
+                            WHERE order_id = ? AND source_type = 'butcher'
                         ''', (order_id,))
                         items = item_cursor.fetchall()
 
@@ -1118,16 +1074,16 @@ def view_order_receipt():
             if is_admin():
                 cursor = conn.execute('''
                     SELECT order_id, order_number, user_name, user_email, total_amount,
-                           status, order_date, pickup_date, payment_method, notes, completed_date
-                    FROM butcher_orders
-                    WHERE order_number = ?
+                           order_status, order_date, pickup_date, payment_method, notes, completed_date
+                    FROM orders
+                    WHERE source_type = 'butcher' AND order_number = ?
                 ''', (order_number,))
             else:
                 cursor = conn.execute('''
                     SELECT order_id, order_number, user_name, user_email, total_amount,
-                           status, order_date, pickup_date, payment_method, notes, completed_date
-                    FROM butcher_orders
-                    WHERE order_number = ? AND user_id = ?
+                           order_status, order_date, pickup_date, payment_method, notes, completed_date
+                    FROM orders
+                    WHERE source_type = 'butcher' AND order_number = ? AND user_id = ?
                 ''', (order_number, user.get('username')))
 
             order = cursor.fetchone()
@@ -1161,9 +1117,9 @@ def view_order_receipt():
 
             # Get items
             item_cursor = conn.execute('''
-                SELECT product_name, quantity_kg, unit_price, subtotal
-                FROM butcher_order_items
-                WHERE order_id = ?
+                SELECT item_name as product_name, quantity_kg, unit_price, subtotal
+                FROM order_items
+                WHERE order_id = ? AND source_type = 'butcher'
             ''', (order_id,))
             items = item_cursor.fetchall()
 
@@ -1207,15 +1163,15 @@ def cancel_order():
             # Check order exists and is pending
             if is_admin():
                 cursor = conn.execute('''
-                    SELECT order_id, total_amount, status, payment_method
-                    FROM butcher_orders
-                    WHERE order_number = ?
+                    SELECT order_id, total_amount, order_status, payment_method
+                    FROM orders
+                    WHERE source_type = 'butcher' AND order_number = ?
                 ''', (order_number,))
             else:
                 cursor = conn.execute('''
-                    SELECT order_id, total_amount, status, payment_method
-                    FROM butcher_orders
-                    WHERE order_number = ? AND user_id = ?
+                    SELECT order_id, total_amount, order_status, payment_method
+                    FROM orders
+                    WHERE source_type = 'butcher' AND order_number = ? AND user_id = ?
                 ''', (order_number, user.get('username')))
 
             order = cursor.fetchone()
@@ -1240,24 +1196,24 @@ def cancel_order():
             # Restore stock
             item_cursor = conn.execute('''
                 SELECT product_id, quantity_kg
-                FROM butcher_order_items
-                WHERE order_id = ?
+                FROM order_items
+                WHERE order_id = ? AND source_type = 'butcher'
             ''', (order_id,))
             items = item_cursor.fetchall()
 
             with transaction() as trans_conn:
                 for product_id, quantity in items:
                     trans_conn.execute('''
-                        UPDATE butcher_products
+                        UPDATE products
                         SET stock_kg = stock_kg + ?
-                        WHERE product_id = ?
+                        WHERE source_product_id = ? AND source_type = 'butcher'
                     ''', (quantity, product_id))
 
                 # Update order status
                 trans_conn.execute('''
-                    UPDATE butcher_orders
-                    SET status = 'cancelled'
-                    WHERE order_id = ?
+                    UPDATE orders
+                    SET order_status = 'cancelled'
+                    WHERE order_id = ? AND source_type = 'butcher'
                 ''', (order_id,))
 
             # Refund if paid via finance account
@@ -1300,9 +1256,10 @@ def view_inventory():
 
         with get_connection() as conn:
             cursor = conn.execute('''
-                SELECT product_id, product_name, category, stock_kg,
+                SELECT source_product_id as product_id, product_name, category, stock_kg,
                        price_per_kg, reorder_point, status
-                FROM butcher_products
+                FROM products
+                WHERE source_type = 'butcher'
                 ORDER BY
                     CASE
                         WHEN stock_kg <= reorder_point THEN 1
@@ -1397,8 +1354,8 @@ def adjust_inventory():
         with get_connection() as conn:
             cursor = conn.execute('''
                 SELECT product_name, stock_kg
-                FROM butcher_products
-                WHERE product_id = ?
+                FROM products
+                WHERE source_product_id = ? AND source_type = 'butcher'
             ''', (product_id,))
 
             product = cursor.fetchone()
@@ -1502,9 +1459,9 @@ def adjust_inventory():
             with transaction() as trans_conn:
                 # Update stock
                 trans_conn.execute('''
-                    UPDATE butcher_products
+                    UPDATE products
                     SET stock_kg = ?, updated_at = ?
-                    WHERE product_id = ?
+                    WHERE source_product_id = ? AND source_type = 'butcher'
                 ''', (new_stock, datetime.now().isoformat(), product_id))
 
                 # Log adjustment
@@ -1516,7 +1473,7 @@ def adjust_inventory():
 
                 # Check for low stock alert
                 cursor = trans_conn.execute('''
-                    SELECT reorder_point FROM butcher_products WHERE product_id = ?
+                    SELECT reorder_point FROM products WHERE source_product_id = ? AND source_type = 'butcher'
                 ''', (product_id,))
                 reorder_point = cursor.fetchone()[0]
 
@@ -1553,8 +1510,8 @@ def view_low_stock_alerts():
             cursor = conn.execute('''
                 SELECT p.product_id, p.product_name, p.category,
                        p.stock_kg, p.reorder_point, p.supplier
-                FROM butcher_products p
-                WHERE p.stock_kg <= p.reorder_point
+                FROM products p
+                WHERE p.source_type = 'butcher' AND p.stock_kg <= p.reorder_point
                 ORDER BY
                     CASE
                         WHEN p.stock_kg = 0 THEN 1
@@ -1646,7 +1603,7 @@ def add_expiry_batch():
 
         with get_connection() as conn:
             cursor = conn.execute('''
-                SELECT product_name FROM butcher_products WHERE product_id = ?
+                SELECT product_name FROM products WHERE source_product_id = ? AND source_type = 'butcher'
             ''', (product_id,))
 
             product = cursor.fetchone()
@@ -1705,7 +1662,7 @@ def view_expiring_products():
                 SELECT e.batch_number, p.product_name, p.category,
                        e.quantity_kg, e.expiry_date, e.received_date
                 FROM butcher_product_expiry e
-                JOIN butcher_products p ON e.product_id = p.product_id
+                JOIN products p ON e.product_id = p.source_product_id AND p.source_type = 'butcher'
                 WHERE e.status = 'active' AND e.expiry_date <= ?
                 ORDER BY e.expiry_date
             ''', (cutoff_date,))
@@ -1829,9 +1786,9 @@ def sales_reports():
             # Total sales
             cursor = conn.execute('''
                 SELECT COUNT(*), SUM(total_amount), AVG(total_amount)
-                FROM butcher_orders
-                WHERE order_date >= ? AND order_date <= ?
-                AND status != 'cancelled'
+                FROM orders
+                WHERE source_type = 'butcher' AND order_date >= ? AND order_date <= ?
+                AND order_status != 'cancelled'
             ''', (start_date.isoformat(), end_date.isoformat()))
 
             stats = cursor.fetchone()
@@ -1840,11 +1797,11 @@ def sales_reports():
             # Sales by category
             category_cursor = conn.execute('''
                 SELECT p.category, SUM(oi.subtotal), SUM(oi.quantity_kg)
-                FROM butcher_order_items oi
-                JOIN butcher_products p ON oi.product_id = p.product_id
-                JOIN butcher_orders o ON oi.order_id = o.order_id
-                WHERE o.order_date >= ? AND o.order_date <= ?
-                AND o.status != 'cancelled'
+                FROM order_items oi
+                JOIN products p ON oi.product_id = p.source_product_id AND p.source_type = 'butcher'
+                JOIN orders o ON oi.order_id = o.order_id AND o.source_type = 'butcher'
+                WHERE oi.source_type = 'butcher' AND o.order_date >= ? AND o.order_date <= ?
+                AND o.order_status != 'cancelled'
                 GROUP BY p.category
                 ORDER BY SUM(oi.subtotal) DESC
             ''', (start_date.isoformat(), end_date.isoformat()))
@@ -1853,12 +1810,12 @@ def sales_reports():
 
             # Top products
             product_cursor = conn.execute('''
-                SELECT oi.product_name, SUM(oi.quantity_kg), SUM(oi.subtotal), COUNT(*)
-                FROM butcher_order_items oi
-                JOIN butcher_orders o ON oi.order_id = o.order_id
-                WHERE o.order_date >= ? AND o.order_date <= ?
-                AND o.status != 'cancelled'
-                GROUP BY oi.product_name
+                SELECT oi.item_name as product_name, SUM(oi.quantity_kg), SUM(oi.subtotal), COUNT(*)
+                FROM order_items oi
+                JOIN orders o ON oi.order_id = o.order_id AND o.source_type = 'butcher'
+                WHERE oi.source_type = 'butcher' AND o.order_date >= ? AND o.order_date <= ?
+                AND o.order_status != 'cancelled'
+                GROUP BY oi.item_name
                 ORDER BY SUM(oi.subtotal) DESC
                 LIMIT 10
             ''', (start_date.isoformat(), end_date.isoformat()))
@@ -1913,7 +1870,8 @@ def inventory_valuation_report():
                        COUNT(*) as product_count,
                        SUM(stock_kg) as total_stock,
                        SUM(stock_kg * price_per_kg) as total_value
-                FROM butcher_products
+                FROM products
+                WHERE source_type = 'butcher'
                 GROUP BY category
                 ORDER BY total_value DESC
             ''')
@@ -1923,7 +1881,8 @@ def inventory_valuation_report():
             # Overall totals
             total_cursor = conn.execute('''
                 SELECT COUNT(*), SUM(stock_kg), SUM(stock_kg * price_per_kg)
-                FROM butcher_products
+                FROM products
+                WHERE source_type = 'butcher'
             ''')
 
             total_products, total_stock, total_value = total_cursor.fetchone()
@@ -1947,8 +1906,8 @@ def inventory_valuation_report():
 
             # Low stock warning
             low_stock_cursor = conn.execute('''
-                SELECT COUNT(*) FROM butcher_products
-                WHERE stock_kg <= reorder_point
+                SELECT COUNT(*) FROM products
+                WHERE source_type = 'butcher' AND stock_kg <= reorder_point
             ''')
             low_stock_count = low_stock_cursor.fetchone()[0]
 
@@ -1983,15 +1942,15 @@ def popular_products_analysis():
         with get_connection() as conn:
             # Most ordered products
             cursor = conn.execute('''
-                SELECT oi.product_name,
+                SELECT oi.item_name as product_name,
                        COUNT(DISTINCT o.order_id) as order_count,
                        SUM(oi.quantity_kg) as total_quantity,
                        SUM(oi.subtotal) as total_revenue,
                        AVG(oi.quantity_kg) as avg_quantity_per_order
-                FROM butcher_order_items oi
-                JOIN butcher_orders o ON oi.order_id = o.order_id
-                WHERE o.order_date >= ? AND o.status != 'cancelled'
-                GROUP BY oi.product_name
+                FROM order_items oi
+                JOIN orders o ON oi.order_id = o.order_id AND o.source_type = 'butcher'
+                WHERE oi.source_type = 'butcher' AND o.order_date >= ? AND o.order_status != 'cancelled'
+                GROUP BY oi.item_name
                 ORDER BY order_count DESC
                 LIMIT 15
             ''', (start_date,))
@@ -2050,8 +2009,8 @@ def customer_purchase_history():
             summary_cursor = conn.execute('''
                 SELECT COUNT(*), SUM(total_amount), AVG(total_amount),
                        MIN(order_date), MAX(order_date)
-                FROM butcher_orders
-                WHERE user_id = ? AND status != 'cancelled'
+                FROM orders
+                WHERE source_type = 'butcher' AND user_id = ? AND order_status != 'cancelled'
             ''', (customer_id,))
 
             summary = summary_cursor.fetchone()
@@ -2065,11 +2024,11 @@ def customer_purchase_history():
 
             # Favorite products
             fav_cursor = conn.execute('''
-                SELECT oi.product_name, COUNT(*), SUM(oi.quantity_kg), SUM(oi.subtotal)
-                FROM butcher_order_items oi
-                JOIN butcher_orders o ON oi.order_id = o.order_id
-                WHERE o.user_id = ? AND o.status != 'cancelled'
-                GROUP BY oi.product_name
+                SELECT oi.item_name as product_name, COUNT(*), SUM(oi.quantity_kg), SUM(oi.subtotal)
+                FROM order_items oi
+                JOIN orders o ON oi.order_id = o.order_id AND o.source_type = 'butcher'
+                WHERE oi.source_type = 'butcher' AND o.user_id = ? AND o.order_status != 'cancelled'
+                GROUP BY oi.item_name
                 ORDER BY COUNT(*) DESC
                 LIMIT 5
             ''', (customer_id,))
@@ -2078,9 +2037,9 @@ def customer_purchase_history():
 
             # Recent orders
             recent_cursor = conn.execute('''
-                SELECT order_number, total_amount, status, order_date
-                FROM butcher_orders
-                WHERE user_id = ?
+                SELECT order_number, total_amount, order_status, order_date
+                FROM orders
+                WHERE source_type = 'butcher' AND user_id = ?
                 ORDER BY order_date DESC
                 LIMIT 10
             ''', (customer_id,))
@@ -2168,17 +2127,18 @@ def view_all_orders():
             if status_filter:
                 cursor = conn.execute('''
                     SELECT order_id, order_number, user_name, total_amount,
-                           status, order_date, pickup_date
-                    FROM butcher_orders
-                    WHERE status = ?
+                           order_status, order_date, pickup_date
+                    FROM orders
+                    WHERE source_type = 'butcher' AND order_status = ?
                     ORDER BY order_date DESC
                     LIMIT 50
                 ''', (status_filter,))
             else:
                 cursor = conn.execute('''
                     SELECT order_id, order_number, user_name, total_amount,
-                           status, order_date, pickup_date
-                    FROM butcher_orders
+                           order_status, order_date, pickup_date
+                    FROM orders
+                    WHERE source_type = 'butcher'
                     ORDER BY order_date DESC
                     LIMIT 50
                 ''')
@@ -2239,9 +2199,9 @@ def update_order_status():
 
         with get_connection() as conn:
             cursor = conn.execute('''
-                SELECT order_id, user_name, total_amount, status, order_date
-                FROM butcher_orders
-                WHERE order_number = ?
+                SELECT order_id, user_name, total_amount, order_status, order_date
+                FROM orders
+                WHERE source_type = 'butcher' AND order_number = ?
             ''', (order_number,))
 
             order = cursor.fetchone()
@@ -2301,15 +2261,15 @@ def update_order_status():
             with transaction() as trans_conn:
                 if new_status == 'completed':
                     trans_conn.execute('''
-                        UPDATE butcher_orders
-                        SET status = ?, completed_date = ?, notes = ?
-                        WHERE order_id = ?
+                        UPDATE orders
+                        SET order_status = ?, completed_date = ?, notes = ?
+                        WHERE order_id = ? AND source_type = 'butcher'
                     ''', (new_status, datetime.now().isoformat(), notes, order_id))
                 else:
                     trans_conn.execute('''
-                        UPDATE butcher_orders
-                        SET status = ?, notes = ?
-                        WHERE order_id = ?
+                        UPDATE orders
+                        SET order_status = ?, notes = ?
+                        WHERE order_id = ? AND source_type = 'butcher'
                     ''', (new_status, notes, order_id))
 
             print(f"\n✅ Order {order_number} status updated to {new_status.upper()}")
@@ -2320,7 +2280,7 @@ def update_order_status():
             if EMAIL_AVAILABLE:
                 try:
                     email_cursor = conn.execute('''
-                        SELECT user_email FROM butcher_orders WHERE order_id = ?
+                        SELECT user_email FROM orders WHERE order_id = ? AND source_type = 'butcher'
                     ''', (order_id,))
 
                     email_result = email_cursor.fetchone()

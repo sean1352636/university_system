@@ -178,6 +178,31 @@ class HelpdeskService:
         finally:
             conn.close()
 
+    def delete_ticket(self, ticket_id: int) -> bool:
+        """Delete a helpdesk ticket and its responses by ID."""
+        conn = self._conn()
+        try:
+            # Delete associated responses first
+            conn.execute(
+                "DELETE FROM helpdesk_responses WHERE ticket_id = ?", (ticket_id,)
+            )
+            result = conn.execute(
+                "DELETE FROM helpdesk_tickets WHERE id = ?", (ticket_id,)
+            )
+            conn.commit()
+            if result.rowcount == 0:
+                raise HelpdeskError(f"Ticket {ticket_id} not found.")
+            logger.info("Helpdesk ticket deleted: id=%d", ticket_id)
+            return True
+        except HelpdeskError:
+            conn.rollback()
+            raise
+        except Exception as e:
+            conn.rollback()
+            raise HelpdeskError(f"Failed to delete ticket: {e}") from e
+        finally:
+            conn.close()
+
     def assign_ticket(self, ticket_id: int, assigned_to: int) -> dict:
         """Assign a ticket to a user."""
         return self.update_ticket(ticket_id, assigned_to=assigned_to)

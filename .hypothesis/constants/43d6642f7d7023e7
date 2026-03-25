@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/operations/events.py
+# hypothesis_version: 6.151.9
+
+[150, '#333333', '#e74c3c', '#ecf0f1', '#ffffff', '%Y-%m-%d', '-', '.', '1', '150', '19:00', '25.00', '450x450', 'Capacity', 'Capacity:', 'Card.TFrame', 'Create Event', 'Date', 'Date:*', 'Event created!', 'Helvetica', 'ID', 'Main.TFrame', 'Name', 'Name required', 'Name:*', 'Price', 'Price:', 'Screen', 'Screen:', 'Sold', 'Status', 'Subtitle.TLabel', 'Success.TButton', 'Time:*', 'Type', 'Type:', '_', 'bold', 'both', 'cap', 'cinema.btn.create', 'cinema.events.create', 'date', 'end', 'headings', 'left', 'name', 'premiere', 'price', 'right', 'screen', 'time', 'type', 'vertical', 'w', 'x', 'y']

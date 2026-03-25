@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/parking_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d', '/api/parking', '/permits', '/permits/<permit_id>', '/spaces', '/vehicles', 'GET', 'POST', 'color', 'create', 'email', 'end_date', 'full_name', 'items', 'license_plate', 'lot_id', 'lot_id = ?', 'make', 'model', 'occupancy_status = ?', 'owner_id', 'parking', 'parking_permit', 'parking_permits', 'parking_spaces', 'permit_type', 'registration_state', 'start_date', 'status', 'sub', 'total', 'user_id', 'user_id = ?', 'vehicle', 'vehicle_id', 'vehicle_type', 'vehicles', 'view', 'year', 'zone', 'zone = ?']

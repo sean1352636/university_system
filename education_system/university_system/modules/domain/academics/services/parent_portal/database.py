@@ -177,18 +177,8 @@ def initialize_parent_portal():
         )
         ''')
 
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS meal_transactions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id TEXT,
-            transaction_type TEXT,
-            amount DECIMAL(10,2),
-            description TEXT,
-            transaction_date TEXT,
-            balance_after DECIMAL(10,2),
-            FOREIGN KEY (student_id) REFERENCES students (student_id)
-        )
-        ''')
+        # NOTE: meal transactions now use the unified 'transactions' table
+        # with source_type = 'meal'
 
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS fundraising_campaigns (
@@ -423,22 +413,8 @@ def initialize_parent_portal():
         )
         ''')
 
-        # Administrative Tools
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS parent_documents (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            parent_id TEXT,
-            student_id TEXT,
-            document_type TEXT,
-            document_name TEXT,
-            file_path TEXT,
-            upload_date TEXT,
-            status TEXT DEFAULT 'pending',
-            expiry_date TEXT,
-            FOREIGN KEY (parent_id) REFERENCES parent_accounts (parent_id),
-            FOREIGN KEY (student_id) REFERENCES students (student_id)
-        )
-        ''')
+        # Parent documents now use the unified documents table with source_type = 'parent'
+        # No separate parent_documents table needed
 
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS pickup_authorizations (

@@ -308,7 +308,7 @@ class WorkflowEngine:
         """Execute a notification step"""
         # Send notification (integrate with notification service if available)
         try:
-            from education_system.university_system.infrastructure.realtime import get_notification_service
+            from education_system.university_system.infrastructure.communication.realtime_notifications import get_notification_service
             notification_service = get_notification_service()
 
             if step.approver:  # approver field used as recipient
@@ -418,7 +418,7 @@ class WorkflowEngine:
         """Send notification to approver"""
         # Integrate with notification service
         try:
-            from education_system.university_system.infrastructure.realtime import get_notification_service
+            from education_system.university_system.infrastructure.communication.realtime_notifications import get_notification_service
             # Would send real-time notification here
             logger.info(f"Notification sent to approver: {request.approver}")
         except ImportError:

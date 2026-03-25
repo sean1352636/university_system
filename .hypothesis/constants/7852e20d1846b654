@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/plagiarism_main_gui/dialogs/converter.py
+# hypothesis_version: 6.151.9
+
+[100, '%Y-%m-%d %H:%M:%S', '*.*', '*.docx;*.doc', '*.pdf', '*.txt', '.html', '.md', '.txt', 'All files', 'All supported', 'Browse...', 'Close', 'Conversion completed', 'Conversion failed', 'Convert', 'Converting format...', 'Error', 'HTML (.html)', 'Markdown (.md)', 'No Input', 'No Output', 'PDF files', 'Plain Text (.txt)', 'Preserve formatting', 'Ready to convert', 'Repository Search', 'Save Converted File', 'Select Input File', 'Success', 'Text files', 'Word documents', 'html', 'md', 'readonly', 'txt', 'utf-8', 'w']

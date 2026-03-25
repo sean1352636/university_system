@@ -29,7 +29,7 @@ from education_system.university_system.modules.shared.utils.i18n import get_tex
 # Import the refactored CalendarGUI from this package.  The GUI class
 # lives in ``main_gui.py`` and aggregates all mixin behaviour via
 # inheritance, so instantiating it here provides the full calendar UI.
-from .main_gui import CalendarGUI
+from education_system.university_system.modules.domain.academics.gui.academic_calendar.main_gui import CalendarGUI
 
 
 def launch_calendar_gui(auth_manager: Optional[object] = None) -> Optional[CalendarGUI]:

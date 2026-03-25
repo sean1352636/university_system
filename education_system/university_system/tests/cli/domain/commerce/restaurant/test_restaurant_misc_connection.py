@@ -29,9 +29,9 @@ class TestSetAuth:
         """Test that set_auth sets the auth context"""
         mock_auth = mock.MagicMock()
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.connection.ctx') as mock_ctx:
-            with mock.patch('university_system.modules.core.services.restaurant_misc.connection.HAS_AUTH', True):
-                with mock.patch('university_system.modules.core.services.restaurant_misc.connection.set_auth_instance') as mock_set_auth_instance:
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.connection.ctx') as mock_ctx:
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.connection.HAS_AUTH', True):
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.connection.set_auth_instance') as mock_set_auth_instance:
                     connection.set_auth(mock_auth)
 
                     assert mock_ctx.auth == mock_auth
@@ -41,8 +41,8 @@ class TestSetAuth:
         """Test set_auth when global auth is not available"""
         mock_auth = mock.MagicMock()
 
-        with mock.patch('university_system.modules.core.services.restaurant_misc.connection.ctx') as mock_ctx:
-            with mock.patch('university_system.modules.core.services.restaurant_misc.connection.HAS_AUTH', False):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.connection.ctx') as mock_ctx:
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.connection.HAS_AUTH', False):
                 connection.set_auth(mock_auth)
 
                 assert mock_ctx.auth == mock_auth
@@ -52,7 +52,7 @@ class TestGetDbConnection:
 
     def test_get_db_connection_success(self, temp_db):
         """Test successful database connection"""
-        with mock.patch('university_system.modules.core.services.restaurant_misc.connection.DATABASE_FILE', temp_db):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.connection.DATABASE_FILE', temp_db):
             conn = connection.get_db_connection()
 
             assert conn is not None
@@ -66,9 +66,9 @@ class TestGetDbConnection:
 
     def test_get_db_connection_failure(self):
         """Test database connection failure"""
-        with mock.patch('university_system.modules.core.services.restaurant_misc.connection.DATABASE_FILE', '/invalid/path/db.db'):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.connection.DATABASE_FILE', '/invalid/path/db.db'):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
-                with mock.patch('university_system.modules.core.services.restaurant_misc.connection.logging.error') as mock_log:
+                with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.connection.logging.error') as mock_log:
                     conn = connection.get_db_connection()
 
                     assert conn is None
@@ -78,7 +78,7 @@ class TestGetDbConnection:
 
     def test_get_db_connection_enables_foreign_keys(self, temp_db):
         """Test that foreign keys are enabled on connection"""
-        with mock.patch('university_system.modules.core.services.restaurant_misc.connection.DATABASE_FILE', temp_db):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.connection.DATABASE_FILE', temp_db):
             conn = connection.get_db_connection()
 
             cursor = conn.cursor()
@@ -105,7 +105,7 @@ class TestSafeDbOperation:
             raise sqlite3.Error("Database error")
 
         with mock.patch('sys.stdout', new=StringIO()) as fake_out:
-            with mock.patch('university_system.modules.core.services.restaurant_misc.connection.logging.error') as mock_log:
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.connection.logging.error') as mock_log:
                 result = connection.safe_db_operation(test_func)
 
                 assert result is None
@@ -119,7 +119,7 @@ class TestSafeDbOperation:
             raise ValueError("Test error")
 
         with mock.patch('sys.stdout', new=StringIO()) as fake_out:
-            with mock.patch('university_system.modules.core.services.restaurant_misc.connection.logging.error') as mock_log:
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.connection.logging.error') as mock_log:
                 result = connection.safe_db_operation(test_func)
 
                 assert result is None
@@ -140,7 +140,7 @@ class TestInitDb:
 
     def test_init_db_success(self, temp_db):
         """Test successful database initialization"""
-        with mock.patch('university_system.modules.core.services.restaurant_misc.connection.DATABASE_FILE', temp_db):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.connection.DATABASE_FILE', temp_db):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                 result = connection.init_db()
 
@@ -150,7 +150,7 @@ class TestInitDb:
 
     def test_init_db_creates_all_tables(self, temp_db):
         """Test that all required tables are created"""
-        with mock.patch('university_system.modules.core.services.restaurant_misc.connection.DATABASE_FILE', temp_db):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.connection.DATABASE_FILE', temp_db):
             connection.init_db()
 
             conn = sqlite3.connect(temp_db)
@@ -182,7 +182,7 @@ class TestInitDb:
 
     def test_init_db_creates_indexes(self, temp_db):
         """Test that indexes are created"""
-        with mock.patch('university_system.modules.core.services.restaurant_misc.connection.DATABASE_FILE', temp_db):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.connection.DATABASE_FILE', temp_db):
             connection.init_db()
 
             conn = sqlite3.connect(temp_db)
@@ -208,7 +208,7 @@ class TestInitDb:
 
     def test_init_db_initializes_default_data(self, temp_db):
         """Test that default data is initialized"""
-        with mock.patch('university_system.modules.core.services.restaurant_misc.connection.DATABASE_FILE', temp_db):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.connection.DATABASE_FILE', temp_db):
             connection.init_db()
 
             conn = sqlite3.connect(temp_db)
@@ -233,7 +233,7 @@ class TestInitDb:
 
     def test_init_db_connection_failure(self):
         """Test init_db when connection fails"""
-        with mock.patch('university_system.modules.core.services.restaurant_misc.connection.get_db_connection', return_value=None):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.connection.get_db_connection', return_value=None):
             with mock.patch('sys.stdout', new=StringIO()) as fake_out:
                 result = connection.init_db()
 
@@ -241,8 +241,8 @@ class TestInitDb:
 
     def test_init_db_sqlite_error(self, temp_db):
         """Test init_db when SQLite error occurs"""
-        with mock.patch('university_system.modules.core.services.restaurant_misc.connection.DATABASE_FILE', temp_db):
-            with mock.patch('university_system.modules.core.services.restaurant_misc.connection.get_db_connection') as mock_conn:
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.connection.DATABASE_FILE', temp_db):
+            with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.connection.get_db_connection') as mock_conn:
                 mock_cursor = mock.MagicMock()
                 mock_cursor.execute.side_effect = sqlite3.Error("Table creation error")
                 mock_connection = mock.MagicMock()
@@ -250,7 +250,7 @@ class TestInitDb:
                 mock_conn.return_value = mock_connection
 
                 with mock.patch('sys.stdout', new=StringIO()) as fake_out:
-                    with mock.patch('university_system.modules.core.services.restaurant_misc.connection.logging.error') as mock_log:
+                    with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.connection.logging.error') as mock_log:
                         result = connection.init_db()
 
                         assert result is False
@@ -260,7 +260,7 @@ class TestInitDb:
 
     def test_init_db_enables_foreign_keys(self, temp_db):
         """Test that foreign keys are enabled during initialization"""
-        with mock.patch('university_system.modules.core.services.restaurant_misc.connection.DATABASE_FILE', temp_db):
+        with mock.patch('education_system.university_system.modules.core.services.restaurant_misc.connection.DATABASE_FILE', temp_db):
             connection.init_db()
 
             conn = sqlite3.connect(temp_db)

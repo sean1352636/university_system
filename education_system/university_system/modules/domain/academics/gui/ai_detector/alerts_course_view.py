@@ -143,25 +143,27 @@ def configure_alert_thresholds(self):
             return
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS ai_alert_settings (
-                id INTEGER PRIMARY KEY,
-                setting_name TEXT UNIQUE,
-                setting_value TEXT,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-
-        for name, value in [('low_threshold', low), ('med_threshold', med), ('high_threshold', high)]:
             cursor.execute('''
-                INSERT OR REPLACE INTO ai_alert_settings (setting_name, setting_value, updated_at)
-                VALUES (?, ?, CURRENT_TIMESTAMP)
-            ''', (name, str(value)))
+                CREATE TABLE IF NOT EXISTS ai_alert_settings (
+                    id INTEGER PRIMARY KEY,
+                    setting_name TEXT UNIQUE,
+                    setting_value TEXT,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
 
-        conn.commit()
-        conn.close()
+            for name, value in [('low_threshold', low), ('med_threshold', med), ('high_threshold', high)]:
+                cursor.execute('''
+                    INSERT OR REPLACE INTO ai_alert_settings (setting_name, setting_value, updated_at)
+                    VALUES (?, ?, CURRENT_TIMESTAMP)
+                ''', (name, str(value)))
+
+            conn.commit()
+        finally:
+            conn.close()
 
         messagebox.showinfo("Success", f"Alert thresholds updated:\nLow: {low}%\nMedium: {med}%\nHigh: {high}%")
         self.update_status("Alert thresholds configured")
@@ -186,29 +188,31 @@ def setup_email_alerts(self):
             return
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS ai_alert_settings (
-                id INTEGER PRIMARY KEY,
-                setting_name TEXT UNIQUE,
-                setting_value TEXT,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS ai_alert_settings (
+                    id INTEGER PRIMARY KEY,
+                    setting_name TEXT UNIQUE,
+                    setting_value TEXT,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
 
-        cursor.execute('''
-            INSERT OR REPLACE INTO ai_alert_settings (setting_name, setting_value, updated_at)
-            VALUES (?, ?, CURRENT_TIMESTAMP)
-        ''', ('email_alerts_enabled', '1' if enabled else '0'))
+            cursor.execute('''
+                INSERT OR REPLACE INTO ai_alert_settings (setting_name, setting_value, updated_at)
+                VALUES (?, ?, CURRENT_TIMESTAMP)
+            ''', ('email_alerts_enabled', '1' if enabled else '0'))
 
-        cursor.execute('''
-            INSERT OR REPLACE INTO ai_alert_settings (setting_name, setting_value, updated_at)
-            VALUES (?, ?, CURRENT_TIMESTAMP)
-        ''', ('notification_email', email))
+            cursor.execute('''
+                INSERT OR REPLACE INTO ai_alert_settings (setting_name, setting_value, updated_at)
+                VALUES (?, ?, CURRENT_TIMESTAMP)
+            ''', ('notification_email', email))
 
-        conn.commit()
-        conn.close()
+            conn.commit()
+        finally:
+            conn.close()
 
         status = "enabled" if enabled else "disabled"
         messagebox.showinfo("Success", f"Email alerts {status}" + (f" for {email}" if enabled else ""))
@@ -225,42 +229,44 @@ def view_alert_queue(self):
             self.alert_tree.delete(item)
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        # Check if table exists
-        cursor.execute('''
-            SELECT name FROM sqlite_master
-            WHERE type='table' AND name='ai_alert_queue'
-        ''')
-
-        if not cursor.fetchone():
+            # Check if table exists
             cursor.execute('''
-                CREATE TABLE IF NOT EXISTS ai_alert_queue (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    student_id TEXT,
-                    student_name TEXT,
-                    assignment_name TEXT,
-                    risk_level TEXT,
-                    ai_score REAL,
-                    submission_id TEXT,
-                    status TEXT DEFAULT 'pending',
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    dismissed_at TIMESTAMP,
-                    dismiss_reason TEXT
-                )
+                SELECT name FROM sqlite_master
+                WHERE type='table' AND name='ai_alert_queue'
             ''')
-            conn.commit()
 
-        cursor.execute('''
-            SELECT id, student_name, assignment_name, risk_level, ai_score,
-                   date(created_at) as date
-            FROM ai_alert_queue
-            WHERE status = 'pending'
-            ORDER BY ai_score DESC, created_at DESC
-        ''')
+            if not cursor.fetchone():
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS ai_alert_queue (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        student_id TEXT,
+                        student_name TEXT,
+                        assignment_name TEXT,
+                        risk_level TEXT,
+                        ai_score REAL,
+                        submission_id TEXT,
+                        status TEXT DEFAULT 'pending',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        dismissed_at TIMESTAMP,
+                        dismiss_reason TEXT
+                    )
+                ''')
+                conn.commit()
 
-        alerts = cursor.fetchall()
-        conn.close()
+            cursor.execute('''
+                SELECT id, student_name, assignment_name, risk_level, ai_score,
+                       date(created_at) as date
+                FROM ai_alert_queue
+                WHERE status = 'pending'
+                ORDER BY ai_score DESC, created_at DESC
+            ''')
+
+            alerts = cursor.fetchall()
+        finally:
+            conn.close()
 
         for alert in alerts:
             self.alert_tree.insert('', 'end', values=alert)
@@ -327,39 +333,41 @@ def escalate_to_dean(self):
         assignment = alert_values[2]
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        # Create escalation table if not exists
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS ai_dean_escalations (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                alert_id INTEGER,
-                student_name TEXT,
-                assignment_name TEXT,
-                escalated_by TEXT,
-                escalation_notes TEXT,
-                status TEXT DEFAULT 'pending',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
+            # Create escalation table if not exists
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS ai_dean_escalations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    alert_id INTEGER,
+                    student_name TEXT,
+                    assignment_name TEXT,
+                    escalated_by TEXT,
+                    escalation_notes TEXT,
+                    status TEXT DEFAULT 'pending',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
 
-        # Get current user
-        escalated_by = "Unknown"
-        if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
-            escalated_by = self.auth.current_user.get('username', 'Unknown')
+            # Get current user
+            escalated_by = "Unknown"
+            if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
+                escalated_by = self.auth.current_user.get('username', 'Unknown')
 
-        cursor.execute('''
-            INSERT INTO ai_dean_escalations (alert_id, student_name, assignment_name, escalated_by)
-            VALUES (?, ?, ?, ?)
-        ''', (alert_id, student_name, assignment, escalated_by))
+            cursor.execute('''
+                INSERT INTO ai_dean_escalations (alert_id, student_name, assignment_name, escalated_by)
+                VALUES (?, ?, ?, ?)
+            ''', (alert_id, student_name, assignment, escalated_by))
 
-        # Update alert status
-        cursor.execute('''
-            UPDATE ai_alert_queue SET status = 'escalated' WHERE id = ?
-        ''', (alert_id,))
+            # Update alert status
+            cursor.execute('''
+                UPDATE ai_alert_queue SET status = 'escalated' WHERE id = ?
+            ''', (alert_id,))
 
-        conn.commit()
-        conn.close()
+            conn.commit()
+        finally:
+            conn.close()
 
         self.alert_tree.delete(selected[0])
         messagebox.showinfo("Success",
@@ -508,29 +516,31 @@ def create_assignment_profile(self):
             return
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS ai_assignment_profiles (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT UNIQUE,
-                course TEXT,
-                expected_word_count INTEGER,
-                assignment_type TEXT,
-                baseline_ai_score REAL,
-                baseline_vocab_diversity REAL,
-                baseline_sentence_complexity REAL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS ai_assignment_profiles (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT UNIQUE,
+                    course TEXT,
+                    expected_word_count INTEGER,
+                    assignment_type TEXT,
+                    baseline_ai_score REAL,
+                    baseline_vocab_diversity REAL,
+                    baseline_sentence_complexity REAL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
 
-        cursor.execute('''
-            INSERT INTO ai_assignment_profiles (name, course, expected_word_count, assignment_type)
-            VALUES (?, ?, ?, ?)
-        ''', (name, course, words, assignment_type))
+            cursor.execute('''
+                INSERT INTO ai_assignment_profiles (name, course, expected_word_count, assignment_type)
+                VALUES (?, ?, ?, ?)
+            ''', (name, course, words, assignment_type))
 
-        conn.commit()
-        conn.close()
+            conn.commit()
+        finally:
+            conn.close()
 
         messagebox.showinfo("Success", f"Assignment profile '{name}' created")
         self._load_assignment_profiles()
@@ -584,14 +594,16 @@ def set_assignment_baseline(self):
         avg_complexity = total_complexity / count
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute('''
-            UPDATE ai_assignment_profiles
-            SET baseline_ai_score = ?, baseline_vocab_diversity = ?, baseline_sentence_complexity = ?
-            WHERE name = ?
-        ''', (avg_ai, avg_vocab, avg_complexity, assignment))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE ai_assignment_profiles
+                SET baseline_ai_score = ?, baseline_vocab_diversity = ?, baseline_sentence_complexity = ?
+                WHERE name = ?
+            ''', (avg_ai, avg_vocab, avg_complexity, assignment))
+            conn.commit()
+        finally:
+            conn.close()
 
         messagebox.showinfo("Success",
                           f"Baseline established from {count} samples:\n\n"

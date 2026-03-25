@@ -7,6 +7,7 @@ This module provides:
 - Test configuration and markers
 """
 
+import atexit
 import os
 import sys
 from education_system.university_system.infrastructure.database.db import sqlite3
@@ -37,139 +38,99 @@ def _initialize_test_auth():
     """Initialize the authentication system for test collection.
 
     This prevents AuthenticationNotInitializedError during module imports.
+    Uses a lightweight mock instead of the real UserAuth to avoid the ~19s
+    cold-start penalty from importing AI/chatbot/voice modules.
     """
     try:
-        # Create a temporary database for auth initialization
-        temp_dir = tempfile.mkdtemp(prefix="university_test_")
-        temp_db = os.path.join(temp_dir, "test_auth.db")
-
-        # Create minimal database schema for auth
-        conn = sqlite3.connect(temp_db)
-        cursor = conn.cursor()
-
-        # Create required tables
-        cursor.executescript("""
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                first_name TEXT,
-                last_name TEXT,
-                email TEXT,
-                role TEXT DEFAULT 'student',
-                created_at TEXT,
-                updated_at TEXT
-            );
-
-            CREATE TABLE IF NOT EXISTS user_accounts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE NOT NULL,
-                password_hash TEXT NOT NULL,
-                salt TEXT NOT NULL,
-                user_id INTEGER,
-                is_active INTEGER DEFAULT 1,
-                created_at TEXT,
-                updated_at TEXT,
-                FOREIGN KEY (user_id) REFERENCES users(id)
-            );
-
-            CREATE TABLE IF NOT EXISTS sessions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                session_token TEXT UNIQUE NOT NULL,
-                user_id INTEGER NOT NULL,
-                created_at TEXT,
-                expires_at TEXT,
-                is_active INTEGER DEFAULT 1,
-                FOREIGN KEY (user_id) REFERENCES users(id)
-            );
-
-            CREATE TABLE IF NOT EXISTS permissions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                role TEXT NOT NULL,
-                permission TEXT NOT NULL,
-                UNIQUE(role, permission)
-            );
-
-            CREATE TABLE IF NOT EXISTS activity_log (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER,
-                action TEXT,
-                entity_type TEXT,
-                entity_id TEXT,
-                details TEXT,
-                timestamp TEXT
-            );
-        """)
-        conn.commit()
-        conn.close()
-
-        # Initialize auth with the temporary database
         from education_system.university_system.infrastructure.shared_context import (
-            initialize_auth,
             is_auth_initialized,
-            set_auth
+            set_auth,
         )
+        import education_system.university_system.infrastructure.shared_context as _ctx
 
         if not is_auth_initialized():
-            initialize_auth(temp_db)
+            # Create a mock that satisfies all auth checks without
+            # importing the heavy UserAuth class or its dependencies.
+            mock_auth = MagicMock()
+            mock_auth.is_logged_in.return_value = False
+            mock_auth.current_user = None
+            mock_auth.check_permission.return_value = True
+            mock_auth.get_current_user.return_value = None
+            mock_auth.has_permission.return_value = True
+            mock_auth.db_path = ":memory:"
+
+            set_auth(mock_auth)
+            # Mark as initialized so other code doesn't try again
+            _ctx._auth_initialized = True
 
     except Exception as e:
-        # If initialization fails, create a mock auth
         print(f"Warning: Could not initialize test auth: {e}")
-        _setup_mock_auth()
-
-def _setup_mock_auth():
-    """Set up a mock authentication system as fallback."""
-    try:
-        from education_system.university_system.infrastructure.shared_context import set_auth
-        from education_system.university_system.infrastructure.auth import UserAuth
-
-        # Create a mock UserAuth
-        mock_auth = MagicMock(spec=UserAuth)
-        mock_auth.is_logged_in.return_value = False
-        mock_auth.current_user = None
-        mock_auth.check_permission.return_value = True
-        mock_auth.get_current_user.return_value = None
-
-        set_auth(mock_auth)
-    except Exception as e:
-        print(f"Warning: Could not set up mock auth: {e}")
 
 # ============================================================================
 # Fixtures
 # ============================================================================
 
 @pytest.fixture(scope="session")
-def test_db_path():
+def _template_db():
+    """Create a seeded template DB once per session (schema + permissions)."""
+    temp_dir = tempfile.mkdtemp(prefix="university_test_template_")
+    db_path = os.path.join(temp_dir, "template.db")
+    _create_test_database(db_path)
+    yield db_path
+    try:
+        shutil.rmtree(temp_dir)
+    except Exception:
+        pass
+
+
+@pytest.fixture(scope="session")
+def test_db_path(_template_db):
     """Create a temporary database for the entire test session."""
     temp_dir = tempfile.mkdtemp(prefix="university_test_session_")
     db_path = os.path.join(temp_dir, "test_session.db")
-
-    # Create the database with required schema
-    _create_test_database(db_path)
-
+    shutil.copy2(_template_db, db_path)
     yield db_path
-
-    # Cleanup
     try:
         shutil.rmtree(temp_dir)
     except Exception:
         pass
 
-@pytest.fixture
-def temp_db():
-    """Create a temporary database for a single test."""
+
+@pytest.fixture(autouse=True)
+def _isolate_db(_template_db, monkeypatch):
+    """Automatically isolate every test from the production database.
+
+    Creates a fresh copy of the template DB and patches DEFAULT_DB_PATH /
+    DEFAULT_DB_NAME in the db module so that get_connection() and transaction()
+    calls without an explicit db_path use this temporary database.
+
+    This fixture is autouse so that *all* tests — even those that never
+    mention temp_db — run against an isolated throw-away database.
+    """
     temp_dir = tempfile.mkdtemp(prefix="university_test_")
     db_path = os.path.join(temp_dir, "test.db")
+    shutil.copy2(_template_db, db_path)
 
-    _create_test_database(db_path)
+    import education_system.university_system.infrastructure.database.db as _db_mod
+    monkeypatch.setattr(_db_mod, "DEFAULT_DB_PATH", db_path)
+    monkeypatch.setattr(_db_mod, "DEFAULT_DB_NAME", os.path.basename(db_path))
 
     yield db_path
-
-    # Cleanup
     try:
         shutil.rmtree(temp_dir)
     except Exception:
         pass
+
+
+@pytest.fixture
+def temp_db(_isolate_db):
+    """Provide the path to the isolated temporary database.
+
+    This is a convenience alias — the actual DB creation and monkeypatching
+    is handled by the autouse _isolate_db fixture.  Tests that need the
+    path (e.g. to open a direct sqlite3 connection) can request this fixture.
+    """
+    return _isolate_db
 
 @pytest.fixture
 def db_connection(temp_db):
@@ -184,17 +145,21 @@ def _create_test_database(db_path):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-    # Core user tables
+    # Core user tables (legacy + shared auth compatible)
     cursor.executescript("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
+            display_name TEXT,
             first_name TEXT,
             last_name TEXT,
-            email TEXT,
+            email TEXT UNIQUE,
             phone TEXT,
             role TEXT DEFAULT 'student',
+            student_id TEXT,
             department TEXT,
+            password_hash TEXT,
+            legacy_salt TEXT,
             created_at TEXT,
             updated_at TEXT
         );
@@ -225,11 +190,65 @@ def _create_test_database(db_path):
             FOREIGN KEY (user_id) REFERENCES users(id)
         );
 
+        CREATE TABLE IF NOT EXISTS user_systems (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            system_key TEXT NOT NULL,
+            role TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            UNIQUE(user_id, system_key)
+        );
+
+        CREATE TABLE IF NOT EXISTS mfa_secrets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER UNIQUE NOT NULL,
+            secret TEXT NOT NULL,
+            enabled INTEGER DEFAULT 0,
+            created_at TEXT,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS mfa_recovery_codes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            code TEXT NOT NULL,
+            used INTEGER DEFAULT 0,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        );
+
         CREATE TABLE IF NOT EXISTS permissions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            role TEXT NOT NULL,
-            permission TEXT NOT NULL,
-            UNIQUE(role, permission)
+            permission_name TEXT UNIQUE NOT NULL,
+            description TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS roles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            role_name TEXT UNIQUE NOT NULL,
+            description TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS role_permissions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            role_id INTEGER NOT NULL,
+            permission_id INTEGER NOT NULL,
+            FOREIGN KEY (role_id) REFERENCES roles (id),
+            FOREIGN KEY (permission_id) REFERENCES permissions (id),
+            UNIQUE(role_id, permission_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS user_permissions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            permission_id INTEGER NOT NULL,
+            granted INTEGER DEFAULT 1,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            FOREIGN KEY (permission_id) REFERENCES permissions (id),
+            UNIQUE(user_id, permission_id)
         );
 
         -- Student tables
@@ -240,11 +259,15 @@ def _create_test_database(db_path):
             first_name TEXT NOT NULL,
             last_name TEXT NOT NULL,
             email TEXT,
+            email_address TEXT,
             phone TEXT,
+            phone_number TEXT,
+            gender TEXT,
             date_of_birth TEXT,
             enrollment_date TEXT,
             graduation_date TEXT,
             major TEXT,
+            course TEXT,
             minor TEXT,
             gpa REAL DEFAULT 0.0,
             status TEXT DEFAULT 'active',
@@ -258,10 +281,14 @@ def _create_test_database(db_path):
         -- Course tables
         CREATE TABLE IF NOT EXISTS courses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            course_code TEXT UNIQUE NOT NULL,
+            course_code TEXT UNIQUE,
+            course_id TEXT UNIQUE,
             course_name TEXT NOT NULL,
             description TEXT,
             credits INTEGER DEFAULT 3,
+            credit_hours REAL DEFAULT 3.0,
+            duration INTEGER,
+            level TEXT,
             department TEXT,
             instructor_id INTEGER,
             max_enrollment INTEGER DEFAULT 30,
@@ -271,6 +298,9 @@ def _create_test_database(db_path):
             schedule TEXT,
             location TEXT,
             status TEXT DEFAULT 'active',
+            course_type TEXT DEFAULT 'Core',
+            lab_required BOOLEAN DEFAULT 0,
+            online_available BOOLEAN DEFAULT 0,
             created_at TEXT,
             updated_at TEXT,
             FOREIGN KEY (instructor_id) REFERENCES users(id)
@@ -278,34 +308,71 @@ def _create_test_database(db_path):
 
         CREATE TABLE IF NOT EXISTS enrollments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id INTEGER NOT NULL,
-            course_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
+            course_id TEXT NOT NULL,
             enrollment_date TEXT,
             status TEXT DEFAULT 'enrolled',
             grade TEXT,
             grade_points REAL,
             created_at TEXT,
             updated_at TEXT,
-            FOREIGN KEY (student_id) REFERENCES students(id),
-            FOREIGN KEY (course_id) REFERENCES courses(id),
             UNIQUE(student_id, course_id)
         );
 
         CREATE TABLE IF NOT EXISTS grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id INTEGER NOT NULL,
-            course_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
+            course_id TEXT,
+            assessment_id INTEGER,
             assignment_name TEXT,
             assignment_type TEXT,
             score REAL,
+            grade REAL,
             max_score REAL DEFAULT 100,
             weight REAL DEFAULT 1.0,
+            letter_grade TEXT,
             grade_date TEXT,
+            submission_date TEXT,
+            semester TEXT,
             comments TEXT,
             created_at TEXT,
-            updated_at TEXT,
-            FOREIGN KEY (student_id) REFERENCES students(id),
-            FOREIGN KEY (course_id) REFERENCES courses(id)
+            updated_at TEXT
+        );
+
+        -- Modules and related tables for grading tests
+        CREATE TABLE IF NOT EXISTS modules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            module_code TEXT UNIQUE NOT NULL,
+            module_name TEXT NOT NULL,
+            credits INTEGER DEFAULT 10,
+            module_type TEXT,
+            course_id INTEGER
+        );
+
+        CREATE TABLE IF NOT EXISTS student_modules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT NOT NULL,
+            module_code TEXT NOT NULL,
+            enrollment_date TEXT,
+            grade TEXT,
+            UNIQUE(student_id, module_code)
+        );
+
+        CREATE TABLE IF NOT EXISTS module_grades (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT NOT NULL,
+            module_code TEXT NOT NULL,
+            final_score REAL,
+            final_grade TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS assessments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            module_code TEXT NOT NULL,
+            assessment_name TEXT NOT NULL,
+            assessment_type TEXT,
+            max_points REAL,
+            due_date TEXT
         );
 
         -- Activity log
@@ -335,24 +402,17 @@ def _create_test_database(db_path):
         );
 
         -- Insert default permissions
-        INSERT OR IGNORE INTO permissions (role, permission) VALUES
-            ('admin', 'all'),
-            ('admin', 'view_students'),
-            ('admin', 'edit_students'),
-            ('admin', 'delete_students'),
-            ('admin', 'view_courses'),
-            ('admin', 'edit_courses'),
-            ('admin', 'view_grades'),
-            ('admin', 'edit_grades'),
-            ('admin', 'manage_users'),
-            ('instructor', 'view_students'),
-            ('instructor', 'view_courses'),
-            ('instructor', 'edit_grades'),
-            ('instructor', 'view_grades'),
-            ('staff', 'view_students'),
-            ('staff', 'view_courses'),
-            ('student', 'view_own_grades'),
-            ('student', 'view_courses');
+        INSERT OR IGNORE INTO permissions (permission_name, description, created_at) VALUES
+            ('all', 'Full access', datetime('now')),
+            ('view_students', 'View student records', datetime('now')),
+            ('edit_students', 'Edit student records', datetime('now')),
+            ('delete_students', 'Delete student records', datetime('now')),
+            ('view_courses', 'View courses', datetime('now')),
+            ('edit_courses', 'Edit courses', datetime('now')),
+            ('view_grades', 'View grades', datetime('now')),
+            ('edit_grades', 'Edit grades', datetime('now')),
+            ('manage_users', 'Manage users', datetime('now')),
+            ('view_own_grades', 'View own grades', datetime('now'));
     """)
 
     conn.commit()
@@ -364,6 +424,7 @@ def mock_auth():
     auth = MagicMock()
     auth.current_user = {
         'id': 1,
+        'user_id': 1,
         'username': 'test_admin',
         'email': 'admin@test.edu',
         'role': 'admin',
@@ -382,6 +443,7 @@ def mock_student_auth():
     auth = MagicMock()
     auth.current_user = {
         'id': 2,
+        'user_id': 2,
         'username': 'test_student',
         'email': 'student@test.edu',
         'role': 'student',
@@ -399,6 +461,7 @@ def mock_instructor_auth():
     auth = MagicMock()
     auth.current_user = {
         'id': 3,
+        'user_id': 3,
         'username': 'test_instructor',
         'email': 'instructor@test.edu',
         'role': 'instructor',
@@ -557,47 +620,70 @@ def insert_test_course(conn, course_data):
     return cursor.lastrowid
 
 def insert_test_user(conn, user_data, password='TestPassword123'):
-    """Helper to insert a test user with account."""
+    """Helper to insert a test user with both legacy and shared auth entries."""
     import hashlib
     import secrets
     from datetime import datetime
 
-    cursor = conn.cursor()
+    try:
+        import bcrypt
+        has_bcrypt = True
+    except ImportError:
+        has_bcrypt = False
 
-    # Insert user
+    cursor = conn.cursor()
+    role = user_data.get('role', 'student')
+
+    # Create bcrypt hash for shared auth (primary), fall back to PBKDF2
+    # Use minimal rounds/iterations for test speed — not security-relevant
+    if has_bcrypt:
+        bcrypt_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds=4)).decode()
+        legacy_salt = None
+    else:
+        salt = secrets.token_hex(16)
+        bcrypt_hash = hashlib.pbkdf2_hmac(
+            'sha256', password.encode(), salt.encode(), 1000
+        ).hex()
+        legacy_salt = salt
+
+    # Insert user with shared auth fields
     cursor.execute("""
-        INSERT INTO users (username, first_name, last_name, email, role, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO users (username, first_name, last_name, email, role,
+                          password_hash, legacy_salt, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         user_data['username'],
         user_data.get('first_name', 'Test'),
         user_data.get('last_name', 'User'),
         user_data.get('email', f"{user_data['username']}@test.edu"),
-        user_data.get('role', 'student'),
+        role,
+        bcrypt_hash,
+        legacy_salt,
         datetime.now().isoformat()
     ))
     user_id = cursor.lastrowid
 
-    # Create password hash
-    salt = secrets.token_hex(16)
-    password_hash = hashlib.pbkdf2_hmac(
-        'sha256',
-        password.encode(),
-        salt.encode(),
-        100000
+    # Insert legacy account for backward compatibility
+    legacy_salt_val = legacy_salt or secrets.token_hex(16)
+    legacy_hash = hashlib.pbkdf2_hmac(
+        'sha256', password.encode(), legacy_salt_val.encode(), 1000
     ).hex()
-
-    # Insert account
     cursor.execute("""
         INSERT INTO user_accounts (username, password_hash, salt, user_id, is_active, created_at)
         VALUES (?, ?, ?, ?, 1, ?)
     """, (
         user_data['username'],
-        password_hash,
-        salt,
+        legacy_hash,
+        legacy_salt_val,
         user_id,
         datetime.now().isoformat()
     ))
+
+    # Insert user_systems entry for shared auth
+    cursor.execute("""
+        INSERT OR IGNORE INTO user_systems (user_id, system_key, role)
+        VALUES (?, 'university', ?)
+    """, (user_id, role))
 
     conn.commit()
     return user_id

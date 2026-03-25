@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import json
 import csv
 
-from .app import auth
+from education_system.university_system.modules.domain.finance.reporting.revenue_analytics.app import auth
 
 
 def generate_predictive_analytics():
@@ -319,7 +319,7 @@ def generate_revenue_forecast():
         # Export option
         export = input("\nExport forecast report? (y/n): ").strip().lower()
         if export == 'y':
-            from .scholarships import export_forecast_report
+            from education_system.university_system.modules.domain.finance.reporting.revenue_analytics.scholarships import export_forecast_report
             export_forecast_report(historical_data, forecasts, total_forecast)
 
         conn.close()

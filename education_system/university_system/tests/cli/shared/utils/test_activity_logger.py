@@ -50,8 +50,8 @@ def temp_log_dir():
 @pytest.fixture
 def activity_logger_instance(temp_log_dir):
     """Create a fresh ActivityLogger instance for testing."""
-    with patch('university_system.modules.shared.utils.activity_logger.ActivityLogger._instance', None):
-        with patch('university_system.modules.shared.utils.activity_logger.ActivityLogger._get_log_directory') as mock_get_dir:
+    with patch('education_system.university_system.modules.shared.utils.activity_logger.ActivityLogger._instance', None):
+        with patch('education_system.university_system.modules.shared.utils.activity_logger.ActivityLogger._get_log_directory') as mock_get_dir:
             mock_get_dir.return_value = Path(temp_log_dir)
             logger_instance = ActivityLogger()
             yield logger_instance
@@ -82,15 +82,15 @@ class TestActivityLoggerInitialization:
 
     def test_get_log_directory_with_paths(self, temp_log_dir):
         """Test getting log directory from paths module."""
-        with patch('university_system.modules.shared.utils.activity_logger.ActivityLogger._instance', None):
-            with patch('university_system.modules.shared.constants.paths.LOG_DIR', temp_log_dir):
+        with patch('education_system.university_system.modules.shared.utils.activity_logger.ActivityLogger._instance', None):
+            with patch('education_system.university_system.modules.shared.constants.paths.LOG_DIR', temp_log_dir):
                 logger_instance = ActivityLogger()
                 assert logger_instance.log_dir == Path(temp_log_dir)
 
     def test_get_log_directory_fallback(self):
         """Test fallback log directory when paths import fails."""
-        with patch('university_system.modules.shared.utils.activity_logger.ActivityLogger._instance', None):
-            with patch('university_system.modules.shared.utils.activity_logger.ActivityLogger._get_log_directory') as mock_get_dir:
+        with patch('education_system.university_system.modules.shared.utils.activity_logger.ActivityLogger._instance', None):
+            with patch('education_system.university_system.modules.shared.utils.activity_logger.ActivityLogger._get_log_directory') as mock_get_dir:
                 # Simulate import error by returning fallback path
                 fallback_path = Path(__file__).parent.parent.parent / 'logs'
                 mock_get_dir.return_value = fallback_path
@@ -100,8 +100,8 @@ class TestActivityLoggerInitialization:
     def test_log_directory_created(self, temp_log_dir):
         """Test that log directory is created if it doesn't exist."""
         new_log_dir = os.path.join(temp_log_dir, 'new_logs')
-        with patch('university_system.modules.shared.utils.activity_logger.ActivityLogger._instance', None):
-            with patch('university_system.modules.shared.constants.paths.LOG_DIR', new_log_dir):
+        with patch('education_system.university_system.modules.shared.utils.activity_logger.ActivityLogger._instance', None):
+            with patch('education_system.university_system.modules.shared.constants.paths.LOG_DIR', new_log_dir):
                 logger_instance = ActivityLogger()
                 assert os.path.exists(new_log_dir)
 
@@ -321,7 +321,7 @@ class TestConvenienceFunctions:
 class TestLogFormatting:
     """Test log entry formatting."""
 
-    @patch('university_system.modules.shared.utils.activity_logger.ActivityLogger.logger')
+    @patch('education_system.university_system.modules.shared.utils.activity_logger.ActivityLogger.logger')
     def test_log_format(self, mock_logger, activity_logger_instance):
         """Test that log entries have correct format."""
         activity_logger_instance.set_user("testuser")
@@ -334,7 +334,7 @@ class TestLogFormatting:
         assert "Test action" in call_args
         # Should contain timestamp in format YYYY-MM-DD HH:MM:SS
 
-    @patch('university_system.modules.shared.utils.activity_logger.ActivityLogger.logger')
+    @patch('education_system.university_system.modules.shared.utils.activity_logger.ActivityLogger.logger')
     def test_log_timestamp_format(self, mock_logger, activity_logger_instance):
         """Test that timestamp is in correct format."""
         activity_logger_instance.log("Test action")
@@ -399,8 +399,8 @@ class TestIntegration:
 
     def test_full_logging_workflow(self, temp_log_dir):
         """Test a complete logging workflow."""
-        with patch('university_system.modules.shared.utils.activity_logger.ActivityLogger._instance', None):
-            with patch('university_system.modules.shared.constants.paths.LOG_DIR', temp_log_dir):
+        with patch('education_system.university_system.modules.shared.utils.activity_logger.ActivityLogger._instance', None):
+            with patch('education_system.university_system.modules.shared.constants.paths.LOG_DIR', temp_log_dir):
                 logger_instance = ActivityLogger()
 
                 # Set user
@@ -418,8 +418,8 @@ class TestIntegration:
 
     def test_concurrent_logging(self, temp_log_dir):
         """Test logging from multiple 'threads' (sequential for simplicity)."""
-        with patch('university_system.modules.shared.utils.activity_logger.ActivityLogger._instance', None):
-            with patch('university_system.modules.shared.constants.paths.LOG_DIR', temp_log_dir):
+        with patch('education_system.university_system.modules.shared.utils.activity_logger.ActivityLogger._instance', None):
+            with patch('education_system.university_system.modules.shared.constants.paths.LOG_DIR', temp_log_dir):
                 logger_instance = ActivityLogger()
 
                 # Simulate multiple users logging
@@ -432,8 +432,8 @@ class TestIntegration:
 
     def test_user_session_lifecycle(self, temp_log_dir):
         """Test complete user session lifecycle."""
-        with patch('university_system.modules.shared.utils.activity_logger.ActivityLogger._instance', None):
-            with patch('university_system.modules.shared.constants.paths.LOG_DIR', temp_log_dir):
+        with patch('education_system.university_system.modules.shared.utils.activity_logger.ActivityLogger._instance', None):
+            with patch('education_system.university_system.modules.shared.constants.paths.LOG_DIR', temp_log_dir):
                 logger_instance = ActivityLogger()
 
                 # Login
@@ -453,7 +453,7 @@ class TestIntegration:
 class TestErrorHandling:
     """Test error handling in logging operations."""
 
-    @patch('university_system.modules.shared.utils.activity_logger.ActivityLogger.logger')
+    @patch('education_system.university_system.modules.shared.utils.activity_logger.ActivityLogger.logger')
     def test_logging_with_exception_in_logger(self, mock_logger, activity_logger_instance):
         """Test that exceptions in logger don't crash the application."""
         mock_logger.info.side_effect = Exception("Logging failed")

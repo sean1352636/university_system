@@ -11,7 +11,7 @@ continue to work without changes.
 """
 
 # ── config & helpers ────────────────────────────────────────────────────────
-from .config import (
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.config import (
     CONFIG,
     AVAILABLE_SECTIONS,
     SystemConfig,
@@ -21,19 +21,19 @@ from .config import (
 )
 
 # ── data models ─────────────────────────────────────────────────────────────
-from .models import ReportTemplate, AdvancedScheduledReport
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.models import ReportTemplate, AdvancedScheduledReport
 
 # ── cache ───────────────────────────────────────────────────────────────────
-from .cache import CacheManager
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.cache import CacheManager
 
 # ── data quality ────────────────────────────────────────────────────────────
-from .data_quality import DataQualityMonitor
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.data_quality import DataQualityMonitor
 
 # ── predictive analytics ────────────────────────────────────────────────────
-from .predictive import PredictiveAnalytics
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.predictive import PredictiveAnalytics
 
 # ── visualization ───────────────────────────────────────────────────────────
-from .visualization import (
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.visualization import (
     AdvancedVisualization,
     create_advanced_visualization,
     create_interactive_chart,
@@ -46,7 +46,7 @@ from .visualization import (
 )
 
 # ── template CRUD ───────────────────────────────────────────────────────────
-from .templates_db import (
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.templates_db import (
     save_template,
     load_templates,
     save_template_dict,
@@ -55,7 +55,7 @@ from .templates_db import (
 )
 
 # ── data retrieval ──────────────────────────────────────────────────────────
-from .data_retrieval import (
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.data_retrieval import (
     get_section_dataframe,
     get_correlation_data,
     get_trend_data,
@@ -64,7 +64,7 @@ from .data_retrieval import (
 )
 
 # ── report generation ───────────────────────────────────────────────────────
-from .report_generation import (
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.report_generation import (
     generate_report,
     generate_enhanced_pdf_report,
     generate_enhanced_section,
@@ -75,10 +75,10 @@ from .report_generation import (
 )
 
 # ── Flask API ───────────────────────────────────────────────────────────────
-from .api import app
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.api import app
 
 # ── scheduling & maintenance ────────────────────────────────────────────────
-from .scheduler import (
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.scheduler import (
     run_system_maintenance,
     cleanup_old_reports,
     load_scheduled_reports,
@@ -87,7 +87,7 @@ from .scheduler import (
 )
 
 # ── CLI menus ───────────────────────────────────────────────────────────────
-from .menu import (
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.menu import (
     display_enhanced_reporting_menu,
     show_performance_monitor,
 )

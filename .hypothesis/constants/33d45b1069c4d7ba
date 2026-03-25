@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/academic_calendar/recurring_events.py
+# hypothesis_version: 6.151.9
+
+[365, 1000, '%Y-%m-%d', 'Academic', 'UTC', 'byweekday', 'count', 'daily', 'date', 'date_end', 'date_start', 'day_of_month', 'days_of_week', 'description', 'dtstart', 'end_date', 'event_type', 'exceptions', 'freq', 'frequency', 'id', 'interval', 'manage_schedules', 'month_of_year', 'monthly', 'name', 'occurrence_count', 'timezone', 'until', 'weekly', 'yearly']

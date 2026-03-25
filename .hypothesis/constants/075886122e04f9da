@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/gui/health_portal/reports/population.py
+# hypothesis_version: 6.151.9
+
+[1.0, 100, 365, '%Y-%m-%d', '*.*', '*.txt', '-', '.txt', '10', '5', '=', 'APPOINTMENT ANALYSIS', 'All files', 'Consolas', 'Date From:', 'Date To:', 'Error', 'Export Report', 'Generate Report', 'Population Health', 'Records by Type:', 'Report Parameters', 'Success', 'TOP HEALTH CONCERNS', 'Text files', 'Title.TLabel', 'VACCINATION ANALYSIS', 'Vaccination Coverage', 'population_health', 'report', 'report_export', 'utf-8', 'w']

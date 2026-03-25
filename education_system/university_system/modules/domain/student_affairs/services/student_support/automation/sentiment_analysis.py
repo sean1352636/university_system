@@ -21,12 +21,12 @@ from education_system.university_system.infrastructure.email.email_manager impor
 from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH, TICKET_TEMPLATES_DIR, UPLOAD_DIR
 from education_system.university_system.utils.logging.log_config import get_log_file
 
-from ..config import (
+from education_system.university_system.modules.domain.student_affairs.services.student_support.config import (
     SUPPORT_DB, TICKET_STATUSES, TICKET_PRIORITIES, SUPPORT_CATEGORIES,
     NotificationType, TicketSentiment, FileType, SupportConfig
 )
-from .. import auth as _auth_mod
-from ..auth import get_current_user_safe, require_auth, has_staff_permissions
+from education_system.university_system.modules.domain.student_affairs.services.student_support import auth as _auth_mod
+from education_system.university_system.modules.domain.student_affairs.services.student_support.auth import get_current_user_safe, require_auth, has_staff_permissions
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +89,7 @@ def _get_auto_assignment(category, priority, staff_assignments=None):
     """Get staff member for auto-assignment"""
     # Load staff assignments if not provided
     if staff_assignments is None:
-        from .background_tasks import _load_staff_assignments
+        from education_system.university_system.modules.domain.student_affairs.services.student_support.automation.background_tasks import _load_staff_assignments
         staff_assignments = _load_staff_assignments()
 
     if category not in staff_assignments:

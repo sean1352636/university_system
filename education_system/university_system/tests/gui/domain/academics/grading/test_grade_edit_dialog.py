@@ -80,7 +80,7 @@ class TestGradeEditDialog:
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.grade_edit_dialog.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.grade_edit_dialog.messagebox')
     def test_calculate_grade_valid_score(self, mock_msgbox, root):
         """Test automatic grade calculation from score"""
         dialog = GradeEditDialog(
@@ -110,7 +110,7 @@ class TestGradeEditDialog:
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.grade_edit_dialog.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.grade_edit_dialog.messagebox')
     def test_calculate_grade_invalid_score(self, mock_msgbox, root):
         """Test grade calculation with invalid score"""
         dialog = GradeEditDialog(
@@ -134,7 +134,7 @@ class TestGradeEditDialog:
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.grade_edit_dialog.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.grade_edit_dialog.messagebox')
     def test_calculate_grade_out_of_range(self, mock_msgbox, root):
         """Test grade calculation with score out of range"""
         dialog = GradeEditDialog(
@@ -168,7 +168,7 @@ class TestGradeEditDialog:
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.grade_edit_dialog.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.grade_edit_dialog.messagebox')
     def test_save_grade_missing_fields(self, mock_msgbox, root):
         """Test validation for missing required fields"""
         callback = Mock()
@@ -199,7 +199,7 @@ class TestGradeEditDialog:
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.grade_edit_dialog.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.grade_edit_dialog.messagebox')
     def test_save_grade_invalid_score(self, mock_msgbox, root):
         """Test validation for non-numeric score"""
         callback = Mock()
@@ -230,7 +230,7 @@ class TestGradeEditDialog:
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.grade_edit_dialog.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.grade_edit_dialog.messagebox')
     def test_save_grade_score_exceeds_max(self, mock_msgbox, root):
         """Test validation for score exceeding max points"""
         callback = Mock()
@@ -261,7 +261,7 @@ class TestGradeEditDialog:
 
         dialog.dialog.destroy()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.dialogs.grade_edit_dialog.messagebox')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.dialogs.grade_edit_dialog.messagebox')
     def test_save_grade_invalid_letter_grade(self, mock_msgbox, root):
         """Test validation for invalid letter grade"""
         callback = Mock()

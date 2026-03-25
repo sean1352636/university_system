@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/financial_aid/admin_portal/aid_types.py
+# hypothesis_version: 6.151.9
+
+[100, 120, 150, 200, 'Aid Type ID', 'Back to Dashboard', 'Category', 'Manage Aid Types', 'Max Amount', 'N/A', 'Name', 'No', 'Renewable', 'Requires Repayment', 'Title.TLabel', 'Yes', 'aid_category', 'aid_name', 'aid_type_id', 'both', 'end', 'is_renewable', 'left', 'max_amount', 'red', 'requires_repayment', 'right', 'x']

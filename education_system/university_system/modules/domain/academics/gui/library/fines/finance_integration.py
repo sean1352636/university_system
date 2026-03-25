@@ -7,7 +7,7 @@ from tkinter import ttk, messagebox
 from datetime import datetime
 from education_system.university_system.modules.shared.utils.i18n import get_text as _
 
-from .constants import (
+from education_system.university_system.modules.domain.academics.gui.library.fines.constants import (
     ORIGINAL_LIBRARY_AVAILABLE,
     FINANCE_ACCOUNT_AVAILABLE,
     DatabaseError,

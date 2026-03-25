@@ -6,7 +6,7 @@ from datetime import datetime
 
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
-from ..dialogs.evidence import EvidenceDialog
+from education_system.university_system.modules.domain.campus.gui.security.dialogs.evidence import EvidenceDialog
 
 
 class EvidenceMixin:

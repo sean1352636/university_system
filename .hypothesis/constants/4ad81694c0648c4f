@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/commerce/gui/restaurant_management_gui/reports/waste_reports.py
+# hypothesis_version: 6.151.9
+
+[1.0, 100, 500, '-', '1000x700', '=', 'Arial', 'Close', 'Cost Analysis', 'Date Range', 'Detailed Records:\n', 'Error', 'OVERALL STATISTICS:\n', 'Report Output', 'Select Report Type', 'WASTE COST ANALYSIS\n', 'Waste Trends', 'Waste by Category', 'Waste by Date Range', 'Waste by Reason', 'bold', 'both', 'left', 'x']

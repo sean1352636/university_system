@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/core_utils/global_auth.py
+# hypothesis_version: 6.151.9
+
+['clear_auth_instance', 'current_user', 'get_auth_instance', 'get_current_user', 'get_current_user_id', 'get_current_username', 'get_global_auth', 'id', 'is_logged_in', 'is_user_logged_in', 'reset_global_auth', 'role', 'set_auth_instance', 'set_global_auth', 'username']

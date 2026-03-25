@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/academic_calendar/audit.py
+# hypothesis_version: 6.151.9
+
+[100, 1000, ' AND ', ' WHERE ', ', ', '?', 'action', 'id', 'ip_address', 'new_values', 'old_values', 'primary key', 'record_id', 'record_id = ?', 'table_name', 'table_name = ?', 'timestamp', 'user_id', 'user_id = ?']

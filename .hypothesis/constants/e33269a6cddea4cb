@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/batch_operations/validation.py
+# hypothesis_version: 6.151.9
+
+[100, '%Y-%m-%d', '-', 'CS', 'DS', 'Validating data', '[^\\d+]', "^[a-zA-Z\\s\\-']+$", 'course', 'dob', 'email_address', 'f', 'female', 'first_name', 'gender', 'issues', 'last_name', 'm', 'male', 'middle_name', 'name', 'o', 'other', 'phone_number', 'student_id', 'w', 'y']

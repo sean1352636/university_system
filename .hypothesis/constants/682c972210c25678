@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/ai/ai_detector/features/federated_learning.py
+# hypothesis_version: 6.151.9
+
+[1.0, '_reconstruct', 'builtins', 'bytes', 'dtype', 'float32', 'float64', 'int32', 'int64', 'ndarray', 'np.ndarray', 'numpy', 'scalar', 'set']

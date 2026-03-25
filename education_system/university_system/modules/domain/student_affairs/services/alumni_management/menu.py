@@ -1,25 +1,25 @@
-from .core import auth
-from .database import init_alumni_db
-from .profiles import register_alumni, view_alumni, update_alumni, setup_alumni_directory
-from .events import (
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.core import auth
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.database import init_alumni_db
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.profiles import register_alumni, view_alumni, update_alumni, setup_alumni_directory
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.events import (
     view_events, register_for_event, create_enhanced_event, event_check_in_system,
 )
-from .donations import (
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.donations import (
     record_donation, view_donations, view_fundraising_campaigns, manage_donor_recognition,
 )
-from .mentorship import setup_mentorship, view_mentorships, smart_mentorship_matching
-from .stories import view_alumni_stories
-from .reunions import manage_class_reunions
-from .chapters import manage_regional_chapters
-from .directory import search_alumni_directory, view_connection_requests, manage_business_directory
-from .communications import create_newsletter
-from .forum import manage_alumni_forum
-from .jobs import view_job_board, post_job_opportunity, schedule_career_counseling
-from .gamification import (
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.mentorship import setup_mentorship, view_mentorships, smart_mentorship_matching
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.stories import view_alumni_stories
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.reunions import manage_class_reunions
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.chapters import manage_regional_chapters
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.directory import search_alumni_directory, view_connection_requests, manage_business_directory
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.communications import create_newsletter
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.forum import manage_alumni_forum
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.jobs import view_job_board, post_job_opportunity, schedule_career_counseling
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.gamification import (
     view_engagement_leaderboard, view_my_badges, generate_engagement_recommendations,
 )
-from .photos import manage_photo_gallery
-from .reports import generate_alumni_report
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.photos import manage_photo_gallery
+from education_system.university_system.modules.domain.student_affairs.services.alumni_management.reports import generate_alumni_report
 
 
 def display_alumni_menu():

@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.college_system.modules.domain.assets.services.assets_service import AssetsService
+from education_system.college_system.core.i18n import t
 
 
 class AssetsFrame(tk.Frame):
@@ -19,7 +20,7 @@ class AssetsFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Asset Loans", font=("Helvetica", 14, "bold"),
+        tk.Label(header, text=t("assets.management"), font=("Helvetica", 14, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=10)
 
         toolbar = tk.Frame(self)
@@ -29,9 +30,10 @@ class AssetsFrame(tk.Frame):
         ttk.Combobox(toolbar, textvariable=self._status_var,
                       values=["All", "on_loan", "returned", "overdue", "lost"],
                       state="readonly", width=12).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="Filter", command=self._load_loans).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="New Loan", command=self._new_loan).pack(side="right", padx=5)
-        ttk.Button(toolbar, text="Return Asset", command=self._return_asset).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("common.filter"), command=self._load_loans).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("assets.new_loan"), command=self._new_loan).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("assets.return_asset"), command=self._return_asset).pack(side="right", padx=5)
+        ttk.Button(toolbar, text="Export CSV", command=self._export_csv).pack(side="left", padx=5)
 
         cols = ("id", "asset", "tag", "type", "student", "condition", "loan_date", "status")
         self._tree = ttk.Treeview(self, columns=cols, show="headings", height=18)
@@ -39,6 +41,10 @@ class AssetsFrame(tk.Frame):
             self._tree.heading(c, text=c.replace("_", " ").title())
             self._tree.column(c, width=w)
         self._tree.pack(fill="both", expand=True, padx=10, pady=5)
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._tree, "assets.csv")
 
     def _load_loans(self):
         for item in self._tree.get_children():
@@ -54,11 +60,11 @@ class AssetsFrame(tk.Frame):
                     l.get("condition_out", ""), l.get("loan_date", ""),
                     l.get("status", "")))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _new_loan(self):
         win = tk.Toplevel(self)
-        win.title("New Asset Loan")
+        win.title(t("assets.new_loan"))
         win.geometry("400x300")
         fields = {}
         row = 0
@@ -87,21 +93,21 @@ class AssetsFrame(tk.Frame):
                     asset_type=type_var.get(),
                     condition_out=fields["condition_out"].get().strip() or "good",
                     issued_by=user_id)
-                messagebox.showinfo("Success", "Loan created")
+                messagebox.showinfo(t("common.success"), t("assets.loan_created"))
                 win.destroy()
                 self._load_loans()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
-        ttk.Button(win, text="Save", command=save).grid(row=row, column=0, columnspan=2, pady=15)
+                messagebox.showerror(t("common.error"), str(e))
+        ttk.Button(win, text=t("common.save"), command=save).grid(row=row, column=0, columnspan=2, pady=15)
 
     def _return_asset(self):
         sel = self._tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a loan to return")
+            messagebox.showwarning(t("common.warning"), t("assets.select_loan_to_return"))
             return
         loan_id = int(sel[0])
         win = tk.Toplevel(self)
-        win.title("Return Asset")
+        win.title(t("assets.return_asset"))
         win.geometry("300x150")
         tk.Label(win, text="Condition:").grid(row=0, column=0, padx=10, pady=10, sticky="e")
         cond_var = tk.StringVar(value="good")
@@ -116,12 +122,12 @@ class AssetsFrame(tk.Frame):
             try:
                 self._svc.return_asset(loan_id, condition_in=cond_var.get(),
                                         notes=notes.get().strip() or None)
-                messagebox.showinfo("Success", "Asset returned")
+                messagebox.showinfo(t("common.success"), t("assets.asset_returned"))
                 win.destroy()
                 self._load_loans()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
-        ttk.Button(win, text="Return", command=save).grid(row=2, column=0, columnspan=2, pady=15)
+                messagebox.showerror(t("common.error"), str(e))
+        ttk.Button(win, text=t("assets.return_asset"), command=save).grid(row=2, column=0, columnspan=2, pady=15)
 
     def refresh(self):
         self._load_loans()

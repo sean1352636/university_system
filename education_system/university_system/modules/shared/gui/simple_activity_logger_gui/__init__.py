@@ -16,10 +16,10 @@ Author: Enhanced Activity Logger Team
 Version: 2.0.0
 """
 
-from .main_gui import EnhancedActivityLoggerGUI
-from .theme import LoggerGUITheme
-from .status_bar import StatusBar
-from .tabs import (
+from education_system.university_system.modules.shared.gui.simple_activity_logger_gui.main_gui import EnhancedActivityLoggerGUI
+from education_system.university_system.modules.shared.gui.simple_activity_logger_gui.theme import LoggerGUITheme
+from education_system.university_system.modules.shared.gui.simple_activity_logger_gui.status_bar import StatusBar
+from education_system.university_system.modules.shared.gui.simple_activity_logger_gui.tabs import (
     LogViewerTab,
     AnalyticsTab,
     ConfigurationTab,
@@ -27,7 +27,7 @@ from .tabs import (
     PluginTab,
     QueryTab,
 )
-from .entry import (
+from education_system.university_system.modules.shared.gui.simple_activity_logger_gui.entry import (
     main,
     launch_logger_gui,
     create_gui_instance,

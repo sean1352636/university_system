@@ -126,15 +126,16 @@ class EmployeeManager:
         with get_connection() as conn:
             if doc_type:
                 rows = conn.execute('''
-                    SELECT * FROM staff_documents
-                    WHERE user_id = ? AND document_type = ?
-                    ORDER BY created_at DESC
+                    SELECT * FROM documents
+                    WHERE source_type = 'staff' AND owner_id = ? AND owner_type = 'staff'
+                      AND document_type = ?
+                    ORDER BY upload_date DESC
                 ''', (user_id, doc_type)).fetchall()
             else:
                 rows = conn.execute('''
-                    SELECT * FROM staff_documents
-                    WHERE user_id = ?
-                    ORDER BY created_at DESC
+                    SELECT * FROM documents
+                    WHERE source_type = 'staff' AND owner_id = ? AND owner_type = 'staff'
+                    ORDER BY upload_date DESC
                 ''', (user_id,)).fetchall()
             return [dict(row) for row in rows]
 
@@ -144,10 +145,11 @@ class EmployeeManager:
         """Add a new document to a staff profile."""
         with transaction() as conn:
             cursor = conn.execute('''
-                INSERT INTO staff_documents (
-                    user_id, document_type, document_name, file_path,
-                    issue_date, expiry_date, status, uploaded_by, notes
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO documents (
+                    source_type, owner_id, owner_type, document_type,
+                    document_name, file_path, issue_date, expiry_date,
+                    status, uploaded_by, notes
+                ) VALUES ('staff', ?, 'staff', ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 user_id,
                 doc_type,
@@ -184,7 +186,8 @@ class EmployeeManager:
 
         with transaction() as conn:
             conn.execute(
-                'UPDATE staff_documents SET ' + ', '.join(fields) + ' WHERE document_id = ?',
+                'UPDATE documents SET ' + ', '.join(fields) +
+                " WHERE document_id = ? AND source_type = 'staff'",
                 values)
             log_activity('update', 'staff_document',
                         details={'document_id': document_id})
@@ -194,8 +197,9 @@ class EmployeeManager:
     def delete_document(document_id: int) -> bool:
         """Delete a document record."""
         with transaction() as conn:
-            conn.execute('DELETE FROM staff_documents WHERE document_id = ?',
-                        (document_id,))
+            conn.execute(
+                "DELETE FROM documents WHERE document_id = ? AND source_type = 'staff'",
+                (document_id,))
             log_activity('delete', 'staff_document',
                         details={'document_id': document_id})
             return True
@@ -206,9 +210,10 @@ class EmployeeManager:
         with get_connection() as conn:
             rows = conn.execute('''
                 SELECT d.*, p.department, p.job_title
-                FROM staff_documents d
-                LEFT JOIN staff_profiles p ON d.user_id = p.user_id
-                WHERE d.expiry_date IS NOT NULL
+                FROM documents d
+                LEFT JOIN staff_profiles p ON d.owner_id = p.user_id
+                WHERE d.source_type = 'staff' AND d.owner_type = 'staff'
+                  AND d.expiry_date IS NOT NULL
                   AND d.expiry_date <= date('now', '+' || ? || ' days')
                   AND d.expiry_date >= date('now')
                   AND d.status = 'active'

@@ -325,19 +325,21 @@ def verify_backup(self):
         if filename:
             # Try to open the database file
             test_conn = sqlite3.connect(filename)
-            cursor = test_conn.cursor()
-            # Check some basic tables
-            tables_to_check = ['menu_items', 'restaurant_orders', 'restaurant_staff']
-            verified_tables = []
-            for table in tables_to_check:
-                try:
-                    safe_table = validate_identifier(table, "table")
-                    cursor.execute("SELECT COUNT(*) FROM [" + safe_table + "]")
-                    count = cursor.fetchone()[0]
-                    verified_tables.append(f"✓ {table}: {count} records")
-                except sqlite3.Error:
-                    verified_tables.append(f"✗ {table}: Missing or corrupted")
-            test_conn.close()
+            try:
+                cursor = test_conn.cursor()
+                # Check some basic tables
+                tables_to_check = ['menu_items', 'orders', 'restaurant_staff']
+                verified_tables = []
+                for table in tables_to_check:
+                    try:
+                        safe_table = validate_identifier(table, "table")
+                        cursor.execute("SELECT COUNT(*) FROM [" + safe_table + "]")
+                        count = cursor.fetchone()[0]
+                        verified_tables.append(f"✓ {table}: {count} records")
+                    except sqlite3.Error:
+                        verified_tables.append(f"✗ {table}: Missing or corrupted")
+            finally:
+                test_conn.close()
             verification_report = "BACKUP VERIFICATION REPORT\n\n"
             verification_report += f"File: {filename}\n"
             verification_report += f"Status: Backup file is valid\n\n"

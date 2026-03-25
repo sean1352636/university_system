@@ -84,7 +84,7 @@ def fix_existing_email_senders():
         SELECT m.id, m.subject, m.sent_at, m.sender_id, u.username as current_sender,
                se.sender_name, se.sender_email
         FROM messages m
-        JOIN users u ON m.sender_id = u.id
+        LEFT JOIN users u ON m.sender_id = u.id
         LEFT JOIN stored_emails se ON (
             se.subject = m.subject AND
             se.created_date = m.sent_at

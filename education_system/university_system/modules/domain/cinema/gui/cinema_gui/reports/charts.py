@@ -6,7 +6,7 @@ Requires matplotlib (guarded by MATPLOTLIB_AVAILABLE in _imports).
 
 from tkinter import ttk
 
-from ._imports import FigureCanvasTkAgg, Figure
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.reports._imports import FigureCanvasTkAgg, Figure
 
 
 def create_bar_chart(self, labels, values, title, xlabel, ylabel):

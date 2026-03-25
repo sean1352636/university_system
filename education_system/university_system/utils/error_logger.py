@@ -30,7 +30,7 @@ class ErrorLogger:
         self.log_file_path = self.log_directory / self.log_filename
 
         # Create logs directory if it doesn't exist
-        self.log_directory.mkdir(exist_ok=True)
+        self.log_directory.mkdir(parents=True, exist_ok=True)
 
         # Setup logging configuration
         self._setup_logging()

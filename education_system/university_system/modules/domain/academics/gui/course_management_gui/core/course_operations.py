@@ -1,4 +1,4 @@
-from ._imports import _, messagebox, sqlite3, DEFAULT_DB_PATH, CourseEditDialog
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.core._imports import _, messagebox, sqlite3, DEFAULT_DB_PATH, CourseEditDialog
 
 
 class CourseOperationsMixin:

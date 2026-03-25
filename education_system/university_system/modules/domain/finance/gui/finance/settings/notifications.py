@@ -20,7 +20,7 @@ from education_system.university_system.modules.domain.finance.gui.finance.commo
     test_sms_service,
 )
 
-from .currency import SUPPORTED_CURRENCIES
+from education_system.university_system.modules.domain.finance.gui.finance.settings.currency import SUPPORTED_CURRENCIES
 
 
 class NotificationsMixin:

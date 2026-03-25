@@ -106,7 +106,8 @@ class ReportsManager:
                    COUNT(DISTINCT submitted_docs.document_id) as submitted_count
             FROM students s
             CROSS JOIN document_types req_types
-            LEFT JOIN student_documents submitted_docs ON s.student_id = submitted_docs.student_id
+            LEFT JOIN documents submitted_docs ON s.student_id = submitted_docs.owner_id
+                AND submitted_docs.source_type = 'student'
                 AND req_types.type_id = submitted_docs.type_id
                 AND submitted_docs.is_current_version = 1
             WHERE req_types.is_required = 1
@@ -217,7 +218,7 @@ class ReportsManager:
 
             cursor.execute('''
                 SELECT verification_status, COUNT(*) as count
-                FROM student_documents
+                FROM documents
                 WHERE is_current_version = 1
                 GROUP BY verification_status
             ''')
@@ -274,16 +275,16 @@ class ReportsManager:
             cursor.execute('''
                 SELECT
                     sd.document_id,
-                    sd.student_id,
+                    sd.owner_id as student_id,
                     s.first_name || ' ' || s.last_name as student_name,
                     dt.type_name,
                     sd.upload_date,
                     sd.expiry_date,
                     CAST((julianday(sd.expiry_date) - julianday('now')) AS INTEGER) as days_until_expiry
-                FROM student_documents sd
-                JOIN students s ON sd.student_id = s.student_id
+                FROM documents sd
+                JOIN students s ON sd.owner_id = s.student_id
                 JOIN document_types dt ON sd.type_id = dt.type_id
-                WHERE sd.expiry_date IS NOT NULL
+                WHERE sd.source_type = 'student' AND sd.expiry_date IS NOT NULL
                     AND sd.expiry_date > date('now')
                     AND sd.expiry_date <= date('now', '+30 days')
                 ORDER BY sd.expiry_date ASC
@@ -375,7 +376,7 @@ class ReportsManager:
                    SUM(CASE WHEN verification_status = 'Verified' THEN 1 ELSE 0 END) as verified,
                    SUM(CASE WHEN verification_status = 'Pending' THEN 1 ELSE 0 END) as pending,
                    SUM(CASE WHEN verification_status = 'Rejected' THEN 1 ELSE 0 END) as rejected
-            FROM student_documents
+            FROM documents
             WHERE strftime('%Y-%m', upload_date) = strftime('%Y-%m', 'now')
             ''')
 
@@ -400,7 +401,7 @@ class ReportsManager:
             cursor.execute('''
             SELECT strftime('%Y-%m', upload_date) as month,
                    COUNT(*) as count
-            FROM student_documents
+            FROM documents
             WHERE upload_date >= date('now', '-12 months')
             GROUP BY month
             ORDER BY month DESC
@@ -499,13 +500,13 @@ class ReportsManager:
             # Get department stats
             cursor.execute('''
             SELECT s.program as department,
-                   COUNT(DISTINCT sd.student_id) as total_students,
+                   COUNT(DISTINCT sd.owner_id) as total_students,
                    COUNT(sd.document_id) as total_documents,
                    SUM(CASE WHEN sd.verification_status = 'Verified' THEN 1 ELSE 0 END) as verified_docs,
                    ROUND(AVG(sd.file_size)/1024.0, 2) as avg_file_size_kb
-            FROM student_documents sd
-            JOIN students s ON sd.student_id = s.student_id
-            WHERE sd.is_current_version = 1
+            FROM documents sd
+            JOIN students s ON sd.owner_id = s.student_id
+            WHERE sd.source_type = 'student' AND sd.is_current_version = 1
             GROUP BY s.program
             ORDER BY total_documents DESC
             ''')
@@ -656,9 +657,9 @@ class ReportsManager:
                         report.append("-" * 80)
                         cursor.execute('''
                         SELECT dt.type_name, sd.upload_date, sd.verification_status, sd.version_number
-                        FROM student_documents sd
+                        FROM documents sd
                         JOIN document_types dt ON sd.type_id = dt.type_id
-                        WHERE sd.student_id = ? AND sd.is_current_version = 1
+                        WHERE sd.owner_id = ? AND sd.source_type = 'student' AND sd.is_current_version = 1
                         ORDER BY sd.upload_date DESC
                         ''', (student_id,))
                         docs = cursor.fetchall()
@@ -672,7 +673,7 @@ class ReportsManager:
                         else:
                             report.append("\n  No documents uploaded yet.")
 
-                        cursor.execute('SELECT COUNT(*) FROM student_documents WHERE student_id = ?', (student_id,))
+                        cursor.execute("SELECT COUNT(*) FROM documents WHERE owner_id = ? AND source_type = 'student'", (student_id,))
                         total_docs = cursor.fetchone()[0]
                         report.append(f"\n  Total Documents: {total_docs}")
 
@@ -683,8 +684,8 @@ class ReportsManager:
                         cursor.execute('''
                         SELECT dw.step_name, dw.status, dw.assigned_to, dw.completed_date
                         FROM document_workflow dw
-                        JOIN student_documents sd ON dw.document_id = sd.document_id
-                        WHERE sd.student_id = ?
+                        JOIN documents sd ON dw.document_id = sd.document_id
+                        WHERE sd.owner_id = ? AND sd.source_type = 'student'
                         ORDER BY dw.step_order
                         ''', (student_id,))
                         workflows = cursor.fetchall()
@@ -719,8 +720,8 @@ class ReportsManager:
                             report.append("\n  Required Documents:")
                             for req in required_docs:
                                 cursor.execute('''
-                                SELECT COUNT(*) FROM student_documents
-                                WHERE student_id = ? AND type_id = (
+                                SELECT COUNT(*) FROM documents
+                                WHERE owner_id = ? AND source_type = 'student' AND type_id = (
                                     SELECT type_id FROM document_types WHERE type_name = ?
                                 )
                                 ''', (student_id, req[0]))
@@ -939,10 +940,10 @@ class ReportsManager:
                         query = '''
                         SELECT sd.document_id, s.first_name || ' ' || s.last_name as student_name,
                                dt.type_name, sd.upload_date, sd.verification_status, sd.file_size, sd.version_number
-                        FROM student_documents sd
-                        JOIN students s ON sd.student_id = s.student_id
+                        FROM documents sd
+                        JOIN students s ON sd.owner_id = s.student_id
                         JOIN document_types dt ON sd.type_id = dt.type_id
-                        WHERE sd.is_current_version = 1
+                        WHERE sd.source_type = 'student' AND sd.is_current_version = 1
                         '''
                     elif rtype == "students":
                         query = '''
@@ -950,7 +951,7 @@ class ReportsManager:
                                s.email_address, s.course, 'N/A' as year, s.enrollment_date, s.status,
                                COUNT(sd.document_id) as doc_count
                         FROM students s
-                        LEFT JOIN student_documents sd ON s.student_id = sd.student_id
+                        LEFT JOIN documents sd ON s.student_id = sd.owner_id AND sd.source_type = 'student'
                         GROUP BY s.student_id
                         '''
                     elif rtype == "workflow":

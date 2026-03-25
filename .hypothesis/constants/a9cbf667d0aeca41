@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/budget_manager/textbooks.py
+# hypothesis_version: 6.151.9
+
+[100, 120, 250, '10', 'Available Listings', 'Condition', 'Course', 'Course Code:', 'Error', 'ISBN:', 'Info', 'N/A', 'No listings found.', 'Price', 'Purchase Date', 'Refresh My Textbooks', 'Search Prices', 'Shipping', 'Textbooks', 'Title', 'Total', 'Type', 'Vendor', 'Warning', 'columns', 'condition', 'course_code', 'end', 'guest', 'headings', 'price', 'purchase_date', 'purchase_type', 'shipping_cost', 'title', 'username', 'vendor']

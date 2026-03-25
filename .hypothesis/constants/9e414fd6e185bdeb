@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/commerce/services/grocery/__init__.py
+# hypothesis_version: 6.151.9
+
+['display_grocery_menu', 'init_grocery_db', 'set_auth']

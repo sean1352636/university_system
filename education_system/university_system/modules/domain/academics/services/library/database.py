@@ -375,30 +375,22 @@ def init_library_db():
         )
         ''')
 
-        # Library fine payments - track all fine payments for refund purposes
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS library_fine_payments (
-            payment_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            loan_id INTEGER NOT NULL,
-            user_id TEXT NOT NULL,
-            book_id TEXT NOT NULL,
-            book_title TEXT,
-            fine_amount REAL NOT NULL,
-            payment_amount REAL NOT NULL,
-            payment_method TEXT NOT NULL,
-            payment_date TEXT NOT NULL,
-            processed_by TEXT,
-            transaction_ref TEXT,
-            status TEXT DEFAULT 'completed',
-            refund_amount REAL DEFAULT 0.0,
-            refunded_date TEXT,
-            refunded_by TEXT,
-            refund_reason TEXT,
-            notes TEXT,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (loan_id) REFERENCES book_loans(loan_id)
-        )
-        ''')
+        # Note: Library fine payments are now stored in the unified 'payments' table
+        # with source_type='library'. Refunds are tracked in 'unified_refunds'.
+        # Ensure payments table has required columns for library tracking
+        try:
+            cursor.execute("PRAGMA table_info(payments)")
+            existing_cols = {row[1] for row in cursor.fetchall()}
+            for col_name, col_type, col_default in [
+                ('source_type', 'TEXT', None),
+                ('reference_id', 'TEXT', None),
+                ('reference_type', 'TEXT', None),
+                ('payment_reference', 'TEXT', None),
+            ]:
+                if col_name not in existing_cols:
+                    cursor.execute(f'ALTER TABLE payments ADD COLUMN {col_name} {col_type}')
+        except Exception as e:
+            logging.warning(f"Could not ensure payments table columns: {e}")
 
         # Insert enhanced default settings
         enhanced_settings = [
@@ -439,10 +431,8 @@ def init_library_db():
             'CREATE INDEX IF NOT EXISTS idx_reviews_user ON book_reviews(user_id)',
             'CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_log(user_id)',
             'CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_log(timestamp)',
-            'CREATE INDEX IF NOT EXISTS idx_fine_payments_user ON library_fine_payments(user_id)',
-            'CREATE INDEX IF NOT EXISTS idx_fine_payments_loan ON library_fine_payments(loan_id)',
-            'CREATE INDEX IF NOT EXISTS idx_fine_payments_date ON library_fine_payments(payment_date)',
-            'CREATE INDEX IF NOT EXISTS idx_fine_payments_status ON library_fine_payments(status)'
+            'CREATE INDEX IF NOT EXISTS idx_payments_source_type ON payments(source_type)',
+            'CREATE INDEX IF NOT EXISTS idx_payments_reference_id ON payments(reference_id)'
         ]
         
         for index in indexes:
@@ -515,13 +505,13 @@ def log_audit_event(user_id: str, action: str, table_affected: str = None,
         cursor = conn.cursor()
         
         cursor.execute('''
-        INSERT INTO audit_log (user_id, action, table_affected, record_id, 
-                              old_values, new_values, timestamp, ip_address, success)
+        INSERT INTO audit_log (user_id, action, table_name, record_id,
+                              old_values, new_values, timestamp, ip_address, details)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             user_id, action, table_affected, record_id,
             old_values, new_values, datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-            ip_address, success
+            ip_address, str(success) if success is not True else None
         ))
         
         conn.commit()

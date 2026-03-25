@@ -3,6 +3,7 @@
 from education_system.college_system.core.exceptions import EarlyWarningError
 from education_system.college_system.infrastructure.database.db import connect
 
+from education_system.college_system.core.sql_safety import escape_like
 import logging
 
 logger = logging.getLogger(__name__)
@@ -72,7 +73,8 @@ class EarlyWarningService:
             if search:
                 sql += (" AND (s.first_name LIKE ? OR s.last_name LIKE ?"
                         " OR a.trigger_detail LIKE ?)")
-                term = f"%{search}%"
+                escaped = escape_like(search)
+                term = f"%{escaped}%"
                 params.extend([term, term, term])
             sql += " ORDER BY a.created_at DESC LIMIT ?"
             params.append(limit)

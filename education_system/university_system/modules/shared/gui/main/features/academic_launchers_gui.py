@@ -370,10 +370,12 @@ def show_assignments(self):
                             from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH
 
                             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-                            cursor = conn.cursor()
-                            cursor.execute('SELECT student_id FROM users WHERE id = ?', (user_id,))
-                            result = cursor.fetchone()
-                            conn.close()
+                            try:
+                                cursor = conn.cursor()
+                                cursor.execute('SELECT student_id FROM users WHERE id = ?', (user_id,))
+                                result = cursor.fetchone()
+                            finally:
+                                conn.close()
 
                             if result and result[0]:
                                 return result[0]
@@ -666,3 +668,23 @@ def show_virtual_classroom_gui(self):
     except Exception as e:
         messagebox.showerror(_t("academic_launchers.errors.title"), _t("academic_launchers.errors.failed_open_virtual_classroom", error=str(e)))
         print(_t("academic_launchers.errors.virtual_classroom_error_log", error=e))
+
+
+def show_lms_gui(self):
+    """Open the shared Learning Management System GUI."""
+    try:
+        from education_system.shared.lms.lms_gui import LMSFrame
+        window = tk.Toplevel(self.root)
+        window.title("Learning Management System")
+        window.geometry("1100x700")
+        try:
+            window.transient(self.root)
+        except Exception:
+            pass
+        auth = self.auth
+        frame = LMSFrame(window, db_path=DB_PATH, auth=auth)
+        frame.pack(fill="both", expand=True)
+        print("LMS GUI opened successfully")
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to open LMS: {e}")
+        print(f"LMS GUI error: {e}")

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/gui/internship_management/eligibility.py
+# hypothesis_version: 6.151.9
+
+[0.0, 2.5, '#6c757d', '#9b59b6', '(\\d+\\.?\\d*)\\s*GPA', '1.0', '1000x700', '500x300', '600x500', 'Arial', 'Cancel', 'Check Eligibility', 'Check My Eligibility', 'Close', 'Error', 'GPA', 'Grade Report', 'Internship not found', 'Internship:', 'No Internships', 'Selection Required', 'Student Grade Report', 'Student not found', 'bold', 'both', 'computer science', 'course', 'course_year', 'courses_met', 'current_gpa', 'disabled', 'eligible', 'engineering', 'gpa', 'green', 'id', 'left', 'mathematics', 'min_gpa_required', 'missing_courses', 'programming', 'readonly', 'red', 'requirements', 'statistics', 'student_email', 'student_name', 'title', 'username', 'values', 'w', 'white', 'x', '✅ ELIGIBLE', '✅ Met', '❌ NOT ELIGIBLE', '❌ Not Met']

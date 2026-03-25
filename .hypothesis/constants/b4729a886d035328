@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/attendance/cli/records_cli.py
+# hypothesis_version: 6.151.9
+
+['\nAvailable Modules:', '\nOutput Format:', '%Y-%m-%d', ',', '-', '..', '1', '1. By Module', '1. Screen', '2', '2. By Student', '2. Excel', '3', '3. By Date', '3. Module Comparison', '3. PDF', '4', '4. Recent Check-ins', '75', '=', 'Absent', 'Enter student ID: ', 'Invalid date format.', 'Invalid selection.', 'Manual Entry', 'Module Code', 'Module Name', 'No modules found.', 'No records found.', 'Number of Students', 'Overall Attendance', 'T', 'Total Sessions', 'batch_reports', 'csv', 'manual', 'module_name', 'pdf', 'screen', 'students', 'total_sessions']

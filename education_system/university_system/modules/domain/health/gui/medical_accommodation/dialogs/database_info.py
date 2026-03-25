@@ -1,7 +1,7 @@
 # dialogs/database_info.py
 # Dialog for displaying database information.
 
-from .._common import (
+from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import (
     tk, ttk, ScrolledText, os, datetime,
     CLI_AVAILABLE, get_connection, logger,
 )

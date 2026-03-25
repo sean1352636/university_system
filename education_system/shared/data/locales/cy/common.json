@@ -1,0 +1,121 @@
+{
+    "app": {
+        "title": "System Addysg",
+        "language_selector": {
+            "title": "Dewis Iaith",
+            "subtitle": "Dewiswch eich iaith ddewisol",
+            "confirm": "Iawn",
+            "cancel": "Canslo"
+        }
+    },
+    "login": {
+        "title": "System Addysg - Mewngofnodi",
+        "sign_in": "Mewngofnodwch i barhau",
+        "username": "Enw defnyddiwr",
+        "password": "Cyfrinair",
+        "login_button": "Mewngofnodi",
+        "enter_both": "Rhowch enw defnyddiwr a chyfrinair os gwelwch yn dda.",
+        "no_access": "Nid oes gan eich cyfrif fynediad i unrhyw system.",
+        "contact_admin": "Cysylltwch â gweinyddwr os gwelwch yn dda.",
+        "default_hint": "Rhagosodiad: superadmin / SuperAdmin@123"
+    },
+    "mfa": {
+        "title": "Dilysu Dau Ffactor",
+        "enter_code": "Rhowch eich cod dilysu:",
+        "code_sent": "Anfonwyd cod dilysu i {email}",
+        "code_failed": "Methwyd anfon e-bost. Dangosir eich cod isod:",
+        "verify": "Dilysu",
+        "back_to_login": "Yn ôl i fewngofnodi",
+        "enter_code_prompt": "Rhowch god os gwelwch yn dda."
+    },
+    "system_picker": {
+        "welcome": "Croeso, {name}",
+        "choose_system": "Dewiswch system i'w lansio:",
+        "university": "System Rheoli Prifysgol",
+        "college": "System Coleg Chweched Dosbarth",
+        "secondary": "System Ysgol Uwchradd",
+        "primary": "System Ysgol Gynradd",
+        "logout": "Allgofnodi",
+        "superadmin_dashboard": "Dangosfwrdd Uwch-weinyddwr"
+    },
+    "common": {
+        "ok": "Iawn",
+        "cancel": "Canslo",
+        "save": "Cadw",
+        "delete": "Dileu",
+        "edit": "Golygu",
+        "add": "Ychwanegu",
+        "search": "Chwilio",
+        "refresh": "Adnewyddu",
+        "close": "Cau",
+        "back": "Yn ôl",
+        "next": "Nesaf",
+        "yes": "Ie",
+        "no": "Na",
+        "confirm": "Cadarnhau",
+        "error": "Gwall",
+        "success": "Llwyddiant",
+        "warning": "Rhybudd",
+        "loading": "Yn llwytho...",
+        "no_results": "Dim canlyniadau wedi'u canfod",
+        "actions": "Gweithredoedd",
+        "status": "Statws",
+        "name": "Enw",
+        "email": "E-bost",
+        "date": "Dyddiad",
+        "type": "Math",
+        "description": "Disgrifiad",
+        "submit": "Cyflwyno",
+        "export": "Allforio",
+        "import": "Mewnforio",
+        "filter": "Hidlo",
+        "clear": "Clirio",
+        "select_all": "Dewis Popeth",
+        "deselect_all": "Dad-ddewis Popeth",
+        "active": "Gweithredol",
+        "inactive": "Anweithredol",
+        "transferred": "Wedi trosglwyddo"
+    },
+    "shared_modules": {
+        "cross_system_notifications": "Hysbysiadau Traws-system",
+        "student_journey": "Taith y Myfyriwr",
+        "analytics_dashboard": "Dangosfwrdd Dadansoddi",
+        "outcome_tracking": "Olrhain Canlyniadau",
+        "predictive_alerts": "Rhybuddion Rhagfynegol",
+        "bulk_transfer": "Trosglwyddo Swmp",
+        "transfer_documents": "Dogfennau Trosglwyddo",
+        "reverse_lookup": "Chwiliad Gwrthdro",
+        "parent_continuity": "Parhad Rhieni",
+        "cross_system_calendar": "Calendr Traws-system",
+        "inter_system_messaging": "Negeseuon Rhwng Systemau",
+        "central_admin_portal": "Porth Gweinyddu Canolog",
+        "gdpr_compliance": "Cydymffurfiaeth GDPR",
+        "shared_documents": "Dogfennau a Rennir",
+        "student_self_service": "Hunanwasanaeth Myfyrwyr",
+        "digital_transcript": "Trawsgrifiad Digidol"
+    },
+    "switch_system": {
+        "title": "Newid System",
+        "switch_to": "Newid i:",
+        "switching": "Yn newid i {system}..."
+    },
+    "superadmin": {
+        "title": "Dangosfwrdd Uwch-weinyddwr",
+        "overview": "Dangosfwrdd",
+        "system_health": "Iechyd y System",
+        "user_management": "Rheoli Defnyddwyr",
+        "student_analytics": "Dadansoddi Myfyrwyr",
+        "notifications": "Hysbysiadau",
+        "student_search": "Chwilio Myfyrwyr",
+        "audit_log": "Cofnod Archwilio",
+        "quick_launch": "Lansio Cyflym"
+    },
+    "roles": {
+        "admin": "Gweinyddwr",
+        "staff": "Staff",
+        "teacher": "Athro/Athrawes",
+        "student": "Myfyriwr",
+        "parent": "Rhiant",
+        "superadmin": "Uwch-weinyddwr"
+    }
+}

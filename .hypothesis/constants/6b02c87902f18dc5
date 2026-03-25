@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/academic_calendar/dependencies.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d', 'Deadline', 'blocking', 'date', 'date_end', 'date_start', 'days_before', 'delay_days', 'delay_hours', 'dependent_event_id', 'description', 'event_type', 'hours_before', 'id', 'manage_schedules', 'medium', 'name', 'priority']

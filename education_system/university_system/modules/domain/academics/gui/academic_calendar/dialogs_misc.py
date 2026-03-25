@@ -1,4 +1,5 @@
 import logging
+import platform
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 from datetime import datetime, timedelta

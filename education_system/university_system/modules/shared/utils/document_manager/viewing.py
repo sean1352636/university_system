@@ -1,4 +1,4 @@
-from ._common import datetime, sqlite3, get_connection, _t
+from education_system.university_system.modules.shared.utils.document_manager._common import datetime, sqlite3, get_connection, _t
 
 
 class ViewingMixin:
@@ -17,9 +17,9 @@ class ViewingMixin:
             SELECT sd.document_id, dt.type_name, sd.original_filename,
                    sd.upload_date, sd.expiry_date, sd.verification_status,
                    sd.version_number, sd.workflow_status, sd.tags
-            FROM student_documents sd
+            FROM documents sd
             JOIN document_types dt ON sd.type_id = dt.type_id
-            WHERE sd.student_id = ? AND sd.is_current_version = 1
+            WHERE sd.owner_id = ? AND sd.source_type = 'student' AND sd.is_current_version = 1
             ORDER BY sd.upload_date DESC
             ''', (student_id,))
 
@@ -81,14 +81,14 @@ class ViewingMixin:
             cursor = conn.cursor()
 
             cursor.execute('''
-            SELECT sd.document_id, sd.student_id, s.first_name, s.last_name,
+            SELECT sd.document_id, sd.owner_id as student_id, s.first_name, s.last_name,
                    dt.type_name, sd.original_filename, sd.file_path, sd.upload_date,
                    sd.expiry_date, sd.verification_status, sd.verification_date,
                    sd.verification_notes, sd.version_number, sd.uploaded_by,
                    sd.file_size, sd.file_hash, sd.tags, sd.workflow_status, sd.priority
-            FROM student_documents sd
+            FROM documents sd
             JOIN document_types dt ON sd.type_id = dt.type_id
-            LEFT JOIN students s ON sd.student_id = s.student_id
+            LEFT JOIN students s ON sd.owner_id = s.student_id
             WHERE sd.document_id = ?
             ''', (doc_id,))
 

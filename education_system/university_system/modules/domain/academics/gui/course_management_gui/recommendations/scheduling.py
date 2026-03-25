@@ -1,4 +1,4 @@
-from ._imports import (
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.recommendations._imports import (
     tk, ttk, messagebox, sqlite3, _, DEFAULT_DB_PATH, datetime,
     DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES,
 )
@@ -165,45 +165,47 @@ class SchedulingMixin:
                 instructor_id = int(instructor_var.get().split(" - ")[0])
 
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0)
-                conn.execute('PRAGMA journal_mode=WAL')  # Enable WAL mode for better concurrency
-                cursor = conn.cursor()
+                try:
+                    conn.execute('PRAGMA journal_mode=WAL')  # Enable WAL mode for better concurrency
+                    cursor = conn.cursor()
 
-                # Ensure course_schedule table exists with proper schema
-                cursor.execute('''
-                CREATE TABLE IF NOT EXISTS course_schedule (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    course_code TEXT NOT NULL,
-                    day_of_week TEXT NOT NULL,
-                    start_time TEXT NOT NULL,
-                    end_time TEXT NOT NULL,
-                    room_id INTEGER,
-                    instructor_id INTEGER,
-                    session_type TEXT,
-                    semester TEXT,
-                    year INTEGER,
-                    created_at TEXT NOT NULL,
-                    updated_at TEXT,
-                    FOREIGN KEY (room_id) REFERENCES rooms(id),
-                    FOREIGN KEY (instructor_id) REFERENCES instructors(id)
-                )
-                ''')
+                    # Ensure course_schedule table exists with proper schema
+                    cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS course_schedule (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        course_code TEXT NOT NULL,
+                        day_of_week TEXT NOT NULL,
+                        start_time TEXT NOT NULL,
+                        end_time TEXT NOT NULL,
+                        room_id INTEGER,
+                        instructor_id INTEGER,
+                        session_type TEXT,
+                        semester TEXT,
+                        year INTEGER,
+                        created_at TEXT NOT NULL,
+                        updated_at TEXT,
+                        FOREIGN KEY (room_id) REFERENCES rooms(id),
+                        FOREIGN KEY (instructor_id) REFERENCES instructors(id)
+                    )
+                    ''')
 
-                # Get current semester and year
-                current_semester = "Fall"  # You can make this dynamic
-                current_year = datetime.now().year
+                    # Get current semester and year
+                    current_semester = "Fall"  # You can make this dynamic
+                    current_year = datetime.now().year
 
-                # Check for schedule conflicts
-                cursor.execute("""
-                    SELECT id FROM course_schedule
-                    WHERE course_code = ? AND day_of_week = ? AND semester = ? AND year = ?
-                    AND ((start_time <= ? AND end_time > ?) OR (start_time < ? AND end_time >= ?))
-                """, (module_code, day_var.get(), current_semester, current_year,
-                     start_time_var.get(), start_time_var.get(),
-                     end_time_var.get(), end_time_var.get()))
+                    # Check for schedule conflicts
+                    cursor.execute("""
+                        SELECT id FROM course_schedule
+                        WHERE course_code = ? AND day_of_week = ? AND semester = ? AND year = ?
+                        AND ((start_time <= ? AND end_time > ?) OR (start_time < ? AND end_time >= ?))
+                    """, (module_code, day_var.get(), current_semester, current_year,
+                         start_time_var.get(), start_time_var.get(),
+                         end_time_var.get(), end_time_var.get()))
 
-                if cursor.fetchone():
-                    messagebox.showerror("Schedule Conflict",
-                                       f"Schedule conflict detected for {module_code} on {day_var.get()}")
+                    if cursor.fetchone():
+                        messagebox.showerror("Schedule Conflict",
+                                           f"Schedule conflict detected for {module_code} on {day_var.get()}")
+                finally:
                     conn.close()
                     return
 

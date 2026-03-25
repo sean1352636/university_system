@@ -103,7 +103,7 @@ class TestAssessmentManager:
         assert hasattr(manager, 'assessment_module_filter_var')
         assert hasattr(manager, 'assessment_module_combo')
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.assessment_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.assessment_manager.get_connection')
     def test_refresh_assessments(self, mock_get_conn, mock_app):
         """Test refreshing assessments list"""
         conn = Mock()
@@ -129,7 +129,7 @@ class TestAssessmentManager:
         # Verify tree was populated
         assert manager.assessment_tree.get_children()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.assessment_manager.sqlite3')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.assessment_manager.sqlite3')
     @patch('tkinter.messagebox.showinfo')
     def test_add_assessment_dialog(self, mock_msg, mock_sqlite, mock_app, root_window):
         """Test opening add assessment dialog"""
@@ -145,7 +145,7 @@ class TestAssessmentManager:
         # Open dialog (should not raise exception)
         manager.add_assessment_dialog()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.assessment_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.assessment_manager.get_connection')
     @patch('tkinter.messagebox.showinfo')
     def test_delete_assessment(self, mock_msg, mock_get_conn, mock_app):
         """Test deleting an assessment"""
@@ -173,7 +173,7 @@ class TestAssessmentManager:
         assert cursor.execute.call_count >= 2
         conn.commit.assert_called_once()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.assessment_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.assessment_manager.get_connection')
     @patch('tkinter.messagebox.showinfo')
     def test_copy_assessment(self, mock_msg, mock_get_conn, mock_app):
         """Test copying an assessment"""
@@ -204,7 +204,7 @@ class TestAssessmentManager:
         cursor.execute.assert_called()
         conn.commit.assert_called_once()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.assessment_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.assessment_manager.get_connection')
     def test_populate_filter_combos(self, mock_get_conn, mock_app):
         """Test populating filter comboboxes"""
         conn = Mock()
@@ -224,7 +224,7 @@ class TestAssessmentManager:
         # Verify combo was populated
         assert manager.assessment_module_combo['values']
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.assessment_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.assessment_manager.get_connection')
     def test_filter_assessments(self, mock_get_conn, mock_app):
         """Test filtering assessments by module"""
         conn = Mock()
@@ -248,7 +248,7 @@ class TestAssessmentManager:
         # Verify filtered query was executed
         cursor.execute.assert_called()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.assessment_manager.AssessmentAssignmentService')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.assessment_manager.AssessmentAssignmentService')
     @patch('tkinter.messagebox.showinfo')
     def test_sync_from_assignments(self, mock_msg, mock_service, mock_app):
         """Test syncing assessments from assignments table"""
@@ -270,7 +270,7 @@ class TestAssessmentManager:
         mock_service.get_all_assessments.assert_called_once()
         mock_service.sync_assessment_to_assignment.assert_called_once()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.assessment_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.assessment_manager.get_connection')
     @patch('tkinter.messagebox.showerror')
     def test_delete_assessment_no_selection(self, mock_error, mock_get_conn, mock_app):
         """Test deleting assessment with no selection"""
@@ -282,7 +282,7 @@ class TestAssessmentManager:
             manager.delete_assessment()
             mock_warning.assert_called_once()
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.assessment_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.assessment_manager.get_connection')
     def test_generate_assessment_analysis(self, mock_get_conn, mock_app):
         """Test generating assessment analysis report"""
         conn = Mock()
@@ -307,7 +307,7 @@ class TestAssessmentManager:
 class TestAssessmentEditing:
     """Test assessment editing functionality"""
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.assessment_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.assessment_manager.get_connection')
     def test_edit_assessment_dialog(self, mock_get_conn, mock_app):
         """Test opening edit assessment dialog"""
         conn = Mock()
@@ -347,7 +347,7 @@ class TestAssessmentEditing:
 class TestAssessmentIntegration:
     """Integration tests for assessment management"""
 
-    @patch('university_system.modules.domain.academics.gui.grade_tracking.assessment_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.gui.grade_tracking.assessment_manager.get_connection')
     def test_full_assessment_workflow(self, mock_get_conn, mock_app):
         """Test complete assessment management workflow"""
         conn = Mock()

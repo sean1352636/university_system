@@ -1,5 +1,5 @@
 import os
-from ..exceptions import PlagiarismCheckerError, FileProcessingError
+from education_system.university_system.modules.domain.academics.services.plagiarism.exceptions import PlagiarismCheckerError, FileProcessingError
 
 
 def safe_input(prompt, default=None, validator=None):
@@ -128,7 +128,7 @@ def submit_document(checker, auth):
                 if check_now == 'y':
                     print("\nChecking for plagiarism, please wait...")
                     try:
-                        from .reporting import display_check_result
+                        from education_system.university_system.modules.domain.academics.services.plagiarism.cli.reporting import display_check_result
                         result = checker.check_plagiarism(document_id, auth.current_user['id'])
                         display_check_result(result)
                     except Exception as e:
@@ -182,7 +182,7 @@ def view_my_documents(checker, auth):
             try:
                 view_num = int(view_choice)
                 if 1 <= view_num <= len(documents):
-                    from .reporting import display_document_details
+                    from education_system.university_system.modules.domain.academics.services.plagiarism.cli.reporting import display_document_details
                     doc_id = documents[view_num-1]['id']
                     display_document_details(checker, doc_id)
                 else:

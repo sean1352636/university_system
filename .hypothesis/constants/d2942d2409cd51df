@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/housing/services/housing_accommodation/inventory.py
+# hypothesis_version: 6.151.9
+
+['\nRemoval Reason:', '\nSelect Building:', '\nSelect Condition:', '\nSelect Item Type:', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', '1', '2', '2. Replaced', '3', '4', '4. Lost/Stolen', '4. Remove Item', '5', '5. Other', '=', 'Additional Notes: ', 'Appliance', 'Bathroom', 'Damaged', 'Decor', 'Electronic', 'Excellent', 'Fair', 'Furniture', 'Good', 'INV', 'In Room', 'Item Name: ', 'Kitchen', 'Lost/Stolen', 'New', 'Other', 'Poor', 'Removal cancelled.', 'Replaced', 'Safety', 'd', 'housing', 'y']

@@ -1,3 +1,4 @@
+from education_system.university_system.core.sql_safety import escape_like
 import tkinter as tk
 import os
 from education_system.university_system.infrastructure.email.template_utils import render_template
@@ -107,7 +108,7 @@ class StoriesPhotosMixin:
                         cursor.execute("""
                             DELETE FROM photo_gallery
                             WHERE uploaded_by = ? AND photo_path LIKE ?
-                        """, (user_id, f"%{photo_data[1]}"))
+                        """, (user_id, f"%{escape_like(photo_data[1])}"))
 
                         conn.commit()
 
@@ -210,10 +211,10 @@ class StoriesPhotosMixin:
                     cursor = conn.cursor()
 
                     query = """
-                        SELECT pg.photo_id, e.event_name, pg.uploaded_by,
+                        SELECT pg.photo_id, e.title, pg.uploaded_by,
                                pg.caption, pg.upload_date, pg.status
                         FROM photo_gallery pg
-                        LEFT JOIN events e ON pg.event_id = e.event_id
+                        LEFT JOIN unified_events e ON pg.event_id = e.event_id
                         WHERE 1=1
                     """
                     params = []
@@ -926,7 +927,7 @@ class StoriesPhotosMixin:
             try:
                 with db_get_connection() as conn:
                     cursor = conn.cursor()
-                    cursor.execute("SELECT event_id, event_name FROM events ORDER BY event_date DESC")
+                    cursor.execute("SELECT event_id, title FROM unified_events ORDER BY start_datetime DESC")
                     events = cursor.fetchall()
                     event_options = [f"{event[1]} (ID: {event[0]})" for event in events]
             except sqlite3.Error:
@@ -1002,10 +1003,10 @@ class StoriesPhotosMixin:
                     user_id = self._current_user_id()
 
                     query = """
-                        SELECT e.event_name, pg.photo_path, pg.caption,
+                        SELECT e.title, pg.photo_path, pg.caption,
                                pg.upload_date, pg.status
                         FROM photo_gallery pg
-                        LEFT JOIN events e ON pg.event_id = e.event_id
+                        LEFT JOIN unified_events e ON pg.event_id = e.event_id
                         WHERE pg.uploaded_by = ?
                         ORDER BY pg.upload_date DESC
                     """

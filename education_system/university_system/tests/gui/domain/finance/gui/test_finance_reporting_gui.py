@@ -54,7 +54,7 @@ class TestFinancialManagementGUI(unittest.TestCase):
         self.assertIsNotNone(FinancialManagementGUI)
         self.assertIsNotNone(launch_financial_gui)
 
-    @patch('university_system.modules.domain.finance.gui.finance_reporting.main.tk.Tk')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance_reporting.main.tk.Tk')
     def test_launch_financial_gui_function(self, mock_tk):
         """Test the launch_financial_gui function"""
         if launch_financial_gui is None:

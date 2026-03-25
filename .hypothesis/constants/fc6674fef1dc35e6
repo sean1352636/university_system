@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/helpdesk_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' = ?', ' AND ', ' WHERE ', ' WHERE ticket_id = ?', '%Y-%m-%d %H:%M:%S', ', ', '/api/helpdesk', '/faqs', '/kb', '/sla-policies', '/tickets', 'GET', 'POST', 'PUT', 'SELECT * FROM faqs', 'answer', 'assigned_to', 'category', 'category = ?', 'comment', 'content', 'create', 'description', 'faq', 'faqs', 'helpdesk', 'is_internal', 'is_published', 'is_published = 1', 'items', 'kb_article', 'kb_articles', 'message', 'priority', 'priority = ?', 'question', 'reply_type', 'resolution', 'satisfaction_rating', 'search', 'sla_policies', 'status', 'status = ?', 'student_id', 'sub', 'summary', 'support_ticket', 'support_tickets', 'ticket_replies', 'ticket_reply', 'title', 'total', 'update', 'user_id', 'view']

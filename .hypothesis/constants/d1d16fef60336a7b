@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/primary_school/modules/domain/pastoral_care/rewards/services/rewards_service.py
+# hypothesis_version: 6.151.9
+
+[' AND award_date <= ?', ' AND award_date >= ?', ' AND house = ?', ' AND pupil_id = ?', ' AND reward_type = ?', ', ', 'Deleted reward: %s', 'Updated reward: %s', 'award_date', 'awarded_by', 'house', 'points', 'reason', 'reward_type']

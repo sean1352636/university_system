@@ -13,6 +13,8 @@ import mimetypes
 import base64
 import secrets
 import traceback
+
+from education_system.university_system.core.sql_safety import escape_like
 from typing import Optional, List, Dict, Any
 from functools import wraps
 
@@ -21,13 +23,13 @@ from education_system.university_system.infrastructure.email.email_manager impor
 from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH, TICKET_TEMPLATES_DIR, UPLOAD_DIR
 from education_system.university_system.utils.logging.log_config import get_log_file
 
-from ..config import (
+from education_system.university_system.modules.domain.student_affairs.services.student_support.config import (
     SUPPORT_DB, TICKET_STATUSES, TICKET_PRIORITIES, SUPPORT_CATEGORIES,
     NotificationType, TicketSentiment, FileType, SupportConfig
 )
-from .. import auth as _auth_mod
-from ..auth import get_current_user_safe, require_auth, has_staff_permissions
-from ..utils.audit import audit_action
+from education_system.university_system.modules.domain.student_affairs.services.student_support import auth as _auth_mod
+from education_system.university_system.modules.domain.student_affairs.services.student_support.auth import get_current_user_safe, require_auth, has_staff_permissions
+from education_system.university_system.modules.domain.student_affairs.services.student_support.utils.audit import audit_action
 
 logger = logging.getLogger(__name__)
 
@@ -178,7 +180,7 @@ def _search_knowledge_base(query, filters):
         AND (title LIKE ? OR summary LIKE ? OR content LIKE ? OR search_keywords LIKE ?)
         """
         
-        search_term = f"%{query}%"
+        search_term = f"%{escape_like(query)}%"
         params = [search_term] * 8
         
         if filters and filters.get('category'):
@@ -316,12 +318,14 @@ def show_kb_statistics(support):
         print("="*50)
         
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-        cursor = conn.cursor()
-        
-        # Check if kb_articles table exists
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='kb_articles'")
-        if not cursor.fetchone():
-            print("📭 No knowledge base data available.")
+        try:
+            cursor = conn.cursor()
+
+            # Check if kb_articles table exists
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='kb_articles'")
+            if not cursor.fetchone():
+                print("📭 No knowledge base data available.")
+        finally:
             conn.close()
             return
         

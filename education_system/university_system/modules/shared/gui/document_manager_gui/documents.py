@@ -175,10 +175,10 @@ class DocumentsManager:
         file_path = filedialog.askopenfilename(
             title="Select Document File",
             filetypes=[
-                ("All Supported", "*.pdf;*.jpg;*.jpeg;*.png;*.doc;*.docx"),
+                ("All Supported", "*.pdf *.jpg *.jpeg *.png *.doc *.docx"),
                 ("PDF files", "*.pdf"),
-                ("Image files", "*.jpg;*.jpeg;*.png"),
-                ("Word documents", "*.doc;*.docx"),
+                ("Image files", "*.jpg *.jpeg *.png"),
+                ("Word documents", "*.doc *.docx"),
                 ("All files", "*.*")
             ]
         )
@@ -331,8 +331,8 @@ class DocumentsManager:
                 # Check for existing document of same type
                 cursor.execute('''
                 SELECT document_id, version_number
-                FROM student_documents
-                WHERE student_id = ? AND type_id = ? AND is_current_version = 1
+                FROM documents
+                WHERE owner_id = ? AND source_type = 'student' AND type_id = ? AND is_current_version = 1
                 ''', (student_id, type_id))
 
                 existing_doc = cursor.fetchone()
@@ -374,7 +374,7 @@ class DocumentsManager:
                 if existing_doc:
                     # Mark existing as not current
                     cursor.execute('''
-                    UPDATE student_documents
+                    UPDATE documents
                     SET is_current_version = 0
                     WHERE document_id = ?
                     ''', (existing_doc[0],))
@@ -387,11 +387,11 @@ class DocumentsManager:
 
                 # Insert new document record
                 cursor.execute('''
-                INSERT INTO student_documents
-                (student_id, type_id, file_path, original_filename, upload_date, expiry_date,
+                INSERT INTO documents
+                (source_type, owner_id, type_id, file_path, original_filename, upload_date, expiry_date,
                  verification_status, version_number, parent_document_id, uploaded_by,
-                 file_size, file_hash, tags, verification_notes, workflow_status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 file_size, file_hash, tags, notes, workflow_status)
+                VALUES ('student', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (student_id, type_id, new_file_path, original_filename, upload_date,
                       expiry_date if expiry_date else None, 'Pending', new_version, parent_doc_id,
                       self.gui.current_user['username'], file_size, file_hash, tags, notes, 'submitted'))
@@ -469,10 +469,10 @@ class DocumentsManager:
 
             cursor.execute('''
             SELECT sd.*, s.first_name, s.last_name, s.email_address, dt.type_name, dt.description
-            FROM student_documents sd
-            JOIN students s ON sd.student_id = s.student_id
+            FROM documents sd
+            JOIN students s ON sd.owner_id = s.student_id
             JOIN document_types dt ON sd.type_id = dt.type_id
-            WHERE sd.document_id = ?
+            WHERE sd.source_type = 'student' AND sd.document_id = ?
             ''', (doc_id,))
 
             doc_data = cursor.fetchone()
@@ -590,7 +590,7 @@ Notes:
                 cursor = conn.cursor()
 
                 cursor.execute('''
-                UPDATE student_documents
+                UPDATE documents
                 SET verification_status = ?, verification_date = ?, verification_notes = ?
                 WHERE document_id = ?
                 ''', (status_var.get(), datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -623,7 +623,7 @@ Notes:
             conn = get_connection()
             cursor = conn.cursor()
 
-            cursor.execute('SELECT file_path, original_filename FROM student_documents WHERE document_id = ?', (doc_id,))
+            cursor.execute('SELECT file_path, original_filename FROM documents WHERE document_id = ?', (doc_id,))
             result = cursor.fetchone()
             conn.close()
 
@@ -703,11 +703,11 @@ Notes:
                 cursor = conn.cursor()
 
                 # Get file path before deletion
-                cursor.execute('SELECT file_path FROM student_documents WHERE document_id = ?', (doc_id,))
+                cursor.execute('SELECT file_path FROM documents WHERE document_id = ?', (doc_id,))
                 result = cursor.fetchone()
 
                 # Delete from database
-                cursor.execute('DELETE FROM student_documents WHERE document_id = ?', (doc_id,))
+                cursor.execute('DELETE FROM documents WHERE document_id = ?', (doc_id,))
 
                 conn.commit()
                 conn.close()
@@ -850,10 +850,10 @@ Notes:
             SELECT sd.document_id, s.first_name || ' ' || s.last_name as student_name,
                    dt.type_name, DATE(sd.upload_date), sd.verification_status,
                    sd.expiry_date, sd.version_number, sd.verification_notes
-            FROM student_documents sd
-            JOIN students s ON sd.student_id = s.student_id
+            FROM documents sd
+            JOIN students s ON sd.owner_id = s.student_id
             JOIN document_types dt ON sd.type_id = dt.type_id
-            WHERE sd.is_current_version = 1
+            WHERE sd.source_type = 'student' AND sd.is_current_version = 1
             ORDER BY sd.upload_date DESC
             '''
 
@@ -920,8 +920,8 @@ Notes:
                     d.expiry_date,
                     d.version,
                     d.notes
-                FROM student_documents d
-                LEFT JOIN students s ON d.student_id = s.student_id
+                FROM documents d
+                LEFT JOIN students s ON d.owner_id = s.student_id
                 WHERE d.is_current_version = 1
                 AND (
                     LOWER(s.first_name || ' ' || s.last_name) LIKE ?

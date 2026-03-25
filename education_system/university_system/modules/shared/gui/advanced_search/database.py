@@ -875,7 +875,7 @@ def get_connection():
             print_error(f"Database connection error: {e}")
             return None
 
-from .base import AdvancedSearchGUI
+from education_system.university_system.modules.shared.gui.advanced_search.base import AdvancedSearchGUI
 
 def check_database_status_gui(self):
     """Check database status with GUI display"""
@@ -1199,7 +1199,7 @@ def optimize_memory_usage(self):
             cache_size = 0
         
         # Clear search history if it gets too large
-        if hasattr(self, 'search_history') and len(self.search_history) > 100:
+        if hasattr(self, 'search_history') and self.search_history and len(self.search_history) > 100:
             self.search_history = self.search_history[-50:]  # Keep last 50
         
         # Force garbage collection

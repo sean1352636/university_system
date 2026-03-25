@@ -3,17 +3,17 @@ import os
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
 
-from .validation import ValidationMixin
-from .duplicates import DuplicatesMixin
-from .import_ops import ImportOpsMixin
-from .db_operations import DbOperationsMixin
-from .export_ops import ExportOpsMixin
-from .reporting import ReportingMixin
-from .templates import TemplatesMixin
-from .backup import BackupMixin
-from .scheduling import SchedulingMixin
-from .api import ApiMixin
-from .external import ExternalMixin
+from education_system.university_system.modules.shared.utils.batch_operations.validation import ValidationMixin
+from education_system.university_system.modules.shared.utils.batch_operations.duplicates import DuplicatesMixin
+from education_system.university_system.modules.shared.utils.batch_operations.import_ops import ImportOpsMixin
+from education_system.university_system.modules.shared.utils.batch_operations.db_operations import DbOperationsMixin
+from education_system.university_system.modules.shared.utils.batch_operations.export_ops import ExportOpsMixin
+from education_system.university_system.modules.shared.utils.batch_operations.reporting import ReportingMixin
+from education_system.university_system.modules.shared.utils.batch_operations.templates import TemplatesMixin
+from education_system.university_system.modules.shared.utils.batch_operations.backup import BackupMixin
+from education_system.university_system.modules.shared.utils.batch_operations.scheduling import SchedulingMixin
+from education_system.university_system.modules.shared.utils.batch_operations.api import ApiMixin
+from education_system.university_system.modules.shared.utils.batch_operations.external import ExternalMixin
 
 
 class BatchOperationManager(
@@ -36,7 +36,7 @@ class BatchOperationManager(
             db_path = str(DEFAULT_DB_PATH)
         self.db_path = db_path
         from education_system.university_system.modules.shared.constants import paths
-        self.backup_dir = str(paths.BACKUP_DIR)
+        self.backup_dir = str(paths.BACKUP_DATABASE_DIR)
         self.import_history = []
         self.api_app = None
         self.ensure_backup_directory()

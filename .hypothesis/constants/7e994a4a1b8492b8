@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/academics/students/services/student_service.py
+# hypothesis_version: 6.151.9
+
+[200, ' AND form_group = ?', ' AND key_stage = ?', ' AND status = ?', ' AND year_group = ?', ', ', '7', 'First name', 'Info', 'KS3', 'KS4', 'Last name', 'Logged', 'Student not found.', 'address', 'admin', 'cnt', 'current_user', 'date_of_birth', 'email', 'first_name', 'form_group', 'form_tutor', 'high', 'id', 'key_stage', 'last_name', 'none', 'parent_email', 'parent_name', 'parent_phone', 'primary', 'pupil_id', 'pupil_premium', 'school', 'sen_status', 'status', 'student_id', 'updated_at', 'user_id', 'username', 'year_group']

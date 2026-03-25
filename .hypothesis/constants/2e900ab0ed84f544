@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/batch_operations/mixins/export_reporting.py
+# hypothesis_version: 6.151.9
+
+[100, ' AND timestamp <= ?', ' AND timestamp >= ?', '%Y%m%d_%H%M%S', '.csv', '.xlsx', 'Active', 'All time', 'Course', 'Earliest Enrollment', 'Generating report...', 'Graduated', 'Inactive', 'Latest Enrollment', 'Present', 'Total Students', 'csv', 'date', 'detailed', 'duplicates_found', 'end_date', 'error_details', 'errors', 'excel', 'exports', 'failed', 'failed_count', 'failed_imports', 'file', 'file_path', 'generated_at', 'id', 'openpyxl', 'operation', 'operation_type', 'operations', 'period', 'report_type', 'start_date', 'status', 'success_rate', 'successful', 'successful_imports', 'summary', 'timestamp', 'total', 'total_operations', 'total_records', 'trends', 'unknown', 'utf-8', 'w']

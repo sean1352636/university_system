@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 from typing import Tuple, List, Dict, Optional
 
-from .models import Exam
+from education_system.university_system.modules.domain.academics.gui.exam_scheduler.models import Exam
 
 logger = logging.getLogger(__name__)
 

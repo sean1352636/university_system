@@ -513,7 +513,7 @@ class TestErrorHandling:
     @patch('builtins.print')
     def test_database_connection_error(self, mock_print, mock_input, mock_auth):
         """Test handling of database connection errors."""
-        with patch('university_system.modules.domain.health.records.quality_assurance.get_connection', side_effect=Exception("Connection error")):
+        with patch('education_system.university_system.modules.domain.health.records.quality_assurance.get_connection', side_effect=Exception("Connection error")):
             # Should handle gracefully
             try:
                 quality_assurance.data_quality_metrics(mock_auth)

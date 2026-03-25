@@ -135,7 +135,7 @@ def temp_db():
 class TestIntegrationCatalogManager:
     """Test IntegrationCatalogManager class."""
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_add_integration_basic(self, mock_get_connection, temp_db):
         """Test adding a basic integration."""
         mock_conn = sqlite3.connect(temp_db)
@@ -154,7 +154,7 @@ class TestIntegrationCatalogManager:
         assert isinstance(integration_id, int)
         mock_conn.close()
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_add_integration_with_version(self, mock_get_connection, temp_db):
         """Test adding an integration with version."""
         mock_conn = sqlite3.connect(temp_db)
@@ -172,7 +172,7 @@ class TestIntegrationCatalogManager:
         assert integration_id is not None
         mock_conn.close()
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_add_integration_official(self, mock_get_connection, temp_db):
         """Test adding an official integration."""
         mock_conn = sqlite3.connect(temp_db)
@@ -190,7 +190,7 @@ class TestIntegrationCatalogManager:
         assert integration_id is not None
         mock_conn.close()
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_add_integration_error_handling(self, mock_get_connection):
         """Test error handling when adding integration fails."""
         mock_conn = MagicMock()
@@ -209,7 +209,7 @@ class TestIntegrationCatalogManager:
 
         assert "Error adding integration:" in str(exc_info.value)
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_get_available_integrations_all(self, mock_get_connection, temp_db):
         """Test getting all available integrations."""
         mock_conn = sqlite3.connect(temp_db)
@@ -234,7 +234,7 @@ class TestIntegrationCatalogManager:
         assert len(integrations) == 2
         mock_conn.close()
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_get_available_integrations_by_category(self, mock_get_connection, temp_db):
         """Test getting integrations by category."""
         mock_conn = sqlite3.connect(temp_db)
@@ -260,7 +260,7 @@ class TestIntegrationCatalogManager:
         assert integrations[0]['category'] == 'LMS'
         mock_conn.close()
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_get_available_integrations_empty(self, mock_get_connection, temp_db):
         """Test getting integrations when none exist."""
         mock_conn = sqlite3.connect(temp_db)
@@ -276,7 +276,7 @@ class TestIntegrationCatalogManager:
 class TestInstallationManager:
     """Test InstallationManager class."""
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_install_integration(self, mock_get_connection, temp_db):
         """Test installing an integration."""
         mock_conn = sqlite3.connect(temp_db)
@@ -309,7 +309,7 @@ class TestInstallationManager:
 
         mock_conn.close()
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_install_integration_error_handling(self, mock_get_connection):
         """Test error handling when installation fails."""
         mock_conn = MagicMock()
@@ -327,7 +327,7 @@ class TestInstallationManager:
 
         assert "Error installing integration:" in str(exc_info.value)
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_uninstall_integration(self, mock_get_connection, temp_db):
         """Test uninstalling an integration."""
         mock_conn = sqlite3.connect(temp_db)
@@ -362,7 +362,7 @@ class TestInstallationManager:
 
         mock_conn.close()
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_uninstall_integration_error_handling(self, mock_get_connection):
         """Test error handling when uninstallation fails."""
         mock_conn = MagicMock()
@@ -379,7 +379,7 @@ class TestInstallationManager:
 class TestCredentialManager:
     """Test CredentialManager class."""
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_store_credentials_api_key(self, mock_get_connection, temp_db):
         """Test storing API key credentials."""
         mock_conn = sqlite3.connect(temp_db)
@@ -413,7 +413,7 @@ class TestCredentialManager:
         assert isinstance(credential_id, int)
         mock_conn.close()
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_store_credentials_oauth(self, mock_get_connection, temp_db):
         """Test storing OAuth credentials."""
         mock_conn = sqlite3.connect(temp_db)
@@ -445,7 +445,7 @@ class TestCredentialManager:
         assert credential_id is not None
         mock_conn.close()
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_store_credentials_error_handling(self, mock_get_connection):
         """Test error handling when storing credentials fails."""
         mock_conn = MagicMock()
@@ -466,7 +466,7 @@ class TestCredentialManager:
 class TestSyncManager:
     """Test SyncManager class."""
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_start_sync(self, mock_get_connection, temp_db):
         """Test starting a sync operation."""
         mock_conn = sqlite3.connect(temp_db)
@@ -501,7 +501,7 @@ class TestSyncManager:
 
         mock_conn.close()
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_start_sync_error_handling(self, mock_get_connection):
         """Test error handling when starting sync fails."""
         mock_conn = MagicMock()
@@ -515,7 +515,7 @@ class TestSyncManager:
 
         assert "Error starting sync:" in str(exc_info.value)
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_complete_sync_success(self, mock_get_connection, temp_db):
         """Test completing a sync operation successfully."""
         mock_conn = sqlite3.connect(temp_db)
@@ -565,7 +565,7 @@ class TestSyncManager:
 
         mock_conn.close()
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_complete_sync_with_errors(self, mock_get_connection, temp_db):
         """Test completing a sync operation with errors."""
         mock_conn = sqlite3.connect(temp_db)
@@ -605,7 +605,7 @@ class TestSyncManager:
         assert result is True
         mock_conn.close()
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_complete_sync_error_handling(self, mock_get_connection):
         """Test error handling when completing sync fails."""
         mock_conn = MagicMock()
@@ -622,7 +622,7 @@ class TestSyncManager:
 class TestDataMappingManager:
     """Test DataMappingManager class."""
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_create_mapping(self, mock_get_connection, temp_db):
         """Test creating a data mapping."""
         mock_conn = sqlite3.connect(temp_db)
@@ -655,7 +655,7 @@ class TestDataMappingManager:
         assert isinstance(mapping_id, int)
         mock_conn.close()
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_create_mapping_with_transformation(self, mock_get_connection, temp_db):
         """Test creating a data mapping with transformation rule."""
         mock_conn = sqlite3.connect(temp_db)
@@ -688,7 +688,7 @@ class TestDataMappingManager:
         assert mapping_id is not None
         mock_conn.close()
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_create_mapping_error_handling(self, mock_get_connection):
         """Test error handling when creating mapping fails."""
         mock_conn = MagicMock()
@@ -709,7 +709,7 @@ class TestDataMappingManager:
 class TestWebhookManager:
     """Test WebhookManager class."""
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_register_webhook(self, mock_get_connection, temp_db):
         """Test registering a webhook."""
         mock_conn = sqlite3.connect(temp_db)
@@ -742,7 +742,7 @@ class TestWebhookManager:
         assert isinstance(webhook_id, int)
         mock_conn.close()
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_register_webhook_with_secret(self, mock_get_connection, temp_db):
         """Test registering a webhook with secret key."""
         mock_conn = sqlite3.connect(temp_db)
@@ -775,7 +775,7 @@ class TestWebhookManager:
         assert webhook_id is not None
         mock_conn.close()
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_register_webhook_error_handling(self, mock_get_connection):
         """Test error handling when registering webhook fails."""
         mock_conn = MagicMock()
@@ -796,17 +796,17 @@ class TestWebhookManager:
 class TestDisplayIntegrationMarketplaceMenu:
     """Test display_integration_marketplace_menu function."""
 
-    @patch('builtins.input', side_effect=['8'])
+    @patch('builtins.input', side_effect=['0'])
     @patch('builtins.print')
     def test_menu_display_and_exit(self, mock_print, mock_input):
-        """Test menu displays and exits on choice 8."""
+        """Test menu displays and exits on choice 0."""
         mock_auth = Mock()
         display_integration_marketplace_menu(mock_auth)
 
         # Verify menu was displayed
         assert any("INTEGRATION MARKETPLACE" in str(call) for call in mock_print.call_args_list)
 
-    @patch('builtins.input', side_effect=['1', '8'])
+    @patch('builtins.input', side_effect=['1', '0'])
     @patch('builtins.print')
     def test_menu_choice_1(self, mock_print, mock_input):
         """Test menu choice 1 (Browse Integration Catalog)."""
@@ -816,7 +816,7 @@ class TestDisplayIntegrationMarketplaceMenu:
         # Verify message was printed
         assert any("Feature available via Integration managers" in str(call) for call in mock_print.call_args_list)
 
-    @patch('builtins.input', side_effect=['invalid', '8'])
+    @patch('builtins.input', side_effect=['invalid', '0'])
     @patch('builtins.print')
     def test_menu_invalid_choice(self, mock_print, mock_input):
         """Test menu handles invalid choice."""
@@ -854,7 +854,7 @@ class TestLaunchIntegrationMarketplaceGui:
 class TestIntegration:
     """Integration tests for complex workflows."""
 
-    @patch('university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
     def test_full_integration_workflow(self, mock_get_connection, temp_db):
         """Test complete integration workflow."""
         mock_conn = sqlite3.connect(temp_db)

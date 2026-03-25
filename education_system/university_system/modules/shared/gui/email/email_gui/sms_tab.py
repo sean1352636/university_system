@@ -10,6 +10,8 @@ import subprocess
 import sys
 import logging
 
+from education_system.university_system.core.sql_safety import escape_like
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -31,7 +33,7 @@ project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(c
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from .email_manager_main import EmailManagerGUI
+from education_system.university_system.modules.shared.gui.email.email_gui.email_manager_main import EmailManagerGUI
 
 # Import database connection
 try:
@@ -759,7 +761,7 @@ def refresh_sms_history(self):
                     LOWER(phone_number) LIKE ? OR
                     LOWER(message) LIKE ?
                 )"""
-                search_pattern = f"%{search_term}%"
+                search_pattern = f"%{escape_like(search_term)}%"
                 params.extend([search_pattern, search_pattern, search_pattern])
 
             query += " ORDER BY sent_at DESC LIMIT 500"

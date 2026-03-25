@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/plagiarism_main_gui/config.py
+# hypothesis_version: 6.151.9
+
+[600, 800, 1200, '#28A745', '#2E86AB', '#343A40', '#A23B72', '#DC3545', '#F8F9FA', '#FFC107', 'Arial', 'Courier New', 'bold']

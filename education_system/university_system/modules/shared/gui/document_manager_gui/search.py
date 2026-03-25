@@ -4,6 +4,8 @@ from datetime import datetime
 import csv
 import logging
 
+from education_system.university_system.core.sql_safety import escape_like
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -123,10 +125,10 @@ class SearchManager:
                    dt.type_name,
                    sd.verification_status,
                    DATE(sd.upload_date) as upload_date
-            FROM student_documents sd
-            JOIN students s ON sd.student_id = s.student_id
+            FROM documents sd
+            JOIN students s ON sd.owner_id = s.student_id
             JOIN document_types dt ON sd.type_id = dt.type_id
-            WHERE sd.is_current_version = 1
+            WHERE sd.source_type = 'student' AND sd.is_current_version = 1
             '''
 
             params = []
@@ -134,12 +136,12 @@ class SearchManager:
             # Add search conditions
             if self.gui.search_student.get():
                 query += " AND (s.first_name LIKE ? OR s.last_name LIKE ? OR s.student_id LIKE ?)"
-                search_term = f"%{self.gui.search_student.get()}%"
+                search_term = f"%{escape_like(self.gui.search_student.get())}%"
                 params.extend([search_term, search_term, search_term])
 
             if self.gui.search_doc_type.get() and self.gui.search_doc_type.get() != 'All':
                 query += " AND dt.type_name LIKE ?"
-                params.append(f"%{self.gui.search_doc_type.get()}%")
+                params.append(f"%{escape_like(self.gui.search_doc_type.get())}%")
 
             if self.gui.search_status.get() and self.gui.search_status.get() != 'All':
                 query += " AND sd.verification_status = ?"
@@ -158,7 +160,7 @@ class SearchManager:
                 tag_conditions = []
                 for tag in tag_list:
                     tag_conditions.append("sd.tags LIKE ?")
-                    params.append(f"%{tag}%")
+                    params.append(f"%{escape_like(tag)}%")
                 query += " AND (" + " OR ".join(tag_conditions) + ")"
 
             query += " ORDER BY sd.upload_date DESC LIMIT 100"
@@ -372,7 +374,7 @@ class SearchManager:
 
             if filters.get('student_id') and filters['student_id'].strip():
                 query += " AND student_id LIKE ?"
-                params.append(f"%{filters['student_id']}%")
+                params.append(f"%{escape_like(filters['student_id'])}%")
 
             if filters.get('doc_type') and filters['doc_type'] != 'All Types':
                 query += " AND document_type = ?"
@@ -390,7 +392,7 @@ class SearchManager:
                 if filters.get('exact_match'):
                     params.append(filters['filename'])
                 else:
-                    params.append(f"%{filters['filename']}%")
+                    params.append(f"%{escape_like(filters['filename'])}%")
 
             # Date filters
             if filters.get('date_from') and filters['date_from'] != 'YYYY-MM-DD':

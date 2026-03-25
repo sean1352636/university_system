@@ -61,8 +61,8 @@ except ImportError:
     except Exception:
         class ModuleScheduler: pass
 
-from .main_gui import ModuleSchedulingGUI
-from .dialogs import AddHolidayDialog
+from education_system.university_system.modules.domain.academics.gui.module_scheduling.main_gui import ModuleSchedulingGUI
+from education_system.university_system.modules.domain.academics.gui.module_scheduling.dialogs import AddHolidayDialog
 
 def create_settings_tab(self):
     """Create the settings tab"""
@@ -158,7 +158,7 @@ def load_settings(self):
         self.auto_backup_var.set(auto_backup)
         
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load settings: {str(e)}")
+        messagebox.showerror("Error", f"Failed to load settings: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.load_settings = load_settings
 
@@ -173,11 +173,11 @@ def save_settings(self):
         self.scheduler.update_system_setting('email_notifications', str(self.email_notifications_var.get()))
         self.scheduler.update_system_setting('auto_backup', str(self.auto_backup_var.get()))
         
-        messagebox.showinfo("Success", "Settings saved successfully!")
+        messagebox.showinfo("Success", "Settings saved successfully!", parent=self.root)
         self.update_activity_log("System settings updated")
         
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to save settings: {str(e)}")
+        messagebox.showerror("Error", f"Failed to save settings: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.save_settings = save_settings
 
@@ -268,7 +268,7 @@ def refresh_holidays(self):
             ))
             
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to refresh holidays: {str(e)}")
+        messagebox.showerror("Error", f"Failed to refresh holidays: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.refresh_holidays = refresh_holidays
 
@@ -337,7 +337,7 @@ def check_holiday_conflicts(self, date):
             "Holiday Conflict",
             f"This date falls on a holiday: {name}\n\n"
             f"{description if description else 'No description available.'}"
-        )
+        , parent=self.root)
         return True
 
     return False
@@ -383,13 +383,13 @@ def save_template(self):
                 except Exception as json_err:
                     print(f"Warning: Could not save JSON file: {json_err}")
 
-                messagebox.showinfo("Success", f"Template '{template_name}' saved successfully!")
+                messagebox.showinfo("Success", f"Template '{template_name}' saved successfully!", parent=self.root)
                 self.update_activity_log(f"Saved template: {template_name}")
             else:
-                messagebox.showerror("Error", "Failed to save template.")
+                messagebox.showerror("Error", "Failed to save template.", parent=self.root)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to save template: {str(e)}")
+        messagebox.showerror("Error", f"Failed to save template: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.save_template = save_template
 
@@ -405,19 +405,19 @@ def load_template(self):
         
         if template_name:
             clear_existing = messagebox.askyesno("Load Template", 
-                                               "Clear existing schedules before loading template?")
+                                               "Clear existing schedules before loading template?", parent=self.root)
             
             success = self.scheduler.load_schedule_template(template_name, clear_existing)
             
             if success:
-                messagebox.showinfo("Success", f"Template '{template_name}' loaded successfully!")
+                messagebox.showinfo("Success", f"Template '{template_name}' loaded successfully!", parent=self.root)
                 self.refresh_all_data()
                 self.update_activity_log(f"Loaded template: {template_name}")
             else:
-                messagebox.showerror("Error", "Failed to load template.")
+                messagebox.showerror("Error", "Failed to load template.", parent=self.root)
         
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load template: {str(e)}")
+        messagebox.showerror("Error", f"Failed to load template: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.load_template = load_template
 
@@ -459,7 +459,7 @@ def list_templates(self):
         self.notebook.select(7)  # Switch to management tab
         
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to list templates: {str(e)}")
+        messagebox.showerror("Error", f"Failed to list templates: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.list_templates = list_templates
 
@@ -485,7 +485,7 @@ def save_schedule_template(self):
         description = desc_text.get("1.0", tk.END).strip()
 
         if not template_name:
-            messagebox.showwarning("Warning", "Please enter a template name.")
+            messagebox.showwarning("Warning", "Please enter a template name.", parent=self.root)
             return
 
         try:
@@ -523,11 +523,11 @@ def save_schedule_template(self):
             # Also save as JSON file
             _save_template_json_file(template_name, description, template_entries)
 
-            messagebox.showinfo("Success", f"Template '{template_name}' saved successfully!")
+            messagebox.showinfo("Success", f"Template '{template_name}' saved successfully!", parent=self.root)
             dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save template: {str(e)}")
+            messagebox.showerror("Error", f"Failed to save template: {str(e)}", parent=self.root)
 
     ttk.Button(dialog, text="Save", command=save_template).pack(pady=10)
 
@@ -565,7 +565,7 @@ def load_schedule_template(self):
         templates = cursor.fetchall()
 
     if not templates:
-        messagebox.showinfo("No Templates", "No schedule templates found.")
+        messagebox.showinfo("No Templates", "No schedule templates found.", parent=self.root)
         return
 
     # Create selection dialog
@@ -583,7 +583,7 @@ def load_schedule_template(self):
 
     def load_selected():
         if not listbox.curselection():
-            messagebox.showwarning("Warning", "Please select a template.")
+            messagebox.showwarning("Warning", "Please select a template.", parent=self.root)
             return
 
         idx = listbox.curselection()[0]
@@ -594,7 +594,7 @@ def load_schedule_template(self):
             "Confirm Load",
             "This will REPLACE all current schedules with the template.\n\n"
             "Are you sure you want to continue?"
-        )
+        , parent=self.root)
 
         if not confirm:
             return
@@ -608,7 +608,7 @@ def load_schedule_template(self):
                 result = cursor.fetchone()
 
                 if not result:
-                    messagebox.showerror("Error", "Template not found.")
+                    messagebox.showerror("Error", "Template not found.", parent=self.root)
                     return
 
                 import json
@@ -625,12 +625,12 @@ def load_schedule_template(self):
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                     ''', schedule)
 
-            messagebox.showinfo("Success", f"Template loaded successfully!\nLoaded {len(schedules)} schedules.")
+            messagebox.showinfo("Success", f"Template loaded successfully!\nLoaded {len(schedules)} schedules.", parent=self.root)
             self.refresh_all_data()
             dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load template: {str(e)}")
+            messagebox.showerror("Error", f"Failed to load template: {str(e)}", parent=self.root)
 
     ttk.Button(dialog, text="Load", command=load_selected).pack(pady=5)
     ttk.Button(dialog, text="Cancel", command=dialog.destroy).pack(pady=5)
@@ -650,7 +650,7 @@ def list_schedule_templates(self):
         templates = cursor.fetchall()
 
     if not templates:
-        messagebox.showinfo("No Templates", "No schedule templates found.")
+        messagebox.showinfo("No Templates", "No schedule templates found.", parent=self.root)
         return
 
     # Create dialog
@@ -704,10 +704,10 @@ def update_system_setting(self, key, value):
                 VALUES (?, ?, ?)
                 ''', (key, value, f"Custom setting: {key}"))
 
-        messagebox.showinfo("Success", f"System setting '{key}' updated to '{value}'")
+        messagebox.showinfo("Success", f"System setting '{key}' updated to '{value}'", parent=self.root)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Error updating setting: {str(e)}")
+        messagebox.showerror("Error", f"Error updating setting: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.update_system_setting = update_system_setting
 

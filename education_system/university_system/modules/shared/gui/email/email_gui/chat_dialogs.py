@@ -10,6 +10,8 @@ import subprocess
 import sys
 import logging
 
+from education_system.university_system.modules.shared.gui.email.email_gui.email_dialogs import RecipientSelectorDialog
+
 # Configure logging
 logger = logging.getLogger(__name__)
 

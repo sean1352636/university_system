@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance_reporting/student_dialogs.py
+# hypothesis_version: 6.151.9
+
+['600x500', '800x600', 'TkAgg', 'common.cancel', 'common.close', 'common.create', 'common.save', 'left']

@@ -5,7 +5,7 @@ Custom progress dialog for GUI operations with ETA tracking
 and cancel support.
 """
 
-from .constants import tk, ttk, time, Progressbar, _t
+from education_system.university_system.modules.shared.gui.batch_operations.constants import tk, ttk, time, Progressbar, _t
 
 
 class GUIProgressDialog:

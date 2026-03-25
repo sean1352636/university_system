@@ -5,7 +5,7 @@ from fuzzywuzzy import fuzz
 
 from education_system.university_system.utils.logging.log_config import configure_logging
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
-from .models import ImportResult
+from education_system.university_system.modules.shared.utils.batch_operations.models import ImportResult
 
 logger = configure_logging(name=__name__)
 

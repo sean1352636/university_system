@@ -3,8 +3,8 @@
 import json
 from datetime import datetime
 
-from .config import logger
-from .models import ReportTemplate
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.config import logger
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.models import ReportTemplate
 
 
 def save_template(template):

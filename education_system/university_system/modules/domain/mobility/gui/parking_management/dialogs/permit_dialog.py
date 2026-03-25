@@ -4,7 +4,7 @@ from tkinter import ttk, messagebox
 from datetime import datetime, timedelta
 import logging
 
-from .. import get_connection, PARKING_ZONES, PERMIT_TYPES
+from education_system.university_system.modules.domain.mobility.gui.parking_management import get_connection, PARKING_ZONES, PERMIT_TYPES
 
 
 class PermitDialog:

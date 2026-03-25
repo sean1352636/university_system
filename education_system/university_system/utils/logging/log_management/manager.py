@@ -22,12 +22,12 @@ except Exception:
             return _ScheduleJobStub()
     schedule = _ScheduleStub()
 
-from .config import LogConfig
-from .database import LogDatabase
-from .analytics import LogAnalytics
-from .alerts import LogAlerts
-from .monitoring import RealTimeMonitor
-from .retention import LogRetention
+from education_system.university_system.utils.logging.log_management.config import LogConfig
+from education_system.university_system.utils.logging.log_management.database import LogDatabase
+from education_system.university_system.utils.logging.log_management.analytics import LogAnalytics
+from education_system.university_system.utils.logging.log_management.alerts import LogAlerts
+from education_system.university_system.utils.logging.log_management.monitoring import RealTimeMonitor
+from education_system.university_system.utils.logging.log_management.retention import LogRetention
 
 
 class EnhancedLogManager:

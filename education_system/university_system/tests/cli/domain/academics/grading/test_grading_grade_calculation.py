@@ -113,7 +113,7 @@ class TestLetterToPercentage:
 class TestInitEnhancedGradesDb:
     """Test the init_enhanced_grades_db function"""
 
-    @patch('university_system.modules.domain.academics.grading.grade_calculation.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.grade_calculation.get_connection')
     def test_init_enhanced_grades_db_success(self, mock_get_conn):
         """Test successful database initialization"""
         conn = Mock()
@@ -128,7 +128,7 @@ class TestInitEnhancedGradesDb:
         conn.commit.assert_called()
         conn.close.assert_called()
 
-    @patch('university_system.modules.domain.academics.grading.grade_calculation.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.grade_calculation.get_connection')
     def test_init_enhanced_grades_db_with_existing_data(self, mock_get_conn):
         """Test initialization with existing data"""
         conn = Mock()
@@ -141,7 +141,7 @@ class TestInitEnhancedGradesDb:
 
         assert result is True
 
-    @patch('university_system.modules.domain.academics.grading.grade_calculation.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.grade_calculation.get_connection')
     @patch('builtins.print')
     def test_init_enhanced_grades_db_error(self, mock_print, mock_get_conn):
         """Test database initialization error handling"""
@@ -155,17 +155,17 @@ class TestInitEnhancedGradesDb:
 class TestDisplayEnhancedGradeMenu:
     """Test the display_enhanced_grade_menu function"""
 
-    @patch('university_system.modules.domain.academics.grading.grade_calculation.init_basic_database')
+    @patch('education_system.university_system.modules.domain.academics.grading.grade_calculation.init_basic_database')
     @patch('builtins.input', return_value='11')  # Return to main menu
     @patch('builtins.print')
     def test_display_enhanced_grade_menu_exit(self, mock_print, mock_input, mock_init):
         """Test exiting the grade menu"""
         mock_init.return_value = True
 
-        with patch('university_system.modules.domain.academics.grading.grade_calculation.init_enhanced_grades_db'):
+        with patch('education_system.university_system.modules.domain.academics.grading.grade_calculation.init_enhanced_grades_db'):
             display_enhanced_grade_menu()
 
-    @patch('university_system.modules.domain.academics.grading.grade_calculation.init_basic_database')
+    @patch('education_system.university_system.modules.domain.academics.grading.grade_calculation.init_basic_database')
     @patch('builtins.input', side_effect=['1', '11'])  # Select option 1, then exit
     @patch('builtins.print')
     def test_display_enhanced_grade_menu_record_grades(
@@ -174,11 +174,11 @@ class TestDisplayEnhancedGradeMenu:
         """Test selecting record grades option"""
         mock_init.return_value = True
 
-        with patch('university_system.modules.domain.academics.grading.grade_calculation.init_enhanced_grades_db'):
-            with patch('university_system.modules.domain.academics.grading.grade_calculation.record_assessment_grades'):
+        with patch('education_system.university_system.modules.domain.academics.grading.grade_calculation.init_enhanced_grades_db'):
+            with patch('education_system.university_system.modules.domain.academics.grading.grade_calculation.record_assessment_grades'):
                 display_enhanced_grade_menu()
 
-    @patch('university_system.modules.domain.academics.grading.grade_calculation.init_basic_database')
+    @patch('education_system.university_system.modules.domain.academics.grading.grade_calculation.init_basic_database')
     def test_display_enhanced_grade_menu_init_failure(self, mock_init):
         """Test when database initialization fails"""
         mock_init.return_value = False
@@ -289,9 +289,9 @@ class TestCreateTrendVisualization:
         monthly = [('2025-01', 86.0, 150), ('2025-02', 88.0, 145)]
         return daily, monthly
 
-    @patch('university_system.modules.domain.academics.grading.grade_calculation.plt')
-    @patch('university_system.modules.domain.academics.grading.grade_calculation.os.makedirs')
-    @patch('university_system.modules.domain.academics.grading.grade_calculation.os.path.exists')
+    @patch('education_system.university_system.modules.domain.academics.grading.grade_calculation.plt')
+    @patch('education_system.university_system.modules.domain.academics.grading.grade_calculation.os.makedirs')
+    @patch('education_system.university_system.modules.domain.academics.grading.grade_calculation.os.path.exists')
     @patch('builtins.print')
     def test_create_trend_visualization_success(
         self, mock_print, mock_exists, mock_makedirs, mock_plt, sample_trend_data
@@ -305,7 +305,7 @@ class TestCreateTrendVisualization:
         mock_plt.savefig.assert_called_once()
         mock_plt.close.assert_called_once()
 
-    @patch('university_system.modules.domain.academics.grading.grade_calculation.plt')
+    @patch('education_system.university_system.modules.domain.academics.grading.grade_calculation.plt')
     @patch('builtins.print')
     def test_create_trend_visualization_error(
         self, mock_print, mock_plt, sample_trend_data
@@ -329,8 +329,8 @@ class TestExportBatchPredictions:
             {'student_id': 'S002', 'risk_score': 35, 'risk_level': 'Medium'},
         ]
 
-    @patch('university_system.modules.domain.academics.grading.grade_calculation.os.makedirs')
-    @patch('university_system.modules.domain.academics.grading.grade_calculation.os.path.exists')
+    @patch('education_system.university_system.modules.domain.academics.grading.grade_calculation.os.makedirs')
+    @patch('education_system.university_system.modules.domain.academics.grading.grade_calculation.os.path.exists')
     @patch('builtins.open', create=True)
     @patch('builtins.print')
     def test_export_batch_predictions_success(
@@ -345,7 +345,7 @@ class TestExportBatchPredictions:
 
         assert any('exported' in str(call).lower() for call in mock_print.call_args_list)
 
-    @patch('university_system.modules.domain.academics.grading.grade_calculation.os.makedirs')
+    @patch('education_system.university_system.modules.domain.academics.grading.grade_calculation.os.makedirs')
     @patch('builtins.open', side_effect=Exception("Write error"))
     @patch('builtins.print')
     def test_export_batch_predictions_error(
@@ -363,34 +363,33 @@ class TestExtractStudentFeatures:
     def feature_cursor(self):
         """Create mock cursor for feature extraction"""
         cursor = Mock()
-
-        # Assessment scores
-        cursor.execute.return_value.fetchall.side_effect = [
-            [(85.0,), (78.0,), (92.0,)],  # Assessment scores
+        cursor.execute.return_value = cursor
+        # Assessment scores - multiple queries may call fetchall/fetchone
+        cursor.fetchall.side_effect = [
+            [(85.0, 'A'), (78.0, 'B'), (92.0, 'A')],  # grade data
+            [],  # any follow-up queries
+            [],
         ]
+        cursor.fetchone.return_value = (3,)  # count of records
 
         return cursor
 
     def test_extract_student_features_success(self, feature_cursor):
         """Test successful feature extraction"""
-        try:
-            features = extract_student_features(feature_cursor, 'S001')
-            # Features should be extracted, test passes if no exception
-            assert True
-        except Exception:
-            pytest.skip("extract_student_features implementation incomplete")
+        features = extract_student_features(feature_cursor, 'S001')
+        assert features is not None
+        assert isinstance(features, dict)
 
     def test_extract_student_features_no_data(self):
         """Test feature extraction with no data"""
         cursor = Mock()
-        cursor.execute.return_value.fetchall.return_value = []
+        cursor.execute.return_value = cursor
+        cursor.fetchall.return_value = []
+        cursor.fetchone.return_value = None
 
-        try:
-            features = extract_student_features(cursor, 'S999')
-            # Should handle empty data gracefully
-            assert True
-        except Exception:
-            pytest.skip("extract_student_features implementation incomplete")
+        features = extract_student_features(cursor, 'S999')
+        # Should handle empty data gracefully (returns None or empty dict)
+        assert features is None or isinstance(features, dict)
 
 class TestGradeCalculationIntegration:
     """Integration tests for grade calculation"""

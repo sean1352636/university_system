@@ -8,6 +8,7 @@ alumni mentorship, and skills tracking.
 from __future__ import annotations
 
 from education_system.university_system.infrastructure.database.db import sqlite3
+from education_system.university_system.core.sql_safety import escape_like
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
@@ -69,7 +70,7 @@ class JobManager:
                     params.append(filters['job_type'])
                 if 'location' in filters:
                     query += " AND location LIKE ?"
-                    params.append(f"%{filters['location']}%")
+                    params.append(f"%{escape_like(filters['location'])}%")
             query += " ORDER BY post_date DESC"
             cursor = conn.execute(query, params)
             return [dict(row) for row in cursor.fetchall()]
@@ -147,12 +148,13 @@ class CareerEventManager:
                     max_attendees: int = 100) -> int:
         try:
             with transaction() as conn:
+                start_datetime = f"{event_date} {event_time}" if event_time else event_date
                 cursor = conn.execute('''
-                    INSERT INTO career_events (
-                        event_name, event_type, event_date, event_time,
-                        location, description, max_attendees
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (event_name, event_type, event_date, event_time,
+                    INSERT INTO unified_events (
+                        title, event_type, start_datetime,
+                        location, description, max_capacity, is_public, source_type
+                    ) VALUES (?, ?, ?, ?, ?, ?, 1, 'career')
+                ''', (event_name, event_type, start_datetime,
                       location, description, max_attendees))
                 event_id = cursor.lastrowid
                 return event_id
@@ -164,7 +166,7 @@ class CareerEventManager:
         try:
             with transaction() as conn:
                 cursor = conn.execute('''
-                    INSERT INTO career_event_registrations (event_id, student_id, registered_at)
+                    INSERT INTO unified_event_registrations (event_id, student_id, registered_at)
                     VALUES (?, ?, datetime('now'))
                 ''', (event_id, student_id))
                 registration_id = cursor.lastrowid

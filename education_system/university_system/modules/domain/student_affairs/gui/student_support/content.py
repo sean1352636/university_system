@@ -1,3 +1,4 @@
+from education_system.university_system.core.sql_safety import escape_like
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import tkinter.font as tkFont
@@ -1180,7 +1181,7 @@ class ContentMixin:
                     conditions.append("""
                         (LOWER(title) LIKE ? OR LOWER(description) LIKE ? OR LOWER(tags) LIKE ?)
                     """)
-                    like_term = f"%{search.lower()}%"
+                    like_term = f"%{escape_like(search.lower())}%"
                     params.extend([like_term, like_term, like_term])
 
                 if conditions:

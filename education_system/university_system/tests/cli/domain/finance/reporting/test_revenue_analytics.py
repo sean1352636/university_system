@@ -163,7 +163,7 @@ class TestRevenueAnalytics:
 
     def test_generate_budget_variance_report(self, temp_db, capsys):
         """Test budget variance report generation"""
-        with patch('university_system.modules.domain.finance.reporting.revenue_analytics.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.modules.domain.finance.reporting.revenue_analytics.DEFAULT_DB_PATH', temp_db):
             revenue_analytics.generate_budget_variance_report()
 
             captured = capsys.readouterr()
@@ -178,7 +178,7 @@ class TestRevenueAnalytics:
         inputs = iter(['2024-01-01', '2024-12-31'])
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        with patch('university_system.modules.domain.finance.reporting.revenue_analytics.get_connection') as mock_conn:
+        with patch('education_system.university_system.modules.domain.finance.reporting.revenue_analytics.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
             revenue_analytics.revenue_summary_report()
@@ -188,7 +188,7 @@ class TestRevenueAnalytics:
 
     def test_generate_outstanding_fees_report(self, temp_db, capsys):
         """Test outstanding fees report generation"""
-        with patch('university_system.modules.domain.finance.reporting.revenue_analytics.get_connection') as mock_conn:
+        with patch('education_system.university_system.modules.domain.finance.reporting.revenue_analytics.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
             revenue_analytics.generate_outstanding_fees_report()
@@ -203,7 +203,7 @@ class TestRevenueAnalytics:
         inputs = iter(['2024-01-01', '2024-12-31'])
         monkeypatch.setattr('builtins.input', lambda _: next(inputs))
 
-        with patch('university_system.modules.domain.finance.reporting.revenue_analytics.get_connection') as mock_conn:
+        with patch('education_system.university_system.modules.domain.finance.reporting.revenue_analytics.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
             revenue_analytics.generate_payment_collection_report()
@@ -216,7 +216,7 @@ class TestPredictiveAnalytics:
 
     def test_generate_predictive_analytics_insufficient_data(self, temp_db, capsys):
         """Test predictive analytics with insufficient data"""
-        with patch('university_system.modules.domain.finance.reporting.revenue_analytics.get_connection') as mock_conn:
+        with patch('education_system.university_system.modules.domain.finance.reporting.revenue_analytics.get_connection') as mock_conn:
             mock_conn.return_value = sqlite3.connect(temp_db)
 
             # Mock auth

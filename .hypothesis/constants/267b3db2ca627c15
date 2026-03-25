@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/gui/internship_management/my_applications.py
+# hypothesis_version: 6.151.9
+
+[150, '#27ae60', '#2c3e50', '#34495e', '#3498db', '#6c757d', '#d4edda', '#f39c12', '#f8d7da', '#f8f9fa', '#fff3cd', '1.0', '600x500', '800x600', '<Configure>', 'App ID', 'Application Details', 'Applied Date', 'Arial', 'Close', 'Company', 'Cover Letter', 'Cover Letter:', 'Database Error', 'Error', 'Feedback', 'Feedback:', 'Internship', 'Job Description', 'Requirements', 'Review Application', 'Selection Error', 'Status', 'Student Information', 'View Details', 'all', 'approve_applications', 'approved', 'bold', 'both', 'common.error', 'common.refresh', 'disabled', 'end', 'flat', 'headings', 'id', 'left', 'nw', 'pending', 'rejected', 'right', 'values', 'vertical', 'w', 'white', 'word', 'x', 'y']

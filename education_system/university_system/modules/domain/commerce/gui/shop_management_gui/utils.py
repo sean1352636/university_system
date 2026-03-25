@@ -220,7 +220,7 @@ def show_print_labels_dialog(self):
         if 'get_connection' in globals():
             conn = get_connection()
             cursor = conn.cursor()
-            cursor.execute("SELECT DISTINCT category FROM shop_products WHERE is_active = 1 ORDER BY category")
+            cursor.execute("SELECT DISTINCT category FROM products WHERE source_type = 'shop' AND is_active = 1 ORDER BY category")
             categories = [row[0] for row in cursor.fetchall()]
             category_combo.configure(values=categories)
             conn.close()
@@ -254,7 +254,7 @@ def show_print_labels_dialog(self):
                 # Get products by category and print labels
                 conn = get_connection()
                 cursor = conn.cursor()
-                cursor.execute("SELECT product_id FROM shop_products WHERE category = ? AND is_active = 1",
+                cursor.execute("SELECT source_product_id as product_id FROM products WHERE source_type = 'shop' AND category = ? AND is_active = 1",
                               [category_var.get()])
                 product_ids = [row[0] for row in cursor.fetchall()]
                 conn.close()
@@ -291,20 +291,20 @@ def display_product_labels_gui(self, product_ids=None):
             # Get specific products
             placeholders = ','.join('?' * len(product_ids))
             query = f"""
-                SELECT p.product_id, p.name, p.category, p.price, p.description, i.quantity
-                FROM shop_products p
-                LEFT JOIN shop_inventory i ON p.product_id = i.product_id
-                WHERE p.product_id IN ({placeholders}) AND p.is_active = 1
+                SELECT p.source_product_id as product_id, p.name, p.category, p.price, p.description, i.quantity
+                FROM products p
+                LEFT JOIN shop_inventory i ON p.source_product_id = i.product_id
+                WHERE p.source_type = 'shop' AND p.source_product_id IN ({placeholders}) AND p.is_active = 1
                 ORDER BY p.name
             """
             cursor.execute(query, product_ids)
         else:
             # Get all active products
             cursor.execute("""
-                SELECT p.product_id, p.name, p.category, p.price, p.description, i.quantity
-                FROM shop_products p
-                LEFT JOIN shop_inventory i ON p.product_id = i.product_id
-                WHERE p.is_active = 1
+                SELECT p.source_product_id as product_id, p.name, p.category, p.price, p.description, i.quantity
+                FROM products p
+                LEFT JOIN shop_inventory i ON p.source_product_id = i.product_id
+                WHERE p.source_type = 'shop' AND p.is_active = 1
                 ORDER BY p.name
             """)
 
@@ -544,6 +544,8 @@ def _export_labels_to_file(self, products):
 
 def clear_content(self):
     """Clear the main content area"""
+    if self.content_frame is None:
+        return
     for widget in self.content_frame.winfo_children():
         widget.destroy()
         
@@ -569,10 +571,10 @@ def load_products(self):
             cursor = conn.cursor()
             
             cursor.execute("""
-                SELECT p.product_id, p.name, p.category, p.price, p.description, i.quantity
-                FROM shop_products p
-                JOIN shop_inventory i ON p.product_id = i.product_id
-                WHERE p.is_active = 1
+                SELECT p.source_product_id as product_id, p.name, p.category, p.price, p.description, i.quantity
+                FROM products p
+                JOIN shop_inventory i ON p.source_product_id = i.product_id
+                WHERE p.source_type = 'shop' AND p.is_active = 1
                 ORDER BY p.category, p.name
             """)
             
@@ -716,12 +718,12 @@ def get_product_sales_data(self, product_id):
         cursor = conn.cursor()
         
         cursor.execute("""
-            SELECT t.transaction_date, t.transaction_id,
+            SELECT t.created_at as transaction_date, t.source_transaction_id as transaction_id,
                    ti.quantity, ti.price_per_item, ti.subtotal
             FROM shop_transaction_items ti
-            JOIN shop_transactions t ON ti.transaction_id = t.transaction_id
+            JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
             WHERE ti.product_id = ?
-            ORDER BY t.transaction_date DESC
+            ORDER BY t.created_at DESC
         """, [product_id])
         
         sales = cursor.fetchall()

@@ -47,8 +47,8 @@ def create_payments_refunds_tab(self, parent):
         self.refund_search_var = tk.StringVar()
         ttk.Entry(search_frame, textvariable=self.refund_search_var, width=20).grid(row=0, column=1, padx=5)
 
-        ttk.Button(search_frame, text="Search", command=self._refresh_refund_payments_list).grid(row=0, column=2, padx=5)
-        ttk.Button(search_frame, text="Show All", command=lambda: [self.refund_search_var.set(''), self._refresh_refund_payments_list()]).grid(row=0, column=3, padx=5)
+        ttk.Button(search_frame, text="Search", command=lambda: _refresh_refund_payments_list(self)).grid(row=0, column=2, padx=5)
+        ttk.Button(search_frame, text="Show All", command=lambda: [self.refund_search_var.set(''), _refresh_refund_payments_list(self)]).grid(row=0, column=3, padx=5)
 
         # Payments list frame
         list_frame = ttk.LabelFrame(parent, text="Housing Payments", padding="5")
@@ -86,11 +86,11 @@ def create_payments_refunds_tab(self, parent):
         action_frame = ttk.Frame(parent)
         action_frame.pack(fill=tk.X)
 
-        ttk.Button(action_frame, text="Process Refund", command=self.process_housing_refund).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="View Details", command=self.view_housing_payment_details).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="Export to CSV", command=self.export_housing_payments_csv).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text="Process Refund", command=lambda: process_housing_refund(self)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text="View Details", command=lambda: view_housing_payment_details(self)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text="Export to CSV", command=lambda: export_housing_payments_csv(self)).pack(side=tk.LEFT, padx=5)
 
-        self._refresh_refund_payments_list()
+        _refresh_refund_payments_list(self)
 
 def _refresh_refund_payments_list(self):
         """Refresh the payments list for refunds tab"""
@@ -106,18 +106,18 @@ def _refresh_refund_payments_list(self):
             # Only show completed housing payments
             if search_term:
                 cursor.execute('''
-                    SELECT payment_id, student_id, amount, payment_method,
+                    SELECT source_payment_id, student_id, amount, payment_method,
                            payment_date, payment_period_start, payment_period_end, status
-                    FROM housing_payments
-                    WHERE student_id LIKE ? AND status = 'Completed'
+                    FROM payments
+                    WHERE source_type = 'housing' AND student_id LIKE ? AND status = 'Completed'
                     ORDER BY payment_date DESC
                 ''', (f'%{search_term}%',))
             else:
                 cursor.execute('''
-                    SELECT payment_id, student_id, amount, payment_method,
+                    SELECT source_payment_id, student_id, amount, payment_method,
                            payment_date, payment_period_start, payment_period_end, status
-                    FROM housing_payments
-                    WHERE status = 'Completed'
+                    FROM payments
+                    WHERE source_type = 'housing' AND status = 'Completed'
                     ORDER BY payment_date DESC
                     LIMIT 100
                 ''')
@@ -228,14 +228,14 @@ def process_housing_refund(self):
             return
 
         # Show refund method selection dialog
-        refund_method = self._show_housing_refund_method_dialog(amount, student_id)
+        refund_method = _show_housing_refund_method_dialog(self, amount, student_id)
         if not refund_method:
             return
 
         # Process based on method
         success = False
         if refund_method == 'Student Account':
-            success = self._add_to_student_account(student_id, amount, payment_id)
+            success = _add_to_student_account(self, student_id, amount, payment_id)
         else:
             # For cash/card, just record the refund
             success = True
@@ -247,19 +247,19 @@ def process_housing_refund(self):
                 cursor = conn.cursor()
 
                 cursor.execute('''
-                    UPDATE housing_payments
+                    UPDATE payments
                     SET status = 'Refunded'
-                    WHERE payment_id = ?
+                    WHERE source_type = 'housing' AND source_payment_id = ?
                 ''', (payment_id,))
 
                 conn.commit()
                 conn.close()
 
                 # Notify finance system
-                self._notify_finance_for_housing_refund(student_id, amount, refund_method, payment_id)
+                _notify_finance_for_housing_refund(self, student_id, amount, refund_method, payment_id)
 
                 # Send refund receipt email
-                self._send_housing_refund_receipt(student_id, amount, refund_method, payment_id)
+                _send_housing_refund_receipt(self, student_id, amount, refund_method, payment_id)
 
                 messagebox.showinfo("Refund Processed",
                                   f"Refund of £{amount:.2f} processed successfully\n\n"
@@ -273,7 +273,7 @@ def process_housing_refund(self):
                     'student_id': student_id
                 }))
 
-                self._refresh_refund_payments_list()
+                _refresh_refund_payments_list(self)
             except Exception as e:
                 messagebox.showerror("Refund Error", f"Failed to process refund: {e}")
         else:
@@ -298,7 +298,7 @@ def _show_housing_refund_method_dialog(self, amount: float, student_id: str):
                  font=('Arial', 12, 'bold')).pack(anchor=tk.W, pady=(5, 0))
 
         # Student account balance
-        balance = self._get_student_account_balance(student_id)
+        balance = _get_student_account_balance(self, student_id)
         if balance is not None:
             ttk.Label(info_frame, text=f"Current Account Balance: £{balance:.2f}").pack(
                 anchor=tk.W, pady=(5, 0))
@@ -364,8 +364,8 @@ def _add_to_student_account(self, student_id: str, amount: float, original_ref: 
                 # Try to create account if it doesn't exist
                 cursor.execute('''
                     INSERT INTO student_finance_accounts
-                    (student_id, account_type, balance, account_status, created_at)
-                    VALUES (?, 'standard', ?, 'active', CURRENT_TIMESTAMP)
+                    (student_id, balance, account_status, created_at)
+                    VALUES (?, ?, 'active', CURRENT_TIMESTAMP)
                 ''', (student_id, amount))
                 account_id = cursor.lastrowid
             else:
@@ -382,10 +382,10 @@ def _add_to_student_account(self, student_id: str, amount: float, original_ref: 
 
             # Record transaction
             cursor.execute('''
-                INSERT INTO student_finance_transactions
-                (account_id, student_id, transaction_type, amount, description,
+                INSERT INTO transactions
+                (source_type, account_id, student_id, transaction_type, amount, description,
                  reference_id, processed_by)
-                VALUES (?, ?, 'credit', ?, ?, ?, ?)
+                VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?)
             ''', (account_id, student_id, amount,
                   f'Housing Payment Refund - Ref: {original_ref}',
                   original_ref,
@@ -399,18 +399,19 @@ def _add_to_student_account(self, student_id: str, amount: float, original_ref: 
             return False
 
 def _notify_finance_for_housing_refund(self, student_id: str, amount: float, method: str, refund_ref: str):
-        """Record refund in finance system for integration"""
+        """Record refund in unified refunds table for finance integration"""
         try:
             from education_system.university_system.infrastructure.database.db import transaction as db_transaction
             from datetime import datetime
             with db_transaction() as conn:
-                # Insert into finance refunds table with correct column names
+                # Insert into unified refunds table with source_type='housing'
                 try:
                     conn.execute('''
-                        INSERT INTO finance_refunds
-                        (student_id, refund_reference, department, transaction_id,
-                         amount, refund_method, refund_date, refund_time, processed_by, notes)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO unified_refunds
+                        (student_id, refund_reference, department, reference_id,
+                         amount, refund_method, refund_date, processed_by, notes,
+                         source_type, reference_type)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'housing', 'payment')
                     ''', (
                         student_id,
                         refund_ref,
@@ -419,13 +420,12 @@ def _notify_finance_for_housing_refund(self, student_id: str, amount: float, met
                         amount,
                         method.lower().replace(' ', '_'),
                         datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                        datetime.now().strftime('%H:%M:%S'),
                         self.auth.current_user.get('username', 'System') if self.auth and self.auth.current_user else 'System',
                         'Housing Payment Refund'
                     ))
-                    print(f"[Housing] Refund recorded in finance system: {refund_ref}")
+                    print(f"[Housing] Refund recorded in unified_refunds: {refund_ref}")
                 except Exception as e:
-                    print(f"[Housing] Error recording refund in finance system: {e}")
+                    print(f"[Housing] Error recording refund in unified_refunds: {e}")
                     import traceback
                     traceback.print_exc()
         except Exception as e:

@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from tkinter.font import Font
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import sqlite3
 from datetime import datetime, timedelta
 import json
@@ -420,7 +421,7 @@ except ImportError:
         except Exception as e:
             print(f"Error setting up enhanced helpdesk permissions: {e}")
 
-from .base import HelpdeskGUI
+from education_system.university_system.modules.domain.student_affairs.gui.helpdesk.base import HelpdeskGUI
 
 def show_search_tickets(self):
     """Show advanced search dialog"""
@@ -547,7 +548,7 @@ def search_tickets(self, criteria):
         # Text search
         if criteria.get('text'):
             where_conditions.append("(t.subject LIKE ? OR t.message LIKE ?)")
-            text_param = f"%{criteria['text']}%"
+            text_param = f"%{escape_like(criteria['text'])}%"
             params.extend([text_param, text_param])
 
         # Status filter
@@ -699,7 +700,7 @@ def execute_search_criteria(self, criteria):
         # Text search
         if 'text' in criteria:
             where_conditions.append("(t.subject LIKE ? OR t.message LIKE ?)")
-            text_param = f"%{criteria['text']}%"
+            text_param = f"%{escape_like(criteria['text'])}%"
             params.extend([text_param, text_param])
 
         # Status filter
@@ -1079,7 +1080,7 @@ def execute_search_gui(self, criteria):
         # Text search
         if 'text' in criteria:
             where_conditions.append("(t.subject LIKE ? OR t.message LIKE ?)")
-            text_param = f"%{criteria['text']}%"
+            text_param = f"%{escape_like(criteria['text'])}%"
             params.extend([text_param, text_param])
 
         # Status filter

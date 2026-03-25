@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/college_system/modules/domain/attendance/services/attendance_service.py
+# hypothesis_version: 6.151.9
+
+[0.0, 100, ' LIMIT ? OFFSET ?', '%Y-%m-%d', 'Course not found.', 'Fri', 'Mon', 'Sat', 'Session not found.', 'Sun', 'Thu', 'Tue', 'Wed', 'absent', 'attendance_rate', 'cnt', 'course_id', 'excused', 'id', 'late', 'name', 'notes', 'present', 'session_id', 'status', 'student_id', 'student_pk', 'total_sessions']

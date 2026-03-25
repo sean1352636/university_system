@@ -1,6 +1,6 @@
 """Refunds mixin for the Legal Services GUI."""
 
-from ._imports import (
+from education_system.university_system.modules.domain.legal.gui._imports import (
     tk, ttk, messagebox, filedialog, traceback,
     datetime,
     get_connection, transaction,
@@ -106,14 +106,15 @@ class RefundsMixin:
                     SELECT
                         p.payment_id,
                         p.created_at,
-                        p.client_id,
-                        p.client_email,
+                        p.student_id,
+                        p.customer_email,
                         p.amount,
                         p.payment_type,
                         p.payment_method,
                         p.status,
-                        p.transaction_reference
-                    FROM legal_payments p
+                        p.payment_reference
+                    FROM payments p
+                    WHERE p.source_type = 'legal'
                     ORDER BY p.created_at DESC
                 """
 
@@ -198,7 +199,7 @@ class RefundsMixin:
             # Get client ID
             with get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT client_id, client_email FROM legal_payments WHERE payment_id = ?",
+                cursor.execute("SELECT student_id, customer_email FROM payments WHERE payment_id = ? AND source_type = 'legal'",
                              (payment_id,))
                 result = cursor.fetchone()
                 if not result:
@@ -297,27 +298,11 @@ class RefundsMixin:
 
                 # Update payment status
                 cursor.execute("""
-                    UPDATE legal_payments
+                    UPDATE payments
                     SET status = 'refunded',
-                        transaction_reference = ?
-                    WHERE payment_id = ?
+                        payment_reference = ?
+                    WHERE payment_id = ? AND source_type = 'legal'
                 """, (refund_ref, payment_id))
-
-                # Create refund record in legal_refunds table
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS legal_refunds (
-                        refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        payment_id INTEGER,
-                        client_id TEXT,
-                        client_email TEXT,
-                        amount DECIMAL(10,2),
-                        refund_method TEXT,
-                        refund_reference TEXT,
-                        refunded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        processed_by TEXT,
-                        FOREIGN KEY (payment_id) REFERENCES legal_payments(payment_id)
-                    )
-                """)
 
                 # Get processed_by
                 processed_by = None
@@ -325,11 +310,13 @@ class RefundsMixin:
                     user = self.auth.current_user
                     processed_by = user.get('username') or user.get('user_id', '')
 
+                # Record refund in unified_refunds table
                 cursor.execute("""
-                    INSERT INTO legal_refunds
-                    (payment_id, client_id, client_email, amount, refund_method, refund_reference, processed_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                """, (payment_id, client_id, client_email, amount, refund_method, refund_ref, processed_by))
+                    INSERT INTO unified_refunds
+                    (source_type, reference_id, reference_type, student_id, customer_email,
+                     amount, refund_method, refund_reference, refund_date, processed_by)
+                    VALUES ('legal', ?, 'payment', ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+                """, (str(payment_id), client_id, client_email, amount, refund_method, refund_ref, processed_by))
 
             # Log activity
             log_activity('refund', 'legal_payment',
@@ -374,27 +361,11 @@ class RefundsMixin:
 
                 # Update payment status
                 cursor.execute("""
-                    UPDATE legal_payments
+                    UPDATE payments
                     SET status = 'refunded',
-                        transaction_reference = ?
-                    WHERE payment_id = ?
+                        payment_reference = ?
+                    WHERE payment_id = ? AND source_type = 'legal'
                 """, (refund_ref, payment_id))
-
-                # Create refund record
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS legal_refunds (
-                        refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        payment_id INTEGER,
-                        client_id TEXT,
-                        client_email TEXT,
-                        amount DECIMAL(10,2),
-                        refund_method TEXT,
-                        refund_reference TEXT,
-                        refunded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        processed_by TEXT,
-                        FOREIGN KEY (payment_id) REFERENCES legal_payments(payment_id)
-                    )
-                """)
 
                 # Get processed_by
                 processed_by = None
@@ -402,11 +373,13 @@ class RefundsMixin:
                     user = self.auth.current_user
                     processed_by = user.get('username') or user.get('user_id', '')
 
+                # Record refund in unified_refunds table
                 cursor.execute("""
-                    INSERT INTO legal_refunds
-                    (payment_id, client_id, client_email, amount, refund_method, refund_reference, processed_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                """, (payment_id, client_id, client_email, amount, 'student_account', refund_ref, processed_by))
+                    INSERT INTO unified_refunds
+                    (source_type, reference_id, reference_type, student_id, customer_email,
+                     amount, refund_method, refund_reference, refund_date, processed_by)
+                    VALUES ('legal', ?, 'payment', ?, ?, ?, 'student_account', ?, CURRENT_TIMESTAMP, ?)
+                """, (str(payment_id), client_id, client_email, amount, refund_ref, processed_by))
 
                 # Add to student finance account
                 cursor.execute("""
@@ -423,12 +396,12 @@ class RefundsMixin:
                 else:
                     account_id, new_balance = None, amount
 
-                # Log transaction in student_finance_transactions
+                # Log transaction in transactions table
                 cursor.execute("""
-                    INSERT INTO student_finance_transactions
-                    (account_id, student_id, transaction_type, amount, balance_after, description,
+                    INSERT INTO transactions
+                    (source_type, account_id, student_id, transaction_type, amount, balance_after, description,
                      reference_id, processed_by, created_at)
-                    VALUES (?, ?, 'credit', ?, ?, ?, ?, ?, ?)
+                    VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, ?, ?)
                 """, (account_id, client_id, amount, new_balance, f'Legal services refund - {refund_ref}',
                       refund_ref, processed_by, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
@@ -464,7 +437,7 @@ class RefundsMixin:
             # Get client name
             with get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT full_name FROM students WHERE student_id = (SELECT client_id FROM legal_payments WHERE transaction_reference = ?)",
+                cursor.execute("SELECT full_name FROM students WHERE student_id = (SELECT student_id FROM payments WHERE payment_reference = ? AND source_type = 'legal')",
                              (refund_ref,))
                 result = cursor.fetchone()
 
@@ -529,42 +502,9 @@ University Legal Services Center
             logger.error(f"Error sending legal refund receipt: {e}")
 
     def notify_legal_finance_gui(self, payment_id, amount, refund_method, refund_ref):
-        """Notify finance system about the refund"""
+        """Notify finance system about the refund - already recorded in unified_refunds."""
         try:
-            with transaction() as conn:
-                cursor = conn.cursor()
-
-                # Create finance_refunds table if not exists
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS finance_refunds (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        refund_reference TEXT UNIQUE,
-                        department TEXT,
-                        transaction_id TEXT,
-                        amount DECIMAL(10,2),
-                        refund_method TEXT,
-                        refund_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        processed_by TEXT,
-                        notes TEXT
-                    )
-                """)
-
-                # Get processed_by
-                processed_by = None
-                if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
-                    user = self.auth.current_user
-                    processed_by = user.get('username') or user.get('user_id', '')
-
-                # Insert refund record
-                cursor.execute("""
-                    INSERT INTO finance_refunds
-                    (refund_reference, department, transaction_id, amount, refund_method, processed_by, notes)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                """, (refund_ref, 'Legal Services', str(payment_id), amount, refund_method, processed_by,
-                     'Legal services payment refund'))
-
             logger.info(f"Finance GUI notified of refund {refund_ref}")
-
         except Exception as e:
             logger.error(f"Error notifying finance GUI: {e}")
 
@@ -589,19 +529,19 @@ University Legal Services Center
                 cursor.execute("""
                     SELECT
                         p.payment_id,
-                        p.client_id,
-                        p.client_email,
+                        p.student_id,
+                        p.customer_email,
                         p.amount,
                         p.payment_type,
                         p.payment_method,
                         p.status,
-                        p.transaction_reference,
+                        p.payment_reference,
                         p.created_at,
                         p.processed_by,
-                        p.case_id,
-                        p.consultation_id
-                    FROM legal_payments p
-                    WHERE p.payment_id = ?
+                        p.reference_id,
+                        p.notes
+                    FROM payments p
+                    WHERE p.payment_id = ? AND p.source_type = 'legal'
                 """, (payment_id,))
 
                 payment = cursor.fetchone()
@@ -612,21 +552,17 @@ University Legal Services Center
                     return
 
                 (pid, client_id, client_email, amount, payment_type, payment_method,
-                 status, reference, created_at, processed_by, case_id, consultation_id) = payment
+                 status, reference, created_at, processed_by, reference_id, notes) = payment
 
                 # Get case/consultation details
                 service_details = ""
-                if case_id:
-                    cursor.execute("SELECT case_number, case_type FROM legal_cases WHERE case_id = ?", (case_id,))
+                if reference_id:
+                    cursor.execute("SELECT case_number, case_type FROM legal_cases WHERE case_id = ?", (reference_id,))
                     case = cursor.fetchone()
                     if case:
                         service_details = f"\nCase Number: {case[0]}\nCase Type: {case[1]}"
-                elif consultation_id:
-                    cursor.execute("SELECT scheduled_date, scheduled_time FROM legal_consultations WHERE consultation_id = ?",
-                                 (consultation_id,))
-                    consultation = cursor.fetchone()
-                    if consultation:
-                        service_details = f"\nConsultation Date: {consultation[0]}\nConsultation Time: {consultation[1]}"
+                if notes:
+                    service_details += f"\nNotes: {notes}"
 
                 # Create details window
                 details_window = tk.Toplevel(self.window)
@@ -704,14 +640,15 @@ Financial Details:
                     SELECT
                         p.payment_id,
                         p.created_at,
-                        p.client_id,
-                        p.client_email,
+                        p.student_id,
+                        p.customer_email,
                         p.amount,
                         p.payment_type,
                         p.payment_method,
                         p.status,
-                        p.transaction_reference
-                    FROM legal_payments p
+                        p.payment_reference
+                    FROM payments p
+                    WHERE p.source_type = 'legal'
                     ORDER BY p.created_at DESC
                 """)
 

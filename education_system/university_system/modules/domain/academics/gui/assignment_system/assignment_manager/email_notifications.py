@@ -294,22 +294,24 @@ class EmailNotificationsMixin:
             from datetime import datetime
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            # Get assignments that are overdue
-            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                # Get assignments that are overdue
+                current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-            cursor.execute('''
-                SELECT a.id, a.title, a.module_code, m.module_name, a.due_date
-                FROM assignments a
-                JOIN modules m ON a.module_code = m.module_code
-                WHERE a.due_date < ? AND a.is_active = 1
-            ''', (current_time,))
+                cursor.execute('''
+                    SELECT a.id, a.title, a.module_code, m.module_name, a.due_date
+                    FROM assignments a
+                    JOIN modules m ON a.module_code = m.module_code
+                    WHERE a.due_date < ? AND a.is_active = 1
+                ''', (current_time,))
 
-            overdue_assignments = cursor.fetchall()
+                overdue_assignments = cursor.fetchall()
 
-            if not overdue_assignments:
-                print("No overdue assignments found")
+                if not overdue_assignments:
+                    print("No overdue assignments found")
+            finally:
                 conn.close()
                 return 0
 

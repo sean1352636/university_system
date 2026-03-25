@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 
 from education_system.university_system.infrastructure.database.db import get_connection
 
-from .alerts import FinancialAlertSystem
-from .ml import PaymentPredictionML
+from education_system.university_system.modules.domain.finance.reporting.financial_reports.alerts import FinancialAlertSystem
+from education_system.university_system.modules.domain.finance.reporting.financial_reports.ml import PaymentPredictionML
 
 
 def initialize_enhanced_database():

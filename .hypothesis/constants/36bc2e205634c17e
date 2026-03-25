@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/helpdesk/knowledge_base.py
+# hypothesis_version: 6.151.9
+
+[100, '\nCategories:', '\nEnter your choice: ', ' AND category = ?', '%Y-%m-%d %H:%M:%S', ', ', '-', '0', '0. All categories', '1', '1. View articles', '2', '3', '3. Edit article', '4', '4. Search articles', '5', '6', '=', 'Article not found.', 'Article title: ', 'CONTENT:', 'Category: ', 'Content is required.', 'Enter search term: ', 'Invalid article ID.', 'No articles found.', 'No changes made.', 'No votes', 'Title is required.', 'category = ?', 'content = ?', 'done', 'draft', 'id', 'manage_tickets', 'n', 'published', 'title = ?', 'updated_at = ?', 'view_all_tickets', 'y']

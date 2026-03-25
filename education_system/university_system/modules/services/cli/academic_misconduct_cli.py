@@ -32,61 +32,63 @@ except ImportError:
 def init_misconduct_tables():
     """Create the academic misconduct tables if they don't exist."""
     conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    # Main cases table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS academic_misconduct_cases (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            case_id TEXT UNIQUE NOT NULL,
-            student_name TEXT NOT NULL,
-            student_id TEXT NOT NULL,
-            student_email TEXT,
-            course TEXT NOT NULL,
-            violation_type TEXT NOT NULL,
-            status TEXT DEFAULT 'Under Review',
-            date_filed TEXT NOT NULL,
-            severity TEXT NOT NULL,
-            notes TEXT,
-            hearing_date TEXT,
-            hearing_time TEXT,
-            hearing_location TEXT,
-            ruling TEXT,
-            ruling_rationale TEXT,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
+        # Main cases table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS academic_misconduct_cases (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                case_id TEXT UNIQUE NOT NULL,
+                student_name TEXT NOT NULL,
+                student_id TEXT NOT NULL,
+                student_email TEXT,
+                course TEXT NOT NULL,
+                violation_type TEXT NOT NULL,
+                status TEXT DEFAULT 'Under Review',
+                date_filed TEXT NOT NULL,
+                severity TEXT NOT NULL,
+                notes TEXT,
+                hearing_date TEXT,
+                hearing_time TEXT,
+                hearing_location TEXT,
+                ruling TEXT,
+                ruling_rationale TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
 
-    # Case history/timeline table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS academic_misconduct_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            case_id TEXT NOT NULL,
-            event_date TEXT NOT NULL,
-            event_description TEXT NOT NULL,
-            event_type TEXT DEFAULT 'info',
-            created_by TEXT,
-            FOREIGN KEY (case_id) REFERENCES academic_misconduct_cases(case_id)
-        )
-    ''')
+        # Case history/timeline table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS academic_misconduct_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                case_id TEXT NOT NULL,
+                event_date TEXT NOT NULL,
+                event_description TEXT NOT NULL,
+                event_type TEXT DEFAULT 'info',
+                created_by TEXT,
+                FOREIGN KEY (case_id) REFERENCES academic_misconduct_cases(case_id)
+            )
+        ''')
 
-    # Evidence table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS academic_misconduct_evidence (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            case_id TEXT NOT NULL,
-            file_name TEXT NOT NULL,
-            file_path TEXT,
-            file_size TEXT,
-            uploaded_date TEXT NOT NULL,
-            uploaded_by TEXT,
-            FOREIGN KEY (case_id) REFERENCES academic_misconduct_cases(case_id)
-        )
-    ''')
+        # Evidence table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS academic_misconduct_evidence (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                case_id TEXT NOT NULL,
+                file_name TEXT NOT NULL,
+                file_path TEXT,
+                file_size TEXT,
+                uploaded_date TEXT NOT NULL,
+                uploaded_by TEXT,
+                FOREIGN KEY (case_id) REFERENCES academic_misconduct_cases(case_id)
+            )
+        ''')
 
-    conn.commit()
-    conn.close()
+        conn.commit()
+    finally:
+        conn.close()
 
 def get_next_case_id():
     """Generate the next case ID in format AM-YYYY-NNNN."""

@@ -52,13 +52,13 @@ class _MailboxMixin:
             archived_condition = _archived_filter("m") + _active_filter("m")
 
             cursor.execute(f'''
-            SELECT m.id, m.sender_id, u.username as sender_username, m.subject, m.content,
+            SELECT m.id, m.sender_id, COALESCE(u.username, 'User ' || m.sender_id) as sender_username, m.subject, m.content,
                    COALESCE(m.is_read, 0) as is_read,
                    COALESCE(m.is_archived, 0) as is_archived,
                    COALESCE(m.is_deleted_by_recipient, 0) as is_deleted,
                    m.sent_at, m.assignment_id, m.reply_to
             FROM messages m
-            JOIN users u ON m.sender_id = u.id
+            LEFT JOIN users u ON m.sender_id = u.id
             WHERE m.recipient_id = ? {archived_condition}
             ORDER BY m.sent_at DESC
             LIMIT ? OFFSET ?
@@ -136,10 +136,10 @@ class _MailboxMixin:
         def _get_sent(cursor):
             # Query for sent messages - simplified for actual schema
             cursor.execute('''
-            SELECT m.id, m.recipient_id, u.username as recipient_username, m.subject, m.content,
+            SELECT m.id, m.recipient_id, COALESCE(u.username, 'User ' || m.recipient_id) as recipient_username, m.subject, m.content,
                    m.is_read, m.sent_at, m.assignment_id, m.reply_to
             FROM messages m
-            JOIN users u ON m.recipient_id = u.id
+            LEFT JOIN users u ON m.recipient_id = u.id
             WHERE m.sender_id = ?
             ORDER BY m.sent_at DESC
             LIMIT ? OFFSET ?
@@ -197,12 +197,12 @@ class _MailboxMixin:
         def _get_archived(cursor):
             # Query for archived messages only
             cursor.execute('''
-            SELECT m.id, m.sender_id, u.username as sender_username, m.subject, m.content,
+            SELECT m.id, m.sender_id, COALESCE(u.username, 'User ' || m.sender_id) as sender_username, m.subject, m.content,
                    COALESCE(m.is_read, 0) as is_read,
                    COALESCE(m.is_archived, 0) as is_archived,
                    m.sent_at, m.assignment_id, m.reply_to
             FROM messages m
-            JOIN users u ON m.sender_id = u.id
+            LEFT JOIN users u ON m.sender_id = u.id
             WHERE m.recipient_id = ? AND m.is_archived = 1
             ORDER BY m.sent_at DESC
             LIMIT ? OFFSET ?
@@ -294,9 +294,9 @@ class _MailboxMixin:
 
             # Check sent messages
             cursor.execute('''
-            SELECT m.id, m.recipient_id, u.username, m.subject, m.sent_at
+            SELECT m.id, m.recipient_id, COALESCE(u.username, 'User ' || m.recipient_id), m.subject, m.sent_at
             FROM messages m
-            JOIN users u ON m.recipient_id = u.id
+            LEFT JOIN users u ON m.recipient_id = u.id
             WHERE m.sender_id = ?
             ORDER BY m.sent_at DESC
             LIMIT 10
@@ -309,9 +309,9 @@ class _MailboxMixin:
 
             # Check received messages
             cursor.execute('''
-            SELECT m.id, m.sender_id, u.username, m.subject, m.sent_at, m.is_read
+            SELECT m.id, m.sender_id, COALESCE(u.username, 'User ' || m.sender_id), m.subject, m.sent_at, m.is_read
             FROM messages m
-            JOIN users u ON m.sender_id = u.id
+            LEFT JOIN users u ON m.sender_id = u.id
             WHERE m.recipient_id = ?
             ORDER BY m.sent_at DESC
             LIMIT 10

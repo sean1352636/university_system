@@ -13,6 +13,8 @@ import mimetypes
 import base64
 import secrets
 import traceback
+
+from education_system.university_system.core.sql_safety import escape_like
 from typing import Optional, List, Dict, Any
 from functools import wraps
 
@@ -21,16 +23,16 @@ from education_system.university_system.infrastructure.email.email_manager impor
 from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH, TICKET_TEMPLATES_DIR, UPLOAD_DIR
 from education_system.university_system.utils.logging.log_config import get_log_file
 
-from ..config import (
+from education_system.university_system.modules.domain.student_affairs.services.student_support.config import (
     SUPPORT_DB, TICKET_STATUSES, TICKET_PRIORITIES, SUPPORT_CATEGORIES,
     NotificationType, TicketSentiment, FileType, SupportConfig
 )
-from .. import auth as _auth_mod
-from ..auth import get_current_user_safe, require_auth, has_staff_permissions
-from .attachment_manager import _get_attachment_count, _get_last_response_info, _process_attachments
-from ..automation.sentiment_analysis import _analyze_sentiment, _suggest_category, _get_auto_assignment, _estimate_resolution_time
-from ..features.templates import _create_auto_response
-from ..features.notifications import _create_ticket_notifications
+from education_system.university_system.modules.domain.student_affairs.services.student_support import auth as _auth_mod
+from education_system.university_system.modules.domain.student_affairs.services.student_support.auth import get_current_user_safe, require_auth, has_staff_permissions
+from education_system.university_system.modules.domain.student_affairs.services.student_support.core.attachment_manager import _get_attachment_count, _get_last_response_info, _process_attachments
+from education_system.university_system.modules.domain.student_affairs.services.student_support.automation.sentiment_analysis import _analyze_sentiment, _suggest_category, _get_auto_assignment, _estimate_resolution_time
+from education_system.university_system.modules.domain.student_affairs.services.student_support.features.templates import _create_auto_response
+from education_system.university_system.modules.domain.student_affairs.services.student_support.features.notifications import _create_ticket_notifications
 
 logger = logging.getLogger(__name__)
 
@@ -62,42 +64,44 @@ def create_support_ticket(student_id, title, description, category, priority='Me
         
         # Create the ticket
         conn = sqlite3.connect(SUPPORT_DB)
-        cursor = conn.cursor()
-        
-        created_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
-        # Auto-assign staff if enabled
-        assigned_to = None
-        if config.auto_assign_enabled:
-            assigned_to = _get_auto_assignment(category, priority)
-        
-        # Estimate resolution time
-        estimated_resolution = _estimate_resolution_time(category, priority)
-        
-        cursor.execute('''
-        INSERT INTO support_tickets (
-            student_id, title, description, category, priority, status, 
-            created_datetime, assigned_to, sentiment, estimated_resolution, tags
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            student_id, title, description, category, priority, 'Open', 
-            created_time, assigned_to, sentiment, estimated_resolution, 
-            json.dumps(tags or [])
-        ))
-        
-        ticket_id = cursor.lastrowid
-        
-        # Handle attachments
-        if attachments:
-            _process_attachments(ticket_id, attachments, cursor)
-        
-        # Create auto-acknowledgment response
-        _create_auto_response(ticket_id, 'acknowledgment', cursor)
+        try:
+            cursor = conn.cursor()
 
-        # Commit and close main transaction BEFORE calling notification helper
-        # This prevents database locks from nested connections
-        conn.commit()
-        conn.close()
+            created_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+            # Auto-assign staff if enabled
+            assigned_to = None
+            if config.auto_assign_enabled:
+                assigned_to = _get_auto_assignment(category, priority)
+
+            # Estimate resolution time
+            estimated_resolution = _estimate_resolution_time(category, priority)
+
+            cursor.execute('''
+            INSERT INTO support_tickets (
+                student_id, title, description, category, priority, status, 
+                created_datetime, assigned_to, sentiment, estimated_resolution, tags
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                student_id, title, description, category, priority, 'Open', 
+                created_time, assigned_to, sentiment, estimated_resolution, 
+                json.dumps(tags or [])
+            ))
+
+            ticket_id = cursor.lastrowid
+
+            # Handle attachments
+            if attachments:
+                _process_attachments(ticket_id, attachments, cursor)
+
+            # Create auto-acknowledgment response
+            _create_auto_response(ticket_id, 'acknowledgment', cursor)
+
+            # Commit and close main transaction BEFORE calling notification helper
+            # This prevents database locks from nested connections
+            conn.commit()
+        finally:
+            conn.close()
 
         # Create notifications (now safe - main transaction is complete)
         _create_ticket_notifications(ticket_id, student_id, assigned_to, 'created')
@@ -237,7 +241,7 @@ def _build_ticket_query(student_id, filters, current_user):
         
         if filters.get('search'):
             base_query += " AND (title LIKE ? OR description LIKE ?)"
-            search_term = f"%{filters['search']}%"
+            search_term = f"%{escape_like(filters['search'])}%"
             params.extend([search_term, search_term])
     
     base_query += " ORDER BY created_datetime DESC"

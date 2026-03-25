@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/staff_hr/services/managers/sabbatical_manager.py
+# hypothesis_version: 6.151.9
+
+[365.25, 100, ' = ?', ' AND status = ?', ' WHERE plan_id = ?', ', ', 'action', 'application_id', 'approval_id', 'approved', 'approver', 'cnt', 'column', 'cover_arrangements', 'create', 'created_at', 'department', 'draft', 'earliest_start', 'end_date', 'faculty', 'funding_details', 'host_institution', 'interim', 'is_eligible', 'last_sabbatical_end', 'next_eligible_date', 'pay_percentage', 'pending', 'plan_id', 'provost', 'reason', 'rejected', 'report_id', 'report_type', 'research', 'research_proposal', 'return_completed', 'reviewed', 'reviewer', 'sabbatical_approval', 'sabbatical_type', 'start_date', 'status', 'submitted', 'title', 'update', 'updated_at = ?', 'updated_fields', 'user_id', 'years_of_service']

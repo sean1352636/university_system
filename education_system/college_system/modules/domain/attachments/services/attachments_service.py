@@ -3,6 +3,7 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import AttachmentError, ValidationError
 from education_system.college_system.infrastructure.database.db import connect
+from education_system.college_system.core.sql_safety import validate_identifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -29,10 +30,23 @@ class AttachmentService:
             raise ValidationError("file_path is required.")
         conn = self._conn()
         try:
+            # Build INSERT with only non-None values so DB defaults apply
+            fields = {k: v for k, v in {
+                'uploaded_by': kwargs.get('uploaded_by'),
+                'filename': kwargs.get('filename'),
+                'original_filename': kwargs.get('original_filename'),
+                'file_path': kwargs.get('file_path'),
+                'file_type': kwargs.get('file_type'),
+                'file_size': kwargs.get('file_size'),
+                'entity_type': kwargs.get('entity_type'),
+                'entity_id': kwargs.get('entity_id'),
+                'is_public': kwargs.get('is_public'),
+            }.items() if v is not None}
+            cols = ", ".join(fields.keys())
+            placeholders = ", ".join("?" for _ in fields)
             conn.execute(
-                """INSERT INTO attachments (uploaded_by, filename, original_filename, file_path, file_type, file_size, entity_type, entity_id, is_public)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (kwargs.get('uploaded_by'), kwargs.get('filename'), kwargs.get('original_filename'), kwargs.get('file_path'), kwargs.get('file_type'), kwargs.get('file_size'), kwargs.get('entity_type'), kwargs.get('entity_id'), kwargs.get('is_public'),),
+                f"INSERT INTO attachments ({cols}) VALUES ({placeholders})",
+                list(fields.values()),
             )
             conn.commit()
             row = conn.execute(
@@ -64,7 +78,7 @@ class AttachmentService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -82,7 +96,7 @@ class AttachmentService:
         if not updates:
             raise ValidationError("No valid fields to update.")
         updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [pk]
         conn = self._conn()
         try:
@@ -120,7 +134,7 @@ class AttachmentService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         conn = self._conn()
         try:

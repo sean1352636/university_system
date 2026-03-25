@@ -179,7 +179,7 @@ def setup_main_menu(self):
     integrations_menu.add_command(label="📅 Student Union Calendar",
                                  command=lambda: self.open_calendar_with_club_events())
     integrations_menu.add_command(label="🧳 Trip Management",
-                                 command=lambda: self.open_trip_gui_direct())
+                                 command=lambda: self.open_trip_management_dialog())
     # New Features menu
     features_menu = tk.Menu(self.menu_bar, tearoff=0)
     self.menu_bar.add_cascade(label="🆕 New Features", menu=features_menu)

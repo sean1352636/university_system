@@ -26,22 +26,22 @@ Managers (Function Modules)
 """
 
 # Import manager classes
-from .database_manager import DatabaseConnectionManager
-from .login_manager import LoginManager
-from .session_manager import SessionManager
-from .user_manager import UserManager
-from .permission_manager import PermissionManager
-from .role_manager import RoleManager
-from .mfa_manager import MFAManager
-from .account_security import AccountSecurityManager
-from .sso_manager import SSOManager
-from .webauthn_manager import WebAuthnManager
-from .biometric_manager import BiometricManager
-from .delegated_access_manager import DelegatedAccessManager
+from education_system.university_system.infrastructure.auth.managers.database_manager import DatabaseConnectionManager
+from education_system.university_system.infrastructure.auth.managers.login_manager import LoginManager
+from education_system.university_system.infrastructure.auth.managers.session_manager import SessionManager
+from education_system.university_system.infrastructure.auth.managers.user_manager import UserManager
+from education_system.university_system.infrastructure.auth.managers.permission_manager import PermissionManager
+from education_system.university_system.infrastructure.auth.managers.role_manager import RoleManager
+from education_system.university_system.infrastructure.auth.managers.mfa_manager import MFAManager
+from education_system.university_system.infrastructure.auth.managers.account_security import AccountSecurityManager
+from education_system.university_system.infrastructure.auth.managers.sso_manager import SSOManager
+from education_system.university_system.infrastructure.auth.managers.webauthn_manager import WebAuthnManager
+from education_system.university_system.infrastructure.auth.managers.biometric_manager import BiometricManager
+from education_system.university_system.infrastructure.auth.managers.delegated_access_manager import DelegatedAccessManager
 
 # Import function-based managers as modules
-from . import password_manager
-from . import activity_logger
+from education_system.university_system.infrastructure.auth.managers import password_manager
+from education_system.university_system.infrastructure.auth.managers import activity_logger
 
 __all__ = [
     # Manager classes

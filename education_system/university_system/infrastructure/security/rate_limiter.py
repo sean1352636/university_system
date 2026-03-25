@@ -86,6 +86,45 @@ class AttemptRecord:
     total_blocked_count: int = 0
 
 
+class InMemoryRateLimitStorage:
+    """In-memory storage backend for rate limiting."""
+
+    def __init__(self):
+        self._attempts: Dict[str, list] = defaultdict(list)
+        self._blocks: Dict[str, datetime] = {}
+        self._lock = threading.RLock()
+
+    def record_attempt(self, identifier: str) -> None:
+        with self._lock:
+            self._attempts[identifier].append(datetime.now())
+
+    def get_attempts(self, identifier: str, window_seconds: int = 300) -> list:
+        with self._lock:
+            cutoff = datetime.now() - timedelta(seconds=window_seconds)
+            attempts = self._attempts[identifier]
+            attempts[:] = [ts for ts in attempts if ts > cutoff]
+            return list(attempts)
+
+    def clear_attempts(self, identifier: str) -> None:
+        with self._lock:
+            self._attempts[identifier] = []
+            self._blocks.pop(identifier, None)
+
+    def is_blocked(self, identifier: str) -> bool:
+        with self._lock:
+            blocked_until = self._blocks.get(identifier)
+            if blocked_until is None:
+                return False
+            if blocked_until > datetime.now():
+                return True
+            del self._blocks[identifier]
+            return False
+
+    def set_block(self, identifier: str, block_until: datetime) -> None:
+        with self._lock:
+            self._blocks[identifier] = block_until
+
+
 class RedisRateLimitStorage:
     """
     Redis-backed storage for distributed rate limiting.
@@ -334,6 +373,7 @@ class RateLimiter:
         cleanup_interval: int = 3600,
         use_redis: bool = None,
         redis_key_prefix: str = "security_ratelimit",
+        config: Optional[RateLimitConfig] = None,
     ):
         """
         Initialize rate limiter.
@@ -346,7 +386,13 @@ class RateLimiter:
             cleanup_interval: Interval for cleaning old records (seconds)
             use_redis: Use Redis for distributed rate limiting (auto-detect if None)
             redis_key_prefix: Prefix for Redis keys when using distributed mode
+            config: Optional RateLimitConfig to override individual parameters
         """
+        if config is not None:
+            max_attempts = config.max_attempts
+            window_seconds = config.window_seconds
+            block_duration_seconds = config.block_duration_seconds
+            progressive_delay = config.progressive_delay
         self.max_attempts = max_attempts
         self.window_seconds = window_seconds
         self.block_duration_seconds = block_duration_seconds
@@ -657,6 +703,30 @@ class RateLimiter:
             if identifier in self._attempts:
                 del self._attempts[identifier]
                 logger.info(f"Rate limit reset for {identifier}")
+
+    def record_attempt(self, identifier: str) -> None:
+        """Record a single attempt without checking the limit.
+
+        This is useful when the calling code handles the allow/block logic
+        itself and just needs to track that an attempt was made.
+        """
+        with self._lock:
+            self._attempts[identifier].timestamps.append(datetime.now())
+
+    def get_delay(self, identifier: str) -> Optional[float]:
+        """Get progressive delay for the identifier based on attempt count.
+
+        Returns None or 0 if progressive delay is disabled.
+        """
+        if not self.progressive_delay:
+            return None
+
+        with self._lock:
+            attempts = self._get_attempts_in_window(identifier)
+            if attempts <= 1:
+                return None
+            # Exponential backoff: 0.5 * 2^(attempts-2)
+            return min(0.5 * (2 ** (attempts - 2)), 30.0)
 
     def reset_all(self) -> None:
         """Reset all rate limits."""

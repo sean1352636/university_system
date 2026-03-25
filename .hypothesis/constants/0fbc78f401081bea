@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/gui/medical_accommodation/__init__.py
+# hypothesis_version: 6.151.9
+
+['AccommodationGUI', 'GUI_CONFIG', 'GUI_VERSION', 'check_conflict', 'create_tooltip', 'format_date_display', 'get_status_color', 'gui_error_handler', 'main', 'validate_gui_input']

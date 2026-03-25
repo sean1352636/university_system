@@ -13,7 +13,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_screening_management(self):
     """Display screening management page."""
@@ -36,10 +36,12 @@ def show_screening_management(self):
     tk.Label(filter_frame, text=_t("cinema.screenings.filter_by_movie"), bg="#ffffff", fg="#333333").pack(side="left")
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, title FROM movies WHERE status = 'active' OR status IS NULL")
-    movies = [("all", "All Movies")] + [(str(m[0]), m[1]) for m in cursor.fetchall()]
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, title FROM movies WHERE status = 'active' OR status IS NULL")
+        movies = [("all", "All Movies")] + [(str(m[0]), m[1]) for m in cursor.fetchall()]
+    finally:
+        conn.close()
 
     movie_var = tk.StringVar(value="all")
     movie_combo = ttk.Combobox(filter_frame, textvariable=movie_var, width=30,
@@ -69,34 +71,36 @@ def show_screening_management(self):
             self.screening_tree.delete(item)
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        sql = '''
-            SELECT s.id, m.title, s.screen_number, s.show_time, s.price,
-                   (SELECT COUNT(*) FROM seats WHERE screening_id = s.id AND status = 'booked'),
-                   (SELECT COUNT(*) FROM seats WHERE screening_id = s.id AND status = 'available'),
-                   COALESCE(s.status, 'active')
-            FROM screenings s
-            JOIN movies m ON s.movie_id = m.id
-        '''
+            sql = '''
+                SELECT s.id, m.title, s.screen_number, s.show_time, s.price,
+                       (SELECT COUNT(*) FROM seats WHERE screening_id = s.id AND status = 'booked'),
+                       (SELECT COUNT(*) FROM seats WHERE screening_id = s.id AND status = 'available'),
+                       COALESCE(s.status, 'active')
+                FROM screenings s
+                JOIN movies m ON s.movie_id = m.id
+            '''
 
-        params = []
-        selected_movie = movie_combo.get()
-        if selected_movie != "All Movies":
-            movie_id = next((m[0] for m in movies if m[1] == selected_movie), None)
-            if movie_id and movie_id != "all":
-                sql += " WHERE s.movie_id = ?"
-                params.append(movie_id)
+            params = []
+            selected_movie = movie_combo.get()
+            if selected_movie != "All Movies":
+                movie_id = next((m[0] for m in movies if m[1] == selected_movie), None)
+                if movie_id and movie_id != "all":
+                    sql += " WHERE s.movie_id = ?"
+                    params.append(movie_id)
 
-        sql += " ORDER BY s.show_time DESC LIMIT 100"
-        cursor.execute(sql, params)
+            sql += " ORDER BY s.show_time DESC LIMIT 100"
+            cursor.execute(sql, params)
 
-        for row in cursor.fetchall():
-            self.screening_tree.insert("", "end", values=(
-                row[0], row[1][:25], f"Screen {row[2]}", row[3],
-                f"\u00a3{row[4]:.2f}", row[5], row[6], row[7].upper()
-            ))
-        conn.close()
+            for row in cursor.fetchall():
+                self.screening_tree.insert("", "end", values=(
+                    row[0], row[1][:25], f"Screen {row[2]}", row[3],
+                    f"\u00a3{row[4]:.2f}", row[5], row[6], row[7].upper()
+                ))
+        finally:
+            conn.close()
 
     load_screenings()
 
@@ -139,10 +143,12 @@ def show_add_screening_form(self):
     tk.Label(fields_frame, text=_t("cinema.screenings.fields.movie_required"), bg="#ffffff", fg="#333333").grid(row=1, column=0, sticky="w", pady=5)
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, title FROM movies WHERE status = 'active' OR status IS NULL")
-    movies = cursor.fetchall()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, title FROM movies WHERE status = 'active' OR status IS NULL")
+        movies = cursor.fetchall()
+    finally:
+        conn.close()
 
     movie_var = tk.StringVar()
     movie_combo = ttk.Combobox(fields_frame, textvariable=movie_var, width=37,
@@ -243,10 +249,12 @@ def edit_selected_screening(self):
     screening_id = self.screening_tree.item(selected[0])['values'][0]
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM screenings WHERE id = ?", (screening_id,))
-    screening = cursor.fetchone()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM screenings WHERE id = ?", (screening_id,))
+        screening = cursor.fetchone()
+    finally:
+        conn.close()
 
     if not screening:
         return
@@ -289,12 +297,14 @@ def edit_selected_screening(self):
             return
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute('''
-            UPDATE screenings SET screen_number=?, price=?, status=? WHERE id=?
-        ''', (int(screen_var.get()), price, status_var.get(), screening_id))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE screenings SET screen_number=?, price=?, status=? WHERE id=?
+            ''', (int(screen_var.get()), price, status_var.get(), screening_id))
+            conn.commit()
+        finally:
+            conn.close()
 
         messagebox.showinfo(_t("cinema.common.success"), "Screening updated!")
         form_window.destroy()
@@ -319,14 +329,16 @@ def cancel_selected_screening(self):
         return
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    cursor.execute("UPDATE screenings SET status = 'cancelled' WHERE id = ?", (screening_id,))
-    cursor.execute("UPDATE seats SET status = 'available' WHERE screening_id = ?", (screening_id,))
-    cursor.execute("UPDATE bookings SET status = 'cancelled' WHERE screening_id = ?", (screening_id,))
+        cursor.execute("UPDATE screenings SET status = 'cancelled' WHERE id = ?", (screening_id,))
+        cursor.execute("UPDATE seats SET status = 'available' WHERE screening_id = ?", (screening_id,))
+        cursor.execute("UPDATE bookings SET status = 'cancelled' WHERE screening_id = ?", (screening_id,))
 
-    conn.commit()
-    conn.close()
+        conn.commit()
+    finally:
+        conn.close()
 
     messagebox.showinfo(_t("cinema.common.success"), "Screening cancelled")
     self.show_screening_management()

@@ -4,12 +4,12 @@ Campus Navigation GUI Interface
 Provides graphical interface for campus navigation with interactive map.
 """
 
-from ._imports import tk, ttk, NavigationService, get_auth, _t
-from .map_canvas import MapCanvasMixin
-from .tabs.directory import DirectoryTabMixin
-from .tabs.route import RouteTabMixin
-from .tabs.nearest import NearestTabMixin
-from .tabs.favorites import FavoritesTabMixin
+from education_system.university_system.modules.domain.campus_navigation.gui._imports import tk, ttk, NavigationService, get_auth, _t
+from education_system.university_system.modules.domain.campus_navigation.gui.map_canvas import MapCanvasMixin
+from education_system.university_system.modules.domain.campus_navigation.gui.tabs.directory import DirectoryTabMixin
+from education_system.university_system.modules.domain.campus_navigation.gui.tabs.route import RouteTabMixin
+from education_system.university_system.modules.domain.campus_navigation.gui.tabs.nearest import NearestTabMixin
+from education_system.university_system.modules.domain.campus_navigation.gui.tabs.favorites import FavoritesTabMixin
 
 
 class NavigationGUI(

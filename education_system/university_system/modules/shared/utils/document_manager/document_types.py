@@ -1,4 +1,4 @@
-from ._common import sqlite3, get_connection, _t
+from education_system.university_system.modules.shared.utils.document_manager._common import sqlite3, get_connection, _t
 
 
 class DocumentTypeMixin:
@@ -243,7 +243,7 @@ class DocumentTypeMixin:
             # Most used document types
             cursor.execute('''
             SELECT dt.type_name, COUNT(*) as usage_count
-            FROM student_documents sd
+            FROM documents sd
             JOIN document_types dt ON sd.type_id = dt.type_id
             GROUP BY dt.type_name
             ORDER BY usage_count DESC
@@ -261,7 +261,7 @@ class DocumentTypeMixin:
             SELECT dt.type_name,
                    COUNT(*) as total,
                    SUM(CASE WHEN sd.verification_status = 'Verified' THEN 1 ELSE 0 END) as verified
-            FROM student_documents sd
+            FROM documents sd
             JOIN document_types dt ON sd.type_id = dt.type_id
             WHERE sd.is_current_version = 1
             GROUP BY dt.type_name

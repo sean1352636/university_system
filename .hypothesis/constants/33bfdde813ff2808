@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/parent_portal/menus.py
+# hypothesis_version: 6.151.9
+
+['#27ae60', '#3498db', '#7f8c8d', '#9b59b6', '#c0392b', '#e74c3c', '#f39c12', 'Admin', 'Arial', 'Title.TLabel', 'admin', 'bold', 'common.access_denied', 'italic', 'role', 'username', 'w']

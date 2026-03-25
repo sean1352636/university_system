@@ -1,27 +1,35 @@
-"""Input validation utilities."""
+"""Input validation utilities for the Secondary School system."""
 
-import re
 from education_system.secondary_school.core.exceptions import ValidationError
+from education_system.shared.auth.exceptions import ValidationError as _SharedValidationError
+from education_system.shared.validation import validators as _shared
 
 
-def validate_non_empty(value: str, field_name: str) -> str:
-    """Validate that a string is non-empty after stripping."""
-    if not value or not value.strip():
-        raise ValidationError(f"{field_name} cannot be empty.")
-    return value.strip()
+def _wrap(fn):
+    """Wrap a shared validator so it raises the secondary-specific ValidationError."""
+    def wrapper(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except _SharedValidationError as exc:
+            raise ValidationError(str(exc)) from exc
+    wrapper.__name__ = fn.__name__
+    wrapper.__doc__ = fn.__doc__
+    return wrapper
 
 
-def validate_email(email: str) -> str:
-    """Validate email format."""
-    email = email.strip()
-    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    if not re.match(pattern, email):
-        raise ValidationError(f"Invalid email format: {email}")
-    return email
+validate_email = _wrap(_shared.validate_email)
+validate_non_empty = _wrap(_shared.validate_non_empty)
+validate_date = _wrap(_shared.validate_date)
+validate_grade_score = _wrap(_shared.validate_grade_score)
+validate_positive_int = _wrap(_shared.validate_positive_int)
+validate_day_of_week = _wrap(_shared.validate_day_of_week)
+validate_time = _wrap(_shared.validate_time)
+validate_time_range = _wrap(_shared.validate_time_range)
 
 
 def validate_student_id(student_id: str) -> str:
     """Validate student ID format (e.g., SEC0001)."""
+    import re
     student_id = student_id.strip().upper()
     if not re.match(r'^SEC\d{4}$', student_id):
         raise ValidationError(f"Invalid student ID format: {student_id}")

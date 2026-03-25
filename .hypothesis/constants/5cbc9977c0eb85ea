@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/communication/communication_manager.py
+# hypothesis_version: 6.151.9
+
+['body', 'email', 'email_enabled = ?', 'normal', 'preferred_method = ?', 'push_enabled = ?', 'sms_enabled = ?', 'subject', 'target_audience']

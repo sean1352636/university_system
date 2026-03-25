@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/student_support/operations/bulk_operations.py
+# hypothesis_version: 6.151.9
+
+['\nCategories:', '\nPriorities:', '\nSelect operation: ', '\nStatuses:', '\n📦 BULK OPERATIONS', '%Y-%m-%d %H:%M:%S', ',', '1', '1. CSV', '2', '2. JSON', '3', '4', '5', '5. Merge tickets', '6', '6. Back', '=', 'Export formats:', 'admin', 'assigned_to', 'assigned_to = ?', 'category', 'category = ?', 'csv', 'id', 'json', 'priority', 'priority = ?', 'role', 'staff', 'status', 'status = ?', 'tickets', 'w', 'y', '❌ Invalid choice.']

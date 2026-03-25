@@ -4,7 +4,7 @@ import logging
 import random
 from datetime import datetime
 
-from . import restaurant_context as ctx
+from education_system.university_system.modules.domain.commerce.services.restaurant.operations import restaurant_context as ctx
 from education_system.university_system.modules.domain.commerce.services.restaurant.operations.restaurant_context import (
     backup_before_operation,
     expense_analytics,
@@ -24,9 +24,9 @@ def profit_loss_statement():
 
         # Revenue
         cursor.execute('''
-            SELECT SUM(total_price) as total_revenue
-            FROM restaurant_orders
-            WHERE DATE(order_time) BETWEEN ? AND ? AND status = 'Completed'
+            SELECT SUM(total_amount) as total_revenue
+            FROM orders
+            WHERE DATE(order_date) BETWEEN ? AND ? AND order_status = 'Completed'
         ''', (start_date, end_date))
 
         revenue = cursor.fetchone()[0] or 0
@@ -34,10 +34,10 @@ def profit_loss_statement():
         # Cost of Goods Sold (estimated from menu items cost)
         cursor.execute('''
             SELECT SUM(oi.quantity * mi.cost_price) as cogs
-            FROM restaurant_order_items oi
+            FROM order_items oi
             JOIN menu_items mi ON oi.item_id = mi.item_id
-            JOIN restaurant_orders o ON oi.order_id = o.order_id
-            WHERE DATE(o.order_time) BETWEEN ? AND ? AND o.status = 'Completed'
+            JOIN orders o ON oi.order_id = o.order_id
+            WHERE DATE(o.order_date) BETWEEN ? AND ? AND o.order_status = 'Completed'
             AND mi.cost_price IS NOT NULL
         ''', (start_date, end_date))
 

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/mfa_integration.py
+# hypothesis_version: 6.151.9
+
+['=', 'Login successful', '__main__', 'action', 'admin', 'allow', 'already_enabled', 'bypassed', 'data', 'deadline', 'enabled', 'error', 'grace', 'grace_deadline', 'grace_period', 'locked', 'message', 'methods', 'mfa_check_failed', 'must_verify', 'needs_setup', 'require_mfa', 'require_setup', 'required', 'setup_required', 'success', 'trust_token', 'trusted', 'trusted_device', 'user_id']

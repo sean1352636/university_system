@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/security/file_upload_validator.py
+# hypothesis_version: 6.151.9
+
+[200, 1024, 8192, 100000000, '\x00', '.', '/', '7z', 'FileUploadValidator', 'Unknown', '[^a-zA-Z0-9._-]', '\\.{2,}', '_', '_getexif', 'aac', 'app', 'avatar_validator', 'avi', 'bash', 'bat', 'bmp', 'bz2', 'cmd', 'com', 'cpl', 'csv', 'deb', 'dll', 'dmg', 'doc', 'document_validator', 'docx', 'drv', 'exe', 'flac', 'flv', 'gif', 'gz', 'hta', 'ico', 'image_validator', 'inf', 'jar', 'job', 'jpeg', 'jpg', 'js', 'jse', 'lnk', 'm4a', 'm4v', 'mkv', 'mov', 'mp3', 'mp4', 'msi', 'ocx', 'odp', 'ods', 'odt', 'ogg', 'pdf', 'pif', 'pkg', 'png', 'ppt', 'pptx', 'ps1', 'rar', 'rb', 'reg', 'rpm', 'rtf', 'scr', 'sh', 'sha256', 'strict_validator', 'svg', 'sys', 'tar', 'txt', 'unnamed_file', 'vb', 'vbe', 'vbs', 'wav', 'webm', 'webp', 'wma', 'wmv', 'ws', 'wsf', 'wsh', 'xls', 'xlsx', 'xz', 'zip']

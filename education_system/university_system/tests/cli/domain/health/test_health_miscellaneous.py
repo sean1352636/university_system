@@ -189,7 +189,7 @@ class TestForwardedFunctionsWork:
         """Test CSV validation function exists"""
         assert callable(validate_csv_format)
 
-    @patch('university_system.modules.core.services.health_misc.get_connection')
+    @patch('education_system.university_system.modules.domain.health.services.get_connection')
     def test_get_connection_forwarding(self, mock_get_connection):
         """Test get_connection is properly forwarded"""
         mock_conn = Mock()
@@ -247,7 +247,7 @@ class TestBackwardsCompatibility:
     def test_all_health_misc_functions_accessible(self):
         """Test all health_misc functions are accessible through this module"""
         from education_system.university_system.modules.domain.health.portal import miscellaneous
-        from education_system.university_system.modules.core.services import health_misc
+        from education_system.university_system.modules.domain.health import services as health_misc
 
         # Get all public functions from health_misc
         health_misc_functions = [
@@ -268,7 +268,7 @@ class TestBackwardsCompatibility:
 class TestIntegration:
     """Integration tests for the forwarding module"""
 
-    @patch('university_system.modules.core.services.health_misc.get_connection')
+    @patch('education_system.university_system.modules.domain.health.services.get_connection')
     def test_database_function_integration(self, mock_get_connection):
         """Test database functions work through forwarding"""
         mock_conn = Mock()

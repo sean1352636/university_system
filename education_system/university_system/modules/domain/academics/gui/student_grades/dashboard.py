@@ -2,9 +2,10 @@
 Dashboard mixin - GPA overview, statistics cards, and quick actions.
 """
 
-from .common_imports import (
-    ttk,
-    logging,
+from tkinter import ttk
+import logging
+
+from education_system.university_system.modules.domain.academics.gui.student_grades.common_imports import (
     get_connection,
     create_stat_card,
     format_grade,

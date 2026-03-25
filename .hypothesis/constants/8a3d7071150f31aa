@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/financial_aid/admin_portal/report_export.py
+# hypothesis_version: 6.151.9
+
+[0.1, '%Y%m%d_%H%M%S', '%Y-%m-%d %H:%M:%S', '&', '&amp;', '&gt;', '&lt;', '*.*', '*.csv', '*.pdf', '*.txt', '.csv', '.pdf', '.txt', '<', '>', 'All files', 'CSV files', 'Courier', 'Email Error', 'Email Sent', 'Export Error', 'Export Successful', 'No Admin Email', 'Normal', 'PDF Library Missing', 'PDF files', 'ReportStyle', 'Text files', 'csv', 'email', 'export', 'financial_aid_report', 'format', 'pdf', 'recipient', 'report_content', 'report_name', 'report_type', 'timestamp', 'txt', 'utf-8', 'w']

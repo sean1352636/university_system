@@ -17,21 +17,23 @@ class ExtensionsMixin:
                 return
 
             conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('''
-            SELECT a.id, a.title, a.due_date, a.module_code
-            FROM assignments a
-            JOIN student_modules sm ON a.module_code = sm.module_code
-            WHERE sm.student_id = ? AND a.is_active = 1
-            AND a.due_date > datetime('now')
-            ORDER BY a.due_date
-            ''', (student_id,))
+                cursor.execute('''
+                SELECT a.id, a.title, a.due_date, a.module_code
+                FROM assignments a
+                JOIN student_modules sm ON a.module_code = sm.module_code
+                WHERE sm.student_id = ? AND a.is_active = 1
+                AND a.due_date > datetime('now')
+                ORDER BY a.due_date
+                ''', (student_id,))
 
-            assignments = cursor.fetchall()
+                assignments = cursor.fetchall()
 
-            if not assignments:
-                print("No upcoming assignments found.")
+                if not assignments:
+                    print("No upcoming assignments found.")
+            finally:
                 conn.close()
                 return
 
@@ -204,33 +206,35 @@ class ExtensionsMixin:
                 return False
 
             conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            reviewer_id = self._get_student_id()
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                reviewer_id = self._get_student_id()
 
-            cursor.execute('SELECT assignment_id, student_id, new_due_date FROM extension_requests WHERE id = ?', (request_id,))
-            result = cursor.fetchone()
+                cursor.execute('SELECT assignment_id, student_id, new_due_date FROM extension_requests WHERE id = ?', (request_id,))
+                result = cursor.fetchone()
 
-            if not result:
-                print("Extension request not found")
-                return False
+                if not result:
+                    print("Extension request not found")
+                    return False
 
-            assignment_id, student_id, new_due_date = result
+                assignment_id, student_id, new_due_date = result
 
-            cursor.execute('''
-                UPDATE extension_requests
-                SET status = 'approved', reviewed_by = ?, reviewed_at = ?
-                WHERE id = ?
-            ''', (reviewer_id, timestamp, request_id))
+                cursor.execute('''
+                    UPDATE extension_requests
+                    SET status = 'approved', reviewed_by = ?, reviewed_at = ?
+                    WHERE id = ?
+                ''', (reviewer_id, timestamp, request_id))
 
-            self._send_notification(student_id, "Extension Approved",
-                                  f"Your extension request has been approved until {new_due_date}",
-                                  "extension_approved", assignment_id)
+                self._send_notification(student_id, "Extension Approved",
+                                      f"Your extension request has been approved until {new_due_date}",
+                                      "extension_approved", assignment_id)
 
-            conn.commit()
-            self._log_action('update', 'extension_requests', request_id, {'status': 'approved'})
-            conn.close()
+                conn.commit()
+                self._log_action('update', 'extension_requests', request_id, {'status': 'approved'})
+            finally:
+                conn.close()
 
             print("Extension approved successfully!")
             return True
@@ -247,33 +251,35 @@ class ExtensionsMixin:
                 return False
 
             conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            reviewer_id = self._get_student_id()
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                reviewer_id = self._get_student_id()
 
-            cursor.execute('SELECT assignment_id, student_id FROM extension_requests WHERE id = ?', (request_id,))
-            result = cursor.fetchone()
+                cursor.execute('SELECT assignment_id, student_id FROM extension_requests WHERE id = ?', (request_id,))
+                result = cursor.fetchone()
 
-            if not result:
-                print("Extension request not found")
-                return False
+                if not result:
+                    print("Extension request not found")
+                    return False
 
-            assignment_id, student_id = result
+                assignment_id, student_id = result
 
-            cursor.execute('''
-                UPDATE extension_requests
-                SET status = 'rejected', reviewed_by = ?, reviewed_at = ?, reviewer_notes = ?
-                WHERE id = ?
-            ''', (reviewer_id, timestamp, reason, request_id))
+                cursor.execute('''
+                    UPDATE extension_requests
+                    SET status = 'rejected', reviewed_by = ?, reviewed_at = ?, reviewer_notes = ?
+                    WHERE id = ?
+                ''', (reviewer_id, timestamp, reason, request_id))
 
-            self._send_notification(student_id, "Extension Rejected",
-                                  f"Your extension request has been rejected. {reason}",
-                                  "extension_rejected", assignment_id)
+                self._send_notification(student_id, "Extension Rejected",
+                                      f"Your extension request has been rejected. {reason}",
+                                      "extension_rejected", assignment_id)
 
-            conn.commit()
-            self._log_action('update', 'extension_requests', request_id, {'status': 'rejected'})
-            conn.close()
+                conn.commit()
+                self._log_action('update', 'extension_requests', request_id, {'status': 'rejected'})
+            finally:
+                conn.close()
 
             print("Extension rejected successfully!")
             return True
@@ -315,16 +321,18 @@ class ExtensionsMixin:
                 student_id = self._get_student_id()
 
             conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('''
-                SELECT * FROM extension_requests
-                WHERE student_id = ?
-                ORDER BY requested_at DESC
-            ''', (student_id,))
+                cursor.execute('''
+                    SELECT * FROM extension_requests
+                    WHERE student_id = ?
+                    ORDER BY requested_at DESC
+                ''', (student_id,))
 
-            requests = cursor.fetchall()
-            conn.close()
+                requests = cursor.fetchall()
+            finally:
+                conn.close()
             return requests
 
         except Exception as e:

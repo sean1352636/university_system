@@ -41,7 +41,7 @@ from education_system.university_system.modules.shared.utils.gui_language_select
 )
 
 # ── standalone constants & helpers ──────────────────────────────────────────
-from .standalone.constants import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.standalone.constants import (
     DB_PATH,
     DEFAULT_DB_PATH,
     ENHANCED_AVAILABLE,
@@ -53,7 +53,7 @@ from .standalone.constants import (
 )
 
 # ── standalone function groups ──────────────────────────────────────────────
-from .standalone.data_utils import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.standalone.data_utils import (
     serialize_dataframe,
     get_template,
     get_section_dataframe,
@@ -63,7 +63,7 @@ from .standalone.data_utils import (
     get_original_section_data_complete,
 )
 
-from .standalone.chart_builders import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.standalone.chart_builders import (
     create_advanced_visualization,
     create_interactive_chart,
     create_standard_chart,
@@ -74,7 +74,7 @@ from .standalone.chart_builders import (
     create_enhanced_data_table,
 )
 
-from .standalone.report_generators import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.standalone.report_generators import (
     generate_enhanced_pdf_report,
     generate_enhanced_section,
     generate_quality_section,
@@ -83,13 +83,13 @@ from .standalone.report_generators import (
     generate_interactive_report,
 )
 
-from .standalone.settings_functions import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.standalone.settings_functions import (
     show_directory_settings,
     show_theme_settings,
     validate_email_settings,
 )
 
-from .standalone.system_ops import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.standalone.system_ops import (
     run_system_maintenance,
     cleanup_old_reports,
     load_scheduled_reports,
@@ -100,7 +100,7 @@ from .standalone.system_ops import (
 
 # Re-export service-layer symbols that the old core.py pulled in and that
 # wrapper files may rely on transitively.
-from .standalone.constants import (  # noqa: F811
+from education_system.university_system.modules.shared.gui.enhanced_reporting.standalone.constants import (  # noqa: F811
     ENHANCED_AVAILABLE as _EA,
 )
 
@@ -127,7 +127,7 @@ else:
 
 
 # ── mixin imports ───────────────────────────────────────────────────────────
-from .mixins import (
+from education_system.university_system.modules.shared.gui.enhanced_reporting.mixins import (
     ApiHandlersMixin,
     TemplatesMixin,
     ReportsMixin,

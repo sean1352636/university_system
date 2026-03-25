@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from .config import get_reporting_db_connection
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting.config import get_reporting_db_connection
 
 
 class DataQualityMonitor:

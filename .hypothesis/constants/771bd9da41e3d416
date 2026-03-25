@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/batch_operations/mixins/data_quality.py
+# hypothesis_version: 6.151.9
+
+[0.1, 100, 'address', 'date_of_birth', 'duplicates_found', 'email', 'generated_at', 'invalid_emails', 'issues', 'metrics', 'missing_data', 'overall_score', 'phone', 'recommendations', 'total_students']

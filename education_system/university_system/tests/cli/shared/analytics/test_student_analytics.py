@@ -22,7 +22,7 @@ from education_system.university_system.modules.shared.services.analytics.studen
 @pytest.fixture
 def analytics():
     """Create StudentAnalytics instance for testing"""
-    with patch('university_system.modules.shared.services.analytics.student_analytics.base.get_connection'):
+    with patch('education_system.university_system.modules.shared.services.analytics.student_analytics.base.get_connection'):
         return StudentAnalytics(gui_mode=True)
 
 
@@ -71,7 +71,7 @@ class TestStudentAnalyticsInit:
 
     def test_init_default(self):
         """Test default initialization"""
-        with patch('university_system.modules.shared.services.analytics.student_analytics.base.get_connection'):
+        with patch('education_system.university_system.modules.shared.services.analytics.student_analytics.base.get_connection'):
             analytics = StudentAnalytics()
 
             assert hasattr(analytics, 'db_path')
@@ -81,14 +81,14 @@ class TestStudentAnalyticsInit:
 
     def test_init_gui_mode(self):
         """Test initialization with GUI mode"""
-        with patch('university_system.modules.shared.services.analytics.student_analytics.base.get_connection'):
+        with patch('education_system.university_system.modules.shared.services.analytics.student_analytics.base.get_connection'):
             analytics = StudentAnalytics(gui_mode=True)
             assert analytics.gui_mode is True
 
     def test_create_directories(self):
         """Test directory creation"""
         with tempfile.TemporaryDirectory() as tmpdir:
-            with patch('university_system.modules.shared.services.analytics.student_analytics.base.get_connection'):
+            with patch('education_system.university_system.modules.shared.services.analytics.student_analytics.base.get_connection'):
                 analytics = StudentAnalytics()
                 analytics.plots_dir = os.path.join(tmpdir, 'plots')
                 analytics.reports_dir = os.path.join(tmpdir, 'reports')

@@ -13,7 +13,7 @@ class TestChatbotGUIModule:
 
     def test_chatbot_gui_file_exists(self):
         """Test that chatbot GUI file exists."""
-        gui_file = Path("university_system/utils/ai/gui/university_chatbot_gui.py")
+        gui_file = Path(__file__).resolve().parents[4] / "utils" / "ai" / "gui" / "university_chatbot_gui.py"
         assert gui_file.exists()
 
     def test_chatbot_gui_imports(self):
@@ -48,7 +48,7 @@ class TestChatbotGUIIntegration:
     def test_chatbot_gui_uses_tkinter(self):
         """Test that chatbot GUI uses tkinter."""
         try:
-            gui_file = Path("university_system/utils/ai/gui/chatbot_gui.py")
+            gui_file = Path(__file__).resolve().parents[4] / "utils" / "ai" / "gui" / "university_chatbot_gui.py"
             content = gui_file.read_text()
 
             assert 'tkinter' in content.lower() or 'tk' in content
@@ -62,7 +62,7 @@ class TestChatbotGUIDirectory:
 
     def test_gui_directory_exists(self):
         """Test that GUI directory exists."""
-        gui_dir = Path("university_system/utils/ai/gui")
+        gui_dir = Path(__file__).resolve().parents[4] / "utils" / "ai" / "gui"
         assert gui_dir.exists()
         assert gui_dir.is_dir()
 

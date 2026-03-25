@@ -2,6 +2,7 @@
 
 from datetime import datetime
 import logging
+from education_system.secondary_school.core.sql_safety import validate_identifier, escape_like
 
 from education_system.secondary_school.core.exceptions import SubjectError, ValidationError
 from education_system.secondary_school.infrastructure.database.db import connect
@@ -82,7 +83,8 @@ class SubjectService:
             params.append(department)
         if search:
             sql += " AND (subject_code LIKE ? OR title LIKE ?)"
-            term = f"%{search}%"
+            escaped = escape_like(search)
+            term = f"%{escaped}%"
             params.extend([term, term])
 
         sql += " ORDER BY department, subject_code LIMIT ? OFFSET ?"
@@ -103,7 +105,7 @@ class SubjectService:
             raise ValidationError("No valid fields to update.")
 
         updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [subject_pk]
 
         conn = self._conn()

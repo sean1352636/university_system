@@ -5,9 +5,11 @@ Main entry point that composes the browse and enrollment mixins
 into a tabbed notebook interface.
 """
 
-from .common_imports import *
-from .browse_modules import BrowseModulesMixin
-from .enrollment import EnrollmentMixin
+from tkinter import ttk
+
+from education_system.university_system.modules.domain.academics.gui.student_registration.common_imports import get_auth, get_student_id
+from education_system.university_system.modules.domain.academics.gui.student_registration.browse_modules import BrowseModulesMixin
+from education_system.university_system.modules.domain.academics.gui.student_registration.enrollment import EnrollmentMixin
 
 
 class StudentRegistrationPortal(BrowseModulesMixin, EnrollmentMixin):

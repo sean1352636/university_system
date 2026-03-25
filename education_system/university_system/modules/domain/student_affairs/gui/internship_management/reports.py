@@ -1,4 +1,4 @@
-from ._imports import messagebox, tk, ttk, sqlite3, get_connection
+from education_system.university_system.modules.domain.student_affairs.gui.internship_management._imports import messagebox, tk, ttk, sqlite3, get_connection
 
 
 class ReportsMixin:

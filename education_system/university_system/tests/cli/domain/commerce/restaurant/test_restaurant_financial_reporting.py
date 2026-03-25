@@ -12,7 +12,7 @@ import tempfile
 
 # Import the module to test
 from education_system.university_system.modules.domain.commerce.services.restaurant.operations import financial_reporting
-from education_system.university_system.modules.shared.constants import paths
+from education_system.university_system.core import paths
 
 @pytest.fixture
 def test_db():
@@ -156,7 +156,7 @@ def mock_auth():
 class TestDailySalesReport:
     """Test daily sales report generation"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.financial_reporting.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.financial_reporting.get_db_connection')
     def test_daily_sales_report_today(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test generating daily sales report for today"""
         financial_reporting.set_auth(mock_auth)
@@ -173,7 +173,7 @@ class TestDailySalesReport:
         assert 'Total Orders:' in captured.out
         assert 'Total Revenue:' in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.financial_reporting.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.financial_reporting.get_db_connection')
     def test_daily_sales_report_specific_date(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test generating daily sales report for specific date"""
         financial_reporting.set_auth(mock_auth)
@@ -193,7 +193,7 @@ class TestDailySalesReport:
 class TestMonthlySummary:
     """Test monthly financial summary"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.financial_reporting.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.financial_reporting.get_db_connection')
     def test_monthly_summary_valid_month(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test generating monthly summary with valid inputs"""
         financial_reporting.set_auth(mock_auth)
@@ -211,7 +211,7 @@ class TestMonthlySummary:
         assert 'REVENUE:' in captured.out
         assert 'EXPENSES:' in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.financial_reporting.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.financial_reporting.get_db_connection')
     def test_monthly_summary_invalid_month(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test handling of invalid month input"""
         financial_reporting.set_auth(mock_auth)
@@ -228,7 +228,7 @@ class TestMonthlySummary:
 class TestTaxReports:
     """Test tax reporting functions"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.financial_reporting.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.financial_reporting.get_db_connection')
     def test_generate_vat_report(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test VAT report generation"""
         financial_reporting.set_auth(mock_auth)
@@ -246,7 +246,7 @@ class TestTaxReports:
         assert 'VAT Rate:' in captured.out
         assert 'Net VAT Due:' in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.financial_reporting.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.financial_reporting.get_db_connection')
     def test_generate_sales_tax_summary(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test sales tax summary generation"""
         financial_reporting.set_auth(mock_auth)
@@ -265,7 +265,7 @@ class TestTaxReports:
 class TestFinancialExports:
     """Test financial data export functions"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.financial_reporting.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.financial_reporting.get_db_connection')
     def test_export_complete_financial_data(self, mock_get_conn, test_db, mock_auth, capsys, tmp_path):
         """Test complete financial data export"""
         financial_reporting.set_auth(mock_auth)
@@ -287,7 +287,7 @@ class TestFinancialExports:
         csv_files = list(tmp_path.glob('*.csv'))
         assert len(csv_files) > 0
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.financial_reporting.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.financial_reporting.get_db_connection')
     def test_export_sales_data(self, mock_get_conn, test_db, mock_auth, capsys, tmp_path):
         """Test sales data export"""
         financial_reporting.set_auth(mock_auth)
@@ -307,7 +307,7 @@ class TestFinancialExports:
 class TestPayrollExport:
     """Test payroll export functionality"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.financial_reporting.get_db_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.financial_reporting.get_db_connection')
     def test_export_payroll_report(self, mock_get_conn, test_db, mock_auth, capsys, tmp_path):
         """Test payroll report export"""
         financial_reporting.set_auth(mock_auth)
@@ -380,7 +380,7 @@ class TestSetAuth:
 class TestFinancialReportsMenu:
     """Test financial reports menu"""
 
-    @patch('university_system.modules.domain.commerce.services.restaurant.operations.financial_reporting.daily_sales_report')
+    @patch('education_system.university_system.modules.domain.commerce.services.restaurant.operations.financial_reporting.daily_sales_report')
     def test_display_financial_reports_daily_sales(self, mock_daily_sales, mock_auth):
         """Test selecting daily sales report from menu"""
         financial_reporting.set_auth(mock_auth)

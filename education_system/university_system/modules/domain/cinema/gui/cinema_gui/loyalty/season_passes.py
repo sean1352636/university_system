@@ -15,8 +15,8 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
-from ..constants import SEASON_PASSES
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.constants import SEASON_PASSES
 
 def show_season_passes_page(self):
     self.clear_content()
@@ -37,11 +37,13 @@ def show_season_passes_page(self):
     for col in columns:
         self.pass_tree.heading(col, text=col)
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM season_passes ORDER BY id DESC")
-    for row in cursor.fetchall():
-        self.pass_tree.insert("", "end", values=(row[0], row[1], row[3], row[5].title(), row[7], row[8], row[9], row[10].upper()))
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM season_passes ORDER BY id DESC")
+        for row in cursor.fetchall():
+            self.pass_tree.insert("", "end", values=(row[0], row[1], row[3], row[5].title(), row[7], row[8], row[9], row[10].upper()))
+    finally:
+        conn.close()
     self.pass_tree.pack(fill="both", expand=True, side="left")
     scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.pass_tree.yview)
     self.pass_tree.configure(yscrollcommand=scrollbar.set)
@@ -74,11 +76,13 @@ def sell_pass(self):
         start = datetime.now().strftime("%Y-%m-%d")
         end = (datetime.now() + timedelta(days=SEASON_PASSES[type_var.get()]['duration_days'])).strftime("%Y-%m-%d")
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO season_passes (pass_code, customer_name, customer_email, pass_type, start_date, end_date) VALUES (?, ?, ?, ?, ?, ?)",
-                      (code, name_e.get(), email_e.get(), type_var.get(), start, end))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO season_passes (pass_code, customer_name, customer_email, pass_type, start_date, end_date) VALUES (?, ?, ?, ?, ?, ?)",
+                          (code, name_e.get(), email_e.get(), type_var.get(), start, end))
+            conn.commit()
+        finally:
+            conn.close()
         messagebox.showinfo(_t("cinema.common.success"), f"Pass Code: {code}\nValid until: {end}")
         form.destroy()
         self.show_season_passes_page()
@@ -101,10 +105,12 @@ def verify_pass(self):
     def verify():
         code = code_e.get().strip().upper()
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM season_passes WHERE pass_code = ?", (code,))
-        result = cursor.fetchone()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM season_passes WHERE pass_code = ?", (code,))
+            result = cursor.fetchone()
+        finally:
+            conn.close()
         if result:
             valid = result[10] == 'active' and result[8] >= datetime.now().strftime("%Y-%m-%d")
             if valid:

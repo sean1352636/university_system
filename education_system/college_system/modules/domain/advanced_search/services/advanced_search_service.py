@@ -3,6 +3,7 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import AdvancedSearchError, ValidationError
 from education_system.college_system.infrastructure.database.db import connect
+from education_system.college_system.core.sql_safety import validate_identifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,10 +26,19 @@ class AdvancedSearchService:
             raise ValidationError("query is required.")
         conn = self._conn()
         try:
+            # Build INSERT with only non-None values so DB defaults apply
+            fields = {k: v for k, v in {
+                'user_id': kwargs.get('user_id'),
+                'query': kwargs.get('query'),
+                'module_filter': kwargs.get('module_filter'),
+                'result_count': kwargs.get('result_count'),
+                'searched_at': kwargs.get('searched_at'),
+            }.items() if v is not None}
+            cols = ", ".join(fields.keys())
+            placeholders = ", ".join("?" for _ in fields)
             conn.execute(
-                """INSERT INTO search_history (user_id, query, module_filter, result_count, searched_at)
-                   VALUES (?, ?, ?, ?, ?)""",
-                (kwargs.get('user_id'), kwargs.get('query'), kwargs.get('module_filter'), kwargs.get('result_count'), kwargs.get('searched_at'),),
+                f"INSERT INTO search_history ({cols}) VALUES ({placeholders})",
+                list(fields.values()),
             )
             conn.commit()
             row = conn.execute(
@@ -60,7 +70,7 @@ class AdvancedSearchService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -78,7 +88,7 @@ class AdvancedSearchService:
         if not updates:
             raise ValidationError("No valid fields to update.")
         updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [pk]
         conn = self._conn()
         try:
@@ -116,7 +126,7 @@ class AdvancedSearchService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         conn = self._conn()
         try:

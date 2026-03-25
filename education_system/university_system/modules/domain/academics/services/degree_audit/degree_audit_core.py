@@ -367,7 +367,7 @@ class WhatIfScenarioManager:
         try:
             # Get current courses completed
             cursor.execute('''
-                SELECT module_code, credits
+                SELECT sm.module_code, m.credits
                 FROM student_modules sm
                 JOIN modules m ON sm.module_code = m.module_code
                 WHERE sm.student_id = ?

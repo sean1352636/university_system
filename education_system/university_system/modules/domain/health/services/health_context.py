@@ -54,10 +54,10 @@ cipher_suite = Fernet(ENCRYPTION_KEY)
 # These will be available to all modules importing context
 def get_user_student_id(auth):
     """Get the student_id for the currently logged-in user."""
-    from . import contacts
+    from education_system.university_system.modules.domain.health.services import contacts
     return contacts.get_user_student_id(auth)
 
 def ensure_templates_schema():
     """Ensure the templates schema exists."""
-    from . import health_db_backup
+    from education_system.university_system.modules.domain.health.services import health_db_backup
     return health_db_backup.ensure_templates_schema()

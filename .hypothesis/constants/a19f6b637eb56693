@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/services/trip_management/registrations.py
+# hypothesis_version: 6.151.9
+
+[100, 120, '%Y-%m-%d %H:%M:%S', '-', '1', '2', '3', '4', '=', 'Available Trips:', 'Cost: £{cost:.2f}', 'Enter choice (1-4): ', 'Invalid choice.', 'Management Options:', 'N/A', 'No trips found.', 'Registering for trip', 'Removal cancelled.', 'Student {student_id}', 'Trip not found.', 'attended', 'cancelled', 'id', 'paid', 'partial', 'pending', 'refunded', 'register_for_trips', 'registered', 'role', 'student', 'trips', 'waitlist', 'y']

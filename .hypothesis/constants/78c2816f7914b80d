@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/database/migrations/add_student_modules_columns.py
+# hypothesis_version: 6.151.9
+
+['-', '=', '__main__', 'completion_date', 'conn', 'grade', 'module_name', 'module_type', 'status']

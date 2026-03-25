@@ -5,7 +5,10 @@ Provides the registration dashboard and the available-modules browser
 with search, filtering, and module detail views.
 """
 
-from .common_imports import *
+import tkinter as tk
+from tkinter import ttk, messagebox
+
+from education_system.university_system.modules.domain.academics.gui.student_registration.common_imports import COLORS, create_stat_card, get_connection, logger
 
 
 class BrowseModulesMixin:
@@ -178,12 +181,13 @@ class BrowseModulesMixin:
             conn = get_connection()
             cursor = conn.cursor()
             query = (
-                "SELECT module_code, module_name, credits, department, max_capacity "
+                "SELECT module_code, module_name, credits, department "
                 "FROM modules ORDER BY module_code"
             )
             cursor.execute(query)
             for row in cursor.fetchall():
-                code, name, credits_val, department, capacity = row
+                code, name, credits_val, department = row
+                capacity = None
                 # Apply search filter
                 if search_text and search_text not in (code or '').lower() and search_text not in (name or '').lower():
                     continue
@@ -231,7 +235,7 @@ class BrowseModulesMixin:
             cursor = conn.cursor()
             cursor.execute(
                 "SELECT module_code, module_name, credits, department, "
-                "max_capacity, description FROM modules WHERE module_code = ?",
+                "description FROM modules WHERE module_code = ?",
                 (module_code,),
             )
             row = cursor.fetchone()
@@ -252,7 +256,8 @@ class BrowseModulesMixin:
             messagebox.showwarning("Not Found", f"Module {module_code} not found.")
             return
 
-        code, name, credits_val, department, capacity, description = row
+        code, name, credits_val, department, description = row
+        capacity = None
 
         dlg = tk.Toplevel(self.parent_frame)
         dlg.title(f"Module Details - {code}")

@@ -13,7 +13,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_corporate_page(self):
     self.clear_content()
@@ -28,11 +28,13 @@ def show_corporate_page(self):
     for col in columns:
         self.corp_tree.heading(col, text=col)
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM corporate_accounts ORDER BY company_name")
-    for row in cursor.fetchall():
-        self.corp_tree.insert("", "end", values=(row[0], row[1], row[2], row[3], f"\u00a3{row[7]:.2f}", f"\u00a3{row[8]:.2f}", f"{row[10]}%", row[11].upper()))
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM corporate_accounts ORDER BY company_name")
+        for row in cursor.fetchall():
+            self.corp_tree.insert("", "end", values=(row[0], row[1], row[2], row[3], f"\u00a3{row[7]:.2f}", f"\u00a3{row[8]:.2f}", f"{row[10]}%", row[11].upper()))
+    finally:
+        conn.close()
     self.corp_tree.pack(fill="both", expand=True, side="left")
     scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.corp_tree.yview)
     self.corp_tree.configure(yscrollcommand=scrollbar.set)
@@ -67,11 +69,13 @@ def add_corporate(self):
         except (ValueError, TypeError):
             credit, discount = 1000, 10
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO corporate_accounts (company_name, contact_name, contact_email, contact_phone, credit_limit, discount_percent) VALUES (?, ?, ?, ?, ?, ?)",
-                      (entries['company'].get(), entries['contact'].get(), entries['email'].get(), entries['phone'].get(), credit, discount))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO corporate_accounts (company_name, contact_name, contact_email, contact_phone, credit_limit, discount_percent) VALUES (?, ?, ?, ?, ?, ?)",
+                          (entries['company'].get(), entries['contact'].get(), entries['email'].get(), entries['phone'].get(), credit, discount))
+            conn.commit()
+        finally:
+            conn.close()
         messagebox.showinfo(_t("cinema.common.success"), "Account created!")
         form.destroy()
         self.show_corporate_page()

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/ta_management/ta_permissions_setup.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d %H:%M:%S', 'admin', 'assign_tas', 'instructor', 'manage_tas', 'staff', 'student', 'view_ta_assignments']

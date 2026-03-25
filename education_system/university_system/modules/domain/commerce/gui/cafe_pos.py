@@ -10,7 +10,7 @@ from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
-from .cafe_system_gui import get_db_connection, FINANCE_ACCOUNT_AVAILABLE, EMAIL_SERVICE_AVAILABLE
+from education_system.university_system.modules.domain.commerce.gui.cafe_system_gui import get_db_connection, FINANCE_ACCOUNT_AVAILABLE, EMAIL_SERVICE_AVAILABLE
 
 try:
     from education_system.university_system.modules.shared.utils.finance_integration import (
@@ -184,7 +184,7 @@ class CafePOSMixin:
                 return
 
             cursor = conn.cursor()
-            cursor.execute('SELECT DISTINCT category FROM cafe_menu_items ORDER BY category')
+            cursor.execute("SELECT DISTINCT category FROM products WHERE source_type = 'cafe' ORDER BY category")
             categories = [row[0] for row in cursor.fetchall()]
             conn.close()
 
@@ -208,11 +208,11 @@ class CafePOSMixin:
             category = self.category_filter.get()
             if category and category != 'All':
                 cursor.execute(
-                    'SELECT item_id, name, price, available FROM cafe_menu_items WHERE category = ? AND available = 1 ORDER BY name',
+                    "SELECT product_id, name, price, is_available FROM products WHERE source_type = 'cafe' AND category = ? AND is_available = 1 ORDER BY name",
                     (category,)
                 )
             else:
-                cursor.execute('SELECT item_id, name, price, available FROM cafe_menu_items WHERE available = 1 ORDER BY category, name')
+                cursor.execute("SELECT product_id, name, price, is_available FROM products WHERE source_type = 'cafe' AND is_available = 1 ORDER BY category, name")
 
             items = cursor.fetchall()
             conn.close()
@@ -468,7 +468,7 @@ class CafePOSMixin:
                     messagebox.showerror(_t("common.error"), _t("cafe.messages.payment_failed", error=result.get('message', 'Unknown error')))
                     return
 
-            # Save order to cafe_orders table
+            # Save order to unified orders table
             conn = get_db_connection()
             if not conn:
                 return
@@ -486,8 +486,8 @@ class CafePOSMixin:
 
             # Insert order
             cursor.execute('''
-                INSERT INTO cafe_orders (student_id, customer_name, total_amount, payment_method, status)
-                VALUES (?, ?, ?, ?, 'completed')
+                INSERT INTO orders (source_type, student_id, customer_name, total_amount, payment_method, order_status)
+                VALUES ('cafe', ?, ?, ?, ?, 'completed')
             ''', (student_id or None, customer_name, total, payment_method_display))
 
             order_id = cursor.lastrowid
@@ -495,28 +495,28 @@ class CafePOSMixin:
             # Insert order items and update inventory
             for item_name, quantity, unit_price, subtotal in order_items_data:
                 # Get item_id
-                cursor.execute('SELECT item_id FROM cafe_menu_items WHERE name = ?', (item_name,))
+                cursor.execute("SELECT product_id FROM products WHERE source_type = 'cafe' AND name = ?", (item_name,))
                 result = cursor.fetchone()
                 if result:
                     item_id = result[0]
 
                     # Insert order item
                     cursor.execute('''
-                        INSERT INTO cafe_order_items (order_id, item_id, item_name, quantity, unit_price, subtotal)
-                        VALUES (?, ?, ?, ?, ?, ?)
+                        INSERT INTO order_items (source_type, source_order_id, product_id, item_name, quantity, unit_price, subtotal)
+                        VALUES ('cafe', ?, ?, ?, ?, ?, ?)
                     ''', (order_id, item_id, item_name, quantity, unit_price, subtotal))
 
                     # Update inventory
                     cursor.execute('''
-                        UPDATE cafe_menu_items
+                        UPDATE products
                         SET stock_quantity = stock_quantity - ?
-                        WHERE item_id = ?
+                        WHERE product_id = ? AND source_type = 'cafe'
                     ''', (quantity, item_id))
 
                     # Log inventory transaction
                     cursor.execute('''
-                        INSERT INTO cafe_inventory_transactions (item_id, quantity_change, transaction_type, notes)
-                        VALUES (?, ?, 'sale', ?)
+                        INSERT INTO transactions (source_type, reference_id, reference_type, quantity_change, transaction_type, notes)
+                        VALUES ('cafe_inventory', ?, 'item', ?, 'sale', ?)
                     ''', (item_id, -quantity, f'Order #{order_id}'))
 
             conn.commit()

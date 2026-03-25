@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/services/health_db_backup.py
+# hypothesis_version: 6.151.9
+
+['%Y%m%d-%H%M%S', '-shm', '-wal', '?', 'PRAGMA database_list', 'backups', 'body', 'created_by', 'file:', 'is_shared', 'main', 'pre_purge', 'updated_at', 'version']

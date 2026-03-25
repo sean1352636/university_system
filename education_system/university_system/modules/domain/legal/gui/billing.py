@@ -1,6 +1,6 @@
 """Billing mixin for the Legal Services GUI."""
 
-from ._imports import (
+from education_system.university_system.modules.domain.legal.gui._imports import (
     tk, ttk, messagebox, scrolledtext, filedialog, traceback,
     datetime,
     transaction,
@@ -55,9 +55,9 @@ class BillingMixin:
 
                     if account:
                         cursor.execute('''
-                            INSERT INTO student_finance_transactions
-                            (account_id, student_id, transaction_type, amount, description, processed_by, created_at)
-                            VALUES (?, ?, 'legal_service', ?, ?, ?, ?)
+                            INSERT INTO transactions
+                            (source_type, account_id, student_id, transaction_type, amount, description, processed_by, created_at)
+                            VALUES ('student_finance', ?, ?, 'legal_service', ?, ?, ?, ?)
                         ''', (account[0], client_id, amount, description,
                               self.current_user.get('username'), datetime.now().isoformat()))
                 except Exception:

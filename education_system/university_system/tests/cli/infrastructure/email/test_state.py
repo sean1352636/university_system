@@ -317,7 +317,7 @@ class TestHasAuthFlag:
 
     def test_fallback_functions_when_import_fails(self):
         """Test fallback get_current_user and set_auth_instance"""
-        with patch('university_system.infrastructure.email.state.HAS_AUTH', False):
+        with patch('education_system.university_system.infrastructure.email.state.HAS_AUTH', False):
             # Re-import to trigger fallback
             import importlib
             import education_system.university_system.infrastructure.email.state as state_module

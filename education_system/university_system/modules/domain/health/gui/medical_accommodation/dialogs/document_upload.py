@@ -1,12 +1,13 @@
 # dialogs/document_upload.py
 # Dialog for uploading documents to accommodations.
 
-from .._common import (
-    tk, ttk, messagebox, filedialog, os, datetime,
+from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import (
+    tk, ttk, messagebox, filedialog, os, datetime, sqlite3,
     CLI_AVAILABLE, SECURE_UPLOAD_AVAILABLE, validate_upload, secure_filename,
+    EMAIL_SERVICE_AVAILABLE,
     get_connection, logger,
 )
-from ..utils import resolve_user_identifier
+from education_system.university_system.modules.domain.health.gui.medical_accommodation.utils import resolve_user_identifier
 
 
 class DocumentUploadDialog:
@@ -86,9 +87,12 @@ class DocumentUploadDialog:
         try:
             self.do_upload()
             if CLI_AVAILABLE:
-                from .._common import log_action
+                from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import log_action
                 log_action('upload_document', self.accommodation_id,
                            f"Uploaded document '{self.doc_name_var.get().strip()}'")
+
+            # Email student about the uploaded document
+            self._notify_student_of_upload()
 
             self.result = True
             self.dialog.destroy()
@@ -117,7 +121,8 @@ class DocumentUploadDialog:
             safe_name = secure_filename(original_filename)
 
         # Create uploads directory if it doesn't exist
-        uploads_dir = "uploaded_documents"
+        uploads_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..', '..', 'data', 'uploads', 'accommodation')
+        uploads_dir = os.path.normpath(uploads_dir)
         os.makedirs(uploads_dir, exist_ok=True)
 
         # Set restrictive permissions on uploads directory
@@ -148,12 +153,52 @@ class DocumentUploadDialog:
         with get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                INSERT INTO accommodation_documents
-                (accommodation_id, document_name, document_path, uploaded_by, uploaded_at)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (self.accommodation_id, self.doc_name_var.get().strip(),
+                INSERT INTO documents
+                (source_type, reference_id, reference_type, document_name,
+                 file_path, uploaded_by, upload_date)
+                VALUES ('accommodation', ?, 'accommodation', ?, ?, ?, ?)
+            ''', (str(self.accommodation_id), self.doc_name_var.get().strip(),
                   destination_path, user, now))
             conn.commit()
+
+    def _notify_student_of_upload(self):
+        """Send email to student notifying them a document has been uploaded."""
+        try:
+            with get_connection() as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT a.student_id, s.email_address, s.first_name, s.last_name
+                    FROM accommodations a
+                    LEFT JOIN students s ON a.student_id = s.student_id
+                    WHERE a.id = ?
+                ''', (self.accommodation_id,))
+                row = cursor.fetchone()
+
+            if not row or not row['email_address']:
+                logger.info(f"No email address for accommodation {self.accommodation_id}, skipping notification")
+                return
+
+            doc_name = self.doc_name_var.get().strip()
+            student_name = f"{row['first_name'] or ''} {row['last_name'] or ''}".strip() or row['student_id']
+
+            if CLI_AVAILABLE:
+                from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import cli_notify_student
+                cli_notify_student(
+                    row['student_id'],
+                    'Document Uploaded to Your Accommodation Record',
+                    f"Dear {student_name},\n\nA new document '{doc_name}' has been uploaded to your accommodation record.\n\nPlease log in to view the document."
+                )
+            elif EMAIL_SERVICE_AVAILABLE:
+                from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import send_email
+                send_email(
+                    row['email_address'],
+                    'Document Uploaded to Your Accommodation Record',
+                    f"Dear {student_name},\n\nA new document '{doc_name}' has been uploaded to your accommodation record.\n\nPlease log in to view the document."
+                )
+
+        except Exception as e:
+            logger.warning(f"Could not send document upload notification: {e}")
 
     def cancel(self):
         self.dialog.destroy()

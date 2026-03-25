@@ -1,6 +1,6 @@
 """Webhook Manager"""
 
-from ._imports import get_connection
+from education_system.university_system.modules.shared.services.integrations.integration_marketplace_core._imports import get_connection
 
 
 class WebhookManager:

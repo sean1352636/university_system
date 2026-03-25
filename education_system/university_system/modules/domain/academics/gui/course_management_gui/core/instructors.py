@@ -1,4 +1,5 @@
-from ._imports import (
+from education_system.university_system.core.sql_safety import escape_like
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.core._imports import (
     _, messagebox, tk, sqlite3, DEFAULT_DB_PATH,
     InstructorCreateDialog, AssignInstructorDialog,
     AdvancedSearchDialog, PrerequisitesWindow,
@@ -83,10 +84,13 @@ class InstructorsMixin:
 
             # Build query from search criteria
             query = """
-            SELECT id, course_code, course_name, department, level, credit_hours,
+            SELECT id, COALESCE(course_code, code) as course_code,
+                   COALESCE(course_name, name) as course_name,
+                   department, level, COALESCE(credit_hours, credits, 3.0) as credit_hours,
                    COALESCE(current_enrollment, 0) || '/' || COALESCE(max_enrollment, 0) as enrollment,
                    status
-            FROM courses WHERE course_code IS NOT NULL
+            FROM courses WHERE COALESCE(course_code, code) IS NOT NULL
+            AND COALESCE(course_name, name) IS NOT NULL
             """
             params = []
 
@@ -96,7 +100,7 @@ class InstructorsMixin:
                 elif value and (isinstance(value, str) and value.strip()):
                     if field == "keyword":
                         query += " AND (course_code LIKE ? OR course_name LIKE ? OR description LIKE ?)"
-                        search_param = f"%{value}%"
+                        search_param = f"%{escape_like(value)}%"
                         params.extend([search_param, search_param, search_param])
                     elif field == "min_credits":
                         query += " AND credit_hours >= ?"
@@ -106,15 +110,17 @@ class InstructorsMixin:
                         params.append(float(value))
                     elif field not in ["available_only"]:
                         query += f" AND {field} LIKE ?"
-                        params.append(f"%{value}%")
+                        params.append(f"%{escape_like(value)}%")
 
             query += " ORDER BY course_code"
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-            cursor = conn.cursor()
-            cursor.execute(query, params)
-            courses = cursor.fetchall()
-            conn.close()
+            try:
+                cursor = conn.cursor()
+                cursor.execute(query, params)
+                courses = cursor.fetchall()
+            finally:
+                conn.close()
 
             # Populate results
             for course in courses:

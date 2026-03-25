@@ -51,8 +51,8 @@ class TestTripManagementGUIBasic(unittest.TestCase):
         except ImportError:
             self.skipTest("TripManagementGUI not available")
 
-    @patch('university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth')
-    @patch('university_system.modules.domain.mobility.gui.trip_management_gui.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth')
+    @patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.transaction')
     def test_gui_initialization(self, mock_transaction, mock_auth):
         """Test GUI initialization"""
         try:
@@ -84,8 +84,8 @@ class TestTripCreation(unittest.TestCase):
         except Exception:
             pass
 
-    @patch('university_system.modules.domain.mobility.gui.trip_management_gui.transaction')
-    @patch('university_system.modules.domain.mobility.gui.trip_management_gui.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.log_activity')
     def test_create_trip(self, mock_log, mock_transaction):
         """Test creating a new trip"""
         mock_cursor = Mock()
@@ -101,7 +101,7 @@ class TestTripCreation(unittest.TestCase):
         try:
             from education_system.university_system.modules.domain.mobility.gui.trip_management_gui import TripManagementGUI
 
-            with patch('university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth',
+            with patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth',
                       return_value=self.mock_auth):
                 app = TripManagementGUI(self.root, self.mock_auth)
         except Exception:
@@ -124,7 +124,7 @@ class TestTripListing(unittest.TestCase):
         except Exception:
             pass
 
-    @patch('university_system.modules.domain.mobility.gui.trip_management_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.get_connection')
     def test_load_trips(self, mock_conn):
         """Test loading trips"""
         mock_cursor = Mock()
@@ -142,8 +142,8 @@ class TestTripListing(unittest.TestCase):
         try:
             from education_system.university_system.modules.domain.mobility.gui.trip_management_gui import TripManagementGUI
 
-            with patch('university_system.modules.domain.mobility.gui.trip_management_gui.transaction'):
-                with patch('university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth',
+            with patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.transaction'):
+                with patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth',
                           return_value=self.mock_auth):
                     app = TripManagementGUI(self.root, self.mock_auth)
                     if hasattr(app, 'load_trips'):
@@ -168,8 +168,8 @@ class TestTripRegistration(unittest.TestCase):
         except Exception:
             pass
 
-    @patch('university_system.modules.domain.mobility.gui.trip_management_gui.transaction')
-    @patch('university_system.modules.domain.mobility.gui.trip_management_gui.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.log_activity')
     def test_register_for_trip(self, mock_log, mock_transaction):
         """Test registering for a trip"""
         mock_cursor = Mock()
@@ -185,13 +185,13 @@ class TestTripRegistration(unittest.TestCase):
         try:
             from education_system.university_system.modules.domain.mobility.gui.trip_management_gui import TripManagementGUI
 
-            with patch('university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth',
+            with patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth',
                       return_value=self.mock_auth):
                 app = TripManagementGUI(self.root, self.mock_auth)
         except Exception:
             self.skipTest("GUI method not available")
 
-    @patch('university_system.modules.domain.mobility.gui.trip_management_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.get_connection')
     def test_view_my_registrations(self, mock_conn):
         """Test viewing user's trip registrations"""
         mock_cursor = Mock()
@@ -208,8 +208,8 @@ class TestTripRegistration(unittest.TestCase):
         try:
             from education_system.university_system.modules.domain.mobility.gui.trip_management_gui import TripManagementGUI
 
-            with patch('university_system.modules.domain.mobility.gui.trip_management_gui.transaction'):
-                with patch('university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth',
+            with patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.transaction'):
+                with patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth',
                           return_value=self.mock_auth):
                     app = TripManagementGUI(self.root, self.mock_auth)
                     if hasattr(app, 'view_my_registrations'):
@@ -234,7 +234,7 @@ class TestParticipantManagement(unittest.TestCase):
         except Exception:
             pass
 
-    @patch('university_system.modules.domain.mobility.gui.trip_management_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.get_connection')
     def test_load_participants(self, mock_conn):
         """Test loading trip participants"""
         mock_cursor = Mock()
@@ -251,8 +251,8 @@ class TestParticipantManagement(unittest.TestCase):
         try:
             from education_system.university_system.modules.domain.mobility.gui.trip_management_gui import TripManagementGUI
 
-            with patch('university_system.modules.domain.mobility.gui.trip_management_gui.transaction'):
-                with patch('university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth',
+            with patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.transaction'):
+                with patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth',
                           return_value=self.mock_auth):
                     app = TripManagementGUI(self.root, self.mock_auth)
                     if hasattr(app, 'load_participants'):
@@ -260,8 +260,8 @@ class TestParticipantManagement(unittest.TestCase):
         except Exception:
             self.skipTest("GUI method not available")
 
-    @patch('university_system.modules.domain.mobility.gui.trip_management_gui.transaction')
-    @patch('university_system.modules.domain.mobility.gui.trip_management_gui.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.log_activity')
     def test_update_participant_status(self, mock_log, mock_transaction):
         """Test updating participant status"""
         mock_conn = Mock()
@@ -271,7 +271,7 @@ class TestParticipantManagement(unittest.TestCase):
         try:
             from education_system.university_system.modules.domain.mobility.gui.trip_management_gui import TripManagementGUI
 
-            with patch('university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth',
+            with patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth',
                       return_value=self.mock_auth):
                 app = TripManagementGUI(self.root, self.mock_auth)
         except Exception:
@@ -294,8 +294,8 @@ class TestPaymentManagement(unittest.TestCase):
         except Exception:
             pass
 
-    @patch('university_system.modules.domain.mobility.gui.trip_management_gui.transaction')
-    @patch('university_system.modules.domain.mobility.gui.trip_management_gui.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.log_activity')
     def test_update_payment_status(self, mock_log, mock_transaction):
         """Test updating payment status"""
         mock_conn = Mock()
@@ -305,7 +305,7 @@ class TestPaymentManagement(unittest.TestCase):
         try:
             from education_system.university_system.modules.domain.mobility.gui.trip_management_gui import TripManagementGUI
 
-            with patch('university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth',
+            with patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth',
                       return_value=self.mock_auth):
                 app = TripManagementGUI(self.root, self.mock_auth)
         except Exception:
@@ -328,7 +328,7 @@ class TestCalendarIntegration(unittest.TestCase):
         except Exception:
             pass
 
-    @patch('university_system.modules.domain.mobility.gui.trip_management_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.get_connection')
     def test_view_trips_calendar(self, mock_conn):
         """Test viewing trips in calendar format"""
         mock_cursor = Mock()
@@ -343,8 +343,8 @@ class TestCalendarIntegration(unittest.TestCase):
         try:
             from education_system.university_system.modules.domain.mobility.gui.trip_management_gui import TripManagementGUI
 
-            with patch('university_system.modules.domain.mobility.gui.trip_management_gui.transaction'):
-                with patch('university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth',
+            with patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.transaction'):
+                with patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth',
                           return_value=self.mock_auth):
                     app = TripManagementGUI(self.root, self.mock_auth)
                     if hasattr(app, 'view_trips_calendar'):
@@ -369,8 +369,8 @@ class TestTripReports(unittest.TestCase):
         except Exception:
             pass
 
-    @patch('university_system.modules.domain.mobility.gui.trip_management_gui.get_connection')
-    @patch('university_system.modules.domain.mobility.gui.trip_management_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.messagebox')
     def test_generate_trip_report(self, mock_msgbox, mock_conn):
         """Test generating trip reports"""
         mock_cursor = Mock()
@@ -385,8 +385,8 @@ class TestTripReports(unittest.TestCase):
         try:
             from education_system.university_system.modules.domain.mobility.gui.trip_management_gui import TripManagementGUI
 
-            with patch('university_system.modules.domain.mobility.gui.trip_management_gui.transaction'):
-                with patch('university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth',
+            with patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.transaction'):
+                with patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth',
                           return_value=self.mock_auth):
                     app = TripManagementGUI(self.root, self.mock_auth)
         except Exception:
@@ -409,8 +409,8 @@ class TestTripUpdates(unittest.TestCase):
         except Exception:
             pass
 
-    @patch('university_system.modules.domain.mobility.gui.trip_management_gui.transaction')
-    @patch('university_system.modules.domain.mobility.gui.trip_management_gui.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.log_activity')
     def test_update_trip(self, mock_log, mock_transaction):
         """Test updating a trip"""
         mock_conn = Mock()
@@ -420,15 +420,15 @@ class TestTripUpdates(unittest.TestCase):
         try:
             from education_system.university_system.modules.domain.mobility.gui.trip_management_gui import TripManagementGUI
 
-            with patch('university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth',
+            with patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth',
                       return_value=self.mock_auth):
                 app = TripManagementGUI(self.root, self.mock_auth)
         except Exception:
             self.skipTest("GUI method not available")
 
-    @patch('university_system.modules.domain.mobility.gui.trip_management_gui.transaction')
-    @patch('university_system.modules.domain.mobility.gui.trip_management_gui.log_activity')
-    @patch('university_system.modules.domain.mobility.gui.trip_management_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.messagebox')
     def test_delete_trip(self, mock_msgbox, mock_log, mock_transaction):
         """Test deleting a trip"""
         mock_msgbox.askyesno.return_value = True
@@ -440,7 +440,7 @@ class TestTripUpdates(unittest.TestCase):
         try:
             from education_system.university_system.modules.domain.mobility.gui.trip_management_gui import TripManagementGUI
 
-            with patch('university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth',
+            with patch('education_system.university_system.modules.domain.mobility.gui.trip_management_gui.get_centralized_auth',
                       return_value=self.mock_auth):
                 app = TripManagementGUI(self.root, self.mock_auth)
         except Exception:

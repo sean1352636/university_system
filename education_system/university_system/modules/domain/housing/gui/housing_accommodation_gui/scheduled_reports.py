@@ -31,15 +31,15 @@ def show_scheduled_reports_manager(self):
         button_frame.pack(fill='x', pady=(0, 10))
 
         ttk.Button(button_frame, text="Add Schedule", width=15,
-                  command=lambda: self.add_scheduled_report(manager_window, tree)).pack(side='left', padx=5)
+                  command=lambda: add_scheduled_report(self, manager_window, tree)).pack(side='left', padx=5)
         ttk.Button(button_frame, text="Edit Schedule", width=15,
-                  command=lambda: self.edit_scheduled_report(tree, manager_window)).pack(side='left', padx=5)
+                  command=lambda: edit_scheduled_report(self, tree, manager_window)).pack(side='left', padx=5)
         ttk.Button(button_frame, text="Delete Schedule", width=15,
-                  command=lambda: self.delete_scheduled_report(tree)).pack(side='left', padx=5)
+                  command=lambda: delete_scheduled_report(self, tree)).pack(side='left', padx=5)
         ttk.Button(button_frame, text="Run Now", width=15,
-                  command=lambda: self.run_scheduled_report_now(tree)).pack(side='left', padx=5)
+                  command=lambda: run_scheduled_report_now(self, tree)).pack(side='left', padx=5)
         ttk.Button(button_frame, text="Refresh", width=15,
-                  command=lambda: self.load_scheduled_reports(tree)).pack(side='left', padx=5)
+                  command=lambda: load_scheduled_reports(self, tree)).pack(side='left', padx=5)
 
         # Tree view for scheduled reports
         tree_frame = ttk.Frame(main_frame)
@@ -74,7 +74,7 @@ def show_scheduled_reports_manager(self):
         scrollbar.config(command=tree.yview)
 
         # Load data
-        self.load_scheduled_reports(tree)
+        load_scheduled_reports(self, tree)
 
         # Close button
         ttk.Button(main_frame, text="Close", command=manager_window.destroy).pack(pady=(10, 0))
@@ -205,7 +205,7 @@ def add_scheduled_report(self, parent_window, tree):
 
                 messagebox.showinfo("Success", "Scheduled report added successfully!", parent=dialog)
                 dialog.destroy()
-                self.load_scheduled_reports(tree)
+                load_scheduled_reports(self, tree)
 
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to add scheduled report: {str(e)}", parent=dialog)
@@ -352,7 +352,7 @@ def edit_scheduled_report(self, tree, parent_window):
 
                 messagebox.showinfo("Success", "Scheduled report updated successfully!", parent=dialog)
                 dialog.destroy()
-                self.load_scheduled_reports(tree)
+                load_scheduled_reports(self, tree)
 
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to update scheduled report: {str(e)}", parent=dialog)
@@ -384,7 +384,7 @@ def delete_scheduled_report(self, tree):
                 conn.close()
 
                 messagebox.showinfo("Success", f"Scheduled report '{report_name}' deleted successfully")
-                self.load_scheduled_reports(tree)
+                load_scheduled_reports(self, tree)
 
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to delete scheduled report: {str(e)}")
@@ -408,13 +408,13 @@ def run_scheduled_report_now(self, tree):
             try:
                 # Generate report content based on type
                 if report_type == 'Occupancy Report':
-                    report_content = self.generate_occupancy_report_content()
+                    report_content = generate_occupancy_report_content(self)
                 elif report_type == 'Financial Summary':
-                    report_content = self.generate_financial_report_content()
+                    report_content = generate_financial_report_content(self)
                 elif report_type == 'Maintenance Summary':
-                    report_content = self.generate_maintenance_report_content()
+                    report_content = generate_maintenance_report_content(self)
                 elif report_type == 'Room Availability':
-                    report_content = self.generate_room_availability_content()
+                    report_content = generate_room_availability_content(self)
                 else:
                     messagebox.showerror("Error", "Unknown report type")
                     return
@@ -444,7 +444,7 @@ def run_scheduled_report_now(self, tree):
                 conn.close()
 
                 messagebox.showinfo("Success", f"Report '{report_name}' generated and emailed successfully!")
-                self.load_scheduled_reports(tree)
+                load_scheduled_reports(self, tree)
 
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to run report: {str(e)}")

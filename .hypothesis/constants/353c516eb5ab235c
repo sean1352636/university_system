@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/email/email_gui/notification_dialogs_support.py
+# hypothesis_version: 6.151.9
+
+[1.0, 100, ',', '450x200', '450x300', '500x250', '500x300', '500x350', 'Alert Type:', 'Cancel', 'Days:', 'Error', 'Failed to send alert', 'Overdue', 'Responder:', 'SLA alert sent', 'Send', 'Send SLA Alert', 'Send Surveys', 'Subject:', 'Success', 'Ticket ID:', 'User ID (optional):', 'Username:', 'Warning', 'default', 'en', 'overdue', 'warning']

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/budget_manager/institutional.py
+# hypothesis_version: 6.151.9
+
+[120, 150, 200, '10', 'Budget Categories', 'Budget Plans', '_', 'budget_id', 'category_id', 'columns', 'expenses', 'headings', 'name', 'parent', 'revenue', 'status', 'type', 'year']

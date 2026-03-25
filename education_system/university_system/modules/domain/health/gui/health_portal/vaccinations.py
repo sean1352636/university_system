@@ -3,6 +3,7 @@ from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
 
 from education_system.university_system.infrastructure.database.db import sqlite3
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 from education_system.university_system.modules.shared.constants import paths
 
@@ -238,7 +239,7 @@ class VaccinationsMixin:
 
             if student_filter:
                 query += " AND vr.student_id LIKE ?"
-                params.append(f"%{student_filter}%")
+                params.append(f"%{escape_like(student_filter)}%")
 
             if not self.auth.check_permission('view_any_health_record') and self.auth.current_user['role'] == 'student':
                 query += " AND vr.student_id = ?"

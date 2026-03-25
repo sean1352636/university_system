@@ -619,10 +619,11 @@ class CareerServicesGUI:
             with get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
-                    SELECT event_id, event_name, event_type, event_date, event_time, location
-                    FROM career_events
-                    WHERE event_date >= date('now')
-                    ORDER BY event_date, event_time
+                    SELECT event_id, title AS event_name, event_type, start_datetime AS event_date, start_datetime AS event_time, location
+                    FROM unified_events
+                    WHERE source_type = 'career'
+                    AND start_datetime >= date('now')
+                    ORDER BY start_datetime
                 ''')
 
                 self.events_data = [dict(row) for row in cursor.fetchall()]

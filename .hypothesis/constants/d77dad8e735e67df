@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/academic_calendar/resources.py
+# hypothesis_version: 6.151.9
+
+[200, 500, ' AND rb.id != ?', 'available', 'capacity', 'confirmed', 'end_time', 'equipment', 'event_id', 'exclude_booking_id', 'location', 'manage_schedules', 'name', 'notes', 'resource_id', 'start_time', 'status', 'type']

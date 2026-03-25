@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox, scrolledtext
 from tkinter.simpledialog import Dialog
 from datetime import datetime
 
-from ._imports import safe_db_operation, sqlite3
+from education_system.university_system.modules.domain.mobility.gui.trip_management_gui._imports import safe_db_operation, sqlite3
 
 
 class ViewItineraryDialog(Dialog):

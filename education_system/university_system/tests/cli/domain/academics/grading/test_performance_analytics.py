@@ -130,8 +130,8 @@ def test_db(tmp_path):
     conn.commit()
     conn.close()
 
-    with patch('university_system.infrastructure.database.db.get_connection', mock_get_connection):
-        with patch('university_system.modules.domain.academics.grading.performance_analytics.get_connection', mock_get_connection):
+    with patch('education_system.university_system.infrastructure.database.db.get_connection', mock_get_connection):
+        with patch('education_system.university_system.modules.domain.academics.grading.performance_analytics.get_connection', mock_get_connection):
             yield mock_get_connection
 
 @pytest.fixture
@@ -356,7 +356,7 @@ class TestCalculateCourseStatistics:
         assert stats is None
         conn.close()
 
-    @patch('university_system.modules.domain.academics.grading.performance_analytics.calculate_student_gpa')
+    @patch('education_system.university_system.modules.domain.academics.grading.performance_analytics.calculate_student_gpa')
     def test_calculate_course_statistics_with_students(self, mock_gpa, sample_data):
         """Test calculating statistics for course with students"""
         mock_gpa.return_value = (3.5, 30, [])
@@ -377,9 +377,9 @@ class TestCalculateCourseStatistics:
 class TestGeneratePerformanceDashboard:
     """Tests for generate_performance_dashboard function"""
 
-    @patch('university_system.modules.domain.academics.grading.performance_analytics.display_performance_dashboard')
-    @patch('university_system.modules.domain.academics.grading.performance_analytics.generate_dashboard_report')
-    @patch('university_system.modules.domain.academics.grading.performance_analytics.create_dashboard_visualizations')
+    @patch('education_system.university_system.modules.domain.academics.grading.performance_analytics.display_performance_dashboard')
+    @patch('education_system.university_system.modules.domain.academics.grading.performance_analytics.generate_dashboard_report')
+    @patch('education_system.university_system.modules.domain.academics.grading.performance_analytics.create_dashboard_visualizations')
     @patch('builtins.print')
     def test_generate_performance_dashboard(self, mock_print, mock_viz, mock_report, mock_display, sample_data):
         """Test generating performance dashboard"""
@@ -392,7 +392,7 @@ class TestDisplayModulePerformanceResults:
     """Tests for display_module_performance_results function"""
 
     @patch('builtins.print')
-    @patch('university_system.modules.domain.academics.grading.performance_analytics.letter_to_gpa')
+    @patch('education_system.university_system.modules.domain.academics.grading.performance_analytics.letter_to_gpa')
     def test_display_module_performance_results(self, mock_gpa, mock_print):
         """Test displaying module performance results"""
         mock_gpa.return_value = 4.0

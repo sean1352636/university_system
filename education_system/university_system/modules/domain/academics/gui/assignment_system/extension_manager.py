@@ -63,39 +63,41 @@ class ExtensionManager:
             # Show all assignments if no student ID (for admin/instructor)
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            if student_id:
-                cursor.execute('''
-                SELECT a.id, a.title, a.module_code, a.due_date
-                FROM assignments a
-                JOIN student_modules sm ON a.module_code = sm.module_code
-                WHERE sm.student_id = ? AND a.is_active = 1
-                AND a.due_date > datetime('now', '-7 days')
-                ORDER BY a.due_date
-                ''', (student_id,))
-            else:
-                # Show all active assignments if no student ID
-                cursor.execute('''
-                SELECT a.id, a.title, a.module_code, a.due_date
-                FROM assignments a
-                WHERE a.is_active = 1
-                AND a.due_date > datetime('now', '-7 days')
-                ORDER BY a.due_date
-                ''')
+                if student_id:
+                    cursor.execute('''
+                    SELECT a.id, a.title, a.module_code, a.due_date
+                    FROM assignments a
+                    JOIN student_modules sm ON a.module_code = sm.module_code
+                    WHERE sm.student_id = ? AND a.is_active = 1
+                    AND a.due_date > datetime('now', '-7 days')
+                    ORDER BY a.due_date
+                    ''', (student_id,))
+                else:
+                    # Show all active assignments if no student ID
+                    cursor.execute('''
+                    SELECT a.id, a.title, a.module_code, a.due_date
+                    FROM assignments a
+                    WHERE a.is_active = 1
+                    AND a.due_date > datetime('now', '-7 days')
+                    ORDER BY a.due_date
+                    ''')
 
-            assignments = cursor.fetchall()
+                assignments = cursor.fetchall()
 
-            assignment_list = []
-            self.ext_assignment_map = {}
+                assignment_list = []
+                self.ext_assignment_map = {}
 
-            for aid, title, module, due_date in assignments:
-                display_text = f"{title} ({module}) - Due: {due_date}"
-                assignment_list.append(display_text)
-                self.ext_assignment_map[display_text] = aid
+                for aid, title, module, due_date in assignments:
+                    display_text = f"{title} ({module}) - Due: {due_date}"
+                    assignment_list.append(display_text)
+                    self.ext_assignment_map[display_text] = aid
 
-            combo['values'] = assignment_list
-            conn.close()
+                combo['values'] = assignment_list
+            finally:
+                conn.close()
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("submission.failed_load_assignments", error=str(e)))
@@ -276,61 +278,63 @@ class ExtensionManager:
                     return
             
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            
-            # Calculate extension days if approved
-            extension_days = 0
-            if decision == 'approved':
-                cursor.execute('''
-                SELECT JULIANDAY(er.new_due_date) - JULIANDAY(a.due_date)
-                FROM extension_requests er
-                JOIN assignments a ON er.assignment_id = a.id
-                WHERE er.id = ?
-                ''', (request_id,))
-                
-                extension_days = int(cursor.fetchone()[0])
-            
-            # Update request
-            cursor.execute('''
-            UPDATE extension_requests 
-            SET status = ?, reviewed_by = ?, reviewed_date = ?, 
-                reviewer_comments = ?, approved_extension_days = ?
-            WHERE id = ?
-            ''', (decision, self.auth.current_user['id'], 
-                  datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                  comments, extension_days, request_id))
-            
-            conn.commit()
+            try:
+                cursor = conn.cursor()
 
-            # Send extension notification email if approved
-            if decision == 'approved':
-                try:
-                    # Get student email and assignment details
+                # Calculate extension days if approved
+                extension_days = 0
+                if decision == 'approved':
                     cursor.execute('''
-                    SELECT s.email_address, a.title, a.module_code, er.new_due_date
+                    SELECT JULIANDAY(er.new_due_date) - JULIANDAY(a.due_date)
                     FROM extension_requests er
-                    JOIN students s ON er.student_id = s.student_id
                     JOIN assignments a ON er.assignment_id = a.id
                     WHERE er.id = ?
                     ''', (request_id,))
-                    result = cursor.fetchone()
 
-                    if result:
-                        student_email, assignment_title, module_code, new_due_date = result
-                        from education_system.university_system.infrastructure.email.email_service import send_extension_notification
+                    extension_days = int(cursor.fetchone()[0])
+
+                # Update request
+                cursor.execute('''
+                UPDATE extension_requests 
+                SET status = ?, reviewed_by = ?, reviewed_date = ?, 
+                    reviewer_comments = ?, approved_extension_days = ?
+                WHERE id = ?
+                ''', (decision, self.auth.current_user['id'], 
+                      datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                      comments, extension_days, request_id))
+
+                conn.commit()
+
+                # Send extension notification email if approved
+                if decision == 'approved':
+                    try:
+                        # Get student email and assignment details
+                        cursor.execute('''
+                        SELECT s.email_address, a.title, a.module_code, er.new_due_date
+                        FROM extension_requests er
+                        JOIN students s ON er.student_id = s.student_id
+                        JOIN assignments a ON er.assignment_id = a.id
+                        WHERE er.id = ?
+                        ''', (request_id,))
+                        result = cursor.fetchone()
+
+                        if result:
+                            student_email, assignment_title, module_code, new_due_date = result
+                            from education_system.university_system.infrastructure.email.email_service import send_extension_notification
+                            import logging
+                            send_extension_notification(
+                                student_email,
+                                assignment_title,
+                                module_code,
+                                new_due_date,
+                                str(extension_days)
+                            )
+                    except Exception as e:
                         import logging
-                        send_extension_notification(
-                            student_email,
-                            assignment_title,
-                            module_code,
-                            new_due_date,
-                            str(extension_days)
-                        )
-                except Exception as e:
-                    import logging
-                    logging.warning(f"Failed to send extension notification email: {e}")
+                        logging.warning(f"Failed to send extension notification email: {e}")
 
-            conn.close()
+            finally:
+                conn.close()
 
             messagebox.showinfo("Success", f"Extension request {decision}!")
             
@@ -418,17 +422,19 @@ class ExtensionManager:
             student_id = self.assignment_system._get_student_id()
             
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-            INSERT INTO extension_requests 
-            (assignment_id, student_id, requested_date, new_due_date, reason)
-            VALUES (?, ?, ?, ?, ?)
-            ''', (assignment_id, student_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                  new_due_date.strftime('%Y-%m-%d %H:%M:%S'), self.ext_reason_text.get(1.0, tk.END).strip()))
-            
-            conn.commit()
-            conn.close()
+            try:
+                cursor = conn.cursor()
+
+                cursor.execute('''
+                INSERT INTO extension_requests 
+                (assignment_id, student_id, requested_date, new_due_date, reason)
+                VALUES (?, ?, ?, ?, ?)
+                ''', (assignment_id, student_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                      new_due_date.strftime('%Y-%m-%d %H:%M:%S'), self.ext_reason_text.get(1.0, tk.END).strip()))
+
+                conn.commit()
+            finally:
+                conn.close()
             
             self.show_ext_status("Extension request submitted successfully!", "success")
             self.clear_extension_form()
@@ -481,18 +487,20 @@ class ExtensionManager:
                 return False
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-            cursor.execute('''
-            INSERT INTO extension_requests
-            (assignment_id, student_id, reason, requested_due_date, status, request_date)
-            VALUES (?, ?, ?, ?, 'pending', ?)
-            ''', (assignment_id, student_id, reason, requested_date, timestamp))
+                cursor.execute('''
+                INSERT INTO extension_requests
+                (assignment_id, student_id, reason, requested_due_date, status, request_date)
+                VALUES (?, ?, ?, ?, 'pending', ?)
+                ''', (assignment_id, student_id, reason, requested_date, timestamp))
 
-            conn.commit()
-            conn.close()
+                conn.commit()
+            finally:
+                conn.close()
 
             return True
 

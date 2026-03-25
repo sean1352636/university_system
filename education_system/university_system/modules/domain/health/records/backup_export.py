@@ -354,11 +354,12 @@ def restore_from_backup(auth):
     print("All current data will be lost!")
     
     # List available backups
-    backup_dir = "backups"
+    from education_system.university_system.modules.shared.constants import paths as _paths
+    backup_dir = str(_paths.BACKUP_HEALTH_DIR)
     if not os.path.exists(backup_dir):
         print("No backup directory found.")
         return
-    
+
     backup_files = glob.glob(os.path.join(backup_dir, "student_records_backup_*.db"))
     backup_files.sort(reverse=True)  # Most recent first
     
@@ -543,13 +544,14 @@ def create_database_backup(auth):
     import shutil
     import os
     
+    from education_system.university_system.modules.shared.constants import paths as _paths
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     backup_filename = f"student_records_backup_{timestamp}.db"
-    backup_dir = "backups"
-    
+    backup_dir = str(_paths.BACKUP_HEALTH_DIR)
+
     # Create backup directory if it doesn't exist
     if not os.path.exists(backup_dir):
-        os.makedirs(backup_dir)
+        os.makedirs(backup_dir, exist_ok=True)
     
     backup_path = os.path.join(backup_dir, backup_filename)
     
@@ -571,12 +573,13 @@ def view_backup_history(auth):
     import os
     import glob
     
-    backup_dir = "backups"
-    
+    from education_system.university_system.modules.shared.constants import paths as _paths
+    backup_dir = str(_paths.BACKUP_HEALTH_DIR)
+
     if not os.path.exists(backup_dir):
         print("No backup directory found.")
         return
-    
+
     backup_files = glob.glob(os.path.join(backup_dir, "student_records_backup_*.db"))
     
     if not backup_files:

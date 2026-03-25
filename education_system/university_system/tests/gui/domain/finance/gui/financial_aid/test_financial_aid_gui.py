@@ -18,8 +18,8 @@ from education_system.university_system.modules.domain.finance.gui.financial_aid
 class TestFinancialAidGUIInit:
     """Test FinancialAidGUI initialization"""
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_auth')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.check_permission')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_auth')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.check_permission')
     def test_init_with_auth(self, mock_check_perm, mock_get_auth):
         """Test initialization with authentication"""
         mock_auth = Mock()
@@ -37,8 +37,8 @@ class TestFinancialAidGUIInit:
 
         root.destroy()
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_auth')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.show_error')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_auth')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.show_error')
     def test_init_without_user(self, mock_error, mock_get_auth):
         """Test initialization without logged-in user"""
         mock_auth = Mock()
@@ -52,8 +52,8 @@ class TestFinancialAidGUIInit:
 
         root.destroy()
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_auth')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.check_permission')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_auth')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.check_permission')
     def test_init_admin_user(self, mock_check_perm, mock_get_auth):
         """Test initialization with admin user"""
         mock_auth = Mock()
@@ -72,9 +72,9 @@ class TestFinancialAidGUIInit:
 class TestWindowCreation:
     """Test window creation methods"""
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_auth')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_current_user')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.check_permission')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_auth')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_current_user')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.check_permission')
     def test_create_standalone_window(self, mock_check_perm, mock_get_user, mock_get_auth):
         """Test create_standalone_window method"""
         mock_auth = Mock()
@@ -89,9 +89,9 @@ class TestWindowCreation:
         # Just verify it doesn't crash during setup
         assert gui.root is None
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_auth')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_current_user')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.check_permission')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_auth')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_current_user')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.check_permission')
     def test_create_embedded_interface(self, mock_check_perm, mock_get_user, mock_get_auth):
         """Test create_embedded_interface method"""
         mock_auth = Mock()
@@ -115,9 +115,9 @@ class TestWindowCreation:
 class TestNavigation:
     """Test navigation between portals"""
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_auth')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_current_user')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.check_permission')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_auth')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_current_user')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.check_permission')
     def test_show_student_portal(self, mock_check_perm, mock_get_user, mock_get_auth):
         """Test show_student_portal method"""
         mock_auth = Mock()
@@ -137,9 +137,9 @@ class TestNavigation:
 
         root.destroy()
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_auth')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_current_user')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.check_permission')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_auth')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_current_user')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.check_permission')
     def test_show_admin_portal(self, mock_check_perm, mock_get_user, mock_get_auth):
         """Test show_admin_portal method"""
         mock_auth = Mock()
@@ -159,10 +159,10 @@ class TestNavigation:
 
         root.destroy()
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_auth')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_current_user')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.check_permission')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.show_error')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_auth')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_current_user')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.check_permission')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.show_error')
     def test_show_admin_portal_no_permission(self, mock_error, mock_check_perm, mock_get_user, mock_get_auth):
         """Test show_admin_portal denies access without permission"""
         mock_auth = Mock()
@@ -186,9 +186,9 @@ class TestNavigation:
 class TestMainInterface:
     """Test main interface display"""
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_auth')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_current_user')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.check_permission')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_auth')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_current_user')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.check_permission')
     def test_show_main_interface_student(self, mock_check_perm, mock_get_user, mock_get_auth):
         """Test show_main_interface for student user"""
         mock_user = Mock(username='student1')
@@ -211,9 +211,9 @@ class TestMainInterface:
 
         root.destroy()
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_auth')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_current_user')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.check_permission')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_auth')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_current_user')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.check_permission')
     def test_show_main_interface_admin(self, mock_check_perm, mock_get_user, mock_get_auth):
         """Test show_main_interface for admin user"""
         mock_user = Mock(username='admin')
@@ -241,9 +241,9 @@ class TestMainInterface:
 class TestWindowClosing:
     """Test window closing methods"""
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_auth')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_current_user')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.check_permission')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_auth')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.get_current_user')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.check_permission')
     def test_return_to_homepage(self, mock_check_perm, mock_get_user, mock_get_auth):
         """Test return_to_homepage method"""
         mock_auth = Mock()
@@ -266,7 +266,7 @@ class TestWindowClosing:
 class TestLaunchFunction:
     """Test launch_financial_aid_gui function"""
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.FinancialAidGUI')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.FinancialAidGUI')
     def test_launch_financial_aid_gui_with_parent(self, mock_gui_class):
         """Test launch_financial_aid_gui with parent window"""
         root = tk.Tk()
@@ -279,7 +279,7 @@ class TestLaunchFunction:
 
         root.destroy()
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.FinancialAidGUI')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui.FinancialAidGUI')
     def test_launch_financial_aid_gui_standalone(self, mock_gui_class):
         """Test launch_financial_aid_gui without parent window"""
         auth_mock = Mock()

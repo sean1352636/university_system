@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/gui/parking_management/__init__.py
+# hypothesis_version: 6.151.9
+
+[1.75, 2.5, 150, 180, 220, 250, 350, 'A', 'Annual', 'B', 'C', 'Commuter Students', 'Compact', 'Daily', 'ExportDialog', 'Faculty/Staff', 'H', 'Handicap Accessible', 'LotDialog', 'M', 'Metered', 'Monthly', 'Motorcycle', 'ParkingManagementGUI', 'PaymentDialog', 'PermitDialog', 'R', 'RefundDialog', 'Reserved', 'Resident Students', 'SUV', 'Sedan', 'Semester', 'Temporary', 'Truck', 'V', 'Van', 'VehicleDialog', 'ViolationDialog', 'Visitor', 'annual_fee', 'hourly_rate', 'main', 'name']

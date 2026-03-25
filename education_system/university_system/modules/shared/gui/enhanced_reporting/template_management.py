@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .core import ReportingSystemGUI  # type: ignore
+from education_system.university_system.modules.shared.gui.enhanced_reporting.core import ReportingSystemGUI  # type: ignore
 
 def load_templates(gui: ReportingSystemGUI) -> None:
     gui.load_templates()

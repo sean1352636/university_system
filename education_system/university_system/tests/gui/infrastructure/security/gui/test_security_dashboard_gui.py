@@ -58,7 +58,7 @@ class TestGUIDashboardInitialization:
 
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
             dashboard = SecurityDashboard(mock_parent, admin_user_id=1)
 
             assert dashboard.admin_user_id == 1
@@ -72,7 +72,7 @@ class TestGUIDashboardInitialization:
 
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
                 with patch.object(SecurityDashboard, '_load_data'):
                     dashboard = SecurityDashboard(mock_parent, admin_user_id=1)
@@ -96,7 +96,7 @@ class TestGUIDashboardInitialization:
 
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
                 with patch.object(SecurityDashboard, '_load_data'):
                     dashboard = SecurityDashboard(mock_parent, admin_user_id=1)
@@ -113,7 +113,7 @@ class TestGUIDashboardInitialization:
 
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
                 with patch.object(SecurityDashboard, '_load_data'):
                     dashboard = SecurityDashboard(mock_parent, admin_user_id=1)
@@ -137,7 +137,7 @@ class TestGUIManagerAccess:
 
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
                 with patch.object(SecurityDashboard, '_load_data'):
                     dashboard = SecurityDashboard(mock_parent, admin_user_id=1)
@@ -171,7 +171,7 @@ class TestGUIWidgetCreation:
 
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
             with patch.object(SecurityDashboard, '_load_data'):
                 dashboard = SecurityDashboard(mock_parent, admin_user_id=1)
 
@@ -188,7 +188,7 @@ class TestGUIWidgetCreation:
 
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
                 with patch.object(SecurityDashboard, '_load_data') as mock_load:
                     dashboard = SecurityDashboard(mock_parent, admin_user_id=1)
@@ -260,8 +260,8 @@ class TestGUIIntegration:
 
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
-            with patch('university_system.infrastructure.security.security_dashboard_gui.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
+            with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.DEFAULT_DB_PATH', test_db):
                 with patch.object(SecurityDashboard, '_create_widgets'):
                     with patch.object(SecurityDashboard, '_load_data'):
                         dashboard = SecurityDashboard(mock_parent, admin_user_id=1)
@@ -294,7 +294,7 @@ class TestGUIErrorHandling:
 
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
                 with patch.object(SecurityDashboard, '_load_data'):
                     # Should not raise exception
@@ -310,7 +310,7 @@ class TestGUIErrorHandling:
 
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
                 with patch.object(SecurityDashboard, '_load_data'):
                     # Should handle None parent
@@ -338,7 +338,7 @@ class TestGUIWindowManagement:
 
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
                 with patch.object(SecurityDashboard, '_load_data'):
                     dashboard = SecurityDashboard(mock_parent, admin_user_id=1)
@@ -363,7 +363,7 @@ class TestGUIFunctionality:
 
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
                 # Mock _load_data to track calls
                 with patch.object(SecurityDashboard, '_load_data') as mock_load:
@@ -392,8 +392,8 @@ class TestComprehensiveGUIIntegration:
 
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
-            with patch('university_system.infrastructure.security.security_dashboard_gui.DEFAULT_DB_PATH', test_db):
+        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
+            with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.DEFAULT_DB_PATH', test_db):
                 with patch.object(SecurityDashboard, '_create_widgets'):
                     with patch.object(SecurityDashboard, '_load_data'):
                         # Create dashboard

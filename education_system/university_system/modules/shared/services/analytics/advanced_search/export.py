@@ -3,7 +3,7 @@ import csv
 import json
 from datetime import datetime
 
-from . import _globals
+from education_system.university_system.modules.shared.services.analytics.advanced_search import _globals
 
 
 def export_to_json(filename):

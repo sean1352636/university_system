@@ -65,19 +65,19 @@ class StudentPortalManager:
                 cursor = conn.cursor()
 
                 # Total documents
-                cursor.execute('SELECT COUNT(*) FROM student_documents WHERE student_id = ?', (student_id,))
+                cursor.execute("SELECT COUNT(*) FROM documents WHERE owner_id = ? AND source_type = 'student'", (student_id,))
                 total = cursor.fetchone()[0]
 
                 # Pending
-                cursor.execute("SELECT COUNT(*) FROM student_documents WHERE student_id = ? AND status = 'pending'", (student_id,))
+                cursor.execute("SELECT COUNT(*) FROM documents WHERE owner_id = ? AND source_type = 'student' AND status = 'pending'", (student_id,))
                 pending = cursor.fetchone()[0]
 
                 # Approved
-                cursor.execute("SELECT COUNT(*) FROM student_documents WHERE student_id = ? AND status = 'approved'", (student_id,))
+                cursor.execute("SELECT COUNT(*) FROM documents WHERE owner_id = ? AND source_type = 'student' AND status = 'approved'", (student_id,))
                 approved = cursor.fetchone()[0]
 
                 # Current versions
-                cursor.execute('SELECT COUNT(*) FROM student_documents WHERE student_id = ? AND is_current_version = 1', (student_id,))
+                cursor.execute("SELECT COUNT(*) FROM documents WHERE owner_id = ? AND source_type = 'student' AND is_current_version = 1", (student_id,))
                 current = cursor.fetchone()[0]
 
                 conn.close()
@@ -121,9 +121,9 @@ class StudentPortalManager:
                     cursor.execute('''
                     SELECT dt.type_name, sd.upload_date, sd.verification_status, sd.version_number,
                            sd.original_filename, sd.verification_notes
-                    FROM student_documents sd
+                    FROM documents sd
                     JOIN document_types dt ON sd.type_id = dt.type_id
-                    WHERE sd.student_id = ? AND sd.is_current_version = 1
+                    WHERE sd.owner_id = ? AND sd.source_type = 'student' AND sd.is_current_version = 1
                     ORDER BY sd.upload_date DESC
                     ''', (student_id,))
 
@@ -198,8 +198,8 @@ class StudentPortalManager:
                     title="Select Document",
                     filetypes=[
                         ("PDF files", "*.pdf"),
-                        ("Image files", "*.jpg;*.jpeg;*.png"),
-                        ("Word documents", "*.doc;*.docx"),
+                        ("Image files", "*.jpg *.jpeg *.png"),
+                        ("Word documents", "*.doc *.docx"),
                         ("All files", "*.*")
                     ]
                 )
@@ -322,11 +322,11 @@ class StudentPortalManager:
                 cursor = conn.cursor()
 
                 # Documents
-                cursor.execute('SELECT COUNT(*) FROM student_documents WHERE student_id = ? AND is_current_version = 1', (student_id,))
+                cursor.execute("SELECT COUNT(*) FROM documents WHERE owner_id = ? AND source_type = 'student' AND is_current_version = 1", (student_id,))
                 doc_count = cursor.fetchone()[0]
 
                 # Pending approvals
-                cursor.execute("SELECT COUNT(*) FROM student_documents WHERE student_id = ? AND status = 'pending'", (student_id,))
+                cursor.execute("SELECT COUNT(*) FROM documents WHERE owner_id = ? AND source_type = 'student' AND status = 'pending'", (student_id,))
                 pending_count = cursor.fetchone()[0]
 
                 # Notifications
@@ -338,8 +338,8 @@ class StudentPortalManager:
                 SELECT COUNT(*) FROM document_types dt
                 WHERE dt.is_required = 1
                 AND NOT EXISTS (
-                    SELECT 1 FROM student_documents sd
-                    WHERE sd.student_id = ? AND sd.type_id = dt.type_id
+                    SELECT 1 FROM documents sd
+                    WHERE sd.owner_id = ? AND sd.source_type = 'student' AND sd.type_id = dt.type_id
                 )
                 ''', (student_id,))
                 missing_count = cursor.fetchone()[0]
@@ -374,9 +374,9 @@ class StudentPortalManager:
                 cursor = conn.cursor()
                 cursor.execute('''
                 SELECT dt.type_name, sd.upload_date, sd.verification_status, sd.version_number
-                FROM student_documents sd
+                FROM documents sd
                 JOIN document_types dt ON sd.type_id = dt.type_id
-                WHERE sd.student_id = ? AND sd.is_current_version = 1
+                WHERE sd.owner_id = ? AND sd.source_type = 'student' AND sd.is_current_version = 1
                 ORDER BY sd.upload_date DESC
                 LIMIT 20
                 ''', (student_id,))
@@ -408,8 +408,8 @@ class StudentPortalManager:
 
                 for req in required:
                     cursor.execute('''
-                    SELECT COUNT(*) FROM student_documents
-                    WHERE student_id = ? AND type_id = (
+                    SELECT COUNT(*) FROM documents
+                    WHERE owner_id = ? AND source_type = 'student' AND type_id = (
                         SELECT type_id FROM document_types WHERE type_name = ?
                     )
                     ''', (student_id, req[0]))
@@ -501,9 +501,9 @@ class StudentPortalManager:
                 # Submitted
                 cursor.execute('''
                 SELECT COUNT(DISTINCT sd.type_id)
-                FROM student_documents sd
+                FROM documents sd
                 JOIN document_types dt ON sd.type_id = dt.type_id
-                WHERE sd.student_id = ? AND dt.is_required = 1
+                WHERE sd.owner_id = ? AND sd.source_type = 'student' AND dt.is_required = 1
                 ''', (student_id,))
                 submitted = cursor.fetchone()[0]
 
@@ -555,8 +555,8 @@ class StudentPortalManager:
                 for type_id, type_name in required_types:
                     cursor.execute('''
                     SELECT upload_date, expiry_date, status
-                    FROM student_documents
-                    WHERE student_id = ? AND type_id = ? AND is_current_version = 1
+                    FROM documents
+                    WHERE owner_id = ? AND source_type = 'student' AND type_id = ? AND is_current_version = 1
                     ORDER BY upload_date DESC
                     LIMIT 1
                     ''', (student_id, type_id))
@@ -626,16 +626,16 @@ class StudentPortalManager:
                 cursor = conn.cursor()
 
                 # Status counts
-                cursor.execute("SELECT COUNT(*) FROM student_documents WHERE student_id = ? AND status = 'pending'", (student_id,))
+                cursor.execute("SELECT COUNT(*) FROM documents WHERE owner_id = ? AND source_type = 'student' AND status = 'pending'", (student_id,))
                 pending = cursor.fetchone()[0]
 
-                cursor.execute("SELECT COUNT(*) FROM student_documents WHERE student_id = ? AND status = 'approved'", (student_id,))
+                cursor.execute("SELECT COUNT(*) FROM documents WHERE owner_id = ? AND source_type = 'student' AND status = 'approved'", (student_id,))
                 approved = cursor.fetchone()[0]
 
-                cursor.execute("SELECT COUNT(*) FROM student_documents WHERE student_id = ? AND status = 'rejected'", (student_id,))
+                cursor.execute("SELECT COUNT(*) FROM documents WHERE owner_id = ? AND source_type = 'student' AND status = 'rejected'", (student_id,))
                 rejected = cursor.fetchone()[0]
 
-                cursor.execute("SELECT COUNT(*) FROM student_documents WHERE student_id = ? AND status = 'verified'", (student_id,))
+                cursor.execute("SELECT COUNT(*) FROM documents WHERE owner_id = ? AND source_type = 'student' AND status = 'verified'", (student_id,))
                 verified = cursor.fetchone()[0]
 
                 conn.close()
@@ -677,9 +677,9 @@ class StudentPortalManager:
                     cursor.execute('''
                     SELECT dt.type_name, sd.upload_date, sd.verification_status,
                            sd.verification_date, sd.verification_notes
-                    FROM student_documents sd
+                    FROM documents sd
                     JOIN document_types dt ON sd.type_id = dt.type_id
-                    WHERE sd.student_id = ? AND sd.is_current_version = 1
+                    WHERE sd.owner_id = ? AND sd.source_type = 'student' AND sd.is_current_version = 1
                     ORDER BY sd.upload_date DESC
                     ''', (student_id,))
 

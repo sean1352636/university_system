@@ -506,7 +506,7 @@ def launch_financial_gui(auth_instance=None):
         initialize_enhanced_database()
 
         # Create and run GUI with auth instance (lazy import to avoid circular import)
-        from .main import FinancialManagementGUI
+        from education_system.university_system.modules.domain.finance.gui.finance_reporting.main import FinancialManagementGUI
         root = tk.Tk()
         app = FinancialManagementGUI(root, auth)
         
@@ -1616,7 +1616,7 @@ def backup_database():
 
         # Create backup filename with timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_path = paths.BACKUP_DIR / f"finance_backup_{timestamp}.db"
+        backup_path = paths.BACKUP_FINANCE_DIR / f"finance_backup_{timestamp}.db"
 
         # Ensure backup directory exists
         backup_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1788,7 +1788,7 @@ def test_auth_integration():
             print("\n🎯 Testing GUI Integration...")
             try:
                 # Test that GUI can be created with auth (lazy import)
-                from .main import FinancialManagementGUI
+                from education_system.university_system.modules.domain.finance.gui.finance_reporting.main import FinancialManagementGUI
                 root = tk.Tk()
                 root.withdraw()  # Hide the window for testing
 

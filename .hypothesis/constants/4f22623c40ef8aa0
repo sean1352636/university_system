@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/financial_aid/student_portal/recommendations.py
+# hypothesis_version: 6.151.9
+
+[100, 120, 250, '#d4edda', '#fff3cd', '1.0', '<<TreeviewSelect>>', 'Arial', 'Award', 'Back to Dashboard', 'Confirm', 'Deadline', 'Eligibility', 'Error', 'HIGH', 'MEDIUM', 'Match Score', 'Name', 'No Recommendations', 'Priority', 'Refresh', 'Start Application', 'Success', 'Success.TButton', 'Title.TLabel', 'View Full Details', 'Warning', 'application_deadline', 'award_amount_max', 'bold', 'both', 'eligibility_status', 'end', 'essay_required', 'green', 'high', 'left', 'match_score', 'medium', 'min_gpa', 'priority_level', 'right', 'scholarship_id', 'scholarship_name', 'score', 'subtitle', 'tags', 'title', 'values', 'x']

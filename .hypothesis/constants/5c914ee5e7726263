@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/plagiarism_main_gui/__init__.py
+# hypothesis_version: 6.151.9
+
+['BackupRestoreDialog', 'BulkOperationsDialog', 'CheckResultDialog', 'GuiConfig', 'PlagiarismCheckerGUI', 'ResultCard', 'ResultDetailsDialog', 'ScrollableFrame', 'SetupTestingDialog', 'StatisticsDialog', 'StatusBar', 'SystemTestingDialog', 'main', 'run_gui_standalone', 'run_gui_tests']

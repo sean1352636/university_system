@@ -9,7 +9,7 @@ from education_system.university_system.infrastructure.database.db import get_db
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.modules.shared.constants import paths
 
-from ._compat import configure_logging
+from education_system.university_system.modules.shared.services.analytics.enhanced_reporting._compat import configure_logging
 
 warnings.filterwarnings('ignore')
 
@@ -91,7 +91,7 @@ def get_reporting_db_connection():
 
 def serialize_dataframe(df):
     """Convert DataFrame to JSON-serializable format"""
-    from ._compat import pd
+    from education_system.university_system.modules.shared.services.analytics.enhanced_reporting._compat import pd
 
     if df is None or df.empty:
         return []

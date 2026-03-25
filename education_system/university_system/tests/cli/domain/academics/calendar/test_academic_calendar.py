@@ -16,6 +16,7 @@ from education_system.university_system.modules.domain.academics.services.academ
     ExportError,
     SyncError,
 )
+from education_system.university_system.modules.domain.academics.services.academic_calendar.config import CalendarConfig
 from education_system.university_system.modules.domain.academics.services.academic_calendar.factory import create_calendar_manager
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 import tempfile
@@ -33,7 +34,8 @@ def temp_db():
 @pytest.fixture
 def calendar_manager(temp_db):
     """Create AcademicCalendarManager instance for testing"""
-    manager = AcademicCalendarManager(db_file=temp_db)
+    config = CalendarConfig(db_file=temp_db)
+    manager = AcademicCalendarManager(config=config)
     return manager
 
 
@@ -86,21 +88,27 @@ class TestCalendarManagerInitialization:
 
     def test_init_with_custom_db(self, temp_db):
         """Test initialization with custom database path"""
-        manager = AcademicCalendarManager(db_file=temp_db)
+        config = CalendarConfig(db_file=temp_db)
+        manager = AcademicCalendarManager(config=config)
         assert manager is not None
-        assert manager.db_file == temp_db
+        assert manager.config.db_file == temp_db
 
     def test_database_tables_created(self, calendar_manager):
         """Test that necessary database tables are created"""
-        with get_connection() as conn:
+        import sqlite3
+        conn = sqlite3.connect(calendar_manager.config.db_file)
+        conn.row_factory = sqlite3.Row
+        try:
             cursor = conn.cursor()
 
             # Check for essential tables
             cursor.execute("""
                 SELECT name FROM sqlite_master
-                WHERE type='table' AND name='calendar_events'
+                WHERE type='table' AND name='academic_calendar_events'
             """)
             assert cursor.fetchone() is not None
+        finally:
+            conn.close()
 
     def test_create_calendar_manager_factory(self, temp_db):
         """Test factory function for creating calendar manager"""
@@ -409,19 +417,32 @@ class TestHolidayManagement:
 class TestNotifications:
     """Test notification functionality"""
 
-    @patch('university_system.modules.domain.academics.services.academic_calendar.send_email')
+    @patch('education_system.university_system.infrastructure.email.smtp.send_email_via_smtp')
     def test_send_event_notification(self, mock_send_email, calendar_manager):
-        """Test sending event notification"""
+        """Test sending event notification via the notification manager"""
         mock_send_email.return_value = True
 
-        try:
-            result = calendar_manager.send_notification(
-                event_id=1,
-                notification_type='reminder'
-            )
-            # Result depends on implementation
-        except (AttributeError, Exception):
-            pass
+        # Insert a test event directly so the FK constraint is satisfied
+        import sqlite3 as _sqlite3
+        conn = _sqlite3.connect(calendar_manager.config.db_file)
+        cursor = conn.cursor()
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        cursor.execute(
+            """INSERT INTO academic_calendar_events
+               (id, name, date, event_type, date_added, last_modified)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            ('evt_1', 'Test Event', datetime.now().strftime('%Y-%m-%d'), 'lecture', now, now)
+        )
+        conn.commit()
+        conn.close()
+
+        result = calendar_manager.notifications.schedule_notification(
+            user_id='test_user',
+            event_id='evt_1',
+            notification_type='reminder',
+            scheduled_time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        )
+        assert result[0] is True
 
 
 class TestEventDependencies:

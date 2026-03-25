@@ -6,6 +6,7 @@ from tkinter import ttk, messagebox, simpledialog
 from education_system.college_system.modules.domain.timetable.services.timetable_service import TimetableService
 from education_system.college_system.modules.domain.timetable.services.room_service import RoomService
 from education_system.college_system.modules.domain.courses.services.course_service import CourseService
+from education_system.college_system.core.i18n import t
 
 
 class TimetableFrame(tk.Frame):
@@ -38,65 +39,65 @@ class TimetableFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Timetable Management",
+        tk.Label(header, text=t("timetable.management"),
                  font=("Helvetica", 15, "bold"), bg="#2c3e50", fg="white"
                  ).pack(side="left", padx=20, pady=10)
 
-        self._generate_btn = ttk.Button(header, text="Generate Timetable",
+        self._generate_btn = ttk.Button(header, text=t("timetable.generate"),
                                         command=self._generate_timetable)
         # Initially hidden — shown for admin in refresh()
 
-        self._my_btn = ttk.Button(header, text="My Timetable",
+        self._my_btn = ttk.Button(header, text=t("timetable.my_timetable"),
                                    command=self._show_my_timetable)
         self._my_btn.pack(side="right", padx=20, pady=10)
 
         # Admin form (hidden for non-admin roles in refresh)
-        self._slot_form = tk.LabelFrame(self, text="Add / Delete Slot", bg="#ecf0f1", padx=10, pady=8)
+        self._slot_form = tk.LabelFrame(self, text=t("timetable.add_delete_slot"), bg="#ecf0f1", padx=10, pady=8)
         self._slot_form.pack(fill="x", padx=15, pady=(8, 0))
 
         row = tk.Frame(self._slot_form, bg="#ecf0f1")
         row.pack(fill="x", pady=2)
 
-        tk.Label(row, text="Course ID:", bg="#ecf0f1").pack(side="left")
+        tk.Label(row, text=t("timetable.course_id_colon"), bg="#ecf0f1").pack(side="left")
         self._course_var = tk.StringVar()
         ttk.Entry(row, textvariable=self._course_var, width=8).pack(side="left", padx=5)
 
-        tk.Label(row, text="Day:", bg="#ecf0f1").pack(side="left", padx=(10, 0))
+        tk.Label(row, text=t("timetable.day_colon"), bg="#ecf0f1").pack(side="left", padx=(10, 0))
         self._day_var = tk.StringVar(value="Mon")
         ttk.Combobox(row, textvariable=self._day_var, values=self._DAYS,
                      width=5, state="readonly").pack(side="left", padx=5)
 
-        tk.Label(row, text="Start:", bg="#ecf0f1").pack(side="left", padx=(10, 0))
+        tk.Label(row, text=t("timetable.start_colon"), bg="#ecf0f1").pack(side="left", padx=(10, 0))
         self._start_var = tk.StringVar()
         ttk.Entry(row, textvariable=self._start_var, width=6).pack(side="left", padx=5)
 
-        tk.Label(row, text="End:", bg="#ecf0f1").pack(side="left", padx=(10, 0))
+        tk.Label(row, text=t("timetable.end_colon"), bg="#ecf0f1").pack(side="left", padx=(10, 0))
         self._end_var = tk.StringVar()
         ttk.Entry(row, textvariable=self._end_var, width=6).pack(side="left", padx=5)
 
         row2 = tk.Frame(self._slot_form, bg="#ecf0f1")
         row2.pack(fill="x", pady=2)
 
-        tk.Label(row2, text="Room:", bg="#ecf0f1").pack(side="left")
+        tk.Label(row2, text=t("timetable.room_colon"), bg="#ecf0f1").pack(side="left")
         self._room_var = tk.StringVar()
         ttk.Entry(row2, textvariable=self._room_var, width=12).pack(side="left", padx=5)
 
-        tk.Label(row2, text="Instructor:", bg="#ecf0f1").pack(side="left", padx=(10, 0))
+        tk.Label(row2, text=t("timetable.instructor_colon"), bg="#ecf0f1").pack(side="left", padx=(10, 0))
         self._instructor_var = tk.StringVar()
         ttk.Entry(row2, textvariable=self._instructor_var, width=20).pack(side="left", padx=5)
 
-        ttk.Button(row2, text="Add Slot", command=self._add_slot).pack(side="left", padx=(20, 0))
-        ttk.Button(row2, text="Delete Slot by ID", command=self._delete_slot).pack(side="left", padx=5)
+        ttk.Button(row2, text=t("timetable.add_slot"), command=self._add_slot).pack(side="left", padx=(20, 0))
+        ttk.Button(row2, text=t("timetable.delete_slot_by_id"), command=self._delete_slot).pack(side="left", padx=5)
 
         # Notebook for timetable grid + rooms tab
         self._nb = ttk.Notebook(self)
         self._nb.pack(fill="both", expand=True, padx=5, pady=5)
 
         self._grid_tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(self._grid_tab, text="Timetable")
+        self._nb.add(self._grid_tab, text=t("timetable.tab_timetable"))
 
         self._rooms_tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(self._rooms_tab, text="Rooms")
+        self._nb.add(self._rooms_tab, text=t("timetable.tab_rooms"))
         self._build_rooms_tab()
 
         # Grid area — canvas with scrollbars for the weekly grid
@@ -124,16 +125,17 @@ class TimetableFrame(tk.Frame):
         toolbar = tk.Frame(self._rooms_tab, bg="#ecf0f1")
         toolbar.pack(fill="x", padx=10, pady=5)
 
-        ttk.Button(toolbar, text="Refresh", command=self._load_rooms).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="Add Room", command=self._add_room_dialog).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("common.refresh"), command=self._load_rooms).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("timetable.add_room"), command=self._add_room_dialog).pack(side="left", padx=5)
+        ttk.Button(toolbar, text="Export CSV", command=self._export_csv).pack(side="right", padx=5)
 
         columns = ("id", "room_code", "room_type", "capacity", "building", "status")
         self._room_tree = ttk.Treeview(self._rooms_tab, columns=columns,
                                         show="headings", selectmode="browse")
         for col, heading, w in [
-            ("id", "ID", 50), ("room_code", "Code", 100),
-            ("room_type", "Type", 100), ("capacity", "Capacity", 80),
-            ("building", "Building", 100), ("status", "Status", 90),
+            ("id", t("timetable.col_id"), 50), ("room_code", t("timetable.col_code"), 100),
+            ("room_type", t("timetable.col_type"), 100), ("capacity", t("timetable.col_capacity"), 80),
+            ("building", t("timetable.col_building"), 100), ("status", t("timetable.col_status"), 90),
         ]:
             self._room_tree.heading(col, text=heading)
             self._room_tree.column(col, width=w, anchor="center")
@@ -154,18 +156,18 @@ class TimetableFrame(tk.Frame):
                     r["capacity"], r.get("building", ""), r["status"],
                 ))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _add_room_dialog(self):
-        code = simpledialog.askstring("Add Room", "Room code:", parent=self)
+        code = simpledialog.askstring(t("timetable.add_room"), t("timetable.room_code_prompt"), parent=self)
         if not code:
             return
         try:
             room = self._room_svc.create_room(room_code=code)
-            messagebox.showinfo("Success", f"Room '{code}' created (ID: {room['id']}).")
+            messagebox.showinfo(t("common.success"), t("timetable.room_created", code=code, id=room['id']))
             self._load_rooms()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ------------------------------------------------------------------
     # Refresh / data loading
@@ -218,7 +220,7 @@ class TimetableFrame(tk.Frame):
             try:
                 slots = self._fetch_all_slots()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
                 return
 
         # Organise slots into a lookup: (day, start_time) -> list of entries
@@ -233,7 +235,7 @@ class TimetableFrame(tk.Frame):
                 grid_data[key].append(s)
 
         # Header row — Time column + day columns
-        tk.Label(self._grid_frame, text="Time", font=("Arial", 10, "bold"),
+        tk.Label(self._grid_frame, text=t("timetable.time"), font=("Arial", 10, "bold"),
                  relief="solid", borderwidth=2, bg="#4a90e2", fg="white",
                  width=14, height=2).grid(row=0, column=0, padx=1, pady=1, sticky="nsew")
 
@@ -307,7 +309,7 @@ class TimetableFrame(tk.Frame):
                                     bg=bg_study, width=180, height=80)
                     cell.grid(row=row_idx, column=col, padx=1, pady=1, sticky="nsew")
                     cell.grid_propagate(False)
-                    tk.Label(cell, text="Study Period",
+                    tk.Label(cell, text=t("timetable.study_period"),
                              font=("Arial", 9, "bold"),
                              bg=bg_study, fg="#856404").place(relx=0.5, rely=0.5, anchor="center")
 
@@ -340,14 +342,14 @@ class TimetableFrame(tk.Frame):
                 self._room_var.get() or None,
                 self._instructor_var.get() or None,
             )
-            messagebox.showinfo("Success", f"Slot added (ID: {slot['id']}).")
+            messagebox.showinfo(t("common.success"), t("timetable.slot_added", id=slot['id']))
             self._load_grid()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _delete_slot(self):
         slot_id_str = simpledialog.askstring(
-            "Delete Slot", "Enter the slot ID to delete:",
+            t("timetable.delete_slot"), t("timetable.enter_slot_id"),
             parent=self,
         )
         if not slot_id_str:
@@ -355,10 +357,10 @@ class TimetableFrame(tk.Frame):
         try:
             slot_id = int(slot_id_str)
             self._svc.delete_slot(slot_id)
-            messagebox.showinfo("Success", f"Slot {slot_id} deleted.")
+            messagebox.showinfo(t("common.success"), t("timetable.slot_deleted", id=slot_id))
             self._load_grid()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ------------------------------------------------------------------
     # Generate timetable
@@ -379,7 +381,7 @@ class TimetableFrame(tk.Frame):
             "Remaining gaps show as Study Periods on student timetables.\n\n"
             "Continue?"
         )
-        if not messagebox.askyesno("Generate Timetable", schedule_info):
+        if not messagebox.askyesno(t("timetable.generate"), schedule_info):
             return
 
         try:
@@ -395,14 +397,18 @@ class TimetableFrame(tk.Frame):
             if result["unscheduled"]:
                 summary += f"\nUnscheduled: {', '.join(result['unscheduled'])}"
 
-            messagebox.showinfo("Generation Complete", summary)
+            messagebox.showinfo(t("timetable.generation_complete"), summary)
             self._load_grid()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ------------------------------------------------------------------
     # My timetable
     # ------------------------------------------------------------------
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._room_tree, default_filename="timetable_rooms.csv")
 
     def _show_my_timetable(self):
         try:
@@ -411,16 +417,16 @@ class TimetableFrame(tk.Frame):
             try:
                 student = conn.execute(
                     "SELECT id FROM students WHERE user_id = ?",
-                    (self._auth.current_user["user_id"],),
+                    (self._auth.current_user["user_id"] if self._auth and self._auth.current_user else None,),
                 ).fetchone()
             finally:
                 conn.close()
 
             if not student:
-                messagebox.showinfo("Info", "No student record linked to your account.")
+                messagebox.showinfo(t("common.info"), t("timetable.no_student_record"))
                 return
 
             slots = self._svc.get_student_timetable(student["id"])
             self._load_grid(slots=slots, show_study=True)
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))

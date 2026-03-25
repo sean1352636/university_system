@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/gui/trip_management_gui/expense_dialogs.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d', 'Accommodation', 'Activities', 'Add Expense', 'Amount (£):', 'Category:', 'Date (YYYY-MM-DD):', 'Description:', 'Edit Expense', 'Equipment', 'Error', 'Expense not found.', 'Food', 'Insurance', 'Miscellaneous', 'Success', 'Transportation', 'Validation Error', 'id', 'readonly']

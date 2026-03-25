@@ -3,6 +3,7 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import EmergencyError, ValidationError
 from education_system.college_system.infrastructure.database.db import connect
+from education_system.college_system.core.sql_safety import validate_identifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,10 +26,21 @@ class EmergencyService:
             raise ValidationError("scheduled_date is required.")
         conn = self._conn()
         try:
+            # Build INSERT with only non-None values so DB defaults apply
+            fields = {k: v for k, v in {
+                'drill_type': kwargs.get('drill_type'),
+                'scheduled_date': kwargs.get('scheduled_date'),
+                'actual_date': kwargs.get('actual_date'),
+                'duration_minutes': kwargs.get('duration_minutes'),
+                'outcome': kwargs.get('outcome'),
+                'notes': kwargs.get('notes'),
+                'status': kwargs.get('status'),
+            }.items() if v is not None}
+            cols = ", ".join(fields.keys())
+            placeholders = ", ".join("?" for _ in fields)
             conn.execute(
-                """INSERT INTO emergency_drills (drill_type, scheduled_date, actual_date, duration_minutes, outcome, notes, status)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                (kwargs.get('drill_type'), kwargs.get('scheduled_date'), kwargs.get('actual_date'), kwargs.get('duration_minutes'), kwargs.get('outcome'), kwargs.get('notes'), kwargs.get('status'),),
+                f"INSERT INTO emergency_drills ({cols}) VALUES ({placeholders})",
+                list(fields.values()),
             )
             conn.commit()
             row = conn.execute(
@@ -60,7 +72,7 @@ class EmergencyService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -78,7 +90,7 @@ class EmergencyService:
         if not updates:
             raise ValidationError("No valid fields to update.")
         updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [pk]
         conn = self._conn()
         try:
@@ -116,7 +128,7 @@ class EmergencyService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         conn = self._conn()
         try:

@@ -8,6 +8,7 @@ from education_system.college_system.infrastructure.validation.validators import
     validate_course_code, validate_non_empty, validate_positive_int,
 )
 
+from education_system.college_system.core.sql_safety import validate_identifier, escape_like
 import logging
 
 logger = logging.getLogger(__name__)
@@ -99,7 +100,8 @@ class CourseService:
             params.append(status)
         if search:
             sql += " AND (course_code LIKE ? OR title LIKE ?)"
-            term = f"%{search}%"
+            escaped = escape_like(search)
+            term = f"%{escaped}%"
             params.extend([term, term])
 
         sql += " ORDER BY course_code LIMIT ? OFFSET ?"
@@ -123,7 +125,7 @@ class CourseService:
 
         updates["updated_at"] = datetime.utcnow().isoformat()
 
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [course_pk]
 
         conn = self._conn()

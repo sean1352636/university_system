@@ -4,6 +4,7 @@ import logging
 
 from education_system.primary_school.infrastructure.database.db import connect
 from education_system.primary_school.core.exceptions import StaffError
+from education_system.primary_school.core.sql_safety import escape_like
 import traceback
 
 logger = logging.getLogger(__name__)
@@ -27,7 +28,8 @@ class StaffDirectoryService:
             params = []
             if search:
                 sql += " AND (first_name LIKE ? OR last_name LIKE ? OR role LIKE ?)"
-                term = f"%{search}%"
+                escaped = escape_like(search)
+                term = f"%{escaped}%"
                 params.extend([term, term, term])
             sql += " ORDER BY last_name, first_name"
             cursor.execute(sql, params)

@@ -21,6 +21,7 @@ import sys
 import json
 import logging
 import random
+import secrets
 import string
 from education_system.university_system.infrastructure.database.db import sqlite3
 from pathlib import Path
@@ -165,14 +166,21 @@ def _check_cli_remember_me_token(auth):
 # Main Authentication Menu
 # ============================================================================
 
-def display_auth_menu():
-    """Enhanced authentication menu with chatbot integration and remember me support"""
+def display_auth_menu(existing_auth=None):
+    """Enhanced authentication menu with chatbot integration and remember me support.
+
+    If *existing_auth* is provided (already logged-in), that session is reused
+    instead of creating a fresh UserAuth and showing the login screen.
+    """
     from education_system.university_system.infrastructure.auth import UserAuth
 
-    auth = UserAuth()
-
-    # Check for remember me token first
-    auth, auto_login = _check_cli_remember_me_token(auth)
+    if existing_auth is not None and getattr(existing_auth, 'current_user', None):
+        auth = existing_auth
+        auto_login = False
+    else:
+        auth = UserAuth()
+        # Check for remember me token first
+        auth, auto_login = _check_cli_remember_me_token(auth)
 
     # Initialize chatbot integration
     if CHATBOT_AVAILABLE:
@@ -195,7 +203,7 @@ def display_auth_menu():
             user = auth.current_user
             print(f"Logged in as: {user['username']} (Role: {user['role']})")
 
-            if user['password_reset_required']:
+            if user.get('password_reset_required'):
                 # Handle password reset (existing code)
                 print("\nYou must change your password before continuing.")
                 current_password = input("Enter current password: ")
@@ -221,7 +229,8 @@ def display_auth_menu():
             print("\n1. User Management")
             print("2. Role Management")
             print("3. My Account")
-            if 'access_chatbot' in user['permissions']:
+            user_perms = user.get('permissions', [])
+            if 'access_chatbot' in user_perms:
                 print("4. University Chatbot")
             print("5. Logout")
             print("6. Return to Main Menu")
@@ -230,18 +239,18 @@ def display_auth_menu():
             choice = input(f"\nEnter your choice (1-{max_choice}): ")
 
             if choice == '1':
-                if 'manage_users' in user['permissions']:
+                if 'manage_users' in user_perms:
                     display_user_management_menu(auth)
                 else:
                     print("You don't have permission to access User Management.")
             elif choice == '2':
-                if 'manage_roles' in user['permissions']:
+                if 'manage_roles' in user_perms:
                     display_role_management_menu(auth)
                 else:
                     print("You don't have permission to access Role Management.")
             elif choice == '3':
                 display_my_account_menu(auth)
-            elif choice == '4' and 'access_chatbot' in user['permissions']:
+            elif choice == '4' and 'access_chatbot' in user_perms:
                 display_chatbot_integration_menu(auth)
             elif choice == '5':
                 # Logout and clear remember me token
@@ -564,7 +573,7 @@ def display_user_management_menu(auth):
                 student_id = input("Student ID (must be an existing student ID): ")
 
             # Generate a random initial password
-            temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+            temp_password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(10))
 
             # Create the user
             if auth.create_user(username, temp_password, email, first_name, last_name, role, student_id, True):
@@ -600,8 +609,12 @@ def display_user_management_menu(auth):
                 print(f"Updated: {user['updated_at']}")
 
                 print("\nPermissions:")
-                for perm in user['permissions']:
-                    print(f"- {perm}")
+                perms = user.get('permissions') or auth.get_user_permissions(user['id'])
+                if perms:
+                    for perm in perms:
+                        print(f"- {perm}")
+                else:
+                    print("- (none)")
 
                 print("=" * 60)
 
@@ -694,7 +707,7 @@ def display_user_management_menu(auth):
             if user:
                 confirm = input(f"Are you sure you want to reset password for '{user_input}'? (y/n): ").lower()
                 if confirm == 'y':
-                    if auth.reset_password(user_input, auth.current_user['id']):
+                    if auth.reset_password(user_input, auth.current_user.get('user_id') or auth.current_user.get('id')):
                         print("Password reset successfully. User will receive a temporary password.")
                     else:
                         print("Failed to reset password.")
@@ -799,7 +812,7 @@ def display_user_management_menu(auth):
                     conn.close()
 
                     # Get user's current permissions
-                    user_permissions = user['permissions']
+                    user_permissions = user.get('permissions') or auth.get_user_permissions(user['id'])
 
                     print(f"Role: {user['role']}")
                     print("Current Permissions:")
@@ -1279,7 +1292,7 @@ def display_my_account_menu(auth):
             print("\nMy Permissions:")
             print("=" * 60)
 
-            for perm in user['permissions']:
+            for perm in user.get('permissions', []):
                 print(f"- {perm}")
 
             print("=" * 60)
@@ -2178,7 +2191,8 @@ def display_chatbot_integration_menu(auth):
         user = auth.current_user
 
         # Check if user has chatbot access
-        if 'access_chatbot' not in user['permissions']:
+        user_perms = user.get('permissions', [])
+        if 'access_chatbot' not in user_perms:
             print("You don't have permission to access the chatbot.")
             return
 
@@ -2197,14 +2211,14 @@ def display_chatbot_integration_menu(auth):
         menu_options.append("2. View My Conversation History")
 
         option_num = 3
-        if 'chatbot_admin' in user['permissions']:
+        if 'chatbot_admin' in user_perms:
             menu_options.append(f"{option_num}. View Chatbot Analytics")
             analytics_option = option_num
             option_num += 1
         else:
             analytics_option = None
 
-        if 'view_all_conversations' in user['permissions']:
+        if 'view_all_conversations' in user_perms:
             menu_options.append(f"{option_num}. View All User Conversations")
             all_conversations_option = option_num
             option_num += 1

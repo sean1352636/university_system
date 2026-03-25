@@ -4,7 +4,7 @@ Financial Aid mixin - applying for financial aid.
 
 from typing import Dict, Optional
 
-from ..common_imports import (
+from education_system.university_system.modules.domain.finance.gui.financial_aid.common_imports import (
     tk,
     ttk,
     scrolledtext,

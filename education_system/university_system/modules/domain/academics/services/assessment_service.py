@@ -44,6 +44,7 @@ class AssessmentAssignmentService:
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
         finally:
+            cursor.close()
             conn.close()
 
     @staticmethod
@@ -93,6 +94,7 @@ class AssessmentAssignmentService:
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
         finally:
+            cursor.close()
             conn.close()
 
     @staticmethod
@@ -115,6 +117,7 @@ class AssessmentAssignmentService:
             row = cursor.fetchone()
             return dict(row) if row else None
         finally:
+            cursor.close()
             conn.close()
 
     @staticmethod
@@ -137,6 +140,7 @@ class AssessmentAssignmentService:
             row = cursor.fetchone()
             return dict(row) if row else None
         finally:
+            cursor.close()
             conn.close()
 
     @staticmethod
@@ -191,6 +195,7 @@ class AssessmentAssignmentService:
             conn.commit()
             return cursor.lastrowid
         finally:
+            cursor.close()
             conn.close()
 
     @staticmethod
@@ -249,6 +254,7 @@ class AssessmentAssignmentService:
             conn.commit()
             return cursor.lastrowid
         finally:
+            cursor.close()
             conn.close()
 
     @staticmethod
@@ -265,4 +271,5 @@ class AssessmentAssignmentService:
             cursor.execute("SELECT module_code, module_name FROM modules ORDER BY module_code")
             return cursor.fetchall()
         finally:
+            cursor.close()
             conn.close()

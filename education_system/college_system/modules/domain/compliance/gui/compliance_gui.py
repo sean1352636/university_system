@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.college_system.modules.domain.compliance.services.compliance_service import ComplianceService
+from education_system.college_system.core.i18n import t
 
 
 class ComplianceFrame(tk.Frame):
@@ -20,7 +21,7 @@ class ComplianceFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Compliance & Funding", font=("Helvetica", 14, "bold"),
+        tk.Label(header, text=t("compliance.management"), font=("Helvetica", 14, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=10)
 
         self._nb = ttk.Notebook(self)
@@ -28,24 +29,25 @@ class ComplianceFrame(tk.Frame):
 
         # Funding tab
         self._fund_tab = tk.Frame(self._nb)
-        self._nb.add(self._fund_tab, text="Funding Records")
+        self._nb.add(self._fund_tab, text=t("compliance.tab_funding", default="Funding Records"))
         self._build_funding_tab()
 
         # Resits tab
         self._resit_tab = tk.Frame(self._nb)
-        self._nb.add(self._resit_tab, text="Resit Tracking")
+        self._nb.add(self._resit_tab, text=t("compliance.tab_resits", default="Resit Tracking"))
         self._build_resit_tab()
 
         # Destinations tab
         self._dest_tab = tk.Frame(self._nb)
-        self._nb.add(self._dest_tab, text="Destinations")
+        self._nb.add(self._dest_tab, text=t("compliance.tab_destinations", default="Destinations"))
         self._build_dest_tab()
 
     def _build_funding_tab(self):
         toolbar = tk.Frame(self._fund_tab)
         toolbar.pack(fill="x", padx=5, pady=5)
-        ttk.Button(toolbar, text="Refresh", command=self._load_funding).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="New Record", command=self._new_funding).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("common.refresh"), command=self._load_funding).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("compliance.new_record", default="New Record"), command=self._new_funding).pack(side="right", padx=5)
+        ttk.Button(toolbar, text="Export CSV", command=self._export_csv).pack(side="left", padx=5)
 
         cols = ("id", "student", "body", "type", "ilr_ref", "status", "hours")
         self._fund_tree = ttk.Treeview(self._fund_tab, columns=cols, show="headings", height=15)
@@ -57,12 +59,12 @@ class ComplianceFrame(tk.Frame):
     def _build_resit_tab(self):
         toolbar = tk.Frame(self._resit_tab)
         toolbar.pack(fill="x", padx=5, pady=5)
-        ttk.Button(toolbar, text="Refresh", command=self._load_resits).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="New Resit", command=self._new_resit).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("common.refresh"), command=self._load_resits).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("compliance.new_resit", default="New Resit"), command=self._new_resit).pack(side="right", padx=5)
 
-        cols = ("id", "student", "subject", "original", "target", "resit_date", "status")
+        cols = ("id", "student", "subject", "gcse_grade", "target", "status")
         self._resit_tree = ttk.Treeview(self._resit_tab, columns=cols, show="headings", height=15)
-        for c, w in zip(cols, (50, 120, 100, 70, 70, 100, 80)):
+        for c, w in zip(cols, (50, 120, 100, 70, 70, 80)):
             self._resit_tree.heading(c, text=c.title())
             self._resit_tree.column(c, width=w)
         self._resit_tree.pack(fill="both", expand=True, padx=5, pady=5)
@@ -70,10 +72,10 @@ class ComplianceFrame(tk.Frame):
     def _build_dest_tab(self):
         toolbar = tk.Frame(self._dest_tab)
         toolbar.pack(fill="x", padx=5, pady=5)
-        ttk.Button(toolbar, text="Refresh", command=self._load_destinations).pack(side="left", padx=5)
-        ttk.Button(toolbar, text="New Destination", command=self._new_destination).pack(side="right", padx=5)
+        ttk.Button(toolbar, text=t("common.refresh"), command=self._load_destinations).pack(side="left", padx=5)
+        ttk.Button(toolbar, text=t("compliance.new_destination", default="New Destination"), command=self._new_destination).pack(side="right", padx=5)
 
-        cols = ("id", "student", "type", "institution", "course", "confirmed")
+        cols = ("id", "student", "type", "institution_name", "course", "contact_made")
         self._dest_tree = ttk.Treeview(self._dest_tab, columns=cols, show="headings", height=15)
         for c, w in zip(cols, (50, 120, 100, 150, 150, 80)):
             self._dest_tree.heading(c, text=c.title())
@@ -88,11 +90,11 @@ class ComplianceFrame(tk.Frame):
             for r in records:
                 name = f"{r.get('first_name', '')} {r.get('last_name', '')}".strip() or str(r.get("student_id", ""))
                 self._fund_tree.insert("", "end", values=(
-                    r["id"], name, r.get("funding_body", ""), r.get("funding_type", ""),
-                    r.get("ilr_reference", ""), r.get("funding_status", ""),
+                    r["id"], name, r.get("learning_aim", ""), r.get("funding_model", ""),
+                    r.get("aim_type", ""), r.get("completion_status", ""),
                     r.get("planned_hours", "")))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _load_resits(self):
         for item in self._resit_tree.get_children():
@@ -102,10 +104,10 @@ class ComplianceFrame(tk.Frame):
             for r in resits:
                 name = f"{r.get('first_name', '')} {r.get('last_name', '')}".strip() or str(r.get("student_id", ""))
                 self._resit_tree.insert("", "end", values=(
-                    r["id"], name, r.get("subject", ""), r.get("original_grade", ""),
-                    r.get("target_grade", ""), r.get("resit_date", ""), r.get("status", "")))
+                    r["id"], name, r.get("subject", ""), r.get("gcse_grade_on_entry", ""),
+                    r.get("target_grade", ""), r.get("status", "")))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _load_destinations(self):
         for item in self._dest_tree.get_children():
@@ -116,20 +118,20 @@ class ComplianceFrame(tk.Frame):
                 name = f"{d.get('first_name', '')} {d.get('last_name', '')}".strip() or str(d.get("student_id", ""))
                 self._dest_tree.insert("", "end", values=(
                     d["id"], name, d.get("destination_type", ""),
-                    d.get("institution", ""), d.get("course_title", ""),
-                    "Yes" if d.get("confirmed") else "No"))
+                    d.get("institution_name", ""), d.get("course_title", ""),
+                    "Yes" if d.get("contact_made") else "No"))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     def _new_funding(self):
         win = tk.Toplevel(self)
-        win.title("New Funding Record")
+        win.title(t("compliance.new_record", default="New Funding Record"))
         win.geometry("400x300")
         fields = {}
         row = 0
-        for label, key in [("Student ID*:", "student_id"), ("Funding Body*:", "funding_body"),
-                           ("Funding Type*:", "funding_type"), ("ILR Reference:", "ilr_reference"),
-                           ("Programme Type:", "programme_type"), ("Planned Hours:", "planned_hours")]:
+        for label, key in [("Student ID*:", "student_id"), ("Learning Aim*:", "learning_aim"),
+                           ("Funding Model*:", "funding_model"), ("Aim Type:", "aim_type"),
+                           ("Start Date:", "start_date"), ("Planned Hours:", "planned_hours")]:
             tk.Label(win, text=label).grid(row=row, column=0, padx=10, pady=5, sticky="e")
             e = tk.Entry(win, width=25)
             e.grid(row=row, column=1, padx=10, pady=5)
@@ -141,27 +143,27 @@ class ComplianceFrame(tk.Frame):
                 ph = fields["planned_hours"].get().strip()
                 self._svc.create_funding_record(
                     student_id=int(fields["student_id"].get().strip()),
-                    funding_body=fields["funding_body"].get().strip(),
-                    funding_type=fields["funding_type"].get().strip(),
-                    ilr_reference=fields["ilr_reference"].get().strip() or None,
-                    programme_type=fields["programme_type"].get().strip() or None,
+                    learning_aim=fields["learning_aim"].get().strip(),
+                    funding_model=fields["funding_model"].get().strip(),
+                    aim_type=fields["aim_type"].get().strip() or None,
+                    start_date=fields["start_date"].get().strip() or None,
                     planned_hours=int(ph) if ph else None)
-                messagebox.showinfo("Success", "Funding record created")
+                messagebox.showinfo(t("common.success"), t("compliance.funding_created", default="Funding record created"))
                 win.destroy()
                 self._load_funding()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
-        ttk.Button(win, text="Save", command=save).grid(row=row, column=0, columnspan=2, pady=15)
+                messagebox.showerror(t("common.error"), str(e))
+        ttk.Button(win, text=t("common.save"), command=save).grid(row=row, column=0, columnspan=2, pady=15)
 
     def _new_resit(self):
         win = tk.Toplevel(self)
-        win.title("New Resit")
+        win.title(t("compliance.new_resit", default="New Resit"))
         win.geometry("400x300")
         fields = {}
         row = 0
         for label, key in [("Student ID*:", "student_id"), ("Subject*:", "subject"),
-                           ("Original Grade:", "original_grade"), ("Target Grade:", "target_grade"),
-                           ("Resit Date:", "resit_date")]:
+                           ("GCSE Grade on Entry:", "gcse_grade_on_entry"),
+                           ("Target Grade:", "target_grade")]:
             tk.Label(win, text=label).grid(row=row, column=0, padx=10, pady=5, sticky="e")
             e = tk.Entry(win, width=25)
             e.grid(row=row, column=1, padx=10, pady=5)
@@ -177,24 +179,23 @@ class ComplianceFrame(tk.Frame):
                 self._svc.create_resit(
                     student_id=int(fields["student_id"].get().strip()),
                     subject=fields["subject"].get().strip(),
-                    original_grade=fields["original_grade"].get().strip() or None,
+                    gcse_grade_on_entry=fields["gcse_grade_on_entry"].get().strip() or None,
                     target_grade=fields["target_grade"].get().strip() or None,
-                    resit_date=fields["resit_date"].get().strip() or None,
-                    is_condition_of_funding=1 if cof_var.get() else 0)
-                messagebox.showinfo("Success", "Resit record created")
+                    resit_required=1 if cof_var.get() else 0)
+                messagebox.showinfo(t("common.success"), t("compliance.resit_created", default="Resit record created"))
                 win.destroy()
                 self._load_resits()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
-        ttk.Button(win, text="Save", command=save).grid(row=row, column=0, columnspan=2, pady=15)
+                messagebox.showerror(t("common.error"), str(e))
+        ttk.Button(win, text=t("common.save"), command=save).grid(row=row, column=0, columnspan=2, pady=15)
 
     def _new_destination(self):
         win = tk.Toplevel(self)
-        win.title("New Destination")
+        win.title(t("compliance.new_destination", default="New Destination"))
         win.geometry("400x300")
         fields = {}
         row = 0
-        for label, key in [("Student ID*:", "student_id"), ("Institution:", "institution"),
+        for label, key in [("Student ID*:", "student_id"), ("Institution Name:", "institution_name"),
                            ("Course Title:", "course_title")]:
             tk.Label(win, text=label).grid(row=row, column=0, padx=10, pady=5, sticky="e")
             e = tk.Entry(win, width=25)
@@ -217,15 +218,19 @@ class ComplianceFrame(tk.Frame):
                 self._svc.create_destination(
                     student_id=int(fields["student_id"].get().strip()),
                     destination_type=type_var.get(),
-                    institution=fields["institution"].get().strip() or None,
+                    institution_name=fields["institution_name"].get().strip() or None,
                     course_title=fields["course_title"].get().strip() or None,
-                    confirmed=1 if conf_var.get() else 0)
-                messagebox.showinfo("Success", "Destination recorded")
+                    contact_made=1 if conf_var.get() else 0)
+                messagebox.showinfo(t("common.success"), t("compliance.destination_recorded", default="Destination recorded"))
                 win.destroy()
                 self._load_destinations()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
-        ttk.Button(win, text="Save", command=save).grid(row=row, column=0, columnspan=2, pady=15)
+                messagebox.showerror(t("common.error"), str(e))
+        ttk.Button(win, text=t("common.save"), command=save).grid(row=row, column=0, columnspan=2, pady=15)
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._fund_tree, "compliance_funding.csv")
 
     def refresh(self):
         self._load_funding()

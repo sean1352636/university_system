@@ -114,8 +114,8 @@ class TestChatbotTab:
         tabs = ai_gui.notebook.tabs()
         assert len(tabs) > 0
 
-    @patch('university_system.modules.shared.services.ai_features.gui.ai_features_gui.ChatbotGUI')
-    @patch('university_system.modules.shared.services.ai_features.gui.ai_features_gui.UniversityChatbot')
+    @patch('education_system.university_system.modules.shared.services.ai_features.gui.ai_features_gui.ChatbotGUI')
+    @patch('education_system.university_system.modules.shared.services.ai_features.gui.ai_features_gui.UniversityChatbot')
     def test_launch_full_chatbot_gui(self, mock_chatbot, mock_gui, ai_gui):
         """Test launching full chatbot GUI"""
         chatbot_instance = Mock()
@@ -127,7 +127,7 @@ class TestChatbotTab:
         mock_gui.assert_called_once()
 
     @patch('tkinter.messagebox.showerror')
-    @patch('university_system.modules.shared.services.ai_features.gui.ai_features_gui.UniversityChatbot')
+    @patch('education_system.university_system.modules.shared.services.ai_features.gui.ai_features_gui.UniversityChatbot')
     def test_launch_chatbot_handles_error(self, mock_chatbot, mock_error, ai_gui):
         """Test error handling when launching chatbot fails"""
         mock_chatbot.side_effect = Exception("Chatbot init failed")
@@ -279,7 +279,7 @@ class TestPlagiarismTab:
 
         assert hasattr(ai_gui, 'plagiarism_tree')
 
-    @patch('university_system.modules.shared.services.ai_features.gui.ai_features_gui.PlagiarismCheckerGUI')
+    @patch('education_system.university_system.modules.shared.services.ai_features.gui.ai_features_gui.PlagiarismCheckerGUI')
     def test_launch_full_plagiarism_gui(self, mock_gui, ai_gui):
         """Test launching full plagiarism GUI"""
         ai_gui.launch_full_plagiarism_gui()
@@ -289,7 +289,7 @@ class TestPlagiarismTab:
 class TestAIDetectorTab:
     """Test AI detector tab functionality"""
 
-    @patch('university_system.modules.shared.services.ai_features.gui.ai_features_gui.AIDetectorGUI')
+    @patch('education_system.university_system.modules.shared.services.ai_features.gui.ai_features_gui.AIDetectorGUI')
     def test_launch_ai_detector_gui(self, mock_gui, ai_gui):
         """Test launching AI detector GUI"""
         ai_gui.launch_full_ai_detector_gui()

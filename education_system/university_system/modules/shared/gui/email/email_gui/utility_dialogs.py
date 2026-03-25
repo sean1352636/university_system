@@ -10,6 +10,8 @@ import subprocess
 import sys
 import logging
 
+from education_system.university_system.core.sql_safety import escape_like
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -33,7 +35,7 @@ if project_root not in sys.path:
 
 # Import functions from email_manager_main
 try:
-    from .email_manager_main import (
+    from education_system.university_system.modules.shared.gui.email.email_gui.email_manager_main import (
         get_system_health_info,
         clear_stored_emails,
         optimize_database,
@@ -45,7 +47,7 @@ except ImportError:
 
 # Import config
 try:
-    from .email_manager_main import config
+    from education_system.university_system.modules.shared.gui.email.email_gui.email_manager_main import config
 except ImportError:
     config = {}
 
@@ -299,12 +301,12 @@ class AdvancedSearchDialog:
 
                     if keywords:
                         query += " AND (m.subject LIKE ? OR m.message LIKE ? OR m.content LIKE ?)"
-                        keyword_param = f"%{keywords}%"
+                        keyword_param = f"%{escape_like(keywords)}%"
                         params.extend([keyword_param, keyword_param, keyword_param])
 
                     if sender_recipient:
                         query += " AND u.username LIKE ?"
-                        params.append(f"%{sender_recipient}%")
+                        params.append(f"%{escape_like(sender_recipient)}%")
 
                     if date_from:
                         query += " AND m.sent_at >= ?"
@@ -332,12 +334,12 @@ class AdvancedSearchDialog:
 
                     if keywords:
                         query += " AND (subject LIKE ? OR body LIKE ?)"
-                        keyword_param = f"%{keywords}%"
+                        keyword_param = f"%{escape_like(keywords)}%"
                         params.extend([keyword_param, keyword_param])
 
                     if sender_recipient:
                         query += " AND (sender_name LIKE ? OR recipient_email LIKE ?)"
-                        sender_param = f"%{sender_recipient}%"
+                        sender_param = f"%{escape_like(sender_recipient)}%"
                         params.extend([sender_param, sender_param])
 
                     if date_from:

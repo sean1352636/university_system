@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/barber/gui/tabs/staff_tab.py
+# hypothesis_version: 6.151.9
+
+[100, 150, 200, '10', '5', ':', 'ID', 'barber.btn.add_staff', 'barber.labels.email', 'barber.labels.name', 'barber.labels.phone', 'barber.labels.status', 'barber.tabs.staff', 'employee_id', 'headings', 'id', 'name', 'specialties', 'status']

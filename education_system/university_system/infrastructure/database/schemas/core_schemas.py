@@ -289,7 +289,7 @@ def init_academics_tables():
                 )
         ''')
 
-        # Create course_event_attendance table
+        # Create course_event_attendance table (references unified_events)
         cursor.execute('''
         CREATE TABLE course_event_attendance (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -298,24 +298,32 @@ def init_academics_tables():
                             attendance_status TEXT DEFAULT 'present',
                             notes TEXT,
                             recorded_at TEXT NOT NULL,
-                            FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE,
+                            FOREIGN KEY (event_id) REFERENCES unified_events (event_id) ON DELETE CASCADE,
                             UNIQUE(event_id, student_id)
                         )
         ''')
 
-        # Create event_attendance table
+        # Create unified_event_registrations table (replaces event_attendance)
         cursor.execute('''
-        CREATE TABLE event_attendance (
-                    attendance_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    event_id INTEGER,
-                    student_id TEXT,
-                    check_in_time TEXT,
+        CREATE TABLE IF NOT EXISTS unified_event_registrations (
+                    registration_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event_id INTEGER NOT NULL,
+                    user_id TEXT,
+                    user_type TEXT,
+                    registration_date TEXT DEFAULT (datetime('now')),
+                    attendance_status TEXT DEFAULT 'registered',
+                    checked_in_at TEXT,
                     check_out_time TEXT,
+                    payment_status TEXT,
+                    payment_amount REAL,
+                    payment_method TEXT,
+                    is_waitlisted INTEGER DEFAULT 0,
+                    num_guests INTEGER DEFAULT 0,
+                    feedback_rating INTEGER,
+                    feedback_comment TEXT,
                     qr_code TEXT,
-                    cpd_credits REAL DEFAULT 0.0,
-                    attendance_verified BOOLEAN DEFAULT 0,
-                    FOREIGN KEY (event_id) REFERENCES union_events (event_id),
-                    FOREIGN KEY (student_id) REFERENCES students (student_id)
+                    cpd_credits REAL,
+                    FOREIGN KEY (event_id) REFERENCES unified_events(event_id)
                 )
         ''')
 

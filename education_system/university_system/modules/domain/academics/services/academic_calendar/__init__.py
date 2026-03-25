@@ -12,7 +12,7 @@ will continue to work without changes.
 """
 
 # Exception classes
-from .exceptions import (
+from education_system.university_system.modules.domain.academics.services.academic_calendar.exceptions import (
     CalendarError,
     ValidationError,
     DatabaseError,
@@ -24,51 +24,51 @@ from .exceptions import (
 )
 
 # Configuration and utilities
-from .config import (
+from education_system.university_system.modules.domain.academics.services.academic_calendar.config import (
     CalendarConfig,
     ValidationUtils,
     SecurityUtils,
 )
 
 # Database layer
-from .database import (
+from education_system.university_system.modules.domain.academics.services.academic_calendar.database import (
     DatabaseManager,
     DatabaseTransaction,
 )
 
 # Authentication
-from .auth import AuthenticationManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.auth import AuthenticationManager
 
 # Manager classes
-from .recurring_events import RecurringEventManager
-from .dependencies import EventDependencyManager
-from .reporting import AdvancedReportingManager
-from .notifications import SMSNotificationManager, NotificationManager
-from .mobile_api import MobileAPIManager
-from .categories import EventCategoryManager, CourseManager
-from .resources import ResourceManager
-from .visualization import (
+from education_system.university_system.modules.domain.academics.services.academic_calendar.recurring_events import RecurringEventManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.dependencies import EventDependencyManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.reporting import AdvancedReportingManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.notifications import SMSNotificationManager, NotificationManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.mobile_api import MobileAPIManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.categories import EventCategoryManager, CourseManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.resources import ResourceManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.visualization import (
     EnhancedCalendarVisualizationManager,
     DataVisualizationManager,
 )
-from .deadlines import AcademicDeadlineManager
-from .batch import BatchOperationsManager
-from .timezone import EnhancedTimeZoneManager
-from .search import AdvancedSearchManager
-from .audit import AuditManager
-from .holidays import HolidayManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.deadlines import AcademicDeadlineManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.batch import BatchOperationsManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.timezone import EnhancedTimeZoneManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.search import AdvancedSearchManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.audit import AuditManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.holidays import HolidayManager
 
 # Main orchestrator
-from .calendar_core import AcademicCalendarManager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.calendar_core import AcademicCalendarManager
 
 # Web API
-from .web_api import CalendarWebAPI
+from education_system.university_system.modules.domain.academics.services.academic_calendar.web_api import CalendarWebAPI
 
 # Factory function
-from .factory import create_calendar_manager
+from education_system.university_system.modules.domain.academics.services.academic_calendar.factory import create_calendar_manager
 
 # CLI functions and global auth
-from .cli import (
+from education_system.university_system.modules.domain.academics.services.academic_calendar.cli import (
     auth,
     set_auth,
     display_academic_calendar_menu,

@@ -5,7 +5,7 @@ This module provides degree progress tracking, prerequisite validation,
 what-if scenarios, and graduation audits.
 """
 
-from .degree_audit_core import (
+from education_system.university_system.modules.domain.academics.services.degree_audit.degree_audit_core import (
     DegreeProgramManager,
     DegreeProgressManager,
     WhatIfScenarioManager,

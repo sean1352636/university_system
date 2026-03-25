@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance_reporting/settings_tab.py
+# hypothesis_version: 6.151.9
+
+[1.0, 85.0, 1000.0, 5000.0, 10000.0, './exports/', '10', 'Accent.TButton', 'Settings loaded', 'TkAgg', 'alert_thresholds', 'auto_refresh', 'collection_rate_min', 'common.browse', 'common.error', 'daily_payment_min', 'email_notifications', 'export_path', 'overdue_balance_max', 'r', 'w']

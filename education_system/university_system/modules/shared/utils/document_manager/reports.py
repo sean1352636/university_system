@@ -1,4 +1,4 @@
-from ._common import (
+from education_system.university_system.modules.shared.utils.document_manager._common import (
     csv, datetime, timedelta, sqlite3,
     get_connection, _t,
 )
@@ -55,7 +55,8 @@ class ReportsMixin:
                    COUNT(DISTINCT CASE WHEN sd.verification_status = 'Verified' THEN dt.type_id END) as verified
             FROM students s
             CROSS JOIN document_types dt
-            LEFT JOIN student_documents sd ON s.student_id = sd.student_id
+            LEFT JOIN documents sd ON s.student_id = sd.owner_id
+                AND sd.source_type = 'student'
                 AND dt.type_id = sd.type_id AND sd.is_current_version = 1
             WHERE dt.is_required = 1 AND dt.is_active = 1
             '''
@@ -148,7 +149,7 @@ class ReportsMixin:
             # Overall statistics
             cursor.execute('''
             SELECT verification_status, COUNT(*) as count
-            FROM student_documents
+            FROM documents
             WHERE is_current_version = 1
             GROUP BY verification_status
             ''')
@@ -165,7 +166,7 @@ class ReportsMixin:
             # Workflow status
             cursor.execute('''
             SELECT workflow_status, COUNT(*) as count
-            FROM student_documents
+            FROM documents
             WHERE is_current_version = 1
             GROUP BY workflow_status
             ''')
@@ -180,7 +181,7 @@ class ReportsMixin:
             cursor.execute('''
             SELECT dt.type_name, COUNT(*) as count,
                    SUM(CASE WHEN sd.verification_status = 'Verified' THEN 1 ELSE 0 END) as verified
-            FROM student_documents sd
+            FROM documents sd
             JOIN document_types dt ON sd.type_id = dt.type_id
             WHERE sd.is_current_version = 1
             GROUP BY dt.type_name
@@ -227,11 +228,11 @@ class ReportsMixin:
             current_date = datetime.now().strftime('%Y-%m-%d')
 
             cursor.execute('''
-            SELECT sd.document_id, sd.student_id, s.first_name, s.last_name,
+            SELECT sd.document_id, sd.owner_id as student_id, s.first_name, s.last_name,
                    dt.type_name, sd.expiry_date, sd.verification_status
-            FROM student_documents sd
+            FROM documents sd
             JOIN document_types dt ON sd.type_id = dt.type_id
-            LEFT JOIN students s ON sd.student_id = s.student_id
+            LEFT JOIN students s ON sd.owner_id = s.student_id
             WHERE sd.expiry_date IS NOT NULL
               AND sd.expiry_date <= ?
               AND sd.expiry_date >= ?
@@ -306,7 +307,8 @@ class ReportsMixin:
                    COUNT(sd.document_id) as doc_count,
                    SUM(CASE WHEN sd.verification_status = 'Verified' THEN 1 ELSE 0 END) as verified_count
             FROM students s
-            LEFT JOIN student_documents sd ON s.student_id = sd.student_id
+            LEFT JOIN documents sd ON s.student_id = sd.owner_id
+                AND sd.source_type = 'student'
                 AND sd.is_current_version = 1
             WHERE s.program IS NOT NULL
             GROUP BY s.program
@@ -338,9 +340,9 @@ class ReportsMixin:
                     cursor.execute('''
                     SELECT dt.type_name, COUNT(*) as count,
                            SUM(CASE WHEN sd.verification_status = 'Verified' THEN 1 ELSE 0 END) as verified
-                    FROM student_documents sd
+                    FROM documents sd
                     JOIN document_types dt ON sd.type_id = dt.type_id
-                    JOIN students s ON sd.student_id = s.student_id
+                    JOIN students s ON sd.owner_id = s.student_id
                     WHERE s.program = ? AND sd.is_current_version = 1
                     GROUP BY dt.type_name
                     ''', (program,))
@@ -374,7 +376,7 @@ class ReportsMixin:
             # Documents uploaded this month
             cursor.execute('''
             SELECT COUNT(*)
-            FROM student_documents
+            FROM documents
             WHERE strftime('%Y-%m', upload_date) = ?
             ''', (target_month,))
 
@@ -384,7 +386,7 @@ class ReportsMixin:
             # Documents verified this month
             cursor.execute('''
             SELECT COUNT(*)
-            FROM student_documents
+            FROM documents
             WHERE strftime('%Y-%m', verification_date) = ?
             ''', (target_month,))
 
@@ -394,7 +396,7 @@ class ReportsMixin:
             # Most active users
             cursor.execute('''
             SELECT uploaded_by, COUNT(*) as count
-            FROM student_documents
+            FROM documents
             WHERE strftime('%Y-%m', upload_date) = ?
             GROUP BY uploaded_by
             ORDER BY count DESC
@@ -411,7 +413,7 @@ class ReportsMixin:
             # Document types uploaded
             cursor.execute('''
             SELECT dt.type_name, COUNT(*) as count
-            FROM student_documents sd
+            FROM documents sd
             JOIN document_types dt ON sd.type_id = dt.type_id
             WHERE strftime('%Y-%m', sd.upload_date) = ?
             GROUP BY dt.type_name
@@ -468,8 +470,8 @@ class ReportsMixin:
             SELECT dt.type_name, dt.is_required, sd.verification_status,
                    sd.upload_date, sd.expiry_date
             FROM document_types dt
-            LEFT JOIN student_documents sd ON dt.type_id = sd.type_id
-                AND sd.student_id = ? AND sd.is_current_version = 1
+            LEFT JOIN documents sd ON dt.type_id = sd.type_id
+                AND sd.owner_id = ? AND sd.source_type = 'student' AND sd.is_current_version = 1
             WHERE dt.is_active = 1
             ORDER BY dt.category, dt.sort_order
             ''', (student_id,))
@@ -513,8 +515,8 @@ class ReportsMixin:
             cursor.execute('''
             SELECT dt.type_name
             FROM document_types dt
-            LEFT JOIN student_documents sd ON dt.type_id = sd.type_id
-                AND sd.student_id = ? AND sd.is_current_version = 1
+            LEFT JOIN documents sd ON dt.type_id = sd.type_id
+                AND sd.owner_id = ? AND sd.source_type = 'student' AND sd.is_current_version = 1
             WHERE dt.is_required = 1 AND dt.is_active = 1 AND sd.document_id IS NULL
             ''', (student_id,))
 
@@ -589,8 +591,8 @@ class ReportsMixin:
             # Build query
             query = f'''
             SELECT {', '.join(select_parts)}
-            FROM student_documents sd
-            JOIN students s ON sd.student_id = s.student_id
+            FROM documents sd
+            JOIN students s ON sd.owner_id = s.student_id
             JOIN document_types dt ON sd.type_id = dt.type_id
             WHERE sd.is_current_version = 1
             '''

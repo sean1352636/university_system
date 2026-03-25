@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/assignments/grading/grading.py
+# hypothesis_version: 6.151.9
+
+[0.0, 1.0, 100, '\nCreate New Rubric', '\nOverall feedback: ', '%Y-%m-%d %H:%M:%S', '-', '=', 'Description: ', 'Feedback', 'Feedback: ', 'Grade', 'Grade Available', 'Grade Released', 'Graded At', 'Graded By', 'Maximum points: ', 'No criteria added.', 'Permission denied', 'Rubric name: ', 'Student ID', 'create', 'delete', 'description', 'done', 'exports', 'grade', 'grade_notification', 'grade_released', 'grade_submissions', 'id', 'manage_assignments', 'name', 'points', 'rubric_criteria', 'rubric_name', 'rubrics', 'total_points', 'update', 'w', 'weight']

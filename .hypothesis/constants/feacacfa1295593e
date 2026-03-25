@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/primary_school/modules/domain/academics/classes/services/class_service.py
+# hypothesis_version: 6.151.9
+
+[' AND year_group = ?', ', ', 'Deleted class: %s', 'Updated class: %s', 'capacity', 'class_name', 'room', 'teacher_staff_id', 'year_group']

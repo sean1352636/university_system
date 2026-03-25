@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/college_system/modules/domain/study_planner/services/study_planner_service.py
+# hypothesis_version: 6.151.9
+
+[100, ', ', '?', 'Session not found.', 'actual_duration', 'cnt', 'completed', 'id', 'planned_date', 'planned_duration', 'session_type', 'student_id', 'subject', 'subject is required.', 'topic', 'updated_at']

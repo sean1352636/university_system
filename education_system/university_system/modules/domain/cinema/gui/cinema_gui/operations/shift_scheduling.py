@@ -13,7 +13,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_shift_scheduling_page(self):
     """Display shift scheduling with weekly calendar view."""
@@ -67,18 +67,20 @@ def show_shift_scheduling_page(self):
 
     # Get shifts for the week
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    week_end = start_of_week + timedelta(days=7)
-    cursor.execute('''
-        SELECT sh.id, sh.shift_date, sh.start_time, sh.end_time, sh.position, sh.status, st.name, sh.staff_id
-        FROM shifts sh
-        JOIN staff st ON sh.staff_id = st.id
-        WHERE sh.shift_date >= ? AND sh.shift_date < ?
-        ORDER BY sh.start_time
-    ''', (start_of_week.strftime("%Y-%m-%d"), week_end.strftime("%Y-%m-%d")))
-    shifts = cursor.fetchall()
-    conn.close()
+        week_end = start_of_week + timedelta(days=7)
+        cursor.execute('''
+            SELECT sh.id, sh.shift_date, sh.start_time, sh.end_time, sh.position, sh.status, st.name, sh.staff_id
+            FROM shifts sh
+            JOIN staff st ON sh.staff_id = st.id
+            WHERE sh.shift_date >= ? AND sh.shift_date < ?
+            ORDER BY sh.start_time
+        ''', (start_of_week.strftime("%Y-%m-%d"), week_end.strftime("%Y-%m-%d")))
+        shifts = cursor.fetchall()
+    finally:
+        conn.close()
 
     # Organize shifts by day
     shifts_by_day = {i: [] for i in range(7)}
@@ -125,16 +127,18 @@ def show_shift_scheduling_page(self):
     stats_frame.pack(fill="x", pady=10)
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*) FROM shifts WHERE shift_date >= ? AND shift_date < ? AND status = 'scheduled'",
-                  (start_of_week.strftime("%Y-%m-%d"), week_end.strftime("%Y-%m-%d")))
-    scheduled_count = cursor.fetchone()[0]
-    cursor.execute("SELECT COUNT(DISTINCT staff_id) FROM shifts WHERE shift_date >= ? AND shift_date < ?",
-                  (start_of_week.strftime("%Y-%m-%d"), week_end.strftime("%Y-%m-%d")))
-    staff_count = cursor.fetchone()[0]
-    cursor.execute("SELECT COUNT(*) FROM shift_swap_requests WHERE status = 'pending'")
-    pending_swaps = cursor.fetchone()[0]
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM shifts WHERE shift_date >= ? AND shift_date < ? AND status = 'scheduled'",
+                      (start_of_week.strftime("%Y-%m-%d"), week_end.strftime("%Y-%m-%d")))
+        scheduled_count = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(DISTINCT staff_id) FROM shifts WHERE shift_date >= ? AND shift_date < ?",
+                      (start_of_week.strftime("%Y-%m-%d"), week_end.strftime("%Y-%m-%d")))
+        staff_count = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM shift_swap_requests WHERE status = 'pending'")
+        pending_swaps = cursor.fetchone()[0]
+    finally:
+        conn.close()
 
     tk.Label(stats_frame, text=f"This Week: {scheduled_count} shifts | {staff_count} staff members | {pending_swaps} pending swap requests",
             bg="#ffffff", fg="#7f8c8d").pack(anchor="w")
@@ -155,10 +159,12 @@ def add_shift(self):
 
     # Get staff list
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, name, role FROM staff WHERE status = 'active' ORDER BY name")
-    staff_list = cursor.fetchall()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, name, role FROM staff WHERE status = 'active' ORDER BY name")
+        staff_list = cursor.fetchall()
+    finally:
+        conn.close()
 
     staff_names = [f"{s[1]} ({s[2]})" for s in staff_list]
     staff_ids = {f"{s[1]} ({s[2]})": s[0] for s in staff_list}
@@ -238,14 +244,16 @@ def add_shift(self):
                 pass
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO shifts (staff_id, shift_date, start_time, end_time, position, screen_assigned, break_start, break_end, notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (staff_id, fields['date'].get(), fields['start'].get(), fields['end'].get(),
-              fields['position_var'].get(), screen, fields['break_start'].get(), fields['break_end'].get(), fields['notes'].get()))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO shifts (staff_id, shift_date, start_time, end_time, position, screen_assigned, break_start, break_end, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (staff_id, fields['date'].get(), fields['start'].get(), fields['end'].get(),
+                  fields['position_var'].get(), screen, fields['break_start'].get(), fields['break_end'].get(), fields['notes'].get()))
+            conn.commit()
+        finally:
+            conn.close()
 
         messagebox.showinfo(_t("cinema.common.success"), "Shift added successfully!")
         form.destroy()
@@ -256,14 +264,16 @@ def add_shift(self):
 def edit_shift(self, shift_id):
     """Edit an existing shift."""
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT sh.*, st.name FROM shifts sh
-        JOIN staff st ON sh.staff_id = st.id
-        WHERE sh.id = ?
-    ''', (shift_id,))
-    shift = cursor.fetchone()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT sh.*, st.name FROM shifts sh
+            JOIN staff st ON sh.staff_id = st.id
+            WHERE sh.id = ?
+        ''', (shift_id,))
+        shift = cursor.fetchone()
+    finally:
+        conn.close()
 
     if not shift:
         messagebox.showerror(_t("cinema.common.error"), "Shift not found")
@@ -292,10 +302,12 @@ def edit_shift(self, shift_id):
 
     def update():
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("UPDATE shifts SET status = ? WHERE id = ?", (status_var.get(), shift_id))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE shifts SET status = ? WHERE id = ?", (status_var.get(), shift_id))
+            conn.commit()
+        finally:
+            conn.close()
         messagebox.showinfo(_t("cinema.common.success"), "Shift updated!")
         form.destroy()
         self.show_shift_scheduling_page()
@@ -303,10 +315,12 @@ def edit_shift(self, shift_id):
     def delete():
         if messagebox.askyesno(_t("cinema.common.confirm"), "Delete this shift?"):
             conn = sqlite3.connect(DB_FILE)
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM shifts WHERE id = ?", (shift_id,))
-            conn.commit()
-            conn.close()
+            try:
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM shifts WHERE id = ?", (shift_id,))
+                conn.commit()
+            finally:
+                conn.close()
             messagebox.showinfo(_t("cinema.messages.success.deleted"), "Shift deleted")
             form.destroy()
             self.show_shift_scheduling_page()
@@ -340,10 +354,12 @@ def show_staff_availability(self):
     select_frame.pack(fill="x", pady=10)
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, name FROM staff WHERE status = 'active' ORDER BY name")
-    staff_list = cursor.fetchall()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, name FROM staff WHERE status = 'active' ORDER BY name")
+        staff_list = cursor.fetchall()
+    finally:
+        conn.close()
 
     staff_names = [s[1] for s in staff_list]
     staff_ids = {s[1]: s[0] for s in staff_list}
@@ -386,10 +402,12 @@ def show_staff_availability(self):
         staff_id = staff_ids.get(staff_name)
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("SELECT day_of_week, is_available, available_from, available_until FROM staff_availability WHERE staff_id = ?", (staff_id,))
-        avails = cursor.fetchall()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT day_of_week, is_available, available_from, available_until FROM staff_availability WHERE staff_id = ?", (staff_id,))
+            avails = cursor.fetchall()
+        finally:
+            conn.close()
 
         for day_idx, is_avail, from_time, to_time in avails:
             if day_idx in avail_vars:
@@ -407,17 +425,19 @@ def show_staff_availability(self):
         staff_id = staff_ids.get(staff_name)
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        for day_idx, vars in avail_vars.items():
-            cursor.execute("DELETE FROM staff_availability WHERE staff_id = ? AND day_of_week = ?", (staff_id, day_idx))
-            cursor.execute('''
-                INSERT INTO staff_availability (staff_id, day_of_week, is_available, available_from, available_until)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (staff_id, day_idx, 1 if vars['available'].get() else 0, vars['from'].get(), vars['to'].get()))
+            for day_idx, vars in avail_vars.items():
+                cursor.execute("DELETE FROM staff_availability WHERE staff_id = ? AND day_of_week = ?", (staff_id, day_idx))
+                cursor.execute('''
+                    INSERT INTO staff_availability (staff_id, day_of_week, is_available, available_from, available_until)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (staff_id, day_idx, 1 if vars['available'].get() else 0, vars['from'].get(), vars['to'].get()))
 
-        conn.commit()
-        conn.close()
+            conn.commit()
+        finally:
+            conn.close()
         messagebox.showinfo(_t("cinema.common.success"), "Availability saved!")
 
     staff_combo.bind("<<ComboboxSelected>>", lambda e: load_availability())
@@ -427,24 +447,26 @@ def show_staff_availability(self):
 def request_shift_swap(self, shift_id):
     """Request a shift swap."""
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT sh.*, st.name FROM shifts sh
-        JOIN staff st ON sh.staff_id = st.id
-        WHERE sh.id = ?
-    ''', (shift_id,))
-    shift = cursor.fetchone()
+    try:
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT sh.*, st.name FROM shifts sh
+            JOIN staff st ON sh.staff_id = st.id
+            WHERE sh.id = ?
+        ''', (shift_id,))
+        shift = cursor.fetchone()
 
-    # Get other shifts that can be swapped
-    cursor.execute('''
-        SELECT sh.id, sh.shift_date, sh.start_time, sh.end_time, st.name, st.id
-        FROM shifts sh
-        JOIN staff st ON sh.staff_id = st.id
-        WHERE sh.id != ? AND sh.status = 'scheduled' AND sh.shift_date >= date('now')
-        ORDER BY sh.shift_date, sh.start_time
-    ''', (shift_id,))
-    other_shifts = cursor.fetchall()
-    conn.close()
+        # Get other shifts that can be swapped
+        cursor.execute('''
+            SELECT sh.id, sh.shift_date, sh.start_time, sh.end_time, st.name, st.id
+            FROM shifts sh
+            JOIN staff st ON sh.staff_id = st.id
+            WHERE sh.id != ? AND sh.status = 'scheduled' AND sh.shift_date >= date('now')
+            ORDER BY sh.shift_date, sh.start_time
+        ''', (shift_id,))
+        other_shifts = cursor.fetchall()
+    finally:
+        conn.close()
 
     if not shift:
         messagebox.showerror(_t("cinema.common.error"), "Shift not found")
@@ -487,13 +509,15 @@ def request_shift_swap(self, shift_id):
             return
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute('''
-            INSERT INTO shift_swap_requests (requester_id, original_shift_id, requested_with_id, target_shift_id, reason)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (shift[1], shift_id, target_staff_id, target_shift_id, reason_text.get("1.0", tk.END).strip()))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO shift_swap_requests (requester_id, original_shift_id, requested_with_id, target_shift_id, reason)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (shift[1], shift_id, target_staff_id, target_shift_id, reason_text.get("1.0", tk.END).strip()))
+            conn.commit()
+        finally:
+            conn.close()
 
         messagebox.showinfo(_t("cinema.common.success"), "Swap request submitted! Awaiting approval.")
         form.destroy()
@@ -524,20 +548,22 @@ def show_swap_requests(self):
         tree.column(col, width=120)
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT sr.id, req.name, sh1.shift_date || ' ' || sh1.start_time,
-               tgt.name, sh2.shift_date || ' ' || sh2.start_time, sr.status
-        FROM shift_swap_requests sr
-        JOIN staff req ON sr.requester_id = req.id
-        JOIN shifts sh1 ON sr.original_shift_id = sh1.id
-        LEFT JOIN staff tgt ON sr.requested_with_id = tgt.id
-        LEFT JOIN shifts sh2 ON sr.target_shift_id = sh2.id
-        ORDER BY sr.created_at DESC
-    ''')
-    for row in cursor.fetchall():
-        tree.insert("", "end", values=row)
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT sr.id, req.name, sh1.shift_date || ' ' || sh1.start_time,
+                   tgt.name, sh2.shift_date || ' ' || sh2.start_time, sr.status
+            FROM shift_swap_requests sr
+            JOIN staff req ON sr.requester_id = req.id
+            JOIN shifts sh1 ON sr.original_shift_id = sh1.id
+            LEFT JOIN staff tgt ON sr.requested_with_id = tgt.id
+            LEFT JOIN shifts sh2 ON sr.target_shift_id = sh2.id
+            ORDER BY sr.created_at DESC
+        ''')
+        for row in cursor.fetchall():
+            tree.insert("", "end", values=row)
+    finally:
+        conn.close()
 
     tree.pack(fill="both", expand=True, side="left")
     scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=tree.yview)
@@ -552,26 +578,28 @@ def show_swap_requests(self):
         req_id = tree.item(selected[0])['values'][0]
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
+        try:
+            cursor = conn.cursor()
 
-        # Get swap details
-        cursor.execute("SELECT original_shift_id, target_shift_id FROM shift_swap_requests WHERE id = ?", (req_id,))
-        orig_id, target_id = cursor.fetchone()
+            # Get swap details
+            cursor.execute("SELECT original_shift_id, target_shift_id FROM shift_swap_requests WHERE id = ?", (req_id,))
+            orig_id, target_id = cursor.fetchone()
 
-        # Get staff IDs from shifts
-        cursor.execute("SELECT staff_id FROM shifts WHERE id = ?", (orig_id,))
-        orig_staff = cursor.fetchone()[0]
-        cursor.execute("SELECT staff_id FROM shifts WHERE id = ?", (target_id,))
-        target_staff = cursor.fetchone()[0]
+            # Get staff IDs from shifts
+            cursor.execute("SELECT staff_id FROM shifts WHERE id = ?", (orig_id,))
+            orig_staff = cursor.fetchone()[0]
+            cursor.execute("SELECT staff_id FROM shifts WHERE id = ?", (target_id,))
+            target_staff = cursor.fetchone()[0]
 
-        # Swap the staff assignments
-        cursor.execute("UPDATE shifts SET staff_id = ? WHERE id = ?", (target_staff, orig_id))
-        cursor.execute("UPDATE shifts SET staff_id = ? WHERE id = ?", (orig_staff, target_id))
+            # Swap the staff assignments
+            cursor.execute("UPDATE shifts SET staff_id = ? WHERE id = ?", (target_staff, orig_id))
+            cursor.execute("UPDATE shifts SET staff_id = ? WHERE id = ?", (orig_staff, target_id))
 
-        cursor.execute("UPDATE shift_swap_requests SET status = 'approved', resolved_at = ? WHERE id = ?",
-                      (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), req_id))
-        conn.commit()
-        conn.close()
+            cursor.execute("UPDATE shift_swap_requests SET status = 'approved', resolved_at = ? WHERE id = ?",
+                          (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), req_id))
+            conn.commit()
+        finally:
+            conn.close()
 
         messagebox.showinfo(_t("cinema.common.approved"), "Shift swap approved!")
         form.destroy()
@@ -585,11 +613,13 @@ def show_swap_requests(self):
         req_id = tree.item(selected[0])['values'][0]
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("UPDATE shift_swap_requests SET status = 'denied', resolved_at = ? WHERE id = ?",
-                      (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), req_id))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE shift_swap_requests SET status = 'denied', resolved_at = ? WHERE id = ?",
+                          (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), req_id))
+            conn.commit()
+        finally:
+            conn.close()
 
         messagebox.showinfo("Denied", _t("cinema.messages.shift_swap_denied"))
         form.destroy()
@@ -606,36 +636,38 @@ def auto_schedule_shifts(self):
         return
 
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    # Get next week dates
-    today = datetime.now()
-    next_monday = today + timedelta(days=(7 - today.weekday()))
+        # Get next week dates
+        today = datetime.now()
+        next_monday = today + timedelta(days=(7 - today.weekday()))
 
-    # Get all active staff with their availability
-    cursor.execute("SELECT id, name FROM staff WHERE status = 'active'")
-    staff_list = cursor.fetchall()
+        # Get all active staff with their availability
+        cursor.execute("SELECT id, name FROM staff WHERE status = 'active'")
+        staff_list = cursor.fetchall()
 
-    shifts_created = 0
-    for staff_id, staff_name in staff_list:
-        cursor.execute("SELECT day_of_week, available_from, available_until FROM staff_availability WHERE staff_id = ? AND is_available = 1", (staff_id,))
-        availabilities = cursor.fetchall()
+        shifts_created = 0
+        for staff_id, staff_name in staff_list:
+            cursor.execute("SELECT day_of_week, available_from, available_until FROM staff_availability WHERE staff_id = ? AND is_available = 1", (staff_id,))
+            availabilities = cursor.fetchall()
 
-        for day_of_week, avail_from, avail_until in availabilities:
-            shift_date = next_monday + timedelta(days=day_of_week)
+            for day_of_week, avail_from, avail_until in availabilities:
+                shift_date = next_monday + timedelta(days=day_of_week)
 
-            # Check if shift already exists
-            cursor.execute("SELECT COUNT(*) FROM shifts WHERE staff_id = ? AND shift_date = ?",
-                          (staff_id, shift_date.strftime("%Y-%m-%d")))
-            if cursor.fetchone()[0] == 0:
-                cursor.execute('''
-                    INSERT INTO shifts (staff_id, shift_date, start_time, end_time, position)
-                    VALUES (?, ?, ?, ?, 'general')
-                ''', (staff_id, shift_date.strftime("%Y-%m-%d"), avail_from or "09:00", avail_until or "17:00"))
-                shifts_created += 1
+                # Check if shift already exists
+                cursor.execute("SELECT COUNT(*) FROM shifts WHERE staff_id = ? AND shift_date = ?",
+                              (staff_id, shift_date.strftime("%Y-%m-%d")))
+                if cursor.fetchone()[0] == 0:
+                    cursor.execute('''
+                        INSERT INTO shifts (staff_id, shift_date, start_time, end_time, position)
+                        VALUES (?, ?, ?, ?, 'general')
+                    ''', (staff_id, shift_date.strftime("%Y-%m-%d"), avail_from or "09:00", avail_until or "17:00"))
+                    shifts_created += 1
 
-    conn.commit()
-    conn.close()
+        conn.commit()
+    finally:
+        conn.close()
 
     messagebox.showinfo("Auto-Schedule Complete", f"Created {shifts_created} shifts for next week.")
     self.show_shift_scheduling_page()

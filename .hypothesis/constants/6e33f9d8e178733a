@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/gui/charity_shop_gui/database.py
+# hypothesis_version: 6.151.9
+
+[' AND category = ?', ' AND sold = 0', ' AND sold = 1', ' ORDER BY name', '%Y-%m-%d', 'All', 'INTEGER DEFAULT 0', 'TEXT', 'all', 'available', 'charity_shop_stock', 'id', 'sold', 'sold_date', 'sold_quantity']

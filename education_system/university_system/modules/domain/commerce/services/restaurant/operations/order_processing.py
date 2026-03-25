@@ -81,71 +81,71 @@ def view_orders():
         if filter_choice == '1':
             cursor.execute('''
                 SELECT o.*, c.name as customer_name
-                FROM restaurant_orders o
+                FROM orders o
                 LEFT JOIN restaurant_customers c ON o.customer_id = c.customer_id
-                ORDER BY o.order_time DESC
+                ORDER BY o.order_date DESC
                 LIMIT 50
             ''')
         elif filter_choice == '2':
             today = datetime.now().strftime('%Y-%m-%d')
             cursor.execute('''
                 SELECT o.*, c.name as customer_name
-                FROM restaurant_orders o
+                FROM orders o
                 LEFT JOIN restaurant_customers c ON o.customer_id = c.customer_id
-                WHERE DATE(o.order_time) = ?
-                ORDER BY o.order_time DESC
+                WHERE DATE(o.order_date) = ?
+                ORDER BY o.order_date DESC
             ''', (today,))
         elif filter_choice == '3':
             cursor.execute('''
                 SELECT o.*, c.name as customer_name
-                FROM restaurant_orders o
+                FROM orders o
                 LEFT JOIN restaurant_customers c ON o.customer_id = c.customer_id
-                WHERE o.status = 'Pending'
-                ORDER BY o.order_time DESC
+                WHERE o.order_status = 'Pending'
+                ORDER BY o.order_date DESC
             ''')
         elif filter_choice == '4':
             cursor.execute('''
                 SELECT o.*, c.name as customer_name
-                FROM restaurant_orders o
+                FROM orders o
                 LEFT JOIN restaurant_customers c ON o.customer_id = c.customer_id
-                WHERE o.status = 'Completed'
-                ORDER BY o.order_time DESC
+                WHERE o.order_status = 'Completed'
+                ORDER BY o.order_date DESC
                 LIMIT 50
             ''')
         elif filter_choice == '5':
             customer_id = input("Enter customer ID: ")
             cursor.execute('''
                 SELECT o.*, c.name as customer_name
-                FROM restaurant_orders o
+                FROM orders o
                 LEFT JOIN restaurant_customers c ON o.customer_id = c.customer_id
                 WHERE o.customer_id = ?
-                ORDER BY o.order_time DESC
+                ORDER BY o.order_date DESC
             ''', (customer_id,))
         elif filter_choice == '6':
             table_id = input("Enter table ID: ")
             cursor.execute('''
                 SELECT o.*, c.name as customer_name
-                FROM restaurant_orders o
+                FROM orders o
                 LEFT JOIN restaurant_customers c ON o.customer_id = c.customer_id
                 WHERE o.table_id = ?
-                ORDER BY o.order_time DESC
+                ORDER BY o.order_date DESC
             ''', (table_id,))
         elif filter_choice == '7':
             start_date = input("Enter start date (YYYY-MM-DD): ")
             end_date = input("Enter end date (YYYY-MM-DD): ")
             cursor.execute('''
                 SELECT o.*, c.name as customer_name
-                FROM restaurant_orders o
+                FROM orders o
                 LEFT JOIN restaurant_customers c ON o.customer_id = c.customer_id
-                WHERE DATE(o.order_time) BETWEEN ? AND ?
-                ORDER BY o.order_time DESC
+                WHERE DATE(o.order_date) BETWEEN ? AND ?
+                ORDER BY o.order_date DESC
             ''', (start_date, end_date))
         else:
             cursor.execute('''
                 SELECT o.*, c.name as customer_name
-                FROM restaurant_orders o
+                FROM orders o
                 LEFT JOIN restaurant_customers c ON o.customer_id = c.customer_id
-                ORDER BY o.order_time DESC
+                ORDER BY o.order_date DESC
                 LIMIT 50
             ''')
 
@@ -192,7 +192,7 @@ def view_order_details(order_id):
         # Get order information
         cursor.execute('''
             SELECT o.*, c.name as customer_name, c.email as customer_email
-            FROM restaurant_orders o
+            FROM orders o
             LEFT JOIN restaurant_customers c ON o.customer_id = c.customer_id
             WHERE o.order_id = ?
         ''', (order_id,))
@@ -238,7 +238,7 @@ def view_order_details(order_id):
         # Get order items
         cursor.execute('''
             SELECT oi.*, mi.name
-            FROM restaurant_order_items oi
+            FROM order_items oi
             JOIN menu_items mi ON oi.item_id = mi.item_id
             WHERE oi.order_id = ?
             ORDER BY oi.id
@@ -275,7 +275,7 @@ def add_tip():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        cursor.execute('SELECT total_price, tip_amount FROM restaurant_orders WHERE order_id = ?', (order_id,))
+        cursor.execute('SELECT total_amount, tip_amount FROM orders WHERE order_id = ?', (order_id,))
         order = cursor.fetchone()
 
         if not order:
@@ -314,7 +314,7 @@ def add_tip():
             return
 
         # Update order with tip
-        cursor.execute('UPDATE restaurant_orders SET tip_amount = ? WHERE order_id = ?',
+        cursor.execute('UPDATE orders SET tip_amount = ? WHERE order_id = ?',
                       (tip_amount, order_id))
 
         conn.commit()
@@ -328,7 +328,7 @@ def add_tip():
         log_audit_action(
             auth.current_user['id'],
             'ADD_TIP',
-            'restaurant_orders',
+            'orders',
             order_id,
             {'old_tip': order[1] or 0},
             {'new_tip': tip_amount}
@@ -358,7 +358,7 @@ def refund_order():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        cursor.execute('SELECT * FROM restaurant_orders WHERE order_id = ?', (order_id,))
+        cursor.execute('SELECT * FROM orders WHERE order_id = ?', (order_id,))
         order = cursor.fetchone()
 
         if not order:
@@ -427,7 +427,7 @@ def refund_order():
                 ))
 
         # Update order status
-        cursor.execute('UPDATE restaurant_orders SET status = ? WHERE order_id = ?', ('Refunded', order_id))
+        cursor.execute('UPDATE orders SET order_status = ? WHERE order_id = ?', ('Refunded', order_id))
 
         conn.commit()
         conn.close()
@@ -441,7 +441,7 @@ def refund_order():
         log_audit_action(
             auth.current_user['id'],
             'REFUND_ORDER',
-            'restaurant_orders',
+            'orders',
             order_id,
             None,
             {'refund_amount': refund_amount, 'reason': reason, 'payment_method': order[6]}
@@ -471,7 +471,7 @@ def update_order_status():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        cursor.execute('SELECT status, table_id FROM restaurant_orders WHERE order_id = ?', (order_id,))
+        cursor.execute('SELECT order_status, table_id FROM orders WHERE order_id = ?', (order_id,))
         order = cursor.fetchone()
 
         if not order:
@@ -505,7 +505,7 @@ def update_order_status():
             return
 
         # Update order status
-        cursor.execute('UPDATE restaurant_orders SET status = ? WHERE order_id = ?', (new_status, order_id))
+        cursor.execute('UPDATE orders SET order_status = ? WHERE order_id = ?', (new_status, order_id))
 
         # If completing or cancelling, free up the table
         if new_status in ['Completed', 'Cancelled'] and order[1]:
@@ -515,8 +515,8 @@ def update_order_status():
         # If completed, record actual time
         if new_status == 'Completed':
             cursor.execute('''
-                UPDATE restaurant_orders
-                SET actual_time = CAST((julianday('now') - julianday(order_time)) * 24 * 60 AS INTEGER)
+                UPDATE orders
+                SET actual_time = CAST((julianday('now') - julianday(order_date)) * 24 * 60 AS INTEGER)
                 WHERE order_id = ?
             ''', (order_id,))
 
@@ -529,7 +529,7 @@ def update_order_status():
         log_audit_action(
             auth.current_user['id'],
             'UPDATE_ORDER_STATUS',
-            'restaurant_orders',
+            'orders',
             order_id,
             {'status': order[0]},
             {'status': new_status}
@@ -588,7 +588,7 @@ def process_cash_payment():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        cursor.execute('SELECT total_price, status, payment_method FROM restaurant_orders WHERE order_id = ?', (order_id,))
+        cursor.execute('SELECT total_amount, order_status, payment_method FROM orders WHERE order_id = ?', (order_id,))
         order = cursor.fetchone()
 
         if not order:
@@ -617,8 +617,8 @@ def process_cash_payment():
 
         # Update payment method and status
         cursor.execute('''
-            UPDATE restaurant_orders
-            SET payment_method = 'Cash', status = 'Completed'
+            UPDATE orders
+            SET payment_method = 'Cash', order_status = 'Completed'
             WHERE order_id = ?
         ''', (order_id,))
 
@@ -647,7 +647,7 @@ def process_cash_payment():
         log_audit_action(
             auth.current_user['id'],
             'PROCESS_CASH_PAYMENT',
-            'restaurant_orders',
+            'orders',
             order_id,
             None,
             {'amount': order[0], 'cash_received': cash_received, 'change': change}
@@ -667,7 +667,7 @@ def process_card_payment():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        cursor.execute('SELECT total_price, status FROM restaurant_orders WHERE order_id = ?', (order_id,))
+        cursor.execute('SELECT total_amount, order_status FROM orders WHERE order_id = ?', (order_id,))
         order = cursor.fetchone()
 
         if not order:
@@ -700,8 +700,8 @@ def process_card_payment():
 
         # Update payment method and status
         cursor.execute('''
-            UPDATE restaurant_orders
-            SET payment_method = ?, status = 'Completed'
+            UPDATE orders
+            SET payment_method = ?, order_status = 'Completed'
             WHERE order_id = ?
         ''', (card_type, order_id))
 
@@ -728,7 +728,7 @@ def process_card_payment():
         log_audit_action(
             auth.current_user['id'],
             'PROCESS_CARD_PAYMENT',
-            'restaurant_orders',
+            'orders',
             order_id,
             None,
             {'amount': order[0], 'card_type': card_type}
@@ -748,7 +748,7 @@ def process_meal_plan_payment():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        cursor.execute('SELECT total_price, status, customer_id FROM restaurant_orders WHERE order_id = ?', (order_id,))
+        cursor.execute('SELECT total_amount, order_status, customer_id FROM orders WHERE order_id = ?', (order_id,))
         order = cursor.fetchone()
 
         if not order:
@@ -804,8 +804,8 @@ def process_meal_plan_payment():
 
         # Update order
         cursor.execute('''
-            UPDATE restaurant_orders
-            SET payment_method = 'Meal Plan', status = 'Completed'
+            UPDATE orders
+            SET payment_method = 'Meal Plan', order_status = 'Completed'
             WHERE order_id = ?
         ''', (order_id,))
 
@@ -834,7 +834,7 @@ def process_meal_plan_payment():
         log_audit_action(
             auth.current_user['id'],
             'PROCESS_MEAL_PLAN_PAYMENT',
-            'restaurant_orders',
+            'orders',
             order_id,
             None,
             {'amount': order[0], 'plan_id': meal_plan[0], 'new_balance': new_balance}
@@ -854,7 +854,7 @@ def apply_discount():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        cursor.execute('SELECT total_price, status, discount_applied FROM restaurant_orders WHERE order_id = ?', (order_id,))
+        cursor.execute('SELECT total_amount, order_status, discount_applied FROM orders WHERE order_id = ?', (order_id,))
         order = cursor.fetchone()
 
         if not order:
@@ -912,8 +912,8 @@ def apply_discount():
 
         # Update order with discount
         cursor.execute('''
-            UPDATE restaurant_orders
-            SET discount_applied = ?, total_price = ?
+            UPDATE orders
+            SET discount_applied = ?, total_amount = ?
             WHERE order_id = ?
         ''', (discount_amount, new_total, order_id))
 
@@ -928,7 +928,7 @@ def apply_discount():
         log_audit_action(
             auth.current_user['id'],
             'APPLY_DISCOUNT',
-            'restaurant_orders',
+            'orders',
             order_id,
             {'original_total': order[0]},
             {'discount': discount_amount, 'new_total': new_total}

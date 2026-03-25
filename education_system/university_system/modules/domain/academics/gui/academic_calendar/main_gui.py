@@ -476,7 +476,7 @@ class CalendarGUI(DashboardMixin, CalendarViewMixin, EventsViewMixin, AcademicVi
         user_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
         
         if self.auth_manager and self.auth_manager.current_user:
-            user_text = f"👤 {self.auth_manager.current_user['username']}\n({self.auth_manager.current_user['role']})"
+            user_text = f"👤 {self.auth_manager.current_user.get('username', 'User')}\n({self.auth_manager.current_user.get('role', 'user')})"
             user_label = ttk.Label(user_frame, text=user_text,
                                  background='#34495E', foreground='white',
                                  font=('Arial', 9))
@@ -625,7 +625,7 @@ class CalendarGUI(DashboardMixin, CalendarViewMixin, EventsViewMixin, AcademicVi
             text=_("academic_calendar.buttons.return_to_main_menu"),
             command=self.return_to_main_menu,
         )
-        self.main_menu_button.place(relx=1.0, rely=0.0, anchor="ne", x=-10, y=10)
+        self.main_menu_button.place(relx=1.0, rely=0.0, anchor="ne", x=-10, y=55)
 
     def _setup_shortcuts(self):
         """Setup keyboard shortcuts"""

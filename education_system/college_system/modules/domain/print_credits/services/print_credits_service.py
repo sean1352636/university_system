@@ -3,6 +3,7 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import PrintCreditError, ValidationError
 from education_system.college_system.infrastructure.database.db import connect
+from education_system.college_system.core.sql_safety import validate_identifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -23,10 +24,18 @@ class PrintCreditService:
             raise ValidationError("student_id is required.")
         conn = self._conn()
         try:
+            # Build INSERT with only non-None values so DB defaults apply
+            fields = {k: v for k, v in {
+                'student_id': kwargs.get('student_id'),
+                'balance': kwargs.get('balance'),
+                'quota_remaining': kwargs.get('quota_remaining'),
+                'quota_reset_date': kwargs.get('quota_reset_date'),
+            }.items() if v is not None}
+            cols = ", ".join(fields.keys())
+            placeholders = ", ".join("?" for _ in fields)
             conn.execute(
-                """INSERT INTO print_accounts (student_id, balance, quota_remaining, quota_reset_date)
-                   VALUES (?, ?, ?, ?)""",
-                (kwargs.get('student_id'), kwargs.get('balance'), kwargs.get('quota_remaining'), kwargs.get('quota_reset_date'),),
+                f"INSERT INTO print_accounts ({cols}) VALUES ({placeholders})",
+                list(fields.values()),
             )
             conn.commit()
             row = conn.execute(
@@ -58,7 +67,7 @@ class PrintCreditService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -76,7 +85,7 @@ class PrintCreditService:
         if not updates:
             raise ValidationError("No valid fields to update.")
         updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [pk]
         conn = self._conn()
         try:
@@ -114,7 +123,7 @@ class PrintCreditService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         conn = self._conn()
         try:

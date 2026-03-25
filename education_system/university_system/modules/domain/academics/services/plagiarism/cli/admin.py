@@ -1,4 +1,4 @@
-from ..exceptions import PlagiarismCheckerError
+from education_system.university_system.modules.domain.academics.services.plagiarism.exceptions import PlagiarismCheckerError
 
 
 def safe_input(prompt, default=None, validator=None):

@@ -36,7 +36,7 @@ class TestParkingManagementCore(unittest.TestCase):
         # Should not raise an error
         self.assertTrue(callable(set_auth))
 
-    @patch('university_system.modules.domain.mobility.services.parking_management.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.transaction')
     def test_init_db(self, mock_transaction):
         """Test database initialization"""
         from education_system.university_system.modules.domain.mobility.services.parking_management import init_db
@@ -55,8 +55,8 @@ class TestParkingPermits(unittest.TestCase):
     """Test parking permit operations"""
 
     @patch('builtins.input', side_effect=['John Doe', 'john@test.com', 'A', '1', '2024-01-01', '2024-12-31', '100'])
-    @patch('university_system.modules.domain.mobility.services.parking_management.transaction')
-    @patch('university_system.modules.domain.mobility.services.parking_management.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.log_activity')
     def test_create_parking_permit(self, mock_log, mock_transaction, mock_input):
         """Test creating a parking permit"""
         from education_system.university_system.modules.domain.mobility.services.parking_management import create_parking_permit
@@ -76,7 +76,7 @@ class TestParkingPermits(unittest.TestCase):
         mock_log.assert_called_once()
 
     @patch('builtins.input', return_value='123')
-    @patch('university_system.modules.domain.mobility.services.parking_management.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.get_connection')
     def test_view_parking_permit(self, mock_conn, mock_input):
         """Test viewing a parking permit"""
         from education_system.university_system.modules.domain.mobility.services.parking_management import view_parking_permit
@@ -98,9 +98,9 @@ class TestParkingPermits(unittest.TestCase):
         mock_cursor.execute.assert_called_once()
 
     @patch('builtins.input', side_effect=['123', '2', '2', '2025-01-01'])
-    @patch('university_system.modules.domain.mobility.services.parking_management.get_connection')
-    @patch('university_system.modules.domain.mobility.services.parking_management.transaction')
-    @patch('university_system.modules.domain.mobility.services.parking_management.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.log_activity')
     def test_update_parking_permit(self, mock_log, mock_transaction, mock_get_conn, mock_input):
         """Test updating a parking permit"""
         from education_system.university_system.modules.domain.mobility.services.parking_management import update_parking_permit
@@ -126,8 +126,8 @@ class TestParkingPermits(unittest.TestCase):
             update_parking_permit()
 
     @patch('builtins.input', side_effect=['123', 'yes'])
-    @patch('university_system.modules.domain.mobility.services.parking_management.transaction')
-    @patch('university_system.modules.domain.mobility.services.parking_management.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.log_activity')
     def test_delete_parking_permit(self, mock_log, mock_transaction, mock_input):
         """Test deleting a parking permit"""
         from education_system.university_system.modules.domain.mobility.services.parking_management import delete_parking_permit
@@ -146,8 +146,8 @@ class TestVehicleManagement(unittest.TestCase):
     """Test vehicle management operations"""
 
     @patch('builtins.input', side_effect=['ABC123', 'Toyota', 'Camry', '2020', 'Blue', 'CA', '123'])
-    @patch('university_system.modules.domain.mobility.services.parking_management.transaction')
-    @patch('university_system.modules.domain.mobility.services.parking_management.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.log_activity')
     def test_register_vehicle(self, mock_log, mock_transaction, mock_input):
         """Test registering a vehicle"""
         from education_system.university_system.modules.domain.mobility.services.parking_management import register_vehicle
@@ -167,7 +167,7 @@ class TestVehicleManagement(unittest.TestCase):
         mock_log.assert_called_once()
 
     @patch('builtins.input', return_value='ABC123')
-    @patch('university_system.modules.domain.mobility.services.parking_management.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.get_connection')
     def test_view_vehicle(self, mock_conn, mock_input):
         """Test viewing a vehicle"""
         from education_system.university_system.modules.domain.mobility.services.parking_management import view_vehicle
@@ -188,9 +188,9 @@ class TestVehicleManagement(unittest.TestCase):
         mock_cursor.execute.assert_called_once()
 
     @patch('builtins.input', side_effect=['ABC123', '2', 'Red'])
-    @patch('university_system.modules.domain.mobility.services.parking_management.get_connection')
-    @patch('university_system.modules.domain.mobility.services.parking_management.transaction')
-    @patch('university_system.modules.domain.mobility.services.parking_management.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.log_activity')
     def test_update_vehicle(self, mock_log, mock_transaction, mock_get_conn, mock_input):
         """Test updating a vehicle"""
         from education_system.university_system.modules.domain.mobility.services.parking_management import update_vehicle
@@ -215,8 +215,8 @@ class TestVehicleManagement(unittest.TestCase):
             update_vehicle()
 
     @patch('builtins.input', side_effect=['ABC123', 'yes'])
-    @patch('university_system.modules.domain.mobility.services.parking_management.transaction')
-    @patch('university_system.modules.domain.mobility.services.parking_management.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.log_activity')
     def test_delete_vehicle(self, mock_log, mock_transaction, mock_input):
         """Test deleting a vehicle"""
         from education_system.university_system.modules.domain.mobility.services.parking_management import delete_vehicle
@@ -235,8 +235,8 @@ class TestParkingViolations(unittest.TestCase):
     """Test parking violation operations"""
 
     @patch('builtins.input', side_effect=['ABC123', 'Expired Meter', 'Lot A', '50.00', 'Officer Smith'])
-    @patch('university_system.modules.domain.mobility.services.parking_management.transaction')
-    @patch('university_system.modules.domain.mobility.services.parking_management.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.log_activity')
     def test_record_violation(self, mock_log, mock_transaction, mock_input):
         """Test recording a parking violation"""
         from education_system.university_system.modules.domain.mobility.services.parking_management import record_violation
@@ -256,7 +256,7 @@ class TestParkingViolations(unittest.TestCase):
         mock_log.assert_called_once()
 
     @patch('builtins.input', return_value='ABC123')
-    @patch('university_system.modules.domain.mobility.services.parking_management.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.get_connection')
     def test_view_violations(self, mock_conn, mock_input):
         """Test viewing parking violations"""
         from education_system.university_system.modules.domain.mobility.services.parking_management import view_violations
@@ -280,7 +280,7 @@ class TestParkingViolations(unittest.TestCase):
 class TestParkingLots(unittest.TestCase):
     """Test parking lot operations"""
 
-    @patch('university_system.modules.domain.mobility.services.parking_management.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.get_connection')
     def test_view_parking_lots(self, mock_conn):
         """Test viewing parking lots"""
         from education_system.university_system.modules.domain.mobility.services.parking_management import view_parking_lots
@@ -301,8 +301,8 @@ class TestParkingLots(unittest.TestCase):
         mock_cursor.execute.assert_called_once()
 
     @patch('builtins.input', side_effect=['Lot B', 'South Campus', '150', 'B'])
-    @patch('university_system.modules.domain.mobility.services.parking_management.transaction')
-    @patch('university_system.modules.domain.mobility.services.parking_management.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.log_activity')
     def test_add_parking_lot(self, mock_log, mock_transaction, mock_input):
         """Test adding a parking lot"""
         from education_system.university_system.modules.domain.mobility.services.parking_management import add_parking_lot
@@ -325,7 +325,7 @@ class TestParkingLots(unittest.TestCase):
 class TestReports(unittest.TestCase):
     """Test report generation"""
 
-    @patch('university_system.modules.domain.mobility.services.parking_management.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.get_connection')
     def test_generate_permit_report(self, mock_conn):
         """Test generating permit report"""
         from education_system.university_system.modules.domain.mobility.services.parking_management import generate_permit_report
@@ -343,7 +343,7 @@ class TestReports(unittest.TestCase):
         with patch('sys.stdout', new=io.StringIO()):
             generate_permit_report()
 
-    @patch('university_system.modules.domain.mobility.services.parking_management.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.get_connection')
     def test_generate_violation_report(self, mock_conn):
         """Test generating violation report"""
         from education_system.university_system.modules.domain.mobility.services.parking_management import generate_violation_report
@@ -361,7 +361,7 @@ class TestReports(unittest.TestCase):
         with patch('sys.stdout', new=io.StringIO()):
             generate_violation_report()
 
-    @patch('university_system.modules.domain.mobility.services.parking_management.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.get_connection')
     def test_generate_analytics_dashboard(self, mock_conn):
         """Test generating analytics dashboard"""
         from education_system.university_system.modules.domain.mobility.services.parking_management import (
@@ -400,7 +400,7 @@ class TestMenus(unittest.TestCase):
         with patch('sys.stdout', new=io.StringIO()):
             display_vehicle_menu()
 
-    @patch('builtins.input', return_value='4')
+    @patch('builtins.input', return_value='5')
     def test_display_violation_menu_exit(self, mock_input):
         """Test exiting violation menu"""
         from education_system.university_system.modules.domain.mobility.services.parking_management import display_violation_menu

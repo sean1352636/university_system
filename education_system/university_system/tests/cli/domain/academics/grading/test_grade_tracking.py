@@ -36,8 +36,8 @@ def test_db(tmp_path):
     def mock_get_connection():
         return sqlite3.connect(str(db_path))
 
-    with patch('university_system.infrastructure.database.db.get_connection', mock_get_connection):
-        with patch('university_system.modules.domain.academics.grading.grade_tracking.get_connection', mock_get_connection):
+    with patch('education_system.university_system.infrastructure.database.db.get_connection', mock_get_connection):
+        with patch('education_system.university_system.modules.domain.academics.grading.grade_tracking.get_connection', mock_get_connection):
             yield mock_get_connection
 
 class TestDatabaseInitialization:
@@ -346,7 +346,7 @@ class TestDatabaseIntegrity:
 class TestErrorHandling:
     """Tests for error handling in grade tracking functions"""
 
-    @patch('university_system.modules.domain.academics.grading.grade_tracking.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.grade_tracking.get_connection')
     @patch('builtins.print')
     def test_init_basic_database_handles_errors(self, mock_print, mock_conn):
         """Test that init_basic_database handles database errors gracefully"""
@@ -358,7 +358,7 @@ class TestErrorHandling:
         # Check that error was printed
         assert any('Database error' in str(call) for call in mock_print.call_args_list)
 
-    @patch('university_system.modules.domain.academics.grading.grade_tracking.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.grade_tracking.get_connection')
     @patch('builtins.print')
     def test_init_enhanced_grades_db_handles_errors(self, mock_print, mock_conn):
         """Test that init_enhanced_grades_db handles database errors gracefully"""

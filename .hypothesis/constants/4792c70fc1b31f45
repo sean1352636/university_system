@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/gui/internship_management/reports.py
+# hypothesis_version: 6.151.9
+
+[100, 120, 150, 180, 200, 250, '#27ae60', '#2c3e50', '#3498db', '#7f8c8d', '#d4edda', '#e74c3c', '#ecf0f1', '#f39c12', '#f8d7da', '#fff3cd', ',', ', ', '...', 'Applications', 'Approval Rate (%)', 'Approved', 'Arial', 'Company', 'Course', 'Database Error', 'Internship Reports', 'Internship Title', 'Internship Types', 'Internships', 'Month', 'Overall Statistics', 'Pending', 'Permission Error', 'Placements', 'Rank', 'Rejected', 'Select Report Type:', 'Students', 'Students Placed', 'Success Rate (%)', 'Total Applications', 'Total Apps', 'bold', 'both', 'end', 'ew', 'flat', 'headings', 'high', 'left', 'low', 'medium', 'raised', 'sunken', 'w', 'white', 'x']

@@ -97,21 +97,21 @@ class TestUserAuthInitialization:
 
     def test_init_with_custom_db_path(self, temp_db):
         """Test initialization with custom database path"""
-        with patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db'):
+        with patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db'):
             auth = UserAuth(db_path=temp_db)
 
             assert auth.db_manager.db_path == temp_db
 
     def test_init_with_default_db_path(self):
         """Test initialization with default database path"""
-        with patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db'):
+        with patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db'):
             auth = UserAuth()
 
             assert auth.db_manager.db_path is not None
 
     def test_hash_password_generates_salt(self, temp_db):
         """Test that password hashing generates salt"""
-        with patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db'):
+        with patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db'):
             auth = UserAuth(db_path=temp_db)
 
             hash1 = auth._hash_password('password123')
@@ -123,7 +123,7 @@ class TestUserAuthInitialization:
 
     def test_hash_password_with_salt(self, temp_db):
         """Test password hashing with provided salt"""
-        with patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db'):
+        with patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db'):
             auth = UserAuth(db_path=temp_db)
 
             # Hash with same salt should produce same result
@@ -134,7 +134,7 @@ class TestUserAuthInitialization:
 
     def test_hash_password_different_passwords(self, temp_db):
         """Test that different passwords produce different hashes"""
-        with patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db'):
+        with patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db'):
             auth = UserAuth(db_path=temp_db)
 
             hash1 = auth._hash_password('password1', salt='salt')
@@ -145,8 +145,8 @@ class TestUserAuthInitialization:
 class TestUserCreation:
     """Test user creation functionality"""
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth.log_activity_with_connection')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth.log_activity_with_connection')
     def test_create_user_success(self, mock_log, mock_init, temp_db):
         """Test successful user creation"""
         auth = UserAuth(db_path=temp_db)
@@ -174,7 +174,7 @@ class TestUserCreation:
         assert row[0] == 'newuser'
         assert row[1] == 'newuser@example.com'
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
     def test_create_user_duplicate_username(self, mock_init, temp_db):
         """Test user creation with duplicate username"""
         auth = UserAuth(db_path=temp_db)
@@ -202,8 +202,8 @@ class TestUserCreation:
         assert result['success'] is False
         assert 'exists' in result['message'].lower() or 'unique' in result['message'].lower()
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth.log_activity_with_connection')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth.log_activity_with_connection')
     def test_create_user_with_student_id(self, mock_log, mock_init, temp_db):
         """Test user creation with student ID"""
         # Create students table
@@ -239,8 +239,8 @@ class TestUserCreation:
 class TestUserLogin:
     """Test user login functionality"""
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth.log_activity_with_connection')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth.log_activity_with_connection')
     def test_login_success(self, mock_log, mock_init, temp_db):
         """Test successful login"""
         auth = UserAuth(db_path=temp_db)
@@ -261,7 +261,7 @@ class TestUserLogin:
         assert result['success'] is True
         assert result['username'] == 'loginuser'
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
     def test_login_wrong_password(self, mock_init, temp_db):
         """Test login with wrong password"""
         auth = UserAuth(db_path=temp_db)
@@ -282,7 +282,7 @@ class TestUserLogin:
         assert result['success'] is False
         assert 'incorrect' in result['message'].lower() or 'invalid' in result['message'].lower()
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
     def test_login_nonexistent_user(self, mock_init, temp_db):
         """Test login with non-existent username"""
         auth = UserAuth(db_path=temp_db)
@@ -291,8 +291,8 @@ class TestUserLogin:
 
         assert result['success'] is False
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth.log_activity_with_connection')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth.log_activity_with_connection')
     def test_login_case_insensitive(self, mock_log, mock_init, temp_db):
         """Test that login is case-insensitive"""
         auth = UserAuth(db_path=temp_db)
@@ -317,8 +317,8 @@ class TestUserLogin:
 class TestUserLogout:
     """Test user logout functionality"""
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth.log_activity_with_connection')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth.log_activity_with_connection')
     def test_logout_success(self, mock_log, mock_init, temp_db):
         """Test successful logout"""
         auth = UserAuth(db_path=temp_db)
@@ -339,7 +339,7 @@ class TestUserLogout:
 
         assert result['success'] is True
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
     def test_logout_when_not_logged_in(self, mock_init, temp_db):
         """Test logout when not logged in"""
         auth = UserAuth(db_path=temp_db)
@@ -352,8 +352,8 @@ class TestUserLogout:
 class TestUserUpdate:
     """Test user update functionality"""
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth.log_activity_with_connection')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth.log_activity_with_connection')
     def test_update_user_email(self, mock_log, mock_init, temp_db):
         """Test updating user email"""
         auth = UserAuth(db_path=temp_db)
@@ -384,8 +384,8 @@ class TestUserUpdate:
 
         assert new_email == 'new@example.com'
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth.log_activity_with_connection')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth.log_activity_with_connection')
     def test_update_user_multiple_fields(self, mock_log, mock_init, temp_db):
         """Test updating multiple user fields"""
         auth = UserAuth(db_path=temp_db)
@@ -415,8 +415,8 @@ class TestUserUpdate:
 class TestUserDeletion:
     """Test user deletion functionality"""
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth.log_activity_with_connection')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth.log_activity_with_connection')
     def test_delete_user_success(self, mock_log, mock_init, temp_db):
         """Test successful user deletion"""
         auth = UserAuth(db_path=temp_db)
@@ -448,7 +448,7 @@ class TestUserDeletion:
         # User might be soft-deleted (is_active = 0) or hard-deleted (row is None)
         assert row is None or row[0] == 0
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
     def test_delete_nonexistent_user(self, mock_init, temp_db):
         """Test deleting non-existent user"""
         auth = UserAuth(db_path=temp_db)
@@ -461,8 +461,8 @@ class TestUserDeletion:
 class TestPasswordReset:
     """Test password reset functionality"""
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth.log_activity_with_connection')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth.log_activity_with_connection')
     def test_reset_password_success(self, mock_log, mock_init, temp_db):
         """Test successful password reset"""
         auth = UserAuth(db_path=temp_db)
@@ -483,7 +483,7 @@ class TestPasswordReset:
         assert result['success'] is True
         assert 'new_password' in result or 'temporary_password' in result or result.get('success')
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
     def test_reset_password_nonexistent_user(self, mock_init, temp_db):
         """Test password reset for non-existent user"""
         auth = UserAuth(db_path=temp_db)
@@ -495,7 +495,7 @@ class TestPasswordReset:
 class TestTwoFactorAuthentication:
     """Test two-factor authentication functionality"""
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
     def test_verify_two_fa_code_not_enabled(self, mock_init, temp_db):
         """Test 2FA verification when not enabled"""
         auth = UserAuth(db_path=temp_db)
@@ -513,8 +513,8 @@ class TestTwoFactorAuthentication:
         # Should indicate 2FA not enabled
         assert 'success' in result
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
-    @patch('university_system.infrastructure.auth.user_authentication.pyotp.TOTP')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.pyotp.TOTP')
     def test_verify_two_fa_code_valid(self, mock_totp_class, mock_init, temp_db):
         """Test 2FA verification with valid code"""
         auth = UserAuth(db_path=temp_db)
@@ -536,7 +536,7 @@ class TestTwoFactorAuthentication:
 
         assert result.get('success') is True or result.get('valid') is True
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
     def test_verify_recovery_code_success(self, mock_init, temp_db):
         """Test recovery code verification"""
         auth = UserAuth(db_path=temp_db)
@@ -550,8 +550,8 @@ class TestTwoFactorAuthentication:
 class TestCurrentUser:
     """Test current user functionality"""
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth.log_activity_with_connection')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth.log_activity_with_connection')
     def test_get_current_user_after_login(self, mock_log, mock_init, temp_db):
         """Test getting current user after login"""
         auth = UserAuth(db_path=temp_db)
@@ -573,7 +573,7 @@ class TestCurrentUser:
         # Should return user info or None if not logged in
         assert current_user is not None or current_user is None  # Documents behavior
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
     def test_get_current_user_not_logged_in(self, mock_init, temp_db):
         """Test getting current user when not logged in"""
         auth = UserAuth(db_path=temp_db)
@@ -586,7 +586,7 @@ class TestCurrentUser:
 class TestActivityLogging:
     """Test activity logging"""
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
     def test_log_activity_with_connection(self, mock_init, temp_db):
         """Test activity logging with connection"""
         auth = UserAuth(db_path=temp_db)
@@ -610,7 +610,7 @@ class TestActivityLogging:
 class TestEdgeCases:
     """Test edge cases and error handling"""
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
     def test_create_user_empty_username(self, mock_init, temp_db):
         """Test user creation with empty username"""
         auth = UserAuth(db_path=temp_db)
@@ -626,7 +626,7 @@ class TestEdgeCases:
 
         assert result['success'] is False
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
     def test_create_user_empty_password(self, mock_init, temp_db):
         """Test user creation with empty password"""
         auth = UserAuth(db_path=temp_db)
@@ -643,7 +643,7 @@ class TestEdgeCases:
         # Should fail or handle gracefully
         assert 'success' in result
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
     def test_login_empty_credentials(self, mock_init, temp_db):
         """Test login with empty credentials"""
         auth = UserAuth(db_path=temp_db)
@@ -652,7 +652,7 @@ class TestEdgeCases:
 
         assert result['success'] is False
 
-    @patch('university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
+    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth._init_db')
     def test_login_none_credentials(self, mock_init, temp_db):
         """Test login with None credentials"""
         auth = UserAuth(db_path=temp_db)

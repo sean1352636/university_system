@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/operations/inventory.py
+# hypothesis_version: 6.151.9
+
+['#27ae60', '#333333', '#dc3545', '#e74c3c', '#ecf0f1', '#ffc107', '#ffffff', '%Y-%m-%d %H:%M:%S', '+ Add Item', '-', '.', '100', '20', '300x150', '400x350', 'Add Item', 'Card.TFrame', 'Cost', 'Cost:', 'Helvetica', 'ID', 'Invalid qty', 'Item', 'Item added!', 'Item:*', 'LOW', 'Main.TFrame', 'Min', 'Min Level:', 'OK', 'Primary.TButton', 'Restock', 'Select an item', 'Status', 'Stock', 'Stock:', 'Subtitle.TLabel', 'Success.TButton', 'Unit', 'Unit:*', '_', 'bold', 'both', 'cinema.btn.restock', 'cinema.buttons.add', 'cost', 'end', 'headings', 'left', 'min', 'name', 'right', 'stock', 'unit', 'values', 'vertical', 'w', 'x', 'y']

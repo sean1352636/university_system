@@ -3,6 +3,7 @@
 from education_system.college_system.core.exceptions import DBSCheckError
 from education_system.college_system.infrastructure.database.db import connect
 
+from education_system.college_system.core.sql_safety import escape_like
 import logging
 
 logger = logging.getLogger(__name__)
@@ -72,7 +73,8 @@ class DBSCheckService:
             if search:
                 sql += (" AND (volunteer_name LIKE ? OR certificate_number LIKE ?"
                         " OR CAST(staff_id AS TEXT) LIKE ?)")
-                term = f"%{search}%"
+                escaped = escape_like(search)
+                term = f"%{escaped}%"
                 params.extend([term, term, term])
             sql += " ORDER BY expiry_date ASC NULLS LAST, created_at DESC LIMIT ?"
             params.append(limit)

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/helpdesk/admin/departments.py
+# hypothesis_version: 6.151.9
+
+['\nDepartments:', '\nEnter your choice: ', ' WHERE dept_id = ?', '%Y-%m-%d %H:%M:%S', ', ', '1', '1. View departments', '2', '3', '3. Edit department', '4', '=', '====================', 'Department email: ', 'Department name: ', 'Description: ', 'Name is required.', 'No', 'No changes made.', 'None', 'Yes', 'activated', 'deactivated', 'email = ?', 'name = ?']

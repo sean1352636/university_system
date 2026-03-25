@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/primary_school/modules/domain/academics/attendance/services/attendance_service.py
+# hypothesis_version: 6.151.9
+
+[' AND ar.date = ?', ' AND ar.pupil_id = ?', ' AND ar.session = ?', ' AND date = ?', ' AND pupil_id = ?', ' AND session = ?', ', ', '/', 'AM', 'Date is required', 'Pupil ID is required', 'date', 'note', 'pupil_id', 'record_id', 'recorded_by', 'status']

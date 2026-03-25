@@ -127,7 +127,7 @@ class TestCalculateSeasonalFactors:
 class TestAnalyzeFeeStructureImpact:
     """Test suite for analyze_fee_structure_impact function"""
 
-    @patch('university_system.modules.domain.finance.finance_misc.analytics.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.analytics.get_connection')
     def test_analyze_fee_structure_impact_success(self, mock_get_connection):
         """Test successful fee structure impact analysis"""
         mock_conn = Mock()
@@ -150,7 +150,7 @@ class TestAnalyzeFeeStructureImpact:
         # 10% increase on 100 students at 9000 = 90000
         assert result['Computer Science'] == 90000.0
 
-    @patch('university_system.modules.domain.finance.finance_misc.analytics.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.analytics.get_connection')
     def test_analyze_fee_structure_impact_database_error(self, mock_get_connection):
         """Test fee structure impact analysis with database error"""
         mock_get_connection.side_effect = Exception("Database connection error")
@@ -159,7 +159,7 @@ class TestAnalyzeFeeStructureImpact:
 
         assert result is None
 
-    @patch('university_system.modules.domain.finance.finance_misc.analytics.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.analytics.get_connection')
     def test_analyze_fee_structure_impact_no_data(self, mock_get_connection):
         """Test fee structure impact analysis with no data"""
         mock_conn = Mock()
@@ -178,7 +178,7 @@ class TestAnalyzeFeeStructureImpact:
 class TestViewOverdueAccounts:
     """Test suite for view_overdue_accounts function"""
 
-    @patch('university_system.modules.domain.finance.finance_misc.analytics.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.analytics.get_connection')
     @patch('builtins.input', return_value='')
     @patch('builtins.print')
     def test_view_overdue_accounts_with_data(self, mock_print, mock_input, mock_get_connection):
@@ -205,7 +205,7 @@ class TestViewOverdueAccounts:
         assert mock_print.called
         mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.finance_misc.analytics.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.analytics.get_connection')
     @patch('builtins.print')
     def test_view_overdue_accounts_no_data(self, mock_print, mock_get_connection):
         """Test viewing overdue accounts with no data"""
@@ -221,7 +221,7 @@ class TestViewOverdueAccounts:
         assert any('No overdue accounts' in str(call) for call in mock_print.call_args_list)
         mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.finance_misc.analytics.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.analytics.get_connection')
     @patch('builtins.print')
     def test_view_overdue_accounts_database_error(self, mock_print, mock_get_connection):
         """Test viewing overdue accounts with database error"""
@@ -236,7 +236,7 @@ class TestViewOverdueAccounts:
 class TestAssignCaseToAgency:
     """Test suite for assign_case_to_agency function"""
 
-    @patch('university_system.modules.domain.finance.finance_misc.analytics.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.analytics.get_connection')
     @patch('builtins.input', return_value='1')
     @patch('builtins.print')
     def test_assign_case_to_agency_success(self, mock_print, mock_input, mock_get_connection):
@@ -259,7 +259,7 @@ class TestAssignCaseToAgency:
         mock_conn.commit.assert_called_once()
         mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.finance_misc.analytics.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.analytics.get_connection')
     @patch('builtins.print')
     def test_assign_case_to_agency_no_agencies(self, mock_print, mock_get_connection):
         """Test case assignment when no agencies available"""
@@ -274,7 +274,7 @@ class TestAssignCaseToAgency:
         # Should print "No active collection agencies available."
         assert any('No active collection agencies' in str(call) for call in mock_print.call_args_list)
 
-    @patch('university_system.modules.domain.finance.finance_misc.analytics.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.analytics.get_connection')
     @patch('builtins.input', return_value='invalid')
     @patch('builtins.print')
     def test_assign_case_to_agency_invalid_input(self, mock_print, mock_input, mock_get_connection):
@@ -296,7 +296,7 @@ class TestAssignCaseToAgency:
 class TestGenerateEnrollmentProjections:
     """Test suite for generate_enrollment_projections function"""
 
-    @patch('university_system.modules.domain.finance.finance_misc.analytics.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.analytics.get_connection')
     @patch('builtins.print')
     def test_generate_enrollment_projections_success(self, mock_print, mock_get_connection):
         """Test successful enrollment projections generation"""
@@ -317,7 +317,7 @@ class TestGenerateEnrollmentProjections:
         assert mock_print.called
         mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.finance_misc.analytics.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.analytics.get_connection')
     @patch('builtins.print')
     def test_generate_enrollment_projections_no_data(self, mock_print, mock_get_connection):
         """Test enrollment projections with no data"""
@@ -336,7 +336,7 @@ class TestGenerateEnrollmentProjections:
 class TestGenerateCashFlowAnalysis:
     """Test suite for generate_cash_flow_analysis function"""
 
-    @patch('university_system.modules.domain.finance.finance_misc.analytics.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.analytics.get_connection')
     @patch('builtins.print')
     def test_generate_cash_flow_analysis_success(self, mock_print, mock_get_connection):
         """Test successful cash flow analysis generation"""
@@ -358,7 +358,7 @@ class TestGenerateCashFlowAnalysis:
         assert mock_print.called
         mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.finance_misc.analytics.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.analytics.get_connection')
     @patch('builtins.print')
     def test_generate_cash_flow_analysis_error(self, mock_print, mock_get_connection):
         """Test cash flow analysis with error"""
@@ -373,7 +373,7 @@ class TestGenerateCashFlowAnalysis:
 class TestGenerateRiskAnalysis:
     """Test suite for generate_risk_analysis function"""
 
-    @patch('university_system.modules.domain.finance.finance_misc.analytics.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.analytics.get_connection')
     @patch('builtins.print')
     def test_generate_risk_analysis_success(self, mock_print, mock_get_connection):
         """Test successful risk analysis generation"""
@@ -406,7 +406,7 @@ class TestGenerateRiskAnalysis:
         assert mock_print.called
         mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.finance_misc.analytics.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.analytics.get_connection')
     @patch('builtins.print')
     def test_generate_risk_analysis_no_debt(self, mock_print, mock_get_connection):
         """Test risk analysis with no debt"""
@@ -431,7 +431,7 @@ class TestGenerateRiskAnalysis:
 class TestGenerateScenarioPlanning:
     """Test suite for generate_scenario_planning function"""
 
-    @patch('university_system.modules.domain.finance.finance_misc.analytics.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.analytics.get_connection')
     @patch('builtins.print')
     def test_generate_scenario_planning_success(self, mock_print, mock_get_connection):
         """Test successful scenario planning generation"""
@@ -452,7 +452,7 @@ class TestGenerateScenarioPlanning:
         assert mock_print.called
         mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.finance_misc.analytics.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.analytics.get_connection')
     @patch('builtins.print')
     def test_generate_scenario_planning_zero_students(self, mock_print, mock_get_connection):
         """Test scenario planning with zero students"""
@@ -475,7 +475,7 @@ class TestGenerateScenarioPlanning:
 class TestRecoveryRateAnalysis:
     """Test suite for recovery_rate_analysis function"""
 
-    @patch('university_system.modules.domain.finance.finance_misc.analytics.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.analytics.get_connection')
     @patch('builtins.print')
     def test_recovery_rate_analysis_success(self, mock_print, mock_get_connection):
         """Test successful recovery rate analysis"""
@@ -507,7 +507,7 @@ class TestRecoveryRateAnalysis:
         assert mock_print.called
         mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.finance_misc.analytics.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.analytics.get_connection')
     @patch('builtins.print')
     def test_recovery_rate_analysis_no_cases(self, mock_print, mock_get_connection):
         """Test recovery rate analysis with no cases"""
@@ -529,7 +529,7 @@ class TestRecoveryRateAnalysis:
 class TestUpdateActualAmounts:
     """Test suite for update_actual_amounts function"""
 
-    @patch('university_system.modules.domain.finance.finance_misc.analytics.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.analytics.get_connection')
     @patch('builtins.print')
     def test_update_actual_amounts_success(self, mock_print, mock_get_connection):
         """Test successful actual amounts update"""
@@ -548,7 +548,7 @@ class TestUpdateActualAmounts:
         # Should print success message
         assert any('updated' in str(call).lower() for call in mock_print.call_args_list)
 
-    @patch('university_system.modules.domain.finance.finance_misc.analytics.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.analytics.get_connection')
     @patch('builtins.print')
     def test_update_actual_amounts_error(self, mock_print, mock_get_connection):
         """Test actual amounts update with error"""
@@ -563,8 +563,8 @@ class TestUpdateActualAmounts:
 class TestBackgroundScheduler:
     """Test suite for background scheduler"""
 
-    @patch('university_system.modules.domain.finance.finance_misc.analytics.threading.Thread')
-    @patch('university_system.modules.domain.finance.finance_misc.analytics.schedule')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.analytics.threading.Thread')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.analytics.schedule')
     @patch('builtins.print')
     def test_start_background_scheduler(self, mock_print, mock_schedule, mock_thread):
         """Test background scheduler startup"""

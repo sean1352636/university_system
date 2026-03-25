@@ -240,8 +240,8 @@ class TestBatchOperationManagerInit:
 
     def test_initialization_default(self):
         """Test initialization with default parameters."""
-        with patch('university_system.modules.shared.constants.paths.DEFAULT_DB_PATH', '/tmp/test.db'):
-            with patch('university_system.modules.shared.constants.paths.BACKUP_DIR', '/tmp/backup'):
+        with patch('education_system.university_system.modules.shared.constants.paths.DEFAULT_DB_PATH', '/tmp/test.db'):
+            with patch('education_system.university_system.modules.shared.constants.paths.BACKUP_DIR', '/tmp/backup'):
                 manager = BatchOperationManager()
                 assert manager.db_path is not None
                 assert manager.backup_dir is not None

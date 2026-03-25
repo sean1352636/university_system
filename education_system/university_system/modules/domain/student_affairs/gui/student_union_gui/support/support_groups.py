@@ -463,10 +463,73 @@ class MySupportGroupsDialog:
             messagebox.showwarning("Warning", "Please select a group to leave.")
             return
 
-        if messagebox.askyesno("Confirm", "Are you sure you want to leave this support group?"):
-            # In a full implementation, would update the database
-            messagebox.showinfo("Success", "Left the support group.")
+        item = self.groups_tree.item(selection[0])
+        group_name = item['values'][0]
+        role = item['values'][2]
+
+        if role == 'Facilitator':
+            messagebox.showwarning("Warning",
+                                   "You are the facilitator of this group. "
+                                   "Please transfer facilitator role before leaving, "
+                                   "or disband the group.")
+            return
+
+        if not messagebox.askyesno("Confirm",
+                                    f"Are you sure you want to leave '{group_name}'?"):
+            return
+
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            cursor.execute('SELECT student_id FROM users WHERE id = ?',
+                           (self.auth.current_user['id'],))
+            result = cursor.fetchone()
+            if not result:
+                messagebox.showerror("Error", "Could not identify your student record.")
+                return
+            student_id = result[0]
+
+            # Find the group_id by matching group_name and student membership
+            cursor.execute('''
+                SELECT psg.group_id FROM peer_support_groups psg
+                INNER JOIN support_group_members sgm ON sgm.group_id = psg.group_id
+                WHERE psg.group_name = ? AND sgm.student_id = ? AND sgm.status = 'active'
+            ''', (group_name, student_id))
+            group_row = cursor.fetchone()
+
+            if not group_row:
+                messagebox.showerror("Error", "Could not find your membership for this group.")
+                conn.close()
+                return
+
+            group_id = group_row[0]
+
+            # Mark membership as inactive
+            cursor.execute('''
+                UPDATE support_group_members SET status = 'inactive'
+                WHERE group_id = ? AND student_id = ? AND status = 'active'
+            ''', (group_id, student_id))
+
+            # Decrement member count
+            cursor.execute('''
+                UPDATE peer_support_groups SET current_members = MAX(current_members - 1, 0)
+                WHERE group_id = ?
+            ''', (group_id,))
+
+            conn.commit()
+            messagebox.showinfo("Success", f"You have left '{group_name}'.")
+
+            # Refresh the list
+            for tree_item in self.groups_tree.get_children():
+                self.groups_tree.delete(tree_item)
             self.load_data()
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to leave group: {e}")
+        finally:
+            if conn:
+                conn.close()
 
 
 
@@ -547,25 +610,101 @@ class BrowseSupportGroupsDialog:
         ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
 
     def load_groups(self):
+        """Load support groups from DB, with topic filter"""
         for item in self.groups_tree.get_children():
             self.groups_tree.delete(item)
 
-        # Sample support groups
-        groups = [
-            ("Stress Busters", "Stress Management", "Mon/Wed 6PM", "12/15", "Closed", "Active",
-             "Weekly peer support for managing academic and life stress. Share coping strategies and support each other."),
-            ("Anxiety Support Circle", "Anxiety", "Tuesday 7PM", "8/12", "Closed", "Active",
-             "Safe space to discuss anxiety, share experiences, and learn from peers dealing with similar challenges."),
-            ("First Year Friends", "Social Connection", "Thursday 5PM", "15/20", "Open", "Active",
-             "Connect with other first-year students, make friends, and navigate university life together."),
-            ("Academic Success Group", "Academic Pressure", "Friday 4PM", "10/15", "Open", "Active",
-             "Support for students dealing with academic pressure. Share study tips and encourage each other."),
-            ("Mindfulness Together", "Self-Care", "Saturday 10AM", "6/10", "Open", "Active",
-             "Practice mindfulness, meditation, and self-care techniques together in a supportive environment.")
-        ]
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
 
-        for group in groups:
-            self.groups_tree.insert('', 'end', values=group[:6], tags=(group[6],))
+            topic_filter = self.topic_var.get() if hasattr(self, 'topic_var') else 'All'
+
+            # Determine privacy column - use 'Open' as default if column doesn't exist
+            # Query groups joined with member count
+            if topic_filter == 'All':
+                cursor.execute('''
+                    SELECT psg.group_id, psg.group_name, psg.support_type,
+                           psg.meeting_schedule,
+                           psg.current_members || '/' || psg.max_members,
+                           COALESCE(psg.privacy, 'Open'),
+                           psg.status,
+                           psg.description
+                    FROM peer_support_groups psg
+                    WHERE psg.status = 'active'
+                    ORDER BY psg.group_name
+                ''')
+            else:
+                cursor.execute('''
+                    SELECT psg.group_id, psg.group_name, psg.support_type,
+                           psg.meeting_schedule,
+                           psg.current_members || '/' || psg.max_members,
+                           COALESCE(psg.privacy, 'Open'),
+                           psg.status,
+                           psg.description
+                    FROM peer_support_groups psg
+                    WHERE psg.status = 'active' AND psg.support_type = ?
+                    ORDER BY psg.group_name
+                ''', (topic_filter,))
+
+            groups = cursor.fetchall()
+
+            for group in groups:
+                # group_id stored internally, display columns: Name, Topic, Schedule, Members, Privacy, Status
+                desc = group[7] or "No description available."
+                self.groups_tree.insert('', 'end',
+                                        values=(group[1], group[2], group[3], group[4], group[5], group[6]),
+                                        tags=(str(group[0]), desc))
+
+            if not groups:
+                # Show defaults if no DB entries
+                defaults = [
+                    ("Stress Busters", "Stress Management", "Mon/Wed 6PM", "0/15", "Open", "Active",
+                     "0", "Weekly peer support for managing academic and life stress."),
+                    ("Anxiety Support Circle", "Anxiety", "Tuesday 7PM", "0/12", "Closed", "Active",
+                     "0", "Safe space to discuss anxiety and share experiences."),
+                    ("First Year Friends", "Social Connection", "Thursday 5PM", "0/20", "Open", "Active",
+                     "0", "Connect with other first-year students."),
+                    ("Academic Success Group", "Academic Pressure", "Friday 4PM", "0/15", "Open", "Active",
+                     "0", "Support for students dealing with academic pressure."),
+                    ("Mindfulness Together", "Self-Care", "Saturday 10AM", "0/10", "Open", "Active",
+                     "0", "Practice mindfulness and self-care techniques together."),
+                ]
+                for g in defaults:
+                    if topic_filter == 'All' or g[1] == topic_filter:
+                        self.groups_tree.insert('', 'end',
+                                                values=(g[0], g[1], g[2], g[3], g[4], g[5]),
+                                                tags=(g[6], g[7]))
+
+        except sqlite3.OperationalError:
+            # Table may not have privacy column; fall back to simpler query
+            try:
+                if conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        SELECT psg.group_id, psg.group_name, psg.support_type,
+                               psg.meeting_schedule,
+                               psg.current_members || '/' || psg.max_members,
+                               psg.status,
+                               psg.description
+                        FROM peer_support_groups psg
+                        WHERE psg.status = 'active'
+                        ORDER BY psg.group_name
+                    ''')
+                    groups = cursor.fetchall()
+                    for group in groups:
+                        desc = group[6] or "No description available."
+                        self.groups_tree.insert('', 'end',
+                                                values=(group[1], group[2], group[3], group[4], 'Open', group[5]),
+                                                tags=(str(group[0]), desc))
+            except sqlite3.Error:
+                pass
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to load groups: {e}")
+        finally:
+            if conn:
+                conn.close()
 
     def on_select(self, event):
         selection = self.groups_tree.selection()
@@ -573,12 +712,15 @@ class BrowseSupportGroupsDialog:
             return
 
         item = self.groups_tree.item(selection[0])
-        details = item['tags'][0] if item['tags'] else "No details available."
+        tags = item['tags']
+        # Tags are [group_id, description]
+        details = tags[1] if len(tags) > 1 else (tags[0] if tags else "No details available.")
 
         self.details_text.delete(1.0, tk.END)
         self.details_text.insert(1.0, details)
 
     def join_group(self):
+        """Join the selected support group via DB"""
         selection = self.groups_tree.selection()
         if not selection:
             messagebox.showwarning("Warning", "Please select a group to join.")
@@ -587,20 +729,89 @@ class BrowseSupportGroupsDialog:
         item = self.groups_tree.item(selection[0])
         group_name = item['values'][0]
         privacy = item['values'][4]
+        tags = item['tags']
+        group_id_str = tags[0] if tags else None
+
+        # For default/sample entries (group_id "0" or non-numeric), show info-only message
+        if not group_id_str or group_id_str == '0':
+            messagebox.showinfo("Info",
+                                f"'{group_name}' is a sample group. "
+                                "Create a real group first using the main Support Groups dialog.")
+            return
 
         if privacy == "Closed":
-            if messagebox.askyesno("Join Request",
-                                  f"'{group_name}' is a closed group.\n\nSubmit a join request?"):
-                messagebox.showinfo("Success",
-                                   f"Join request submitted for '{group_name}'.\n\n"
-                                   "The group moderator will review your request.")
-        else:
-            if messagebox.askyesno("Confirm", f"Join '{group_name}'?"):
-                messagebox.showinfo("Success",
-                                   f"You've joined '{group_name}'!\n\n"
-                                   "You'll receive meeting reminders and can access group resources.")
+            if not messagebox.askyesno("Join Request",
+                                       f"'{group_name}' is a closed group.\n\nSubmit a join request?"):
+                return
+            # For closed groups, just show confirmation (would need approval workflow)
+            messagebox.showinfo("Submitted",
+                                f"Join request submitted for '{group_name}'.\n\n"
+                                "The group moderator will review your request.")
+            return
+
+        if not messagebox.askyesno("Confirm", f"Join '{group_name}'?"):
+            return
+
+        conn = None
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+
+            group_id = int(group_id_str)
+
+            cursor.execute('SELECT student_id FROM users WHERE id = ?',
+                           (self.auth.current_user['id'],))
+            result = cursor.fetchone()
+            if not result:
+                messagebox.showerror("Error", "Could not identify your student record.")
+                return
+            student_id = result[0]
+
+            # Check if already a member
+            cursor.execute('''
+                SELECT id FROM support_group_members
+                WHERE group_id = ? AND student_id = ? AND status = 'active'
+            ''', (group_id, student_id))
+            if cursor.fetchone():
+                messagebox.showinfo("Info", "You are already a member of this group.")
+                return
+
+            # Check capacity
+            cursor.execute('SELECT current_members, max_members FROM peer_support_groups WHERE group_id = ?',
+                           (group_id,))
+            cap_row = cursor.fetchone()
+            if cap_row and cap_row[0] >= cap_row[1]:
+                messagebox.showwarning("Full", "This group is currently full.")
+                return
+
+            # Generate anonymous ID
+            anonymous_id = hashlib.md5(f"{student_id}{group_id}".encode()).hexdigest()[:8]
+
+            cursor.execute('''
+                INSERT INTO support_group_members (group_id, student_id, join_date, anonymous_id, status)
+                VALUES (?, ?, ?, ?, 'active')
+            ''', (group_id, student_id, datetime.now().isoformat(), anonymous_id))
+
+            cursor.execute('''
+                UPDATE peer_support_groups SET current_members = current_members + 1
+                WHERE group_id = ?
+            ''', (group_id,))
+
+            conn.commit()
+            messagebox.showinfo("Success",
+                                f"You've joined '{group_name}'!\n\n"
+                                "You'll receive meeting reminders and can access group resources.")
+            self.load_groups()
+        except sqlite3.IntegrityError:
+            messagebox.showinfo("Info", "You are already a member of this group.")
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to join group: {e}")
+        finally:
+            if conn:
+                conn.close()
 
     def view_full_details(self):
+        """Open Toplevel showing full group details from DB"""
         selection = self.groups_tree.selection()
         if not selection:
             messagebox.showwarning("Warning", "Please select a group.")
@@ -608,23 +819,139 @@ class BrowseSupportGroupsDialog:
 
         item = self.groups_tree.item(selection[0])
         values = item['values']
-        details = item['tags'][0] if item['tags'] else ""
+        tags = item['tags']
+        group_id_str = tags[0] if tags else None
+        description = tags[1] if len(tags) > 1 else "No description available."
 
-        info = f"""Group: {values[0]}
-Topic: {values[1]}
-Schedule: {values[2]}
-Members: {values[3]}
-Privacy: {values[4]}
-Status: {values[5]}
+        group_name = values[0]
+        topic = values[1]
+        schedule = values[2]
+        members_str = values[3]
+        privacy = values[4]
+        status = values[5]
 
-Description:
-{details}
+        detail_win = tk.Toplevel(self.dialog)
+        detail_win.title(f"Group Details - {group_name}")
+        detail_win.geometry("650x600")
+        detail_win.transient(self.dialog)
+        detail_win.grab_set()
 
-Moderator: Anonymous (for privacy)
-Established: 3 months ago
-Meeting Location: Private (shared with members)
-"""
-        messagebox.showinfo("Group Details", info)
+        main_frame = ttk.Frame(detail_win)
+        main_frame.pack(fill='both', expand=True, padx=15, pady=15)
+
+        ttk.Label(main_frame, text=group_name, font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+
+        # Basic info grid
+        info_frame = ttk.LabelFrame(main_frame, text="Group Information")
+        info_frame.pack(fill='x', pady=(0, 10))
+
+        info_grid = ttk.Frame(info_frame)
+        info_grid.pack(fill='x', padx=10, pady=8)
+
+        labels = [
+            ("Topic:", topic),
+            ("Schedule:", schedule),
+            ("Members:", members_str),
+            ("Privacy:", privacy),
+            ("Status:", status),
+        ]
+
+        # Try to get additional details from DB
+        facilitator_name = "Anonymous (for privacy)"
+        created_date = "Unknown"
+        member_list = []
+
+        if group_id_str and group_id_str != '0':
+            conn = None
+            try:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                cursor = conn.cursor()
+                group_id = int(group_id_str)
+
+                # Get facilitator
+                cursor.execute('''
+                    SELECT s.first_name || ' ' || s.last_name
+                    FROM peer_support_groups psg
+                    INNER JOIN students s ON psg.facilitator_id = s.student_id
+                    WHERE psg.group_id = ?
+                ''', (group_id,))
+                fac_row = cursor.fetchone()
+                if fac_row:
+                    facilitator_name = fac_row[0]
+
+                # Get created date
+                cursor.execute('SELECT created_date FROM peer_support_groups WHERE group_id = ?', (group_id,))
+                date_row = cursor.fetchone()
+                if date_row and date_row[0]:
+                    try:
+                        dt = datetime.fromisoformat(date_row[0])
+                        created_date = dt.strftime('%B %d, %Y')
+                    except (ValueError, TypeError):
+                        created_date = str(date_row[0])
+
+                # Get member list (anonymous IDs only for privacy)
+                cursor.execute('''
+                    SELECT sgm.anonymous_id, sgm.join_date
+                    FROM support_group_members sgm
+                    WHERE sgm.group_id = ? AND sgm.status = 'active'
+                    ORDER BY sgm.join_date
+                ''', (group_id,))
+                member_list = cursor.fetchall()
+
+            except sqlite3.Error:
+                pass
+            finally:
+                if conn:
+                    conn.close()
+
+        labels.append(("Facilitator:", facilitator_name))
+        labels.append(("Established:", created_date))
+
+        for i, (label, value) in enumerate(labels):
+            ttk.Label(info_grid, text=label, font=('Arial', 10, 'bold')).grid(
+                row=i, column=0, sticky='w', padx=(0, 10), pady=2)
+            ttk.Label(info_grid, text=str(value), font=('Arial', 10)).grid(
+                row=i, column=1, sticky='w', pady=2)
+
+        # Description
+        desc_frame = ttk.LabelFrame(main_frame, text="Description")
+        desc_frame.pack(fill='x', pady=(0, 10))
+
+        desc_text = scrolledtext.ScrolledText(desc_frame, height=5, wrap=tk.WORD)
+        desc_text.pack(fill='both', expand=True, padx=5, pady=5)
+        desc_text.insert(1.0, description)
+        desc_text.config(state='disabled')
+
+        # Member list (anonymous)
+        member_frame = ttk.LabelFrame(main_frame, text="Members (Anonymous IDs)")
+        member_frame.pack(fill='both', expand=True, pady=(0, 10))
+
+        mem_columns = ('Anonymous ID', 'Joined')
+        mem_tree = ttk.Treeview(member_frame, columns=mem_columns, show='headings', height=6)
+        mem_tree.heading('Anonymous ID', text='Anonymous ID')
+        mem_tree.heading('Joined', text='Joined')
+        mem_tree.column('Anonymous ID', width=200)
+        mem_tree.column('Joined', width=200)
+
+        mem_vsb = ttk.Scrollbar(member_frame, orient='vertical', command=mem_tree.yview)
+        mem_tree.configure(yscrollcommand=mem_vsb.set)
+        mem_tree.pack(side='left', fill='both', expand=True)
+        mem_vsb.pack(side='right', fill='y')
+
+        if member_list:
+            for anon_id, join_date in member_list:
+                display_date = join_date
+                try:
+                    dt = datetime.fromisoformat(join_date)
+                    display_date = dt.strftime('%Y-%m-%d')
+                except (ValueError, TypeError):
+                    pass
+                display_id = "Facilitator" if anon_id == 'facilitator' else f"Member-{anon_id}"
+                mem_tree.insert('', 'end', values=(display_id, display_date))
+        else:
+            mem_tree.insert('', 'end', values=("No member data available", ""))
+
+        ttk.Button(main_frame, text="Close", command=detail_win.destroy).pack(anchor='e')
 
 
 

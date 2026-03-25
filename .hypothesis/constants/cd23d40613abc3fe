@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/gui/student_union_gui/competitions/competition_registration.py
+# hypothesis_version: 6.151.9
+
+[1.0, '600x500', 'Arial', 'bold', 'both', 'common.cancel', 'common.error', 'common.register', 'common.success', 'common.warning', 'id', 'left', 'values', 'w', 'x']

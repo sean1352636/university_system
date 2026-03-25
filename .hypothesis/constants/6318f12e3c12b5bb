@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/budget_manager/plans.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d %H:%M:%S', ',', '0', '0.00', '1.0', '2024-2025', '550x500', '600x500', 'Academic Year:', 'Active', 'Approved', 'Budget Analysis', 'Budget Approval', 'Budget ID:', 'Budget Plan Details', 'Budget Summary', 'Cancel', 'Closed', 'Confirm Delete', 'Courier', 'Create Budget Plan', 'Create Plan', 'Currency:', 'Description:', 'Draft', 'EUR', 'Error', 'Expense Budget (£):', 'Expenses Budget (£):', 'Fiscal Year:', 'GBP', 'Invalid Amount', 'Name Required', 'No Selection', 'Notes:', 'Plan Name:', 'Revenue Budget (£):', 'Save Changes', 'Status:', 'Success', 'TkDefaultFont', 'USD', 'Year Required', 'active', 'admin', 'approved', 'blue', 'bold', 'both', 'budget_plans_tree', 'closed', 'draft', 'end', 'left', 'nw', 'readonly', 'system', 'username', 'values', 'w', 'warning', 'x', '£', '£0.00']

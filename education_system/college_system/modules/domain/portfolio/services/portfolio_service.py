@@ -3,6 +3,7 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import PortfolioError, ValidationError
 from education_system.college_system.infrastructure.database.db import connect
+from education_system.college_system.core.sql_safety import validate_identifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,10 +26,22 @@ class PortfolioService:
             raise ValidationError("title is required.")
         conn = self._conn()
         try:
+            # Build INSERT with only non-None values so DB defaults apply
+            fields = {k: v for k, v in {
+                'student_id': kwargs.get('student_id'),
+                'title': kwargs.get('title'),
+                'item_type': kwargs.get('item_type'),
+                'description': kwargs.get('description'),
+                'file_path': kwargs.get('file_path'),
+                'subject_area': kwargs.get('subject_area'),
+                'is_public': kwargs.get('is_public'),
+                'tags': kwargs.get('tags'),
+            }.items() if v is not None}
+            cols = ", ".join(fields.keys())
+            placeholders = ", ".join("?" for _ in fields)
             conn.execute(
-                """INSERT INTO portfolio_items (student_id, title, item_type, description, file_path, subject_area, is_public, tags)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                (kwargs.get('student_id'), kwargs.get('title'), kwargs.get('item_type'), kwargs.get('description'), kwargs.get('file_path'), kwargs.get('subject_area'), kwargs.get('is_public'), kwargs.get('tags'),),
+                f"INSERT INTO portfolio_items ({cols}) VALUES ({placeholders})",
+                list(fields.values()),
             )
             conn.commit()
             row = conn.execute(
@@ -60,7 +73,7 @@ class PortfolioService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -78,7 +91,7 @@ class PortfolioService:
         if not updates:
             raise ValidationError("No valid fields to update.")
         updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [pk]
         conn = self._conn()
         try:
@@ -116,7 +129,7 @@ class PortfolioService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {key} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"
                 params.append(val)
         conn = self._conn()
         try:

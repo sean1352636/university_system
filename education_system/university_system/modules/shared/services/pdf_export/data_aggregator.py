@@ -65,14 +65,13 @@ class DataAggregator:
             "grant_applications": ("Grant Applications", "Research grant applications"),
         },
         "Events": {
-            "campus_events": ("Campus Events", "University events"),
+            "unified_events": ("Events", "University events (all source types)"),
             "event_registrations": ("Event Registrations", "Event attendance"),
             "union_events": ("Union Events", "Student union events"),
         },
         "Alumni": {
             "alumni_profiles": ("Alumni Profiles", "Graduate profiles"),
             "alumni_donations": ("Donations", "Alumni contributions"),
-            "alumni_events": ("Alumni Events", "Alumni networking events"),
         },
         "System": {
             "email_log": ("Email Log", "System email records"),
@@ -357,14 +356,14 @@ class DataAggregator:
         try:
             with get_connection(self.db_path) as conn:
                 try:
-                    cursor = conn.execute("SELECT COUNT(*) FROM campus_events")
+                    cursor = conn.execute("SELECT COUNT(*) FROM unified_events WHERE source_type = 'campus'")
                     result = cursor.fetchone()
                     stats["total_events"] = result[0] if result else 0
                 except Exception:
                     pass
 
                 try:
-                    cursor = conn.execute("SELECT COUNT(*) FROM event_registrations")
+                    cursor = conn.execute("SELECT COUNT(*) FROM unified_event_registrations")
                     result = cursor.fetchone()
                     stats["total_registrations"] = result[0] if result else 0
                 except Exception:
@@ -372,8 +371,8 @@ class DataAggregator:
 
                 try:
                     cursor = conn.execute(
-                        "SELECT event_type, COUNT(*) FROM campus_events "
-                        "WHERE event_type IS NOT NULL GROUP BY event_type"
+                        "SELECT event_type, COUNT(*) FROM unified_events "
+                        "WHERE source_type = 'campus' AND event_type IS NOT NULL GROUP BY event_type"
                     )
                     stats["by_type"] = {row[0]: row[1] for row in cursor.fetchall()}
                 except Exception:

@@ -2,7 +2,7 @@
 All reports, revenue analytics, profit margins, and trend analysis.
 """
 
-from ._imports import (
+from education_system.university_system.modules.services.cli.charity_shop_cli._imports import (
     sqlite3, logger, datetime, timedelta,
     get_connection, List, Dict,
     TABLE_NAME, SALES_TABLE, DONORS_TABLE, DONATIONS_TABLE,

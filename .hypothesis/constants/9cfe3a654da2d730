@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/database/dialogs/integrity_check.py
+# hypothesis_version: 6.151.9
+
+[100, 400, '500x600', '600x500', 'Backup', 'Cancel', 'Change Detection', 'Check', 'Check All Backups', 'Check Complete', 'Check Error', 'Check Selected', 'Check failed', 'Close', 'DB Valid', 'Deduplication', 'Enable Deduplication', 'Error', 'Export Report', 'File Exists', 'Hash Match', 'Invalid Input', 'Max Threads:', 'No Backups', 'No Selection', 'PASS', 'Performance', 'Readable', 'Save', 'Status', 'Storage Management', 'Storage Quota (GB):', 'Success', 'backup', 'bandwidth_limit_mbps', 'both', 'database_valid', 'determinate', 'enable_deduplication', 'end', 'file_exists', 'file_readable', 'filename', 'hash_verified', 'headings', 'left', 'max_threads', 'parallel_backup', 'path', 'results', 'right', 'status', 'storage_quota_gb', 'tables_accessible', 'vertical', 'w', 'x', 'y', '✅', '✅ PASS', '❌', '❌ FAIL']

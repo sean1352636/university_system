@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/expense_manager/late_fees.py
+# hypothesis_version: 6.151.9
+
+[100, 120, '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '1.0', '600x500', 'Active', 'Arial', 'both', 'bottom', 'center', 'common.cancel', 'common.confirm', 'common.error', 'common.info', 'common.success', 'count', 'daily', 'end', 'fixed', 'headings', 'horizontal', 'late_fees', 'left', 'percentage', 'reports', 'right', 'total', 'username', 'values', 'vertical', 'w', 'white', 'x', 'y', '£']

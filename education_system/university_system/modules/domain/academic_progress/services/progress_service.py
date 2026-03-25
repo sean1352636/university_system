@@ -840,46 +840,104 @@ class ProgressService:
 
     def _calculate_current_gpa(self, student_id: str) -> Dict:
         """Calculate student's current GPA and total points."""
+        grade_values = {
+            'A+': 4.0, 'A': 4.0, 'A-': 3.7,
+            'B+': 3.3, 'B': 3.0, 'B-': 2.7,
+            'C+': 2.3, 'C': 2.0, 'C-': 1.7,
+            'D+': 1.3, 'D': 1.0, 'D-': 0.7, 'F': 0.0
+        }
+
+        def pct_to_letter(pct):
+            if pct >= 93: return 'A'
+            if pct >= 90: return 'A-'
+            if pct >= 87: return 'B+'
+            if pct >= 83: return 'B'
+            if pct >= 80: return 'B-'
+            if pct >= 77: return 'C+'
+            if pct >= 73: return 'C'
+            if pct >= 70: return 'C-'
+            if pct >= 67: return 'D+'
+            if pct >= 63: return 'D'
+            if pct >= 60: return 'D-'
+            return 'F'
+
         with get_connection() as conn:
-            grades = conn.execute("""
-                SELECT mg.final_grade as grade, m.credits
+            # Source 1: module_grades (letter grades)
+            module_rows = conn.execute("""
+                SELECT mg.module_code, mg.final_grade as grade, COALESCE(m.credits, 1) as credits
                 FROM module_grades mg
                 LEFT JOIN modules m ON mg.module_code = m.module_code
                 WHERE mg.student_id = ?
                 AND mg.final_grade NOT IN ('W', 'I')
                 AND mg.final_grade IS NOT NULL
-                UNION
-                SELECT sg.grade, c.credits
-                FROM student_grades sg
-                LEFT JOIN courses c ON sg.module_code = c.code
-                WHERE sg.student_id = ?
-                AND sg.grade NOT IN ('W', 'I')
-                AND sg.grade IS NOT NULL
-                AND sg.assessment_name LIKE '%Final%'
-            """, (student_id, student_id)).fetchall()
+            """, (student_id,)).fetchall()
 
-            grade_values = {
-                'A+': 4.0, 'A': 4.0, 'A-': 3.7,
-                'B+': 3.3, 'B': 3.0, 'B-': 2.7,
-                'C+': 2.3, 'C': 2.0, 'C-': 1.7,
-                'D+': 1.3, 'D': 1.0, 'F': 0.0
-            }
+            # Source 2: assignment_submissions (percentage grades, averaged per module)
+            assign_rows = conn.execute("""
+                SELECT a.module_code, ROUND(AVG(sub.grade), 2) as avg_pct,
+                       COALESCE(m.credits, 1) as credits
+                FROM assignment_submissions sub
+                JOIN assignments a ON sub.assignment_id = a.id
+                LEFT JOIN modules m ON a.module_code = m.module_code
+                WHERE sub.student_id = ? AND sub.grade IS NOT NULL
+                GROUP BY a.module_code
+            """, (student_id,)).fetchall()
 
-            total_credits = 0
-            total_points = 0
+            # Source 3: grades table (score-based)
+            grade_rows = conn.execute("""
+                SELECT a.module_code,
+                       ROUND(AVG(g.score / a.max_points * 100), 2) as avg_pct,
+                       COALESCE(m.credits, 1) as credits
+                FROM grades g
+                JOIN assessments a ON g.assessment_id = a.assessment_id
+                LEFT JOIN modules m ON a.module_code = m.module_code
+                WHERE g.student_id = ? AND a.max_points > 0
+                GROUP BY a.module_code
+            """, (student_id,)).fetchall()
 
-            for grade in grades:
-                if grade['grade'] in grade_values:
-                    total_credits += grade['credits']
-                    total_points += grade_values[grade['grade']] * grade['credits']
+        # Merge: module_grades takes priority
+        seen = set()
+        total_credits = 0
+        total_points = 0.0
 
-            current_gpa = total_points / total_credits if total_credits > 0 else 0.0
+        for row in module_rows:
+            code = row['module_code']
+            if code in seen:
+                continue
+            seen.add(code)
+            grade_str = str(row['grade']).strip()
+            # Handle numeric grades stored as strings
+            try:
+                pct = float(grade_str)
+                letter = pct_to_letter(pct)
+            except (ValueError, TypeError):
+                letter = grade_str
 
-            return {
-                'current_gpa': current_gpa,
-                'total_credits': total_credits,
-                'total_points': total_points
-            }
+            if letter in grade_values:
+                cr = row['credits'] or 1
+                total_credits += cr
+                total_points += grade_values[letter] * cr
+
+        for row in list(assign_rows) + list(grade_rows):
+            code = row['module_code']
+            if code in seen:
+                continue
+            seen.add(code)
+            pct = row['avg_pct']
+            if pct is not None:
+                letter = pct_to_letter(pct)
+                if letter in grade_values:
+                    cr = row['credits'] or 1
+                    total_credits += cr
+                    total_points += grade_values[letter] * cr
+
+        current_gpa = total_points / total_credits if total_credits > 0 else 0.0
+
+        return {
+            'current_gpa': current_gpa,
+            'total_credits': total_credits,
+            'total_points': total_points
+        }
 
     def _analyze_gpa_impact(self, gpa_change: float) -> str:
         """Analyze and describe the impact of GPA change."""
@@ -1096,9 +1154,8 @@ class ProgressService:
                     ]
                 })
 
-            # Save warnings to database
-            for warning in warnings:
-                self._create_warning_record(student_id, warning)
+            # Clear stale warnings that no longer apply, then save new ones
+            self._refresh_warning_records(student_id, warnings)
 
             log_activity('view', 'early_warnings', details={
                 'student_id': student_id,
@@ -1127,6 +1184,50 @@ class ProgressService:
                 """, (student_id, warning['type'], warning['severity'],
                       warning['message'], warning['metric'],
                       str(warning['value']), json.dumps(warning.get('recommendations', []))))
+
+    def _refresh_warning_records(self, student_id: str, current_warnings: list):
+        """Clear stale warnings and save/update current ones."""
+        current_types = {w['type'] for w in current_warnings}
+
+        with transaction() as conn:
+            # Resolve old warnings whose type is no longer triggered
+            conn.execute("""
+                UPDATE academic_warnings
+                SET resolved = 1, resolved_at = CURRENT_TIMESTAMP,
+                    resolution_notes = 'Auto-resolved: condition no longer met'
+                WHERE student_id = ? AND resolved = 0
+                AND warning_type NOT IN ({})
+            """.format(','.join('?' * len(current_types)) if current_types else "'__none__'"),
+                (student_id, *current_types) if current_types else (student_id,))
+
+            # Update existing warnings with fresh data, or create new ones
+            for warning in current_warnings:
+                existing = conn.execute("""
+                    SELECT warning_id FROM academic_warnings
+                    WHERE student_id = ? AND warning_type = ? AND resolved = 0
+                """, (student_id, warning['type'])).fetchone()
+
+                if existing:
+                    # Update the message and value in case they changed
+                    conn.execute("""
+                        UPDATE academic_warnings
+                        SET warning_message = ?, trigger_value = ?,
+                            severity = ?, recommendations_json = ?
+                        WHERE warning_id = ?
+                    """, (warning['message'], str(warning['value']),
+                          warning['severity'],
+                          json.dumps(warning.get('recommendations', [])),
+                          existing['warning_id']))
+                else:
+                    conn.execute("""
+                        INSERT INTO academic_warnings
+                        (student_id, warning_type, severity, warning_message,
+                         trigger_metric, trigger_value, recommendations_json)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """, (student_id, warning['type'], warning['severity'],
+                          warning['message'], warning['metric'],
+                          str(warning['value']),
+                          json.dumps(warning.get('recommendations', []))))
 
     def get_active_warnings(self, student_id: str) -> List[Dict]:
         """Get all active warnings for a student."""

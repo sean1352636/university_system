@@ -16,8 +16,8 @@ from education_system.university_system.modules.domain.finance.gui.financial_aid
 class TestStudentPortalInit:
     """Test StudentPortal initialization"""
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.student_portal.get_student_id')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.student_portal.get_current_user')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.student_portal.get_student_id')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.student_portal.get_current_user')
     def test_init_with_auth(self, mock_get_user, mock_get_id):
         """Test initialization with auth instance"""
         root = tk.Tk()
@@ -38,8 +38,8 @@ class TestStudentPortalInit:
 class TestDashboard:
     """Test student dashboard"""
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.student_portal.get_connection')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.student_portal.get_student_id')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.student_portal.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.student_portal.get_student_id')
     def test_show_dashboard(self, mock_get_id, mock_get_conn):
         """Test show_dashboard method"""
         root = tk.Tk()
@@ -61,7 +61,7 @@ class TestDashboard:
 class TestScholarshipBrowsing:
     """Test scholarship browsing functionality"""
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.student_portal.get_student_id')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.student_portal.get_student_id')
     def test_show_scholarships(self, mock_get_id):
         """Test show_scholarships method"""
         root = tk.Tk()
@@ -82,9 +82,9 @@ class TestScholarshipBrowsing:
 class TestApplicationSubmission:
     """Test application submission"""
 
-    @patch('university_system.modules.domain.finance.gui.financial_aid.student_portal.get_student_id')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.student_portal.log_activity')
-    @patch('university_system.modules.domain.finance.gui.financial_aid.student_portal.show_success')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.student_portal.get_student_id')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.student_portal.log_activity')
+    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.student_portal.show_success')
     def test_submit_scholarship_application(self, mock_success, mock_log, mock_get_id):
         """Test scholarship application submission"""
         root = tk.Tk()

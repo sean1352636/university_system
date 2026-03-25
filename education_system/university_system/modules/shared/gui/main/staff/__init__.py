@@ -1,6 +1,6 @@
 """Staff CRUD Management Module"""
 
-from .staff_crud_gui import (
+from education_system.university_system.modules.shared.gui.main.staff.staff_crud_gui import (
     create_staff_dialog,
     update_staff_dialog,
     view_staff,

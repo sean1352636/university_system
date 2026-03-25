@@ -2,7 +2,7 @@
 FAFSA import mixin for AdminPortal.
 """
 
-from ._imports import (
+from education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal._imports import (
     tk, ttk, filedialog, logging,
     log_activity,
     clear_frame,

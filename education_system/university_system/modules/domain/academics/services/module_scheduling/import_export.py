@@ -1,6 +1,6 @@
 from education_system.university_system.infrastructure.database.db import get_connection
 from datetime import datetime, timedelta
-from .constants import DAYS_OF_WEEK
+from education_system.university_system.modules.domain.academics.services.module_scheduling.constants import DAYS_OF_WEEK
 import os
 import pandas as pd
 from icalendar import Calendar, Event

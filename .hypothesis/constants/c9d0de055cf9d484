@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/staff/hr/services/hr_service.py
+# hypothesis_version: 6.151.9
+
+[' AND department = ?', ' AND sl.status = ?', ' AND status = ?', ', ', 'Caretaker', 'Deputy Head', 'Head of Department', 'Head of Year', 'Headteacher', 'IT Technician', 'Librarian', 'Mr', 'Office Admin', 'Receptionist', 'SENCO', 'Teacher', 'Teaching Assistant', 'address', 'annual', 'annual_leave_used', 'approved', 'cancelled', 'compassionate', 'contract_type', 'dbs_certificate', 'dbs_check_date', 'department', 'email', 'end_date', 'first_name', 'fixed_term', 'job_title', 'last_name', 'maternity', 'notes', 'part_time', 'paternity', 'pending', 'permanent', 'phone', 'rejected', 'salary', 'sick', 'sick_days_used', 'start_date', 'status', 'supply', 'title', 'training', 'unpaid', 'volunteer']

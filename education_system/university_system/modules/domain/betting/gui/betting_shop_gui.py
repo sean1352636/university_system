@@ -1681,10 +1681,10 @@ Balance:      GBP {self.account['balance']:.2f}
 
                 # Log transaction in student finance system
                 cursor.execute('''
-                    INSERT INTO student_finance_transactions
-                    (account_id, student_id, transaction_type, amount, balance_after, description,
+                    INSERT INTO transactions
+                    (source_type, account_id, student_id, transaction_type, amount, balance_after, description,
                      reference_id, processed_by, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES ('student_finance', ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (account_id, student_id, 'credit', amount, new_balance,
                       f'Betting shop withdrawal - {withdrawal_ref}',
                       withdrawal_ref,

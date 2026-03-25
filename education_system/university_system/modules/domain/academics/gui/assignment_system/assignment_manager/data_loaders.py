@@ -84,28 +84,30 @@ class DataLoadersMixin:
                 return
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('''
-            SELECT DISTINCT a.id, a.title, a.module_code
-            FROM assignments a
-            JOIN student_modules sm ON a.module_code = sm.module_code
-            WHERE sm.student_id = ?
-            ORDER BY a.due_date DESC
-            ''', (student_id,))
+                cursor.execute('''
+                SELECT DISTINCT a.id, a.title, a.module_code
+                FROM assignments a
+                JOIN student_modules sm ON a.module_code = sm.module_code
+                WHERE sm.student_id = ?
+                ORDER BY a.due_date DESC
+                ''', (student_id,))
 
-            assignments = cursor.fetchall()
+                assignments = cursor.fetchall()
 
-            assignment_list = ["All Assignments"] + [f"{title} ({module})" for aid, title, module in assignments]
-            combo['values'] = assignment_list
-            combo.set("All Assignments")
+                assignment_list = ["All Assignments"] + [f"{title} ({module})" for aid, title, module in assignments]
+                combo['values'] = assignment_list
+                combo.set("All Assignments")
 
-            # Create mapping
-            self.submission_assignment_map = {"All Assignments": None}
-            for aid, title, module in assignments:
-                self.submission_assignment_map[f"{title} ({module})"] = aid
+                # Create mapping
+                self.submission_assignment_map = {"All Assignments": None}
+                for aid, title, module in assignments:
+                    self.submission_assignment_map[f"{title} ({module})"] = aid
 
-            conn.close()
+            finally:
+                conn.close()
 
         except Exception as e:
             print(f"Error loading assignments: {e}")
@@ -118,39 +120,41 @@ class DataLoadersMixin:
             # Show all assignments if no student ID (for admin/instructor)
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            if student_id:
-                cursor.execute('''
-                SELECT a.id, a.title, a.module_code, a.due_date
-                FROM assignments a
-                JOIN student_modules sm ON a.module_code = sm.module_code
-                WHERE sm.student_id = ? AND a.is_active = 1
-                AND a.due_date > datetime('now', '-7 days')
-                ORDER BY a.due_date
-                ''', (student_id,))
-            else:
-                # Show all active assignments if no student ID
-                cursor.execute('''
-                SELECT a.id, a.title, a.module_code, a.due_date
-                FROM assignments a
-                WHERE a.is_active = 1
-                AND a.due_date > datetime('now', '-7 days')
-                ORDER BY a.due_date
-                ''')
+                if student_id:
+                    cursor.execute('''
+                    SELECT a.id, a.title, a.module_code, a.due_date
+                    FROM assignments a
+                    JOIN student_modules sm ON a.module_code = sm.module_code
+                    WHERE sm.student_id = ? AND a.is_active = 1
+                    AND a.due_date > datetime('now', '-7 days')
+                    ORDER BY a.due_date
+                    ''', (student_id,))
+                else:
+                    # Show all active assignments if no student ID
+                    cursor.execute('''
+                    SELECT a.id, a.title, a.module_code, a.due_date
+                    FROM assignments a
+                    WHERE a.is_active = 1
+                    AND a.due_date > datetime('now', '-7 days')
+                    ORDER BY a.due_date
+                    ''')
 
-            assignments = cursor.fetchall()
+                assignments = cursor.fetchall()
 
-            assignment_list = []
-            self.ext_assignment_map = {}
+                assignment_list = []
+                self.ext_assignment_map = {}
 
-            for aid, title, module, due_date in assignments:
-                display_text = f"{title} ({module}) - Due: {due_date}"
-                assignment_list.append(display_text)
-                self.ext_assignment_map[display_text] = aid
+                for aid, title, module, due_date in assignments:
+                    display_text = f"{title} ({module}) - Due: {due_date}"
+                    assignment_list.append(display_text)
+                    self.ext_assignment_map[display_text] = aid
 
-            combo['values'] = assignment_list
-            conn.close()
+                combo['values'] = assignment_list
+            finally:
+                conn.close()
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load assignments: {e}")
@@ -202,27 +206,29 @@ class DataLoadersMixin:
                 return
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('''
-            SELECT st.student_id, st.first_name, st.last_name, s.submission_date,
-                   s.status, s.grade, s.late_submission, s.late_days, s.feedback
-            FROM assignment_submissions s
-            JOIN students st ON s.student_id = st.student_id
-            WHERE s.assignment_id = ?
-            ORDER BY st.last_name, st.first_name
-            ''', (assignment_id,))
+                cursor.execute('''
+                SELECT st.student_id, st.first_name, st.last_name, s.submission_date,
+                       s.status, s.grade, s.late_submission, s.late_days, s.feedback
+                FROM assignment_submissions s
+                JOIN students st ON s.student_id = st.student_id
+                WHERE s.assignment_id = ?
+                ORDER BY st.last_name, st.first_name
+                ''', (assignment_id,))
 
-            data = cursor.fetchall()
+                data = cursor.fetchall()
 
-            import csv
-            with open(save_path, 'w', newline='') as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow(['Student ID', 'First Name', 'Last Name', 'Submission Date',
-                               'Status', 'Grade', 'Late Submission', 'Late Days', 'Feedback'])
-                writer.writerows(data)
+                import csv
+                with open(save_path, 'w', newline='') as csvfile:
+                    writer = csv.writer(csvfile)
+                    writer.writerow(['Student ID', 'First Name', 'Last Name', 'Submission Date',
+                                   'Status', 'Grade', 'Late Submission', 'Late Days', 'Feedback'])
+                    writer.writerows(data)
 
-            conn.close()
+            finally:
+                conn.close()
             messagebox.showinfo("Success", f"Assignment data exported to: {save_path}")
 
         except Exception as e:

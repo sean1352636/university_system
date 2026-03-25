@@ -37,7 +37,7 @@ def mock_auth():
 class TestInitShopDB:
     """Test shop database initialization"""
 
-    @patch('university_system.modules.domain.commerce.services.shop_management.get_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.shop_management.get_connection')
     def test_init_shop_db_success(self, mock_get_conn, test_db, capsys):
         """Test successful database initialization"""
         conn = sqlite3.connect(test_db)
@@ -60,7 +60,7 @@ class TestInitShopDB:
         captured = capsys.readouterr()
         assert 'initialized successfully' in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.shop_management.get_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.shop_management.get_connection')
     def test_init_shop_db_with_default_data(self, mock_get_conn, test_db, capsys):
         """Test that default products and discounts are created"""
         conn = sqlite3.connect(test_db)
@@ -88,7 +88,7 @@ class TestInitShopDB:
 class TestSetupShopPermissions:
     """Test shop permissions setup"""
 
-    @patch('university_system.modules.domain.commerce.services.shop_management.get_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.shop_management.get_connection')
     def test_setup_shop_permissions_success(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test successful permissions setup"""
         conn = sqlite3.connect(test_db)
@@ -146,7 +146,7 @@ class TestSetupShopPermissions:
 class TestBrowseProducts:
     """Test product browsing functionality"""
 
-    @patch('university_system.modules.domain.commerce.services.shop_management.get_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.shop_management.get_connection')
     def test_browse_products_all(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test browsing all products"""
         shop_management.set_auth(mock_auth)
@@ -185,7 +185,7 @@ class TestBrowseProducts:
         captured = capsys.readouterr()
         assert 'Test Product' in captured.out or 'PRODUCTS' in captured.out
 
-    @patch('university_system.modules.domain.commerce.services.shop_management.get_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.shop_management.get_connection')
     def test_browse_products_by_category(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test browsing products by category"""
         shop_management.set_auth(mock_auth)
@@ -226,7 +226,7 @@ class TestBrowseProducts:
 class TestShoppingCart:
     """Test shopping cart functionality"""
 
-    @patch('university_system.modules.domain.commerce.services.shop_management.get_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.shop_management.get_connection')
     def test_view_shopping_cart_empty(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test viewing empty shopping cart"""
         shop_management.set_auth(mock_auth)
@@ -254,8 +254,8 @@ class TestShoppingCart:
 class TestCheckout:
     """Test checkout functionality"""
 
-    @patch('university_system.modules.domain.commerce.services.shop_management.record_payment_to_finance')
-    @patch('university_system.modules.domain.commerce.services.shop_management.get_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.shop_management.record_payment_to_finance')
+    @patch('education_system.university_system.modules.domain.commerce.services.shop_management.get_connection')
     def test_checkout_process_empty_cart(self, mock_get_conn, mock_record_payment, test_db, mock_auth, capsys):
         """Test checkout with empty cart"""
         shop_management.set_auth(mock_auth)
@@ -283,7 +283,7 @@ class TestCheckout:
 class TestPurchaseHistory:
     """Test purchase history viewing"""
 
-    @patch('university_system.modules.domain.commerce.services.shop_management.get_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.shop_management.get_connection')
     def test_view_purchase_history_no_purchases(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test viewing purchase history with no purchases"""
         shop_management.set_auth(mock_auth)
@@ -312,7 +312,7 @@ class TestPurchaseHistory:
 class TestProductManagement:
     """Test product management (admin functions)"""
 
-    @patch('university_system.modules.domain.commerce.services.shop_management.get_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.shop_management.get_connection')
     def test_display_product_management_menu_available(self, mock_get_conn, test_db, mock_auth):
         """Test that product management menu function exists"""
         shop_management.set_auth(mock_auth)
@@ -323,7 +323,7 @@ class TestProductManagement:
 class TestInventoryManagement:
     """Test inventory management (admin functions)"""
 
-    @patch('university_system.modules.domain.commerce.services.shop_management.get_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.shop_management.get_connection')
     def test_display_inventory_management_menu_available(self, mock_get_conn, test_db, mock_auth):
         """Test that inventory management menu function exists"""
         shop_management.set_auth(mock_auth)
@@ -334,7 +334,7 @@ class TestInventoryManagement:
 class TestTransactionViewing:
     """Test transaction viewing (admin functions)"""
 
-    @patch('university_system.modules.domain.commerce.services.shop_management.get_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.shop_management.get_connection')
     def test_view_all_transactions_available(self, mock_get_conn, test_db, mock_auth):
         """Test that view all transactions function exists"""
         shop_management.set_auth(mock_auth)
@@ -345,7 +345,7 @@ class TestTransactionViewing:
 class TestDiscountManagement:
     """Test discount management functions"""
 
-    @patch('university_system.modules.domain.commerce.services.shop_management.get_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.shop_management.get_connection')
     def test_display_discount_management_menu_available(self, mock_get_conn, test_db, mock_auth):
         """Test that discount management menu function exists"""
         shop_management.set_auth(mock_auth)
@@ -356,7 +356,7 @@ class TestDiscountManagement:
 class TestSalesReports:
     """Test sales reporting functions"""
 
-    @patch('university_system.modules.domain.commerce.services.shop_management.get_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.shop_management.get_connection')
     def test_display_sales_reports_menu_available(self, mock_get_conn, test_db, mock_auth):
         """Test that sales reports menu function exists"""
         shop_management.set_auth(mock_auth)
@@ -367,7 +367,7 @@ class TestSalesReports:
 class TestDisplayShopMenu:
     """Test main shop menu"""
 
-    @patch('university_system.modules.domain.commerce.services.shop_management.get_connection')
+    @patch('education_system.university_system.modules.domain.commerce.services.shop_management.get_connection')
     def test_display_shop_menu_initialization(self, mock_get_conn, test_db, mock_auth, capsys):
         """Test shop menu with uninitialized database"""
         shop_management.set_auth(mock_auth)

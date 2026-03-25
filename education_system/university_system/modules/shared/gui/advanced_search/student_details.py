@@ -873,7 +873,7 @@ def get_connection():
             print_error(f"Database connection error: {e}")
             return None
 
-from .base import AdvancedSearchGUI
+from education_system.university_system.modules.shared.gui.advanced_search.base import AdvancedSearchGUI
 
 def view_academic_history_detailed(self, student_id):
     """View detailed academic history for a student"""

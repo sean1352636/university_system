@@ -68,7 +68,7 @@ from education_system.university_system.modules.domain.commerce.gui.restaurant_m
 
 
 def ensure_payment_columns():
-    """Ensure tip_amount and discount_amount columns exist in restaurant_orders table"""
+    """Ensure tip_amount and discount_amount columns exist in orders table"""
     try:
         conn = get_db_connection()
         if not conn:
@@ -77,24 +77,24 @@ def ensure_payment_columns():
         cursor = conn.cursor()
 
         # Check if columns exist
-        cursor.execute("PRAGMA table_info(restaurant_orders)")
+        cursor.execute("PRAGMA table_info(orders)")
         columns = [row[1] for row in cursor.fetchall()]
 
         # Add tip_amount if missing
         if 'tip_amount' not in columns:
             cursor.execute('''
-                ALTER TABLE restaurant_orders
+                ALTER TABLE orders
                 ADD COLUMN tip_amount REAL DEFAULT 0
             ''')
-            print("✓ Added tip_amount column to restaurant_orders")
+            print("✓ Added tip_amount column to orders")
 
         # Add discount_amount if missing
         if 'discount_amount' not in columns:
             cursor.execute('''
-                ALTER TABLE restaurant_orders
+                ALTER TABLE orders
                 ADD COLUMN discount_amount REAL DEFAULT 0
             ''')
-            print("✓ Added discount_amount column to restaurant_orders")
+            print("✓ Added discount_amount column to orders")
 
         conn.commit()
         conn.close()
@@ -132,8 +132,8 @@ def add_tip(self):
         if conn:
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT total_price, tip_amount, status
-                FROM restaurant_orders
+                SELECT total_amount, tip_amount, order_status
+                FROM orders
                 WHERE order_id = ?
             ''', (order_id,))
             order_data = cursor.fetchone()
@@ -142,8 +142,8 @@ def add_tip(self):
                 messagebox.showerror("Error", "Order not found")
                 tip_dialog.destroy()
                 return
-            current_total, current_tip, status = order_data
-            if status != 'Paid':
+            current_total, current_tip, order_status_val = order_data
+            if order_status_val != 'Paid':
                 messagebox.showwarning("Cannot Add Tip", "Order must be paid before adding a tip")
                 tip_dialog.destroy()
                 return
@@ -181,8 +181,8 @@ def add_tip(self):
                         new_tip_total = (current_tip or 0) + tip_amount
                         new_total = current_total + tip_amount
                         cursor.execute('''
-                            UPDATE restaurant_orders
-                            SET tip_amount = ?, total_price = ?
+                            UPDATE orders
+                            SET tip_amount = ?, total_amount = ?
                             WHERE order_id = ?
                         ''', (new_tip_total, new_total, order_id))
                         conn.commit()
@@ -226,8 +226,8 @@ def refund_order(self):
         if conn:
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT total_price, status, payment_method
-                FROM restaurant_orders
+                SELECT total_amount, order_status, payment_method
+                FROM orders
                 WHERE order_id = ?
             ''', (order_id,))
             order_data = cursor.fetchone()
@@ -236,8 +236,8 @@ def refund_order(self):
                 messagebox.showerror("Error", "Order not found")
                 refund_dialog.destroy()
                 return
-            total_price, status, payment_method = order_data
-            if status != 'Paid':
+            total_price, order_status_val, payment_method = order_data
+            if order_status_val != 'Paid':
                 messagebox.showwarning("Cannot Refund", "Order must be paid before processing refund")
                 refund_dialog.destroy()
                 return
@@ -297,29 +297,46 @@ def refund_order(self):
                     conn = get_db_connection()
                     if conn:
                         cursor = conn.cursor()
-                        # Create refunds table if doesn't exist
+                        # Create unified refunds table if doesn't exist
                         cursor.execute('''
-                            CREATE TABLE IF NOT EXISTS order_refunds (
+                            CREATE TABLE IF NOT EXISTS unified_refunds (
                                 refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                order_id INTEGER,
-                                refund_amount REAL,
+                                source_type TEXT NOT NULL,
+                                source_refund_id TEXT,
+                                reference_type TEXT,
+                                reference_id TEXT,
+                                student_id TEXT,
+                                customer_name TEXT,
+                                customer_email TEXT,
+                                amount DECIMAL(10,2) NOT NULL,
+                                original_amount DECIMAL(10,2),
+                                currency TEXT DEFAULT 'GBP',
                                 refund_type TEXT,
+                                refund_method TEXT,
+                                refund_reference TEXT,
                                 reason TEXT,
+                                status TEXT DEFAULT 'pending',
+                                department TEXT,
+                                processed_by TEXT,
+                                requested_by TEXT,
+                                approved_by TEXT,
+                                refund_date TEXT,
+                                request_date TEXT,
+                                approval_date TEXT,
                                 notes TEXT,
-                                refund_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-                                FOREIGN KEY (order_id) REFERENCES restaurant_orders(order_id)
+                                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                             )
                         ''')
                         # Insert refund record
                         cursor.execute('''
-                            INSERT INTO order_refunds (order_id, refund_amount, refund_type, reason, notes)
-                            VALUES (?, ?, ?, ?, ?)
+                            INSERT INTO unified_refunds (source_type, reference_type, reference_id, amount, refund_type, reason, notes, department, status, request_date)
+                            VALUES ('restaurant', 'order', ?, ?, ?, ?, ?, 'restaurant', 'processed', datetime('now'))
                         ''', (order_id, refund_amount, refund_type_var.get(), reason, notes))
                         # Update order status
                         new_status = 'Refunded' if refund_type_var.get() == 'Full' else 'Partially Refunded'
                         cursor.execute('''
-                            UPDATE restaurant_orders
-                            SET status = ?, total_price = total_price - ?
+                            UPDATE orders
+                            SET order_status = ?, total_amount = total_amount - ?
                             WHERE order_id = ?
                         ''', (new_status, refund_amount, order_id))
                         conn.commit()
@@ -373,8 +390,8 @@ def apply_discount(self):
         if conn:
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT total_price, discount_amount, status
-                FROM restaurant_orders
+                SELECT total_amount, discount_amount, order_status
+                FROM orders
                 WHERE order_id = ?
             ''', (order_id,))
             order_data = cursor.fetchone()
@@ -383,7 +400,7 @@ def apply_discount(self):
                 messagebox.showerror("Error", "Order not found")
                 discount_dialog.destroy()
                 return
-            original_total, current_discount, status = order_data
+            original_total, current_discount, order_status_val = order_data
             # Display order info
             info_frame = ttk.LabelFrame(main_frame, text="Order Information", padding=10)
             info_frame.pack(fill='x', pady=10)
@@ -487,7 +504,7 @@ def apply_discount(self):
                                 reason TEXT,
                                 manager_approved BOOLEAN,
                                 discount_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-                                FOREIGN KEY (order_id) REFERENCES restaurant_orders(order_id)
+                                FOREIGN KEY (order_id) REFERENCES orders(order_id)
                             )
                         ''')
                         # Insert discount record
@@ -502,8 +519,8 @@ def apply_discount(self):
                         new_discount_total = (current_discount or 0) + discount_amount
                         new_total = original_total - new_discount_total
                         cursor.execute('''
-                            UPDATE restaurant_orders
-                            SET discount_amount = ?, total_price = ?
+                            UPDATE orders
+                            SET discount_amount = ?, total_amount = ?
                             WHERE order_id = ?
                         ''', (new_discount_total, new_total, order_id))
                         conn.commit()
@@ -586,7 +603,7 @@ def process_cash_payment(self, order_id, total_amount):
                         cash_tendered REAL,
                         change_given REAL,
                         transaction_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (order_id) REFERENCES restaurant_orders(order_id)
+                        FOREIGN KEY (order_id) REFERENCES orders(order_id)
                     )
                 ''')
                 # Record cash transaction
@@ -596,8 +613,8 @@ def process_cash_payment(self, order_id, total_amount):
                 ''', (order_id, tendered, change))
                 # Update order
                 cursor.execute('''
-                    UPDATE restaurant_orders
-                    SET status = 'Paid', payment_method = 'Cash'
+                    UPDATE orders
+                    SET order_status = 'Paid', payment_method = 'Cash'
                     WHERE order_id = ?
                 ''', (order_id,))
                 conn.commit()
@@ -685,7 +702,7 @@ def process_card_payment(self, order_id, total_amount):
                             amount REAL,
                             authorization_code TEXT,
                             transaction_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-                            FOREIGN KEY (order_id) REFERENCES restaurant_orders(order_id)
+                            FOREIGN KEY (order_id) REFERENCES orders(order_id)
                         )
                     ''')
                     # Generate authorization code
@@ -698,8 +715,8 @@ def process_card_payment(self, order_id, total_amount):
                     ''', (transaction_id, order_id, card_type, card_last4 or None, total_amount, auth_code))
                     # Update order
                     cursor.execute('''
-                        UPDATE restaurant_orders
-                        SET status = 'Paid', payment_method = ?
+                        UPDATE orders
+                        SET order_status = 'Paid', payment_method = ?
                         WHERE order_id = ?
                     ''', (card_type, order_id))
                     conn.commit()
@@ -839,26 +856,17 @@ def process_meal_plan_payment(self, order_id, total_amount):
                     SET balance = balance - ?
                     WHERE student_id = ?
                 ''', (total_amount, student_id))
-                # Create meal plan transactions table
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS meal_plan_transactions (
-                        transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        order_id INTEGER,
-                        student_id TEXT,
-                        amount REAL,
-                        transaction_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (order_id) REFERENCES restaurant_orders(order_id)
-                    )
-                ''')
+                # NOTE: meal plan transactions now use the unified 'transactions' table
+                # with source_type = 'meal_plan'
                 # Record transaction
                 cursor.execute('''
-                    INSERT INTO meal_plan_transactions (order_id, student_id, amount)
-                    VALUES (?, ?, ?)
+                    INSERT INTO transactions (source_type, reference_id, student_id, amount)
+                    VALUES ('meal_plan', ?, ?, ?)
                 ''', (order_id, student_id, total_amount))
                 # Update order
                 cursor.execute('''
-                    UPDATE restaurant_orders
-                    SET status = 'Paid', payment_method = 'Meal Plan'
+                    UPDATE orders
+                    SET order_status = 'Paid', payment_method = 'Meal Plan'
                     WHERE order_id = ?
                 ''', (order_id,))
                 # Get new balance
@@ -904,13 +912,44 @@ def open_finance_gui_for_payment(self, order_id=None, amount=None):
     except (sqlite3.Error, tk.TclError) as e:
         messagebox.showerror("Error", f"Could not open finance system: {e}")
 
-def add_finance_button_to_payment_options(self):
-    """Add finance button to payment options if applicable"""
+def add_finance_button_to_payment_options(self, parent_frame):
+    """Add a 'Pay via Finance System' button to a payment options frame.
+
+    Args:
+        parent_frame: The tkinter frame to add the button to.
+    """
+    if not FINANCE_ACCOUNT_AVAILABLE:
+        return
+
     try:
-        # This method can be called from payment dialogs to add finance integration
-        # Implementation depends on specific payment dialog structure
-        pass
-    except (sqlite3.Error, tk.TclError) as e:
+        def open_finance():
+            # Get selected order if available
+            order_id = None
+            amount = None
+            if hasattr(self, 'orders_tree') and self.orders_tree.selection():
+                selected = self.orders_tree.item(self.orders_tree.selection()[0])['values']
+                if selected:
+                    order_id = selected[0]
+                    # Try to get amount from the order
+                    try:
+                        conn = get_db_connection()
+                        if conn:
+                            cursor = conn.cursor()
+                            cursor.execute('SELECT total_amount FROM orders WHERE order_id = ?', (order_id,))
+                            result = cursor.fetchone()
+                            if result:
+                                amount = result[0]
+                            conn.close()
+                    except sqlite3.Error:
+                        pass
+            self.open_finance_gui_for_payment(order_id, amount)
+
+        ttk.Button(
+            parent_frame,
+            text=_t("restaurant.payments.finance_system", default="Pay via Finance System"),
+            command=open_finance,
+        ).pack(side='left', padx=5)
+    except tk.TclError as e:
         print(f"Could not add finance button: {e}")
 
 class PaymentDialog:
@@ -937,7 +976,7 @@ class PaymentDialog:
             conn = get_db_connection()
             if conn:
                 cursor = conn.cursor()
-                cursor.execute('SELECT total_price FROM restaurant_orders WHERE order_id = ?', (self.order_id,))
+                cursor.execute('SELECT total_amount FROM orders WHERE order_id = ?', (self.order_id,))
                 result = cursor.fetchone()
                 total = result[0] if result else 0
                 conn.close()
@@ -952,11 +991,11 @@ class PaymentDialog:
         
         self.payment_var = tk.StringVar()
         payment_combo = ttk.Combobox(main_frame, textvariable=self.payment_var,
-                                    values=['Cash', 'Card', 'Meal Plan', 'Student Account'])
+                                    values=['Cash', 'Card', 'Meal Plan', 'Finance Account'])
         payment_combo.pack(pady=10)
 
         # Student ID field for student account payments
-        ttk.Label(main_frame, text="Student ID (for Student Account payments):").pack(pady=(10, 0))
+        ttk.Label(main_frame, text="Student ID (for Finance Account payments):").pack(pady=(10, 0))
         self.student_id_var = tk.StringVar()
         self.student_id_entry = ttk.Entry(main_frame, textvariable=self.student_id_var)
         self.student_id_entry.pack(pady=5)
@@ -975,11 +1014,11 @@ class PaymentDialog:
             messagebox.showerror("Error", "Please select a payment method")
             return
 
-        # Validate student ID for Student Account payments
-        if payment_method == 'Student Account':
+        # Validate student ID for Finance Account payments
+        if payment_method == 'Finance Account':
             student_id = self.student_id_var.get().strip()
             if not student_id:
-                messagebox.showerror("Error", "Please enter a Student ID for Student Account payments")
+                messagebox.showerror("Error", "Please enter a Student ID for Finance Account payments")
                 return
 
             # Process payment via finance system
@@ -991,7 +1030,7 @@ class PaymentDialog:
             conn = get_db_connection()
             if conn:
                 cursor = conn.cursor()
-                cursor.execute('UPDATE restaurant_orders SET payment_method = ?, status = ? WHERE order_id = ?',
+                cursor.execute('UPDATE orders SET payment_method = ?, order_status = ? WHERE order_id = ?',
                               (payment_method, 'Completed', self.order_id))
                 conn.commit()
                 conn.close()
@@ -1000,8 +1039,8 @@ class PaymentDialog:
             self.dialog.destroy()
             messagebox.showinfo("Success", "Payment processed successfully")
 
-            # Send order confirmation email if using Student Account
-            if payment_method == 'Student Account':
+            # Send order confirmation email if using Finance Account
+            if payment_method == 'Finance Account':
                 self._send_order_confirmation_email(student_id)
 
         except sqlite3.Error as e:
@@ -1017,7 +1056,7 @@ class PaymentDialog:
                 return False
 
             cursor = conn.cursor()
-            cursor.execute('SELECT total_price FROM restaurant_orders WHERE order_id = ?', (self.order_id,))
+            cursor.execute('SELECT total_amount FROM orders WHERE order_id = ?', (self.order_id,))
             result = cursor.fetchone()
             if not result:
                 messagebox.showerror("Error", "Order not found")
@@ -1115,7 +1154,7 @@ class PaymentDialog:
                     (payment_id, student_id, amount, payment_method, payment_date, status, description)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                 ''', (
-                    payment_id, student_id, total_amount, 'Student Account', current_date, 'completed',
+                    payment_id, student_id, total_amount, 'Finance Account', current_date, 'completed',
                     f'Restaurant payment for order #{self.order_id}'
                 ))
             except sqlite3.Error:
@@ -1154,27 +1193,38 @@ class PaymentDialog:
             first_name, last_name, email = student_result
 
             # Get order details
-            cursor.execute('SELECT total_price, order_time FROM restaurant_orders WHERE order_id = ?', (self.order_id,))
+            cursor.execute('SELECT total_amount, order_date FROM orders WHERE order_id = ?', (self.order_id,))
             order_result = cursor.fetchone()
             if not order_result:
                 conn.close()
                 return
 
-            total_amount, order_time = order_result
+            total_amount, order_date = order_result
 
             conn.close()
 
             from education_system.university_system.infrastructure.email.template_utils import render_template
 
-            subject, message = render_template('restaurant_order_confirmation', {
+            result = render_template('restaurant_order_confirmation', {
                 'first_name': first_name,
                 'last_name': last_name,
                 'student_id': student_id,
                 'order_id': self.order_id,
-                'order_time': order_time,
+                'order_date': order_date,
                 'total_amount': f'{total_amount:.2f}',
                 'signature': 'University Restaurant Team'
             })
+
+            if result and isinstance(result, tuple):
+                subject, message = result
+            else:
+                subject = "Order Confirmation - University Restaurant"
+                message = (f"Dear {first_name} {last_name},\n\n"
+                           f"Your restaurant order #{self.order_id} has been confirmed.\n"
+                           f"Student ID: {student_id}\n"
+                           f"Order Date: {order_date}\n"
+                           f"Total: £{total_amount:.2f}\n\n"
+                           f"University Restaurant Team")
 
             if not (subject and message):
                 print("Failed to load restaurant order confirmation template")
@@ -1240,7 +1290,7 @@ class PaymentDialog:
             conn = get_db_connection()
             if conn:
                 cursor = conn.cursor()
-                cursor.execute('SELECT total_price FROM restaurant_orders WHERE order_id = ?', (self.order_id,))
+                cursor.execute('SELECT total_amount FROM orders WHERE order_id = ?', (self.order_id,))
                 result = cursor.fetchone()
                 amount = result[0] if result else 0
                 conn.close()
@@ -1293,7 +1343,7 @@ def send_payment_receipt_email(order_id, amount, payment_method, **kwargs):
 
         # Get order details
         cursor.execute('''
-            SELECT customer_id, order_time, total_price FROM restaurant_orders
+            SELECT customer_id, order_date, total_amount FROM orders
             WHERE order_id = ?
         ''', (order_id,))
         order_row = cursor.fetchone()
@@ -1303,7 +1353,7 @@ def send_payment_receipt_email(order_id, amount, payment_method, **kwargs):
             print(f"[Restaurant] Order {order_id} not found")
             return False
 
-        customer_id, order_time, total_price = order_row
+        customer_id, order_date, total_price = order_row
 
         # Get customer email
         email = None
@@ -1335,7 +1385,7 @@ def send_payment_receipt_email(order_id, amount, payment_method, **kwargs):
         # Get order items
         cursor.execute('''
             SELECT item_name, quantity, unit_price, subtotal, special_instructions
-            FROM restaurant_order_items
+            FROM order_items
             WHERE order_id = ?
         ''', (order_id,))
         order_items = cursor.fetchall()
@@ -1372,20 +1422,27 @@ def send_payment_receipt_email(order_id, amount, payment_method, **kwargs):
             payment_details += f"New Meal Plan Balance: £{new_balance:.2f}\n"
 
         # Render email from template
-        subject, body = render_template('commerce/restaurant_payment_receipt',
-            customer_name=customer_name,
-            order_id=order_id,
-            order_time=order_time,
-            items_text=items_text,
-            payment_details=payment_details,
-            amount=f"{amount:.2f}"
-        )
+        result = render_template('commerce/restaurant_payment_receipt', {
+            'customer_name': customer_name,
+            'order_id': order_id,
+            'order_date': order_date,
+            'items_text': items_text,
+            'payment_details': payment_details,
+            'amount': f"{amount:.2f}"
+        })
+        if result and isinstance(result, tuple):
+            subject, body = result
+        else:
+            subject = "Payment Receipt - Restaurant"
+            body = (f"Dear {customer_name},\n\n"
+                    f"Payment received for Order #{order_id}.\n"
+                    f"Order Date: {order_date}\n\n"
+                    f"Items:\n{items_text}\n"
+                    f"{payment_details}\n"
+                    f"Amount Paid: £{amount:.2f}\n\n"
+                    f"Thank you for your payment.")
 
-        success = send_email(
-            recipient_email=email,
-            subject=subject,
-            body=body
-        )
+        success = send_email(email, subject, body)
 
         if success:
             print(f"✓ Payment receipt sent to {email} for Order #{order_id}")
@@ -1423,7 +1480,7 @@ def send_refund_receipt_email(order_id, refund_amount, payment_method, refund_ty
 
         # Get order details
         cursor.execute('''
-            SELECT customer_id, order_time, total_price FROM restaurant_orders
+            SELECT customer_id, order_date, total_amount FROM orders
             WHERE order_id = ?
         ''', (order_id,))
         order_row = cursor.fetchone()
@@ -1433,7 +1490,7 @@ def send_refund_receipt_email(order_id, refund_amount, payment_method, refund_ty
             print(f"[Restaurant] Order {order_id} not found")
             return False
 
-        customer_id, order_time, original_total = order_row
+        customer_id, order_date, original_total = order_row
 
         # Get customer email
         email = None
@@ -1477,23 +1534,30 @@ def send_refund_receipt_email(order_id, refund_amount, payment_method, refund_ty
             return False
 
         # Render email from template
-        subject, body = render_template('commerce/restaurant_refund_confirmation',
-            customer_name=customer_name,
-            order_id=order_id,
-            order_time=order_time,
-            original_total=f"{original_total:.2f}",
-            refund_type=refund_type,
-            refund_amount=f"{refund_amount:.2f}",
-            payment_method=payment_method,
-            reason=reason,
-            refund_date=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        )
+        result = render_template('commerce/restaurant_refund_confirmation', {
+            'customer_name': customer_name,
+            'order_id': order_id,
+            'order_date': order_date,
+            'original_total': f"{original_total:.2f}",
+            'refund_type': refund_type,
+            'refund_amount': f"{refund_amount:.2f}",
+            'payment_method': payment_method,
+            'reason': reason,
+            'refund_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        })
+        if result and isinstance(result, tuple):
+            subject, body = result
+        else:
+            subject = "Refund Confirmation - Restaurant"
+            body = (f"Dear {customer_name},\n\n"
+                    f"A {refund_type.lower()} refund has been processed for Order #{order_id}.\n"
+                    f"Original Total: £{original_total:.2f}\n"
+                    f"Refund Amount: £{refund_amount:.2f}\n"
+                    f"Payment Method: {payment_method}\n"
+                    f"Reason: {reason}\n\n"
+                    f"Thank you.")
 
-        success = send_email(
-            recipient_email=email,
-            subject=subject,
-            body=body
-        )
+        success = send_email(email, subject, body)
 
         if success:
             print(f"✓ Refund receipt sent to {email} for Order #{order_id}")

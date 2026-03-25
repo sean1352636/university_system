@@ -2,6 +2,7 @@
 
 from education_system.college_system.infrastructure.database.db import connect
 from education_system.college_system.core.exceptions import LibraryError
+from education_system.college_system.core.sql_safety import escape_like
 
 
 class LibraryService:
@@ -44,7 +45,8 @@ class LibraryService:
             params = []
             if search:
                 query += " AND (title LIKE ? OR author LIKE ? OR isbn LIKE ?)"
-                term = f"%{search}%"
+                escaped = escape_like(search)
+                term = f"%{escaped}%"
                 params.extend([term, term, term])
             if category:
                 query += " AND category = ?"
@@ -89,6 +91,25 @@ class LibraryService:
             raise
         except Exception as e:
             raise LibraryError(f"Failed to update item: {e}")
+        finally:
+            conn.close()
+
+    def delete_item(self, item_id: int) -> bool:
+        """Delete a library item by ID."""
+        conn = self._conn()
+        try:
+            result = conn.execute(
+                "DELETE FROM library_items WHERE id = ?", (item_id,)
+            )
+            conn.commit()
+            if result.rowcount == 0:
+                raise LibraryError(f"Item {item_id} not found.")
+            return True
+        except LibraryError:
+            raise
+        except Exception as e:
+            conn.rollback()
+            raise LibraryError(f"Failed to delete item: {e}")
         finally:
             conn.close()
 

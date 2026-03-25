@@ -1,5 +1,5 @@
 """Community Services GUI modules - Church Management."""
 
-from .church_management_gui import ChurchManagementSystem
+from education_system.university_system.modules.domain.campus.gui.community.church_management_gui import ChurchManagementSystem
 
 __all__ = ['ChurchManagementSystem']

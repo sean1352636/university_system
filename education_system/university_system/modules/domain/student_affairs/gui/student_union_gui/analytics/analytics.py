@@ -12,6 +12,8 @@ from typing import Dict, List, Optional, Tuple, Any
 import threading
 import queue
 from education_system.university_system.infrastructure.email.template_utils import render_template
+from education_system.university_system.infrastructure.email.email_service.core import send_email
+from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.infrastructure.shared_context import get_auth
 
@@ -159,6 +161,11 @@ RECOMMENDATIONS:
         text.insert(1.0, content)
         text.config(state='disabled')
 
+        btn_frame = ttk.Frame(frame)
+        btn_frame.pack(fill='x', pady=(10, 0))
+        ttk.Button(btn_frame, text="Save as TXT", command=lambda: self._save_as_txt(content, "engagement_trends.txt")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Email to Admin", command=lambda: self._email_to_admin(content, "Engagement Trends")).pack(side='left', padx=5)
+
     def create_predictions_tab(self, parent):
         frame = ttk.Frame(parent)
         frame.pack(fill='both', expand=True, padx=10, pady=10)
@@ -213,6 +220,11 @@ OPTIMIZATION SUGGESTIONS:
 """
         text.insert(1.0, content)
         text.config(state='disabled')
+
+        btn_frame = ttk.Frame(frame)
+        btn_frame.pack(fill='x', pady=(10, 0))
+        ttk.Button(btn_frame, text="Save as TXT", command=lambda: self._save_as_txt(content, "event_predictions.txt")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Email to Admin", command=lambda: self._email_to_admin(content, "Event Predictions")).pack(side='left', padx=5)
 
     def create_retention_tab(self, parent):
         frame = ttk.Frame(parent)
@@ -278,6 +290,11 @@ CLUBS NEEDING ATTENTION:
         text.insert(1.0, content)
         text.config(state='disabled')
 
+        btn_frame = ttk.Frame(frame)
+        btn_frame.pack(fill='x', pady=(10, 0))
+        ttk.Button(btn_frame, text="Save as TXT", command=lambda: self._save_as_txt(content, "member_retention.txt")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Email to Admin", command=lambda: self._email_to_admin(content, "Member Retention")).pack(side='left', padx=5)
+
     def create_recommendations_tab(self, parent):
         frame = ttk.Frame(parent)
         frame.pack(fill='both', expand=True, padx=10, pady=10)
@@ -341,6 +358,36 @@ TRENDING IN YOUR NETWORK:
 """
         text.insert(1.0, content)
         text.config(state='disabled')
+
+        btn_frame = ttk.Frame(frame)
+        btn_frame.pack(fill='x', pady=(10, 0))
+        ttk.Button(btn_frame, text="Save as TXT", command=lambda: self._save_as_txt(content, "recommendations.txt")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="Email to Admin", command=lambda: self._email_to_admin(content, "Recommendations")).pack(side='left', padx=5)
+
+    def _save_as_txt(self, content, default_name):
+        from tkinter import filedialog
+        filename = filedialog.asksaveasfilename(
+            defaultextension=".txt",
+            filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+            initialfile=default_name
+        )
+        if filename:
+            with open(filename, 'w', encoding='utf-8') as f:
+                f.write(content)
+            messagebox.showinfo("Success", f"Saved to {filename}")
+
+    def _email_to_admin(self, content, report_title):
+        try:
+            with get_connection() as conn:
+                cursor = conn.execute("SELECT email FROM users WHERE role = 'admin' AND email IS NOT NULL AND email != '' LIMIT 1")
+                row = cursor.fetchone()
+            if not row or not row[0]:
+                messagebox.showerror("Error", "No admin email found")
+                return
+            send_email(row[0], f"Analytics Report: {report_title}", content)
+            messagebox.showinfo("Success", f"Report emailed to {row[0]}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to send: {e}")
 
 
 # ============================================================================

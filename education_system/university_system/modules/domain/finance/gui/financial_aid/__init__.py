@@ -22,10 +22,10 @@ Usage:
     app.create_embedded_interface()
 """
 
-from .financial_aid_gui import FinancialAidGUI
-from .student_portal import StudentPortal
-from .admin_portal import AdminPortal
-from .scholarship_manager import ScholarshipManagerGUI
+from education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui import FinancialAidGUI
+from education_system.university_system.modules.domain.finance.gui.financial_aid.student_portal import StudentPortal
+from education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal import AdminPortal
+from education_system.university_system.modules.domain.finance.gui.financial_aid.scholarship_manager import ScholarshipManagerGUI
 
 __all__ = [
     'FinancialAidGUI',

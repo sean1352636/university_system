@@ -1,17 +1,17 @@
-from . import _common
-from ._common import get_text, logging, CALENDAR_AVAILABLE, log_menu_navigation
-from .database import init_trip_db
-from .permissions import setup_trip_permissions, setup_report_permissions
-from .trips import view_trips, view_trips_with_calendar, create_trip, update_trip, delete_trip
-from .registrations import (
+from education_system.university_system.modules.domain.mobility.services.trip_management import _common
+from education_system.university_system.modules.domain.mobility.services.trip_management._common import get_text, logging, CALENDAR_AVAILABLE, log_menu_navigation
+from education_system.university_system.modules.domain.mobility.services.trip_management.database import init_trip_db
+from education_system.university_system.modules.domain.mobility.services.trip_management.permissions import setup_trip_permissions, setup_report_permissions
+from education_system.university_system.modules.domain.mobility.services.trip_management.trips import view_trips, view_trips_with_calendar, create_trip, update_trip, delete_trip
+from education_system.university_system.modules.domain.mobility.services.trip_management.registrations import (
     register_for_trip, view_my_trip_registrations, manage_trip_participants,
 )
-from .reports import generate_trip_report
-from .calendar_integration import create_trip_calendar_event, view_trip_events_in_calendar
+from education_system.university_system.modules.domain.mobility.services.trip_management.reports import generate_trip_report
+from education_system.university_system.modules.domain.mobility.services.trip_management.calendar_integration import create_trip_calendar_event, view_trip_events_in_calendar
 
 # Conditional calendar imports
 if CALENDAR_AVAILABLE:
-    from ._common import AcademicCalendarManager, CalendarConfig
+    from education_system.university_system.modules.domain.mobility.services.trip_management._common import AcademicCalendarManager, CalendarConfig
 
 
 @log_menu_navigation(description="Displaying trip management menu")
@@ -34,7 +34,9 @@ def display_trip_management_menu():
 
     while True:
         print(get_text("mobility.trip_management.menu.title", "\nIntegrated Trip Management & Calendar System"))
-        print(get_text("mobility.trip_management.menu.logged_in_as", "Logged in as: {username} ({role})").format(username=auth.current_user['username'], role=auth.current_user['role']))
+        username = auth.current_user.get('username', 'User')
+        role = auth.current_user.get('role', 'user')
+        print(get_text("mobility.trip_management.menu.logged_in_as", "Logged in as: {username} ({role})").format(username=username, user=username, role=role))
         print("=" * 60)
 
         # Build menu based on permissions
@@ -155,7 +157,7 @@ def integrate_trip_management_with_main():
 
 def test_report_generation():
     """Test the report generation system"""
-    from ._common import PDF_AVAILABLE
+    from education_system.university_system.modules.domain.mobility.services.trip_management._common import PDF_AVAILABLE
     print(get_text("mobility.trip_management.test.report_testing", "Testing Trip Report Generation System..."))
 
     try:

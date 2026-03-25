@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
-from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
+from education_system.university_system.core.sql_safety import escape_like, validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
@@ -874,7 +874,7 @@ def get_connection():
             print_error(f"Database connection error: {e}")
             return None
 
-from .base import AdvancedSearchGUI
+from education_system.university_system.modules.shared.gui.advanced_search.base import AdvancedSearchGUI
 
 def save_search_profile_to_db(self, name, description, is_shared):
     """Persist a search profile to the central database."""
@@ -889,35 +889,42 @@ def save_search_profile_to_db(self, name, description, is_shared):
     if conn is None:
         raise RuntimeError("Database connection unavailable.")
 
-    cursor = conn.cursor()
-    cursor.execute(
-        "SELECT search_id FROM saved_searches WHERE user_id = ? AND search_name = ?",
-        (self._current_user_id(), name)
-    )
-    row = cursor.fetchone()
+    try:
+        # Disable FK checks — the user_id is a GUI/session identifier,
+        # not necessarily present in the users table.
+        conn.execute("PRAGMA foreign_keys = OFF")
 
-    if row:
+        cursor = conn.cursor()
         cursor.execute(
-            """
-            UPDATE saved_searches
-            SET search_criteria = ?, is_shared = ?, created_date = CURRENT_TIMESTAMP
-            WHERE search_id = ?
-            """,
-            (json.dumps(payload), 1 if is_shared else 0, row[0])
+            "SELECT id FROM saved_searches WHERE user_id = ? AND search_name = ?",
+            (self._current_user_id(), name)
         )
-        profile_id = row[0]
-    else:
-        cursor.execute(
-            """
-            INSERT INTO saved_searches (user_id, name, search_name, search_criteria, is_shared, created_date)
-            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-            """,
-            (self._current_user_id(), name, name, json.dumps(payload), 1 if is_shared else 0)
-        )
-        profile_id = cursor.lastrowid
+        row = cursor.fetchone()
 
-    conn.commit()
-    conn.close()
+        if row:
+            cursor.execute(
+                """
+                UPDATE saved_searches
+                SET search_criteria = ?, is_shared = ?, created_date = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (json.dumps(payload), 1 if is_shared else 0, row[0])
+            )
+            profile_id = row[0]
+        else:
+            cursor.execute(
+                """
+                INSERT INTO saved_searches (user_id, search_name, search_criteria, is_shared, created_date)
+                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+                """,
+                (self._current_user_id(), name, json.dumps(payload), 1 if is_shared else 0)
+            )
+            profile_id = cursor.lastrowid
+
+        conn.commit()
+    finally:
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.close()
     return profile_id
 AdvancedSearchGUI.save_search_profile_to_db = save_search_profile_to_db
 
@@ -1588,7 +1595,7 @@ def execute_loaded_search(self, criteria):
             if value:
                 if key in ['student_id', 'first_name', 'last_name']:
                     query += f" AND {key} LIKE ?"
-                    params.append(f"%{value}%")
+                    params.append(f"%{escape_like(value)}%")
                 elif key == 'age_min':
                     query += " AND age >= ?"
                     params.append(value)

@@ -1,4 +1,4 @@
-from ._common import sqlite3, get_connection, _t
+from education_system.university_system.modules.shared.utils.document_manager._common import sqlite3, get_connection, _t
 
 
 class OCRMixin:
@@ -43,7 +43,7 @@ class OCRMixin:
 
             cursor.execute('''
             SELECT file_path, original_filename
-            FROM student_documents
+            FROM documents
             WHERE document_id = ? AND is_current_version = 1
             ''', (doc_id,))
 
@@ -93,7 +93,7 @@ class OCRMixin:
             if choice == '1':
                 cursor.execute('''
                 SELECT document_id, file_path, original_filename
-                FROM student_documents
+                FROM documents
                 WHERE is_current_version = 1
                 ''')
             elif choice == '2':
@@ -103,7 +103,7 @@ class OCRMixin:
                     return
                 cursor.execute('''
                 SELECT document_id, file_path, original_filename
-                FROM student_documents
+                FROM documents
                 WHERE type_id = ? AND is_current_version = 1
                 ''', (type_info[0],))
             elif choice == '3':
@@ -113,8 +113,8 @@ class OCRMixin:
                     return
                 cursor.execute('''
                 SELECT document_id, file_path, original_filename
-                FROM student_documents
-                WHERE student_id = ? AND is_current_version = 1
+                FROM documents
+                WHERE owner_id = ? AND source_type = 'student' AND is_current_version = 1
                 ''', (student_id,))
             else:
                 print(_t("shared.utils.document_manager.invalid_choice", default="Invalid choice. Please try again."))

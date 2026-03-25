@@ -136,10 +136,11 @@ class DocumentManager:
             cursor.execute('''
             SELECT sd.document_id, s.first_name || ' ' || s.last_name as student_name,
                    dt.type_name, sd.verification_status, DATE(sd.upload_date)
-            FROM student_documents sd
-            JOIN students s ON sd.student_id = s.student_id
+            FROM documents sd
+            JOIN students s ON sd.owner_id = s.student_id
             JOIN document_types dt ON sd.type_id = dt.type_id
-            WHERE sd.is_current_version = 1
+            WHERE sd.source_type = 'student'
+            AND sd.is_current_version = 1
             ORDER BY sd.upload_date DESC
             LIMIT 20
             ''')
@@ -169,10 +170,10 @@ class DocumentManager:
             cursor = conn.cursor()
 
             # Get basic stats
-            cursor.execute('SELECT COUNT(*) FROM student_documents WHERE is_current_version = 1')
+            cursor.execute('SELECT COUNT(*) FROM documents WHERE is_current_version = 1')
             total_docs = cursor.fetchone()[0]
 
-            cursor.execute('SELECT COUNT(*) FROM student_documents WHERE verification_status = "Pending" AND is_current_version = 1')
+            cursor.execute('SELECT COUNT(*) FROM documents WHERE verification_status = "Pending" AND is_current_version = 1')
             pending_docs = cursor.fetchone()[0]
 
             cursor.execute('SELECT COUNT(*) FROM students')
@@ -200,7 +201,7 @@ class DocumentManager:
                 # Get status distribution data
                 cursor.execute('''
                 SELECT status, COUNT(*) as count
-                FROM student_documents
+                FROM documents
                 WHERE is_current_version = 1
                 GROUP BY status
                 ORDER BY count DESC
@@ -210,7 +211,7 @@ class DocumentManager:
 
                 # Get total documents
                 cursor.execute('''
-                SELECT COUNT(*) FROM student_documents WHERE is_current_version = 1
+                SELECT COUNT(*) FROM documents WHERE is_current_version = 1
                 ''')
                 total_docs = cursor.fetchone()[0]
 
@@ -374,10 +375,10 @@ class DocumentManager:
                         cursor.execute('''
                         SELECT sd.document_id, s.student_id, s.first_name, s.last_name,
                                dt.type_name, sd.file_name
-                        FROM student_documents sd
-                        JOIN students s ON sd.student_id = s.student_id
+                        FROM documents sd
+                        JOIN students s ON sd.owner_id = s.student_id
                         JOIN document_types dt ON sd.type_id = dt.type_id
-                        WHERE sd.is_current_version = 1
+                        WHERE sd.source_type = 'student' AND sd.is_current_version = 1
                         AND sd.document_id NOT IN (SELECT document_id FROM ocr_results)
                         ORDER BY s.last_name, s.first_name
                         ''')
@@ -385,10 +386,10 @@ class DocumentManager:
                         cursor.execute('''
                         SELECT sd.document_id, s.student_id, s.first_name, s.last_name,
                                dt.type_name, sd.file_name
-                        FROM student_documents sd
-                        JOIN students s ON sd.student_id = s.student_id
+                        FROM documents sd
+                        JOIN students s ON sd.owner_id = s.student_id
                         JOIN document_types dt ON sd.type_id = dt.type_id
-                        WHERE sd.is_current_version = 1
+                        WHERE sd.source_type = 'student' AND sd.is_current_version = 1
                         AND sd.document_id NOT IN (SELECT document_id FROM ocr_results)
                         AND UPPER(sd.file_name) LIKE ?
                         ORDER BY s.last_name, s.first_name
@@ -536,9 +537,10 @@ class DocumentManager:
                 cursor = conn.cursor()
                 cursor.execute('''
                     SELECT sd.document_id, s.first_name, s.last_name, dt.type_name
-                    FROM student_documents sd
-                    JOIN students s ON sd.student_id = s.student_id
+                    FROM documents sd
+                    JOIN students s ON sd.owner_id = s.student_id
                     JOIN document_types dt ON sd.type_id = dt.type_id
+                    WHERE sd.source_type = 'student'
                     ORDER BY s.last_name, s.first_name
                 ''')
                 docs = cursor.fetchall()

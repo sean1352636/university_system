@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/exceptions.py
+# hypothesis_version: 6.151.9
+
+['AlreadyEnrolledError', 'AttachmentError', 'AuthenticationError', 'ConfigurationError', 'CourseError', 'CourseFullError', 'CourseNotFoundError', 'DatabaseError', 'EmailDeliveryError', 'EmailError', 'EnrollmentError', 'FileError', 'FileUploadError', 'FileValidationError', 'FinanceError', 'FormatError', 'GradeError', 'GradeNotFoundError', 'IntegrityError', 'InvalidConfigError', 'InvalidGradeError', 'InvalidInputError', 'MFARequiredError', 'MissingConfigError', 'MissingFieldError', 'PaymentError', 'PrerequisiteError', 'QueryError', 'SessionExpiredError', 'StudentError', 'StudentNotFoundError', 'TemplateError', 'TransactionError', 'ValidationError']

@@ -1,17 +1,17 @@
 # import_export.py
 # Import/export functionality mixin for AccommodationGUI.
 
-from ._common import (
+from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import (
     tk, ttk, messagebox, filedialog,
     datetime, json, csv, threading, sqlite3,
     CLI_AVAILABLE, get_connection, logger,
 )
 
 if CLI_AVAILABLE:
-    from ._common import bulk_import_from_csv, validate_student_id
+    from education_system.university_system.modules.domain.health.gui.medical_accommodation._common import bulk_import_from_csv, validate_student_id
 
-from .dialogs.export_filter import ExportFilterDialog
-from .dialogs.import_result import ImportResultDialog
+from education_system.university_system.modules.domain.health.gui.medical_accommodation.dialogs.export_filter import ExportFilterDialog
+from education_system.university_system.modules.domain.health.gui.medical_accommodation.dialogs.import_result import ImportResultDialog
 
 
 class ImportExportMixin:

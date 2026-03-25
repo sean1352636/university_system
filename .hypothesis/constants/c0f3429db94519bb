@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/auth/mfa_service.py
+# hypothesis_version: 6.151.9
+
+['Education System', 'cnt', 'id', 'is_enabled', 'provisioning_uri', 'recovery_codes', 'secret', 'totp_secret']

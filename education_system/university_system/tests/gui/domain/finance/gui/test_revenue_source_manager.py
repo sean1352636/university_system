@@ -65,11 +65,11 @@ class TestRevenueSourceManager(unittest.TestCase):
         self.assertIsInstance(self.manager.start_date_var, tk.StringVar)
         self.assertIsInstance(self.manager.end_date_var, tk.StringVar)
 
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.tk.Frame')
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.tk.Label')
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.tk.Button')
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.ttk.Treeview')
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.ttk.PanedWindow')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.tk.Frame')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.tk.Label')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.tk.Button')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.ttk.Treeview')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.ttk.PanedWindow')
     def test_create_revenue_source_tab(self, mock_paned, mock_tree, mock_button,
                                        mock_label, mock_frame):
         """Test creating revenue source tab"""
@@ -89,8 +89,8 @@ class TestRevenueSourceManager(unittest.TestCase):
         # Verify chart frame was created
         self.assertTrue(hasattr(self.manager, 'chart_frame'))
 
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.get_revenue_by_source')
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.messagebox.showinfo')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.get_revenue_by_source')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.messagebox.showinfo')
     def test_load_revenue_data_no_data(self, mock_showinfo, mock_get_revenue):
         """Test loading revenue data when no data available"""
         mock_get_revenue.return_value = {}
@@ -104,7 +104,7 @@ class TestRevenueSourceManager(unittest.TestCase):
 
         mock_showinfo.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.get_revenue_by_source')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.get_revenue_by_source')
     def test_load_revenue_data_with_data(self, mock_get_revenue):
         """Test loading revenue data with valid data"""
         # Mock revenue data
@@ -143,7 +143,7 @@ class TestRevenueSourceManager(unittest.TestCase):
         # Verify data was stored for charting
         self.assertTrue(hasattr(self.manager, 'current_revenue_data'))
 
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.messagebox.showwarning')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.messagebox.showwarning')
     def test_load_revenue_data_missing_dates(self, mock_warning):
         """Test loading revenue data with missing dates"""
         self.manager.revenue_tree = Mock()
@@ -155,8 +155,8 @@ class TestRevenueSourceManager(unittest.TestCase):
 
         mock_warning.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.get_revenue_by_source')
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.messagebox.showerror')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.get_revenue_by_source')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.messagebox.showerror')
     def test_load_revenue_data_error(self, mock_error, mock_get_revenue):
         """Test loading revenue data error handling"""
         mock_get_revenue.side_effect = Exception("Database error")
@@ -170,15 +170,15 @@ class TestRevenueSourceManager(unittest.TestCase):
 
         mock_error.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.messagebox.showwarning')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.messagebox.showwarning')
     def test_show_charts_no_data(self, mock_warning):
         """Test showing charts when no data loaded"""
         self.manager.show_charts()
 
         mock_warning.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.tk.Toplevel')
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.FigureCanvasTkAgg')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.tk.Toplevel')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.FigureCanvasTkAgg')
     def test_show_charts_with_data(self, mock_canvas, mock_toplevel):
         """Test showing charts with valid data"""
         # Setup data
@@ -204,8 +204,8 @@ class TestRevenueSourceManager(unittest.TestCase):
         # Verify canvas was created
         mock_canvas.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.tk.Toplevel')
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.messagebox.showerror')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.tk.Toplevel')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.messagebox.showerror')
     def test_show_charts_error(self, mock_error, mock_toplevel):
         """Test showing charts error handling"""
         self.manager.current_revenue_data = {'Library': {'total': 5000}}
@@ -216,15 +216,15 @@ class TestRevenueSourceManager(unittest.TestCase):
 
         mock_error.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.messagebox.showwarning')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.messagebox.showwarning')
     def test_show_trends_no_data(self, mock_warning):
         """Test showing trends when no data loaded"""
         self.manager.show_trends()
 
         mock_warning.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.tk.Toplevel')
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.get_source_revenue_trend')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.tk.Toplevel')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.get_source_revenue_trend')
     def test_show_trends_with_data(self, mock_get_trend, mock_toplevel):
         """Test showing trends with valid data"""
         # Setup data
@@ -246,9 +246,9 @@ class TestRevenueSourceManager(unittest.TestCase):
         # Verify window was created
         mock_toplevel.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.filedialog.asksaveasfilename')
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.export_revenue_by_source_csv')
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.messagebox.showinfo')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.filedialog.asksaveasfilename')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.export_revenue_by_source_csv')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.messagebox.showinfo')
     def test_export_data_success(self, mock_showinfo, mock_export, mock_filedialog):
         """Test successful data export"""
         mock_filedialog.return_value = "/tmp/revenue_data.csv"
@@ -266,7 +266,7 @@ class TestRevenueSourceManager(unittest.TestCase):
         )
         mock_showinfo.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.filedialog.asksaveasfilename')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.filedialog.asksaveasfilename')
     def test_export_data_cancelled(self, mock_filedialog):
         """Test export when user cancels"""
         mock_filedialog.return_value = ""
@@ -274,9 +274,9 @@ class TestRevenueSourceManager(unittest.TestCase):
         # Should not raise any exceptions
         self.manager.export_data()
 
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.filedialog.asksaveasfilename')
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.export_revenue_by_source_csv')
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.messagebox.showerror')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.filedialog.asksaveasfilename')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.export_revenue_by_source_csv')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.messagebox.showerror')
     def test_export_data_failure(self, mock_error, mock_export, mock_filedialog):
         """Test export failure handling"""
         mock_filedialog.return_value = "/tmp/revenue_data.csv"
@@ -289,8 +289,8 @@ class TestRevenueSourceManager(unittest.TestCase):
 
         mock_error.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.filedialog.asksaveasfilename')
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.messagebox.showerror')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.filedialog.asksaveasfilename')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.messagebox.showerror')
     def test_export_data_exception(self, mock_error, mock_filedialog):
         """Test export exception handling"""
         mock_filedialog.side_effect = Exception("File error")
@@ -314,7 +314,7 @@ class TestRevenueDataFormatting(unittest.TestCase):
 
         self.manager = RevenueSourceManager(self.mock_gui)
 
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.get_revenue_by_source')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.get_revenue_by_source')
     def test_revenue_data_formatting(self, mock_get_revenue):
         """Test that revenue data is formatted correctly"""
         # Mock revenue data with specific values
@@ -348,7 +348,7 @@ class TestRevenueDataFormatting(unittest.TestCase):
         self.assertIn('£5.50', insert_call[4])  # Min with currency
         self.assertIn('£500.00', insert_call[5])  # Max with currency
 
-    @patch('university_system.modules.domain.finance.gui.finance.revenue_source_manager.get_revenue_by_source')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager.get_revenue_by_source')
     def test_percentage_calculation(self, mock_get_revenue):
         """Test percentage calculation is accurate"""
         # Mock revenue data with known percentages

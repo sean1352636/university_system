@@ -13,9 +13,9 @@ class BackupMixin:
 
         # Ensure backups directory exists (already created via paths._ensure)
         from education_system.university_system.modules.shared.constants import paths
-        os.makedirs(str(paths.BACKUP_DIR), exist_ok=True)
+        os.makedirs(str(paths.BACKUP_DATABASE_DIR), exist_ok=True)
 
-        backup_path = os.path.join(str(paths.BACKUP_DIR), f"{backup_name}.db")
+        backup_path = os.path.join(str(paths.BACKUP_DATABASE_DIR), f"{backup_name}.db")
 
         try:
             # Check if source database exists
@@ -81,7 +81,7 @@ class BackupMixin:
     def restore_backup(self, backup_name):
         """Restore from a backup"""
         from education_system.university_system.modules.shared.constants import paths
-        backup_path = paths.BACKUP_DIR / f"{backup_name}.db"
+        backup_path = paths.BACKUP_DATABASE_DIR / f"{backup_name}.db"
 
         if not backup_path.exists():
             print(f"Backup file not found: {backup_path}")

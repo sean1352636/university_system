@@ -13,7 +13,7 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE
 
 def show_maintenance_page(self):
     self.clear_content()
@@ -28,11 +28,13 @@ def show_maintenance_page(self):
     for col in columns:
         self.maint_tree.heading(col, text=col)
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM screen_maintenance ORDER BY start_datetime DESC")
-    for row in cursor.fetchall():
-        self.maint_tree.insert("", "end", values=(row[0], f"Screen {row[1]}", row[2], row[4], row[5] or "-", row[6] or "-", row[8].upper()))
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM screen_maintenance ORDER BY start_datetime DESC")
+        for row in cursor.fetchall():
+            self.maint_tree.insert("", "end", values=(row[0], f"Screen {row[1]}", row[2], row[4], row[5] or "-", row[6] or "-", row[8].upper()))
+    finally:
+        conn.close()
     self.maint_tree.pack(fill="both", expand=True, side="left")
     scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.maint_tree.yview)
     self.maint_tree.configure(yscrollcommand=scrollbar.set)
@@ -69,11 +71,13 @@ def schedule_maint(self):
             messagebox.showwarning(_t("cinema.common.warning"), "Invalid screen")
             return
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO screen_maintenance (screen_number, maintenance_type, start_datetime, end_datetime, technician) VALUES (?, ?, ?, ?, ?)",
-                      (screen, entries['type'].get(), entries['start'].get(), entries['end'].get(), entries['tech'].get()))
-        conn.commit()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO screen_maintenance (screen_number, maintenance_type, start_datetime, end_datetime, technician) VALUES (?, ?, ?, ?, ?)",
+                          (screen, entries['type'].get(), entries['start'].get(), entries['end'].get(), entries['tech'].get()))
+            conn.commit()
+        finally:
+            conn.close()
         messagebox.showinfo(_t("cinema.common.success"), "Scheduled!")
         form.destroy()
         self.show_maintenance_page()
@@ -86,8 +90,10 @@ def complete_maint(self):
         return
     maint_id = self.maint_tree.item(selected[0])['values'][0]
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("UPDATE screen_maintenance SET status = 'completed', end_datetime = ? WHERE id = ?", (datetime.now().strftime("%Y-%m-%d %H:%M"), maint_id))
-    conn.commit()
-    conn.close()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE screen_maintenance SET status = 'completed', end_datetime = ? WHERE id = ?", (datetime.now().strftime("%Y-%m-%d %H:%M"), maint_id))
+        conn.commit()
+    finally:
+        conn.close()
     self.show_maintenance_page()

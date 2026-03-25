@@ -3,6 +3,7 @@
 from education_system.college_system.core.exceptions import StudentPortalError
 from education_system.college_system.infrastructure.database.db import connect
 
+from education_system.college_system.core.sql_safety import escape_like
 import logging
 
 logger = logging.getLogger(__name__)
@@ -60,7 +61,8 @@ class StudentPortalService:
                 params.append(1 if published else 0)
             if search:
                 sql += " AND (page_title LIKE ? OR page_slug LIKE ? OR content LIKE ?)"
-                term = f"%{search}%"
+                escaped = escape_like(search)
+                term = f"%{escaped}%"
                 params.extend([term, term, term])
             sql += " ORDER BY sort_order, page_title"
             rows = conn.execute(sql, params).fetchall()
@@ -188,7 +190,8 @@ class StudentPortalService:
                 params.append(1 if active else 0)
             if search:
                 sql += " AND (link_title LIKE ? OR url LIKE ? OR description LIKE ?)"
-                term = f"%{search}%"
+                escaped = escape_like(search)
+                term = f"%{escaped}%"
                 params.extend([term, term, term])
             sql += " ORDER BY sort_order, link_title"
             rows = conn.execute(sql, params).fetchall()

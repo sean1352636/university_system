@@ -1,6 +1,6 @@
 """Data Mapping Tools Manager and CLI functions"""
 
-from ._imports import json, re, Any, Dict, List, get_connection, transaction
+from education_system.university_system.modules.shared.services.integrations.integration_marketplace_core._imports import json, re, Any, Dict, List, get_connection, transaction
 
 
 class DataMappingToolsManager:

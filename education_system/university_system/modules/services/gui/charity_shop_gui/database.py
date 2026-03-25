@@ -1,6 +1,7 @@
 """Charity Shop - Database operations."""
 
-from ._imports import (
+from education_system.university_system.core.sql_safety import escape_like
+from education_system.university_system.modules.services.gui.charity_shop_gui._imports import (
     sqlite3, validate_table_name, safe_alter_table_add_column,
     DEFAULT_DB_PATH, datetime, timedelta, logging,
 )
@@ -81,7 +82,7 @@ class Database:
         """Search stock by name and optionally filter by category and sold status."""
         with self.get_connection() as conn:
             query = f"SELECT id, name, category, price, quantity, condition, date_added, sold, sold_date, sold_quantity FROM {self.TABLE_NAME} WHERE name LIKE ?"
-            params = [f"%{search_term}%"]
+            params = [f"%{escape_like(search_term)}%"]
 
             if category != "All":
                 query += " AND category = ?"

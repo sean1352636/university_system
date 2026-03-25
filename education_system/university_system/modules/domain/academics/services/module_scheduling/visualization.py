@@ -1,5 +1,5 @@
 from education_system.university_system.modules.shared.constants import paths
-from .constants import DAYS_OF_WEEK, TIME_SLOTS
+from education_system.university_system.modules.domain.academics.services.module_scheduling.constants import DAYS_OF_WEEK, TIME_SLOTS
 from datetime import datetime
 import os
 import matplotlib.pyplot as plt

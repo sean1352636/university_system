@@ -99,7 +99,6 @@ except ImportError:
 
 # Import academic system launchers
 try:
-    from education_system.university_system.modules.domain.academics.services.lms.lms_core import launch_lms_gui
     from education_system.university_system.modules.domain.academics.services.degree_audit.degree_audit_core import launch_degree_audit_gui
     from education_system.university_system.modules.domain.academics.services.evaluation.course_evaluation_core import launch_course_evaluation_gui
     ACADEMIC_SYSTEMS_AVAILABLE = True
@@ -208,14 +207,15 @@ def create_academic_systems_tab(self):
 
 
 def show_lms_gui(self):
-    """Launch the LMS GUI"""
+    """Switch to the LMS tab in the course management notebook."""
     try:
-        if ACADEMIC_SYSTEMS_AVAILABLE:
-            launch_lms_gui(self.root, self.auth)
-        else:
-            messagebox.showerror(_("common.error"), _("course_management.messages.lms_not_available"))
+        for i in range(self.notebook.index("end")):
+            if self.notebook.tab(i, "text") == _("lms.title"):
+                self.notebook.select(i)
+                return
+        messagebox.showinfo("LMS", "LMS tab is available in the Course Management tabs above.")
     except Exception as e:
-        messagebox.showerror(_("common.error"), _("course_management.messages.lms_launch_failed").format(error=e))
+        messagebox.showerror(_("common.error"), f"Failed to open LMS tab: {e}")
 
 
 def show_degree_audit_gui(self):

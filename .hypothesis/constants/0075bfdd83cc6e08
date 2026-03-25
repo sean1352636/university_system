@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/lost_found_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/<int:item_id>', '/<int:item_id>/claim', '/api/lost-found', 'GET', 'POST', 'category', 'category = ?', 'claim', 'claimed', 'claimed_by_email', 'claimed_by_name', 'claimed_by_phone', 'create', 'found_date', 'found_time', 'item_description', 'items', 'location_found', 'lost_found', 'lost_found_item', 'lost_found_items', 'notes', 'other', 'search', 'status', 'status = ?', 'storage_location', 'sub', 'total', 'view']

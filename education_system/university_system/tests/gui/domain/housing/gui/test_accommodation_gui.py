@@ -31,7 +31,7 @@ def root_window():
 class TestAccommodationGUIInitialization:
     """Test GUI initialization"""
 
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
     def test_gui_initialization(self, mock_init_db, root_window):
         """Test AccommodationGUI initializes correctly"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
@@ -41,7 +41,7 @@ class TestAccommodationGUIInitialization:
         assert gui.root == root_window
         assert mock_init_db.called
 
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
     def test_gui_with_auth_instance(self, mock_init_db, root_window):
         """Test GUI initialization with authentication"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
@@ -54,7 +54,7 @@ class TestAccommodationGUIInitialization:
         assert gui.auth == mock_auth
         assert gui.current_user is not None
 
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
     def test_window_title_set(self, mock_init_db, root_window):
         """Test window title is set correctly"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
@@ -67,7 +67,7 @@ class TestAccommodationGUIInitialization:
 class TestMenuCreation:
     """Test menu bar creation"""
 
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
     def test_menu_bar_created(self, mock_init_db, root_window):
         """Test menu bar is created"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
@@ -78,7 +78,7 @@ class TestMenuCreation:
         menu = root_window['menu']
         assert menu is not None
 
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
     def test_file_menu_exists(self, mock_init_db, root_window):
         """Test file menu exists with import/export options"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
@@ -134,8 +134,8 @@ class TestHelperFunctions:
 class TestDialogMethods:
     """Test dialog creation methods"""
 
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.messagebox')
     def test_add_accommodation_dialog_opens(self, mock_messagebox, mock_init_db, root_window):
         """Test add_accommodation_dialog can be called"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
@@ -149,8 +149,8 @@ class TestDialogMethods:
             # Method may not exist or need other setup
             pass
 
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.messagebox')
     def test_update_accommodation_dialog(self, mock_messagebox, mock_init_db, root_window):
         """Test update_accommodation_dialog can be called"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
@@ -164,8 +164,8 @@ class TestDialogMethods:
             # Expected if treeview not fully initialized
             pass
 
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.messagebox')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.messagebox')
     def test_remove_accommodation_dialog(self, mock_messagebox, mock_init_db, root_window):
         """Test remove_accommodation_dialog handles no selection"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
@@ -182,8 +182,8 @@ class TestDialogMethods:
 class TestImportExport:
     """Test import and export functionality"""
 
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.filedialog')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.filedialog')
     def test_import_csv_method_exists(self, mock_filedialog, mock_init_db, root_window):
         """Test import_csv method exists"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
@@ -192,8 +192,8 @@ class TestImportExport:
 
         assert hasattr(gui, 'import_csv')
 
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.filedialog')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.filedialog')
     def test_export_csv_method_exists(self, mock_filedialog, mock_init_db, root_window):
         """Test export_csv method exists"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
@@ -202,8 +202,8 @@ class TestImportExport:
 
         assert hasattr(gui, 'export_csv')
 
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.filedialog')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.filedialog')
     def test_export_excel_method_exists(self, mock_filedialog, mock_init_db, root_window):
         """Test export_excel method exists"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
@@ -212,8 +212,8 @@ class TestImportExport:
 
         assert hasattr(gui, 'export_excel')
 
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.filedialog')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.filedialog')
     def test_export_pdf_method_exists(self, mock_filedialog, mock_init_db, root_window):
         """Test export_pdf method exists"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
@@ -226,7 +226,7 @@ class TestImportExport:
 class TestTemplateManagement:
     """Test template management dialogs"""
 
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
     def test_save_template_dialog_method_exists(self, mock_init_db, root_window):
         """Test save_template_dialog method exists"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
@@ -235,7 +235,7 @@ class TestTemplateManagement:
 
         assert hasattr(gui, 'save_template_dialog')
 
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
     def test_apply_template_dialog_method_exists(self, mock_init_db, root_window):
         """Test apply_template_dialog method exists"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
@@ -244,7 +244,7 @@ class TestTemplateManagement:
 
         assert hasattr(gui, 'apply_template_dialog')
 
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
     def test_manage_templates_dialog_method_exists(self, mock_init_db, root_window):
         """Test manage_templates_dialog method exists"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
@@ -257,7 +257,7 @@ class TestTemplateManagement:
 class TestReporting:
     """Test reporting and statistics methods"""
 
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
     def test_show_dashboard_method_exists(self, mock_init_db, root_window):
         """Test show_dashboard method exists"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
@@ -266,7 +266,7 @@ class TestReporting:
 
         assert hasattr(gui, 'show_dashboard')
 
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
     def test_generate_statistics_method_exists(self, mock_init_db, root_window):
         """Test generate_statistics method exists"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
@@ -275,7 +275,7 @@ class TestReporting:
 
         assert hasattr(gui, 'generate_statistics')
 
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
     def test_check_expiry_method_exists(self, mock_init_db, root_window):
         """Test check_expiry method exists"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
@@ -288,8 +288,8 @@ class TestReporting:
 class TestDataRefresh:
     """Test data refresh functionality"""
 
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.get_connection')
     def test_refresh_data_method(self, mock_conn, mock_init_db, root_window):
         """Test refresh_data method updates UI"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
@@ -310,7 +310,7 @@ class TestDataRefresh:
 class TestStatusBar:
     """Test status bar functionality"""
 
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
     def test_status_bar_created(self, mock_init_db, root_window):
         """Test status bar is created"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
@@ -349,7 +349,7 @@ class TestModuleConstants:
 class TestErrorHandling:
     """Test error handling"""
 
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
     def test_gui_handles_missing_auth_gracefully(self, mock_init_db, root_window):
         """Test GUI handles missing auth gracefully"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
@@ -359,8 +359,8 @@ class TestErrorHandling:
 
         assert gui.auth is None
 
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    @patch('university_system.modules.domain.housing.gui.accommodation_gui.get_connection')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
+    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.get_connection')
     def test_gui_handles_database_errors(self, mock_conn, mock_init_db, root_window):
         """Test GUI handles database errors gracefully"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI

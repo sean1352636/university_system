@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/staff_hr/services/managers/grant_budget_manager.py
+# hypothesis_version: 6.151.9
+
+[100, ' = ?', ' AND is_active = 1', ' AND is_read = ?', ' AND status = ?', ' ORDER BY sort_order', ', ', 'action', 'alert_id', 'alert_threshold_pct', 'alert_type', 'allocated_amount', 'allocation_id', 'amount', 'approved', 'approved_by', 'categories', 'category_id', 'column', 'create', 'critical', 'description', 'expense_date', 'expense_id', 'from_allocation_id', 'grant_application_id', 'grant_expense_item', 'grant_funding_alert', 'invoice_number', 'mark_read', 'name', 'next_order', 'notes', 'receipt_path', 'rejected', 'requested_by', 'resolved', 'resolved_by', 'severity', 'spent_amount', 'submitted_by', 'threshold_exceeded', 'to_allocation_id', 'total_allocated', 'total_committed', 'total_remaining', 'total_spent', 'transfer_id', 'update', 'updated_at = ?', 'updated_fields', 'vendor', 'warning']

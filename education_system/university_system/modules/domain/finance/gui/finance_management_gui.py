@@ -20,14 +20,14 @@ except ImportError as e:
 
 # Import CLI fallback
 try:
-    from education_system.university_system.modules.shared.cli.cli_main import display_finance_menu as _display_finance_menu
+    from education_system.university_system.modules.domain.finance.gui.finance_reporting.misc import display_finance_menu as _display_finance_menu
     FINANCE_CLI_AVAILABLE = True
 except ImportError:
     _display_finance_menu = None
     FINANCE_CLI_AVAILABLE = False
 
 try:
-    from education_system.university_system.modules.finance.core.financial_core import set_finance_auth as _set_finance_cli_auth
+    from education_system.university_system.modules.domain.finance.core.financial_core import set_finance_auth as _set_finance_cli_auth
 except Exception:
     _set_finance_cli_auth = None
 

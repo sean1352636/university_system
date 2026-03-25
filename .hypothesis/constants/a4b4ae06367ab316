@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/ai/university_chatbot/models.py
+# hypothesis_version: 6.151.9
+
+['academic', 'admin', 'administrative', 'email', 'faculty', 'financial', 'general', 'guest', 'in_app', 'push', 'sms', 'staff', 'student', 'technical']

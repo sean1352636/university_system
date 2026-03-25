@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/college_system/modules/domain/lesson_plans/services/lesson_plans_service.py
+# hypothesis_version: 6.151.9
+
+[100, ', ', '?', 'Plan created: id=%d', 'Plan deleted: pk=%d', 'Plan not found.', 'Plan updated: pk=%d', 'cnt', 'course_id', 'differentiation', 'homework', 'id', 'learning_objectives', 'lesson_date', 'main_activity', 'plenary', 'reflection', 'resources', 'starter_activity', 'status', 'teacher_id', 'topic', 'topic is required.', 'updated_at']

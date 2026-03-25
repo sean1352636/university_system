@@ -134,7 +134,7 @@ class TestHealthPortalGUIAttributes:
 class TestLogging:
     """Test logging behavior"""
 
-    @patch('university_system.modules.services.gui.health_portal_gui.logger')
+    @patch('education_system.university_system.modules.services.gui.health_portal_gui.logger')
     def test_logging_available(self, mock_logger):
         """Test that logger is available"""
         try:

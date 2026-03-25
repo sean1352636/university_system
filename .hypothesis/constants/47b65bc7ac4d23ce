@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/legal/gui/billing.py
+# hypothesis_version: 6.151.9
+
+[' - ', '%Y-%m-%d', '*.*', '*.txt', '.txt', '1.0', '600x500', '@', 'All Files', 'Case not found', 'Close', 'Courier', 'Email Invoice', 'Error', 'GBP 25.00', 'Success', 'Text Files', 'Warning', 'amount', 'case_id', 'client_email', 'client_id', 'common.close', 'common.error', 'common.save_invoice', 'common.success', 'common.warning', 'description', 'disabled', 'legal_services', 'record_payment', 'username', 'w']

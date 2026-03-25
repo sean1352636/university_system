@@ -199,7 +199,7 @@ class TestStudentProgressTracking:
 
     def test_student_progress_tracking_db_error(self, capsys):
         """Test database error handling"""
-        with mock.patch('university_system.modules.domain.academics.grade_misc.progress.get_connection') as mock_conn:
+        with mock.patch('education_system.university_system.modules.domain.academics.grade_misc.progress.get_connection') as mock_conn:
             mock_conn.side_effect = sqlite3.Error("Database error")
 
             student_progress_tracking()
@@ -287,7 +287,7 @@ class TestSuccessProbabilityCalculator:
 
     def test_success_probability_db_error(self, capsys):
         """Test database error handling"""
-        with mock.patch('university_system.modules.domain.academics.grade_misc.progress.get_connection') as mock_conn:
+        with mock.patch('education_system.university_system.modules.domain.academics.grade_misc.progress.get_connection') as mock_conn:
             mock_conn.side_effect = sqlite3.Error("Database error")
 
             success_probability_calculator()

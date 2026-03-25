@@ -826,11 +826,21 @@ class DegreeAuditGUI:
 
                 current_course = student_data[0]
 
-                # Store scenario in simple format (no foreign key to degree_programs)
+                # Look up target course ID
+                cursor.execute(
+                    "SELECT id FROM courses WHERE UPPER(COALESCE(course_code, code)) = ?",
+                    (target_course_code.upper(),)
+                )
+                course_row = cursor.fetchone()
+                target_program_id = int(course_row[0]) if course_row and str(course_row[0]).isdigit() else 0
+
                 cursor.execute('''
-                    INSERT INTO degree_what_if_scenarios (student_id, scenario_name, notes, created_at)
-                    VALUES (?, ?, ?, ?)
-                ''', (student_id, scenario_name, f"Target Course: {target_course_code}\n{notes}", datetime.now().isoformat()))
+                    INSERT INTO degree_what_if_scenarios
+                    (student_id, scenario_name, target_program_id, notes, created_at)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (student_id, scenario_name, target_program_id,
+                      f"Target Course: {target_course_code}\n{notes}",
+                      datetime.now().isoformat()))
 
                 scenario_id = cursor.lastrowid
                 conn.commit()
@@ -1126,6 +1136,64 @@ class DegreeAuditGUI:
                        {'student_id': student_id, 'date': date})
 
             messagebox.showinfo(_("common.success"), _("degree_audit.messages.appointment_scheduled_success").format(appointment_id=appointment_id))
+
+            # Send confirmation emails to student and advisor
+            try:
+                from education_system.university_system.infrastructure.email.email_service import send_email
+                with get_connection() as conn:
+                    cursor = conn.cursor()
+                    # Get student email and name
+                    cursor.execute(
+                        "SELECT email_address, first_name, last_name FROM students WHERE student_id = ?",
+                        (student_id,)
+                    )
+                    stu = cursor.fetchone()
+                    # Get advisor email and name
+                    cursor.execute(
+                        "SELECT email, first_name, last_name FROM instructors WHERE id = ?",
+                        (advisor_id,)
+                    )
+                    adv = cursor.fetchone()
+
+                appt_details = (
+                    f"Date: {date}\n"
+                    f"Time: {time}\n"
+                    f"Duration: {duration} minutes\n"
+                    f"Type: {appt_type}\n"
+                    f"Topic: {topic or 'N/A'}\n"
+                )
+
+                if stu and stu[0]:
+                    student_name = f"{stu[1] or ''} {stu[2] or ''}".strip() or "Student"
+                    advisor_name = f"{adv[1] or ''} {adv[2] or ''}".strip() if adv else advisor_id
+                    send_email(
+                        recipient_email=stu[0],
+                        subject=f"Advising Appointment Confirmed - {date} at {time}",
+                        body=(
+                            f"Dear {student_name},\n\n"
+                            f"Your advising appointment has been scheduled.\n\n"
+                            f"{appt_details}\n"
+                            f"Advisor: {advisor_name}\n\n"
+                            f"Best regards,\nAcademic Administration"
+                        )
+                    )
+
+                if adv and adv[0]:
+                    advisor_name = f"{adv[1] or ''} {adv[2] or ''}".strip() or "Advisor"
+                    student_name = f"{stu[1] or ''} {stu[2] or ''}".strip() if stu else student_id
+                    send_email(
+                        recipient_email=adv[0],
+                        subject=f"Advising Appointment Scheduled - {date} at {time}",
+                        body=(
+                            f"Dear {advisor_name},\n\n"
+                            f"An advising appointment has been scheduled with you.\n\n"
+                            f"{appt_details}\n"
+                            f"Student: {student_name} ({student_id})\n\n"
+                            f"Best regards,\nAcademic Administration"
+                        )
+                    )
+            except Exception as email_err:
+                print(f"Appointment email notification failed: {email_err}")
 
             # Clear fields
             fields['student'].delete(0, tk.END)

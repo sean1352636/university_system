@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/college_system/modules/domain/courses/services/course_service.py
+# hypothesis_version: 6.151.9
+
+[100, ' AND status = ?', ' AND term = ?', ', ', 'A-Level', 'Capacity', 'Course not found.', 'Title', 'UNIQUE', 'capacity', 'cnt', 'credits', 'description', 'prerequisite_id', 'qualification_type', 'schedule', 'status', 'subject_area', 'teacher', 'term', 'title', 'updated_at']

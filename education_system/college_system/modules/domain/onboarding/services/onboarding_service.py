@@ -3,6 +3,7 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import OnboardingError
 from education_system.college_system.infrastructure.database.db import connect
+from education_system.college_system.core.sql_safety import validate_identifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -104,7 +105,7 @@ class OnboardingService:
         if not updates:
             raise OnboardingError("No valid fields to update.")
         updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [checklist_id]
         conn = self._conn()
         try:
@@ -271,7 +272,7 @@ class OnboardingService:
         updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
         if not updates:
             raise OnboardingError("No valid fields to update.")
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [task_id]
         conn = self._conn()
         try:
@@ -432,7 +433,7 @@ class OnboardingService:
         updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
         if not updates:
             raise OnboardingError("No valid fields to update.")
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [review_id]
         conn = self._conn()
         try:

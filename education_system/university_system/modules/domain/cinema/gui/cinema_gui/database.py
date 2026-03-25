@@ -24,6 +24,15 @@ def init_database():
     """Initialize the database with required tables."""
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
+    try:
+        _init_database_tables(conn, cursor)
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def _init_database_tables(conn, cursor):
+    """Create all database tables and seed data (called by init_database)."""
 
     # Movies table
     cursor.execute('''
@@ -312,8 +321,9 @@ def init_database():
     try:
         cursor.execute("ALTER TABLE staff ADD COLUMN salt TEXT")
         conn.commit()
-    except sqlite3.OperationalError:
-        pass  # Column already exists
+    except sqlite3.OperationalError as e:
+        if "duplicate column" not in str(e).lower() and "already exists" not in str(e).lower():
+            raise
 
     # Audit Log table
     cursor.execute('''
@@ -456,22 +466,24 @@ def init_database():
         )
     ''')
 
-    # Snack Orders table (snacks only, no movie)
+    # Unified orders table (snack orders have source_type='snack')
+    # NOTE: snack_orders migrated to unified 'orders' table with source_type = 'snack'
+    # Column mappings: id -> auto, order_ref -> order_number, items -> notes, order_status stays, payment_status stays
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS snack_orders (
+        CREATE TABLE IF NOT EXISTS orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            order_ref TEXT UNIQUE NOT NULL,
+            source_type TEXT NOT NULL DEFAULT 'snack',
+            source_order_id INTEGER,
+            student_id TEXT,
             customer_name TEXT,
-            customer_email TEXT,
-            items TEXT NOT NULL,
-            pickup_time TEXT,
-            subtotal REAL NOT NULL,
-            discount_amount REAL DEFAULT 0,
+            order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             total_amount REAL NOT NULL,
-            payment_status TEXT DEFAULT 'pending',
             payment_method TEXT,
+            age_verified INTEGER DEFAULT 0,
             order_status TEXT DEFAULT 'pending',
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            notes TEXT,
+            order_number TEXT,
+            payment_status TEXT DEFAULT 'pending'
         )
     ''')
 
@@ -839,7 +851,6 @@ def init_database():
                     )
 
     conn.commit()
-    conn.close()
 
 def generate_booking_ref():
     """Generate a unique booking reference."""

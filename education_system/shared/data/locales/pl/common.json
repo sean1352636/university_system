@@ -1,0 +1,121 @@
+{
+    "app": {
+        "title": "System edukacyjny",
+        "language_selector": {
+            "title": "Wybierz język",
+            "subtitle": "Wybierz preferowany język",
+            "confirm": "OK",
+            "cancel": "Anuluj"
+        }
+    },
+    "login": {
+        "title": "System edukacyjny - Logowanie",
+        "sign_in": "Zaloguj się, aby kontynuować",
+        "username": "Nazwa użytkownika",
+        "password": "Hasło",
+        "login_button": "Zaloguj się",
+        "enter_both": "Proszę podać nazwę użytkownika i hasło.",
+        "no_access": "Twoje konto nie ma dostępu do żadnego systemu.",
+        "contact_admin": "Proszę skontaktować się z administratorem.",
+        "default_hint": "Domyślne: superadmin / SuperAdmin@123"
+    },
+    "mfa": {
+        "title": "Uwierzytelnianie dwuskładnikowe",
+        "enter_code": "Wprowadź kod uwierzytelniania:",
+        "code_sent": "Kod weryfikacyjny został wysłany na adres {email}",
+        "code_failed": "Wysyłanie e-maila nie powiodło się. Twój kod jest wyświetlony poniżej:",
+        "verify": "Zweryfikuj",
+        "back_to_login": "Powrót do logowania",
+        "enter_code_prompt": "Proszę wprowadzić kod."
+    },
+    "system_picker": {
+        "welcome": "Witaj, {name}",
+        "choose_system": "Wybierz system do uruchomienia:",
+        "university": "System zarządzania uczelnią",
+        "college": "System Sixth Form College",
+        "secondary": "System szkoły średniej",
+        "primary": "System szkoły podstawowej",
+        "logout": "Wyloguj się",
+        "superadmin_dashboard": "Panel superadministratora"
+    },
+    "common": {
+        "ok": "OK",
+        "cancel": "Anuluj",
+        "save": "Zapisz",
+        "delete": "Usuń",
+        "edit": "Edytuj",
+        "add": "Dodaj",
+        "search": "Szukaj",
+        "refresh": "Odśwież",
+        "close": "Zamknij",
+        "back": "Wstecz",
+        "next": "Dalej",
+        "yes": "Tak",
+        "no": "Nie",
+        "confirm": "Potwierdź",
+        "error": "Błąd",
+        "success": "Sukces",
+        "warning": "Ostrzeżenie",
+        "loading": "Ładowanie...",
+        "no_results": "Nie znaleziono wyników",
+        "actions": "Akcje",
+        "status": "Status",
+        "name": "Nazwa",
+        "email": "E-mail",
+        "date": "Data",
+        "type": "Typ",
+        "description": "Opis",
+        "submit": "Wyślij",
+        "export": "Eksportuj",
+        "import": "Importuj",
+        "filter": "Filtruj",
+        "clear": "Wyczyść",
+        "select_all": "Zaznacz wszystko",
+        "deselect_all": "Odznacz wszystko",
+        "active": "Aktywny",
+        "inactive": "Nieaktywny",
+        "transferred": "Przeniesiony"
+    },
+    "shared_modules": {
+        "cross_system_notifications": "Powiadomienia międzysystemowe",
+        "student_journey": "Ścieżka studenta",
+        "analytics_dashboard": "Panel analityczny",
+        "outcome_tracking": "Śledzenie wyników",
+        "predictive_alerts": "Alerty predykcyjne",
+        "bulk_transfer": "Transfer masowy",
+        "transfer_documents": "Dokumenty transferu",
+        "reverse_lookup": "Wyszukiwanie odwrotne",
+        "parent_continuity": "Ciągłość rodziców",
+        "cross_system_calendar": "Kalendarz międzysystemowy",
+        "inter_system_messaging": "Wiadomości międzysystemowe",
+        "central_admin_portal": "Centralny portal administracyjny",
+        "gdpr_compliance": "Zgodność z RODO",
+        "shared_documents": "Dokumenty współdzielone",
+        "student_self_service": "Samoobsługa studenta",
+        "digital_transcript": "Cyfrowy wykaz ocen"
+    },
+    "switch_system": {
+        "title": "Przełącz system",
+        "switch_to": "Przełącz na:",
+        "switching": "Przełączanie na {system}..."
+    },
+    "superadmin": {
+        "title": "Panel superadministratora",
+        "overview": "Panel",
+        "system_health": "Stan systemu",
+        "user_management": "Zarządzanie użytkownikami",
+        "student_analytics": "Analityka studentów",
+        "notifications": "Powiadomienia",
+        "student_search": "Wyszukiwanie studentów",
+        "audit_log": "Dziennik audytu",
+        "quick_launch": "Szybkie uruchomienie"
+    },
+    "roles": {
+        "admin": "Administrator",
+        "staff": "Pracownik",
+        "teacher": "Nauczyciel",
+        "student": "Student",
+        "parent": "Rodzic",
+        "superadmin": "Superadministrator"
+    }
+}

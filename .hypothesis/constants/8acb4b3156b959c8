@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/managers/user_manager.py
+# hypothesis_version: 6.151.9
+
+[' = ?', ' WHERE id = ?', ' WHERE user_id = ?', '%Y-%m-%d %H:%M:%S', ', ', 'INVALID_EMAIL', 'INVALID_PASSWORD', 'INVALID_ROLE', 'INVALID_USERNAME', 'ROLES', 'UPDATE users SET ', 'User not found.', 'UserManager', '_initialization_mode', 'activity_log', 'admin', 'column', 'deleted_role', 'deleted_username', 'email', 'first_name', 'id', 'instructor', 'is_active', 'last_name', 'login_history', 'manage_users', 'mfa_methods', 'mfa_otp_codes', 'mfa_recovery_codes', 'mfa_secrets', 'mfa_trusted_devices', 'mfa_user_settings', 'mfa_verification_log', 'new_username', 'parent', 'permissions', 'role', 'sessions', 'staff', 'student', 'student_id', 'system', 'target_role', 'target_username', 'updated_at = ?', 'user', 'user_accounts', 'user_permissions', 'username', 'valid_roles']

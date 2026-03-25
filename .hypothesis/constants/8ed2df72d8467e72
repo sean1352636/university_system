@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/pastoral_care/rewards/services/rewards_service.py
+# hypothesis_version: 6.151.9
+
+[' AND r.category = ?', 'academic', 'arts', 'attendance', 'behaviour', 'certificate', 'commendation', 'community', 'effort', 'general', 'headteacher_award', 'house_point', 'kindness', 'leadership', 'merit', 'sport']

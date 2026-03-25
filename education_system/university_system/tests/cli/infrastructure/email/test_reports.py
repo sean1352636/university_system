@@ -26,7 +26,7 @@ class TestLogEmailMetrics:
             mock_cursor.fetchone.return_value = None  # No existing record
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
             result = reports.log_email_metrics('sent')
 
             assert result is True
@@ -38,7 +38,7 @@ class TestLogEmailMetrics:
             mock_cursor.fetchone.return_value = (1,)  # Existing record
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
             result = reports.log_email_metrics('sent')
 
             assert result is True
@@ -50,7 +50,7 @@ class TestLogEmailMetrics:
             mock_cursor.fetchone.return_value = None
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
             result = reports.log_email_metrics('failed')
 
             assert result is True
@@ -62,7 +62,7 @@ class TestLogEmailMetrics:
             mock_cursor.fetchone.return_value = (1,)
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
             result = reports.log_email_metrics('failed')
 
             assert result is True
@@ -74,14 +74,14 @@ class TestLogEmailMetrics:
             mock_cursor.fetchone.side_effect = [None, None]  # Table doesn't exist, then no record
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
             result = reports.log_email_metrics('sent')
 
             assert result is True
 
     def test_log_email_metrics_database_error(self):
         """Test logging email metrics with database error"""
-        with patch('university_system.infrastructure.email.reports.execute_db_operation') as mock_db:
+        with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation') as mock_db:
             mock_db.side_effect = Exception("Database error")
 
             result = reports.log_email_metrics('sent')
@@ -103,8 +103,8 @@ class TestLogEmailMetrics:
             mock_cursor.execute = capture_execute
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation), \
-             patch('university_system.infrastructure.email.reports.datetime') as mock_datetime:
+        with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation), \
+             patch('education_system.university_system.infrastructure.email.reports.datetime') as mock_datetime:
 
             mock_now = datetime(2024, 1, 15, 10, 30, 0)
             mock_datetime.now.return_value = mock_now
@@ -131,7 +131,7 @@ class TestGenerateReport:
             mock_cursor.fetchall.return_value = mock_records
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
             result = reports.generate_report('2024-01-01', '2024-01-02', 'json')
 
             assert 'data' in result
@@ -153,7 +153,7 @@ class TestGenerateReport:
             mock_cursor.fetchall.return_value = mock_records
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation), \
+        with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation), \
              patch('builtins.open', mock_open()) as mock_file:
 
             result = reports.generate_report('2024-01-01', '2024-01-02', 'csv')
@@ -169,7 +169,7 @@ class TestGenerateReport:
             mock_cursor.fetchall.return_value = []
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
             result = reports.generate_report('2024-01-01', '2024-01-02', 'json')
 
             assert result['data'] == []
@@ -187,8 +187,8 @@ class TestGenerateReport:
             mock_cursor.fetchall.return_value = mock_records
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation), \
-             patch('university_system.infrastructure.email.reports.datetime') as mock_datetime:
+        with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation), \
+             patch('education_system.university_system.infrastructure.email.reports.datetime') as mock_datetime:
 
             mock_now = datetime(2024, 2, 1, 10, 0, 0)
             mock_datetime.now.return_value = mock_now
@@ -212,7 +212,7 @@ class TestGenerateReport:
             mock_cursor.fetchall.return_value = mock_records
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
             result = reports.generate_report('2024-01-01', '2024-01-01', 'json')
 
             day_data = result['data'][0]
@@ -239,7 +239,7 @@ class TestGenerateReport:
             mock_cursor.fetchall.return_value = mock_records
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
             result = reports.generate_report('2024-01-01', '2024-01-02', 'json')
 
             totals = result['totals']
@@ -261,7 +261,7 @@ class TestGenerateReport:
             mock_cursor.fetchall.return_value = mock_records
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
             result = reports.generate_report('2024-01-01', '2024-01-01', 'json')
 
             day_data = result['data'][0]
@@ -272,7 +272,7 @@ class TestGenerateReport:
 
     def test_generate_report_database_error(self):
         """Test generating report with database error"""
-        with patch('university_system.infrastructure.email.reports.execute_db_operation') as mock_db:
+        with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation') as mock_db:
             mock_db.side_effect = Exception("Database error")
 
             result = reports.generate_report('2024-01-01', '2024-01-02', 'json')
@@ -296,7 +296,7 @@ class TestGenerateReport:
             temp_path = tmp.name
 
         try:
-            with patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation), \
+            with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation), \
                  patch('builtins.open', mock_open()) as mock_file:
 
                 result = reports.generate_report('2024-01-01', '2024-01-02', 'csv')
@@ -323,7 +323,7 @@ class TestGenerateReportForm:
 
         with patch('builtins.input', side_effect=['1', '1']), \
              patch('builtins.print'), \
-             patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+             patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
 
             reports.generate_report_form()
 
@@ -339,7 +339,7 @@ class TestGenerateReportForm:
 
         with patch('builtins.input', side_effect=['2', '1']), \
              patch('builtins.print'), \
-             patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+             patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
 
             reports.generate_report_form()
 
@@ -355,8 +355,8 @@ class TestGenerateReportForm:
 
         with patch('builtins.input', side_effect=['3', '1']), \
              patch('builtins.print'), \
-             patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation), \
-             patch('university_system.infrastructure.email.reports.datetime') as mock_datetime:
+             patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation), \
+             patch('education_system.university_system.infrastructure.email.reports.datetime') as mock_datetime:
 
             mock_now = datetime(2024, 1, 15, 10, 0, 0)
             mock_datetime.now.return_value = mock_now
@@ -380,7 +380,7 @@ class TestGenerateReportForm:
             '1'  # JSON format
         ]), \
              patch('builtins.print'), \
-             patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+             patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
 
             reports.generate_report_form()
 
@@ -401,7 +401,7 @@ class TestGenerateReportForm:
             '2'  # CSV format
         ]), \
              patch('builtins.print'), \
-             patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation), \
+             patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation), \
              patch('builtins.open', mock_open()):
 
             reports.generate_report_form()
@@ -455,7 +455,7 @@ class TestGenerateReportForm:
 
         with patch('builtins.input', side_effect=['1', '99']), \
              patch('builtins.print') as mock_print, \
-             patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+             patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
 
             reports.generate_report_form()
 
@@ -477,7 +477,7 @@ class TestGenerateReportForm:
 
         with patch('builtins.input', side_effect=['1', '1']), \
              patch('builtins.print') as mock_print, \
-             patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+             patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
 
             reports.generate_report_form()
 
@@ -499,7 +499,7 @@ class TestGenerateReportForm:
 
         with patch('builtins.input', side_effect=['1', '2']), \
              patch('builtins.print') as mock_print, \
-             patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation), \
+             patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation), \
              patch('builtins.open', mock_open()):
 
             reports.generate_report_form()
@@ -528,7 +528,7 @@ class TestGetUserCommunicationStats:
             ]
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
             stats = reports.get_user_communication_stats(mock_dashboard)
 
             assert stats is not None
@@ -551,7 +551,7 @@ class TestGetUserCommunicationStats:
             ]
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
             stats = reports.get_user_communication_stats(mock_dashboard, user_id=2)
 
             assert stats is not None
@@ -579,7 +579,7 @@ class TestGetUserCommunicationStats:
         mock_dashboard = Mock()
         mock_dashboard.auth.current_user = {'id': 1}
 
-        with patch('university_system.infrastructure.email.reports.execute_db_operation') as mock_db:
+        with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation') as mock_db:
             mock_db.side_effect = Exception("Database error")
 
             stats = reports.get_user_communication_stats(mock_dashboard)
@@ -598,7 +598,7 @@ class TestGetUserCommunicationStats:
             ]
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
             stats = reports.get_user_communication_stats(mock_dashboard)
 
             assert stats is not None
@@ -624,7 +624,7 @@ class TestGetRecentCommunicationActivity:
             mock_cursor.fetchall.return_value = mock_activities
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
             activities = reports.get_recent_communication_activity(mock_dashboard, limit=10)
 
             assert len(activities) == 2
@@ -642,7 +642,7 @@ class TestGetRecentCommunicationActivity:
             mock_cursor.fetchall.return_value = []
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
             activities = reports.get_recent_communication_activity(mock_dashboard)
 
             assert activities == []
@@ -663,7 +663,7 @@ class TestGetRecentCommunicationActivity:
             mock_cursor.fetchall.return_value = mock_activities[:5]  # Limit to 5
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
             activities = reports.get_recent_communication_activity(mock_dashboard, limit=5)
 
             assert len(activities) <= 5
@@ -682,7 +682,7 @@ class TestGetRecentCommunicationActivity:
         mock_dashboard = Mock()
         mock_dashboard.auth.current_user = {'id': 1}
 
-        with patch('university_system.infrastructure.email.reports.execute_db_operation') as mock_db:
+        with patch('education_system.university_system.infrastructure.email.reports.execute_db_operation') as mock_db:
             mock_db.side_effect = Exception("Database error")
 
             activities = reports.get_recent_communication_activity(mock_dashboard)
@@ -704,10 +704,10 @@ class TestGetSystemHealthInfo:
             mock_cursor.fetchone.return_value = (1,)
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.email_queue', mock_email_queue), \
-             patch('university_system.infrastructure.email.reports.worker_threads', mock_worker_threads), \
-             patch('university_system.infrastructure.email.reports.config') as mock_config, \
-             patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.reports.email_queue', mock_email_queue), \
+             patch('education_system.university_system.infrastructure.email.reports.worker_threads', mock_worker_threads), \
+             patch('education_system.university_system.infrastructure.email.reports.config') as mock_config, \
+             patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
 
             mock_config.get.return_value = False  # Not database-only mode
 
@@ -727,8 +727,8 @@ class TestGetSystemHealthInfo:
             mock_cursor.fetchone.return_value = (1,)
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.config') as mock_config, \
-             patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.reports.config') as mock_config, \
+             patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
 
             mock_config.get.return_value = True  # Database-only mode
 
@@ -749,10 +749,10 @@ class TestGetSystemHealthInfo:
             mock_cursor.fetchone.return_value = (1,)
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.email_queue', mock_email_queue), \
-             patch('university_system.infrastructure.email.reports.worker_threads', mock_worker_threads), \
-             patch('university_system.infrastructure.email.reports.config') as mock_config, \
-             patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.reports.email_queue', mock_email_queue), \
+             patch('education_system.university_system.infrastructure.email.reports.worker_threads', mock_worker_threads), \
+             patch('education_system.university_system.infrastructure.email.reports.config') as mock_config, \
+             patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
 
             mock_config.get.return_value = False
 
@@ -762,8 +762,8 @@ class TestGetSystemHealthInfo:
 
     def test_get_system_health_info_database_error(self):
         """Test getting system health with database error"""
-        with patch('university_system.infrastructure.email.reports.config') as mock_config, \
-             patch('university_system.infrastructure.email.reports.execute_db_operation') as mock_db:
+        with patch('education_system.university_system.infrastructure.email.reports.config') as mock_config, \
+             patch('education_system.university_system.infrastructure.email.reports.execute_db_operation') as mock_db:
 
             mock_config.get.return_value = True
             mock_db.return_value = False  # Database test fails
@@ -774,7 +774,7 @@ class TestGetSystemHealthInfo:
 
     def test_get_system_health_info_exception_handling(self):
         """Test getting system health with exception"""
-        with patch('university_system.infrastructure.email.reports.config') as mock_config:
+        with patch('education_system.university_system.infrastructure.email.reports.config') as mock_config:
             mock_config.get.side_effect = Exception("Config error")
 
             health = reports.get_system_health_info()
@@ -789,9 +789,9 @@ class TestGetSystemHealthInfo:
             mock_cursor.fetchone.return_value = (1,)
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.config') as mock_config, \
-             patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation), \
-             patch('university_system.infrastructure.email.reports.datetime') as mock_datetime:
+        with patch('education_system.university_system.infrastructure.email.reports.config') as mock_config, \
+             patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation), \
+             patch('education_system.university_system.infrastructure.email.reports.datetime') as mock_datetime:
 
             mock_config.get.return_value = True
             mock_now = datetime(2024, 1, 15, 10, 30, 45)
@@ -809,8 +809,8 @@ class TestGetSystemHealthInfo:
             mock_cursor.fetchone.return_value = (1,)
             return func(mock_cursor)
 
-        with patch('university_system.infrastructure.email.reports.config') as mock_config, \
-             patch('university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
+        with patch('education_system.university_system.infrastructure.email.reports.config') as mock_config, \
+             patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
 
             mock_config.get.return_value = True
 

@@ -2,7 +2,7 @@
 Configuration management tab for the Activity Logger GUI.
 """
 
-from .._imports import (
+from education_system.university_system.modules.shared.gui.simple_activity_logger_gui._imports import (
     tk, ttk, messagebox, filedialog,
     json, os,
     Dict, Any,
@@ -11,9 +11,9 @@ from .._imports import (
 )
 
 if LOGGER_AVAILABLE:
-    from .._imports import create_default_config
+    from education_system.university_system.modules.shared.gui.simple_activity_logger_gui._imports import create_default_config
 
-from ..theme import LoggerGUITheme
+from education_system.university_system.modules.shared.gui.simple_activity_logger_gui.theme import LoggerGUITheme
 
 
 class ConfigurationTab(ttk.Frame):

@@ -329,8 +329,10 @@ class LoginManager:
                 # Set current user in session manager
                 user_dict = {
                     'id': user_id,
+                    'user_id': user_id,
                     'account_id': account_id,
                     'username': username,
+                    'display_name': username,
                     'role': role,
                     'permissions': permissions,
                     'password_reset_required': password_reset_required,

@@ -51,23 +51,44 @@ env/
 .DS_Store
 Thumbs.db
 
-# mypy/coverage
+# mypy/coverage/pytest
 .mypy_cache/
 .coverage
 htmlcov/
 .tox/
+**/.pytest_cache/
 
 # Claude
 CLAUDE.md
 .claude.json.backup*
+**/.claude/
 
-# Database files and backups
+# Log files (runtime-generated)
+# NOTE: Log directories are created by ensure_directories(); files are gitignored
+*.log
+
+# Database files and backups (runtime-generated, not committed)
+# NOTE: DBs are created on first launch via seed_default_data() / initialise_database()
 *.db
+!education_system/shared/data/db_files/.gitkeep
 university_system/data/db_files/
 university_system/backups/
 university_system/data/backups/
 university_system/logs/*.db
 
+# Export outputs
+university_system/exports/
+
 # Encryption keys
 *.key
 university_system/data/health_encryption.key
+university_system/data/db_files/.encryption_master_key
+
+# SMTP / email credentials (passwords must come from env vars)
+**/email_config.json
+
+# JWT secret files (persisted at first startup)
+**/.jwt_secret
+
+# Nginx TLS certificates
+nginx/certs/

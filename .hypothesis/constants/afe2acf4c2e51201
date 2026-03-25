@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/helpdesk/admin/templates.py
+# hypothesis_version: 6.151.9
+
+['\nEnter your choice: ', '\nTicket Templates:', '%Y-%m-%d %H:%M:%S', ', ', '1', '1. View templates', '2', '3', '3. Edit template', '4', '=', 'Category: ', 'Description: ', 'Name is required.', 'No', 'No changes made.', 'No templates found.', 'Template name: ', 'Template not found.', 'Yes', 'activated', 'deactivated', 'description = ?', 'done', 'id', 'name = ?']

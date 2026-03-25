@@ -1,5 +1,5 @@
 """GUI utility mixin for the Student Analytics GUI."""
-from ._imports import (
+from education_system.university_system.modules.shared.gui.student_analytics_gui._imports import (
     tk, ttk, messagebox, filedialog, scrolledtext,
     plt, sys, queue, _t, CONFIG,
 )
@@ -127,20 +127,20 @@ class GUIUtilsMixin:
 
     def show_filters_dialog(self):
         """Show advanced filters dialog"""
-        from .dialogs import FilterDialog
+        from education_system.university_system.modules.shared.gui.student_analytics_gui.dialogs import FilterDialog
         dialog = FilterDialog(self.root, self.analytics)
         self.root.wait_window(dialog.dialog)
         self.update_filter_status()
 
     def show_custom_report_dialog(self):
         """Show custom report builder dialog"""
-        from .dialogs import CustomReportDialog
+        from education_system.university_system.modules.shared.gui.student_analytics_gui.dialogs import CustomReportDialog
         dialog = CustomReportDialog(self.root, self.analytics)
         self.root.wait_window(dialog.dialog)
 
     def show_config_dialog(self):
         """Show configuration dialog"""
-        from .dialogs import ConfigDialog
+        from education_system.university_system.modules.shared.gui.student_analytics_gui.dialogs import ConfigDialog
         dialog = ConfigDialog(self.root, self.analytics)
         self.root.wait_window(dialog.dialog)
 

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/services/surveillance.py
+# hypothesis_version: 6.151.9
+
+[100, 365, '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '+', '-', '1', '2', '3', '4', '5', '6', '7', '=', 'COVID-19', 'Hepatitis A', 'Hepatitis B', 'High', 'Influenza', 'Measles', 'Meningitis', 'Moderate', 'Mumps', 'Norovirus', 'Rubella', 'Strep Throat', 'Tuberculosis', '_', 'case_definition', 'cases', 'control_measures', 'date', 'disease', 'disease_surveillance', 'done', 'duration', 'id', 'investigate_outbreak', 'investigation_date', 'investigator', 'low', 'name', 'outbreak', 'period', 'report_disease_case', 'risk', 'suspected_source', 'type', 'under_investigation', 'username', 'y']

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/charity_shop_cli/archive.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d', 'address', 'archive_items', 'charity_shop_item', 'charity_shop_items', 'id', 'manager', 'name', 'phone', 'transfer']

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/email_service/notifications/alumni.py
+# hypothesis_version: 6.151.9
+
+['%Y-%m-%d %H:%M:%S', 'alumni_welcome', 'amount', 'donation_date', 'donation_receipt', 'end_text', 'error', 'event_date', 'event_location', 'event_name', 'failed', 'focus_area', 'full_name', 'info', 'mentee_name', 'mentor_name', 'purpose_text', 'sent', 'start_date']

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/management/movie_management.py
+# hypothesis_version: 6.151.9
+
+[200, '#333333', '#e74c3c', '#ecf0f1', '#ffffff', '.', '500x500', 'Add Movie', 'Card.TFrame', 'Danger.TButton', 'Description:', 'Director', 'Director:', 'Duration', 'Duration (min):*', 'Edit Movie', 'Genre', 'Genre:', 'Helvetica', 'ID', 'Main.TFrame', 'Movie saved!', 'Rating', 'Rating:', 'Secondary.TButton', 'Status', 'Subtitle.TLabel', 'Success.TButton', 'Title', 'Title:*', '_', 'bold', 'both', 'cinema.buttons.save', 'cinema.movies.title', 'description', 'director', 'duration', 'end', 'genre', 'headings', 'left', 'movie_tree', 'rating', 'right', 'title', 'values', 'vertical', 'w', 'x', 'y']

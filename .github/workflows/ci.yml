@@ -25,7 +25,7 @@ jobs:
           pip install ruff
 
       - name: Lint with ruff
-        run: ruff check university_system/
+        run: ruff check education_system/
 
   test:
     name: Test (Python ${{ matrix.python-version }})
@@ -46,11 +46,43 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install pytest pytest-cov
+          pip install pytest pytest-cov pytest-timeout
 
-      - name: Run tests
+      - name: Run tests with coverage
         run: |
-          pytest university_system/tests/ -v --cov=university_system --cov-report=term-missing
+          pytest \
+            education_system/shared/tests/ \
+            education_system/university_system/tests/ \
+            education_system/college_system/tests/ \
+            education_system/secondary_school/tests/ \
+            education_system/primary_school/tests/ \
+            -v \
+            --cov=education_system \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml \
+            --cov-report=html:htmlcov \
+            --cov-fail-under=30 \
+            -m "not slow and not gui" \
+            --timeout=60
+
+      - name: Run GUI tests (mocked tkinter)
+        run: |
+          pytest \
+            education_system/college_system/tests/gui/ \
+            education_system/secondary_school/tests/gui/ \
+            education_system/primary_school/tests/gui/ \
+            -v \
+            -m gui \
+            --timeout=60
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-py${{ matrix.python-version }}
+          path: |
+            coverage.xml
+            htmlcov/
 
   security:
     name: Security Scan
@@ -70,7 +102,7 @@ jobs:
           pip install bandit[toml]
 
       - name: Run bandit security linter
-        run: bandit -r university_system/ -c pyproject.toml -lll
+        run: bandit -r education_system/ -c pyproject.toml -lll
 
       - name: Check dependencies for known vulnerabilities
         run: |

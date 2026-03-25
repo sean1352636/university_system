@@ -18,8 +18,8 @@ except ImportError:
     def _t(key, default=None):
         return default if default else key.split('.')[-1].replace('_', ' ').title()
 
-from ..database import DB_FILE, generate_booking_ref
-from ..constants import SNACKS_MENU
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import DB_FILE, generate_booking_ref
+from education_system.university_system.modules.domain.cinema.gui.cinema_gui.constants import SNACKS_MENU
 
 # Finance integration
 try:
@@ -111,16 +111,18 @@ def show_payment_page(self, screening, movie):
             return
 
         conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        cursor.execute('''
-            SELECT * FROM promo_codes
-            WHERE code = ? AND status = 'active'
-            AND (valid_from IS NULL OR valid_from <= date('now'))
-            AND (valid_until IS NULL OR valid_until >= date('now'))
-            AND (max_uses IS NULL OR times_used < max_uses)
-        ''', (code,))
-        promo = cursor.fetchone()
-        conn.close()
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT * FROM promo_codes
+                WHERE code = ? AND status = 'active'
+                AND (valid_from IS NULL OR valid_from <= date('now'))
+                AND (valid_until IS NULL OR valid_until >= date('now'))
+                AND (max_uses IS NULL OR times_used < max_uses)
+            ''', (code,))
+            promo = cursor.fetchone()
+        finally:
+            conn.close()
 
         if not promo:
             self.promo_status_label.config(text=_t("cinema.booking.invalid_promo"), fg="#dc3545")
@@ -459,24 +461,26 @@ def show_payment_page(self, screening, movie):
 def print_ticket(self, booking_ref):
     """Generate and display printable ticket."""
     conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute('''
-        SELECT b.*, m.title, s.show_time, s.screen_number
-        FROM bookings b
-        JOIN screenings s ON b.screening_id = s.id
-        JOIN movies m ON s.movie_id = m.id
-        WHERE b.booking_ref = ?
-    ''', (booking_ref,))
-    booking = cursor.fetchone()
+    try:
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT b.*, m.title, s.show_time, s.screen_number
+            FROM bookings b
+            JOIN screenings s ON b.screening_id = s.id
+            JOIN movies m ON s.movie_id = m.id
+            WHERE b.booking_ref = ?
+        ''', (booking_ref,))
+        booking = cursor.fetchone()
 
-    cursor.execute('''
-        SELECT se.row, se.seat_number, bs.ticket_type
-        FROM booked_seats bs
-        JOIN seats se ON bs.seat_id = se.id
-        WHERE bs.booking_id = ?
-    ''', (booking[0],))
-    seats = cursor.fetchall()
-    conn.close()
+        cursor.execute('''
+            SELECT se.row, se.seat_number, bs.ticket_type
+            FROM booked_seats bs
+            JOIN seats se ON bs.seat_id = se.id
+            WHERE bs.booking_id = ?
+        ''', (booking[0],))
+        seats = cursor.fetchall()
+    finally:
+        conn.close()
 
     if not booking:
         messagebox.showerror(_t("cinema.common.error"), _t("cinema.messages.errors.booking_not_found"))

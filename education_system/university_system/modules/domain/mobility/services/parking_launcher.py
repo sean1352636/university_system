@@ -77,7 +77,7 @@ def launch_gui():
         # under ``refactored.services`` rather than ``utils.services``.  If a
         # GUI implementation exists it should be placed alongside
         # ``parking_management.py`` as ``parking_management_gui.py``.
-        from education_system.university_system.modules.domain.mobility.services.parking_management_gui import ParkingManagementGUI
+        from education_system.university_system.modules.domain.mobility.gui.parking_management_gui import ParkingManagementGUI
         
         print(get_text("mobility.parking.starting_gui"))
         

@@ -73,15 +73,7 @@ CREATE TABLE IF NOT EXISTS carrental_rentals (
     FOREIGN KEY (vehicle_id) REFERENCES carrental_vehicles (vehicle_id)
 );
 
-CREATE TABLE IF NOT EXISTS carrental_transactions (
-    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    rental_id INTEGER NOT NULL,
-    amount REAL NOT NULL,
-    payment_method TEXT,
-    transaction_date TEXT NOT NULL,
-    reference_number TEXT,
-    FOREIGN KEY (rental_id) REFERENCES carrental_rentals (rental_id)
-);
+-- Car rental transactions now use unified 'transactions' table with source_type='car_rental'
 """
 
 def init_carrental_database():

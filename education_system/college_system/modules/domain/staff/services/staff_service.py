@@ -9,6 +9,7 @@ from education_system.college_system.infrastructure.validation.validators import
     validate_email, validate_non_empty,
 )
 
+from education_system.college_system.core.sql_safety import validate_identifier, escape_like
 import logging
 
 logger = logging.getLogger(__name__)
@@ -101,7 +102,8 @@ class StaffService:
             params.append(status)
         if search:
             sql += " AND (first_name LIKE ? OR last_name LIKE ? OR staff_id LIKE ?)"
-            term = f"%{search}%"
+            escaped = escape_like(search)
+            term = f"%{escaped}%"
             params.extend([term, term, term])
 
         sql += " ORDER BY staff_id LIMIT ? OFFSET ?"
@@ -128,7 +130,7 @@ class StaffService:
 
         updates["updated_at"] = datetime.utcnow().isoformat()
 
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [staff_pk]
 
         conn = self._conn()

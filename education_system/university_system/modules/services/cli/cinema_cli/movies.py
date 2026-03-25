@@ -4,8 +4,8 @@ import logging
 
 from education_system.university_system.infrastructure.database.db import get_connection
 
-from .utils import print_subheader
-from .screenings import view_screenings_for_movie
+from education_system.university_system.modules.services.cli.cinema_cli.utils import print_subheader
+from education_system.university_system.modules.services.cli.cinema_cli.screenings import view_screenings_for_movie
 
 logger = logging.getLogger(__name__)
 

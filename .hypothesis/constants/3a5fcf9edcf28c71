@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/cli/cli_main.py
+# hypothesis_version: 6.151.9
+
+['User', '__main__', 'auth', 'display_name', 'email', 'id', 'initialize_system', 'main', 'permissions', 'role', 'student', 'student_id', 'system_key', 'systems', 'university', 'user_id', 'username']

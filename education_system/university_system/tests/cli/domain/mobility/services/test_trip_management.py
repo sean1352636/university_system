@@ -37,7 +37,7 @@ class TestTripManagementCore(unittest.TestCase):
         # Should not raise an error
         self.assertTrue(callable(set_auth))
 
-    @patch('university_system.modules.domain.mobility.services.trip_management.transaction')
+    @patch('education_system.university_system.modules.domain.mobility.services.trip_management.transaction')
     def test_init_trip_db(self, mock_transaction):
         """Test database initialization"""
         from education_system.university_system.modules.domain.mobility.services.trip_management import init_trip_db
@@ -59,8 +59,8 @@ class TestTripCreation(unittest.TestCase):
         'City Tour', 'Tour of the city', '2024-06-01', '2024-06-05',
         'City Center', '50', '200.00'
     ])
-    @patch('university_system.modules.domain.mobility.services.trip_management.get_db_connection')
-    @patch('university_system.modules.domain.mobility.services.trip_management.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.services.trip_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.mobility.services.trip_management.log_activity')
     def test_create_trip(self, mock_log, mock_conn, mock_input):
         """Test creating a trip"""
         from education_system.university_system.modules.domain.mobility.services.trip_management import create_trip
@@ -79,7 +79,7 @@ class TestTripCreation(unittest.TestCase):
 
         mock_log.assert_called_once()
 
-    @patch('university_system.modules.domain.mobility.services.trip_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.mobility.services.trip_management.get_db_connection')
     def test_view_trips(self, mock_conn):
         """Test viewing trips"""
         from education_system.university_system.modules.domain.mobility.services.trip_management import view_trips
@@ -101,7 +101,7 @@ class TestTripCreation(unittest.TestCase):
         mock_cursor.execute.assert_called_once()
 
     @patch('builtins.input', return_value='123')
-    @patch('university_system.modules.domain.mobility.services.trip_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.mobility.services.trip_management.get_db_connection')
     def test_view_trip_details(self, mock_conn, mock_input):
         """Test viewing trip details"""
         from education_system.university_system.modules.domain.mobility.services.trip_management import view_trip_details
@@ -122,8 +122,8 @@ class TestTripCreation(unittest.TestCase):
             view_trip_details(123)
 
     @patch('builtins.input', side_effect=['123', '2', '2024-06-10'])
-    @patch('university_system.modules.domain.mobility.services.trip_management.get_db_connection')
-    @patch('university_system.modules.domain.mobility.services.trip_management.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.services.trip_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.mobility.services.trip_management.log_activity')
     def test_update_trip(self, mock_log, mock_conn, mock_input):
         """Test updating a trip"""
         from education_system.university_system.modules.domain.mobility.services.trip_management import update_trip
@@ -144,8 +144,8 @@ class TestTripCreation(unittest.TestCase):
             update_trip()
 
     @patch('builtins.input', side_effect=['123', 'yes'])
-    @patch('university_system.modules.domain.mobility.services.trip_management.get_db_connection')
-    @patch('university_system.modules.domain.mobility.services.trip_management.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.services.trip_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.mobility.services.trip_management.log_activity')
     def test_delete_trip(self, mock_log, mock_conn, mock_input):
         """Test deleting a trip"""
         from education_system.university_system.modules.domain.mobility.services.trip_management import delete_trip
@@ -169,8 +169,8 @@ class TestTripRegistration(unittest.TestCase):
     """Test trip registration operations"""
 
     @patch('builtins.input', side_effect=['123', 'student1', 'yes'])
-    @patch('university_system.modules.domain.mobility.services.trip_management.get_db_connection')
-    @patch('university_system.modules.domain.mobility.services.trip_management.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.services.trip_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.mobility.services.trip_management.log_activity')
     def test_register_for_trip(self, mock_log, mock_conn, mock_input):
         """Test registering for a trip"""
         from education_system.university_system.modules.domain.mobility.services.trip_management import register_for_trip
@@ -195,7 +195,7 @@ class TestTripRegistration(unittest.TestCase):
         mock_log.assert_called_once()
 
     @patch('builtins.input', return_value='student1')
-    @patch('university_system.modules.domain.mobility.services.trip_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.mobility.services.trip_management.get_db_connection')
     def test_view_my_trip_registrations(self, mock_conn, mock_input):
         """Test viewing user's trip registrations"""
         from education_system.university_system.modules.domain.mobility.services.trip_management import (
@@ -221,8 +221,8 @@ class TestTripRegistration(unittest.TestCase):
 class TestParticipantManagement(unittest.TestCase):
     """Test participant management operations"""
 
-    @patch('builtins.input', side_effect=['123', '1', '1', 'student1', '1'])
-    @patch('university_system.modules.domain.mobility.services.trip_management.get_db_connection')
+    @patch('builtins.input', side_effect=['123', '1', '1', '1', '0'])
+    @patch('education_system.university_system.modules.domain.mobility.services.trip_management.get_db_connection')
     def test_manage_trip_participants(self, mock_conn, mock_input):
         """Test managing trip participants"""
         from education_system.university_system.modules.domain.mobility.services.trip_management import (
@@ -248,8 +248,8 @@ class TestParticipantManagement(unittest.TestCase):
 class TestPaymentManagement(unittest.TestCase):
     """Test payment management operations"""
 
-    @patch('university_system.modules.domain.mobility.services.trip_management.get_db_connection')
-    @patch('university_system.modules.domain.mobility.services.trip_management.log_activity')
+    @patch('education_system.university_system.modules.domain.mobility.services.trip_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.mobility.services.trip_management.log_activity')
     def test_update_payment_status(self, mock_log, mock_conn):
         """Test updating payment status"""
         from education_system.university_system.modules.domain.mobility.services.trip_management import (
@@ -271,7 +271,7 @@ class TestPaymentManagement(unittest.TestCase):
 class TestCalendarIntegration(unittest.TestCase):
     """Test calendar integration"""
 
-    @patch('university_system.modules.domain.mobility.services.trip_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.mobility.services.trip_management.get_db_connection')
     def test_view_trips_with_calendar(self, mock_conn):
         """Test viewing trips with calendar"""
         from education_system.university_system.modules.domain.mobility.services.trip_management import (
@@ -309,15 +309,30 @@ class TestReports(unittest.TestCase):
 class TestMenuFunction(unittest.TestCase):
     """Test menu function"""
 
-    @patch('builtins.input', return_value='10')
-    def test_display_trip_management_menu_exit(self, mock_input):
+    def test_display_trip_management_menu_exit(self):
         """Test exiting trip management menu"""
         from education_system.university_system.modules.domain.mobility.services.trip_management import (
-            display_trip_management_menu
+            display_trip_management_menu, _common
         )
+        from education_system.university_system.modules.domain.mobility.services.trip_management import menu as _menu_mod
 
-        with patch('sys.stdout', new=io.StringIO()):
-            display_trip_management_menu()
+        # Set up auth so all permission checks pass, giving a known menu size
+        mock_auth = Mock()
+        mock_auth.current_user = {'username': 'test', 'role': 'admin'}
+        mock_auth.check_permission.return_value = True
+
+        original_auth = _common.auth
+        original_cal = getattr(_menu_mod, 'CALENDAR_AVAILABLE', False)
+        try:
+            _common.auth = mock_auth
+            _menu_mod.CALENDAR_AVAILABLE = False
+            # 8 permission-based options + exit at 9
+            with patch('builtins.input', return_value='9'):
+                with patch('sys.stdout', new=io.StringIO()):
+                    display_trip_management_menu()
+        finally:
+            _common.auth = original_auth
+            _menu_mod.CALENDAR_AVAILABLE = original_cal
 
 
 class TestDatabaseConnection(unittest.TestCase):
@@ -330,7 +345,7 @@ class TestDatabaseConnection(unittest.TestCase):
         self.assertTrue(hasattr(trip_management, 'get_db_connection'))
         self.assertTrue(callable(trip_management.get_db_connection))
 
-    @patch('university_system.modules.domain.mobility.services.trip_management.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.services.trip_management.get_connection')
     def test_get_db_connection(self, mock_get_connection):
         """Test get_db_connection function"""
         from education_system.university_system.modules.domain.mobility.services.trip_management import (
@@ -345,7 +360,7 @@ class TestDatabaseConnection(unittest.TestCase):
         self.assertEqual(result, mock_conn)
         mock_get_connection.assert_called_once()
 
-    @patch('university_system.modules.domain.mobility.services.trip_management.get_connection')
+    @patch('education_system.university_system.modules.domain.mobility.services.trip_management.get_connection')
     def test_safe_db_operation(self, mock_get_connection):
         """Test safe_db_operation wrapper"""
         from education_system.university_system.modules.domain.mobility.services.trip_management import (
@@ -379,17 +394,23 @@ class TestPermissions(unittest.TestCase):
 class TestEdgeCases(unittest.TestCase):
     """Test edge cases and error handling"""
 
-    @patch('builtins.input', return_value='')
-    def test_create_trip_empty_name(self, mock_input):
-        """Test creating trip with empty name"""
-        from education_system.university_system.modules.domain.mobility.services.trip_management import create_trip
+    def test_create_trip_empty_name(self):
+        """Test creating trip with no auth returns gracefully"""
+        from education_system.university_system.modules.domain.mobility.services.trip_management import (
+            create_trip, _common
+        )
 
-        with patch('sys.stdout', new=io.StringIO()) as output:
-            create_trip()
-            # Should handle empty input gracefully
+        original_auth = _common.auth
+        try:
+            _common.auth = None
+            with patch('sys.stdout', new=io.StringIO()):
+                result = create_trip()
+                self.assertFalse(result)
+        finally:
+            _common.auth = original_auth
 
     @patch('builtins.input', return_value='999')
-    @patch('university_system.modules.domain.mobility.services.trip_management.get_db_connection')
+    @patch('education_system.university_system.modules.domain.mobility.services.trip_management.get_db_connection')
     def test_view_trip_details_not_found(self, mock_conn, mock_input):
         """Test viewing details of non-existent trip"""
         from education_system.university_system.modules.domain.mobility.services.trip_management import view_trip_details

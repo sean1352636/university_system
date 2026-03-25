@@ -530,9 +530,9 @@ class StaffProfileGUI:
                 cursor.execute('''
                     SELECT document_id, document_type, document_name,
                            issue_date, expiry_date, status
-                    FROM staff_documents
-                    WHERE user_id = ?
-                    ORDER BY created_at DESC
+                    FROM documents
+                    WHERE source_type = 'staff' AND owner_id = ? AND owner_type = 'staff'
+                    ORDER BY upload_date DESC
                 ''', (user_id,))
 
                 today = datetime.now().date()
@@ -605,9 +605,10 @@ class StaffProfileGUI:
             try:
                 with transaction() as conn:
                     conn.execute('''
-                        INSERT INTO staff_documents (user_id, document_type, document_name,
-                                                     file_path, issue_date, expiry_date, uploaded_by)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO documents (source_type, owner_id, owner_type,
+                                               document_type, document_name,
+                                               file_path, issue_date, expiry_date, uploaded_by)
+                        VALUES ('staff', ?, 'staff', ?, ?, ?, ?, ?, ?)
                     ''', (user_id, type_var.get(), name_var.get(), file_path_var.get(),
                           issue_var.get() or None, expiry_var.get() or None, user_id))
                     conn.commit()
@@ -637,7 +638,7 @@ class StaffProfileGUI:
         try:
             with get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute('SELECT file_path FROM staff_documents WHERE document_id = ?', (doc_id,))
+                cursor.execute("SELECT file_path FROM documents WHERE document_id = ? AND source_type = 'staff'", (doc_id,))
                 row = cursor.fetchone()
                 if row and row[0]:
                     import os
@@ -674,7 +675,7 @@ class StaffProfileGUI:
 
         try:
             with transaction() as conn:
-                conn.execute('DELETE FROM staff_documents WHERE document_id = ?', (doc_id,))
+                conn.execute("DELETE FROM documents WHERE document_id = ? AND source_type = 'staff'", (doc_id,))
                 conn.commit()
 
             user_id = self.current_user.get('id') or self.current_user.get('username')

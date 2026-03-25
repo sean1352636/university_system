@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, Toplevel
 from tkinter.scrolledtext import ScrolledText
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
 init_i18n()
@@ -99,7 +100,6 @@ except ImportError:
 
 # Import academic system launchers
 try:
-    from education_system.university_system.modules.domain.academics.services.lms.lms_core import launch_lms_gui
     from education_system.university_system.modules.domain.academics.services.degree_audit.degree_audit_core import launch_degree_audit_gui
     from education_system.university_system.modules.domain.academics.services.evaluation.course_evaluation_core import launch_course_evaluation_gui
     ACADEMIC_SYSTEMS_AVAILABLE = True
@@ -317,7 +317,7 @@ def filter_courses(self):
         
         if search_text:
             query += " AND (course_code LIKE ? OR course_name LIKE ? OR description LIKE ?)"
-            search_param = f"%{search_text}%"
+            search_param = f"%{escape_like(search_text)}%"
             params.extend([search_param, search_param, search_param])
         
         if dept_filter and dept_filter != "All":

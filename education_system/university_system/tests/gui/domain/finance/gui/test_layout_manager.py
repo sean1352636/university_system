@@ -89,9 +89,9 @@ class TestStyleSetup:
 class TestMainInterface:
     """Test main interface creation"""
 
-    @patch('university_system.modules.domain.finance.gui.finance.layout.LayoutManager.setup_navigation')
-    @patch('university_system.modules.domain.finance.gui.finance.layout.LayoutManager.show_tab')
-    @patch('university_system.modules.domain.finance.gui.finance.layout.LayoutManager.create_status_bar')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.layout.LayoutManager.setup_navigation')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.layout.LayoutManager.show_tab')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.layout.LayoutManager.create_status_bar')
     def test_create_main_interface(self, mock_status, mock_show_tab, mock_nav, layout_manager):
         """Test main interface creation"""
         # Mock all the create_*_tab methods

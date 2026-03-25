@@ -1,10 +1,10 @@
 # Auto‑generated init file for the email GUI package
 
-from .email_manager_main import EmailManagerGUI, main, run_gui_mode, display_communication_dashboard_gui, integrate_with_cli
-from .utils import ThemeManager, ConfigManager, SingletonApp, handle_gui_error
+from education_system.university_system.modules.shared.gui.email.email_gui.email_manager_main import EmailManagerGUI, main, run_gui_mode, display_communication_dashboard_gui, integrate_with_cli
+from education_system.university_system.modules.shared.gui.email.email_gui.utils import ThemeManager, ConfigManager, SingletonApp, handle_gui_error
 
 # Email dialogs
-from .email_dialogs import (
+from education_system.university_system.modules.shared.gui.email.email_gui.email_dialogs import (
     ComposeEmailDialog,
     BulkEmailDialog,
     ScheduleEmailDialog,
@@ -17,7 +17,7 @@ from .email_dialogs import (
 )
 
 # Chat dialogs
-from .chat_dialogs import (
+from education_system.university_system.modules.shared.gui.email.email_gui.chat_dialogs import (
     ComposeMessageDialog,
     ReplyMessageDialog,
     CreateAnnouncementDialog,
@@ -29,7 +29,7 @@ from .chat_dialogs import (
 )
 
 # Utility dialogs
-from .utility_dialogs import (
+from education_system.university_system.modules.shared.gui.email.email_gui.utility_dialogs import (
     SystemHealthDialog,
     DatabaseCleanupDialog,
     NotificationPreferencesDialog,
@@ -43,7 +43,7 @@ from .utility_dialogs import (
 )
 
 # Academic notification dialogs
-from .notification_dialogs_academic import (
+from education_system.university_system.modules.shared.gui.email.email_gui.notification_dialogs_academic import (
     RegistrationConfirmationDialog,
     AssignmentNotificationDialog,
     ModuleGradeNotificationDialog,
@@ -55,14 +55,14 @@ from .notification_dialogs_academic import (
 )
 
 # Library notification dialogs
-from .notification_dialogs_library import (
+from education_system.university_system.modules.shared.gui.email.email_gui.notification_dialogs_library import (
     BookCheckoutConfirmationDialog,
     BookReturnReminderDialog,
     OverdueNotificationDialog,
 )
 
 # Support notification dialogs
-from .notification_dialogs_support import (
+from education_system.university_system.modules.shared.gui.email.email_gui.notification_dialogs_support import (
     TicketNotificationDialog,
     ReplyNotificationDialog,
     SLAAlertDialog,
@@ -71,7 +71,7 @@ from .notification_dialogs_support import (
 )
 
 # Other notification dialogs
-from .notification_dialogs_other import (
+from education_system.university_system.modules.shared.gui.email.email_gui.notification_dialogs_other import (
     AppointmentConfirmationDialog,
     HealthNotificationDialog,
     InternshipNotificationDialog,

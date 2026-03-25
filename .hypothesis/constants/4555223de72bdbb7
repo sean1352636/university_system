@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/utils/ai/ai_detector/detector/batch_operations_mixin.py
+# hypothesis_version: 6.151.9
+
+[0.5, 0.7, 0.9, '.', '.docx', '.md', '.pdf', '.txt', '02:00', 'Job not found', 'LMS Submission', '_', 'ai_score', 'auto', 'blackboard', 'cancelled', 'cancelled_at', 'canvas', 'completed', 'content', 'count', 'critical', 'docx', 'error', 'failed', 'file', 'files_analyzed', 'files_failed', 'flagged_students', 'generic', 'high', 'id', 'ignore', 'job_id', 'jobs', 'low', 'medium', 'moodle', 'parse_errors', 'pdf', 'previous_status', 'queued', 'r', 'rb', 'report_path', 'results', 'retried', 'risk_level', 'running', 'scheduled_time', 'status', 'still_failed', 'student_id', 'submissions_analyzed', 'submissions_found', 'success', 'successful', 'summary', 'text_content', 'title', 'total_time', 'txt', 'unknown', 'utf-8', 'w']

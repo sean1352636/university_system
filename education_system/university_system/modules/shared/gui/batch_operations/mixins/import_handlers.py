@@ -29,11 +29,21 @@ class ImportHandlersMixin:
 
             # Read and validate file
             with open(file_path, 'r', newline='', encoding='utf-8-sig') as csvfile:
-                sample = csvfile.read(1024)
+                sample = csvfile.read(4096)
                 csvfile.seek(0)
 
-                sniffer = csv.Sniffer()
-                delimiter = sniffer.sniff(sample).delimiter
+                # Detect delimiter with fallback
+                try:
+                    sniffer = csv.Sniffer()
+                    delimiter = sniffer.sniff(sample).delimiter
+                except csv.Error:
+                    # Sniffer failed — try common delimiters by frequency in sample
+                    for candidate in [',', '\t', ';', '|']:
+                        if candidate in sample:
+                            delimiter = candidate
+                            break
+                    else:
+                        delimiter = ','  # default to comma
 
                 reader = csv.DictReader(csvfile, delimiter=delimiter)
                 reader.fieldnames = [header.strip().lower().replace(' ', '_') for header in reader.fieldnames]
@@ -93,7 +103,16 @@ class ImportHandlersMixin:
             backup_path = self.create_database_backup(auto=True)
 
             # Read Excel file
-            df = pd.read_excel(file_path, sheet_name=sheet_name)
+            data = pd.read_excel(file_path, sheet_name=sheet_name)
+
+            # pd.read_excel returns a dict of DataFrames when sheet_name is None
+            if isinstance(data, dict):
+                # Use the first sheet
+                first_key = next(iter(data))
+                df = data[first_key]
+            else:
+                df = data
+
             df.columns = [col.strip().lower().replace(' ', '_') for col in df.columns]
 
             records = df.to_dict('records')
@@ -153,6 +172,9 @@ class ImportHandlersMixin:
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
+            # Disable FK checks so INSERT OR REPLACE doesn't fail
+            # when updating existing students that have module records
+            cursor.execute("PRAGMA foreign_keys = OFF")
 
             # Get module information
             general_modules = {
@@ -178,32 +200,37 @@ class ImportHandlersMixin:
 
             for i, record in enumerate(records):
                 try:
-                    # Generate student ID
-                    student_id = str(int(datetime.datetime.now().timestamp() * 1000000 + i) % 10000000).zfill(7)
+                    # Use student_id from file, or generate one
+                    student_id = record.get('student_id') or str(int(datetime.datetime.now().timestamp() * 1000000 + i) % 10000000).zfill(7)
 
-                    # Create email if not provided
-                    email_address = record.get('email_address') or f"C{student_id}@tees.ac.uk"
+                    # Create email if not provided (check both column name variants)
+                    email_address = record.get('email_address') or record.get('email') or f"C{student_id}@tees.ac.uk"
 
-                    # Set title based on gender
-                    gender = record['gender'].lower()
-                    title = {'male': 'Mr', 'female': 'Miss'}.get(gender, '?')
+                    # Gender and title — optional
+                    gender = (record.get('gender') or '').lower() or None
+                    title = {'male': 'Mr', 'female': 'Miss'}.get(gender or '', '')
 
-                    # Calculate age
-                    dob_value = record.get('dob')
-                    if not dob_value or str(dob_value).strip().lower() in ('none', ''):
-                        result.failed_imports += 1
-                        result.errors.append({'row': i + 2, 'error': 'Missing date of birth'})
-                        continue
-                    dob = datetime.datetime.strptime(str(dob_value).strip(), "%Y-%m-%d")
-                    now = datetime.datetime.now()
-                    age = now.year - dob.year - ((now.month, now.day) < (dob.month, dob.day))
+                    # DOB and age — optional
+                    dob_value = record.get('dob') or record.get('date_of_birth')
+                    dob_str = None
+                    age = None
+                    if dob_value and str(dob_value).strip().lower() not in ('none', '', 'nat'):
+                        try:
+                            dob = datetime.datetime.strptime(str(dob_value).strip()[:10], "%Y-%m-%d")
+                            now = datetime.datetime.now()
+                            age = now.year - dob.year - ((now.month, now.day) < (dob.month, dob.day))
+                            dob_str = str(dob_value).strip()[:10]
+                        except ValueError:
+                            pass  # unparseable date — leave as None
 
-                    # Get current datetime
-                    registration_datetime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    # Registration date — use file value or now
+                    registration_datetime = record.get('registration_date') or record.get('registration_datetime') or datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
                     # Insert student
                     cursor.execute('''
-                    INSERT INTO students VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT OR REPLACE INTO students
+                    (student_id, email_address, title, first_name, middle_name, last_name, gender, dob, age, course, registration_datetime)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ''', (
                         student_id,
                         email_address,
@@ -212,27 +239,38 @@ class ImportHandlersMixin:
                         record.get('middle_name', ''),
                         record['last_name'],
                         gender,
-                        str(record['dob']),
+                        dob_str,
                         age,
                         record['course'].upper(),
                         registration_datetime
                     ))
 
-                    # Insert modules
-                    course = record['course'].upper()
-                    course_modules = cs_modules if course == 'CS' else ds_modules
+                    # Insert modules — use file columns if present, else default set
+                    module_codes = []
+                    for key, value in record.items():
+                        if key.startswith('module_') and value:
+                            # Handle "CODE - name" format or bare codes
+                            code = str(value).split(' - ')[0].strip()
+                            if code:
+                                module_codes.append(code)
 
-                    module_data = [
-                        (student_id, compulsory_module_1['code']),
-                        (student_id, compulsory_module_2['code']),
-                        (student_id, general_modules["1"]['code']),
-                        (student_id, general_modules["2"]['code']),
-                        (student_id, course_modules["1"]['code']),
-                        (student_id, course_modules["2"]['code'])
-                    ]
+                    if module_codes:
+                        module_data = [(student_id, code) for code in module_codes]
+                    else:
+                        # Fallback to default module set
+                        course = record['course'].upper()
+                        course_modules = cs_modules if course == 'CS' else ds_modules
+                        module_data = [
+                            (student_id, compulsory_module_1['code']),
+                            (student_id, compulsory_module_2['code']),
+                            (student_id, general_modules["1"]['code']),
+                            (student_id, general_modules["2"]['code']),
+                            (student_id, course_modules["1"]['code']),
+                            (student_id, course_modules["2"]['code'])
+                        ]
 
                     cursor.executemany('''
-                    INSERT INTO student_modules (student_id, module_code)
+                    INSERT OR IGNORE INTO student_modules (student_id, module_code)
                     VALUES (?, ?)
                     ''', module_data)
 
@@ -263,6 +301,10 @@ class ImportHandlersMixin:
             logger.error(f"Database error during import: {e}")
             raise
         finally:
+            try:
+                conn.execute("PRAGMA foreign_keys = ON")
+            except Exception:
+                pass
             conn.close()
             result.end_time = datetime.datetime.now()
 

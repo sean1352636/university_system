@@ -145,9 +145,9 @@ def log_event(level, message):
             # Create activity log entry
             activity_data = {
                 'timestamp': datetime.now().isoformat(),
-                'user_id': _state.auth.current_user['id'],
-                'username': _state.auth.current_user['username'],
-                'role': _state.auth.current_user['role'],
+                'user_id': _state.auth.current_user.get('user_id') or _state.auth.current_user.get('id'),
+                'username': _state.auth.current_user.get('username', 'unknown'),
+                'role': _state.auth.current_user.get('role', 'unknown'),
                 'action': 'email_system_activity',
                 'module': 'email_manager',
                 'details': message,
@@ -328,8 +328,8 @@ def export_communication_logs(dashboard):
 
 def display_communication_analytics_menu(dashboard):
     """Display communication analytics for admins"""
-    from .finance_db_operations import execute_db_operation  # Local import to avoid circular dependency
-    from .email_service import get_stored_emails  # Local import to avoid circular dependency
+    from education_system.university_system.modules.shared.utils.database import execute_db_operation  # Local import to avoid circular dependency
+    from education_system.university_system.modules.shared.utils.email_service import get_stored_emails  # Local import to avoid circular dependency
 
     while True:
         print(f"\n{_t('shared.utils.logs.analytics_title')}:")

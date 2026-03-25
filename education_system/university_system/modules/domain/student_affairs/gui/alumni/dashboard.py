@@ -90,7 +90,7 @@ class DashboardMixin:
                 result = cursor.fetchone()
                 total_alumni = result[0] if result else 0
 
-                cursor.execute("SELECT COUNT(*) FROM alumni_events WHERE event_date > datetime('now')")
+                cursor.execute("SELECT COUNT(*) FROM unified_events WHERE source_type = 'alumni' AND start_datetime > datetime('now')")
                 result = cursor.fetchone()
                 upcoming_events = result[0] if result else 0
 
@@ -98,13 +98,37 @@ class DashboardMixin:
                 result = cursor.fetchone()
                 total_donors = result[0] if result else 0
 
+                total_donated = 0
+                try:
+                    cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM donations")
+                    total_donated = cursor.fetchone()[0]
+                except Exception:
+                    pass
+
+                active_mentors = 0
+                try:
+                    cursor.execute("SELECT COUNT(*) FROM mentorships WHERE status = 'active'")
+                    active_mentors = cursor.fetchone()[0]
+                except Exception:
+                    pass
+
+                gift_aid_total = 0
+                try:
+                    cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM donations WHERE is_gift_aided = 1")
+                    gift_aid_total = cursor.fetchone()[0]
+                except Exception:
+                    pass
+
                 conn.close()
 
                 stats = [
                     (_t("alumni.stats.total_alumni", default="Total Alumni"), total_alumni, "👥"),
                     (_t("alumni.stats.upcoming_events", default="Upcoming Events"), upcoming_events, "📅"),
                     (_t("alumni.stats.active_donors", default="Active Donors"), total_donors, "💝"),
-                    (_t("alumni.stats.system_status", default="System Status"), _t("common.online", default="Online"), "✅")
+                    ("Total Donated", f"£{total_donated:,.2f}", "💰"),
+                    ("Active Mentors", active_mentors, "🤝"),
+                    ("Gift Aid Eligible", f"£{gift_aid_total:,.2f}", "🎁"),
+                    (_t("alumni.stats.system_status", default="System Status"), _t("common.online", default="Online"), "✅"),
                 ]
             except sqlite3.Error:
                 stats = [

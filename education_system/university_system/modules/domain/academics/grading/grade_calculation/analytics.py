@@ -115,7 +115,7 @@ def grade_distribution_analysis():
         cursor = conn.cursor()
 
         # Local imports to avoid circular dependencies with grade_curve_analysis
-        from education_system.university_system.modules.students.grade_curve_analysis import (
+        from education_system.university_system.modules.domain.academics.grading.curve_analysis import (
             analyze_distribution_by_course,
             analyze_distribution_by_module_type,
             analyze_overall_distribution,

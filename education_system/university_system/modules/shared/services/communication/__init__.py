@@ -42,8 +42,8 @@ Example Usage:
 
 from education_system.university_system.modules.shared.utils.i18n import get_text, _
 
-from .communication_manager import CommunicationManager
-from .schema import create_communication_tables
+from education_system.university_system.modules.shared.services.communication.communication_manager import CommunicationManager
+from education_system.university_system.modules.shared.services.communication.schema import create_communication_tables
 
 __all__ = [
     'CommunicationManager',

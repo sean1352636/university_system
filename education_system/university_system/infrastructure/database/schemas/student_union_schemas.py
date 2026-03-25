@@ -389,24 +389,44 @@ def init_student_affairs_tables():
                         )
         ''')
 
-        # Create events table
+        # Create unified_events table
         cursor.execute('''
-        CREATE TABLE events (
-                            id TEXT PRIMARY KEY,
-                            name TEXT NOT NULL,
-                            date TEXT,
-                            date_start TEXT,
-                            date_end TEXT,
-                            description TEXT,
-                            event_type TEXT DEFAULT 'Academic',
-                            date_added TEXT NOT NULL,
-                            last_modified TEXT,
-                            created_by TEXT,
-                            CONSTRAINT valid_event_dates CHECK (
-                                (date IS NOT NULL AND date_start IS NULL AND date_end IS NULL) OR
-                                (date IS NULL AND date_start IS NOT NULL AND date_end IS NOT NULL AND date_start <= date_end)
-                            )
-                        )
+        CREATE TABLE IF NOT EXISTS unified_events (
+            event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_type TEXT NOT NULL,
+            source_event_id INTEGER,
+            title TEXT NOT NULL,
+            description TEXT,
+            event_type TEXT,
+            event_category TEXT,
+            start_datetime TEXT,
+            end_datetime TEXT,
+            location TEXT,
+            building TEXT,
+            room TEXT,
+            room_id INTEGER,
+            organizer_id TEXT,
+            organizer_name TEXT,
+            organizer_type TEXT,
+            max_capacity INTEGER,
+            registration_required INTEGER DEFAULT 0,
+            registration_deadline TEXT,
+            is_public INTEGER DEFAULT 1,
+            is_featured INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'scheduled',
+            tags TEXT,
+            image_url TEXT,
+            virtual_link TEXT,
+            event_fee REAL DEFAULT 0,
+            payment_required INTEGER DEFAULT 0,
+            waitlist_enabled INTEGER DEFAULT 0,
+            qr_code_path TEXT,
+            club_id INTEGER,
+            created_by TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT,
+            notes TEXT
+        )
         ''')
 
         # Create organizations table

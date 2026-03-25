@@ -14,6 +14,7 @@ from education_system.college_system.modules.domain.attendance.services.attendan
 from education_system.college_system.modules.domain.courses.services.course_service import CourseService
 from education_system.college_system.modules.domain.students.services.student_service import StudentService
 from education_system.college_system.core.exceptions import AttendanceError
+from education_system.college_system.core.i18n import t
 
 
 class AttendanceFrame(tk.Frame):
@@ -32,6 +33,12 @@ class AttendanceFrame(tk.Frame):
         self._courses: list[dict] = []
         self._roster_widgets: list[dict] = []
 
+        # Pagination state for records tab
+        self._rec_page = 0
+        self._rec_page_size = 50
+        self._rec_total_count = 0
+        self._rec_current_session_id: int | None = None
+
         self._build_ui()
 
     # ------------------------------------------------------------------
@@ -45,7 +52,7 @@ class AttendanceFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Attendance Management",
+        tk.Label(header, text=t("attendance.management"),
                  font=("Helvetica", 15, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=10)
 
@@ -59,21 +66,34 @@ class AttendanceFrame(tk.Frame):
         self._build_generate_tab()
 
         # Status bar
-        self._status_var = tk.StringVar(value="Ready")
+        self._status_var = tk.StringVar(value=t("common.ready"))
         tk.Label(self, textvariable=self._status_var, bg="#ecf0f1", anchor="w",
                  font=("Helvetica", 9), fg="#7f8c8d").pack(
             fill="x", padx=15, pady=(0, 8))
 
+        # --- Keyboard shortcuts for accessibility ---
+        self._bind_when_visible("<Control-n>", lambda e: self._on_create_and_load())
+
+    def _bind_when_visible(self, sequence, callback):
+        """Bind a keyboard shortcut that only fires when this frame is visible."""
+        def _handler(event):
+            if self.winfo_ismapped():
+                callback(event)
+                return "break"
+        self.bind(sequence, _handler)
+        top = self.winfo_toplevel()
+        top.bind(sequence, _handler, add=True)
+
     def _build_take_tab(self):
         """Tab 1: Take Attendance (admin/staff/instructor only)."""
         self._take_tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(self._take_tab, text="Take Attendance")
+        self._nb.add(self._take_tab, text=t("attendance.tab_take"))
 
         # Course + date + topic row
         form = tk.Frame(self._take_tab, bg="#ecf0f1")
         form.pack(fill="x", pady=(0, 10))
 
-        tk.Label(form, text="Course:", bg="#ecf0f1").grid(
+        tk.Label(form, text=t("attendance.course_colon"), bg="#ecf0f1").grid(
             row=0, column=0, sticky="w", padx=5, pady=4)
         self._take_course_var = tk.StringVar()
         self._take_course_combo = ttk.Combobox(
@@ -81,19 +101,19 @@ class AttendanceFrame(tk.Frame):
             state="readonly", width=25)
         self._take_course_combo.grid(row=0, column=1, padx=5, pady=4)
 
-        tk.Label(form, text="Date:", bg="#ecf0f1").grid(
+        tk.Label(form, text=t("attendance.date_colon"), bg="#ecf0f1").grid(
             row=0, column=2, sticky="w", padx=5, pady=4)
         self._take_date_var = tk.StringVar(value=date.today().isoformat())
         ttk.Entry(form, textvariable=self._take_date_var, width=12).grid(
             row=0, column=3, padx=5, pady=4)
 
-        tk.Label(form, text="Topic:", bg="#ecf0f1").grid(
+        tk.Label(form, text=t("attendance.topic_colon"), bg="#ecf0f1").grid(
             row=0, column=4, sticky="w", padx=5, pady=4)
         self._take_topic_var = tk.StringVar()
         ttk.Entry(form, textvariable=self._take_topic_var, width=18).grid(
             row=0, column=5, padx=5, pady=4)
 
-        ttk.Button(form, text="Create Session & Load Roster",
+        ttk.Button(form, text=t("attendance.create_session"),
                    command=self._on_create_and_load).grid(
             row=0, column=6, padx=10, pady=4)
 
@@ -114,26 +134,26 @@ class AttendanceFrame(tk.Frame):
         vsb.pack(side="right", fill="y")
 
         # Header row for roster
-        for col, text, w in [(0, "Student ID", 12), (1, "Name", 25),
-                              (2, "Present", 8), (3, "Absent", 8),
-                              (4, "Late", 8), (5, "Excused", 8)]:
+        for col, text, w in [(0, t("attendance.col_student_id"), 12), (1, t("attendance.col_name"), 25),
+                              (2, t("attendance.col_present"), 8), (3, t("attendance.col_absent"), 8),
+                              (4, t("attendance.col_late"), 8), (5, t("attendance.col_excused"), 8)]:
             tk.Label(self._roster_frame, text=text, font=("Helvetica", 9, "bold"),
                      bg="#dfe6e9", width=w, anchor="center", relief="ridge").grid(
                 row=0, column=col, sticky="ew")
 
         # Submit button
-        ttk.Button(self._take_tab, text="Submit All Attendance",
+        ttk.Button(self._take_tab, text=t("attendance.submit_all"),
                    command=self._on_submit_all).pack(pady=8)
 
     def _build_records_tab(self):
         """Tab 2: View Records (all roles)."""
         records_tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(records_tab, text="View Records")
+        self._nb.add(records_tab, text=t("attendance.tab_records"))
 
         sel_row = tk.Frame(records_tab, bg="#ecf0f1")
         sel_row.pack(fill="x", pady=(0, 8))
 
-        tk.Label(sel_row, text="Course:", bg="#ecf0f1").pack(side="left", padx=(0, 5))
+        tk.Label(sel_row, text=t("attendance.course_colon"), bg="#ecf0f1").pack(side="left", padx=(0, 5))
         self._rec_course_var = tk.StringVar()
         self._rec_course_combo = ttk.Combobox(
             sel_row, textvariable=self._rec_course_var,
@@ -141,7 +161,7 @@ class AttendanceFrame(tk.Frame):
         self._rec_course_combo.pack(side="left", padx=(0, 10))
         self._rec_course_combo.bind("<<ComboboxSelected>>", self._on_rec_course_selected)
 
-        tk.Label(sel_row, text="Session:", bg="#ecf0f1").pack(side="left", padx=(0, 5))
+        tk.Label(sel_row, text=t("attendance.session_colon"), bg="#ecf0f1").pack(side="left", padx=(0, 5))
         self._rec_session_var = tk.StringVar()
         self._rec_session_combo = ttk.Combobox(
             sel_row, textvariable=self._rec_session_var,
@@ -150,47 +170,77 @@ class AttendanceFrame(tk.Frame):
         self._rec_session_combo.bind("<<ComboboxSelected>>", self._on_rec_session_selected)
 
         # Treeview
+        rec_tree_frame = tk.Frame(records_tab)
+        rec_tree_frame.pack(fill="both", expand=True)
+
         columns = ("sid", "name", "status", "recorded_at")
-        self._rec_tree = ttk.Treeview(records_tab, columns=columns,
+        self._rec_tree = ttk.Treeview(rec_tree_frame, columns=columns,
                                       show="headings", selectmode="browse")
         for col, heading, w in [
-            ("sid", "Student ID", 100), ("name", "Name", 180),
-            ("status", "Status", 90), ("recorded_at", "Recorded", 150),
+            ("sid", t("attendance.col_student_id"), 100), ("name", t("attendance.col_name"), 180),
+            ("status", t("attendance.col_status"), 90), ("recorded_at", t("attendance.col_recorded"), 150),
         ]:
             self._rec_tree.heading(col, text=heading)
             self._rec_tree.column(col, width=w, anchor="center")
 
-        rec_vsb = ttk.Scrollbar(records_tab, orient="vertical",
+        rec_vsb = ttk.Scrollbar(rec_tree_frame, orient="vertical",
                                 command=self._rec_tree.yview)
         self._rec_tree.configure(yscrollcommand=rec_vsb.set)
         self._rec_tree.pack(side="left", fill="both", expand=True)
         rec_vsb.pack(side="right", fill="y")
+
+        # Return key on records treeview shows selected record details
+        self._rec_tree.bind("<Return>", lambda e: self._on_rec_view_selected())
+
+        # Pagination bar for records
+        rec_pag_frame = tk.Frame(records_tab, bg="#ecf0f1")
+        rec_pag_frame.pack(fill="x", pady=(4, 0))
+
+        self._rec_prev_btn = ttk.Button(rec_pag_frame, text="Previous",
+                                         command=self._rec_prev_page, state="disabled")
+        self._rec_prev_btn.pack(side="left", padx=4)
+
+        self._rec_page_label_var = tk.StringVar(value="Page 1 of 1")
+        tk.Label(rec_pag_frame, textvariable=self._rec_page_label_var,
+                 bg="#ecf0f1", font=("Helvetica", 9)).pack(side="left", padx=8)
+
+        self._rec_next_btn = ttk.Button(rec_pag_frame, text="Next",
+                                         command=self._rec_next_page, state="disabled")
+        self._rec_next_btn.pack(side="left", padx=4)
+
+        self._rec_record_count_var = tk.StringVar(value="")
+        tk.Label(rec_pag_frame, textvariable=self._rec_record_count_var,
+                 bg="#ecf0f1", font=("Helvetica", 9), fg="#7f8c8d").pack(
+            side="right", padx=8)
+
+        ttk.Button(rec_pag_frame, text="Export CSV", command=self._export_csv).pack(
+            side="right", padx=5)
 
         self._sessions_data: list[dict] = []
 
     def _build_reports_tab(self):
         """Tab 3: Reports (all roles)."""
         reports_tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(reports_tab, text="Reports")
+        self._nb.add(reports_tab, text=t("attendance.tab_reports"))
 
         input_row = tk.Frame(reports_tab, bg="#ecf0f1")
         input_row.pack(fill="x", pady=(0, 10))
 
-        tk.Label(input_row, text="Student ID:", bg="#ecf0f1").pack(side="left", padx=(0, 5))
+        tk.Label(input_row, text=t("attendance.student_id_colon"), bg="#ecf0f1").pack(side="left", padx=(0, 5))
         self._rpt_student_var = tk.StringVar()
         ttk.Entry(input_row, textvariable=self._rpt_student_var, width=12).pack(
             side="left", padx=(0, 10))
 
-        tk.Label(input_row, text="Course Code:", bg="#ecf0f1").pack(side="left", padx=(0, 5))
+        tk.Label(input_row, text=t("attendance.course_code_colon"), bg="#ecf0f1").pack(side="left", padx=(0, 5))
         self._rpt_course_var = tk.StringVar()
         ttk.Entry(input_row, textvariable=self._rpt_course_var, width=12).pack(
             side="left", padx=(0, 10))
 
-        ttk.Button(input_row, text="Show Summary",
+        ttk.Button(input_row, text=t("attendance.show_summary"),
                    command=self._on_show_summary).pack(side="left", padx=5)
 
         # Summary display
-        self._summary_frame = tk.LabelFrame(reports_tab, text="Attendance Summary",
+        self._summary_frame = tk.LabelFrame(reports_tab, text=t("attendance.summary"),
                                             bg="#ecf0f1", font=("Helvetica", 10, "bold"))
         self._summary_frame.pack(fill="x", pady=5)
 
@@ -198,8 +248,9 @@ class AttendanceFrame(tk.Frame):
         summary_inner = tk.Frame(self._summary_frame, bg="#ecf0f1")
         summary_inner.pack(fill="x", padx=10, pady=8)
 
-        for i, label in enumerate(("Total Sessions", "Present", "Absent",
-                                    "Late", "Excused", "Attendance Rate")):
+        for i, label in enumerate((t("attendance.total_sessions"), t("attendance.present"),
+                                    t("attendance.absent"), t("attendance.late"),
+                                    t("attendance.excused"), t("attendance.rate"))):
             var = tk.StringVar(value="--")
             row = tk.Frame(summary_inner, bg="#ecf0f1")
             row.grid(row=i // 3, column=i % 3, padx=15, pady=4, sticky="w")
@@ -209,22 +260,22 @@ class AttendanceFrame(tk.Frame):
                            font=("Helvetica", 10), fg="#2980b9")
             lbl.pack(side="left", padx=(5, 0))
             self._summary_labels[label] = var
-            if label == "Attendance Rate":
+            if label == t("attendance.rate"):
                 self._rate_label = lbl
 
     def _build_generate_tab(self):
         """Tab 4: Generate from Timetable (admin/staff only)."""
         self._gen_tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)
-        self._nb.add(self._gen_tab, text="Generate from Timetable")
+        self._nb.add(self._gen_tab, text=t("attendance.tab_generate"))
 
         form = tk.Frame(self._gen_tab, bg="#ecf0f1")
         form.pack(fill="x", pady=(0, 10))
 
-        tk.Label(form, text="Date:", bg="#ecf0f1").pack(side="left", padx=(0, 5))
+        tk.Label(form, text=t("attendance.date_colon"), bg="#ecf0f1").pack(side="left", padx=(0, 5))
         self._gen_date_var = tk.StringVar(value=date.today().isoformat())
         ttk.Entry(form, textvariable=self._gen_date_var, width=12).pack(side="left", padx=(0, 10))
 
-        ttk.Button(form, text="Generate Registers",
+        ttk.Button(form, text=t("attendance.generate_registers"),
                    command=self._on_generate_registers).pack(side="left", padx=5)
 
         # Results area
@@ -234,7 +285,7 @@ class AttendanceFrame(tk.Frame):
     def _on_generate_registers(self):
         target = self._gen_date_var.get().strip()
         if not target:
-            messagebox.showwarning("Input", "Enter a date.")
+            messagebox.showwarning(t("common.input"), t("attendance.enter_date"))
             return
 
         created_by = None
@@ -255,7 +306,7 @@ class AttendanceFrame(tk.Frame):
             self._gen_results.configure(state="disabled")
             self._status_var.set(f"{len(sessions)} registers generated for {target}")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(t("common.error"), str(e))
 
     # ------------------------------------------------------------------
     # Refresh & permissions
@@ -302,7 +353,7 @@ class AttendanceFrame(tk.Frame):
     def _on_create_and_load(self):
         course = self._get_selected_course(self._take_course_combo)
         if not course:
-            messagebox.showwarning("Input", "Select a course first.")
+            messagebox.showwarning(t("common.input"), t("attendance.select_course_first"))
             return
 
         date_str = self._take_date_var.get().strip() or None
@@ -317,7 +368,7 @@ class AttendanceFrame(tk.Frame):
                 topic=topic, created_by=created_by,
             )
         except AttendanceError as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
             return
 
         self._current_session_id = session["id"]
@@ -343,7 +394,7 @@ class AttendanceFrame(tk.Frame):
                 child.destroy()
 
         if not roster:
-            tk.Label(self._roster_frame, text="No students enrolled.",
+            tk.Label(self._roster_frame, text=t("attendance.no_students_enrolled"),
                      bg="white").grid(row=1, column=0, columnspan=6, pady=10)
             return
 
@@ -374,7 +425,7 @@ class AttendanceFrame(tk.Frame):
 
     def _on_submit_all(self):
         if not self._roster_widgets:
-            messagebox.showwarning("Input", "Load a roster first.")
+            messagebox.showwarning(t("common.input"), t("attendance.load_roster_first"))
             return
 
         records = []
@@ -387,11 +438,11 @@ class AttendanceFrame(tk.Frame):
         try:
             count = self._attendance_svc.bulk_record_attendance(
                 self._current_session_id, records)
-            messagebox.showinfo("Success",
-                                f"Attendance recorded for {count} students.")
-            self._status_var.set(f"{count} records submitted")
+            messagebox.showinfo(t("common.success"),
+                                t("attendance.recorded_for", count=count))
+            self._status_var.set(t("attendance.records_submitted", count=count))
         except AttendanceError as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
 
     # ------------------------------------------------------------------
     # Tab 2: View Records
@@ -417,13 +468,26 @@ class AttendanceFrame(tk.Frame):
         idx = self._rec_session_combo.current()
         if idx < 0 or idx >= len(self._sessions_data):
             return
-        session_id = self._sessions_data[idx]["id"]
+        self._rec_current_session_id = self._sessions_data[idx]["id"]
+        self._rec_page = 0
+        self._load_rec_records()
+
+    def _load_rec_records(self):
+        """Load attendance records for the current session with pagination."""
+        if self._rec_current_session_id is None:
+            return
 
         self._rec_tree.delete(*self._rec_tree.get_children())
         try:
-            records = self._attendance_svc.get_session_records(session_id)
+            self._rec_total_count = self._attendance_svc.count_session_records(
+                self._rec_current_session_id)
+            records = self._attendance_svc.get_session_records(
+                self._rec_current_session_id,
+                limit=self._rec_page_size,
+                offset=self._rec_page * self._rec_page_size,
+            )
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load records:\n{exc}")
+            messagebox.showerror(t("common.error"), f"Failed to load records:\n{exc}")
             return
 
         for r in records:
@@ -433,19 +497,52 @@ class AttendanceFrame(tk.Frame):
                 r.get("status", ""), r.get("recorded_at", ""),
             ))
 
+        self._update_rec_pagination()
         self._status_var.set(
-            f"{len(records)} record(s) for session {session_id}")
+            f"{len(records)} record(s) for session {self._rec_current_session_id}")
+
+    def _update_rec_pagination(self):
+        """Update pagination controls for the records tab."""
+        total_pages = max(1, (self._rec_total_count + self._rec_page_size - 1) // self._rec_page_size)
+        current = self._rec_page + 1
+        self._rec_page_label_var.set(f"Page {current} of {total_pages}")
+
+        start = self._rec_page * self._rec_page_size + 1
+        end = min((self._rec_page + 1) * self._rec_page_size, self._rec_total_count)
+        if self._rec_total_count == 0:
+            self._rec_record_count_var.set("No records")
+        else:
+            self._rec_record_count_var.set(
+                f"Showing {start}-{end} of {self._rec_total_count} records")
+
+        self._rec_prev_btn.configure(
+            state="normal" if self._rec_page > 0 else "disabled")
+        self._rec_next_btn.configure(
+            state="normal" if current < total_pages else "disabled")
+
+    def _rec_next_page(self):
+        self._rec_page += 1
+        self._load_rec_records()
+
+    def _rec_prev_page(self):
+        if self._rec_page > 0:
+            self._rec_page -= 1
+        self._load_rec_records()
 
     # ------------------------------------------------------------------
     # Tab 3: Reports
     # ------------------------------------------------------------------
+
+    def _export_csv(self):
+        from education_system.college_system.modules.shared.csv_export import export_treeview_to_csv
+        export_treeview_to_csv(self._rec_tree, default_filename="attendance.csv")
 
     def _on_show_summary(self):
         sid_str = self._rpt_student_var.get().strip()
         code_str = self._rpt_course_var.get().strip().upper()
 
         if not sid_str or not code_str:
-            messagebox.showwarning("Input", "Enter both Student ID and Course Code.")
+            messagebox.showwarning(t("common.input"), t("attendance.enter_both_ids"))
             return
 
         try:
@@ -456,25 +553,25 @@ class AttendanceFrame(tk.Frame):
             if not course:
                 raise AttendanceError(f"Course '{code_str}' not found.")
         except AttendanceError as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(t("common.error"), str(exc))
             return
 
         try:
             summary = self._attendance_svc.get_attendance_summary(
                 student["id"], course["id"])
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to get summary:\n{exc}")
+            messagebox.showerror(t("common.error"), f"Failed to get summary:\n{exc}")
             return
 
-        self._summary_labels["Total Sessions"].set(
+        self._summary_labels[t("attendance.total_sessions")].set(
             str(summary.get("total_sessions", 0)))
-        self._summary_labels["Present"].set(str(summary.get("present", 0)))
-        self._summary_labels["Absent"].set(str(summary.get("absent", 0)))
-        self._summary_labels["Late"].set(str(summary.get("late", 0)))
-        self._summary_labels["Excused"].set(str(summary.get("excused", 0)))
+        self._summary_labels[t("attendance.present")].set(str(summary.get("present", 0)))
+        self._summary_labels[t("attendance.absent")].set(str(summary.get("absent", 0)))
+        self._summary_labels[t("attendance.late")].set(str(summary.get("late", 0)))
+        self._summary_labels[t("attendance.excused")].set(str(summary.get("excused", 0)))
 
         rate = summary.get("attendance_rate", 0.0)
-        self._summary_labels["Attendance Rate"].set(f"{rate}%")
+        self._summary_labels[t("attendance.rate")].set(f"{rate}%")
 
         # Colour-code the rate
         if rate >= 90:
@@ -487,3 +584,18 @@ class AttendanceFrame(tk.Frame):
 
         self._status_var.set(
             f"Summary for {sid_str} in {code_str}")
+
+    def _on_rec_view_selected(self):
+        """Handle Return key on records treeview -- show details of selected record."""
+        sel = self._rec_tree.selection()
+        if not sel:
+            return
+        values = self._rec_tree.item(sel[0], "values")
+        if values:
+            detail = (
+                f"Student ID: {values[0]}\n"
+                f"Name: {values[1]}\n"
+                f"Status: {values[2]}\n"
+                f"Recorded: {values[3]}"
+            )
+            messagebox.showinfo("Attendance Record", detail)

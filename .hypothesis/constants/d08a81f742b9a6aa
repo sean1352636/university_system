@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/academics_domain_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/academics', '/programs', 'GET', 'POST', 'academics_domain', 'create', 'degree_level', 'degree_level = ?', 'degree_programs', 'department', 'description', 'duration_years', 'items', 'program_name', 'search', 'sub', 'total', 'total_credits', 'view']

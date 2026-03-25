@@ -1,24 +1,24 @@
-from .base import AdvancedSearchGUI
+from education_system.university_system.modules.shared.gui.advanced_search.base import AdvancedSearchGUI
 
 # Import all split modules to apply monkey-patching to AdvancedSearchGUI
 # Each module defines methods and patches them onto the class
-from . import admin
-from . import bulk_operations
-from . import charts
-from . import database
-from . import demographics
-from . import export_import
-from . import menus
-from . import predictive
-from . import reports
-from . import results
-from . import scheduled_reports
-from . import search_advanced
-from . import search_basic
-from . import search_conditional
-from . import search_history
-from . import search_profiles
-from . import student_details
-from . import utils
+from education_system.university_system.modules.shared.gui.advanced_search import admin
+from education_system.university_system.modules.shared.gui.advanced_search import bulk_operations
+from education_system.university_system.modules.shared.gui.advanced_search import charts
+from education_system.university_system.modules.shared.gui.advanced_search import database
+from education_system.university_system.modules.shared.gui.advanced_search import demographics
+from education_system.university_system.modules.shared.gui.advanced_search import export_import
+from education_system.university_system.modules.shared.gui.advanced_search import menus
+from education_system.university_system.modules.shared.gui.advanced_search import predictive
+from education_system.university_system.modules.shared.gui.advanced_search import reports
+from education_system.university_system.modules.shared.gui.advanced_search import results
+from education_system.university_system.modules.shared.gui.advanced_search import scheduled_reports
+from education_system.university_system.modules.shared.gui.advanced_search import search_advanced
+from education_system.university_system.modules.shared.gui.advanced_search import search_basic
+from education_system.university_system.modules.shared.gui.advanced_search import search_conditional
+from education_system.university_system.modules.shared.gui.advanced_search import search_history
+from education_system.university_system.modules.shared.gui.advanced_search import search_profiles
+from education_system.university_system.modules.shared.gui.advanced_search import student_details
+from education_system.university_system.modules.shared.gui.advanced_search import utils
 
 __all__ = ['AdvancedSearchGUI']

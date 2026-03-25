@@ -166,12 +166,12 @@ def refresh_refunds_list(self):
         if search_term:
             # Search by transaction_id or username
             query = '''
-                SELECT t.transaction_id, t.transaction_date, u.username, u.student_id,
+                SELECT t.source_transaction_id as transaction_id, t.created_at as transaction_date, u.username, u.student_id,
                        t.total_amount, t.payment_method, t.status
-                FROM shop_transactions t
-                LEFT JOIN users u ON t.user_id = u.id
-                WHERE t.transaction_id LIKE ? OR u.username LIKE ? OR u.student_id LIKE ?
-                ORDER BY t.transaction_date DESC
+                FROM transactions t
+                LEFT JOIN users u ON t.customer_id = u.id
+                WHERE t.source_type = 'shop' AND (t.source_transaction_id LIKE ? OR u.username LIKE ? OR u.student_id LIKE ?)
+                ORDER BY t.created_at DESC
                 LIMIT 500
             '''
             search_pattern = f'%{search_term}%'
@@ -179,11 +179,12 @@ def refresh_refunds_list(self):
         else:
             # Get all transactions
             query = '''
-                SELECT t.transaction_id, t.transaction_date, u.username, u.student_id,
+                SELECT t.source_transaction_id as transaction_id, t.created_at as transaction_date, u.username, u.student_id,
                        t.total_amount, t.payment_method, t.status
-                FROM shop_transactions t
-                LEFT JOIN users u ON t.user_id = u.id
-                ORDER BY t.transaction_date DESC
+                FROM transactions t
+                LEFT JOIN users u ON t.customer_id = u.id
+                WHERE t.source_type = 'shop'
+                ORDER BY t.created_at DESC
                 LIMIT 500
             '''
             cursor.execute(query)
@@ -255,11 +256,11 @@ def process_shop_refund(self):
             cursor = conn.cursor()
 
             cursor.execute('''
-                SELECT t.user_id, t.student_id as trans_student_id, u.student_id as user_student_id,
+                SELECT t.customer_id as user_id, t.student_id as trans_student_id, u.student_id as user_student_id,
                        u.username, t.payment_method
-                FROM shop_transactions t
-                LEFT JOIN users u ON t.user_id = u.id
-                WHERE t.transaction_id = ?
+                FROM transactions t
+                LEFT JOIN users u ON t.customer_id = u.id
+                WHERE t.source_type = 'shop' AND t.source_transaction_id = ?
             ''', (transaction_id,))
 
             trans_data = cursor.fetchone()
@@ -303,32 +304,17 @@ def process_shop_refund(self):
 
             # Update transaction status to refunded
             cursor.execute('''
-                UPDATE shop_transactions
+                UPDATE transactions
                 SET status = 'refunded'
-                WHERE transaction_id = ?
+                WHERE source_type = 'shop' AND source_transaction_id = ?
             ''', (transaction_id,))
 
-            # Create shop_refunds table if it doesn't exist
+            # Insert refund record into unified_refunds table
             cursor.execute('''
-                CREATE TABLE IF NOT EXISTS shop_refunds (
-                    refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    transaction_id TEXT NOT NULL,
-                    refund_date TEXT NOT NULL,
-                    refund_amount REAL NOT NULL,
-                    refund_method TEXT NOT NULL,
-                    refund_reference TEXT UNIQUE,
-                    student_id TEXT,
-                    processed_by TEXT,
-                    notes TEXT,
-                    FOREIGN KEY (transaction_id) REFERENCES shop_transactions (transaction_id)
-                )
-            ''')
-
-            # Insert refund record
-            cursor.execute('''
-                INSERT INTO shop_refunds
-                (transaction_id, refund_date, refund_amount, refund_method, refund_reference, student_id, processed_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO unified_refunds
+                (source_type, reference_id, reference_type, refund_date, amount,
+                 refund_method, refund_reference, student_id, processed_by)
+                VALUES ('shop', ?, 'transaction', ?, ?, ?, ?, ?, ?)
             ''', (transaction_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), amount, refund_method,
                   refund_ref, student_id, self.current_user.get('username', 'System')))
 

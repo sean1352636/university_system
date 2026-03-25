@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/gui/medical_accommodation/dialogs/__init__.py
+# hypothesis_version: 6.151.9
+
+['AccommodationDialog', 'DatabaseInfoDialog', 'DetailsDialog', 'DocumentUploadDialog', 'ExportFilterDialog', 'HelpDialog', 'ImportResultDialog', 'SettingsDialog']

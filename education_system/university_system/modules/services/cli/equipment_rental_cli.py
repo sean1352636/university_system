@@ -72,15 +72,8 @@ CREATE TABLE IF NOT EXISTS equipment_rentals (
     FOREIGN KEY (equipment_id) REFERENCES equipment_inventory (equipment_id)
 );
 
-CREATE TABLE IF NOT EXISTS equipment_transactions (
-    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    rental_id INTEGER NOT NULL,
-    amount REAL NOT NULL,
-    payment_method TEXT,
-    transaction_date TEXT NOT NULL,
-    reference_number TEXT,
-    FOREIGN KEY (rental_id) REFERENCES equipment_rentals (rental_id)
-);
+-- NOTE: equipment transactions now use the unified 'transactions' table
+-- with source_type = 'equipment'
 """
 
 def init_equipment_database():

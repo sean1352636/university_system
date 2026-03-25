@@ -13,6 +13,10 @@ import threading
 import queue
 from education_system.university_system.infrastructure.email.template_utils import render_template
 from education_system.university_system.infrastructure.auth import UserAuth
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.analytics.analytics import (
+    EngagementTrendAnalysisDialog, MemberRetentionInsightsDialog
+)
+
 from education_system.university_system.infrastructure.shared_context import get_auth
 
 # Import i18n for multi-language support

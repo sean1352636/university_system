@@ -98,10 +98,12 @@ def init_db():
         else:
             # Check if database has any tables
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-            tables = cursor.fetchall()
-            conn.close()
+            try:
+                cursor = conn.cursor()
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+                tables = cursor.fetchall()
+            finally:
+                conn.close()
 
             if len(tables) == 0:
                 db_needs_setup = True
@@ -114,6 +116,10 @@ def init_db():
             # Initialize all schemas from centralized schema file
             from education_system.university_system.infrastructure.database.schemas.misc_schemas import initialize_all_schemas
             initialize_all_schemas()
+
+            # Seed default staff profiles
+            from education_system.university_system.modules.setup_unified_database import seed_default_staff
+            seed_default_staff()
 
             logging.info("Database initialized successfully with all tables!")
             print("✅ " + _t("database.init_success"))
@@ -176,6 +182,10 @@ def init_db_parking():
                 created_at TEXT,
                 fraud_score DECIMAL(3,2),
                 is_suspicious BOOLEAN DEFAULT 0,
+                source_type TEXT,
+                reference_id TEXT,
+                reference_type TEXT,
+                payment_reference TEXT,
                 FOREIGN KEY (student_id) REFERENCES students (student_id)
             )
             ''')

@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 from tkinter import filedialog, messagebox, scrolledtext, ttk
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import get_connection, DEFAULT_DB_PATH
 from education_system.university_system.infrastructure.security.audit_trail import (
     AuditLogger,
@@ -505,7 +506,7 @@ class AuditLogViewerGUI(tk.Toplevel):
                     (username LIKE ? OR action LIKE ? OR resource_type LIKE ?
                      OR resource_id LIKE ? OR details LIKE ? OR error_message LIKE ?)
                 """)
-                search_pattern = f"%{search_text}%"
+                search_pattern = f"%{escape_like(search_text)}%"
                 params.extend([search_pattern] * 6)
 
             # User filter
@@ -987,6 +988,11 @@ class AuditLogViewerGUI(tk.Toplevel):
 
     def _start_auto_refresh(self):
         """Start auto-refresh timer."""
+        try:
+            if not self.winfo_exists():
+                return
+        except Exception:
+            return
         self._search_logs()
         if self._auto_refresh.get():
             self._refresh_job = self.after(self._refresh_interval, self._start_auto_refresh)

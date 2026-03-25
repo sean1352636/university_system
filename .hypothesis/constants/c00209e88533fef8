@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/college_system/modules/domain/emergency/services/emergency_service.py
+# hypothesis_version: 6.151.9
+
+[100, ', ', '?', 'Drill created: id=%d', 'Drill deleted: pk=%d', 'Drill not found.', 'Drill updated: pk=%d', 'actual_date', 'cnt', 'drill_type', 'duration_minutes', 'id', 'notes', 'outcome', 'scheduled_date', 'status', 'updated_at']

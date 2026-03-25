@@ -62,6 +62,25 @@ class CareersService:
         finally:
             conn.close()
 
+    def delete_record(self, record_id: int) -> bool:
+        """Delete a careers activity by ID."""
+        conn = self._conn()
+        try:
+            result = conn.execute(
+                "DELETE FROM careers_activities WHERE id = ?", (record_id,)
+            )
+            conn.commit()
+            if result.rowcount == 0:
+                raise CareersError(f"Careers record {record_id} not found.")
+            return True
+        except CareersError:
+            raise
+        except Exception as e:
+            conn.rollback()
+            raise CareersError(f"Failed to delete careers record: {e}")
+        finally:
+            conn.close()
+
     # --- UCAS Records ---
 
     def create_ucas_record(self, student_id: int, ucas_id: str = None,

@@ -102,7 +102,7 @@ class TestConsoleOutputBasic:
     def console_with_colors(self):
         """Create ConsoleOutput instance with colors"""
         from education_system.university_system.modules.shared.utils.console_output import ConsoleOutput
-        with patch('university_system.modules.shared.utils.console_output.Colors.supports_color', return_value=True):
+        with patch('education_system.university_system.modules.shared.utils.console_output.Colors.supports_color', return_value=True):
             return ConsoleOutput(use_colors=True)
 
     def test_init_with_colors(self, console_with_colors):
@@ -504,7 +504,7 @@ class TestSpecialOutput:
         captured = capsys.readouterr()
         assert '*' in captured.out
 
-    @patch('university_system.modules.shared.utils.console_output.datetime')
+    @patch('education_system.university_system.modules.shared.utils.console_output.datetime')
     def test_timestamp(self, mock_datetime, console, capsys):
         """Test timestamp output"""
         mock_datetime.now.return_value.strftime.return_value = '2025-01-01 12:00:00'

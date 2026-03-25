@@ -1,6 +1,6 @@
 from typing import Dict, List, Any
 
-from ..models import LogEntry
+from education_system.university_system.modules.shared.utils.simple_activity_logger.models import LogEntry
 
 
 class LoggerPlugin:

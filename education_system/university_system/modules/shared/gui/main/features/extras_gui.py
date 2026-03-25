@@ -374,7 +374,7 @@ def show_security_desk_gui(self):
 def show_academic_misconduct_gui(self):
     """Launch the Academic Misconduct Panel GUI"""
     try:
-        from education_system.university_system.modules.domain.academics.gui.misconduct.academic_misconduct_gui import AcademicMisconductPanel
+        from education_system.shared.academic_misconduct.academic_misconduct_gui import AcademicMisconductPanel
         window = tk.Toplevel(self.root)
         window.title(_t("extras_gui.titles.academic_misconduct"))
         window.geometry("1200x800")
@@ -382,7 +382,7 @@ def show_academic_misconduct_gui(self):
             window.transient(self.root)
         except Exception:
             pass
-        AcademicMisconductPanel(window)
+        AcademicMisconductPanel(window, system_key='university')
         print(_t("extras_gui.messages.academic_misconduct_opened"))
     except Exception as e:
         messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.academic_misconduct_failed").format(error=str(e)))

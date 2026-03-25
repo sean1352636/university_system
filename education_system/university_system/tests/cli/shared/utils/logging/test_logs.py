@@ -48,9 +48,9 @@ class TestGetLogFile:
     def test_get_log_file_creates_directory(self):
         """Test that get_log_file creates directory if needed"""
         with tempfile.TemporaryDirectory() as tmpdir:
-            with patch('university_system.modules.shared.constants.paths.LOG_DIR', tmpdir):
+            with patch('education_system.university_system.modules.shared.constants.paths.LOG_DIR', tmpdir):
                 test_subdir = os.path.join(tmpdir, 'subdir')
-                with patch('university_system.modules.shared.constants.paths.LOG_DIR', test_subdir):
+                with patch('education_system.university_system.modules.shared.constants.paths.LOG_DIR', test_subdir):
                     result = get_log_file('test.log')
                     assert os.path.exists(test_subdir)
 
@@ -61,11 +61,11 @@ class TestGetLogFile:
             result = get_log_file(filename)
             assert result.endswith(filename)
 
-    @patch('university_system.modules.shared.utils.logs.project_get_log_file')
+    @patch('education_system.university_system.modules.shared.utils.logs.project_get_log_file')
     def test_get_log_file_uses_project_function(self, mock_project_get):
         """Test that get_log_file uses project function if available"""
         mock_project_get.return_value = '/custom/path/test.log'
-        with patch('university_system.modules.shared.utils.logs.project_get_log_file', mock_project_get):
+        with patch('education_system.university_system.modules.shared.utils.logs.project_get_log_file', mock_project_get):
             result = get_log_file('test.log')
             # If project function is available, it should be called
             if logs.project_get_log_file:
@@ -86,10 +86,10 @@ class TestConfigureLogging:
         # Just verify the function is callable
         assert callable(configure_logging)
 
-    @patch('university_system.modules.shared.utils.logs.project_configure_logging')
+    @patch('education_system.university_system.modules.shared.utils.logs.project_configure_logging')
     def test_configure_logging_uses_project_function(self, mock_project_config):
         """Test that configure_logging uses project function if available"""
-        with patch('university_system.modules.shared.utils.logs.project_configure_logging', mock_project_config):
+        with patch('education_system.university_system.modules.shared.utils.logs.project_configure_logging', mock_project_config):
             configure_logging()
             # If project function exists, it would be called
 
@@ -97,46 +97,46 @@ class TestConfigureLogging:
 class TestLogEvent:
     """Test log_event function"""
 
-    @patch('university_system.modules.shared.utils.logs.logger')
+    @patch('education_system.university_system.modules.shared.utils.logs.logger')
     def test_log_event_debug(self, mock_logger):
         """Test log_event with debug level"""
         log_event('debug', 'Test debug message')
         mock_logger.debug.assert_called_with('Test debug message')
 
-    @patch('university_system.modules.shared.utils.logs.logger')
+    @patch('education_system.university_system.modules.shared.utils.logs.logger')
     def test_log_event_info(self, mock_logger):
         """Test log_event with info level"""
         log_event('info', 'Test info message')
         mock_logger.info.assert_called_with('Test info message')
 
-    @patch('university_system.modules.shared.utils.logs.logger')
+    @patch('education_system.university_system.modules.shared.utils.logs.logger')
     def test_log_event_warning(self, mock_logger):
         """Test log_event with warning level"""
         log_event('warning', 'Test warning message')
         mock_logger.warning.assert_called_with('Test warning message')
 
-    @patch('university_system.modules.shared.utils.logs.logger')
+    @patch('education_system.university_system.modules.shared.utils.logs.logger')
     def test_log_event_error(self, mock_logger):
         """Test log_event with error level"""
         log_event('error', 'Test error message')
         mock_logger.error.assert_called_with('Test error message')
 
-    @patch('university_system.modules.shared.utils.logs.logger')
+    @patch('education_system.university_system.modules.shared.utils.logs.logger')
     def test_log_event_critical(self, mock_logger):
         """Test log_event with critical level"""
         log_event('critical', 'Test critical message')
         mock_logger.critical.assert_called_with('Test critical message')
 
-    @patch('university_system.modules.shared.utils.logs.logger')
+    @patch('education_system.university_system.modules.shared.utils.logs.logger')
     def test_log_event_unknown_level(self, mock_logger):
         """Test log_event with unknown level defaults to info"""
         log_event('unknown', 'Test message')
         mock_logger.info.assert_called_with('Test message')
 
-    @patch('university_system.modules.shared.utils.logs.logger')
-    @patch('university_system.modules.shared.utils.logs.LOG_MANAGEMENT_AVAILABLE', True)
-    @patch('university_system.modules.shared.utils.logs.log_manager')
-    @patch('university_system.modules.shared.utils.logs.state')
+    @patch('education_system.university_system.modules.shared.utils.logs.logger')
+    @patch('education_system.university_system.modules.shared.utils.logs.LOG_MANAGEMENT_AVAILABLE', True)
+    @patch('education_system.university_system.modules.shared.utils.logs.log_manager')
+    @patch('education_system.university_system.modules.shared.utils.logs.state')
     def test_log_event_with_enhanced_logging(self, mock_state, mock_log_manager, mock_logger):
         """Test log_event with enhanced logging available"""
         # Setup mock user
@@ -341,7 +341,7 @@ class TestDisplayCommunicationLogsMenu:
 
     @patch('builtins.input', side_effect=['1', '9'])
     @patch('builtins.print')
-    @patch('university_system.modules.shared.utils.logs.display_activity_logs')
+    @patch('education_system.university_system.modules.shared.utils.logs.display_activity_logs')
     def test_display_communication_logs_menu_recent(self, mock_display, mock_print, mock_input):
         """Test recent activity option"""
         dashboard = Mock()
@@ -351,7 +351,7 @@ class TestDisplayCommunicationLogsMenu:
 
     @patch('builtins.input', side_effect=['2', '7', '9'])
     @patch('builtins.print')
-    @patch('university_system.modules.shared.utils.logs.display_activity_logs')
+    @patch('education_system.university_system.modules.shared.utils.logs.display_activity_logs')
     def test_display_communication_logs_menu_date_range(self, mock_display, mock_print, mock_input):
         """Test date range option"""
         dashboard = Mock()
@@ -377,8 +377,8 @@ class TestDisplayCommunicationAnalyticsMenu:
 
     @patch('builtins.input', side_effect=['1', '7'])
     @patch('builtins.print')
-    @patch('university_system.modules.shared.utils.logs.LOG_MANAGEMENT_AVAILABLE', True)
-    @patch('university_system.modules.shared.utils.logs.log_manager')
+    @patch('education_system.university_system.modules.shared.utils.logs.LOG_MANAGEMENT_AVAILABLE', True)
+    @patch('education_system.university_system.modules.shared.utils.logs.log_manager')
     def test_display_communication_analytics_menu_summary(self, mock_log_manager, mock_print, mock_input):
         """Test activity summary option"""
         dashboard = Mock()
@@ -420,7 +420,7 @@ class TestModuleConstants:
 class TestIntegration:
     """Integration tests for logging functionality"""
 
-    @patch('university_system.modules.shared.utils.logs.logger')
+    @patch('education_system.university_system.modules.shared.utils.logs.logger')
     def test_full_logging_workflow(self, mock_logger):
         """Test a complete logging workflow"""
         # Log different levels

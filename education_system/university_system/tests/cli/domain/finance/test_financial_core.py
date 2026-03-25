@@ -35,7 +35,7 @@ class TestDatabaseInitialization:
 
     def test_init_enhanced_finance_db(self, temp_db):
         """Test enhanced finance database initialization"""
-        with patch('university_system.modules.domain.finance.core.financial_core.get_connection') as mock_conn:
+        with patch('education_system.university_system.modules.domain.finance.core.financial_core.get_connection') as mock_conn:
             conn = sqlite3.connect(temp_db)
             mock_conn.return_value = conn
 
@@ -55,7 +55,7 @@ class TestDatabaseInitialization:
 
     def test_warn_if_table_empty(self, temp_db):
         """Test empty table warning functionality"""
-        with patch('university_system.modules.domain.finance.core.financial_core.get_connection') as mock_conn:
+        with patch('education_system.university_system.modules.domain.finance.core.financial_core.get_connection') as mock_conn:
             conn = sqlite3.connect(temp_db)
             mock_conn.return_value = conn
 
@@ -81,9 +81,9 @@ class TestInitialization:
 
     def test_initialize_finance(self, temp_db):
         """Test complete finance system initialization"""
-        with patch('university_system.modules.domain.finance.core.financial_core.get_connection') as mock_conn, \
-             patch('university_system.modules.domain.finance.core.financial_core.get_auth') as mock_get_auth, \
-             patch('university_system.modules.domain.finance.core.financial_core.init_enhanced_finance_db'):
+        with patch('education_system.university_system.modules.domain.finance.core.financial_core.get_connection') as mock_conn, \
+             patch('education_system.university_system.modules.domain.finance.core.financial_core.get_auth') as mock_get_auth, \
+             patch('education_system.university_system.modules.domain.finance.core.financial_core.init_enhanced_finance_db'):
 
             conn = sqlite3.connect(temp_db)
             mock_conn.return_value = conn
@@ -98,8 +98,8 @@ class TestFinanceMenu:
 
     def test_display_enhanced_finance_menu_exits(self, mock_auth):
         """Test finance menu exit"""
-        with patch('university_system.modules.domain.finance.core.financial_core.auth', mock_auth), \
-             patch('builtins.input', side_effect=['29']):
+        with patch('education_system.university_system.modules.domain.finance.core.financial_core.auth', mock_auth), \
+             patch('builtins.input', side_effect=['31']):
 
             financial_core.display_enhanced_finance_menu()
 

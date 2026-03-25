@@ -13,16 +13,19 @@ class ParentsEveningService:
 
     # --- Evenings ---
 
-    def create_evening(self, title: str, event_date: str,
+    def create_evening(self, academic_year: str, event_date: str,
                         start_time: str = "16:00", end_time: str = "20:00",
-                        slot_duration_mins: int = 5, created_by: int = None) -> dict:
+                        slot_duration: int = 5, term: str = None,
+                        created_by: int = None) -> dict:
         conn = self._conn()
         try:
             conn.execute(
                 """INSERT INTO parents_evenings
-                   (title, event_date, start_time, end_time, slot_duration_mins, created_by)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
-                (title, event_date, start_time, end_time, slot_duration_mins, created_by),
+                   (academic_year, term, event_date, start_time, end_time,
+                    slot_duration, created_by)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (academic_year, term, event_date, start_time, end_time,
+                 slot_duration, created_by),
             )
             conn.commit()
             row = conn.execute(
@@ -65,8 +68,8 @@ class ParentsEveningService:
     def update_evening(self, evening_id: int, **kwargs) -> dict:
         conn = self._conn()
         try:
-            allowed = {"title", "event_date", "start_time", "end_time",
-                        "slot_duration_mins", "status"}
+            allowed = {"academic_year", "term", "event_date", "start_time",
+                        "end_time", "slot_duration", "status"}
             parts, params = [], []
             for k, v in kwargs.items():
                 if k in allowed:
@@ -89,15 +92,15 @@ class ParentsEveningService:
 
     # --- Slots ---
 
-    def create_slot(self, evening_id: int, teacher_id: int, slot_time: str,
+    def create_slot(self, evening_id: int, staff_id: int, slot_time: str,
                      parent_user_id: int = None, student_id: int = None) -> dict:
         conn = self._conn()
         try:
             conn.execute(
                 """INSERT INTO parents_evening_slots
-                   (evening_id, teacher_id, slot_time, parent_user_id, student_id)
+                   (evening_id, staff_id, slot_time, parent_user_id, student_id)
                    VALUES (?, ?, ?, ?, ?)""",
-                (evening_id, teacher_id, slot_time, parent_user_id, student_id),
+                (evening_id, staff_id, slot_time, parent_user_id, student_id),
             )
             conn.commit()
             row = conn.execute(
@@ -109,17 +112,17 @@ class ParentsEveningService:
         finally:
             conn.close()
 
-    def list_slots(self, evening_id: int, teacher_id: int = None) -> list[dict]:
+    def list_slots(self, evening_id: int, staff_id: int = None) -> list[dict]:
         conn = self._conn()
         try:
-            query = """SELECT ps.*, u.username as teacher_name
+            query = """SELECT ps.*, u.username as staff_name
                        FROM parents_evening_slots ps
-                       LEFT JOIN users u ON ps.teacher_id = u.id
+                       LEFT JOIN users u ON ps.staff_id = u.id
                        WHERE ps.evening_id = ?"""
             params = [evening_id]
-            if teacher_id:
-                query += " AND ps.teacher_id = ?"
-                params.append(teacher_id)
+            if staff_id:
+                query += " AND ps.staff_id = ?"
+                params.append(staff_id)
             query += " ORDER BY ps.slot_time"
             rows = conn.execute(query, params).fetchall()
             return [dict(r) for r in rows]
@@ -171,13 +174,33 @@ class ParentsEveningService:
         finally:
             conn.close()
 
+    def delete_appointment(self, appointment_id: int) -> bool:
+        """Delete a parents evening slot/appointment by ID."""
+        conn = self._conn()
+        try:
+            result = conn.execute(
+                "DELETE FROM parents_evening_slots WHERE id = ?", (appointment_id,)
+            )
+            conn.commit()
+            if result.rowcount == 0:
+                raise ParentsEveningError(f"Appointment {appointment_id} not found.")
+            return True
+        except ParentsEveningError:
+            raise
+        except Exception as e:
+            conn.rollback()
+            raise ParentsEveningError(f"Failed to delete appointment: {e}")
+        finally:
+            conn.close()
+
     def get_parent_bookings(self, parent_user_id: int, evening_id: int = None) -> list[dict]:
         conn = self._conn()
         try:
-            query = """SELECT ps.*, pe.title as evening_title, pe.event_date, u.username as teacher_name
+            query = """SELECT ps.*, pe.academic_year, pe.term, pe.event_date,
+                              u.username as staff_name
                        FROM parents_evening_slots ps
                        LEFT JOIN parents_evenings pe ON ps.evening_id = pe.id
-                       LEFT JOIN users u ON ps.teacher_id = u.id
+                       LEFT JOIN users u ON ps.staff_id = u.id
                        WHERE ps.parent_user_id = ?"""
             params = [parent_user_id]
             if evening_id:

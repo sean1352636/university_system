@@ -2,7 +2,7 @@
 All CLI menu functions and interactive wrappers.
 """
 
-from ._imports import (
+from education_system.university_system.modules.services.cli.charity_shop_cli._imports import (
     sqlite3, datetime,
     get_connection, get_text, get_auth, display_language_menu_option,
     TABLE_NAME, CATEGORIES, CONDITIONS,
@@ -10,8 +10,8 @@ from ._imports import (
 )
 import education_system.university_system.modules.services.cli.charity_shop_cli._imports as _imp
 
-from .db import init_charity_shop_db
-from .inventory import (
+from education_system.university_system.modules.services.cli.charity_shop_cli.db import init_charity_shop_db
+from education_system.university_system.modules.services.cli.charity_shop_cli.inventory import (
     get_all_stock, search_stock, add_item, update_item,
     mark_as_sold, mark_as_available, delete_item,
     get_stock_summary, get_revenue_summary, get_revenue_by_category, get_stock_by_category,
@@ -19,36 +19,36 @@ from .inventory import (
     adjust_stock_quantity, set_low_stock_alert, view_low_stock_items,
     merge_duplicate_items,
 )
-from .archive import (
+from education_system.university_system.modules.services.cli.charity_shop_cli.archive import (
     archive_old_items, restore_archived_items, get_archived_items,
     transfer_between_locations, get_all_locations, add_location,
 )
-from .pricing import (
+from education_system.university_system.modules.services.cli.charity_shop_cli.pricing import (
     barcode_scanner_integration, set_item_barcode,
     apply_discount, create_sale_bundle, get_bundles,
     price_history_tracker, dynamic_pricing_suggestions,
 )
-from .promotions import (
+from education_system.university_system.modules.services.cli.charity_shop_cli.promotions import (
     create_promotional_event, get_active_promotions, process_refund,
     layaway_system, get_layaways, gift_card_management, loyalty_points_system,
 )
-from .reporting import (
+from education_system.university_system.modules.services.cli.charity_shop_cli.reporting import (
     calculate_profit_margin,
     generate_daily_sales_report, generate_weekly_sales_report, generate_monthly_sales_report,
     best_selling_items_report, slow_moving_items_report,
     revenue_trend_analysis, category_performance_comparison, seasonal_trends_report,
     donor_contribution_report, tax_deduction_report,
 )
-from .customers import (
+from education_system.university_system.modules.services.cli.charity_shop_cli.customers import (
     register_customer, get_customer, customer_purchase_history,
     customer_wishlist, vip_customer_management, customer_birthday_discounts,
     customer_referral_program, customer_feedback_system,
 )
-from .donations import (
+from education_system.university_system.modules.services.cli.charity_shop_cli.donations import (
     record_donation, generate_donation_receipt, donor_database,
     donation_value_estimator, donation_drive_tracker, thank_you_letter_generator,
 )
-from .staff import (
+from education_system.university_system.modules.services.cli.charity_shop_cli.staff import (
     register_staff, get_all_staff,
     staff_performance_tracker, shift_scheduling,
     task_assignment_system, volunteer_hours_tracker,

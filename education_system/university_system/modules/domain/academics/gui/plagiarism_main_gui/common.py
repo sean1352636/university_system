@@ -63,7 +63,7 @@ except ImportError:
     logger.warning("textract not available. Only .txt files will be supported.")
     TEXTRACT_AVAILABLE = False
 
-from .config import GuiConfig
+from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.config import GuiConfig
 
 # Helper function to create authenticated UserAuth instance
 def get_authenticated_user_auth():

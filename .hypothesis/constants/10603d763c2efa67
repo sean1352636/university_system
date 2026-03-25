@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/grading/competency.py
+# hypothesis_version: 6.151.9
+
+[100, 110, '\nAvailable Levels:', '\nCompetencies Menu:', '\nCompetencies:', '\nCurrent values:', '\nManage Competencies', '%Y-%m-%d', '-', '...', '1', '2', '3', '3. Edit Competency', '4', '4. Delete Competency', '5', 'Competency Name: ', 'Description: ', 'Student not found.', 'y']

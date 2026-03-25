@@ -1,6 +1,6 @@
 """Campus map canvas drawing and interaction."""
 
-from ._imports import tk, ttk, messagebox, scrolledtext, Dict, _t
+from education_system.university_system.modules.domain.campus_navigation.gui._imports import tk, ttk, messagebox, scrolledtext, Dict, _t
 
 
 class MapCanvasMixin:

@@ -23,8 +23,7 @@ from education_system.university_system.infrastructure.database.db import get_co
 
 # Try to import hypothesis for property-based testing
 try:
-    from hypothesis import given, strategies as st, settings, Phase
-    from hypothesis.statistic import describe_statistics
+    from hypothesis import given, strategies as st, settings, Phase, HealthCheck
     HYPOTHESIS_AVAILABLE = True
 except ImportError:
     HYPOTHESIS_AVAILABLE = False
@@ -423,7 +422,7 @@ class TestPropertyBasedTesting:
         first_name=st.text(min_size=1, max_size=50),
         last_name=st.text(min_size=1, max_size=50)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_student_creation_properties(self, temp_db, student_id, first_name, last_name):
         """Property: Any valid student data should be insertable and retrievable"""
 
@@ -459,7 +458,7 @@ class TestPropertyBasedTesting:
     @given(
         grade=st.floats(min_value=0.0, max_value=100.0, allow_nan=False, allow_infinity=False)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=100, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_grade_calculation_properties(self, temp_db, grade):
         """Property: Grade calculations should be consistent and within bounds"""
 
@@ -523,7 +522,7 @@ class TestPropertyBasedTesting:
         num_students=st.integers(min_value=1, max_value=50),
         num_courses=st.integers(min_value=1, max_value=10)
     )
-    @settings(max_examples=20, deadline=None)
+    @settings(max_examples=20, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_enrollment_capacity_properties(self, temp_db, num_students, num_courses):
         """Property: Enrollment counts should always match actual enrollments"""
 

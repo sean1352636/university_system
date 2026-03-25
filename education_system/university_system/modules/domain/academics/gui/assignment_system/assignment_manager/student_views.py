@@ -67,40 +67,42 @@ class StudentViewsMixin:
                 return
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            cursor = conn.cursor()
+            try:
+                cursor = conn.cursor()
 
-            cursor.execute('''
-            SELECT a.id, a.title, a.module_code, a.due_date,
-                   CASE
-                       WHEN s.id IS NOT NULL THEN 'Submitted'
-                       WHEN a.due_date < datetime('now') THEN 'Overdue'
-                       ELSE 'Pending'
-                   END as status,
-                   COALESCE(s.grade, 'Not Graded') as grade
-            FROM assignments a
-            JOIN student_modules sm ON a.module_code = sm.module_code
-            LEFT JOIN assignment_submissions s ON a.id = s.assignment_id AND s.student_id = ?
-            WHERE sm.student_id = ? AND a.is_active = 1
-            ORDER BY a.due_date
-            ''', (student_id, student_id))
+                cursor.execute('''
+                SELECT a.id, a.title, a.module_code, a.due_date,
+                       CASE
+                           WHEN s.id IS NOT NULL THEN 'Submitted'
+                           WHEN a.due_date < datetime('now') THEN 'Overdue'
+                           ELSE 'Pending'
+                       END as status,
+                       COALESCE(s.grade, 'Not Graded') as grade
+                FROM assignments a
+                JOIN student_modules sm ON a.module_code = sm.module_code
+                LEFT JOIN assignment_submissions s ON a.id = s.assignment_id AND s.student_id = ?
+                WHERE sm.student_id = ? AND a.is_active = 1
+                ORDER BY a.due_date
+                ''', (student_id, student_id))
 
-            assignments = cursor.fetchall()
+                assignments = cursor.fetchall()
 
-            for assignment in assignments:
-                # Color code based on status
-                tags = []
-                if assignment[4] == 'Overdue':
-                    tags = ['overdue']
-                elif assignment[4] == 'Submitted':
-                    tags = ['submitted']
+                for assignment in assignments:
+                    # Color code based on status
+                    tags = []
+                    if assignment[4] == 'Overdue':
+                        tags = ['overdue']
+                    elif assignment[4] == 'Submitted':
+                        tags = ['submitted']
 
-                tree.insert('', 'end', values=assignment, tags=tags)
+                    tree.insert('', 'end', values=assignment, tags=tags)
 
-            # Configure tags
-            tree.tag_configure('overdue', background='#ffebee')
-            tree.tag_configure('submitted', background='#e8f5e8')
+                # Configure tags
+                tree.tag_configure('overdue', background='#ffebee')
+                tree.tag_configure('submitted', background='#e8f5e8')
 
-            conn.close()
+            finally:
+                conn.close()
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load assignments: {e}")

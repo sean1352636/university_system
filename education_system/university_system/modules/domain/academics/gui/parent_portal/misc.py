@@ -41,7 +41,7 @@ except ImportError:
 
 
 
-from .base import ParentPortalGUI
+from education_system.university_system.modules.domain.academics.gui.parent_portal.base import ParentPortalGUI
 
 class DataExportDialog:
     """Dialog for exporting student data"""
@@ -603,7 +603,7 @@ def format_date(date_string):
     """Format date string for display"""
     try:
         date_obj = datetime.datetime.strptime(date_string, '%Y-%m-%d')
-        return date_obj.strftime('%d/%m/%Y')
+        return date_obj.strftime('%Y-%m-%d')
     except (ValueError, TypeError):
         return date_string
 

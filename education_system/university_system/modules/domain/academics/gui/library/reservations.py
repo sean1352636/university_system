@@ -5,6 +5,7 @@ Backwards compatible with existing database and auth systems
 """
 
 
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
@@ -114,7 +115,7 @@ except ImportError:
 _AUDIT_LOG_COLUMNS_CACHE: Optional[List[str]] = None
 _STUDENT_COLUMNS_CACHE: Optional[List[str]] = None
 
-from .base import LibraryGUI
+from education_system.university_system.modules.domain.academics.gui.library.base import LibraryGUI
 
 def show_reservations(self):
     """Show reservations management"""
@@ -196,24 +197,45 @@ def refresh_reservations(self):
     self.load_reservations()
 
 def new_reservation_dialog(self):
-    """Create new reservation dialog"""
+    """Create new reservation dialog with book dropdown and auto-filled user"""
     dialog = tk.Toplevel(self.master)
     dialog.title(_("library.dialogs.new_reservation"))
-    dialog.geometry("400x300")
+    dialog.geometry("500x300")
     dialog.transient(self.master)
     dialog.grab_set()
 
     main_frame = ttk.Frame(dialog)
     main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-    # Book selection
-    ttk.Label(main_frame, text="Book ID:").pack(anchor='w', pady=5)
-    book_id_var = tk.StringVar()
-    ttk.Entry(main_frame, textvariable=book_id_var, width=30).pack(anchor='w', pady=5)
+    # Book selection dropdown
+    ttk.Label(main_frame, text="Select Book:").pack(anchor='w', pady=5)
+    book_var = tk.StringVar()
+    book_combo = ttk.Combobox(main_frame, textvariable=book_var, width=55, state='readonly')
+    book_combo.pack(anchor='w', pady=5)
 
-    # User selection
+    # Load books
+    book_map = {}
+    try:
+        conn = get_db_connection()
+        if conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT book_id, title, author, status FROM books ORDER BY title")
+            books = cursor.fetchall()
+            conn.close()
+            book_list = []
+            for bid, title, author, status in books:
+                display = f"{bid} - {title[:35]} ({author[:20]}) [{status}]"
+                book_list.append(display)
+                book_map[display] = bid
+            book_combo['values'] = book_list
+    except Exception:
+        pass
+
+    # User ID — auto-fill from current user
     ttk.Label(main_frame, text="User ID:").pack(anchor='w', pady=5)
     user_id_var = tk.StringVar()
+    if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
+        user_id_var.set(self.auth.current_user.get('username', ''))
     ttk.Entry(main_frame, textvariable=user_id_var, width=30).pack(anchor='w', pady=5)
 
     # Buttons
@@ -221,17 +243,20 @@ def new_reservation_dialog(self):
     button_frame.pack(pady=20)
 
     def create_reservation():
-        book_id = book_id_var.get().strip()
+        selected = book_var.get()
+        book_id = book_map.get(selected, selected.split(' - ')[0] if selected else '').strip()
         user_id = user_id_var.get().strip()
 
         if not book_id or not user_id:
-            messagebox.showwarning(_("common.warning"), "Please enter both Book ID and User ID")
+            messagebox.showwarning(_("common.warning"), "Please select a book and enter a User ID")
             return
 
         try:
             if ORIGINAL_LIBRARY_AVAILABLE:
                 success = self.create_reservation_database(book_id, user_id)
                 if success:
+                    # Email user about reservation
+                    self._send_reservation_email(user_id, book_id, 'created')
                     messagebox.showinfo(_("common.success"), "Reservation created successfully!")
                     dialog.destroy()
                     self.refresh_reservations()
@@ -243,7 +268,7 @@ def new_reservation_dialog(self):
         except tk.TclError as e:
             messagebox.showerror(_("common.error"), f"Error creating reservation: {str(e)}")
 
-    ttk.Button(button_frame, text="Create", command=create_reservation).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text="Create Reservation", command=create_reservation).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
 def create_reservation_database(self, book_id, user_id):
@@ -350,9 +375,12 @@ def cancel_reservation(self):
                     conn.close()
 
                     # Log the action
-                    log_audit_event(get_current_user_id(), 
-                                  f"GUI: Cancelled reservation {reservation_id}", 
+                    log_audit_event(get_current_user_id(),
+                                  f"GUI: Cancelled reservation {reservation_id}",
                                   "book_reservations")
+
+                    # Email user about cancellation
+                    self._send_reservation_email(user_id, item['values'][1], 'cancelled')
 
                     messagebox.showinfo(_("common.success"), "Reservation cancelled successfully!")
                     self.refresh_reservations()
@@ -402,7 +430,7 @@ def reserve_selected_book(self):
             cursor.execute('''
                 SELECT student_id FROM students
                 WHERE student_id = ? OR email_address LIKE ?
-            ''', (user_id, f"%{user_id}%"))
+            ''', (user_id, f"%{escape_like(user_id)}%"))
 
             user = cursor.fetchone()
             if not user:
@@ -693,4 +721,100 @@ def manage_reservations_gui(self):
 
     # Load initial data
     load_reservations()
+
+
+def _send_reservation_email(self, user_id, book_id_or_title, action):
+    """Email user about reservation status (created/cancelled/available)."""
+    try:
+        from education_system.university_system.infrastructure.email.email_service import send_email
+
+        conn = get_db_connection()
+        if not conn:
+            return
+        cursor = conn.cursor()
+
+        # Get user email
+        email = None
+        name = user_id
+        cursor.execute("SELECT first_name, email_address FROM students WHERE student_id = ?", (user_id,))
+        row = cursor.fetchone()
+        if row and row[1]:
+            name, email = row[0], row[1]
+        else:
+            cursor.execute("SELECT first_name, email FROM users WHERE username = ? OR id = ?", (user_id, user_id))
+            row = cursor.fetchone()
+            if row and row[1]:
+                name, email = row[0], row[1]
+
+        # Get book title if we have a book_id
+        book_title = book_id_or_title
+        cursor.execute("SELECT title FROM books WHERE book_id = ?", (book_id_or_title,))
+        title_row = cursor.fetchone()
+        if title_row:
+            book_title = title_row[0]
+
+        conn.close()
+
+        if not email:
+            return
+
+        if action == 'created':
+            subject = f"Book Reserved: {book_title}"
+            body = (
+                f"Dear {name},\n\n"
+                f"Your reservation has been created:\n\n"
+                f"Book: {book_title}\n\n"
+                f"You will be notified when the book becomes available.\n\n"
+                f"Best regards,\nLibrary Services"
+            )
+        elif action == 'cancelled':
+            subject = f"Reservation Cancelled: {book_title}"
+            body = (
+                f"Dear {name},\n\n"
+                f"Your reservation for the following book has been cancelled:\n\n"
+                f"Book: {book_title}\n\n"
+                f"If this was done in error, please contact the library.\n\n"
+                f"Best regards,\nLibrary Services"
+            )
+        elif action == 'available':
+            subject = f"Book Now Available: {book_title}"
+            body = (
+                f"Dear {name},\n\n"
+                f"The book you reserved is now available for checkout:\n\n"
+                f"Book: {book_title}\n\n"
+                f"Please visit the library to check out the book before your reservation expires.\n\n"
+                f"Best regards,\nLibrary Services"
+            )
+        else:
+            return
+
+        send_email(recipient_email=email, subject=subject, body=body)
+
+    except Exception as e:
+        import logging
+        logging.warning(f"Reservation email failed: {e}")
+
+
+def notify_reserved_users_on_return(self, book_id):
+    """When a book is returned, email users who have active reservations for it."""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            SELECT user_id FROM book_reservations
+            WHERE book_id = ? AND status = 'active'
+            ORDER BY priority_order ASC
+        ''', (book_id,))
+        reserved_users = cursor.fetchall()
+        conn.close()
+
+        for (uid,) in reserved_users:
+            self._send_reservation_email(uid, book_id, 'available')
+
+    except Exception as e:
+        import logging
+        logging.warning(f"Failed to notify reserved users: {e}")
 

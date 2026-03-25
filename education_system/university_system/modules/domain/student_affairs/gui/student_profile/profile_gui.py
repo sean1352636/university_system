@@ -87,7 +87,7 @@ class StudentProfileGUI:
             ("Name", "name", True),
             ("Email", "email", False),
             ("Gender", "gender", True),
-            ("Date of Birth", "dob", True),
+            ("Date of Birth (YYYY-MM-DD)", "dob", True),
             ("Course", "course", True),
             ("Emergency Contact", "emergency_contact", False),
             ("Pronouns", "pronouns", False),

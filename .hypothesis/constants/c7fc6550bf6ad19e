@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/equipment/services/equipment_core.py
+# hypothesis_version: 6.151.9
+
+[' = ?', ' AND category = ?', ' WHERE item_id = ?', '%H:%M', '%Y%m%d%H%M%S', '%Y-%m-%d', ', ', '-', 'audio_visual', 'borrower_department', 'borrower_email', 'borrower_phone', 'brand', 'cameras', 'cancelled', 'checked_out', 'column', 'computers', 'condition', 'condition_checkout', 'created_by', 'deposit_amount', 'deposit_required', 'description', 'event_supplies', 'excellent', 'fair', 'furniture', 'good', 'hourly_rate', 'lab_equipment', 'lighting', 'location', 'model', 'needs_repair', 'notes', 'other', 'out_of_service', 'outdoor', 'overdue', 'projectors', 'purpose', 'quantity_available', 'quantity_total', 'requires_training', 'reserved', 'returned', 'serial_number', 'sports', 'tools']

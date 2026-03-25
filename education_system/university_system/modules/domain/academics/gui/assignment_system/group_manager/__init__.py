@@ -4,10 +4,10 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from education_system.university_system.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 
-from .assignment_creation import AssignmentCreationMixin
-from .configuration import ConfigurationMixin
-from .management import ManagementMixin
-from .student_actions import StudentActionsMixin
+from education_system.university_system.modules.domain.academics.gui.assignment_system.group_manager.assignment_creation import AssignmentCreationMixin
+from education_system.university_system.modules.domain.academics.gui.assignment_system.group_manager.configuration import ConfigurationMixin
+from education_system.university_system.modules.domain.academics.gui.assignment_system.group_manager.management import ManagementMixin
+from education_system.university_system.modules.domain.academics.gui.assignment_system.group_manager.student_actions import StudentActionsMixin
 
 
 class GroupManager(AssignmentCreationMixin, ConfigurationMixin,

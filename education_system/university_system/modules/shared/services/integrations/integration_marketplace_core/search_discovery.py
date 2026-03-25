@@ -1,6 +1,7 @@
 """Search & Discovery Manager and CLI functions"""
 
-from ._imports import re, Any, Dict, List, get_connection
+from education_system.university_system.core.sql_safety import escape_like
+from education_system.university_system.modules.shared.services.integrations.integration_marketplace_core._imports import re, Any, Dict, List, get_connection
 
 
 class SearchDiscoveryManager:
@@ -11,7 +12,7 @@ class SearchDiscoveryManager:
         """Full-text search across integration names, providers, and descriptions with highlighting"""
         with get_connection() as conn:
             cursor = conn.cursor()
-            search_pattern = f"%{query}%"
+            search_pattern = f"%{escape_like(query)}%"
             cursor.execute('''
                 SELECT integration_id, integration_name, provider_name, description,
                        category, integration_type, version, rating, install_count
@@ -118,7 +119,7 @@ class SearchDiscoveryManager:
                 params.append(status)
             if error_contains:
                 query += " AND error_details LIKE ?"
-                params.append(f"%{error_contains}%")
+                params.append(f"%{escape_like(error_contains)}%")
 
             query += " ORDER BY sync_start_time DESC LIMIT 500"
             cursor.execute(query, params)
@@ -146,7 +147,7 @@ class SearchDiscoveryManager:
                 params.append(1 if filters['is_official'] else 0)
             if filters.get('provider_name'):
                 conditions.append("provider_name LIKE ?")
-                params.append(f"%{filters['provider_name']}%")
+                params.append(f"%{escape_like(filters['provider_name'])}%")
             if filters.get('min_installs'):
                 conditions.append("install_count >= ?")
                 params.append(filters['min_installs'])

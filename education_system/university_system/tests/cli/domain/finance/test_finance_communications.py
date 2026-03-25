@@ -27,7 +27,7 @@ from education_system.university_system.modules.domain.finance.core.communicatio
 class TestSendEmailSMTP:
     """Test suite for send_email_smtp function"""
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.send_email_via_smtp')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.send_email_via_smtp')
     @patch('builtins.print')
     def test_send_email_smtp_success(self, mock_print, mock_send_email):
         """Test successful email sending via SMTP"""
@@ -44,7 +44,7 @@ class TestSendEmailSMTP:
         # Verify success message printed
         assert any('Email sent successfully' in str(call) for call in mock_print.call_args_list)
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.send_email_via_smtp')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.send_email_via_smtp')
     @patch('builtins.print')
     def test_send_email_smtp_failure(self, mock_print, mock_send_email):
         """Test failed email sending via SMTP"""
@@ -60,7 +60,7 @@ class TestSendEmailSMTP:
         # Verify failure message printed
         assert any('Email sending failed' in str(call) for call in mock_print.call_args_list)
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.send_email_via_smtp')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.send_email_via_smtp')
     @patch('builtins.print')
     def test_send_email_smtp_exception(self, mock_print, mock_send_email):
         """Test email sending with exception"""
@@ -80,7 +80,7 @@ class TestSendEmailSMTP:
 class TestSendEmailSendgrid:
     """Test suite for send_email_sendgrid function"""
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.send_email_unified')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.send_email_unified')
     @patch('builtins.print')
     def test_send_email_sendgrid_success(self, mock_print, mock_send_email):
         """Test successful email sending via SendGrid (deprecated)"""
@@ -97,7 +97,7 @@ class TestSendEmailSendgrid:
         # Verify deprecation warning
         assert any('DEPRECATED' in str(call) for call in mock_print.call_args_list)
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.send_email_unified')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.send_email_unified')
     @patch('builtins.print')
     def test_send_email_sendgrid_failure(self, mock_print, mock_send_email):
         """Test failed email sending via SendGrid"""
@@ -111,7 +111,7 @@ class TestSendEmailSendgrid:
 
         assert result is False
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.send_email_unified')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.send_email_unified')
     @patch('builtins.print')
     def test_send_email_sendgrid_exception(self, mock_print, mock_send_email):
         """Test email sending via SendGrid with exception"""
@@ -130,7 +130,7 @@ class TestSendEmailSendgrid:
 class TestSendEmailAWSSES:
     """Test suite for send_email_aws_ses function"""
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.send_email_unified')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.send_email_unified')
     @patch('builtins.print')
     def test_send_email_aws_ses_success(self, mock_print, mock_send_email):
         """Test successful email sending via AWS SES (deprecated)"""
@@ -147,7 +147,7 @@ class TestSendEmailAWSSES:
         # Verify deprecation warning
         assert any('DEPRECATED' in str(call) for call in mock_print.call_args_list)
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.send_email_unified')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.send_email_unified')
     @patch('builtins.print')
     def test_send_email_aws_ses_failure(self, mock_print, mock_send_email):
         """Test failed email sending via AWS SES"""
@@ -232,7 +232,7 @@ class TestSetupSMSConfig:
 class TestSendSMSTwilio:
     """Test suite for send_sms_twilio function"""
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.send_sms_unified')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.send_sms_unified')
     @patch('builtins.print')
     def test_send_sms_twilio_success(self, mock_print, mock_send_sms):
         """Test successful SMS sending via Twilio (deprecated)"""
@@ -248,7 +248,7 @@ class TestSendSMSTwilio:
         # Verify deprecation warning
         assert any('DEPRECATED' in str(call) for call in mock_print.call_args_list)
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.send_sms_unified')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.send_sms_unified')
     @patch('builtins.print')
     def test_send_sms_twilio_failure(self, mock_print, mock_send_sms):
         """Test failed SMS sending via Twilio"""
@@ -261,7 +261,7 @@ class TestSendSMSTwilio:
 
         assert result is False
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.send_sms_unified')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.send_sms_unified')
     @patch('builtins.print')
     def test_send_sms_twilio_exception(self, mock_print, mock_send_sms):
         """Test SMS sending via Twilio with exception"""
@@ -279,7 +279,7 @@ class TestSendSMSTwilio:
 class TestSendSMSAWSSNS:
     """Test suite for send_sms_aws_sns function"""
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.send_sms_unified')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.send_sms_unified')
     @patch('builtins.print')
     def test_send_sms_aws_sns_success(self, mock_print, mock_send_sms):
         """Test successful SMS sending via AWS SNS (deprecated)"""
@@ -295,7 +295,7 @@ class TestSendSMSAWSSNS:
         # Verify deprecation warning
         assert any('DEPRECATED' in str(call) for call in mock_print.call_args_list)
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.send_sms_unified')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.send_sms_unified')
     @patch('builtins.print')
     def test_send_sms_aws_sns_failure(self, mock_print, mock_send_sms):
         """Test failed SMS sending via AWS SNS"""
@@ -312,8 +312,8 @@ class TestSendSMSAWSSNS:
 class TestEmailService:
     """Test suite for test_email_service function"""
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.send_email_notification')
-    @patch('university_system.modules.domain.finance.finance_misc.communications.render_template')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.send_email_notification')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.render_template')
     @patch('builtins.input', return_value='test@example.com')
     @patch('builtins.print')
     def test_email_service_success(self, mock_print, mock_input, mock_render, mock_send):
@@ -326,8 +326,8 @@ class TestEmailService:
         mock_send.assert_called_once_with('test@example.com', 'Test Subject', 'Test Body')
         assert any('Email test successful' in str(call) for call in mock_print.call_args_list)
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.send_email_notification')
-    @patch('university_system.modules.domain.finance.finance_misc.communications.render_template')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.send_email_notification')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.render_template')
     @patch('builtins.input', return_value='test@example.com')
     @patch('builtins.print')
     def test_email_service_failure(self, mock_print, mock_input, mock_render, mock_send):
@@ -339,7 +339,7 @@ class TestEmailService:
 
         assert any('Email test failed' in str(call) for call in mock_print.call_args_list)
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.render_template')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.render_template')
     @patch('builtins.input', return_value='test@example.com')
     @patch('builtins.print')
     def test_email_service_no_template(self, mock_print, mock_input, mock_render):
@@ -350,14 +350,14 @@ class TestEmailService:
 
         assert any('Failed to load email template' in str(call) for call in mock_print.call_args_list)
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.render_template')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.render_template')
     @patch('builtins.input', return_value='')
     @patch('builtins.print')
     def test_email_service_default_email(self, mock_print, mock_input, mock_render):
         """Test email service testing with default email"""
         mock_render.return_value = ('Test Subject', 'Test Body')
 
-        with patch('university_system.modules.domain.finance.finance_misc.communications.send_email_notification') as mock_send:
+        with patch('education_system.university_system.modules.domain.finance.finance_misc.communications.send_email_notification') as mock_send:
             mock_send.return_value = True
             test_email_service()
 
@@ -368,7 +368,7 @@ class TestEmailService:
 class TestSMSService:
     """Test suite for test_sms_service function"""
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.send_sms_notification')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.send_sms_notification')
     @patch('builtins.input', return_value='STU001')
     @patch('builtins.print')
     def test_sms_service_success(self, mock_print, mock_input, mock_send):
@@ -380,7 +380,7 @@ class TestSMSService:
         mock_send.assert_called_once()
         assert any('SMS test successful' in str(call) for call in mock_print.call_args_list)
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.send_sms_notification')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.send_sms_notification')
     @patch('builtins.input', return_value='STU001')
     @patch('builtins.print')
     def test_sms_service_failure(self, mock_print, mock_input, mock_send):
@@ -391,7 +391,7 @@ class TestSMSService:
 
         assert any('SMS test failed' in str(call) for call in mock_print.call_args_list)
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.send_sms_notification')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.send_sms_notification')
     @patch('builtins.input', return_value='')
     @patch('builtins.print')
     def test_sms_service_default_student(self, mock_print, mock_input, mock_send):
@@ -407,7 +407,7 @@ class TestSMSService:
     @patch('builtins.print')
     def test_sms_service_exception(self, mock_print, mock_input):
         """Test SMS service testing with exception"""
-        with patch('university_system.modules.domain.finance.finance_misc.communications.send_sms_notification') as mock_send:
+        with patch('education_system.university_system.modules.domain.finance.finance_misc.communications.send_sms_notification') as mock_send:
             mock_send.side_effect = Exception("SMS error")
             test_sms_service()
 
@@ -417,9 +417,9 @@ class TestSMSService:
 class TestSendArrangementConfirmation:
     """Test suite for send_arrangement_confirmation function"""
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.get_connection')
-    @patch('university_system.modules.domain.finance.finance_misc.communications.send_email_notification')
-    @patch('university_system.modules.domain.finance.finance_misc.communications.render_template')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.send_email_notification')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.render_template')
     @patch('builtins.print')
     def test_send_arrangement_confirmation_success(self, mock_print, mock_render, mock_send, mock_get_conn):
         """Test successful arrangement confirmation sending"""
@@ -444,9 +444,9 @@ class TestSendArrangementConfirmation:
         assert any('confirmation sent' in str(call) for call in mock_print.call_args_list)
         mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.get_connection')
-    @patch('university_system.modules.domain.finance.finance_misc.communications.send_email_notification')
-    @patch('university_system.modules.domain.finance.finance_misc.communications.render_template')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.send_email_notification')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.render_template')
     @patch('builtins.print')
     def test_send_arrangement_confirmation_send_failure(self, mock_print, mock_render, mock_send, mock_get_conn):
         """Test arrangement confirmation with send failure"""
@@ -467,7 +467,7 @@ class TestSendArrangementConfirmation:
 
         assert any('Failed to send arrangement confirmation' in str(call) for call in mock_print.call_args_list)
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.get_connection')
     @patch('builtins.print')
     def test_send_arrangement_confirmation_no_student(self, mock_print, mock_get_conn):
         """Test arrangement confirmation with non-existent student"""
@@ -488,7 +488,7 @@ class TestSendArrangementConfirmation:
         # Should close connection even if student not found
         mock_conn.close.assert_called_once()
 
-    @patch('university_system.modules.domain.finance.finance_misc.communications.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.finance_misc.communications.get_connection')
     @patch('builtins.print')
     def test_send_arrangement_confirmation_exception(self, mock_print, mock_get_conn):
         """Test arrangement confirmation with exception"""

@@ -30,25 +30,32 @@ def setup_helpdesk_database():
     yield
 
     # Cleanup
-    conn = get_connection()
-    cursor = conn.cursor()
+    try:
+        conn = get_connection(timeout=2)
+    except sqlite3.OperationalError:
+        return
 
-    tables = [
-        'support_tickets', 'ticket_replies', 'ticket_attachments',
-        'ticket_assignments', 'ticket_templates', 'sla_policies',
-        'ticket_workflows', 'ticket_time_tracking', 'ticket_escalations',
-        'ticket_links', 'ticket_audit_log', 'knowledge_base',
-        'departments', 'organizations', 'saved_searches'
-    ]
+    try:
+        cursor = conn.cursor()
 
-    for table in tables:
-        try:
-            cursor.execute(f'DELETE FROM {table}')
-        except sqlite3.OperationalError:
-            pass
+        tables = [
+            'ticket_replies', 'ticket_attachments',
+            'ticket_assignments', 'ticket_time_tracking', 'ticket_escalations',
+            'ticket_links', 'ticket_audit_log', 'ticket_workflows',
+            'support_tickets', 'ticket_templates', 'sla_policies',
+            'knowledge_base', 'saved_searches',
+            'departments', 'organizations',
+        ]
 
-    conn.commit()
-    conn.close()
+        for table in tables:
+            try:
+                cursor.execute(f'DELETE FROM {table}')
+            except (sqlite3.OperationalError, sqlite3.IntegrityError):
+                pass
+
+        conn.commit()
+    finally:
+        conn.close()
 
 @pytest.fixture
 def sample_user(setup_helpdesk_database):
@@ -334,14 +341,13 @@ class TestKnowledgeBase:
 
         cursor.execute('''
             INSERT INTO knowledge_base (
-                title, content, category, tags, author_id, status, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                title, content, category, tags, status, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?)
         ''', (
             'How to Reset Password',
             'Step 1: Click Forgot Password...',
             'Account Access',
             'password,reset,login',
-            2001,
             'published',
             datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         ))

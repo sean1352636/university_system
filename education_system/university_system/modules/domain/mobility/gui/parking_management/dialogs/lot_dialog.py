@@ -2,7 +2,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from .. import PARKING_ZONES
+from education_system.university_system.modules.domain.mobility.gui.parking_management import PARKING_ZONES
 
 
 class LotDialog:

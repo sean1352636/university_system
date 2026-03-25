@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/shared/api/university/routes/dining_routes.py
+# hypothesis_version: 6.151.9
+
+[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/accounts/topup', '/api/dining', '/menu', '/transactions', 'Account top-up', 'GET', 'POST', 'amount', 'available', 'available = 1', 'balance', 'category', 'category = ?', 'create', 'description', 'dining', 'items', 'meal_account', 'meal_topup', 'meal_transactions', 'menu_items', 'new_balance', 'student_id', 'sub', 'total', 'true', 'view']

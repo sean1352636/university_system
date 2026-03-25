@@ -5,7 +5,7 @@ from tkinter import ttk
 
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
-from ..constants import CAMPUS_OFFICER_RANKS
+from education_system.university_system.modules.domain.campus.gui.security.constants import CAMPUS_OFFICER_RANKS
 
 
 class OfficerDialog:

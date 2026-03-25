@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/student_registration/enrollment.py
+# hypothesis_version: 6.151.9
+
+[100, 120, 250, 'Already Enrolled', 'Arial', 'Cannot Drop', 'Code', 'Confirm Drop', 'Credits', 'Drop Selected Module', 'Enrolled', 'Enrolled Date', 'Enrollment error: %s', 'Error', 'Module Dropped', 'Module Full', 'My Enrollment', 'Name', 'No Selection', 'Refresh', 'Status', 'Success', 'bold', 'both', 'end', 'enrollment_tree', 'headings', 'left', 'modules_tree', 'ns', 'nsew', 'values', 'vertical', 'w', 'x']

@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/facilities/seating_plans/services/seating_service.py
+# hypothesis_version: 6.151.9
+
+[' AND room = ?', ' AND status = ?', ' ORDER BY name', 'active', 'cnt']

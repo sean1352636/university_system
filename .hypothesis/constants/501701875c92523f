@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/email_fallback.py
+# hypothesis_version: 6.151.9
+
+[100, 300, 900, 3600, 7200, 'CircuitBreaker', 'Email', 'EmailRetryWorker', 'FallbackQueue', 'Retry worker stopped', 'Send returned False', 'SendResult', 'SendStatus', 'attachments', 'attempt_count', 'bcc', 'body', 'calculate_retry_time', 'cc', 'circuit_breaker', 'closed', 'code', 'created_at', 'details', 'email_queue.db', 'failed', 'half_open', 'is_available', 'last_error', 'metadata', 'open', 'pending', 'pending_retry', 'queue', 'queued', 'recipient', 'retry_at', 'sent', 'skipped', 'state', 'subject', 'total']

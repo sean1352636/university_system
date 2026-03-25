@@ -2,6 +2,7 @@
 
 from datetime import datetime
 import logging
+from education_system.secondary_school.core.sql_safety import validate_identifier
 
 from education_system.secondary_school.core.exceptions import GradeError
 from education_system.secondary_school.infrastructure.database.db import connect
@@ -94,7 +95,7 @@ class GradeService:
         if not updates:
             raise GradeError("No valid fields to update.")
 
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
         params = list(updates.values()) + [grade_id]
 
         conn = self._conn()

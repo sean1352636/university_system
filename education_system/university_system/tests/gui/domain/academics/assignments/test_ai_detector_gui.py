@@ -74,7 +74,7 @@ class TestAIDetectorGUIInitialization:
     """Tests for AI Detector GUI initialization"""
 
     @patch('tkinter.Tk')
-    @patch('university_system.modules.domain.academics.gui.ai_detector_gui.get_auth')
+    @patch('education_system.university_system.modules.domain.academics.gui.ai_detector_gui.get_auth')
     def test_initialization_with_detector(self, mock_get_auth, mock_tk_class, mock_detector, mock_auth):
         """Test initializing GUI with detector instance"""
         if not GUI_AVAILABLE:
@@ -94,8 +94,8 @@ class TestAIDetectorGUIInitialization:
                     assert gui.auth is mock_auth
 
     @patch('tkinter.Tk')
-    @patch('university_system.modules.domain.academics.gui.ai_detector_gui.get_auth')
-    @patch('university_system.modules.domain.academics.gui.ai_detector_gui.AIDetector')
+    @patch('education_system.university_system.modules.domain.academics.gui.ai_detector_gui.get_auth')
+    @patch('education_system.university_system.modules.domain.academics.gui.ai_detector_gui.AIDetector')
     def test_initialization_without_detector(self, mock_ai_detector_class, mock_get_auth, mock_tk_class, mock_auth):
         """Test initializing GUI without detector instance"""
         if not GUI_AVAILABLE:
@@ -117,8 +117,8 @@ class TestAIDetectorGUIInitialization:
 
     @patch('tkinter.Tk')
     @patch('tkinter.messagebox.showerror')
-    @patch('university_system.modules.domain.academics.gui.ai_detector_gui.AIDetector', None)
-    @patch('university_system.modules.domain.academics.gui.ai_detector_gui.get_auth')
+    @patch('education_system.university_system.modules.domain.academics.gui.ai_detector_gui.AIDetector', None)
+    @patch('education_system.university_system.modules.domain.academics.gui.ai_detector_gui.get_auth')
     def test_initialization_without_ai_detector_backend(self, mock_get_auth, mock_error, mock_tk_class, mock_auth):
         """Test that initialization fails gracefully without AI Detector backend"""
         if not GUI_AVAILABLE:
@@ -135,7 +135,7 @@ class TestAuthenticationInitialization:
     """Tests for authentication initialization"""
 
     @patch('tkinter.Tk')
-    @patch('university_system.modules.domain.academics.gui.ai_detector_gui.get_auth')
+    @patch('education_system.university_system.modules.domain.academics.gui.ai_detector_gui.get_auth')
     def test_initialization_uses_provided_auth(self, mock_get_auth, mock_tk_class, mock_detector, mock_auth):
         """Test that GUI uses provided auth object"""
         if not GUI_AVAILABLE:
@@ -152,8 +152,8 @@ class TestAuthenticationInitialization:
                     assert gui.auth is mock_auth
 
     @patch('tkinter.Tk')
-    @patch('university_system.modules.domain.academics.gui.ai_detector_gui.get_auth')
-    @patch('university_system.modules.domain.academics.gui.ai_detector_gui.UserAuth')
+    @patch('education_system.university_system.modules.domain.academics.gui.ai_detector_gui.get_auth')
+    @patch('education_system.university_system.modules.domain.academics.gui.ai_detector_gui.UserAuth')
     def test_initialization_creates_auth_if_not_provided(self, mock_user_auth_class, mock_get_auth, mock_tk_class, mock_detector):
         """Test that GUI creates auth if not provided"""
         if not GUI_AVAILABLE:
@@ -331,7 +331,7 @@ class TestErrorHandling:
         mock_tk_class.return_value = mock_root
 
         # Temporarily set AIDetector to None
-        with patch('university_system.modules.domain.academics.gui.ai_detector_gui.AIDetector', None):
+        with patch('education_system.university_system.modules.domain.academics.gui.ai_detector_gui.AIDetector', None):
             with pytest.raises(RuntimeError):
                 gui = AIDetectorGUI(root=mock_root, auth=mock_auth)
 
@@ -342,8 +342,8 @@ class TestFallbackAuthentication:
     """Tests for fallback authentication"""
 
     @patch('tkinter.Tk')
-    @patch('university_system.modules.domain.academics.gui.ai_detector_gui.get_auth')
-    @patch('university_system.modules.domain.academics.gui.ai_detector_gui.UserAuth')
+    @patch('education_system.university_system.modules.domain.academics.gui.ai_detector_gui.get_auth')
+    @patch('education_system.university_system.modules.domain.academics.gui.ai_detector_gui.UserAuth')
     def test_creates_default_admin_user_on_db_error(self, mock_user_auth_class, mock_get_auth, mock_tk_class, mock_detector):
         """Test that default admin user is created when DB access fails"""
         if not GUI_AVAILABLE:

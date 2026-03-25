@@ -23,6 +23,8 @@ except ImportError:
     from modules.shared.utils.activity_logger import log_activity
     from modules.shared.constants import paths
 
+from education_system.university_system.core.sql_safety import escape_like
+
 
 class AdminToolsGUI:
     """Administrative tools GUI with document approvals, requests, keys, and visitors."""
@@ -1067,7 +1069,7 @@ Created: {row[13]}
 
                 if search_term:
                     query += " AND (card_number LIKE ? OR user_id LIKE ?)"
-                    params.extend([f"%{search_term}%", f"%{search_term}%"])
+                    params.extend([f"%{escape_like(search_term)}%", f"%{escape_like(search_term)}%"])
 
                 query += " ORDER BY created_at DESC"
 

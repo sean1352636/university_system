@@ -982,8 +982,10 @@ def generate_comprehensive_risk_report(risk_data):
     # Ensure recommendations list exists
     if 'recommendations' not in risk_data or risk_data['recommendations'] is None:
         risk_data['recommendations'] = []
-    # Create reports directory
-    reports_dir = 'risk_reports'
+    # Create reports directory within the university system
+    _base_dir = os.path.dirname(os.path.abspath(__file__))
+    _uni_root = os.path.abspath(os.path.join(_base_dir, '..', '..', '..', '..'))
+    reports_dir = os.path.join(_uni_root, 'data', 'reports', 'risk_reports')
     if not os.path.exists(reports_dir):
         os.makedirs(reports_dir)
     

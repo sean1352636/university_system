@@ -9,7 +9,7 @@ existing imports continue to work:
     from education_system.university_system.modules.shared.utils.document_manager import display_document_management_menu
 """
 
-from .manager import DocumentManager, display_document_management_menu, main
+from education_system.university_system.modules.shared.utils.document_manager.manager import DocumentManager, display_document_management_menu, main
 
 __all__ = [
     "DocumentManager",

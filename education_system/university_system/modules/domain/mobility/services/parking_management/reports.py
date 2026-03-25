@@ -2,6 +2,7 @@ import os
 import csv
 import logging
 from datetime import datetime
+from education_system.university_system.core.sql_safety import escape_like
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
@@ -9,11 +10,11 @@ from reportlab.lib import colors
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.modules.shared.utils.i18n import get_text
 from education_system.university_system.utils.logging.log_config import configure_logging
-from .constants import PARKING_ZONES, PERMIT_TYPES
-from .permits import display_permit_details
-from .violations import display_violation_details
-from .helpers import get_file_path
-from . import core
+from education_system.university_system.modules.domain.mobility.services.parking_management.constants import PARKING_ZONES, PERMIT_TYPES
+from education_system.university_system.modules.domain.mobility.services.parking_management.permits import display_permit_details
+from education_system.university_system.modules.domain.mobility.services.parking_management.violations import display_violation_details
+from education_system.university_system.modules.domain.mobility.services.parking_management.helpers import get_file_path
+from education_system.university_system.modules.domain.mobility.services.parking_management import core
 
 _t = get_text
 logger = configure_logging(name=__name__)
@@ -396,7 +397,7 @@ def generate_violation_report():
             WHERE v.location LIKE ?
             ORDER BY v.violation_date DESC
             '''
-            params = (f"%{location}%",)
+            params = (f"%{escape_like(location)}%",)
 
         else:
             print(_t("common.invalid_choice"))

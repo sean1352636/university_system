@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/document_manager/notifications.py
+# hypothesis_version: 6.151.9
+
+['\nCampaign Type:', '\n🔔 MY NOTIFICATIONS', '%Y-%m-%d', '-', '1', '1. Specific Student', '2', '2. All Students', '3', '30', '4', '6. Custom Template', '=', 'Announcement title: ', 'Campaign name: ', 'Enter program name: ', 'No recipients found.', 'Notification title: ', 'Operation cancelled.', 'Unknown', 'announcement', 'campaign', 'custom', 'd', 'expiry_warning', 'high', 'm', 'medium', 'normal', 'y', '⚪', '📖', '📩', '🔴', '🟡']

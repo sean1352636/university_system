@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/staff_hr/services/managers/training_manager.py
+# hypothesis_version: 6.151.9
+
+[' AND category = ?', ' AND e.status = ?', 'active', 'category', 'completed', 'credential_id', 'description', 'document_path', 'duration_hours', 'expiry_date', 'failed', 'is_active', 'is_mandatory', 'issue_date', 'issuing_body', 'notes', 'passing_score', 'provider', 'status']

@@ -458,16 +458,33 @@ class UserManager:
             with self.db_manager.get_connection() as conn:
                 cursor = conn.cursor()
 
+                # Use LEFT JOIN so users without a user_accounts row are still found
                 cursor.execute('''
-                    SELECT u.id, ua.username, u.role
+                    SELECT u.id, COALESCE(ua.username, u.student_id, CAST(u.id AS TEXT)), u.role
                     FROM users u
-                    JOIN user_accounts ua ON u.id = ua.user_id
+                    LEFT JOIN user_accounts ua ON u.id = ua.user_id
                     WHERE u.id = ?
                 ''', (user_id,))
 
                 user_data = cursor.fetchone()
                 if not user_data:
-                    print("User not found.")
+                    # User not in legacy DB — try shared auth as fallback
+                    try:
+                        from education_system.shared.auth.core import UserAuth as SharedAuth
+                        shared = SharedAuth()
+                        shared_user = shared.get_user_by_id(user_id)
+                        if shared_user:
+                            shared_conn = shared._conn()
+                            try:
+                                shared_conn.execute("DELETE FROM sessions WHERE user_id = ?", (user_id,))
+                                shared_conn.execute("DELETE FROM user_systems WHERE user_id = ?", (user_id,))
+                                shared_conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+                                shared_conn.commit()
+                            finally:
+                                shared_conn.close()
+                            return True
+                    except Exception:
+                        pass
                     return False
 
                 _, username, role = user_data
@@ -479,11 +496,25 @@ class UserManager:
                         print("Cannot delete the last admin user.")
                         return False
 
-                # Delete related data
-                cursor.execute('DELETE FROM two_fa_recovery_codes WHERE user_id = ?', (user_id,))
-                cursor.execute('DELETE FROM user_permissions WHERE user_id = ?', (user_id,))
-                cursor.execute('DELETE FROM user_accounts WHERE user_id = ?', (user_id,))
+                # Disable FK constraints while cleaning up user data
+                cursor.execute("PRAGMA foreign_keys = OFF")
+
+                # Delete from all known user-related tables
+                fk_tables = [
+                    'two_fa_recovery_codes', 'mfa_recovery_codes',
+                    'mfa_methods', 'mfa_otp_codes', 'mfa_trusted_devices',
+                    'mfa_user_settings', 'mfa_verification_log', 'mfa_secrets',
+                    'user_permissions', 'sessions', 'user_accounts',
+                    'activity_log', 'login_history',
+                ]
+                for table in fk_tables:
+                    try:
+                        cursor.execute(f'DELETE FROM [{table}] WHERE user_id = ?', (user_id,))
+                    except sqlite3.OperationalError:
+                        pass  # Table may not exist
+
                 cursor.execute('DELETE FROM users WHERE id = ?', (user_id,))
+                cursor.execute("PRAGMA foreign_keys = ON")
 
                 conn.commit()
 
@@ -505,8 +536,8 @@ class UserManager:
             logger.error(f"Database error: {e}")
             return False
 
-    def list_users(self) -> Optional[List[Dict]]:
-        """List all users in the system."""
+    def list_users(self, role=None) -> Optional[List[Dict]]:
+        """List all users in the system, optionally filtered by role."""
         current_user = self.get_current_user()
         if not current_user or 'manage_users' not in current_user.get('permissions', []):
             print("You don't have permission to view all users.")
@@ -517,13 +548,23 @@ class UserManager:
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
 
-                cursor.execute('''
-                    SELECT u.id, ua.username, u.email, u.first_name, u.last_name, u.role,
-                           ua.is_active, ua.last_login, u.created_at, u.student_id, ua.two_fa_enabled
-                    FROM users u
-                    JOIN user_accounts ua ON u.id = ua.user_id
-                    ORDER BY u.role, ua.username
-                ''')
+                if role:
+                    cursor.execute('''
+                        SELECT u.id, ua.username, u.email, u.first_name, u.last_name, u.role,
+                               ua.is_active, ua.last_login, u.created_at, u.student_id, ua.two_fa_enabled
+                        FROM users u
+                        JOIN user_accounts ua ON u.id = ua.user_id
+                        WHERE u.role = ?
+                        ORDER BY u.role, ua.username
+                    ''', (role,))
+                else:
+                    cursor.execute('''
+                        SELECT u.id, ua.username, u.email, u.first_name, u.last_name, u.role,
+                               ua.is_active, ua.last_login, u.created_at, u.student_id, ua.two_fa_enabled
+                        FROM users u
+                        JOIN user_accounts ua ON u.id = ua.user_id
+                        ORDER BY u.role, ua.username
+                    ''')
 
                 users = [dict(row) for row in cursor.fetchall()]
                 return users

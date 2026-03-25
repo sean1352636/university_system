@@ -3,6 +3,7 @@
 from education_system.college_system.core.exceptions import ComplaintError
 from education_system.college_system.infrastructure.database.db import connect
 
+from education_system.college_system.core.sql_safety import escape_like
 import logging
 
 logger = logging.getLogger(__name__)
@@ -69,7 +70,8 @@ class ComplaintService:
             if search:
                 sql += (" AND (complainant_name LIKE ? OR subject LIKE ?"
                         " OR description LIKE ?)")
-                term = f"%{search}%"
+                escaped = escape_like(search)
+                term = f"%{escaped}%"
                 params.extend([term, term, term])
             sql += " ORDER BY complaint_date DESC, created_at DESC LIMIT ?"
             params.append(limit)

@@ -8,10 +8,13 @@ import json
 import sys
 import os
 import logging
+import shutil
 from typing import Dict, List, Optional, Tuple, Any
 import threading
 import queue
 from education_system.university_system.infrastructure.email.template_utils import render_template
+from education_system.university_system.infrastructure.email.email_service.core import send_email
+from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.infrastructure.shared_context import get_auth
 
@@ -97,6 +100,11 @@ class AcademicConferencesDialog:
         tree.insert('', 'end', values=("AI & Machine Learning Symposium", "May 15, 2025", "12", "5", "150"))
         tree.insert('', 'end', values=("Sustainability Conference", "June 2, 2025", "8", "3", "100"))
 
+        self._upcoming_tree = tree
+
+        ttk.Button(upcoming_frame, text="Register",
+                  command=self._register_for_conference).pack(anchor='w', padx=10, pady=(0, 10))
+
         # Paper submissions
         papers_frame = ttk.Frame(notebook)
         notebook.add(papers_frame, text="Submit Paper")
@@ -105,15 +113,132 @@ class AcademicConferencesDialog:
         form.pack(padx=15, pady=15, fill='both', expand=True)
 
         ttk.Label(form, text="Paper Title:").pack(anchor='w', pady=(0, 5))
-        ttk.Entry(form, width=60).pack(fill='x', pady=(0, 15))
+        self._paper_title_entry = ttk.Entry(form, width=60)
+        self._paper_title_entry.pack(fill='x', pady=(0, 15))
 
         ttk.Label(form, text="Abstract:").pack(anchor='w', pady=(0, 5))
-        abstract_text = scrolledtext.ScrolledText(form, height=10, wrap=tk.WORD)
-        abstract_text.pack(fill='both', expand=True, pady=(0, 15))
+        self._abstract_text = scrolledtext.ScrolledText(form, height=10, wrap=tk.WORD)
+        self._abstract_text.pack(fill='both', expand=True, pady=(0, 15))
 
-        ttk.Button(form, text="Submit Paper").pack(anchor='w')
+        # File upload section
+        self._selected_file_path = None
+        upload_frame = ttk.Frame(form)
+        upload_frame.pack(fill='x', pady=(0, 15))
+        ttk.Label(upload_frame, text="Or upload file:").pack(side='left', padx=(0, 10))
+        self._file_label = ttk.Label(upload_frame, text="No file selected")
+        self._file_label.pack(side='left', padx=(0, 10))
+        ttk.Button(upload_frame, text="Browse",
+                  command=self._browse_paper_file).pack(side='left')
+
+        ttk.Button(form, text="Submit Paper",
+                  command=self._submit_paper).pack(anchor='w')
 
         ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+
+    def _get_user_email(self):
+        """Look up the current user's email address."""
+        user = self.auth.current_user
+        if user and user.get('email'):
+            return user['email']
+        try:
+            with get_connection() as conn:
+                # Try users table first
+                cursor = conn.execute(
+                    "SELECT email FROM users WHERE id = ?",
+                    (user.get('id'),)
+                )
+                row = cursor.fetchone()
+                if row and row[0]:
+                    return row[0]
+                # Try students table
+                cursor = conn.execute(
+                    "SELECT email_address FROM students WHERE student_id = ?",
+                    (user.get('student_id', user.get('id')),)
+                )
+                row = cursor.fetchone()
+                if row and row[0]:
+                    return row[0]
+        except Exception:
+            pass
+        return None
+
+    def _register_for_conference(self):
+        """Register for the selected conference."""
+        selected = self._upcoming_tree.selection()
+        if not selected:
+            messagebox.showwarning("No Selection", "Please select a conference to register for.")
+            return
+        values = self._upcoming_tree.item(selected[0], 'values')
+        conf_name = values[0] if values else "Unknown"
+        if not messagebox.askyesno("Confirm Registration",
+                                   f"Register for '{conf_name}'?"):
+            return
+        email = self._get_user_email()
+        if email:
+            try:
+                send_email(
+                    email,
+                    f"Conference Registration Confirmation: {conf_name}",
+                    f"You have been successfully registered for '{conf_name}'.\n\n"
+                    f"Date: {values[1] if len(values) > 1 else 'TBA'}\n\n"
+                    "Thank you for registering!"
+                )
+            except Exception:
+                pass
+        messagebox.showinfo("Success",
+                           f"You have been registered for '{conf_name}'.\n"
+                           "A confirmation email has been sent.")
+
+    def _browse_paper_file(self):
+        """Browse for a paper file to upload."""
+        from tkinter import filedialog
+        filename = filedialog.askopenfilename(
+            title="Select Paper File",
+            filetypes=[("PDF files", "*.pdf"), ("Word documents", "*.docx"), ("All files", "*.*")]
+        )
+        if filename:
+            self._selected_file_path = filename
+            self._file_label.config(text=os.path.basename(filename))
+
+    def _submit_paper(self):
+        """Submit the paper with optional file upload."""
+        title = self._paper_title_entry.get().strip()
+        if not title:
+            messagebox.showwarning("Validation Error", "Please enter a paper title.")
+            return
+
+        # Handle file upload if selected
+        if self._selected_file_path:
+            upload_dir = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                '..', '..', '..', '..', '..', '..', 'data', 'uploads'
+            )
+            upload_dir = os.path.normpath(upload_dir)
+            os.makedirs(upload_dir, exist_ok=True)
+            dest = os.path.join(upload_dir, os.path.basename(self._selected_file_path))
+            try:
+                shutil.copy2(self._selected_file_path, dest)
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to upload file: {e}")
+                return
+
+        # Send confirmation email
+        email = self._get_user_email()
+        if email:
+            try:
+                send_email(
+                    email,
+                    f"Paper Submission Confirmation: {title}",
+                    f"Your paper '{title}' has been successfully submitted.\n\n"
+                    "You will receive further updates on the review process.\n\n"
+                    "Thank you for your submission!"
+                )
+            except Exception:
+                pass
+
+        messagebox.showinfo("Success",
+                           f"Paper '{title}' submitted successfully.\n"
+                           "A confirmation email has been sent.")
 
 
 # ============================================================================

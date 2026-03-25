@@ -1,9 +1,9 @@
-from . import common as _common
-from .common import (
+from education_system.university_system.modules.domain.housing.services.housing_accommodation import common as _common
+from education_system.university_system.modules.domain.housing.services.housing_accommodation.common import (
     sqlite3, datetime, get_text, get_connection, generate_id,
     record_payment_to_finance, log_create, log_read,
 )
-from .applications import select_student
+from education_system.university_system.modules.domain.housing.services.housing_accommodation.applications import select_student
 
 
 # Payment Functions
@@ -143,11 +143,12 @@ def record_payment():
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         cursor.execute('''
-        INSERT INTO housing_payments (
-            payment_id, assignment_id, student_id, amount, payment_date, payment_method,
-            transaction_reference, payment_period_start, payment_period_end, status,
-            received_by, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO payments (
+            source_payment_id, source_type, reference_id, reference_type,
+            student_id, amount, payment_date, payment_method,
+            payment_reference, payment_period_start, payment_period_end, status,
+            processed_by, created_at, updated_at
+        ) VALUES (?, 'housing', ?, 'assignment', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             payment_id, assignment_id, student_id, payment_amount, timestamp, payment_method,
             transaction_ref, period_start, period_end, 'Completed',
@@ -218,14 +219,14 @@ def view_payment_history():
 
             # Fetch student's payments
             cursor.execute('''
-            SELECT p.payment_id, p.assignment_id, p.amount, p.payment_date, p.payment_method,
+            SELECT p.source_payment_id, p.reference_id, p.amount, p.payment_date, p.payment_method,
                    p.payment_period_start, p.payment_period_end, p.status,
                    r.room_number, b.building_name
-            FROM housing_payments p
-            JOIN housing_assignments a ON p.assignment_id = a.assignment_id
+            FROM payments p
+            JOIN housing_assignments a ON p.reference_id = a.assignment_id
             JOIN housing_rooms r ON a.room_id = r.room_id
             JOIN housing_buildings b ON r.building_id = b.building_id
-            WHERE p.student_id = ?
+            WHERE p.source_type = 'housing' AND p.student_id = ?
             ORDER BY p.payment_date DESC
             ''', (student_id,))
 
@@ -248,8 +249,8 @@ def view_payment_history():
             # Display payment summary
             cursor.execute('''
             SELECT SUM(amount), COUNT(payment_id)
-            FROM housing_payments
-            WHERE student_id = ?
+            FROM payments
+            WHERE source_type = 'housing' AND student_id = ?
             ''', (student_id,))
 
             total = cursor.fetchone()
@@ -282,14 +283,14 @@ def view_payment_history():
                     return
 
                 cursor.execute('''
-                SELECT p.payment_id, p.assignment_id, p.amount, p.payment_date, p.payment_method,
+                SELECT p.source_payment_id, p.reference_id, p.amount, p.payment_date, p.payment_method,
                        p.payment_period_start, p.payment_period_end, p.status,
                        r.room_number, b.building_name
-                FROM housing_payments p
-                JOIN housing_assignments a ON p.assignment_id = a.assignment_id
+                FROM payments p
+                JOIN housing_assignments a ON p.reference_id = a.assignment_id
                 JOIN housing_rooms r ON a.room_id = r.room_id
                 JOIN housing_buildings b ON r.building_id = b.building_id
-                WHERE p.student_id = ?
+                WHERE p.source_type = 'housing' AND p.student_id = ?
                 ORDER BY p.payment_date DESC
                 ''', (student_id,))
 
@@ -315,8 +316,8 @@ def view_payment_history():
                 # Display payment summary
                 cursor.execute('''
                 SELECT SUM(amount), COUNT(payment_id)
-                FROM housing_payments
-                WHERE student_id = ?
+                FROM payments
+                WHERE source_type = 'housing' AND student_id = ?
                 ''', (student_id,))
 
                 total = cursor.fetchone()
@@ -352,15 +353,15 @@ def view_payment_history():
                         print("Please enter a valid number.")
 
                 cursor.execute('''
-                SELECT p.payment_id, p.student_id, s.first_name, s.last_name,
+                SELECT p.source_payment_id, p.student_id, s.first_name, s.last_name,
                        p.amount, p.payment_date, p.payment_method,
                        p.payment_period_start, p.payment_period_end, p.status,
                        r.room_number
-                FROM housing_payments p
+                FROM payments p
                 JOIN students s ON p.student_id = s.student_id
-                JOIN housing_assignments a ON p.assignment_id = a.assignment_id
+                JOIN housing_assignments a ON p.reference_id = a.assignment_id
                 JOIN housing_rooms r ON a.room_id = r.room_id
-                WHERE r.building_id = ?
+                WHERE p.source_type = 'housing' AND r.building_id = ?
                 ORDER BY p.payment_date DESC
                 LIMIT 50  -- Limit to prevent too many results
                 ''', (building_id,))
@@ -384,10 +385,10 @@ def view_payment_history():
                 # Display payment summary
                 cursor.execute('''
                 SELECT SUM(p.amount), COUNT(p.payment_id)
-                FROM housing_payments p
-                JOIN housing_assignments a ON p.assignment_id = a.assignment_id
+                FROM payments p
+                JOIN housing_assignments a ON p.reference_id = a.assignment_id
                 JOIN housing_rooms r ON a.room_id = r.room_id
-                WHERE r.building_id = ?
+                WHERE p.source_type = 'housing' AND r.building_id = ?
                 ''', (building_id,))
 
                 total = cursor.fetchone()
@@ -417,15 +418,15 @@ def view_payment_history():
                         print("Invalid date format. Please use YYYY-MM-DD.")
 
                 cursor.execute('''
-                SELECT p.payment_id, p.student_id, s.first_name, s.last_name,
+                SELECT p.source_payment_id, p.student_id, s.first_name, s.last_name,
                        p.amount, p.payment_date, p.payment_method,
                        r.room_number, b.building_name, p.status
-                FROM housing_payments p
+                FROM payments p
                 JOIN students s ON p.student_id = s.student_id
-                JOIN housing_assignments a ON p.assignment_id = a.assignment_id
+                JOIN housing_assignments a ON p.reference_id = a.assignment_id
                 JOIN housing_rooms r ON a.room_id = r.room_id
                 JOIN housing_buildings b ON r.building_id = b.building_id
-                WHERE p.payment_date BETWEEN ? AND ?
+                WHERE p.source_type = 'housing' AND p.payment_date BETWEEN ? AND ?
                 ORDER BY p.payment_date DESC
                 ''', (start_date, end_date + ' 23:59:59'))
 
@@ -448,8 +449,8 @@ def view_payment_history():
                 # Display payment summary
                 cursor.execute('''
                 SELECT SUM(amount), COUNT(payment_id)
-                FROM housing_payments
-                WHERE payment_date BETWEEN ? AND ?
+                FROM payments
+                WHERE source_type = 'housing' AND payment_date BETWEEN ? AND ?
                 ''', (start_date, end_date + ' 23:59:59'))
 
                 total = cursor.fetchone()
@@ -464,15 +465,15 @@ def view_payment_history():
                 today = datetime.datetime.now().strftime('%Y-%m-%d')
 
                 cursor.execute('''
-                SELECT p.payment_id, p.student_id, s.first_name, s.last_name,
+                SELECT p.source_payment_id, p.student_id, s.first_name, s.last_name,
                        p.amount, p.payment_date, p.payment_method,
                        r.room_number, b.building_name, p.status
-                FROM housing_payments p
+                FROM payments p
                 JOIN students s ON p.student_id = s.student_id
-                JOIN housing_assignments a ON p.assignment_id = a.assignment_id
+                JOIN housing_assignments a ON p.reference_id = a.assignment_id
                 JOIN housing_rooms r ON a.room_id = r.room_id
                 JOIN housing_buildings b ON r.building_id = b.building_id
-                WHERE p.payment_date BETWEEN ? AND ?
+                WHERE p.source_type = 'housing' AND p.payment_date BETWEEN ? AND ?
                 ORDER BY p.payment_date DESC
                 ''', (thirty_days_ago, today + ' 23:59:59'))
 
@@ -495,8 +496,8 @@ def view_payment_history():
                 # Display payment summary
                 cursor.execute('''
                 SELECT SUM(amount), COUNT(payment_id)
-                FROM housing_payments
-                WHERE payment_date BETWEEN ? AND ?
+                FROM payments
+                WHERE source_type = 'housing' AND payment_date BETWEEN ? AND ?
                 ''', (thirty_days_ago, today + ' 23:59:59'))
 
                 total = cursor.fetchone()

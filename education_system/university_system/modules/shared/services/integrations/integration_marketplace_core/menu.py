@@ -1,43 +1,43 @@
 """Main CLI menu and GUI launcher for Integration Marketplace"""
 
-from ._imports import create_gui_launcher
+from education_system.university_system.modules.shared.services.integrations.integration_marketplace_core._imports import create_gui_launcher
 
-from .search_discovery import (
+from education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.search_discovery import (
     search_catalog, filter_by_rating, filter_by_compatibility,
     find_similar_integrations, search_sync_logs, advanced_filter_dialog,
 )
-from .bulk_operations import (
+from education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.bulk_operations import (
     bulk_install_integrations, bulk_uninstall_integrations,
     bulk_enable_integrations, bulk_disable_integrations,
     bulk_sync_integrations, bulk_update_credentials,
 )
-from .import_export import (
+from education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.import_export import (
     export_catalog_to_json, import_integrations_from_json,
     export_configuration_bundle, import_configuration_bundle,
     export_sync_report_pdf, export_mappings_to_excel,
 )
-from .reports import (
+from education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.reports import (
     show_dashboard_overview, generate_health_report, show_error_analysis,
     generate_usage_trend_chart, show_api_call_statistics,
     compare_integration_performance, generate_compliance_report,
 )
-from .security import (
+from education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.security import (
     rotate_api_credentials, check_credential_expiry, validate_credentials,
     encrypt_export_credentials, audit_credential_access, revoke_all_tokens,
 )
-from .scheduling import (
+from education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.scheduling import (
     schedule_sync, view_scheduled_tasks, pause_scheduled_syncs,
     set_maintenance_window, configure_retry_policy,
 )
-from .validation import (
+from education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.validation import (
     test_integration_connection, validate_mapping_rules, dry_run_sync,
     test_webhook_delivery, validate_json_configuration, run_integration_diagnostics,
 )
-from .mapping_tools import (
+from education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.mapping_tools import (
     auto_detect_mappings, preview_transformation,
     duplicate_mapping_set, import_mappings_from_template,
 )
-from .notifications import (
+from education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.notifications import (
     configure_alert_rules, subscribe_to_notifications,
     view_notification_history, test_notification_channel,
 )

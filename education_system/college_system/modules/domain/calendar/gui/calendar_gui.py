@@ -6,6 +6,7 @@ import calendar as cal_mod
 from datetime import date
 
 from education_system.college_system.modules.domain.calendar.services.calendar_service import CalendarService
+from education_system.college_system.core.i18n import t
 
 
 class CalendarFrame(tk.Frame):
@@ -30,10 +31,10 @@ class CalendarFrame(tk.Frame):
         header = tk.Frame(self, bg="#2c3e50", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Calendar",
+        tk.Label(header, text=t("calendar.title"),
                  font=("Helvetica", 15, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=10)
-        ttk.Button(header, text="Add Event",
+        ttk.Button(header, text=t("calendar.add_event"),
                    command=self._on_add_event).pack(side="right", padx=20, pady=10)
 
         # Navigation row
@@ -48,7 +49,7 @@ class CalendarFrame(tk.Frame):
                  width=20, anchor="center").pack(side="left", padx=10)
         ttk.Button(nav_frame, text=">", width=3,
                    command=self._next_month).pack(side="left")
-        ttk.Button(nav_frame, text="Today",
+        ttk.Button(nav_frame, text=t("calendar.today"),
                    command=self._go_today).pack(side="left", padx=15)
 
         # Calendar grid
@@ -77,7 +78,7 @@ class CalendarFrame(tk.Frame):
                 self._day_cells.append(cell)
 
         # Detail pane
-        detail_frame = tk.LabelFrame(self, text="Events", bg="#ecf0f1",
+        detail_frame = tk.LabelFrame(self, text=t("calendar.events"), bg="#ecf0f1",
                                      font=("Helvetica", 10, "bold"))
         detail_frame.pack(fill="x", padx=15, pady=(5, 10))
 
@@ -218,7 +219,7 @@ class CalendarFrame(tk.Frame):
                 self._svc.create_event(self._get_user_id(), **dlg.result)
                 self._render_month()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(t("common.error"), str(e))
 
 
 class _EventDialog(tk.Toplevel):
@@ -226,7 +227,7 @@ class _EventDialog(tk.Toplevel):
 
     def __init__(self, parent, is_admin=False):
         super().__init__(parent)
-        self.title("Add Event")
+        self.title(t("calendar.add_event"))
         self.geometry("420x320")
         self.resizable(False, False)
         self.grab_set()
@@ -235,27 +236,27 @@ class _EventDialog(tk.Toplevel):
         frame = tk.Frame(self, padx=15, pady=15)
         frame.pack(fill="both", expand=True)
 
-        tk.Label(frame, text="Title:").grid(row=0, column=0, sticky="w", pady=3)
+        tk.Label(frame, text=t("common.title_colon")).grid(row=0, column=0, sticky="w", pady=3)
         self._title_var = tk.StringVar()
         ttk.Entry(frame, textvariable=self._title_var, width=30).grid(
             row=0, column=1, pady=3)
 
-        tk.Label(frame, text="Date (YYYY-MM-DD):").grid(row=1, column=0, sticky="w", pady=3)
+        tk.Label(frame, text=t("calendar.date_label")).grid(row=1, column=0, sticky="w", pady=3)
         self._date_var = tk.StringVar(value=date.today().isoformat())
         ttk.Entry(frame, textvariable=self._date_var, width=15).grid(
             row=1, column=1, sticky="w", pady=3)
 
-        tk.Label(frame, text="Start Time (HH:MM):").grid(row=2, column=0, sticky="w", pady=3)
+        tk.Label(frame, text=t("calendar.start_time_label")).grid(row=2, column=0, sticky="w", pady=3)
         self._start_var = tk.StringVar()
         ttk.Entry(frame, textvariable=self._start_var, width=10).grid(
             row=2, column=1, sticky="w", pady=3)
 
-        tk.Label(frame, text="End Time (HH:MM):").grid(row=3, column=0, sticky="w", pady=3)
+        tk.Label(frame, text=t("calendar.end_time_label")).grid(row=3, column=0, sticky="w", pady=3)
         self._end_var = tk.StringVar()
         ttk.Entry(frame, textvariable=self._end_var, width=10).grid(
             row=3, column=1, sticky="w", pady=3)
 
-        tk.Label(frame, text="Type:").grid(row=4, column=0, sticky="w", pady=3)
+        tk.Label(frame, text=t("calendar.type_colon")).grid(row=4, column=0, sticky="w", pady=3)
         types = ["personal", "academic", "deadline"]
         if is_admin:
             types.append("college")
@@ -264,29 +265,29 @@ class _EventDialog(tk.Toplevel):
                      values=types, state="readonly", width=12).grid(
             row=4, column=1, sticky="w", pady=3)
 
-        tk.Label(frame, text="Description:").grid(row=5, column=0, sticky="nw", pady=3)
+        tk.Label(frame, text=t("common.description_colon")).grid(row=5, column=0, sticky="nw", pady=3)
         self._desc_text = tk.Text(frame, width=23, height=3)
         self._desc_text.grid(row=5, column=1, pady=3)
 
         self._allday_var = tk.BooleanVar()
-        ttk.Checkbutton(frame, text="All day", variable=self._allday_var).grid(
+        ttk.Checkbutton(frame, text=t("calendar.all_day"), variable=self._allday_var).grid(
             row=6, column=1, sticky="w", pady=3)
 
         btn_frame = tk.Frame(frame)
         btn_frame.grid(row=7, column=0, columnspan=2, pady=(10, 0))
-        ttk.Button(btn_frame, text="Save", command=self._save).pack(
+        ttk.Button(btn_frame, text=t("common.save"), command=self._save).pack(
             side="left", padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.destroy).pack(
+        ttk.Button(btn_frame, text=t("common.cancel"), command=self.destroy).pack(
             side="left", padx=5)
 
     def _save(self):
         title = self._title_var.get().strip()
         if not title:
-            messagebox.showwarning("Input", "Title is required.", parent=self)
+            messagebox.showwarning(t("common.input"), t("calendar.title_required"), parent=self)
             return
         event_date = self._date_var.get().strip()
         if not event_date:
-            messagebox.showwarning("Input", "Date is required.", parent=self)
+            messagebox.showwarning(t("common.input"), t("calendar.date_required"), parent=self)
             return
         self.result = {
             "title": title,

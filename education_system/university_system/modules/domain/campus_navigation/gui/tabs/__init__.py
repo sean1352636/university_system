@@ -1,9 +1,9 @@
 """Campus Navigation GUI tab mixins."""
 
-from .directory import DirectoryTabMixin
-from .route import RouteTabMixin
-from .nearest import NearestTabMixin
-from .favorites import FavoritesTabMixin
+from education_system.university_system.modules.domain.campus_navigation.gui.tabs.directory import DirectoryTabMixin
+from education_system.university_system.modules.domain.campus_navigation.gui.tabs.route import RouteTabMixin
+from education_system.university_system.modules.domain.campus_navigation.gui.tabs.nearest import NearestTabMixin
+from education_system.university_system.modules.domain.campus_navigation.gui.tabs.favorites import FavoritesTabMixin
 
 __all__ = [
     'DirectoryTabMixin',

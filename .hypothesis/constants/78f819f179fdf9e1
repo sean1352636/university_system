@@ -1,0 +1,4 @@
+# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/assignment_system/__init__.py
+# hypothesis_version: 6.151.9
+
+['AnalyticsManager', 'AssessmentManager', 'AssignmentGUI', 'AssignmentManager', 'DashboardManager', 'DatabaseManager', 'ExtensionManager', 'FilePreviewManager', 'GradingManager', 'GroupManager', 'LayoutManager', 'MaintenanceManager', 'MessagingManager', 'NotificationManager', 'PeerReviewManager', 'RubricManager', 'SubmissionManager', 'TemplateManager', 'launch_gui']

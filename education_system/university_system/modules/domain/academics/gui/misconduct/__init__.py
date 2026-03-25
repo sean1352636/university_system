@@ -1,6 +1,12 @@
-"""Academic Misconduct Panel GUI module."""
+"""Academic Misconduct Panel GUI module.
 
-from .academic_misconduct_gui import AcademicMisconductPanel, main
-from .database import init_misconduct_tables
+Thin wrapper — delegates to education_system.shared.academic_misconduct.
+"""
+
+from education_system.shared.academic_misconduct import (
+    AcademicMisconductPanel,
+    init_misconduct_tables,
+    main,
+)
 
 __all__ = ['AcademicMisconductPanel', 'init_misconduct_tables', 'main']
