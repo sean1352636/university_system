@@ -994,25 +994,7 @@ TABLES = {
             created_at TEXT DEFAULT (datetime('now'))
         )
     """,
-    # ── Payroll ──
-    "payroll_records": """
-        CREATE TABLE IF NOT EXISTS payroll_records (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            staff_id TEXT NOT NULL,
-            pay_period TEXT NOT NULL,
-            gross_pay REAL NOT NULL,
-            tax REAL DEFAULT 0,
-            ni_contribution REAL DEFAULT 0,
-            pension REAL DEFAULT 0,
-            other_deductions REAL DEFAULT 0,
-            net_pay REAL NOT NULL,
-            status TEXT DEFAULT 'draft',
-            approved_by TEXT,
-            processed_date TEXT,
-            notes TEXT,
-            created_at TEXT DEFAULT (datetime('now'))
-        )
-    """,
+    # ── Payroll (defined earlier with full constraints)
     # ── Staff Management ──
     "staff_appraisals": """
         CREATE TABLE IF NOT EXISTS staff_appraisals (
@@ -1137,18 +1119,7 @@ TABLES = {
             assessed_at TEXT DEFAULT (datetime('now'))
         )
     """,
-    # ── Homework Enhancements ──
-    "homework_feedback": """
-        CREATE TABLE IF NOT EXISTS homework_feedback (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            submission_id INTEGER NOT NULL,
-            teacher_feedback TEXT,
-            sticker TEXT,
-            parent_comment TEXT,
-            parent_id TEXT,
-            created_at TEXT DEFAULT (datetime('now'))
-        )
-    """,
+    # ── Homework Enhancements (homework_feedback defined earlier with FK constraints) ──
     # ── Student ID Cards ──
     "student_id_cards": """
         CREATE TABLE IF NOT EXISTS student_id_cards (

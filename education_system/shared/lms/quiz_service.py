@@ -1,5 +1,6 @@
 """LMS quiz service with auto-grading."""
-import sqlite3, json
+import sqlite3
+import json
 from datetime import datetime
 
 

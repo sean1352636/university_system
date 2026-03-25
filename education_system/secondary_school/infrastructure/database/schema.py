@@ -1414,25 +1414,7 @@ TABLES = {
             created_at TEXT DEFAULT (datetime('now'))
         )
     """,
-    # ── Payroll ──
-    "payroll_records": """
-        CREATE TABLE IF NOT EXISTS payroll_records (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            staff_id TEXT NOT NULL,
-            pay_period TEXT NOT NULL,
-            gross_pay REAL NOT NULL,
-            tax REAL DEFAULT 0,
-            ni_contribution REAL DEFAULT 0,
-            pension REAL DEFAULT 0,
-            other_deductions REAL DEFAULT 0,
-            net_pay REAL NOT NULL,
-            status TEXT DEFAULT 'draft',
-            approved_by TEXT,
-            processed_date TEXT,
-            notes TEXT,
-            created_at TEXT DEFAULT (datetime('now'))
-        )
-    """,
+    # ── Payroll (defined earlier with full constraints)
     # ── Staff Appraisals ──
     "staff_appraisals": """
         CREATE TABLE IF NOT EXISTS staff_appraisals (
@@ -1635,34 +1617,8 @@ TABLES = {
             created_at TEXT DEFAULT (datetime('now'))
         )
     """,
-    # ── Homework Enhancements ──
-    "homework_rubrics": """
-        CREATE TABLE IF NOT EXISTS homework_rubrics (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            homework_id INTEGER NOT NULL,
-            criteria TEXT NOT NULL,
-            max_marks INTEGER DEFAULT 10,
-            created_at TEXT DEFAULT (datetime('now'))
-        )
-    """,
-    "homework_feedback": """
-        CREATE TABLE IF NOT EXISTS homework_feedback (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            submission_id INTEGER NOT NULL,
-            feedback_text TEXT,
-            marked_by TEXT,
-            created_at TEXT DEFAULT (datetime('now'))
-        )
-    """,
-    "homework_drafts": """
-        CREATE TABLE IF NOT EXISTS homework_drafts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            homework_id INTEGER NOT NULL,
-            student_id TEXT NOT NULL,
-            draft_text TEXT,
-            saved_at TEXT DEFAULT (datetime('now'))
-        )
-    """,
+    # ── Homework Enhancements (homework_rubrics, homework_feedback, homework_drafts
+    #    defined earlier with FK constraints) ──
     # ── Student ID Cards ──
     "student_id_cards": """
         CREATE TABLE IF NOT EXISTS student_id_cards (

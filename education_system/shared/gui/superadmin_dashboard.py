@@ -2224,7 +2224,8 @@ class SuperAdminDashboard(tk.Tk):
                     limit=5000, type_filter=tf, search_text=st,
                     date_from=df, date_to=dt,
                 )
-                import csv, io
+                import csv
+                import io
                 from tkinter import filedialog
                 path = filedialog.asksaveasfilename(
                     title="Export Audit Log",

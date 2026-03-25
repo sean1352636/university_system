@@ -644,7 +644,8 @@ class ViewCandidateProfilesDialog:
             )
             if not filepath:
                 return
-            import os, shutil
+            import os
+            import shutil
             filename = os.path.basename(filepath)
             ext = os.path.splitext(filename)[1].lower()
             file_type = 'Image' if ext in ('.png','.jpg','.jpeg','.gif') else 'PDF' if ext == '.pdf' else 'Video' if ext in ('.mp4','.avi') else 'Other'

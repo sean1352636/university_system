@@ -359,7 +359,8 @@ def calculate_route():
     if not start_id or not end_id:
         raise ValidationError("start_location_id and end_location_id are required")
 
-    import math, json as _json
+    import math
+    import json as _json
 
     def _haversine(lat1, lon1, lat2, lon2):
         R = 6371000
