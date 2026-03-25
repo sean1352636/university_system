@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/database/data_backup/storage/cloud.py
-# hypothesis_version: 6.151.9
-
-['aws_access_key', 'aws_region', 'aws_secret_key', 's3']

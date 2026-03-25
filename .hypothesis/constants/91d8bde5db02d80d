@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/loyalty/season_passes.py
-# hypothesis_version: 6.151.9
-
-['#27ae60', '#333333', '#7f8c8d', '#dc3545', '#e74c3c', '#ecf0f1', '#ffffff', '%Y-%m-%d', '.', '350x250', '400x300', 'Card.TFrame', 'Code', 'End', 'Helvetica', 'ID', 'Main.TFrame', 'Primary.TButton', 'SP', 'Sell Season Pass', 'Start', 'Status', 'Subtitle.TLabel', 'Success.TButton', 'Type', 'Used', 'Verify Pass', '_', 'active', 'bold', 'both', 'cinema.btn.sell', 'cinema.btn.sell_pass', 'cinema.btn.verify', 'cinema.labels.type', 'cinema.passes.sell', 'cinema.passes.title', 'cinema.passes.verify', 'duration_days', 'end', 'headings', 'left', 'monthly', 'right', 'vertical', 'w', 'x', 'y']

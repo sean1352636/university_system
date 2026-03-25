@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/primary_school/modules/domain/admin/admissions/services/admissions_service.py
-# hypothesis_version: 6.151.9
-
-[' AND status = ?', ', ', 'Approved', 'Pending', 'Rejected', 'address', 'date_of_birth', 'first_name', 'gender', 'id', 'last_name', 'notes', 'parent_email', 'parent_name', 'parent_phone', 'previous_school', 'status', 'year_group_applied']

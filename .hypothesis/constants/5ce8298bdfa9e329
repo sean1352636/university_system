@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/document_manager/settings.py
-# hypothesis_version: 6.151.9
-
-['\nActivity by User:', '\nModify Settings:', '\nOCR Engine Options:', '\n⚙️ SYSTEM SETTINGS', '\n👁️  OCR SETTINGS', '\n💾 BACKUP SETTINGS', '\n📧 EMAIL SETTINGS', '\n🔒 SECURITY SETTINGS', '%Y-%m-%d', '***', '1', '1. Password Policy', '127.0.0.1', '2', '2. Backup Settings', '2. Session Timeout', '3', '3. AWS Textract', '3. Access Control', '3. Security Settings', '30', '4', '4. Audit Logging', '5', '5. OCR Settings', '50', '5000', '6', '6. View Access Logs', '8', '=', 'No logs found.', 'No settings found.', 'aws_textract', 'azure_vision', 'false', 'google_vision', 'password', 'secret', 'tesseract', 'true', 'y']

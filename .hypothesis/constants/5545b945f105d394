@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/integrations/integration_marketplace_core/security.py
-# hypothesis_version: 6.151.9
-
-['\n[!] EXPIRING SOON:', '+00:00', '...', '127.0.0.1', '=', 'Cancelled.', 'Confirm password: ', 'Credential not found', 'Enter install ID: ', 'Invalid install ID.', 'REVOKE', 'Z', '[X] EXPIRED:', 'accessed', 'action', 'credential_id', 'credentials', 'data', 'days_until_expiry', 'encrypted', 'endpoint_url', 'expired', 'expiring_soon', 'exported_at', 'exports', 'install_id', 'integration_name', 'ip_address', 'message', 'new_api_key_prefix', 'note', 'revoked_count', 'rotated', 'status', 'system', 'timestamp', 'token_expiry', 'user', 'valid', 'w', 'y']

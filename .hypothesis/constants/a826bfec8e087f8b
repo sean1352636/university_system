@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/simple_activity_logger_gui/tabs/log_viewer.py
-# hypothesis_version: 6.151.9
-
-[100, 120, 150, 200, 300, 1000, 2000, ' AND action LIKE ?', ' AND username LIKE ?', '#ef5350', '#ff6b6b', '#ffa726', '%Y-%m-%d %H:%M:%S', '*.*', '*.csv', '*.json', '*.txt', '.', '...', '.json', '600x400', '<<ComboboxSelected>>', '<Double-1>', '<KeyRelease>', 'AL.Card.TFrame', 'AL.Info.TLabel', 'ALL', 'Action', 'All files', 'CRITICAL', 'CSV files', 'DEBUG', 'Details', 'ERROR', 'Export Complete', 'Export Error', 'Export Logs', 'Export Unavailable', 'INFO', 'JSON files', 'Level', 'Module', 'N/A', 'Status', 'Text files', 'Timestamp', 'User', 'WARNING', 'action', 'details', 'disabled', 'end', 'error', 'export_logs', 'failure', 'headings', 'id', 'ip_address', 'level', 'log_level', 'module', 'readonly', 'status', 'timestamp', 'user', 'username', 'values', 'warning']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/constants/defaults.py
-# hypothesis_version: 6.151.9
-
-['DEFAULT_ADMIN_EMAIL', 'DEFAULT_STUDENT_ID', 'DEMO_MODE', 'SYSTEM_ADMIN_EMAIL', 'SYSTEM_SUPPORT_EMAIL', 'UNIVERSITY_NAME', 'get_admin_email', 'get_fallback_email']

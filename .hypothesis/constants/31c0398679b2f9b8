@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/cinema_cli/movies.py
-# hypothesis_version: 6.151.9
-
-['\nEnter choice: ', '\nEnter movie ID: ', '\nFilter by:', '\nSearch by:', ' AND genre = ?', ' AND rating = ?', '-', '1', '1. All Movies', '1. Title', '2', '2. Genre', '2. Now Showing', '3', '3. Coming Soon', '3. Rating', '4', '4. Director', '4. Filter by Genre', '5', '5. Actor/Actress', '5. Filter by Rating', '=', 'Enter genre: ', 'MOVIE LISTINGS', 'SEARCH MOVIES', 'now_showing', 'yes', '❌ Invalid movie ID', '❌ Movie not found', '📅', '📅 COMING SOON', '📺', '📺 NOW SHOWING']

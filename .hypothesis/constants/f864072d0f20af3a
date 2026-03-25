@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/booking/payment.py
-# hypothesis_version: 6.151.9
-
-[-0.01, 0.01, 100, '#27ae60', '#333333', '#4ecca3', '#666666', '#7f8c8d', '#dc3545', '#e74c3c', '#e94560', '#ecf0f1', '#f4a261', '#ffffff', '%Y-%m-%d %H:%M:%S', '*.txt', ', ', '.', '.txt', '450x500', '500x600', '<KeyRelease>', '=', 'Adult', 'Card.TFrame', 'Cash', 'Cinema', 'Courier', 'Credit Card', 'Debit Card', 'GBP', 'GUEST', 'Gift Card', 'Helvetica', 'PNG', 'PayPal', 'Primary.TButton', 'SEATS:', 'SEATS:\n', 'Secondary.TButton', 'Split Payment', 'Student Account', 'Subtitle.TLabel', 'Success.TButton', 'Text files', 'Warning', '_', 'amount', 'black', 'bold', 'both', 'cinema.common.error', 'cinema.common.print', 'completed', 'count', 'email', 'left', 'message', 'method', 'name', 'percentage', 'student_id', 'success', 'total', 'w', 'white', 'x', '£']

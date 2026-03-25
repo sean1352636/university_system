@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/email_service/notifications/schedule_change.py
-# hypothesis_version: 6.151.9
-
-[', ', 'N/A', 'Session', 'TBA', 'body', 'changes', 'coordinator_email', 'credits', 'date/time', 'day_of_week', 'email', 'end_time', 'error', 'hod@university.edu', 'hod_email', 'instructor', 'instructor_id', 'instructor_name', 'module_code', 'module_name', 'name', 'new_day', 'new_end_time', 'new_instructor_email', 'new_instructor_name', 'new_room_location', 'new_start_time', 'notify', 'old_day', 'old_end_time', 'old_instructor_name', 'old_room_location', 'old_start_time', 'recipient_name', 'recipients', 'room', 'room_id', 'room_location', 'schedule_change', 'schedule_id', 'session_type', 'signature', 'start_time', 'student_count', 'student_id', 'subject']

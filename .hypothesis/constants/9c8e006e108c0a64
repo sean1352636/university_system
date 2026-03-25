@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/student_affairs_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/student-affairs', '/support-requests', '/tools', '/tools/<int:tool_id>', 'GET', 'POST', 'accessibility_tools', 'category', 'category = ?', 'create', 'description', 'is_active', 'is_active = ?', 'items', 'priority', 'search', 'status', 'status = ?', 'student_affairs', 'student_id', 'student_id = ?', 'sub', 'title', 'tool_name', 'total', 'url', 'view']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/betting_shop_cli/sports.py
-# hypothesis_version: 6.151.9
-
-[0.0, 1.0, '\n1. Add Selection', '\nBet Types:', '\nChoice: ', '\nEvent ID: ', '\nSelect bet type: ', '\n❌ No bets found', '\n📅 Available Events:', '\n📊 Filter by status:', '-', '0', '0. Cancel', '1', '1. All Bets', '1. Single Bet (Win)', '2', '2. Pending Bets', '2. Place Accumulator', '3', '3. Won Bets', '4', '4. Lost Bets', 'Draw', 'MY SPORTS BETS', 'PLACE SPORTS BET', 'cashed_out', 'each-way', 'event_id', 'event_name', 'lost', 'odds', 'pending', 'selection', 'single', 'username', 'won', 'yes', '❌ Bet cancelled', '❌ Event not found', '❌ Invalid event ID', '❌ Invalid selection', '❌ Invalid stake']

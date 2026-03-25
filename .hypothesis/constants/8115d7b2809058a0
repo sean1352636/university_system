@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/database/dialogs/templates.py
-# hypothesis_version: 6.151.9
-
-[1.0, '-', '500x400', '<<ListboxSelect>>', '=', 'Available Templates', 'Cancel', 'Close', 'Delete Template', 'Error', 'Load', 'Load Template', 'No Selection', 'Rename Template', 'Settings:\n', 'Success', 'Template Details', 'Template Manager', 'Templates', 'TkDefaultFont', 'auto_backup_enabled', 'backup_frequency', 'backup_templates', 'backup_type', 'both', 'cloud_enabled', 'compression_enabled', 'compression_format', 'description', 'email_notifications', 'encryption_enabled', 'file', 'gray', 'left', 'max_backups', 'path', 'r', 'remote_enabled', 'right', 'source', 'vertical', 'w', 'x', 'y']

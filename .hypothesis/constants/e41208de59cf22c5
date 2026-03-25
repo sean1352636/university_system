@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/transaction_manager/refunds.py
-# hypothesis_version: 6.151.9
-
-[120, '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '1.0', '900x750', '<Configure>', '<MouseWheel>', 'Amount', 'Arial', 'Date', 'Method', 'Payment ID', 'Transaction ID', 'all', 'approve_refunds', 'bank_transfer', 'both', 'cash', 'center', 'check', 'full', 'general', 'has_permission', 'headings', 'is_logged_in', 'left', 'nw', 'overpayment', 'partial', 'payment', 'pending', 'readonly', 'right', 'system', 'units', 'username', 'values', 'vertical', 'w', 'white', 'withdrawal', 'x', 'y', '£']

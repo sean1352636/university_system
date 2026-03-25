@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/student_support/operations/__init__.py
-# hypothesis_version: 6.151.9
-
-['bulk_operations_menu', 'bulk_update_tickets', 'export_data', 'export_data_menu', 'export_metrics_menu', 'export_tickets_menu', 'merge_tickets', 'merge_tickets_menu', 'perform_bulk_assign']

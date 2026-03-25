@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/settings/financial_aid.py
-# hypothesis_version: 6.151.9
-
-['1.0', '400x200', '500x400', '700x500', '700x600', '800x600', 'Bank Transfer', 'Bursary', 'Cheque', 'Courier', 'Direct Credit', 'Emergency Aid', 'Fee Reduction', 'Grant', 'Loan', 'Scholarship', 'TkDefaultFont', 'Unlimited', '_', 'aid', 'aid_id', 'amount', 'bank_transfer', 'blue', 'bold', 'both', 'category', 'check', 'columns', 'dark', 'direct_debit', 'end', 'grant', 'headings', 'left', 'loan', 'max_amount', 'name', 'nw', 'online', 'readonly', 'scholarship', 'secondary', 'status', 'student', 'success', 'type', 'type_id', 'w', 'warning', 'white', 'work_study', 'x']

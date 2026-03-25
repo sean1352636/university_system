@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/gui/student_union_gui/core/profile.py
-# hypothesis_version: 6.151.9
-
-[1.0, '    Columns: ', '*', ', ', '350x250', '400x300', '500x400', '=', 'Arial', 'PRAGMA table_info([', ']', '])', 'auth.change_password', 'auth.login_required', 'auth.new_password', 'auth.username', 'bold', 'common.cancel', 'common.close', 'common.error', 'common.success', 'email', 'id', 'role', 'username', 'view profile']

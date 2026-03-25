@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/butcher/__init__.py
-# hypothesis_version: 6.151.9
-
-['ButcherGUI', 'MEAT_CATEGORIES', 'ORDER_STATUSES', 'OrderManager', 'ProductManager', 'ReportManager', 'TransactionManager', 'init_butcher_db', 'launch_butcher_gui']

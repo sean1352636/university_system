@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/student_support/config.py
-# hypothesis_version: 6.151.9
-
-[1024, '.bmp', '.csv', '.doc', '.docx', '.gif', '.jpeg', '.jpg', '.pdf', '.png', '.rar', '.txt', '.xlsx', '.zip', 'Academic', 'Accessibility', 'Accommodation', 'Career Services', 'Closed', 'Critical', 'Dining', 'Escalated', 'Financial Aid', 'High', 'Housing', 'In Progress', 'Library Services', 'Low', 'Medium', 'Mental Health', 'On Hold', 'Open', 'Other', 'Parking', 'Registration', 'Resolved', 'Student Activities', 'Technical', 'Urgent', 'document', 'email', 'frustrated', 'image', 'in_app', 'negative', 'neutral', 'other', 'positive', 'push', 'video']

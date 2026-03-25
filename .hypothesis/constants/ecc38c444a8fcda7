@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/student_life/consent/services/consent_service.py
-# hypothesis_version: 6.151.9
-
-[' AND cr.granted = 1', '2025/2026', 'biometric', 'contact_by_email', 'contact_by_sms', 'data_sharing', 'medical_treatment', 'online_platforms', 'photo_external', 'photo_internal', 'photo_press', 'photo_social_media', 'trip_blanket']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/evaluation/course_evaluation_core.py
-# hypothesis_version: 6.151.9
-
-['\n  0. Back', '\nSelect: ', '\x1b[2J\x1b[H', '  4. Activate Form', '  5. Close Form', '  8. Response Rates', '  Answer: ', '  Rating (1-5): ', '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '=', 'Academic year: ', 'Display order [0]: ', 'Form ID to close: ', 'Form ID: ', 'Form activated.', 'Form closed.', 'Module code: ', 'Module name: ', 'Question added.', 'Question text: ', 'ResponseManager', 'Semester: ', 'Student ID: ', 'average_score', 'avg_rating', 'distribution', 'form_id', 'id', 'question_id', 'question_text', 'question_type', 'questions', 'rating', 'rating_value', 'response_count', 'responses', 'text', 'text_value', 'total_responses', 'unknown', 'username']

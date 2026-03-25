@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/college_system/modules/domain/intervention_tracking/services/intervention_tracking_service.py
-# hypothesis_version: 6.151.9
-
-[100, ', ', '?', 'cnt', 'id', 'impact_notes', 'intervention_type', 'pre_assessment_score', 'sessions_completed', 'sessions_total', 'staff_id', 'status', 'student_id', 'subject_area', 'updated_at', 'value_added']

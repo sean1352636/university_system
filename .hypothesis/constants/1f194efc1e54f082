@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/study_matching_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/study-matching', '/groups', '/profiles', '/questions', '/virtual-rooms', 'GET', 'POST', 'break_duration', 'category', 'communication_style', 'course_id', 'course_id = ?', 'create', 'creator_id', 'difficulty_level', 'group_id', 'group_id = ?', 'group_name', 'host_id', 'host_id = ?', 'is_active', 'is_active = ?', 'is_answered', 'is_answered = ?', 'is_virtual', 'items', 'location', 'max_members', 'max_participants', 'meeting_schedule', 'noise_preference', 'pomodoro_enabled', 'preferred_time', 'qa_board', 'question_text', 'question_title', 'room_code', 'room_name', 'search', 'status', 'status = ?', 'student_id', 'student_id = ?', 'study_groups', 'study_matching', 'study_profiles', 'study_style', 'sub', 'total', 'view', 'virtual_study_rooms', 'work_duration']

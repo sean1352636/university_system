@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/betting/services/__init__.py
-# hypothesis_version: 6.151.9
-
-['AccountManager', 'BET_STATUSES', 'CASINO_GAMES', 'CasinoManager', 'MAX_BET', 'MAX_DEPOSIT', 'MIN_BET', 'MIN_DEPOSIT', 'ReportManager', 'SportsBettingManager', 'generate_reference', 'init_betting_db']

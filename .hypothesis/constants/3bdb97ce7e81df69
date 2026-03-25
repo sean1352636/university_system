@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/email_service/notifications/internship.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d %H:%M:%S', 'approved', 'company', 'deadline', 'error', 'failed', 'first_name', 'info', 'internship_title', 'last_name', 'rejected', 'sent', 'status']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/lms/schema.py
-# hypothesis_version: 6.151.9
-
-['lms_course_content', 'lms_courses', 'lms_discussion_posts', 'lms_gradebook', 'lms_lessons', 'lms_modules', 'lms_progress', 'lms_questions', 'lms_quiz_attempts', 'lms_quizzes', 'lms_resources', 'lms_video_lectures']

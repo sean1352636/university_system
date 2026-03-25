@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/grade_tracking_management_gui/predictive_analytics.py
-# hypothesis_version: 6.151.9
-
-['Enter Student ID:', 'Error', 'High', 'Info', 'Low', 'Medium', 'Student ID', 'Success', 'common.error', 'common.info', 'common.success', 'generate_alerts', 'manage_grades', 'use_ml_models', 'view_reports', 'view_risk_analysis']

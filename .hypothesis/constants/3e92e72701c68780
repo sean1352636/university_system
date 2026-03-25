@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/analytics/advanced_search/system.py
-# hypothesis_version: 6.151.9
-
-[0.1, -100, 100, '%Y%m%d_%H%M%S', '%Y-%m-%d %H:%M:%S', '-', '=', 'ANALYZE', 'VACUUM', 'average_age', 'criteria', 'data_quality', 'email_completeness', 'missing_emails', 'results', 'search_types', 'students_by_course', 'time', 'total_enrollments', 'total_modules', 'total_searches', 'total_students', 'type', 'w', '✓ Database vacuumed', '✓ Statistics updated']

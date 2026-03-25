@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/validation/validators.py
-# hypothesis_version: 6.151.9
-
-[0.0, 4.0, 128, 200, 253, 254, '%B %d, %Y', '%H:%M', '%H:%M:%S', '%I:%M %p', '%I:%M:%S %p', '%Y-%m-%d', '%Y/%m/%d', '%d %B %Y', '%d-%m-%Y', '%d/%m/%Y', '%m/%d/%Y', '.', '..', '12345678', '; ', '@', 'Date is required', 'Email is required', 'GPA must be a number', 'Grade is required', 'Invalid email format', 'Password is required', 'Username is required', '[A-Z]', '[\\s\\-\\.\\(\\)]', '[^\\d]', '[a-z]', '\\d', '^[A-F][+-]?$', '^[A-Z]{3}\\d{4}$', '^\\+?[1-9]\\d{6,14}$', '^\\+?\\d+$', 'admin', 'admin123', 'administrator', 'course_code', 'credits', 'date', 'email', 'gpa', 'grade', 'guest', 'letmein', 'module_code', 'name', 'password', 'phone', 'qwerty', 'root', 'student_id', 'superuser', 'system', 'username', 'welcome']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/college_system/modules/domain/finance/services/finance_service.py
-# hypothesis_version: 6.151.9
-
-[' AND staff_id = ?', ' AND status = ?', ' AND student_id = ?', ', ', 'Fee item not found.', 'Invoice not found.', 'academic_year', 'amount', 'balance_due', 'cancelled', 'cash', 'fee_type', 'mandatory', 'overdue', 'paid', 'paid_amount', 'partial', 'pending', 'processed', 'student_id', 'title', 'total_invoiced', 'total_paid', 'tuition']

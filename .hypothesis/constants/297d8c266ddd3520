@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/email_service/queue.py
-# hypothesis_version: 6.151.9
-
-[1.0, 2.0, 5.0, 'attachments', 'bcc', 'body', 'cc', 'database_only_mode', 'error', 'failed', 'info', 'recipient', 'scheduled_id', 'send_delay', 'sent', 'subject', 'template', 'template_name', 'template_vars', 'type']

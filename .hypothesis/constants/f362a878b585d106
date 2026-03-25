@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/primary_school/modules/domain/facilities/room_booking/services/room_booking_service.py
-# hypothesis_version: 6.151.9
-
-[' AND booked_by = ?', ' AND room_name = ?', ', ', 'booked_by', 'booking_date', 'end_time', 'id', 'purpose', 'recurring', 'room_name', 'start_time', 'status']

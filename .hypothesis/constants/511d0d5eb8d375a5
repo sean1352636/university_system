@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/core/defaults.py
-# hypothesis_version: 6.151.9
-
-['!@#$%&*', '1', '=', 'Administrator', 'DEFAULT_ADMIN_EMAIL', 'DEFAULT_STAFF_EMAIL', 'DEFAULT_STUDENT_ID', 'DEMO_MODE', 'Demo', 'S12345', 'SYSTEM_ADMIN_EMAIL', 'SYSTEM_SUPPORT_EMAIL', 'Staff', 'Student', 'Teesside University', 'UNIVERSITY_NAME', 'University', 'admin', 'admin123', 'admin@university.edu', 'email', 'first_name', 'get_admin_email', 'get_fallback_email', 'last_name', 'noreply', 'password', 'staff', 'staff123', 'staff@university.edu', 'student123', 'student_id', 'support', 'true', 'university.edu', 'username', 'yes']

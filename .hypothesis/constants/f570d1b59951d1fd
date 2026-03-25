@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/security.py
-# hypothesis_version: 6.151.9
-
-[100, '*', 'admin', 'create_admin', 'credit_card', 'delete', 'email', 'export_data', 'ip_address', 'lockout_window', 'max_failed_attempts', 'modify_permissions', 'phone', 'privileged_roles', 'sensitive_actions', 'ssn', 'superuser']

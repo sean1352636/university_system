@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/cinema_cli/menu.py
-# hypothesis_version: 6.151.9
-
-['\nEnter choice: ', '\n🎟️  TICKET BOOKING:', '\n🎬 MOVIE BROWSING:', '\n👑 ADMIN PANEL:', '0', '1', '2', '2. Search Movies', '3', '4', '4. View Screenings', '5', '5. Book Tickets', '6', '6. View My Bookings', '7', '7. Membership Menu', '8', 'UNIVERSITY CINEMA', 'username', '❌ Invalid choice']

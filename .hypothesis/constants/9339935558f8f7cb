@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/email_service/scheduling.py
-# hypothesis_version: 6.151.9
-
-[1.0, '%Y-%m-%d %H:%M:%S', 'database_only_mode', 'error', 'failed', 'failure', 'info', 'pending', 'process_emails', 'processing', 'scheduled_ids', 'scheduler_thread', 'send_delay', 'sent', 'success', 'total']

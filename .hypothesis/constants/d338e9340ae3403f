@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/student_support/features/search.py
-# hypothesis_version: 6.151.9
-
-['\nSearch in:', '\n🔍 ADVANCED SEARCH', ' AND category = ?', ' AND status = ?', '%Y-%m-%d %H:%M:%S', '1', '2', '2. Tickets only', '3', '3. FAQs only', '4', '4. Resources only', '5', '=', 'Account security', 'Book renewal', 'Database access', 'Email forwarding', 'Email quota', 'Email setup', 'Enter search query: ', 'Grade appeals', 'Library hours', 'SELECT *', 'SELECT COUNT(*)', 'Transcript requests', 'VPN access', 'View grades', 'WiFi setup', 'category', 'email', 'faq_id', 'faqs', 'global', 'grade', 'id', 'kb', 'kb_articles', 'library', 'page', 'password', 'per_page', 'resource_id', 'resources', 'role', 'session_id', 'status', 'student', 'student_id = ? AND ', 'suggestions', 'tickets', 'total_count', 'unknown', 'wifi']

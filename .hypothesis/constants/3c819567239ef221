@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/commerce/services/shop_management/config.py
-# hypothesis_version: 6.151.9
-
-[0.0, 0.2, '555-SHOP', 'University Campus', 'University Shop', 'currency_symbol', 'default_tax_rate', 'low_stock_threshold', 'max_cart_items', 'receipt_footer', 'shop@university.edu', 'shop_address', 'shop_email', 'shop_name', 'shop_phone', '£', '£0.00']

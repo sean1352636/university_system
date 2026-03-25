@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/document_manager/status.py
-# hypothesis_version: 6.151.9
-
-['\nExpired Documents:', '\nNew Status Options:', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', '1', '1. Verified', '2', '2. Rejected', '3', '3. Pending', '30', '4', '4. Expired', '5', '5. Under Review', 'Document not found.', 'Expired', 'File: {filename}', 'Invalid document ID.', 'Pending', 'Rejected', 'Under Review', 'Verified', 'days_left', 'document_expired', 'document_id', 'document_rejected', 'document_type', 'document_verified', 'error', 'expiry_date', 'filename', 'info', 'notes', 'status', 'status_update', 'student_name', 'updated_date', 'verification_date', 'warning', 'y']

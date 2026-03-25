@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/document_manager/document_types.py
-# hypothesis_version: 6.151.9
-
-[100, '\n➕ ADD DOCUMENT TYPE', '\n📝 DOCUMENT TYPES:', ',', '-', '0', '1', '10', '2', '2. Add Document Type', '3', '4', '5', '=', 'Description: ', 'Document type name: ', 'General', 'Invalid input.', 'Invalid selection.', 'No', 'Program name: ', 'Yes', 'pdf,jpg,jpeg,png', 'y']

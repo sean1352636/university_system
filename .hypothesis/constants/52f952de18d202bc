@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/security/audit_trail.py
-# hypothesis_version: 6.151.9
-
-[100, 500, ' AND ', '***', 'AuditAction', 'AuditEntry', 'AuditLogger', 'F', 'WHERE ', '__module__', '_initialized', 'access', 'action', 'action = ?', 'args', 'audit_data_access', 'audit_trail', 'config_change', 'create', 'current_user', 'data_hash', 'delete', 'details', 'error_message', 'export', 'function', 'function_name', 'get_audit_logger', 'get_current_user', 'import', 'ip_address', 'key', 'log_activity', 'login', 'logout', 'module_name', 'password', 'permission_change', 'read', 'resource_id', 'resource_id = ?', 'resource_type', 'resource_type = ?', 'result_count', 'result_type', 'secret', 'success', 'success = ?', 'timestamp', 'timestamp <= ?', 'timestamp >= ?', 'token', 'update', 'user_id', 'user_id = ?', 'username']

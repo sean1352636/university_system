@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/billing/fee_structure.py
-# hypothesis_version: 6.151.9
-
-[1.14, 1.17, 1.27, 1.71, 1.91, 188.5, 100, 500, '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', ', ', '/api/exchange-rates', 'AUD', 'Amount: ', 'CAD', 'CHF', 'EUR', 'EXCHANGE_API_KEY', 'From currency: ', 'GBP', 'GET', 'Invalid input.', 'Invalid selection.', 'JPY', 'PAYPAL_CLIENT_ID', 'PAYPAL_CLIENT_SECRET', 'PAYPAL_ENVIRONMENT', 'STRIPE_PUBLIC_KEY', 'STRIPE_SECRET_KEY', 'To currency: ', 'USD', 'all', 'amount_waived', 'analytics.log', 'api', 'client_id', 'client_secret', 'daily', 'date', 'environment', 'error', 'fixed', 'ignore', 'late_fees', 'manage_finances', 'paypal', 'percentage', 'public_key', 'rate', 'reason', 'sandbox', 'secret_key', 'stripe', 'student_id', 'username', 'waive_late_fee', 'webhook_secret']

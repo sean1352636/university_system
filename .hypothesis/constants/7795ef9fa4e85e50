@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/assignment_system/dashboard.py
-# hypothesis_version: 6.151.9
-
-[100, 150, 400, '#2ecc71', '#3498db', '#e74c3c', '#f39c12', '%Y-%m-%d %H:%M:%S', 'Arial', 'Date', 'Description', 'Title.TLabel', 'Type', 'active_assignments', 'assignments', 'bold', 'both', 'common.date', 'common.description', 'common.type', 'end', 'ew', 'headings', 'left', 'manage_assignments', 'my_submissions', 'pending_grades', 'raised', 'right', 'student_modules', 'upcoming_due', 'vertical', 'view_assignments', 'w', 'x', 'y']

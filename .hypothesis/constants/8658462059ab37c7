@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/gui/student_union_gui/integrations/external_integrations.py
-# hypothesis_version: 6.151.9
-
-[120, '1050x550', '1200x800', '20', '300x200', '300x250', 'Arial', 'Attendees', 'Book Dining', 'Cancel', 'Close', 'Club Event', 'Create New Trip', 'Database Error', 'Date', 'End Time', 'Error', 'Event Name', 'Helvetica', 'Location', 'No Clubs', 'No Selection', 'No events found', 'Open Shop', 'Organizer', 'Please select a club', 'Refresh', 'Select a club:', 'Shop Opened', 'Start Time', 'Status', 'Trip Management', 'attendees', 'bold', 'both', 'end_time', 'event_date', 'event_name', 'headings', 'left', 'location', 'organizer', 'readonly', 'start_time', 'status', 'student_union', 'x']

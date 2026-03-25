@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/reporting/financial_reports/analyzers.py
-# hypothesis_version: 6.151.9
-
-[100, 365, 'Dropped Out', 'Early Program', 'Extended Stay', 'Graduated', 'Mid-Program', 'avg_collection_rate', 'avg_payment', 'collected_fees', 'collection_rate', 'count', 'days_enrolled', 'dropped', 'graduated', 'high_risk_students', 'lifecycle_analysis', 'lifecycle_stage', 'mean', 'paid_fees', 'payment_count', 'payment_frequency', 'revenue_per_student', 'scholarship_amount', 'scholarship_rate', 'status', 'std', 'student_count', 'student_data', 'summary_stats', 'total_collected', 'total_expected', 'total_fees', 'total_scholarships', 'total_students', 'years_enrolled']

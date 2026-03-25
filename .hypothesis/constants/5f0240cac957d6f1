@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/services/trip_management/menu.py
-# hypothesis_version: 6.151.9
-
-['=', 'Create New Trip', 'Delete Trip', 'Generate Trip Report', 'Manage Participants', 'Register for Trip', 'Return to Main Menu', 'TRIP MANAGEMENT:', 'Test failed: {error}', 'Update Trip', 'User', 'View All Trips', 'create_trip', 'create_trips', 'delete_trip', 'generate_report', 'manage_participants', 'manage_schedules', 'manage_trips', 'register_for_trips', 'register_trip', 'role', 'update_trip', 'user', 'username', 'view_own_timetable', 'view_registrations', 'view_trip_events', 'view_trips', 'view_trips_calendar']

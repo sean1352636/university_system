@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/reporting/revenue_analytics/collections.py
-# hypothesis_version: 6.151.9
-
-[100, 130, '\nAvailable statuses:', '%Y-%m-%d %H:%M:%S', '-', '1', '2', '3', '4', '5', '6', '7', '8', '9', '=', 'Enter case notes: ', 'Invalid amount.', 'Invalid input.', 'Invalid selection.', 'N/A', 'Unassigned', 'amount_due', 'assigned', 'closed', 'collection_cases', 'collection_notice', 'created_by', 'days_overdue', 'due_date', 'in_progress', 'manage_finances', 'new', 'new_status', 'old_status', 'resolved', 'student_id', 'student_name', 'total_debt', 'updated_by', 'username']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/admin/initialization.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d %H:%M:%S', '=', 'Computer Science', 'Doe', 'John', 'Mr', 'System', 'TEST123', 'Test Email', 'University System', 'User', 'admin', 'course', 'create_announcement', 'database_only_mode', 'email_address', 'error', 'first_name', 'get_announcements', 'get_inbox', 'get_sent_messages', 'info', 'last_name', 'message', 'modules_list', 'monitor', 'notification_type', 'read_message', 'send_email_to_role', 'send_message', 'sender_email', 'sender_name', 'sent', 'smtp_server', 'student_id', 'system', 'system_notification', 'test@example.com', 'title', 'warning', '✓ Metrics logged']

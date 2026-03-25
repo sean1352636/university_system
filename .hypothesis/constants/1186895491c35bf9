@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/services/gui/charity_shop_gui/reports.py
-# hypothesis_version: 6.151.9
-
-[0.0, 550, 700, '%Y%m%d_%H%M%S', '%Y-%m-%d %H:%M:%S', '*.*', '*.txt', '.txt', '1.0', '700x600', '800x650', 'All files', 'Category Breakdown:\n', 'Charity Shop Reports', 'Close', 'Confirm Email', 'Courier', 'Daily Breakdown:\n', 'Email to Admin', 'Error', 'Generate Report', 'Helvetica', 'Open in New Window', 'Report', 'SUMMARY\n', 'Sales by Category:\n', 'Save Report As', 'Save as TXT', 'Select Report:', 'Success', 'System', 'Text files', 'Warning', 'bold', 'category', 'daily', 'monthly', 'readonly', 'report', 'report_content', 'report_text_widget', 'report_type_var', 'stock', 'total', 'username', 'utf-8', 'w', 'weekly', '─', '═']

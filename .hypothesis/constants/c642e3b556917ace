@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/logging/gui/features/api_management.py
-# hypothesis_version: 6.151.9
-
-[100, '%Y-%m-%d %H:%M:%S', '-', '1.0', '600x200', '600x400', '800x600', '900x700', '=', 'API Status', 'Arial', 'Confirm', 'Copied', 'Copy', 'Courier', 'ENDPOINT BREAKDOWN', 'Endpoints', 'Error', 'Examples', 'Friday', 'Generate API Key', 'HOURLY TRAFFIC', 'Monday', 'Overview', 'Saturday', 'Sunday', 'Thursday', 'Tuesday', 'Wednesday', 'alert_email', 'api_enabled', 'api_secret_key', 'bold', 'disable', 'disabled', 'enable', 'enabled', 'readonly', 'red', 'security_alert_email', 'weekly_report_day', 'weekly_report_email', '█']

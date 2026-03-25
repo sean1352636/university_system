@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/core/aid.py
-# hypothesis_version: 6.151.9
-
-[0.0, 100, 120, '\nDecision options:', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', '1', '1. Single payment', '1. View Aid Types', '2', '2. Weekly payments', '3', '3. Edit Aid Type', '3. Monthly payments', '3. Reject', '4', '4. Custom schedule', '5', '=', 'Aid type not found.', 'Category Totals:', 'Enter aid name: ', 'Enter description: ', 'Financial Aid', 'Invalid amount.', 'Invalid decision.', 'Invalid input.', 'Invalid selection.', 'Loan Repayment', 'N/A', 'No', 'Unlimited', 'Yes', 'approved', 'approved_amount', 'awarded', 'decision', 'disbursed', 'emergency', 'grant', 'loan', 'paid', 'partial', 'pending', 'rejected', 'reviewer', 'scholarship', 'system', 'username', 'work_study', 'y']

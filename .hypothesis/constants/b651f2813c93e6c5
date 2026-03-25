@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/batch_operations/mixins/templates.py
-# hypothesis_version: 6.151.9
-
-[100, '.csv', '.xlsx', '2000-01-15', '2024-09-01', '2024-2025', '4.0', '555-0123', '92.5', 'A', 'Active', 'COMPUTER SCIENCE', 'CS101', 'CS201', 'Data Structures', 'Enrolled', 'Fall', 'John', 'S12345', 'Smith', 'academic_year', 'address', 'course', 'course_code', 'csv', 'date_of_birth', 'email', 'enrollment', 'enrollment_date', 'enrollment_status', 'excel', 'first_name', 'grade', 'grade_point', 'last_name', 'module', 'module_code', 'module_name', 'module_type', 'openpyxl', 'optional_module_1', 'percentage', 'phone_number', 'semester', 'status', 'student', 'student_id', 'templates', 'utf-8', 'w']

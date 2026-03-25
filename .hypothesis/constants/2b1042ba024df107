@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/database/dialogs/storage.py
-# hypothesis_version: 6.151.9
-
-[1.0, 1000.0, 365, 1024, '\nBreakdown by Type:\n', '\nRecent Backups:\n', '%Y', '%Y%m%d_%H%M%S', '%Y-%m', '%Y-W%U', '500x400', '=', 'Adjust Quota', 'Clean Old Backups', 'Cleanup Complete', 'Close', 'Quota Updated', 'Remove Duplicates', 'Storage Actions', 'Storage Summary', 'Storage Usage', 'backup_directory', 'backup_type', 'backups', 'both', 'count', 'daily_keep', 'left', 'monthly_keep', 'path', 'quota_exceeded', 'retention_policy', 'secure_deletion', 'size', 'storage_quota_gb', 'timestamp', 'unknown', 'weekly_keep', 'x', 'yearly_keep']

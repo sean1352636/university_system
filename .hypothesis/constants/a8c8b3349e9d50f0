@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/housing/services/housing_accommodation/assignments.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '1', '1. ', '2', '2. ', '3', '3. ', '4', '4. ', '5', '5. ', ':', ': ', '=', 'Active', 'Expired', 'Pending', 'Terminated', 'common.yes', 'common.yes_no_prompt', 'housing', 'housing.room.select', 'id', 'in', 'out', 'role', 'student', 'view_accommodations', 'view_own_record']

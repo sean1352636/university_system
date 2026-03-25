@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/gym_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/gym', '/bookings', '/classes', '/memberships', 'GET', 'POST', 'booking_date', 'class_id', 'class_id = ?', 'class_name', 'class_type', 'class_type = ?', 'create', 'description', 'difficulty_level', 'difficulty_level = ?', 'emergency_contact', 'end_date', 'end_time', 'gym', 'gym_class_bookings', 'gym_classes', 'gym_memberships', 'health_conditions', 'instructor_id', 'instructor_name', 'items', 'location', 'max_capacity', 'member_id', 'member_id = ?', 'membership_type', 'membership_type = ?', 'monthly_fee', 'schedule_day', 'search', 'start_date', 'start_time', 'status', 'status = ?', 'sub', 'total', 'user_email', 'user_id', 'user_name', 'user_phone', 'view']

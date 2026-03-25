@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/module_scheduling/optimization.py
-# hypothesis_version: 6.151.9
-
-[100, 480, ' AND r.room_type = ?', '%H:%M', ',', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', ':', '?', 'Lab', 'Lecture', 'Popular morning slot', 'Thursday', 'Tuesday', 'Wednesday', 'building', 'day', 'duration', 'end', 'end_time', 'instructor', 'module_code', 'reasons', 'room_type', 'same_day', 'same_time', 'score', 'session_type', 'start', 'start_time', 'student', 'time_from', 'time_to', 'type']

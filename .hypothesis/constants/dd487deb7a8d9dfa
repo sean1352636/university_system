@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/analytics/advanced_search/analytics.py
-# hypothesis_version: 6.151.9
-
-[0.0, '\nSelect report type:', '\n📊 AGE DISTRIBUTION:', '-', '1', '1. Age Distribution', '2', '3', '3. Enrollment Trends', '4', '4. Module Popularity', '5', '5. All Reports', '=', 'Enter choice (1-5): ', 'SELECT DATE([', 'column', 'grade', 'search_datetime', 'timestamp']

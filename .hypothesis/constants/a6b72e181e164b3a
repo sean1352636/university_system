@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/barber/gui/tabs/appointments_tab.py
-# hypothesis_version: 6.151.9
-
-[100, 120, 150, '%Y-%m-%d', '10', '5', ':', 'Add to Waitlist', 'Block Time Slot', 'Booking for:', 'Bulk Cancel', 'Email:', 'Guest', 'Helvetica', 'ID:', 'Mark No-Show', 'N/A', 'Not set', 'Recurring Appt', 'Set Reminder', 'View History', 'View Waitlist', 'Weekly Calendar', 'barber', 'barber.btn.check_in', 'barber.labels.barber', 'barber.labels.date', 'barber.labels.status', 'barber.labels.time', 'black', 'bold', 'customer', 'email', 'first_name', 'full_name', 'gray', 'headings', 'id', 'last_name', 'number', 'payment', 'readonly', 'service', 'status', 'student_id', 'time', 'username', 'values']

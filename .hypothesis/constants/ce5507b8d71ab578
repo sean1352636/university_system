@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/assignments/templates/templates.py
-# hypothesis_version: 6.151.9
-
-[100, '\nSelect module:', '%Y-%m-%d %H:%M', '%Y-%m-%d %H:%M:%S', '=', 'Assignment not found', 'Default max marks: ', 'Description: ', 'Invalid selection.', 'Module number: ', 'Template name: ', 'Template not found', 'Template not found.', 'X', 'assignment_templates', 'assignment_type', 'create', 'default_file_types', 'default_max_marks', 'default_max_size', 'delete', 'description', 'description_template', 'file_types_allowed', 'id', 'instructions', 'late_penalty_per_day', 'manage_assignments', 'max_file_size_mb', 'max_marks', 'template_data', 'template_data = ?', 'template_name', 'template_name = ?', 'title', 'title_template', 'update', 'updated_at = ?']

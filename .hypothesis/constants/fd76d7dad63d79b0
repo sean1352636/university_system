@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/database/shared_imports.py
-# hypothesis_version: 6.151.9
-
-['backup_gui', 'backup_templates', 'backups', 'data', 'database', 'en', 'logs', 'templates']

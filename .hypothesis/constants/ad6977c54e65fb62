@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/charity_shop_cli/_imports.py
-# hypothesis_version: 6.151.9
-
-['Accessories', 'Books', 'Clothing', 'Electronics', 'Excellent', 'Fair', 'Furniture', 'Good', 'Homeware', 'Music/DVDs', 'New', 'Other', 'Poor', 'Sports', 'Toys', 'charity_shop_bundles', 'charity_shop_donors', 'charity_shop_layaway', 'charity_shop_loyalty', 'charity_shop_sales', 'charity_shop_shifts', 'charity_shop_staff', 'charity_shop_stock', 'charity_shop_tasks']

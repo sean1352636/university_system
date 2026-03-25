@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/budget_manager/manager.py
-# hypothesis_version: 6.151.9
-
-['admin', 'both', 'budget', 'danger', 'get_user_role', 'info', 'instructor', 'left', 'primary', 'secondary', 'staff', 'success', 'warning', 'white', 'x', '✏️ Edit Budget', '🍽️ Meal Plan', '🎯 Savings Goals', '💰 My Expenses', '💵 My Income', '📂 Manage Categories', '📈 Budget Analysis', '📊 New Budget Plan', '📚 Textbooks', '🗑️ Delete Budget']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/student_union/clubs/club_management/community.py
-# hypothesis_version: 6.151.9
-
-[100, '-', '1', '1. Browse book clubs', '10', '2', '2. Create book club', '3', '3. Join book club', '4', '4. My book clubs', '5', '5. Suggest a book', '6', '7', '7. Public events', '8', '9', '=', 'Author: ', 'Book club is full.', 'Book club name: ', 'Choose an option: ', 'Choose option: ', 'Club description: ', 'Coming soon...', 'Invalid choice.', 'Invalid club ID.', 'Learning', 'No activity', 'Selecting next book', 'active', 'decreasing', 'id', 'increasing', 'manage_all_clubs', 'manage_union_reps']

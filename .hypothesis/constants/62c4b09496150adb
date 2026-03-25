@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/gui/parking_management/dialogs/payment_dialog.py
-# hypothesis_version: 6.151.9
-
-['#229954', '#27ae60', '#2980b9', '#3498db', '#7f8c8d', '#8e44ad', '#95a5a6', '#9b59b6', '10', '20', '550x500', 'Arial', 'Cancel', 'Confirm Payment', 'Date:', 'Fine Amount:', 'License Plate:', 'Location:', 'Pay Parking Fine', 'Status:', 'Type:', 'Violation Details', 'amount', 'arrow', 'blue', 'bold', 'card', 'cash', 'disabled', 'green', 'hand2', 'normal', 'payment_method', 'raised', 'red', 'student_account', 'student_id', 'violation_id', 'white', '💳 Pay with Card', '💵 Pay with Cash']

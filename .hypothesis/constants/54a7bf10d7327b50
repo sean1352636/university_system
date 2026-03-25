@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/financial_aid/admin_portal/portal.py
-# hypothesis_version: 6.151.9
-
-[0.0, '-', '1200x800', 'Active Aid Packages', 'Arial', 'Create Aid Package', 'Import FAFSA Data', 'Manage Aid Types', 'Manage Scholarships', 'Management Functions', 'Pending Reviews', 'Review Applications', 'Title.TLabel', 'View Awards', 'View Reports', 'active_packages', 'bold', 'both', 'count', 'ew', 'info', 'pending_reviews', 'primary', 'success', 'total', 'total_disbursed', 'w', 'warning', 'x']

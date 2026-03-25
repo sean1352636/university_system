@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/academics/interventions/services/intervention_service.py
-# hypothesis_version: 6.151.9
-
-[' AND ig.status = ?', ' ORDER BY ig.name', 'active', 'current_grade = ?', 'progress_notes = ?']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/ai/ai_detector/detector/integration_mixin.py
-# hypothesis_version: 6.151.9
-
-[0.5, 0.7, 200, 201, 202, 404, 50000, ',', '?', 'Authorization', 'Content-Type', 'activity_log', 'activity_records', 'ai_detector', 'ai_only', 'ai_score', 'alerts', 'analyses', 'application/json', 'bidirectional', 'combined_results', 'copyleaks', 'data_controller', 'data_summary', 'error', 'errors', 'export_id', 'export_path', 'external_id', 'gdpr_exports', 'generated_at', 'high_risk_both', 'id', 'json', 'legal_basis', 'metadata', 'notifications_sent', 'plagiarism_only', 'plagscan', 'pull', 'pull_success', 'push', 'push_success', 'record_id', 'request_reference', 'similarity_score', 'source', 'student_email', 'student_id', 'submissions', 'submissions_synced', 'success', 'text', 'text_content', 'timestamp', 'turnitin', 'unicheck', 'w']

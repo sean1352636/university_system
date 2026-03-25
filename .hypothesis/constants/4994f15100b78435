@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/grading/interventions.py
-# hypothesis_version: 6.151.9
-
-[2.0, 2.5, 100, '1 week', '2 weeks', '=', 'Academic Advising', 'Counseling', 'Current GPA: N/A', 'High', 'Immediate', 'Medium', 'Mentoring', 'Modified Schedule', 'Tutoring', 'avg_risk_score', 'course', 'description', 'gpa', 'interventions', 'name', 'priority', 'risk_distribution', 'risk_level', 'risk_score', 'student_id', 'students', 'summary_stats', 'timeline', 'total_students', 'type', '🔴', '🟡']

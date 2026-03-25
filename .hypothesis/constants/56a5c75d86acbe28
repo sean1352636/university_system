@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/ta_routes.py
-# hypothesis_version: 6.151.9
-
-[201, 400, 404, 500, '/<int:id>', 'DELETE', 'GET', 'POST', 'PUT', 'active', 'create', 'delete', 'details', 'error', 'has_permission', 'hours_per_week', 'instructor_id', 'items', 'message', 'module_code', 'permission_type', 'permission_types', 'permissions', 'role_type', 'status', 'student_id', 'sub', 'ta', 'ta_id', 'ta_permission_check', 'ta_permissions', 'ta_workload', 'teaching_assistant', 'teaching_assistants', 'total', 'update', 'view']

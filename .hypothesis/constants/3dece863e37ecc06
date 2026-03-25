@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/pdf_export/pdf_generator.py
-# hypothesis_version: 6.151.9
-
-[0.15, 0.25, 0.5, 1.5, 2.5, 7.5, '#2c3e50', '#34495e', '#3498db', '#dee2e6', '#f8f9fa', '...', 'ALIGN', 'BACKGROUND', 'BOTTOMPADDING', 'CENTER', 'CustomSubtitle', 'CustomTitle', 'Empty Tables', 'Export Summary', 'FONTNAME', 'FONTSIZE', 'GRID', 'Heading1', 'Heading2', 'Heading3', 'Helvetica', 'Helvetica-Bold', 'LEFT', 'LEFTPADDING', 'LINEBELOW', 'MIDDLE', 'Normal', 'RIGHT', 'RIGHTPADDING', 'SectionHeader', 'Stats', 'SubsectionHeader', 'TEXTCOLOR', 'TOPPADDING', 'Table of Contents', 'TableDescription', 'Tables with Data', 'Total Records', 'Total Tables', 'VALIGN', 'empty_tables', 'tables_with_data', 'total_tables']

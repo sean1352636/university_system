@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/integrations/integration_marketplace_core/search_discovery.py
-# hypothesis_version: 6.151.9
-
-[' AND sync_status = ?', '**\\1**', '.', '1=1', '5.0.0', '=', 'AND', 'Enter search term: ', 'N/A', 'OR', 'category', 'category = ?', 'description', 'error_details', 'install_count', 'install_count >= ?', 'integration_name', 'integration_type', 'integration_type = ?', 'is_official', 'is_official = ?', 'min_installs', 'min_rating', 'n', 'provider_name', 'provider_name LIKE ?', 'rating', 'rating >= ?', 'y']

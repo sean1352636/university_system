@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/ai/university_chatbot/api_routes.py
-# hypothesis_version: 6.151.9
-
-[5.0, 400, 401, '/api/auth/login', '/api/auth/logout', '/api/auth/status', '/api/chat', '/api/login', '/api/voice/record', '/api/voice/test', '/api/voice/tts', 'Authorization', 'Bearer ', 'GET', 'Invalid session', 'No speech recognized', 'No text provided', 'POST', 'TTS failed', 'anonymous', 'authenticated', 'duration', 'error', 'flask', 'has_permission', 'is_voice', 'message', 'permission', 'recognized_text', 'recommendations', 'response', 'session_token', 'success', 'text', 'timestamp', 'user', 'user_id']

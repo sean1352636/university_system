@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/student_support/utils/metrics.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d %H:%M:%S', 'SELECT 0', '_update_metrics', 'active_tickets', 'avg_response_time', 'changed_by', 'created_datetime', 'feedback', 'id', 'new_status', 'old_status', 'performance', 'role', 'satisfaction', 'satisfaction_rating', 'status_change', 'student', 'ticket_id', 'tickets', 'unknown', 'user_id', 'user_satisfaction', 'username']

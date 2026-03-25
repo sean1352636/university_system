@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/student_registration/browse_modules.py
-# hypothesis_version: 6.151.9
-
-[100, 150, 250, 400, '450x350', '<<ComboboxSelected>>', 'All', 'Arial', 'Available Modules', 'Browse Modules', 'Capacity', 'Capacity:', 'Close', 'Code', 'Credits', 'Credits:', 'Department', 'Department:', 'Description:', 'Enroll', 'Enrolled Modules', 'Error', 'Module Code:', 'My Enrollment', 'N/A', 'Name', 'No Selection', 'Not Found', 'Quick Actions', 'Search', 'Search:', 'Total Credits', 'Unlimited', 'View Details', 'bold', 'both', 'end', 'headings', 'info', 'left', 'ns', 'nsew', 'primary', 'readonly', 'success', 'values', 'vertical', 'w', 'x']

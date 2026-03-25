@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/batch_operations/import_manager.py
-# hypothesis_version: 6.151.9
-
-[100, '*.*', '*.csv', '*.txt', '*.xlsx *.xls', '+%d+%d', '.', '.csv', '.txt', '.xls', '.xlsx', '1', '10', '2', '3', '300x200', '4', '400x300', '500x400', '600x500', '800x600', '; ', '?', 'All files', 'Arial', 'CSV Import', 'Excel Import', 'Import', 'Importing CSV data', 'OK', 'Resume', 'Resume Import', 'Resumed Import', 'Resuming import', 'Save error report', 'Text files', 'Unknown error', '_', 'all', 'batch_ops.buttons.ok', 'bold', 'both', 'confidence', 'disabled', 'end', 'error', 'errors', 'existing_record', 'green', 'headings', 'import_record', 'import_resume_', 'import_resume_*.json', 'left', 'nw', 'orange', 'original_total', 'r', 'red', 'remaining_records', 'right', 'row', 'status', 'text', 'type', 'vertical', 'w', 'y']

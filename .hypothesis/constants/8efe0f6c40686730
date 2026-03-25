@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/ai/ai_detector/core/enums.py
-# hypothesis_version: 6.151.9
-
-['ai_generated_content', 'behavioral_analysis', 'citation_fraud', 'critical', 'ensemble_api', 'high', 'low', 'medium', 'ml_model', 'multi_modal', 'pattern_matching', 'sentence_analysis', 'statistical_analysis', 'style_deviation', 'suspicious_behavior', 'temporal_analysis', 'temporal_anomaly']

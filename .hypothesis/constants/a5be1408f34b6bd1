@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/assignments/assignments/submissions.py
-# hypothesis_version: 6.151.9
-
-['\nAvailable groups:', '\nRecent Submissions:', '"', '%Y%m%d_%H%M%S', '%Y-%m-%d %H:%M:%S', "'", '... (truncated)', '.c', '.cpp', '.css', '.html', '.java', '.js', '.pdf', '.py', '.txt', '1', '2', '2. Create new group', '=', 'Choose option: ', 'Downloads', 'Enter group name: ', 'File not found.', 'Invalid choice.', 'Invalid selection.', 'Submission not found', 'assignment_id', 'exports', 'file', 'group', 'ignore', 'leader', 'localhost', 'r', 'submit_assignment', 'submitted', 'update', 'utf-8', 'view_all_submissions', 'w', 'y', '~']

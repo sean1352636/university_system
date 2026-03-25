@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/services/trip_management/itinerary.py
-# hypothesis_version: 6.151.9
-
-['\nDAY {day}:', '  Notes: {notes}', ' at {location}', '%H:%M', '%Y-%m-%d', '(from {time})', '-', '=', 'All day', 'Invalid trip ID.', 'Notes (optional): ', 'Trip not found.', 'create_trips', 'id', 'manage_trips', 'trips', 'view_trips', 'y']

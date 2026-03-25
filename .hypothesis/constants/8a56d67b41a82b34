@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/student_dashboard/overview.py
-# hypothesis_version: 6.151.9
-
-['$0.00', '%A', '%A, %B %d, %Y', '0', 'Arial', 'Current GPA', 'Date', 'Enrolled Modules', 'Grade', 'Module', 'N/A', 'Outstanding Fines', 'Recent Grades', 'Room', 'Student', 'Time', "Today's Schedule", 'Upcoming Exams', 'bold', 'danger', 'dashboard.enrolled', 'dashboard.exams', 'dashboard.fines', 'dashboard.gpa', 'dashboard.no_classes', 'dashboard.no_grades', 'dashboard.welcome', 'horizontal', 'info', 'left', 'nsew', 'primary', 'secondary', 'success', 'w', 'warning', 'x', '{name}']

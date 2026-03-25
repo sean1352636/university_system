@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/notification_routes.py
-# hypothesis_version: 6.151.9
-
-[201, 300, ' = ?', ' AND ', ' WHERE ', ' WHERE user_id = ?', '%Y-%m-%d %H:%M:%S', ', ', '/api/notifications', '/mark-all-read', '/preferences', '08:00', 'GET', 'POST', 'PUT', 'bundle_notifications', 'bundle_time_window', 'channel', 'create', 'daily_digest_enabled', 'daily_digest_time', 'is_read', 'is_read = ?', 'marked_read', 'message', 'notification', 'notification_read', 'notifications', 'preferences', 'priority', 'priority = ?', 'quiet_hours_end', 'quiet_hours_start', 'source_id', 'source_system', 'sub', 'title', 'update', 'updated_at = ?', 'user_id', 'user_id = ?', 'view']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/module_scheduling/visualization.py
-# hypothesis_version: 6.151.9
-
-[-0.5, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.05, 300, '#45B7D1', '#4ECDC4', '#95A5A6', '#96CEB4', '#FF6B6B', '#FFEAA7', '%1.1f%%', '%Y%m%d_%H%M%S', '-', 'Avg Duration (min)', 'Blues', 'Capacity', 'Days of Week', 'Duration (minutes)', 'Invalid entity type', 'Lab', 'Lecture', 'Number of Rooms', 'Room', 'Room Capacity', 'Rooms', 'Seminar', 'Time Slots', 'Tutorial', 'Type', 'Utilization Rate (%)', 'Workshop', 'auto', 'black', 'bold', 'center', 'data', 'day', 'gray', 'inf', 'instructor', 'lightgreen', 'minor', 'module', 'module_code', 'room', 'session_type', 'skyblue', 'start_time', 'student', 'tight', 'time', 'type', 'upper left', 'x']

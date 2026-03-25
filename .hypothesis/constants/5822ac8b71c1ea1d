@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/main/features/commerce_facilities_gui.py
-# hypothesis_version: 6.151.9
-
-[550, 600, 700, 800, 900, 1000, 1100, 1200, '..', '1000x700', '1100x650', '1200x800', '1400x900', '1400x950', 'admin', 'bar_gui', 'cafe_gui', 'create_permit', 'current_user', 'grocery_gui', 'manage_parking', 'role', 'staff', 'takeaway_gui', 'view_accommodations', 'view_any_permit', 'view_own_permit']

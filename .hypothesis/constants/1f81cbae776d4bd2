@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/gui/health_portal/audit_security.py
-# hypothesis_version: 6.151.9
-
-[1.0, 100, '*.*', '*.log', '*.txt', '-', '.log', '10', '5', '=', 'ACTION:', 'ACTION:login', 'ACTION:logout', 'ACTIVITY SUMMARY', 'Access Summary', 'Action:', 'All files', 'Audit Log', 'Clear', 'Consolas', 'DATABASE SUMMARY', 'Error', 'Export Audit Log', 'Filter', 'Filters', 'Log files', 'Save Audit Log', 'Security Audit', 'Success', 'Text files', 'Title.TLabel', 'USER:', 'User ID:', ']', 'activity.log', 'add_health_record', 'audit_export', 'export_audit_log', 'health_appointments', 'health_records', 'login', 'logout', 'r', 'record_vaccination', 'schedule_appointment', 'students', 'utf-8', 'vaccination_records', 'view_health_record', 'w']

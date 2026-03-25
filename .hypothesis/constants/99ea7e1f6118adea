@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/helpdesk/admin/sla.py
-# hypothesis_version: 6.151.9
-
-[120, '\nEnter your choice: ', '\nSLA Policies:', ' WHERE sla_id = ?', '%Y-%m-%d %H:%M:%S', ', ', '1', '1. View SLA policies', '2', '3', '3. Edit SLA policy', '4', '=', '====================', 'Description: ', 'Invalid time values.', 'Name is required.', 'No', 'No changes made.', 'Policy name: ', 'Yes', 'activated', 'deactivated', 'escalation_hours = ?', 'resolution_hours = ?', 'y']

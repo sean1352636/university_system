@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/housing/services/accommodation/db.py
-# hypothesis_version: 6.151.9
-
-[180, 365, '%Y-%m-%d %H:%M:%S', 'Alternate Format', 'Assistive Technology', 'Available tables:', 'Extended Time', 'Flexible Attendance', 'Note-Taking', 'PRAGMA table_info([', 'TEXT', '] ', '])', 'accommodation_id', 'accommodation_types', 'approval_date', 'approved_by', 'column', 'details', 'ip_address', 'notes', 'status', 'table columns:']

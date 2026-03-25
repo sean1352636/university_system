@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/mail/__init__.py
-# hypothesis_version: 6.151.9
-
-['ForwardingManager', 'MailPostGUI', 'PACKAGE_TYPES', 'POBoxManager', 'PackageManager', 'ReportManager', 'STORAGE_FEES', 'TransactionManager', 'init_mail_db', 'launch_mail_post_gui']

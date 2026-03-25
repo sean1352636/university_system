@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/plagiarism_main_gui/dialogs/statistics.py
-# hypothesis_version: 6.151.9
-
-[100, 120, 150, 300, '%Y-%m-%d %H:%M:%S', '...', 'Check Date', 'Close', 'Count', 'Date', 'Document', 'Document Title', 'Documents', 'Last Updated:', 'Module', 'Overview', 'Percentage', 'Similarity', 'Similarity Score', 'Status', 'System Statistics', 'Total Checks:', 'Total Documents:', 'check_date', 'document_title', 'documents_by_module', 'ew', 'headings', 'ns', 'nsew', 'recent_checks', 'result_id', 'similarity_score', 'status', 'status_counts', 'total_checks', 'total_documents']

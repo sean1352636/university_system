@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/transaction_manager/payment_plans.py
-# hypothesis_version: 6.151.9
-
-[100, 120, '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '0.00', '1.0', '600x400', '600x500', '600x700', '700x600', '<<ComboboxSelected>>', '=', 'Arial', 'Bank Transfer', 'Card', 'Cash', 'Cheque', 'Courier', 'Next Due', 'Plan ID', 'Remaining', 'Start Date', 'Status', 'Student', 'Template', 'Total', 'active', 'bold', 'both', 'bottom', 'center', 'completed', 'end', 'ew', 'headings', 'horizontal', 'left', 'monthly', 'payment_plans', 'quarterly', 'readonly', 'right', 'username', 'values', 'vertical', 'w', 'weekly', 'white', 'x', 'y', '£']

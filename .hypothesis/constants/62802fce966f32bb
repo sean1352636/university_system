@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/calendar_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' = ?', ' AND ', ' WHERE ', ' WHERE id = ?', '%Y-%m-%d %H:%M:%S', ', ', '/<event_id>', '/api/calendar', 'DELETE', 'GET', 'POST', 'PUT', 'calendar', 'calendar_event', 'calendar_events', 'create', 'date', 'date_end', 'date_start', 'delete', 'description', 'event_type', 'event_type = ?', 'items', 'last_modified = ?', 'message', 'name', 'search', 'sub', 'total', 'update', 'view']

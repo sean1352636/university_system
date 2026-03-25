@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/gui/parking_management/dialogs/vehicle_dialog.py
-# hypothesis_version: 6.151.9
-
-[1900, '5', '500x550', 'Cancel', 'Color:', 'Error', 'Invalid year', 'License Plate:', 'Lookup Owner', 'Make:', 'Model:', 'Not Found', 'Not found', 'Not linked', 'Note', 'Owner Lookup', 'Owner Name:', 'Registration State:', 'Save', 'Sedan', 'Student ID:', 'Success', 'Unknown', 'Vehicle Type:', 'Year:', 'color', 'ew', 'license_plate', 'make', 'model', 'owner_id', 'readonly', 'registration_state', 'vehicle_type', 'w', 'year']

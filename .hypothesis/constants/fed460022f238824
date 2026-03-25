@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/ai/voice_interface.py
-# hypothesis_version: 6.151.9
-
-[0.0, 0.5, 0.8, 0.9, 1.0, 2.0, 5.0, 10.0, 100, 175, 'en', 'gender', 'gtts', 'id', 'languages', 'name', 'pyttsx3', 'rate', 'unknown', 'voice', 'voices', 'volume']

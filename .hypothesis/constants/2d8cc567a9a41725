@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/gui/parking_management/dialogs/__init__.py
-# hypothesis_version: 6.151.9
-
-['ExportDialog', 'LotDialog', 'PaymentDialog', 'PermitDialog', 'RefundDialog', 'VehicleDialog', 'ViolationDialog']

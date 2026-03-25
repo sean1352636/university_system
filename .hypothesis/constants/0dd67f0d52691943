@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/course_management_gui/recommendations/waitlists.py
-# hypothesis_version: 6.151.9
-
-[30.0, 100, 120, 200, 500, '%Y-%m-%d %H:%M:%S', ')', '-- All Courses --', '10', '550x350', '800x600', '<<ComboboxSelected>>', 'Add to Waitlist', 'Added Date', 'Arial', 'Cancel', 'Close', 'Course', 'Course Waitlists', 'Course:', 'Duplicate', 'Filter by Course:', 'ID: ', 'Invalid Student', 'Missing Data', 'Position', 'Process Waitlist', 'Refresh', 'Select Full Course', 'Status', 'Student ID', 'Student ID:', 'Student Information', 'Unknown', 'blue', 'bold', 'common.error', 'common.no_results', 'common.success', 'headings', 'readonly', 'values']

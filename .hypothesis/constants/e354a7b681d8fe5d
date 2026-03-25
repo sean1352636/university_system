@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/student_union/services/competitions.py
-# hypothesis_version: 6.151.9
-
-['\nScoring options:', '%Y-%m-%d', ',', '-', '0.0', '1', '2', '2. Bulk score update', '3', '4', '=', 'Academic', 'Choose option: ', 'Community Service', 'Competition name: ', 'Completed', 'Cultural', 'Innovation', 'Invalid choice.', 'Invalid date format.', 'Invalid selection.', 'N/A', 'No score', 'No scores entered.', 'Ongoing', 'Other', 'Scores: ', 'Sports', 'TBD', 'active', 'completed', 'registration_open', 'upcoming', 'y']

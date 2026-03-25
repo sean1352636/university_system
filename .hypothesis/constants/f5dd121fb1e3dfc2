@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/batch_operations/export_manager.py
-# hypothesis_version: 6.151.9
-
-[100, '%Y-%m-%d', '*.*', '*.csv', '*.json', '*.xlsx', '+%d+%d', '.csv', '.json', '.xlsx', '10', '2024-01-01', '400x300', '500x400', 'All files', 'All students', 'Arial', 'CS', 'CSV', 'CSV files', 'Comprehensive report', 'DS', 'Excel', 'Excel files', 'Export', 'Export Format', 'Filter Options', 'Filter by course', 'Filter by date range', 'Generate Reports', 'Import success rates', 'JSON', 'JSON files', 'Performance trends', 'Ready', 'Report Type', 'Save export as', 'Save statistics as', 'all', 'bold', 'comprehensive', 'course', 'csv', 'date', 'end_date', 'error_analysis', 'json', 'performance', 'readonly', 'start_date', 'success_rates', 'w', 'xlsx']

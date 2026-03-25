@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/console_output.py
-# hypothesis_version: 6.151.9
-
-[0.33, 0.66, 100, 120, '\x1b[0m', '\x1b[1m', '\x1b[2m', '\x1b[30m', '\x1b[31m', '\x1b[32m', '\x1b[33m', '\x1b[34m', '\x1b[35m', '\x1b[36m', '\x1b[37m', '\x1b[4m', '\x1b[5m', '\x1b[7m', '\x1b[90m', '\x1b[91m', '\x1b[92m', '\x1b[93m', '\x1b[94m', '\x1b[95m', '\x1b[96m', '\x1b[97m', '%Y-%m-%d %H:%M:%S', '-', ': ', '=', 'No data to display', 'TERM', 'Timestamp', 'Y/n', 'bold', 'double', 'dumb', 'isatty', 'single', 'y', 'y/N', 'yes', '•', 'ℹ', '─', '━', '│', '┃', '┌', '┏', '┐', '┓', '└', '┗', '┘', '┛', '├', '┤', '┬', '┴', '┼', '═', '║', '╔', '╗', '╚', '╝', '╠', '╣', '█', '░', '⚠', '✓', '✗', '🔧']

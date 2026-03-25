@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/staff_hr_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/staff-hr', '/leave-requests', '/staff', 'GET', 'POST', 'create', 'department', 'department = ?', 'email', 'end_date', 'first_name', 'hire_date', 'items', 'last_name', 'leave_type', 'leave_type = ?', 'notes', 'phone', 'position', 'reason', 'salary', 'search', 'staff_hr', 'staff_id', 'staff_id = ?', 'staff_leave_requests', 'staff_records', 'start_date', 'status', 'status = ?', 'sub', 'total', 'view']

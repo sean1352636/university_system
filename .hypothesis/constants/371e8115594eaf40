@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/staff_hr/services/managers/onboarding_manager.py
-# hypothesis_version: 6.151.9
-
-[' AND is_active = 1', ' AND oa.status = ?', ' AND oa.user_id = ?', ' ORDER BY name', '%Y-%m-%d', 'assign', 'assigned_to_role', 'assignment_id', 'category', 'department', 'description', 'due_days', 'employee', 'estimated_days', 'general', 'is_active', 'is_required', 'onboarding', 'order_num', 'role', 'template_type']

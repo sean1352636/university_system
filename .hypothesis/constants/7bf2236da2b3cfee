@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/models.py
-# hypothesis_version: 6.151.9
-
-['cloud', 'csv', 'database', 'json', 'syslog']

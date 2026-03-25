@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/housing/services/accommodation/menu.py
-# hypothesis_version: 6.151.9
-
-['1', '10', '11', '12', '13', '14', '15', '2', '3', '4', '5', '6', '7', '8', '9', '=', 'Apply Template', 'Bulk Import from CSV', 'CSV file path: ', 'Dashboard Metrics', 'Enter your choice: ', 'Export Data', 'Import from JSON', 'Migration completed!', 'Remove Accommodation', 'Return to Main Menu', 'Save Template', 'Update Accommodation', '__main__', 'batch_operations', 'export_data', 'view_accommodations']

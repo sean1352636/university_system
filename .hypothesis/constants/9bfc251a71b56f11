@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/lms/quiz_service.py
-# hypothesis_version: 6.151.9
-
-[0.0, 100, ' AND student_id = ?', 'attempts', 'avg_score', 'correct_answer', 'earned', 'id', 'marks', 'options', 'options_json', 'pass_count', 'pass_mark', 'pass_rate', 'passed', 'score', 'total', 'unique_students']

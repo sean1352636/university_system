@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/student_support/utils/audit.py
-# hypothesis_version: 6.151.9
-
-['_log_audit', 'action', 'duration', 'error', 'function', 'new_values', 'old_values', 'resource_id', 'success', 'system', 'timestamp', 'unknown', 'user', 'username']

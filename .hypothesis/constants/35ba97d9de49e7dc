@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/batch_operations/mixins/scheduling.py
-# hypothesis_version: 6.151.9
-
-[0.1, 100, '%H:%M', '*.csv', '*.xlsx', '.csv', 'created_at', 'custom', 'data', 'day_of_week', 'expression', 'id', 'import_dir', 'is_active', 'notification_email', 'time', 'type', 'weekly']

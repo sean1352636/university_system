@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/library/fines/admin.py
-# hypothesis_version: 6.151.9
-
-[0.0, '%Y-%m-%d', '1.0', '500x400', '900x500', ':', '<Configure>', 'Adjust Fine Amount', 'Adjustment', 'Apply Adjustment', 'Arial', 'Confirm Waive Fines', 'Decrease by', 'Fine paid on', 'Fine waived on', 'Increase by', 'No Fines', 'No History', 'Please select a loan', 'Select Loan', 'all', 'bold', 'book_loans', 'both', 'common.cancel', 'common.close', 'common.demo', 'common.error', 'common.success', 'common.warning', 'decrease', 'end-1c', 'increase', 'left', 'nw', 'right', 'set', 'solid', 'vertical', 'w', 'x', 'y']

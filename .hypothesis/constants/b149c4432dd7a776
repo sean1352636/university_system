@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/course_management/recommendations.py
-# hypothesis_version: 6.151.9
-
-[3.0, '\nActive Courses:', '\nAvailable Courses:', '-', '...', '... and more', '1', '2', '3', 'Course Type', 'Credit Hours', 'Department', 'Invalid choice.', 'Invalid course ID.', 'Level', 'Max Enrollment', 'N/A', 'Recommended', 'Required', 'Unknown', 'conn', 'course_management', 'view_courses']

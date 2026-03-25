@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/services/security.py
-# hypothesis_version: 6.151.9
-
-[1024, 1900, '%Y-%m-%d', ',', ', ', '.csv', '0', '1', ';', 'confidential', 'description', 'false', 'illness', 'injury', 'medical_exam', 'mental_health', 'n', 'no', 'other', 'prescription', 'provider', 'r', 'record_date', 'record_type', 'student_id', 't', 'true', 'utf-8', 'vaccination', 'y', 'yes']

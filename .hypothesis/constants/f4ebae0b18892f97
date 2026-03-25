@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/mail_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/mail', '/packages', '/po-boxes', 'GET', 'POST', 'box_number', 'create', 'description', 'holder_email', 'holder_id', 'holder_id = ?', 'holder_name', 'items', 'mail', 'mail_packages', 'mail_po_boxes', 'monthly_fee', 'package_type', 'recipient_email', 'recipient_id', 'recipient_id = ?', 'recipient_name', 'rental_end', 'rental_start', 'search', 'sender_address', 'sender_name', 'size', 'status', 'status = ?', 'storage_location', 'sub', 'total', 'tracking_number', 'view', 'weight_kg']

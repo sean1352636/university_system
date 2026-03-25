@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/research/services/research_grants_core.py
-# hypothesis_version: 6.151.9
-
-[100, '\n  0. Back', '\nAdd item? (y/n): ', '\nNot found.', '\nSelect: ', '\x1b[2J\x1b[H', '  3. Update Status', '  4. View Details', '  6. Milestones', '  7. Budget', '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '=', 'Amount awarded: ', 'Amount requested: ', 'Amount: ', 'Budget item added.', 'Department: ', 'Description: ', 'EquipmentManager', 'EthicsReviewManager', 'Funding body: ', 'Grant ID: ', 'GrantTrackerService', 'Milestone ID: ', 'Milestone added.', 'Milestone completed.', 'MilestoneManager', 'PublicationManager', 'Status updated.', 'Title: ', 'a', 'amount', 'awarded', 'by_category', 'c', 'category', 'completed', 'draft', 'items', 'rejected', 'shortlisted', 'submitted', 'success_rate', 'total', 'total_decided', 'under_review', 'y']

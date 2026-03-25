@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/student_union/clubs/club_management/clubs.py
-# hypothesis_version: 6.151.9
-
-['\n1. Add member', '\nChoose an action: ', '%Y-%m-%d', '-', '1', '1. View club details', '2', '2. Remove member', '2. Update category', '2. View members', '3', '4', '5', '5. Organize an event', '6', 'Category updated!', 'Category: ', 'Choose an action: ', 'Date (YYYY-MM-DD): ', 'Description updated!', 'Description: ', 'End time (HH:MM): ', 'Enter club name: ', 'Enter new category: ', 'Event name: ', 'Invalid choice.', 'Invalid position.', 'Invalid selection.', 'Location: ', 'Member', 'No members found.', 'President', 'Secretary', 'Start time (HH:MM): ', 'Treasurer', 'active', 'create_club', 'id', 'manage_all_clubs', 'manage_own_club', 'president', 'secretary', 'treasurer', 'upcoming']

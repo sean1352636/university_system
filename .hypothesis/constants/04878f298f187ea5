@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/parent_portal/security_and_documents.py
-# hypothesis_version: 6.151.9
-
-[365, '\nAuthorized Persons:', '\nDocument Types:', '\nExisting Documents:', '\nOptions:', '\nPermission Types:', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '1', '1. Permission slip', '2', '2. Medical form', '3', '3. Back to menu', '3. Yearbook photos', '4', '4. Photo consent', '5', '5. Other', 'Active', 'DENIED', 'Enter number: ', 'Full name: ', 'GRANTED', 'ID number: ', 'Inactive', 'Invalid choice.', 'Invalid date format.', 'Phone number: ', 'Select option: ', 'denied', 'emergency_contact', 'granted', 'id', 'manage_documents', 'manage_pickup_auth', 'media_coverage', 'medical_form', 'other', 'parent', 'permission_slip', 'photo_consent', 'promotional', 'role', 'simulate', 'social_media', 'website_photos', 'y', 'yearbook']

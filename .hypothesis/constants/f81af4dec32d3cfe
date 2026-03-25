@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/academic_calendar/search.py
-# hypothesis_version: 6.151.9
-
-[100, 200, 1000, ' AND ', ' WHERE ', ',', '?', 'Invalid user ID', 'c.id = ?', 'course_id', 'e.event_type = ?', 'end_date', 'event_type', 'start_date', 'tags', 'text']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/database/scheduling/__init__.py
-# hypothesis_version: 6.151.9
-
-['_expand_cron_field', '_set_next_cron_run', 'get_connection', 'parse_cron_schedule', 'scheduled_backup_job', 'start_scheduler', 'stop_scheduler']

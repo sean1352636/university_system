@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/attendance/cli/backup_cli.py
-# hypothesis_version: 6.151.9
-
-[1024, '\n💾 BACKUP SETTINGS:', '%Y-%m-%d %H:%M', '*.db', '-', '1', '2', '3', '4', '4. Backup Settings', '5', 'Enter choice (1-2): ', 'No backups found.', 'Restore cancelled.', 'attendance', 'auto_backup_enabled', 'backups', 'boolean', 'disabled', 'enabled', 'integer', 'manual', 'yes']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/module_scheduling/import_export.py
-# hypothesis_version: 6.151.9
-
-['%H:%M', '%Y%m%d_%H%M%S', ',', '2.0', '?', 'Invalid entity type', 'TBA', 'Unknown', 'bulk_import', 'count', 'day', 'day_of_week', 'description', 'dtend', 'dtstart', 'end_time', 'freq', 'instructor', 'instructor_id', 'location', 'module_code', 'module_name', 'prodid', 'room', 'room_id', 'rrule', 'session_type', 'start_time', 'student', 'summary', 'timetable_reports', 'version', 'wb', 'weekly', 'x-wr-calname']

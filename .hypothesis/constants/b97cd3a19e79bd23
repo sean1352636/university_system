@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/helpdesk/tickets/attachments.py
-# hypothesis_version: 6.151.9
-
-[1024, 4096, '%Y-%m-%d %H:%M:%S', ',', 'Enter file path: ', 'File not found.', '\\b[a-zA-Z]{3,}\\b', 'a', 'an', 'and', 'application/msword', 'application/pdf', 'application/zip', 'are', 'at', 'attachments', 'be', 'been', 'but', 'by', 'can', 'cannot', 'cant', 'could', 'did', 'do', 'does', 'for', 'had', 'has', 'have', 'he', 'her', 'him', 'his', 'i', 'image/', 'in', 'is', 'it', 'its', 'may', 'me', 'might', 'my', 'n', 'of', 'on', 'or', 'our', 'rb', 'she', 'should', 'text/', 'the', 'their', 'them', 'they', 'to', 'us', 'was', 'we', 'were', 'will', 'with', 'would', 'y', 'you', 'your']

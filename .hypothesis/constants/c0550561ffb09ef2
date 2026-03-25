@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/housing/services/accommodation/audit.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d %H:%M:%S', '127.0.0.1', '[system action]', 'accommodations', 'email', 'id', 'system', 'table_affected', 'username']

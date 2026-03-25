@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/ai_detector/statistics_view.py
-# hypothesis_version: 6.151.9
-
-[120, '#8B0000', '%1.1f%%', '0', '0.000', '<Configure>', '<MouseWheel>', 'Card.TFrame', 'Segoe UI', 'Subtitle.TLabel', 'Title.TLabel', 'ai_detector.risk.low', 'all', 'avg_score', 'bg_primary', 'bg_tertiary', 'bold', 'both', 'color', 'common.unknown', 'danger', 'database_status', 'high_risk', 'left', 'nw', 'right', 'stats_cards', 'students', 'success', 'text_primary', 'total', 'total_submissions', 'unique_students', 'units', 'vertical', 'w', 'warning', 'x', 'y', '⚠️', '🎯', '👥', '📄']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/operations/maintenance.py
-# hypothesis_version: 6.151.9
-
-['#333333', '#e74c3c', '#ecf0f1', '#ffffff', '%Y-%m-%d %H:%M', '-', '.', '1', '400x350', 'Card.TFrame', 'End', 'End:', 'Helvetica', 'ID', 'Invalid screen', 'Main.TFrame', 'Schedule Maintenance', 'Scheduled!', 'Screen', 'Screen #:', 'Select a record', 'Start', 'Start:', 'Status', 'Subtitle.TLabel', 'Success.TButton', 'Technician', 'Technician:', 'Type', 'Type:', '_', 'bold', 'both', 'cinema.btn.schedule', 'cleaning', 'end', 'headings', 'left', 'right', 'screen', 'start', 'tech', 'type', 'values', 'vertical', 'w', 'x', 'y']

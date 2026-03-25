@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/plagiarism_main_gui/dialogs/document_details.py
-# hypothesis_version: 6.151.9
-
-[100, 150, '<Configure>', '<Double-1>', 'Author:', 'Check Date:', 'Close', 'Created:', 'Date', 'Details', 'Document Details', 'EXACT_MATCH', 'File Type:', 'HIGH_SIMILARITY', 'Info', 'Information', 'Last Updated:', 'MODERATE_SIMILARITY', 'Module:', 'N/A', 'Similarity', 'Similarity Score:', 'Status', 'Status:', 'Submission Date:', 'Threshold', 'Threshold Used:', 'Title:', 'Word Count:', 'all', 'author_name', 'check_date', 'created_at', 'ew', 'file_type', 'headings', 'latest_check', 'module_code', 'ns', 'nsew', 'nw', 'result_id', 'similarity_score', 'status', 'submission_date', 'tags', 'threshold_used', 'title', 'updated_at', 'word_count']

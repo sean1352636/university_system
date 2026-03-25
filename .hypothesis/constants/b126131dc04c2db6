@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/core/communications.py
-# hypothesis_version: 6.151.9
-
-[587, '+447000000000', '1', '2', '3', '=', 'Enter app password: ', 'Enter from email: ', 'Enter from name: ', 'Enter sender email: ', 'Enter sender name: ', 'Finance Department', 'STU001', 'account_sid', 'api_key', 'auth_token', 'aws_access_key_id', 'case_id', 'finance', 'finance_system_test', 'from_email', 'from_name', 'from_phone', 'name', 'region_name', 'schedule_info', 'sender_email', 'sender_name', 'sender_password', 'smtp.gmail.com', 'smtp_port', 'smtp_server', 'system', 'test@example.com', 'us-east-1']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/records/vaccinations/tracking.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d', 'y', 'ℹ️ UPCOMING', '✅ Current', '✅ Verified', '🔴 EXPIRED', '🔴 Expired', '🟡 DUE SOON', '🟡 Expiring Soon']

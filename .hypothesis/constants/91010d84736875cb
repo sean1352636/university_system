@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/staff_hr/services/managers/cover_manager.py
-# hypothesis_version: 6.151.9
-
-[' = ?', ' AND department = ?', ' GROUP BY status', ' GROUP BY urgency', ', ', '1=1', 'accepted', 'action', 'assigned_by', 'assignee_id', 'assignment_id', 'by_status', 'by_urgency', 'cancelled', 'cnt', 'column', 'completed', 'count', 'course_code', 'course_name', 'cover_assignment', 'cover_date', 'cover_offer', 'cover_request', 'cover_skill', 'create', 'declined', 'delete', 'department', 'end_time', 'general', 'intermediate', 'location', 'normal', 'offer_id', 'qualification_id', 'qualified', 'reason', 'request_id', 'request_type', 'requester_id', 'skill_id', 'skill_name', 'start_time', 'status', 'subject_area', 'teaching', 'total_requests', 'update', 'updated_at = ?', 'updated_fields', 'urgency', 'user_id', 'volunteer_id']

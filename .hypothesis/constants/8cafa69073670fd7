@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/document_manager_gui/users.py
-# hypothesis_version: 6.151.9
-
-['Error', 'Feature', 'No Selection', 'Permission Denied', 'Yes', 'access', 'action', 'admin', 'default', 'end', 'ensure_login', 'required_role', 'role', 'system', 'unknown', 'user_role', 'users_tree']

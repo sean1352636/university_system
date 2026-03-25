@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/commerce/services/shop_management/inventory.py
-# hypothesis_version: 6.151.9
-
-[1.5, 110, '\nAdjustment Options:', '\nLow Stock Products:', '\nOptions:', '\nRestock Options:', '%Y-%m-%d %H:%M:%S', '+', '-', '1', '2', '3', '3. Cancel', '4', 'Added', 'Enter product ID: ', 'Invalid choice.', 'Removed', 'Restock cancelled.', 'Restocking products', 'Set', 'Update cancelled.', 'Viewing low stock', 'avg_threshold', 'back', 'category', 'conn', 'last_restock_date', 'manage_inventory', 'price', 'product_count', 'product_id', 'quantity', 'restock_threshold', 'shop', 'stock_percent', 'total_quantity', 'total_value', 'y']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/college_system/modules/domain/absence_requests/services/absence_requests_service.py
-# hypothesis_version: 6.151.9
-
-[100, ', ', '?', 'Request not found.', 'absence_type', 'approved_by', 'cnt', 'end_date', 'id', 'reason', 'staff_id', 'start_date', 'status', 'updated_at']

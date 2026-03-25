@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/cli/auth_manager.py
-# hypothesis_version: 6.151.9
-
-[10.0, 30.0, '%Y-%m-%d %H:%M:%S', 'MFA services loaded', 'SMS provider loaded', '_users_created', 'admin', 'email', 'first_name', 'last_name', 'set_auth', 'set_auth_all', 'student', 'student_id', 'username']

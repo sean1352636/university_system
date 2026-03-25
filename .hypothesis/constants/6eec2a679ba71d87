@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/course_management_gui/recommendations/prerequisites.py
-# hypothesis_version: 6.151.9
-
-[30.0, '%Y-%m-%d %H:%M:%S', ')', '-', '-- All Courses --', '1.0', '10', '500x300', '600x400', '700x500', '<<ComboboxSelected>>', '=', 'Arial', 'Cancel', 'Circular Dependency', 'Close', 'Courier', 'Course Prerequisites', 'Course:', 'Duplicate', 'ID: ', 'Incomplete', 'Prerequisite removed', 'Prerequisite:', 'Recommended', 'Refresh', 'Remove Selected', 'Required', 'Save', 'Select Course', 'Select Course:', 'Select Prerequisite', 'bold', 'common.confirm', 'common.error', 'common.success', 'readonly', 'values']

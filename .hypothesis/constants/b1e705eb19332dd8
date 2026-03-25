@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/managers/database_manager.py
-# hypothesis_version: 6.151.9
-
-[0.1, 30.0, 'DB_CONNECTION_FAILED', 'DB_LOCK_TIMEOUT', 'SELECT 1', '_count', 'connection_id', 'database is locked', 'db_path', 'disk i/o error', 'error', 'error_type', 'lock_acquired', 'max_retries', 'message', 'no such table', 'permission denied', 'result', 'retry_delay', 'status', 'success', 'total_connections', 'unknown']

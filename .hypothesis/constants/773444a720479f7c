@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/scholarship_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' = ?', ' AND ', ' WHERE ', ', ', '/api/scholarships', '/applications', 'GET', 'POST', 'PUT', 'active', 'additional_documents', 'award_amount', 'create', 'decision_date', 'essay', 'false', 'is_active = 1', 'items', 'review_date', 'review_notes', 'reviewer_id', 'sa.status = ?', 'sa.student_id = ?', 'scholarship', 'scholarship_id', 'scholarships', 'search', 'status', 'student_id', 'sub', 'total', 'update', 'view']

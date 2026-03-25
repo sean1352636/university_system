@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/housing/gui/housing_accommodation_gui/assignment_manager.py
-# hypothesis_version: 6.151.9
-
-[150, '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '1.0', '10', '400x300', '600x500', 'Active', 'All', 'Apply Filter', 'Arial', 'Assignment Details', 'Assignment ID', 'Assignment not found', 'Building', 'Cancel', 'Close', 'Error', 'Expired', 'Filter Assignments', 'Housing Assignments', 'Move-in', 'New Status:', 'Pending', 'Refresh', 'Room', 'Status', 'Status:', 'Student', 'Success', 'Terminated', 'Update', 'Update Status', 'View Details', 'Warning', 'bold', 'both', 'disabled', 'end', 'headings', 'horizontal', 'housing_assignment', 'left', 'move_out_date', 'new_status', 'old_status', 'right', 'values', 'vertical', 'w', 'x', 'y']

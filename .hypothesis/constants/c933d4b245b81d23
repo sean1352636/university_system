@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/academic_calendar/dialogs_search.py
-# hypothesis_version: 6.151.9
-
-[100, 150, 200, 350, 500, 700, '#0', '*.*', '*.csv', '*.txt', ',', '-', '...', '.csv', '.txt', '900x700', ';', '=', 'Academic', 'Administrative', 'All files', 'Arial', 'CSV files', 'Date', 'Deadline', 'Description', 'End Date', 'Finance', 'Holiday', 'Library', 'Social', 'Sports', 'Text files', 'Trip', 'Type', 'bold', 'common.clear', 'common.close', 'common.error', 'common.search', 'date', 'date_end', 'date_start', 'description', 'end', 'end_date', 'event_type', 'ew', 'name', 'ns', 'nsew', 'search_results', 'start_date', 'tags', 'text', 'tree headings', 'utf-8', 'w']

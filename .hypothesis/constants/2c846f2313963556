@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/services/contacts.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d %H:%M:%S', '-', '1', '2', '3', '4', '5', '6', 'admin', 'emergency_contact', 'health_provider', 'id', 'n', 'role', 'y', 'yes']

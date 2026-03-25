@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/ai/ai_detector/integration/api_gateway.py
-# hypothesis_version: 6.151.9
-
-[1.0, 200, 300, 5000, 'Authorization', 'Content-Type', 'api_key', 'api_name', 'application/json', 'confidence', 'details', 'failure_threshold', 'failures', 'general', 'is_open', 'last_failure', 'max_per_minute', 'model', 'recovery_timeout', 'requests', 'response_time', 'score', 'text', 'timeout', 'url', 'weight']

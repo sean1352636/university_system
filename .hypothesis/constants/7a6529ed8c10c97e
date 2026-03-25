@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/optional_dependencies.py
-# hypothesis_version: 6.151.9
-
-['Chatbot', 'ChatbotInterface', 'UniversityChatbot', 'Voice Interface', 'VoiceInterface', 'config_path', 'db_path', 'get_chatbot', 'get_voice_interface', 'is_chatbot_available', 'set_auth_system']

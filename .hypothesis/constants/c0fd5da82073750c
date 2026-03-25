@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/auth.py
-# hypothesis_version: 6.151.9
-
-[100, 401, 403, 429, 'API_CONFIG', 'Authorization', 'Bearer ', 'HS256', 'Invalid token', 'Invalid token type', 'Rate limit exceeded', 'Token has expired', 'access', 'admin', 'algorithm', 'current_user', 'enabled', 'error', 'exp', 'iat', 'id', 'jwt', 'mfa_pending', 'rate_limiting', 'refresh', 'requests_per_minute', 'role', 'secret_key', 'status', 'sub', 'type', 'unknown', 'user_id', 'username']

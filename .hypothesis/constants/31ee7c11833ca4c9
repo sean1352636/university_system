@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/college_system/modules/domain/sms_email/services/sms_email_service.py
-# hypothesis_version: 6.151.9
-
-[100, ', ', '?', 'assignment_alerts', 'attendance_alerts', 'cnt', 'digest_frequency', 'email_enabled', 'grade_alerts', 'id', 'phone_number', 'sms_enabled', 'updated_at', 'user_id', 'user_id is required.']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/theme_config.py
-# hypothesis_version: 6.151.9
-
-['#000000', '#0078d7', '#0d47a1', '#2b2b2b', '#333333', '#3c3c3c', '#404040', '#606060', '#e0e0e0', '#e1e1e1', '#f0f0f0', '#ffffff', 'Accent.TButton', 'TButton', 'TCheckbutton', 'TCombobox', 'TEntry', 'TFrame', 'TLabel', 'TLabelFrame', 'TLabelFrame.Label', 'TNotebook', 'TNotebook.Tab', 'TRadiobutton', 'TScrollbar', 'Treeview', 'active', 'bg', 'button_bg', 'button_fg', 'default', 'entry_bg', 'entry_fg', 'fg', 'frame_bg', 'label_bg', 'label_fg', 'scrollbar_bg', 'scrollbar_fg', 'select_bg', 'select_fg', 'selected', 'treeview_bg', 'treeview_fg', 'treeview_selected']

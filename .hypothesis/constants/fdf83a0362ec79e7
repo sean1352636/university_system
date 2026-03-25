@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/course_management/database.py
-# hypothesis_version: 6.151.9
-
-['ALTER TABLE [', 'BOOLEAN DEFAULT 0', 'INTEGER', 'INTEGER DEFAULT 3', 'REAL DEFAULT 0.0', 'TEXT', "TEXT DEFAULT 'Core'", '] ', '] ADD COLUMN [', 'assessment_methods', 'availability_periods', 'column', 'conn', 'course_fee', 'course_type', 'courses', 'created_at', 'duration', 'instructors', 'lab_required', 'learning_outcomes', 'online_available', 'required_textbooks', 'tags', 'updated_at']

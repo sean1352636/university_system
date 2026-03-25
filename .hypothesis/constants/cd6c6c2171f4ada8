@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/academics/homework/services/homework_service.py
-# hypothesis_version: 6.151.9
-
-[' AND h.status = ?', '%Y-%m-%d %H:%M:%S', 'Homework not found', 'Submission not found', 'due_date', 'gold_star', 'good_effort', 'homework_id', 'id', 'keep_trying', 'late', 'marked', 'missing', 'pending', 'student_id', 'submitted', 'well_done']

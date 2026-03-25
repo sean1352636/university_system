@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/email/__init__.py
-# hypothesis_version: 6.151.9
-
-['BUILTIN_TEMPLATES', 'EmailError', 'EmailMessage', 'EmailQueue', 'EmailService', 'get_template', 'list_templates', 'load_email_config', 'register_template', 'render_template', 'save_email_config', 'template_exists']

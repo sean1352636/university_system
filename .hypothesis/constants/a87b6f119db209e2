@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/cinema_cli/admin/movies.py
-# hypothesis_version: 6.151.9
-
-['\n🎬 Movie Title: ', '0', 'ADD NEW MOVIE', 'cinema_movie', 'coming_soon', 'create', 'now_showing', 'status', 'status_changed', 'title', 'update', '❌ Invalid duration', '❌ Invalid movie ID', '❌ Movie not found', '❌ No changes made', '🎥 Director: ', '📅', '📖 Description: ', '📺']

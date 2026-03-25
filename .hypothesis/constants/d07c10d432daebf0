@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/parent_portal/medical.py
-# hypothesis_version: 6.151.9
-
-[120, 600, '\nAllergies:', ')', '1.0', '600x700', '650x750', '<Configure>', '<MouseWheel>', 'A+', 'A-', 'AB+', 'AB-', 'Active Conditions:', 'Arial', 'B+', 'B-', 'Blood Type:', 'Cancel', 'Doctor Name:', 'Doctor Phone:', 'Error', 'ID: ', 'Insurance Provider:', 'Load Medical Info', 'Medical Information', 'Medications:', 'O+', 'O-', 'Save', 'Select Student:', 'Success', 'Title.TLabel', 'Unknown', 'all', 'allergies', 'blood_type', 'bold', 'conditions', 'doctor_name', 'doctor_phone', 'insurance_policy', 'insurance_provider', 'italic', 'medications', 'nw', 'readonly', 'units', 'values', 'vertical', 'w']

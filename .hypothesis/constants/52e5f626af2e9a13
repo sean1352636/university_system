@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/course_management/status.py
-# hypothesis_version: 6.151.9
-
-['\nAll Courses:', '\nSelect new status:', '%Y-%m-%d %H:%M:%S', '-', 'Active', 'Archived', 'Cancelled', 'Enter choice (1-4): ', 'Inactive', 'Invalid choice.', 'Invalid course ID.', 'No courses found.', 'conn', 'course_management', 'manage_courses', 'status', 'system', 'y']

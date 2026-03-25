@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/error_logger.py
-# hypothesis_version: 6.151.9
-
-[-1000, 1000, '%Y-%m-%d %H:%M:%S', 'a', 'context', 'error', 'error_log.txt', 'error_message', 'error_type', 'error_types', 'file_path', 'files_with_errors', 'function_name', 'line_number', 'lineno', 'logs', 'r', 'timestamp', 'total_errors', 'traceback', 'unknown', 'utf-8', 'w']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/admin/chat.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d %H:%M:%S', 'accepted', 'already_invited', 'already_member', 'content', 'course', 'create_chat_room', 'created_at', 'creator', 'declined', 'department', 'description', 'email', 'error', 'full_name', 'id', 'info', 'invite_user_to_room', 'invited_at', 'invited_by', 'is_admin', 'join_chat_room', 'joined', 'joined_at', 'leave_chat_room', 'limit', 'member_count', 'message_count', 'messages', 'name', 'page', 'pending', 'private', 'public', 'room_description', 'room_id', 'room_name', 'room_type', 'rooms', 'sender', 'sender_name', 'sent_at', 'total_count', 'total_pages', 'user_id', 'username', 'warning']

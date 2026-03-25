@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/student_support/features/reports.py
-# hypothesis_version: 6.151.9
-
-[100, '\nDate Range:', '\n📊 GENERATE REPORTS', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '1', '2', '3', '4', '5', '5. Back', '=', 'admin', 'avg_hours', 'avg_rating', 'avg_resolution_hours', 'avg_satisfaction', 'category', 'category_analysis', 'category_breakdown', 'category_stats', 'count', 'daily_creation', 'date', 'date_range', 'end', 'id', 'max_hours', 'min_hours', 'performance', 'priority_breakdown', 'rating_distribution', 'report_generated', 'report_type', 'reports', 'resolution_rate', 'resolution_stats', 'resolved', 'resolved_count', 'response_rate', 'role', 'satisfaction', 'staff', 'staff_member', 'staff_performance', 'start', 'status_breakdown', 'ticket_summary', 'total_assigned', 'total_responses', 'total_tickets', 'user_id', 'w', 'y', '❌ Invalid choice.']

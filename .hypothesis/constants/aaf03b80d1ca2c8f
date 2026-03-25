@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/attendance/cli/notifications_cli.py
-# hypothesis_version: 6.151.9
-
-[100, '\nAvailable Modules:', '\n📧 EMAIL SETTINGS', '\n📱 SMS SETTINGS', '\n🚨 PENDING ALERTS', '-', '1', '1. Email Settings', '2', '2. SMS Settings', '3', '3. Alert Thresholds', '4', '4. Alert Statistics', '=', 'Alert not found.', 'Enter SMS API key: ', 'Enter choice (1-2): ', 'Enter student ID: ', 'Invalid selection.', 'No modules found.', 'No pending alerts.', 'T', 'Test Notification', 'all', 'auto_email_warnings', 'boolean', 'custom', 'disabled', 'enable_parent_portal', 'enabled', 'integer', 'medium', 'percentage', 'sms_api_key', 'string', 'y']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/attendance/attendance_notifications.py
-# hypothesis_version: 6.151.9
-
-[0.0, 90.0, '@', 'absent_sessions', 'attendance_rate', 'attendance_summary', 'attended_sessions', 'email', 'emails_sent', 'errors', 'first_name', 'id', 'instructor_email', 'last_name', 'low_attendance_alert', 'module', 'module_code', 'module_name', 'notification', 'notification_type', 'parent_id', 'parent_name', 'parents_notified', 'phone', 'recipient_email', 'sent', 'sent_at', 'signature', 'status', 'student_id', 'student_name', 'student_notified', 'students_checked', 'students_notified', 'threshold', 'total_sessions']

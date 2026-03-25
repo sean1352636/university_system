@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/student_routes.py
-# hypothesis_version: 6.151.9
-
-[200, 201, 1000000, 9000000, '%Y-%m-%d %H:%M:%S', '/<student_id>', '/api/students', 'Active', 'CS', 'DELETE', 'DS', 'GET', 'Mr', 'Ms', 'POST', 'PUT', 'age', 'code', 'course', 'create', 'delete', 'dob', 'email_address', 'enrolled_modules', 'enrollment_date', 'first_name', 'full_name', 'gender', 'items', 'last_name', 'male', 'message', 'middle_name', 'search', 'status', 'student', 'student_id', 'students', 'sub', 'temp_password', 'title', 'total', 'update', 'user_account_created', 'view']

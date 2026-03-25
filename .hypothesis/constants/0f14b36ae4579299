@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/grading/grade_calculation/grade_entry.py
-# hypothesis_version: 6.151.9
-
-[100, '\nAvailable Grades:', '\nLetter grade: ', '\nNew letter grade: ', '%Y-%m-%d', '. ', '1', '2', 'No comments', 'letter', 'y']

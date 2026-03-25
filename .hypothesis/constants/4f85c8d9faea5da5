@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/grading/curve_analysis.py
-# hypothesis_version: 6.151.9
-
-[100, '\nApply Grading Curve', '\nComparison Options:', '\nCurving Methods:', '\nCurving Results:', '-', '1', '1. Compare by Course', '2', '2. Compare by Gender', '3', '4', '5', '6', '7', '8', '9', '=', 'A', 'A+', 'A-', 'Agg', 'B', 'B+', 'B-', 'C', 'C+', 'C-', 'D', 'D+', 'D-', 'F', 'Invalid method.', 'y']

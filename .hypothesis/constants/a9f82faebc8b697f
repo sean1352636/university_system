@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/analytics/enhanced_reporting/scheduler.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d', '%Y-%m-%d %H:%M:%S', 'daily', 'enabled', 'end_date', 'frequency', 'generated_date', 'hour', 'last_run', 'monthly', 'pdf', 'r', 'recipients', 'reports_dir', 'run_count', 'schedule_config', 'scheduled_report', 'start_date', 'template_name', 'w', 'weekly']

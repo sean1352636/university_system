@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/mfa_enforcement.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d %H:%M:%S', '+00:00', ',', '?', 'LOW', 'MFA_REQUIRED_ROLES', 'Z', 'action', 'admin', 'allow_login', 'compliant', 'created_at', 'days_remaining', 'email', 'grace_period_expired', 'grace_period_expires', 'id', 'in_grace_period', 'instructor', 'message', 'mfa_enabled', 'mfa_enforcement', 'mfa_method', 'mfa_setup_date', 'mfa_setup_reminder', 'redirect_to', 'require_mfa_setup', 'required', 'role', 'setup_url', 'show_warning', 'staff', 'student', 'true', 'unknown', 'user_id', 'username']

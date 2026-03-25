@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/college_system/modules/domain/audit_reports/services/audit_reports_service.py
-# hypothesis_version: 6.151.9
-
-[100, ', ', '?', 'Report not found.', 'cnt', 'findings', 'generated_by', 'id', 'report_type', 'result_summary', 'status', 'title', 'title is required.', 'updated_at']

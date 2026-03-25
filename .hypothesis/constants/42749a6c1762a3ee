@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/admin/audit_log/services/audit_service.py
-# hypothesis_version: 6.151.9
-
-[365, 500, ' AND action = ?', ' AND module = ?', ' AND username = ?', 'cnt', 'config_change', 'create', 'delete', 'export', 'import', 'login', 'logout', 'update', 'view']

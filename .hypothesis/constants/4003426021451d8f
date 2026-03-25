@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/college_system/modules/domain/student_support/services/student_support_service.py
-# hypothesis_version: 6.151.9
-
-[' AND status = ?', ' AND student_id = ?', ', ', 'Document not found.', 'Risk not found.', 'Risk resolved: id=%d', 'Risk updated: id=%d', 'academic', 'documents', 'escalated', 'impact_rating', 'intervention_type', 'interventions', 'mitigations', 'monitoring', 'open', 'open_risks', 'outcome', 'risk_level', 'risk_type', 'risks', 'sessions_attended', 'sessions_planned', 'status', 'student_id', 'targets', 'total_risks']

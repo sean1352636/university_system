@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/student_support/core/attachment_manager.py
-# hypothesis_version: 6.151.9
-
-[1024, '%Y%m%d_%H%M%S', '%Y-%m-%d %H:%M:%S', '.avi', '.bmp', '.doc', '.docx', '.gif', '.jpeg', '.jpg', '.mov', '.mp4', '.pdf', '.png', '.rtf', '.txt', '.wmv', '=', 'add_response', 'attachment_id', 'data', 'datetime', 'file_size', 'filename', 'id', 'mime_type', 'role', 'tickets', 'wb', '❌ Invalid choice.']

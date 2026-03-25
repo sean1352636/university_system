@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/biometric_service.py
-# hypothesis_version: 6.151.9
-
-[0.0, 0.05, 0.6, 0.7, 1.0, 'BIOMETRIC_TYPE_FACE', 'BLOB', 'BiometricService', 'Face Camera', 'Fingerprint Scanner', 'INTEGER DEFAULT 0', 'NUMPY_AVAILABLE', 'REAL', 'TEXT', "TEXT DEFAULT '{}'", 'biometric_face', 'biometric_type', 'created_at', 'device_name', 'enrollment_id', 'error', 'face', 'failure_count', 'fingerprint', 'inf', 'last_verified_at', 'match_score', 'metadata', 'quality_score', 'revoked_at', 'success', 'template_data', 'template_hash', 'user_id is required', 'verification_count']

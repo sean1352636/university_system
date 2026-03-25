@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/financial_aid/student_portal/financial_aid.py
-# hypothesis_version: 6.151.9
-
-[600, 700, '%Y-%m-%d %H:%M:%S', '(Annual, USD)', ',', '0', '1.0', 'Academic Year:', 'Aid Type Requested:', 'An error occurred:', 'Arial', 'Back to Dashboard', 'Cancel', 'Emergency Aid', 'Error', 'Grant', 'Household Income:', 'Loan', 'Student', 'Student ID Not Found', 'Submit Application', 'Success', 'Success.TButton', 'Title.TLabel', 'Validation Error', 'Work-Study', 'academic_year', 'additional_info', 'aid_type', 'blue', 'bold', 'both', 'create', 'dependents', 'email', 'end-1c', 'gray', 'household_income', 'income', 'left', 'no such table', 'orange', 'readonly', 'red', 'right', 'solid', 'status', 'student_id', 'student_name', 'submission_date', 'to_dict', 'w', 'x']

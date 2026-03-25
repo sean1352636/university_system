@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/financial_aid/student_portal/deadlines.py
-# hypothesis_version: 6.151.9
-
-[100, 120, 150, 300, '#f8d7da', '#fff3cd', '%Y-%m-%d', '14', 'Back to Dashboard', 'Days Left', 'Deadline', 'Error', 'Progress', 'Refresh', 'Scholarship', 'Soon', 'Status', 'Title.TLabel', 'URGENT!', 'Upcoming', 'Upcoming Deadlines', 'Urgency', 'application_progress', 'both', 'darkred', 'days', 'deadline_date', 'end', 'left', 'right', 'scholarship_name', 'soon', 'status', 'urgent', 'values', 'x', '{count} days', '█', '░']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/booking/seat_selection.py
-# hypothesis_version: 6.151.9
-
-[1.0, 5.0, ' | ', ' →', '#0f3460', '#27ae60', '#333333', '#555555', '#e74c3c', '#e94560', '#ecf0f1', '#ffa500', '#ffd700', '#ffffff', ', ', '.', 'A', 'Adult', 'B', 'Booked', 'C', 'Card.TFrame', 'D', 'E', 'F', 'G', 'H', 'Helvetica', 'Main.TFrame', 'Primary.TButton', 'Reserved', 'Secondary.TButton', 'Selected', 'Standard', 'Subtitle.TLabel', 'VIP', '_', 'available', 'black', 'bold', 'cinema.buttons.back', 'disabled', 'left', 'reserved', 'vip', 'w', 'white', 'x']

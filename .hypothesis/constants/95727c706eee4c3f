@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/primary_school/modules/domain/pupil_life/meals/services/meal_service.py
-# hypothesis_version: 6.151.9
-
-[' AND date = ?', ' AND meal_type = ?', ' AND pupil_id = ?', ', ', 'Paid', 'Updated meal id=%s', 'date', 'entitlement', 'id', 'meal_choice', 'meal_type', 'pupil_id', 'recorded_by']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/academic_calendar/batch.py
-# hypothesis_version: 6.151.9
-
-[255, 1000, 'Academic', 'Event not found', 'Missing event name', 'created_count', 'created_events', 'data', 'date', 'date_end', 'date_start', 'description', 'error', 'event_id', 'event_type', 'failed_count', 'failed_events', 'id', 'last_modified = ?', 'manage_schedules', 'name', 'success', 'updated_count', 'updated_events']

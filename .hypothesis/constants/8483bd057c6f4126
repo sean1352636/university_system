@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/reporting/revenue_analytics/agencies.py
-# hypothesis_version: 6.151.9
-
-[100, '%Y-%m-%d %H:%M:%S', '-', '- Reminder schedules', '1', '2', '2. Add New Agency', '3', '3. Edit Agency', '4', '4. Deactivate Agency', '5', '6', '=', 'Agency not found.', 'Enter agency name: ', 'No', 'Yes', 'y']

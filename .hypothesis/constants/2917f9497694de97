@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/course_management_gui/bulk/bulk_operations.py
-# hypothesis_version: 6.151.9
-
-[30.0, '%Y-%m-%d %H:%M:%S', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '600x500', 'Arial', 'Bulk Update Courses', 'By Department', 'By Level', 'By Status', 'Cancel', 'Confirm Update', 'Error', 'Field to Update', 'Field:', 'Friday', 'Lab', 'Lecture', 'Monday', 'New Value:', 'No Matches', 'Preview', 'Seminar', 'Thursday', 'TkAgg', 'Tuesday', 'Tutorial', 'Update', 'Update Complete', 'Update Preview', 'Value:', 'Wednesday', 'Workshop', 'bold', 'course_fee', 'course_type', 'courses.db', 'department', 'level', 'max_enrollment', 'status']

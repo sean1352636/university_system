@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/charity_shop_cli/pricing.py
-# hypothesis_version: 6.151.9
-
-[0.6, 0.75, 0.8, 0.85, 1.0, 1.1, 1.2, 100, ' WHERE is_active = 1', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', 'Excellent', 'Fair', 'Good', 'New', 'Poor', 'barcode', 'bundle_price', 'category', 'category_average', 'change_date', 'changed_by', 'charity_shop_bundle', 'condition', 'current_price', 'date_created', 'days_in_stock', 'description', 'id', 'is_active', 'item_ids', 'name', 'new_price', 'old_price', 'percent', 'price', 'quantity', 'reason', 'suggested_price', 'times_sold']

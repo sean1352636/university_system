@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/records/analytics/population.py
-# hypothesis_version: 6.151.9
-
-[100, '\nAllergies:', '\nMedical Conditions:', '\nRecent Vital Signs:', '\nTop 5 Allergies:', '%Y%m%d_%H%M%S', '%Y-%m-%d', '-', '=', 'Enter student ID: ', 'HEALTH RECORDS', 'MEDICAL CONDITIONS', 'N/A', 'STUDENT DEMOGRAPHICS', 'STUDENT INFORMATION', 'Unverified', 'VACCINATION HISTORY', 'Verified', 'id', 'report', 'utf-8', 'w', 'y']

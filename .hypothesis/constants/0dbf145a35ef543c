@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/logging/log_management/config.py
-# hypothesis_version: 6.151.9
-
-[100, 587, 1000, 'FLASK_SECRET_KEY', 'alert_email', 'api_enabled', 'api_secret_key', 'auto_archive_days', 'chart_export_format', 'enable_alerts', 'enable_analytics', 'enable_encryption', 'enable_real_time', 'log_config.json', 'max_log_size_mb', 'max_search_results', 'png', 'r', 'retention_days', 'smtp_password', 'smtp_port', 'smtp_server', 'smtp_username', 'w', 'webhook_secret']

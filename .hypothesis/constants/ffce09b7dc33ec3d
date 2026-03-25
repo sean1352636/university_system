@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/reset_password.py
-# hypothesis_version: 6.151.9
-
-[1000000, '%Y-%m-%d %H:%M:%S', '*', '***', '-', '--db-path', '--list-users', '--password', '--reset-defaults', '--user', '-p', '-u', '=', 'Active', 'Enter new password:', 'Enter username:', 'N/A', 'No', 'PASSWORD', 'PATH', 'Role', 'Total: {count} users', 'USERNAME', 'Username', 'Username to reset', 'Users in database:', 'Yes', '__main__', 'admin', 'data', 'db_files', 'instructor', 'logs', 'reset_password.na', 'reset_password.no', 'reset_password.role', 'reset_password.title', 'reset_password.total', 'reset_password.yes', 'sha256', 'staff', 'store_true', 'student', 'student_records.db', 'teacher', '{', '}']

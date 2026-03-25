@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/document_manager/viewing.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d', '-', 'DOCUMENT DETAILS', 'Document not found.', 'Enter document ID: ', 'WORKFLOW STEPS:', 'y']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/helpdesk/maintenance.py
-# hypothesis_version: 6.151.9
-
-[365, '\nDatabase Cleanup', '\nEnter your choice: ', '\nSystem Maintenance', '%Y%m%d_%H%M%S', '%Y-%m-%d', '1', '1. Database cleanup', '2', '3', '4', '4. Backup database', '================', '==================', 'Cleanup cancelled.', 'y']

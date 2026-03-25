@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/student_support/features/__init__.py
-# hypothesis_version: 6.151.9
-
-['advanced_search', 'create_kb_article', 'display_article_list', 'display_dashboard', 'display_full_article', 'display_support_menu', 'generate_reports', 'get_dashboard_data', 'get_kb_articles', 'get_ticket_templates', 'publish_kb_article', 'show_kb_statistics', 'view_all_kb_articles', 'view_notifications']

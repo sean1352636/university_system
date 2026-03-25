@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/college_system/modules/domain/timetable/services/timetable_service.py
-# hypothesis_version: 6.151.9
-
-[' AND ts.id != ?', ' AND ts.room = ?', ', ', '09:00', '10:00', '11:00', '11:20', '12:20', '13:00', '14:00', '15:00', 'Course not found.', 'Fri', 'Mon', 'Slot not found.', 'Thu', 'Tue', 'Wed', 'course_code', 'course_id', 'courses_scheduled', 'courses_total', 'day_of_week', 'doubles_added', 'end_time', 'id', 'instructor', 'instructor_name', 'partial', 'reason', 'room', 'slot_a', 'slot_b', 'slot_id', 'slots_created', 'start_time', 'teacher', 'type', 'unscheduled']

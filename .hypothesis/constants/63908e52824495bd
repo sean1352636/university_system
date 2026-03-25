@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/primary_school/modules/domain/communication/announcements/services/announcement_service.py
-# hypothesis_version: 6.151.9
-
-[' AND audience = ?', ' AND status = ?', ', ', 'Active', 'All', 'Normal', 'audience', 'content', 'expiry_date', 'id', 'priority', 'publish_date', 'status', 'title']

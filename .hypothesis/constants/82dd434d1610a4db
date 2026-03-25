@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/ai/ai_detector/analyzers/multimodal_analyzer.py
-# hypothesis_version: 6.151.9
-
-[0.1, 0.2, 0.3, 0.4, 0.6, 0.7, 1.0, '# Example usage:', 'consistency_score', 'def main\\(\\):', 'error', 'excessive_formatting', 'extracted_texts', 'image_count', 'input_data', 'java', 'language', 'line_count', 'output', 'patterns_found', 'processed_data', 'python', 'reason', 'result', 'temp']

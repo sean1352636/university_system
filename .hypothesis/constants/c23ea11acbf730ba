@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/ai/university_chatbot/config.py
-# hypothesis_version: 6.151.9
-
-[0.7, 500, 587, 1024, 3600, 5432, 16000, 'analytics_enabled', 'api_key', 'chunk_size', 'confidence_threshold', 'database', 'email', 'en-US', 'encryption.key', 'features', 'host', 'jwt_secret', 'language', 'localhost', 'max_login_attempts', 'model_name', 'name', 'nlp', 'password', 'port', 'push_notifications', 'r', 'rb', 'sample_rate', 'security', 'service_url', 'session_timeout', 'silence_limit', 'sms', 'smtp.university.edu', 'smtp_port', 'smtp_server', 'threshold', 'university_db', 'username', 'voice', 'voice_enabled', 'w', 'wb']

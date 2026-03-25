@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/student_analytics_gui/results.py
-# hypothesis_version: 6.151.9
-
-['*.*', '*.pdf', '*.txt', '-', '- Color schemes', '- Email settings', '- Export formats', '.txt', '1.0', '10', '20', '500x250', '900x700', '=', 'Analysis Results', 'Arial', 'Close', 'Copy to Clipboard', 'Courier', 'Email Report', 'Missing data found:', 'STUDENT STATISTICS\n', 'Save Report', 'Send to Admin', 'View Chart', 'WM_DELETE_WINDOW', 'admin', 'admin@university.edu', 'age', 'analytics.view_chart', 'bold', 'common.cancel', 'common.close', 'common.confirm', 'common.error', 'common.send', 'common.success', 'common.warning', 'custom', 'disabled', 'email', 'engagement_score', 'enrollment_count', 'gpa', 'self', 'w']

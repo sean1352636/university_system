@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/admin/announcements.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d %H:%M:%S', ',', '?', 'admin', 'all', 'announcement_body', 'announcement_title', 'announcements', 'content', 'create_announcement', 'created_at', 'creator', 'creator_id', 'end_date', 'error', 'first_name', 'general_announcement', 'id', 'info', 'instructor', 'instructors', 'is_urgent', 'is_viewed', 'last_name', 'limit', 'page', 'role', 'staff', 'start_date', 'student', 'students', 'target_audience', 'title', 'total_count', 'total_pages', 'warning']

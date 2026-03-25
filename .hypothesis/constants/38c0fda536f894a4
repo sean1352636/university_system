@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/module_scheduling/conflicts.py
-# hypothesis_version: 6.151.9
-
-[100, ',', '-', '=', '?', 'TBA', 'affected_schedules', 'code', 'day', 'description', 'detected_date', 'high', 'id', 'instructor_conflict', 'medium', 'module1', 'module2', 'name', 'resolution_notes', 'resolved', 'room', 'room_conflict', 'severity', 'student_conflict', 'student_id', 'time', 'type']

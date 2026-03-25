@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/marketplace_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/marketplace', '/free-items', '/listings', '/sublets', 'GET', 'POST', 'address', 'available_from', 'available_to', 'bathrooms', 'bedrooms', 'category', 'category = ?', 'condition_status', 'contact_email', 'contact_info', 'contact_method', 'create', 'description', 'free_stuff', 'furnished', 'giver_id', 'giver_id = ?', 'is_negotiable', 'item_name', 'items', 'landlord_id', 'landlord_id = ?', 'listing_type', 'listing_type = ?', 'location', 'marketplace', 'marketplace_listings', 'monthly_rent', 'pickup_instructions', 'price', 'search', 'seller_id', 'seller_id = ?', 'square_feet', 'status', 'status = ?', 'sub', 'sublet_listings', 'title', 'total', 'view']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/admission_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' = ?', ' AND ', ' WHERE ', ', ', '/api/admissions', '/applications', '/prospects', 'GET', 'POST', 'PUT', 'aa.academic_year = ?', 'aa.status = ?', 'academic_year', 'admission_prospect', 'admission_prospects', 'admissions', 'application_fee_paid', 'application_type', 'create', 'decision', 'decision_date', 'enrollment_confirmed', 'items', 'program', 'program_applied', 'prospect_id', 'search', 'semester', 'status', 'status = ?', 'sub', 'total', 'update', 'view']

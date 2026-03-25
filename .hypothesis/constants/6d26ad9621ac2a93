@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/business_intelligence/bi_reports_core.py
-# hypothesis_version: 6.151.9
-
-['1', '2', '2. Export Reports', '3', '3. Schedule Reports', '4', '5', '5. Custom Metrics', '6', '7', '7. Report Library', '8', '=', 'CustomMetricManager', 'ReportExportManager', 'VisualizationManager', '❌ Invalid choice.']

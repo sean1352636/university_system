@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/plagiarism_main_gui/dialogs/workflow.py
-# hypothesis_version: 6.151.9
-
-[120, '...', '<<ComboboxSelected>>', 'Action', 'Actions', 'Add Comment', 'All', 'Approved', 'Author', 'Available', 'Checked', 'Close', 'Confirm', 'Documents', 'EXACT_MATCH', 'Enter comment:', 'Error', 'Filter', 'Filter by status:', 'Flag Document', 'Flagged', 'HIGH_SIMILARITY', 'High', 'LOW_SIMILARITY', 'Last Check', 'MODERATE_SIMILARITY', 'Medium', 'Never', 'No Selection', 'Normal', 'Priority', 'Reason for flagging:', 'Refresh', 'Repository Search', 'Status', 'Submitted', 'Title', 'Under Review', 'Unknown', 'author_name', 'check_date', 'ew', 'headings', 'id', 'latest_check', 'ns', 'nsew', 'readonly', 'status', 'tags', 'title']

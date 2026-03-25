@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/gui/parking_management/reports.py
-# hypothesis_version: 6.151.9
-
-[100, 200, '%Y-%m-%d %H:%M:%S', '*.*', '*.txt', '-', '...', '.txt', '800x600', '=', 'ACTIVE PERMITS', 'Administrator', 'All files', 'Close', 'Email Failed', 'Error', 'Export as TXT', 'No Admin Email', 'OVERALL STATISTICS', 'PERMIT COMPLIANCE', 'PERMITS BY TYPE', 'PERMITS BY ZONE', 'REVENUE ANALYSIS', 'Report Sent', 'Save Report', 'Send Report to Admin', 'Success', 'TOP VIOLATORS', 'Text files', 'USER ACTIVITY REPORT', 'User Activity Report', 'VIOLATION COMPLIANCE', 'VIOLATION SUMMARY', 'VIOLATIONS BY TYPE', 'ZONE UTILIZATION', 'admin_name', 'annual_fee', 'generated_at', 'report_content', 'report_title', 'separator', 'utf-8', 'w']

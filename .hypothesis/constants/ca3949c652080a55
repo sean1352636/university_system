@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/student_analytics_gui/__init__.py
-# hypothesis_version: 6.151.9
-
-[100, '%Y%m%d_%H%M%S', '--gui', '-g', '1', '2', '3', '4', 'Average Engagement', 'Average GPA', 'CONFIG', 'Choose interface:', 'Completed', 'Completion Rate', 'ConfigDialog', 'CustomReportDialog', 'FilterDialog', 'GUIStudentAnalytics', 'Metric', 'Modules', 'Students', 'Summary', 'Total Students', 'Value', '__main__', 'auth', 'completion_status', 'engagement_score', 'export_metadata', 'gpa', 'gui', 'launch_gui', 'main', 'modules', 'openpyxl', 'records', 'students', 'timestamp', 'total_modules', 'total_students', 'w']

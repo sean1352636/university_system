@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/admin/users.py
-# hypothesis_version: 6.151.9
-
-['WHERE u.role = ?', 'email', 'error', 'first_name', 'full_name', 'id', 'last_name', 'limit', 'page', 'role', 'total_count', 'total_pages', 'username', 'users']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/records/vaccinations/management.py
-# hypothesis_version: 6.151.9
-
-[365, '\nCommon Vaccines:', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', 'COVID-19', 'Enter student ID: ', 'Enter vaccine name: ', 'HPV', 'Hepatitis A', 'Hepatitis B', 'Influenza (Flu)', 'Lot number: ', 'Manufacturer: ', 'Meningococcal', 'Other', 'health_provider', 'id', 'manage_vaccinations', 'record_vaccination', 'role', 'username', 'vaccination', 'verify_vaccination', 'verify_vaccinations', 'y', '✅ CURRENT']

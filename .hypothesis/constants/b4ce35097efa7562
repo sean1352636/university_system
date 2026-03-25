@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/primary_school/modules/domain/academics/phonics/services/phonics_service.py
-# hypothesis_version: 6.151.9
-
-[100, ' AND pupil_id = ?', ' AND year_group = ?', ', ', 'Pupil ID is required', 'Score is required', 'assessment_date', 'avg_score', 'fail', 'failed', 'is_resit', 'max_score', 'min_score', 'pass', 'pass_rate', 'passed', 'passed_count', 'pupil_id', 'result_id', 'score', 'threshold', 'total']

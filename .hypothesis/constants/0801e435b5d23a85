@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/security/rate_limiter.py
-# hypothesis_version: 6.151.9
-
-[0.5, 30.0, 100, 300, 900, 3600, 'RATE_LIMIT_EXCEEDED', 'REDIS_URL', 'Rate limit exceeded', 'RateLimitConfig', 'RateLimitExceeded', 'RateLimiter', 'Redis', 'api_limiter', 'attempts', 'blocked_until', 'code', 'config', 'currently_blocked', 'default', 'details', 'get_redis_storage', 'identifier', 'in-memory', 'login_limiter', 'max_attempts', 'rate_limit', 'rate_limit_exceeded', 'ratelimit', 'reason', 'retry_after_seconds', 'security:api', 'security:login', 'security_ratelimit', 'total_blocked_count', 'tracked_identifiers', 'window_seconds']

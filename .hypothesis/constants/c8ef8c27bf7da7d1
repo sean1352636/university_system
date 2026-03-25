@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/assignment_system/extension_manager.py
-# hypothesis_version: 6.151.9
-
-[1.0, 100, '#e8f5e8', '#ffebee', '#fff3cd', '%Y-%m-%d %H:%M', '%Y-%m-%d %H:%M:%S', '<<TreeviewSelect>>', 'Admin', 'All', 'Assignment', 'Assignment:', 'Days', 'Error', 'Error.TLabel', 'Extension Request', 'Faculty', 'ID', 'New Due Date', 'No Comments', 'Reason:', 'Request Details', 'Request Extension', 'Requested Date', 'Requested Due Date:', 'Status', 'Student', 'Submit Request', 'Success', 'Success.TLabel', 'Title.TLabel', 'Warning.TLabel', '_get_student_id', 'approved', 'both', 'common.error', 'denied', 'e', 'end', 'error', 'ew', 'extension request', 'extension review', 'extension.filters', 'extension.status', 'extension.title', 'headings', 'id', 'manage_assignments', 'ns', 'nsew', 'nw', 'pending', 'review_comments_text', 'student_id', 'success', 'values', 'vertical', 'w', 'x']

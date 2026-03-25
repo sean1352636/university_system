@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/assignments/notifications/messaging.py
-# hypothesis_version: 6.151.9
-
-['\nNotification Types:', '\nSend Message', '\nYour Messages:', '%Y-%m-%d %H:%M:%S', '*', '-', '1', '2', '3', '4', '5', '=', 'Available modules:', 'Choose option: ', 'Current preferences:', 'Enter student ID: ', 'Invalid choice.', 'Invalid selection.', 'Message not found.', 'Message subject: ', 'Message text: ', 'Message: ', 'No messages found.', 'No modules found.', 'Preferences saved!', 'Reply sent!', 'Student not found.', 'Subject: ', 'Your reply: ', 'assignments', 'create', 'delete', 'due_reminder', 'email', 'extension_update', 'extensions', 'grade_released', 'grades', 'id', 'manage_assignments', 'messages', 'new_assignment', 'notifications', 'peer_review', 'update', 'view_assignments', 'y']

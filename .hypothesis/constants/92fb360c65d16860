@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/settings/currency.py
-# hypothesis_version: 6.151.9
-
-[1.14, 1.17, 1.27, 1.71, 1.91, 188.5, 120, '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '500x400', '<Return>', 'AUD', 'Arial', 'CAD', 'CHF', 'EUR', 'GBP', 'JPY', 'USD', 'api', 'blue', 'bold', 'both', 'center', 'currency', 'e', 'end', 'ew', 'from', 'headings', 'left', 'rates_tree', 'readonly', 'right', 'to', 'vertical', 'white', 'x', 'y']

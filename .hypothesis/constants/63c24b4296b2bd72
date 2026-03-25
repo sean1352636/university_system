@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/student_support/utils/__init__.py
-# hypothesis_version: 6.151.9
-
-['_update_metrics', 'audit_action', 'display_faq_list', 'display_full_faq', 'format_file_size', 'get_user_preferences', 'handle_support_error', 'manage_preferences', 'truncate_text']

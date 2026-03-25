@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/database/sql_safety.py
-# hypothesis_version: 6.151.9
-
-['!=', '%', '<', '<=', '=', '>', '>=', 'AND', 'IN', 'IS', 'IS NOT', 'LIKE', 'No columns to update', '\\%', '\\_', '_']

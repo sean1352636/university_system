@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/reporting/financial_reports/forecasting.py
-# hypothesis_version: 6.151.9
-
-[0.05, 0.1, 0.4, 0.5, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.5, 100, '%Y-%m', '%m', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', 'baseline_monthly', 'collection_rate', 'confidence', 'cumulative_cash', 'forecast_amount', 'forecast_data', 'historical_data', 'month', 'outstanding_balance', 'seasonal_factor', 'trend']

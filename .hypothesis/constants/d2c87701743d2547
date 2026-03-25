@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/ta_management/ta_service.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d %H:%M:%S', ', ', 'active', 'assignment_count', 'assignments', 'create', 'delete', 'end_date', 'grade_assignments', 'grader', 'granted_by', 'hours_per_week', 'instructor_id', 'lead_ta', 'manage_discussions', 'module_code', 'permissions', 'role_type', 'status', 'student_id', 'ta', 'ta_id', 'ta_permissions', 'take_attendance', 'teaching_assistant', 'total_hours', 'update', 'updated_at', 'updated_fields', 'upload_materials', 'view_student_info']

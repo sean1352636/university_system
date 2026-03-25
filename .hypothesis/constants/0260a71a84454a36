@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/document_manager/student_portal.py
-# hypothesis_version: 6.151.9
-
-[100, '\n📄 MY DOCUMENTS', '\n📊 MY DASHBOARD', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', '...', '=', 'Missing', 'N/A', 'No documents found.', 'Pending', 'Rejected', 'Student not found.', 'Submitted', 'Verified', '█', '░', '✅ Submitted', '❌ Missing']

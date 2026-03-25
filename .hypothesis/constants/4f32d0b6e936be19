@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/services/templates.py
-# hypothesis_version: 6.151.9
-
-[145, '\nCategories:', '\nTemplates:', '-', '.csv', '.json', '2024-01-12', '2024-01-13', '2024-01-14', '2024-01-15', 'Acute Care', 'Annual Physical', 'Annual Physical Exam', 'Chronic Care', 'Emergency', 'Follow-up Visit', 'General Medical', 'Immunizations', 'Invalid ID.', 'Mental Health', 'No templates found.', 'Other', 'Path to CSV/JSON: ', 'Preventive Care', 'Record type: ', 'Sick Visit', 'Template name: ', 'Template updated.', 'Vaccination', 'Vaccination Record', 'author', 'body', 'category', 'content', 'created_by', 'description', 'group', 'id', 'is_shared', 'last_used', 'name', 'owner', 'q', 'r', 'record_type', 'shared', 'tag', 'template', 'templates', 'title', 'uses', 'utf-8', 'version', 'y']

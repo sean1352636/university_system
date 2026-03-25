@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/health_portal.py
-# hypothesis_version: 6.151.9
-
-['schedule_appointment', 'view_health_records', 'view_medical_history']

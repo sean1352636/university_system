@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/commerce/gui/restaurant_management_gui/core/tabs.py
-# hypothesis_version: 6.151.9
-
-[100, 110, 120, '<Configure>', 'Available', 'Capacity', 'Category', 'Cost/Unit', 'Customer', 'Date', 'Email', 'Heading.TLabel', 'Hourly Rate', 'ID', 'Item ID', 'Location', 'Loyalty Tier', 'Name', 'Order ID', 'Payment', 'Performance', 'Phone', 'Points', 'Price', 'Quantity', 'Refunds', 'Reorder Level', 'Role', 'Staff ID', 'Status', 'Table ID', 'Total', 'Total Spent', 'Type', 'Unit', 'Vegan', 'Vegetarian', 'all', 'both', 'headings', 'left', 'nw', 'restaurant.add_staff', 'restaurant.add_table', 'restaurant.add_tip', 'restaurant.suppliers', 'restaurant.tab_staff', 'right', 'vertical', 'x', 'y', '📝 Place Order']

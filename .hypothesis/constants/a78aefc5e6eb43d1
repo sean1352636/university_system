@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/budget_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/budget', '/budgets', '/expenses', '/savings-goals', 'GET', 'POST', 'amount', 'budget', 'budget_expenses', 'budget_id', 'budget_id = ?', 'category_id', 'category_id = ?', 'create', 'current_amount', 'date', 'deadline', 'expense_name', 'goal_name', 'items', 'notes', 'savings_goals', 'search', 'semester', 'semester = ?', 'status', 'status = ?', 'student_budgets', 'student_id', 'student_id = ?', 'sub', 'target_amount', 'total', 'total_budget', 'view']

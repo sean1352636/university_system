@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/assignment_system/assignment_manager/data_loaders.py
-# hypothesis_version: 6.151.9
-
-['(No Assignment)', '*.*', '*.csv', '.csv', 'All Assignments', 'All Modules', 'All files', 'CSV files', 'Error', 'Feedback', 'First Name', 'Grade', 'Last Name', 'Late Days', 'Late Submission', 'None', 'Status', 'Student ID', 'Submission Date', 'Success', 'Warning', 'values', 'w']

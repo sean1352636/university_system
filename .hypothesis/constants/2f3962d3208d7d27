@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/student_support/operations/export.py
-# hypothesis_version: 6.151.9
-
-['\nExport formats:', '\n📤 EXPORT DATA', '\n📤 EXPORT METRICS', '\n📤 EXPORT RESPONSES', '\n📤 EXPORT TICKETS', ' AND action_type = ?', ' AND category = ?', ' AND status = ?', ' AND timestamp <= ?', ' AND timestamp >= ?', ' AND u.role = ?', ' ORDER BY u.username', '1', '1. CSV', '1. Export tickets', '2', '2. Export responses', '2. JSON', '3', '3. Export metrics', '4', '5', '5. Back', '=', 'action', 'action_type', 'admin', 'category', 'columns', 'created_at', 'csv', 'date_from', 'date_to', 'details', 'email', 'entity', 'id', 'json', 'last_login', 'log_id', 'logs', 'metrics', 'priority', 'responses', 'role', 'rows', 'staff', 'status', 'student_id', 'ticket_count', 'tickets', 'timestamp', 'user_id', 'username', 'users', 'w', '❌ Invalid choice.', '❌ Invalid status.']

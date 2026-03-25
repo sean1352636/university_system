@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/analytics/enhanced_reporting/cache.py
-# hypothesis_version: 6.151.9
-
-[1024, '.json', 'cache_dir', 'cache_expiry_hours', 'max_cache_size_mb', 'r', 'w']

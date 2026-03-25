@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/ai/gui/events.py
-# hypothesis_version: 6.151.9
-
-['1.0', '<Button-1>', '<Control-Return>', '<Control-Shift-S>', '<Control-Shift-U>', '<Control-a>', '<Control-l>', '<Escape>', '<F1>', '<F2>', '<F3>', '<F5>', '<Return>', 'View refreshed', 'WM_DELETE_WINDOW', 'admin', 'admin_frame', 'chat_frame', 'default', 'destroy', 'en', 'message_entry', 'role', 'staff', 'voice_interface']

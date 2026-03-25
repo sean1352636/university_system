@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/ai/gui/screens/chat.py
-# hypothesis_version: 6.151.9
-
-['Announcements', 'Assignments', 'Attendance', 'CB.Primary.TButton', 'CB.Secondary.TButton', 'CB.Title.TLabel', 'Events', 'Exit to Main', 'Financial Aid', 'Library Books', 'My Courses', 'My Grades', 'Notifications', 'Quick Actions', 'Quick Help', 'Segoe UI', 'Send', 'Support Tickets', 'System', 'View Schedule', '_welcome_shown', 'body', 'bold', 'bot', 'chat', 'chat_bold', 'chatbot.assignments', 'chatbot.attendance', 'chatbot.events', 'chatbot.exit_to_main', 'chatbot.my_courses', 'chatbot.my_grades', 'chatbot.quick_help', 'chatbot.send_btn', 'chatbot.settings_btn', 'chatbot.voice_btn', 'chatbot.welcome', 'default', 'en', 'ew', 'normal', 'primary', 'secondary', 'small', 'system', 'text_secondary', 'timestamp', 'user', 'white', '⚙️ Settings', '🎤 Voice']

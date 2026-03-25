@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/commerce/gui/shop_management_gui/cart_manager.py
-# hypothesis_version: 6.151.9
-
-[100, 250, '10', 'Arial', 'Browse Products', 'Cart Items', 'Cart cleared', 'Cart loaded', 'Checkout', 'Clear Cart', 'Confirm', 'Continue Shopping', 'Danger.TButton', 'Error', 'Heading.TLabel', 'Name', 'Order Summary', 'Price', 'Primary.TButton', 'Product ID', 'Quantity', 'Remove Item', 'Shopping Cart', 'Subtotal', 'Success', 'Success.TButton', 'Title.TLabel', 'Update Quantity', 'Warning', 'Warning.TButton', 'Your cart is empty', 'bold', 'cart_tree', 'end', 'headings', 'name', 'price', 'product_count', 'product_id', 'quantity', 'subtotal', 'total_quantity', 'total_value', 'values', 'vertical']

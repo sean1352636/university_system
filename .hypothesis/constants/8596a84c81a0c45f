@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/attendance_tracker/main.py
-# hypothesis_version: 6.151.9
-
-[0.0, 1.0, 800, 1200, 5000, '!selected', '#27AE60', '#2C3E50', '#34495E', '#3498DB', '#E74C3C', '#ECF0F1', '#F39C12', '--cli', '--gui', '--help', '-c', '-g', '-h', '1400x900', 'Arial', 'Custom.TNotebook', 'Custom.TNotebook.Tab', 'Danger.TButton', 'Primary.TButton', 'Success.TButton', 'Usage:', 'Warning.TButton', '__main__', 'attendance.menu.file', 'attendance.menu.help', 'attendance.title', 'bold', 'clam', 'common.error', 'common.exit', 'common.ready', 'danger', 'dark', 'error', 'info', 'light', 'main_menu_button', 'ne', 'primary', 'secondary', 'selected', 'success', 'warning', 'white']

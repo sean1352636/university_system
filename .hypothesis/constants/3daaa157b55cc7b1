@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/academic_calendar/categories.py
-# hypothesis_version: 6.151.9
-
-[100, 200, 500, 'Invalid event ID', 'Tag name is required', 'academic_year_id', 'active', 'code', 'credits', 'department', 'id', 'instructor_id', 'manage_schedules', 'name', 'semester_id', 'status']

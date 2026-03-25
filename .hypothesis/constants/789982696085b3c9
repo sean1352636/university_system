@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/attendance/cli/integrations_cli.py
-# hypothesis_version: 6.151.9
-
-['\n📅 CALENDAR SYNC', '\n📋 AUDIT LOGS', '\n📋 RECENT AUDIT LOGS', '\n🔗 LMS INTEGRATION', '-', '1', '1. View Recent Logs', '2. Search Logs', '3. Backup Database', '3. Export Logs', '=', 'No audit logs found.', 'T']

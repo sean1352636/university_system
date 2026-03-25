@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/announcement_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' = ?', ' AND ', ' WHERE ', ' WHERE id = ?', '%Y-%m-%d %H:%M:%S', ', ', '/api/announcements', 'DELETE', 'GET', 'POST', 'PUT', 'active', 'announcement', 'announcements', 'audience', 'content', 'create', 'delete', 'end_date', 'false', 'is_active', 'is_active = 1', 'is_urgent', 'message', 'start_date', 'sub', 'target_audience', 'target_audience = ?', 'title', 'true', 'update', 'updated_at = ?', 'user_id', 'view']

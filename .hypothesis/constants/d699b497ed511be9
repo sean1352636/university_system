@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/housing/services/accommodation/templates.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d', '%Y-%m-%d %H:%M:%S', 'Available templates:', 'Duration days: ', 'Enter student ID: ', 'SELECT name FROM [', 'Template name: ', '] ORDER BY name', '] WHERE name = ?', 'active', 'apply_template', 'save_template', 'y']

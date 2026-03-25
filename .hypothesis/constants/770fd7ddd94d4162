@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/document_manager/workflows.py
-# hypothesis_version: 6.151.9
-
-[100, '\nActions:', '   Steps:', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', '1', '1. Approve', '2', '2. Delete template', '2. Reject', '3', '3. Reassign', '3. Return to menu', '4', '5', '=', 'Active', 'Enter template ID: ', 'Inactive', 'No active workflows.', 'Reassign to: ', 'Rejection reason: ', 'Workflow name: ', 'assigned_to', 'done', 'name', 'order', 'required', 'y', '✅ Step approved.', '✅ Template deleted.', '❌ Step rejected.']

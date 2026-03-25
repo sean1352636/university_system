@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/attendance/cli/api_cli.py
-# hypothesis_version: 6.151.9
-
-[1000, '\nAPI server stopped.', '\nExample Usage:', '\n📖 API DOCUMENTATION', '\n🔌 API MANAGEMENT', '/api/qr/checkin', '/api/qr/generate', '1', '1. Start API Server', '127.0.0.1', '2', '3', '4', '4. Generate API Key', '5000', '=', 'Enter service name: ', 'GET', 'Get risk prediction', 'Invalid port number.', 'POST', 'api_rate_limit', 'integer']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/parent_portal/database.py
-# hypothesis_version: 6.151.9
-
-['assignment', 'assignment_alerts', 'attendance', 'attendance_alerts', 'behavior', 'behavior_alerts', 'conn', 'grade', 'grade_alerts', 'report']

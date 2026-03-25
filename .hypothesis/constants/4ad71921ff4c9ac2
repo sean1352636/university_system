@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/gui/student_union_gui/misc.py
-# hypothesis_version: 6.151.9
-
-[1.0, 120, '--db-path', '--mode', 'auto', 'cli', 'common.error', 'gui', 'units']

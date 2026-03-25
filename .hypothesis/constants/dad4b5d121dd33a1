@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/email/email_service.py
-# hypothesis_version: 6.151.9
-
-[465, 587, ', ', 'Cc', 'Content-Disposition', 'Education System', 'Email sent to %s: %s', 'From', 'Reply-To', 'SMTP not configured', 'SMTP_FROM', 'SMTP_FROM_NAME', 'SMTP_HOST', 'SMTP_PASSWORD', 'SMTP_PORT', 'SMTP_USER', 'Subject', 'To', 'Unknown error', 'alternative', 'error', 'errors', 'failed', 'html', 'plain', 'rb', 'sender_email', 'sender_name', 'sent', 'smtp_password', 'smtp_port', 'smtp_server', 'smtp_username', 'success', 'use_tls', 'utf-8']

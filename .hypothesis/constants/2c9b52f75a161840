@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/reports/sales_reports.py
-# hypothesis_version: 6.151.9
-
-['create_bar_chart', 'create_line_chart', 'create_pie_chart', 'export_report_csv', 'generate_daily_sales', 'save_report_txt', 'show_reports_page']

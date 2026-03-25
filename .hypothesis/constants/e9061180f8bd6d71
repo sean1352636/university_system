@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/delegated_access_scopes.py
-# hypothesis_version: 6.151.9
-
-['communicate_staff', 'description', 'make_payments', 'message_teachers', 'permissions', 'send_emails', 'view_attendance', 'view_fees', 'view_finances', 'view_grades', 'view_health', 'view_own_attendance', 'view_own_finances', 'view_own_grades', 'view_own_timetable', 'view_own_transcript', 'view_timetable']

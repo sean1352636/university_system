@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/communication/communication_log/services/comms_service.py
-# hypothesis_version: 6.151.9
-
-['email', 'home_visit', 'incoming', 'letter', 'meeting', 'other', 'outgoing', 'phone_call', 'text_message']

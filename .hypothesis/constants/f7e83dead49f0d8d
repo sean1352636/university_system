@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/document_manager/search.py
-# hypothesis_version: 6.151.9
-
-[120, '\n🔍 ADVANCED SEARCH', ' AND (', ' OR ', ')', ',', '-', '...', '1', '2', '2. Export results', '3', '4. Return to menu', 'Document type: ', 'Student name or ID: ', 'doc_type', 'from_date', 'sd.tags LIKE ?', 'status', 'student', 'tags', 'to_date']

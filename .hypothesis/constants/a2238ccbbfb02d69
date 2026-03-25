@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/grade_tracking/analytics_manager/risk.py
-# hypothesis_version: 6.151.9
-
-[100, 150, 250, 400, '%Y-%m-%d', ', ', '400x500', '900x600', '; ', 'Academic Performance', 'Academic Statistics', 'Arial', 'Assess', 'At-Risk Students', 'Average Score: N/A', 'CRITICAL', 'Critical', 'Database Error', 'Details', 'Early Warning Alerts', 'Early Warning System', 'Engagement', 'Error', 'Failing Grades', 'HIGH', 'High', 'Highest Score: N/A', 'Interventions', 'LOW', 'Low', 'Low Engagement', 'Low Score Alert', 'Lowest Score: N/A', 'MEDIUM', 'Medium', 'Moderate', 'Name', 'No Selection', 'No Students', 'Overview', 'Priority', 'Recommendations', 'Risk Factors', 'Risk Level', 'Risk Score', 'Select a student:', 'Student ID', 'Student Information', 'Summary', 'Very few submissions', 'Very low engagement', 'Warning Type', 'Wellness check-in', 'bold', 'end', 'headings']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/reporting/revenue_analytics/dashboard.py
-# hypothesis_version: 6.151.9
-
-[0.1, 0.3, 0.5, 0.7, 0.9, 100, 120, 300, '%1.1f%%', '%Y-%m', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', 'Amount (£)', 'Apr', 'Aug', 'Dec', 'Feb', 'Jan', 'Jul', 'Jun', 'Late Fees (£)', 'Late Fees Trend', 'Mar', 'May', 'N/A', 'No Fees', 'Nov', 'Number of Plans', 'Number of Students', 'Oct', 'Outstanding', 'Paid', 'Payment Plan Status', 'Sep', 'amount', 'avg_payment_delay', 'blue', 'bold', 'collection_rate', 'coral', 'daily', 'green', 'high', 'lightblue', 'low', 'manage_finances', 'medium', 'mediumpurple', 'o', 'off', 'orange', 'outstanding_fees', 'percentage', 'red', 's', 'tight', 'total_revenue', 'x', 'yearly']

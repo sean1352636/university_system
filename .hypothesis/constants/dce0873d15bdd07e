@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/document_manager/upload.py
-# hypothesis_version: 6.151.9
-
-[1024, '\nSearch Results:', ' (Expires)', ' (Required)', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', ',', '1', '3', '3. Cancel', 'Enter file path: ', 'File not found.', 'Final Approval', 'Initial Review', 'Invalid input.', 'Invalid selection.', 'No students found.', 'Pending', 'Student', 'Student not found.', 'Verification', 'Version: {version}', 'admin', 'dean', 'document_id', 'document_type', 'document_uploaded', 'error', 'info', 'message', 'pending', 'rb', 'registrar', 'student_name', 'submitted', 'title', 'upload_date', 'version', 'warning']

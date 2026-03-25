@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/academics/exams/services/exam_notifications.py
-# hypothesis_version: 6.151.9
-
-['Exam Notification', 'TBC', 'body', 'config', 'data', 'date', 'duration_minutes', 'exam_title', 'exam_type', 'invigilator', 'r', 'room', 'start_time', 'status', 'student_name', 'subject', 'subject_id', 'subject_title', 'title', 'total_marks', 'user_id', 'utf-8', 'year_group']

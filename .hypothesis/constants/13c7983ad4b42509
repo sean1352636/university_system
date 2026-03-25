@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/validation/rules.py
-# hypothesis_version: 6.151.9
-
-[0.0, 4.0, 100, 500, '%Y-%m-%d', '+', ', ', '-', '.', '...', 'Course Code', 'Course Name', 'First Name', 'GPA', 'Last Name', 'Max Enrollment', 'Student ID', '[\\s\\-\\(\\)]', ']+$', '^[a-zA-Z0-9', '_', 'admin', 'course_code', 'credits', 'email', 'first_name', 'gpa', 'instructor', 'last_name', 'max_enrollment', 'name', 'parent', 'phone', 'role', 'staff', 'student', 'student_id', 'username', '{field} is invalid', '{field} is required']

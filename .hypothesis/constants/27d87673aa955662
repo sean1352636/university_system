@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/betting_shop_cli/constants.py
-# hypothesis_version: 6.151.9
-
-[1.0, 10.0, 500.0, 1000.0, 'academic', 'blackjack', 'cashed_out', 'entertainment', 'lost', 'other', 'pending', 'poker', 'politics', 'roulette', 'slots', 'sports', 'void', 'won']

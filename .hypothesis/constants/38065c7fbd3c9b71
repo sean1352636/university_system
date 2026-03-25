@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/database/migrations/add_mfa_system.py
-# hypothesis_version: 6.151.9
-
-['..', '["totp", "email"]', '__main__', 'admin', 'instructor', 'parent', 'staff', 'student']

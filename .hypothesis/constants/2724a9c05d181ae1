@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/grading/comparisons.py
-# hypothesis_version: 6.151.9
-
-[0.0, 0.05, 100.0, 100, ',', '-', '1', '2', '3', '4', '=', 'A', 'A+', 'A-', 'F', 'Invalid choice.', 'No modules found.', 'STATISTICAL ANALYSIS', 'Unknown', 'assessment_type', 'avg_gpa', 'avg_percentage', 'avg_score', 'course_comparison', 'excellence_rate', 'gender', 'grade_count', 'passing_rate', 'student_count', 'total_assessments', 'total_grades', 'y']

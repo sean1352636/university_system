@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/logging/log_management/cli/db_maintenance.py
-# hypothesis_version: 6.151.9
-
-[1024, '\n🏗️ REBUILD INDEXES', '\n🧹 VACUUM DATABASE', '.', '1', '2', '2. Optimize database', '3', '3. Rebuild indexes', '4', '4. Vacuum database', '5', '6. Return', '=', 'ANALYZE', 'Continue? (y/n): ', 'Database Tables:', 'PRAGMA optimize', 'PRAGMA page_count', 'PRAGMA page_size', 'Running VACUUM...', 'VACUUM', 'sqlite_', 'y', '✓ Statistics updated']

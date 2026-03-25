@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/sql_safety.py
-# hypothesis_version: 6.151.9
-
-['ColumnDefinition', 'KNOWN_COLUMNS', 'KNOWN_TABLES', 'SQLIdentifierError', 'VALID_SQLITE_TYPES', 'build_update_set', 'build_where_clause', 'get_table_schema', 'get_valid_columns', 'get_valid_tables', 'safe_table_query', 'validate_column_name', 'validate_identifier', 'validate_table_name']

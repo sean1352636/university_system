@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/budget_manager/savings.py
-# hypothesis_version: 6.151.9
-
-[0.01, 100, 200, '10', 'Add Funds', 'Amount to add (£):', 'Create Goal', 'Error', 'Goal', 'Goal Name:', 'High', 'ID', 'Low', 'Medium', 'My Savings Goals', 'Priority', 'Priority:', 'Progress %', 'Refresh', 'Remaining', 'Saved', 'Savings Goals', 'Success', 'Target', 'Target Amount (£):', 'Warning', 'columns', 'end', 'goal_id', 'goal_name', 'goals_tree', 'guest', 'headings', 'priority', 'readonly', 'username', 'values']

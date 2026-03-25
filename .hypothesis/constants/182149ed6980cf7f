@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/assignment_routes.py
-# hypothesis_version: 6.151.9
-
-[100, 201, ' = ?', '%Y-%m-%d %H:%M:%S', ', ', '/<int:assignment_id>', '/api/assignments', 'GET', 'POST', 'PUT', 'active', 'assignment', 'assignment_type', 'assignments', 'content', 'create', 'description', 'due_date', 'file_path', 'homework', 'items', 'max_score', 'module_code', 'status', 'student_id', 'sub', 'submitted', 'title', 'total', 'update', 'updated_at = ?', 'view']

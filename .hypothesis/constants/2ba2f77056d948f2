@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/accessibility_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/accommodations', '/api/accessibility', '/requests', 'GET', 'POST', 'accessibility', 'accommodation_type', 'accommodations', 'approved_by', 'create', 'description', 'expiration_date', 'is_active', 'is_active = ?', 'items', 'request_id', 'search', 'start_date', 'status', 'status = ?', 'student_email', 'student_id', 'student_id = ?', 'student_name', 'sub', 'total', 'view']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/logging/log_management/database.py
-# hypothesis_version: 6.151.9
-
-[1000, ' AND action = ?', ' AND module = ?', ' AND status = ?', ' AND user_id = ?', ' AND username LIKE ?', 'action', 'date_from', 'date_to', 'details', 'module', 'role', 'search_text', 'status', 'system', 'timestamp', 'user_id', 'username']

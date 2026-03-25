@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/module_scheduling/notifications.py
-# hypothesis_version: 6.151.9
-
-['Instructor', 'Student', 'User', '_', 'admin@university.edu', 'admin_email', 'custom_subject', 'errors', 'info', 'instructor', 'instructor_emailed', 'message', 'module_code', 'module_name', 'notification_type', 'recipient_name', 'schedule_change', 'student', 'student_name', 'students_emailed']

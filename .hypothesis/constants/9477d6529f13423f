@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/college_system/modules/domain/enrollment/services/enrollment_service.py
-# hypothesis_version: 6.151.9
-
-[100, ' AND e.course_id = ?', ' AND e.status = ?', 'Course not found.', 'Student not found.', 'active', 'capacity', 'cnt', 'course_code', 'course_pk', 'dropped', 'enrolled', 'id', 'max_pos', 'position', 'prerequisite_id', 'promoted_student_pk', 'status', 'student_id', 'student_pk', 'success', 'unknown', 'user_id', 'waitlisted']

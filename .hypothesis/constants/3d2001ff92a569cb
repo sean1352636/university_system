@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/course_management/analytics.py
-# hypothesis_version: 6.151.9
-
-[100, '  None', '%Y-%m-%d %H:%M:%S', '-', '...', '1. Summary Report', '2. Department Report', '5. Capacity Analysis', '=', 'Enter choice (1-5): ', 'Invalid choice.', 'Select report type:', 'Unknown', 'conn', 'course_management', 'view_courses', 'y']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/financial_aid_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' = ?', ' AND ', ' WHERE ', ', ', '/api/financial-aid', '/applications', '/packages', '/payment-plans', 'GET', 'POST', 'PUT', 'academic_year', 'academic_year = ?', 'aid_package', 'aid_packages', 'create', 'family_income', 'financial_aid', 'household_size', 'items', 'package_status', 'payment_plans', 'response_date', 'review_date', 'review_notes', 'reviewed_by', 'status', 'status = ?', 'student_id', 'student_id = ?', 'sub', 'total', 'update', 'user_id', 'view']

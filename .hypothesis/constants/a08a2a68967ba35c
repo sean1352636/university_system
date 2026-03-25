@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/assignments/peer_review/peer_review.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d %H:%M:%S', 'Invalid selection.', 'assignment_id', 'create', 'description', 'done', 'manage_assignments', 'max_points', 'name', 'peer_review_criteria', 'pending', 'update']

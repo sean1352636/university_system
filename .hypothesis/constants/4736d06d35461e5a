@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/dentist_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/dentist', '/appointments', '/patients', '/treatments', 'GET', 'POST', 'address', 'allergies', 'appointment_date', 'appointment_id', 'appointment_time', 'create', 'date_of_birth', 'dentist', 'dentist_appointments', 'dentist_id', 'dentist_name', 'dentist_patients', 'dentist_treatments', 'description', 'duration_minutes', 'emergency_contact', 'emergency_phone', 'fee', 'insurance_provider', 'items', 'notes', 'patient_id', 'patient_id = ?', 'payment_status', 'search', 'status', 'status = ?', 'sub', 'tooth_number', 'total', 'treatment_date', 'treatment_type', 'treatment_type = ?', 'user_email', 'user_id', 'user_id = ?', 'user_name', 'user_phone', 'view']

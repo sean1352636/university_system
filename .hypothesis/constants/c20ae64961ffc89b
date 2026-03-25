@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/nailbar_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/nailbar', '/appointments', '/technicians', '/treatments', 'GET', 'POST', 'appointment_date', 'appointment_time', 'category', 'category = ?', 'certification', 'create', 'customer_email', 'customer_id', 'customer_id = ?', 'customer_name', 'customer_phone', 'description', 'duration_minutes', 'email', 'employee_id', 'is_active', 'is_active = ?', 'is_available', 'is_available = ?', 'items', 'nailbar', 'nailbar_appointments', 'nailbar_technicians', 'nailbar_treatments', 'name', 'phone', 'price', 'requires_appointment', 'search', 'special_requests', 'specialties', 'status', 'status = ?', 'sub', 'technician_id', 'technician_id = ?', 'technician_name', 'total', 'view']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/student_analytics_gui/student_analytics_gui.py
-# hypothesis_version: 6.151.9
-
-['1400x900', 'Action.TButton', 'Arial', 'At Risk', 'Avg GPA', 'Completion Rate', 'Heading.TLabel', 'Loading...', 'Ready', 'Refresh Stats', 'Title.TLabel', 'Total Students', 'WM_DELETE_WINDOW', 'all', 'analytics.at_risk', 'analytics.avg_gpa', 'at_risk', 'avg_gpa', 'bold', 'bottom', 'clam', 'common.loading', 'common.ready', 'completion_rate', 'indeterminate', 'left', 'right', 'sunken', 'total_students', 'x']

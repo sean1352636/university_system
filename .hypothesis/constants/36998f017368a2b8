@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/simple_activity_logger_gui/theme.py
-# hypothesis_version: 6.151.9
-
-['#000000', '#0066cc', '#333333', '#4CAF50', '#666666', '#cccccc', '#e0e0e0', '#f0f0f0', '#f44336', '#ff9800', '#ffc107', '#ffffff', 'AL.Accent.TButton', 'AL.Card.TFrame', 'AL.Danger.TButton', 'AL.Error.TLabel', 'AL.Heading.TLabel', 'AL.Info.TLabel', 'AL.Success.TButton', 'AL.Success.TLabel', 'AL.TNotebook', 'AL.TNotebook.Tab', 'AL.Title.TLabel', 'AL.Warning.TLabel', 'Segoe UI', 'bold', 'clam', 'flat']

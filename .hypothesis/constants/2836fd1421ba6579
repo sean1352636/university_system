@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/gui/trip_management_gui/itinerary_dialogs.py
-# hypothesis_version: 6.151.9
-
-[1.0, 100, 150, 200, '%H:%M', '%Y-%m-%d', '-', '1', 'Activity', 'Add Item', 'Add Itinerary Item', 'All day', 'Arial', 'Close', 'Confirm Deletion', 'Day', 'Delete Item', 'Edit Item', 'Edit Itinerary Item', 'Error', 'Existing Itinerary', 'Itinerary', 'Location', 'Location (optional):', 'Manage Itinerary', 'No Selection', 'Notes (optional):', 'Refresh', 'Success', 'Time', 'Trip Information', 'Trip not found.', 'Validation Error', 'View Trip Itinerary', 'activity', 'bold', 'day', 'day_header', 'end', 'end time', 'headings', 'itinerary', 'location', 'readonly', 'start time', 'text', 'time', 'trip_info', 'values']

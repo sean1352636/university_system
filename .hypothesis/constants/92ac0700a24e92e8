@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/database/data_backup/metadata.py
-# hypothesis_version: 6.151.9
-
-['backup_metadata.json', 'backup_type', 'backups', 'full', 'last_full', 'path', 'r', 'statistics', 'type', 'w']

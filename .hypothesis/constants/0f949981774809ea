@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/musicshop/services/__init__.py
-# hypothesis_version: 6.151.9
-
-['CONDITION_TYPES', 'GENRES', 'MUSIC_CATEGORIES', 'ORDER_STATUSES', 'OrderManager', 'ProductManager', 'ReportManager', 'TransactionManager', 'WishlistManager', 'init_musicshop_db']

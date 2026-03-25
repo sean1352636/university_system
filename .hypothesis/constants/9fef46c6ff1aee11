@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/virtual_classroom/recording_manager.py
-# hypothesis_version: 6.151.9
-
-[' AND is_public = ?', ' AND session_id = ?', 'mp4']

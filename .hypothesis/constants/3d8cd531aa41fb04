@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/parent_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/accounts', '/api/parents', '/conferences', '/documents', '/messages', '/notifications', 'GET', 'POST', 'PUT', 'create', 'datetime', 'in_person', 'individual', 'is_from_parent', 'items', 'location', 'meeting_link', 'meeting_type', 'message_content', 'message_type', 'notes', 'parent_account', 'parent_accounts', 'parent_conference', 'parent_conferences', 'parent_documents', 'parent_id', 'parent_id = ?', 'parent_message', 'parent_messages', 'parent_notification', 'parent_notifications', 'parent_student_links', 'parents', 'search', 'status', 'status = ?', 'student_id', 'student_id = ?', 'sub', 'teacher_id', 'total', 'two_factor_secret', 'update', 'view']

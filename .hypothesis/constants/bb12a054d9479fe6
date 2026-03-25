@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/gui/parking_management/tabs/lots.py
-# hypothesis_version: 6.151.9
-
-[100, '500x400', '<Configure>', 'Add New Parking Lot', 'Arial', 'Available', 'Cancel', 'Confirm Delete', 'Edit Parking Lot', 'Error', 'Hours', 'ID', 'Info', 'Location', 'Name', 'Save Changes', 'Total Spaces', 'Warning', 'Zone', '__iter__', 'all', 'bold', 'both', 'common.refresh', 'headings', 'hours', 'left', 'location', 'lot_name', 'nw', 'parking.btn.add_lot', 'right', 'total_spaces', 'values', 'vertical', 'y', 'zone']

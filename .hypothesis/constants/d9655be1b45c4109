@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/grade_tracking/utils/__init__.py
-# hypothesis_version: 6.151.9
-
-['ensure_column_exists', 'format_gpa', 'format_letter_grade', 'format_percentage', 'validate_gpa', 'validate_grade', 'validate_percentage']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/degree_routes.py
-# hypothesis_version: 6.151.9
-
-[2.0, 201, ' = ?', ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', ', ', '/api/degrees', '/prerequisites', '/programs', 'DELETE', 'GET', 'POST', 'PUT', 'course_id', 'course_prerequisite', 'course_prerequisites', 'create', 'degree_program', 'degree_programs', 'degree_requirements', 'degree_type', 'degree_type = ?', 'degrees', 'delete', 'department', 'department = ?', 'description', 'is_active', 'is_active = 1', 'is_required', 'items', 'max_years_allowed', 'message', 'min_gpa_required', 'program_code', 'program_name', 'search', 'sub', 'total', 'update', 'view']

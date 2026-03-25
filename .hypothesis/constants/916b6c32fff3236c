@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/communication_integration.py
-# hypothesis_version: 6.151.9
-
-['book_title', 'calendar', 'calendar_reminder', 'checkout', 'date', 'date_line', 'days_overdue', 'due_date', 'due_soon', 'email', 'event_date', 'event_name', 'event_time', 'failed', 'guests', 'guests_line', 'items', 'items_line', 'library', 'library_checkout', 'library_due_soon', 'library_overdue', 'location_line', 'loyalty_update', 'mock', 'order_confirmation', 'order_id', 'overdue', 'points', 'points_line', 'reservation_id', 'reservation_ready', 'sent', 'sms', 'system', 'time', 'time_line', 'total', 'total_line']

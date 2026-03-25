@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/attendance/cli/settings_cli.py
-# hypothesis_version: 6.151.9
-
-['\n🔧 FEATURE TOGGLES', '-', '1', '1. View All Settings', '2', '2. Update Setting', '3', '3. Feature Toggles', '4. Reset to Defaults', 'Audit Logging', 'Automatic Backups', 'Enter new value: ', 'Enter setting name: ', 'Face Recognition', 'Feature not found.', 'Gamification', 'Geofencing', 'No settings found.', 'Parent Portal', 'Predictive Analytics', 'QR Code Check-in', 'SMS Notifications', 'Setting not found.', 'auto_backup_enabled', 'back', 'boolean', 'disabled', 'enable_audit_log', 'enable_gamification', 'enable_geofencing', 'enable_parent_portal', 'enable_qr_checkin', 'enabled', '✅ ON', '❌ OFF']

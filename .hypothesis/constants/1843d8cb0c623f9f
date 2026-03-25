@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/helpdesk/menus.py
-# hypothesis_version: 6.151.9
-
-[100, '\nEnter your choice: ', '\nFilter Options:', '\nSystem Management', " AND status = 'open'", '%Y-%m-%d %H:%M:%S', '1', '1. All my tickets', '2', '2. Open tickets only', '3', '3. Manage Workflows', '4', '5', '6', '7', '8', '=', '================', 'WHERE user_id = ?', 'advanced_search', 'analytics', 'closed', 'create_ticket', 'due_date', 'generate_report', 'helpdesk.returning', 'id', 'in progress', 'knowledge_base', 'language', 'manage_tickets', 'open', 'resolved', 'saved_searches', 'status', 'system_management', 'view_all_tickets', 'view_own_tickets', 'waiting for customer', '⏳', '✅', '🆕', '📋', '🔄', '🔒']

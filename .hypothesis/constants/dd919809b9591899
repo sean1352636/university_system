@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/ai/ai_detector/core/__init__.py
-# hypothesis_version: 6.151.9
-
-['AIDetectionError', 'APIError', 'ConfigurationError', 'DatabaseError', 'DetectionMethod', 'DetectionResult', 'ML_AVAILABLE', 'OCR_AVAILABLE', 'OPENCV_AVAILABLE', 'PrivacyError', 'REQUESTS_AVAILABLE', 'RiskLevel', 'SPACY_AVAILABLE', 'SubmissionMetadata', 'ViolationType', 'logger']

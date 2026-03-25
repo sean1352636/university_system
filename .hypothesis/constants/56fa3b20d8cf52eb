@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/api_server.py
-# hypothesis_version: 6.151.9
-
-[45.2, 67.8, 127, 200, 401, 404, 3600, 5000, '\nServer stopped', '/api/metrics', '/api/status', '1.0.0', 'Content-Length', 'Content-type', 'Endpoint not found', 'Invalid API key', 'X-API-Key', '__main__', 'active_connections', 'api_key', 'application/json', 'authentication', 'cpu_usage', 'data_length', 'error', 'healthy', 'localhost', 'memory_usage', 'message', 'r', 'status', 'timestamp', 'total_requests', 'uptime_seconds', 'version']

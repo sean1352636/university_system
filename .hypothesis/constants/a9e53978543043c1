@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/mfa_admin_gui.py
-# hypothesis_version: 6.151.9
-
-['MFAAdminPanel', 'show_mfa_admin']

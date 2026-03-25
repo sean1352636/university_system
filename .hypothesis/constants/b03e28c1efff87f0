@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/database/dialogs/schedule.py
-# hypothesis_version: 6.151.9
-
-[100, '%H:%M', '400x350', '600x400', 'Advanced Scheduling', 'Arial', 'Backup Frequency', 'Backup Time', 'Cancel', 'Clear History', 'Close', 'Daily', 'Date', 'Duration', 'Error', 'Full Backup', 'Incremental Backup', 'Invalid Cron', 'Invalid Time', 'Monthly', 'N/A', 'Refresh', 'Save', 'Schedule History', 'Size', 'Status', 'Success', 'Type', 'Unknown', 'Weekly', 'auto_backup_enabled', 'backup_frequency', 'backup_type', 'both', 'cron_schedule', 'daily', 'date_formatted', 'end', 'full', 'headings', 'incremental', 'left', 'manual', 'monthly', 'path', 'right', 'size_formatted', 'vertical', 'w', 'weekly', 'x', 'y', '✓ Success', '✗ Failed']

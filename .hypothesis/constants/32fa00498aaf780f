@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/core_utils/utils.py
-# hypothesis_version: 6.151.9
-
-[', ', 'Account', 'INTEGER', 'TEXT', 'User', '[._\\-\\s]+', '[0-9]', '[A-Za-z]', 'admin', 'age', 'course', 'default_accounts', 'dob', 'dr.', 'dr_', 'email_address', 'employee', 'enrollment_date', 'faculty', 'first_name', 'gender', 'guardian', 'instructor', 'last_name', 'middle_name', 'parent', 'prof', 'root', 'staff', 'status', 'student', 'superuser', 'teacher', 'title', 'validate_email', 'validate_password', 'validate_username']

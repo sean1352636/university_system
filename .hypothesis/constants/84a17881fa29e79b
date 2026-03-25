@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/ai/gui/entry.py
-# hypothesis_version: 6.151.9
-
-['\nInterface Options:', '1', '2', '3', '4', '5', '=', 'Hello', 'auth-console', 'auto', 'console', 'fallback_user', 'gui', 'tkinter', 'web', '✓ tkinter available']

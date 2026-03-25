@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/config.py
-# hypothesis_version: 6.151.9
-
-[1.0, 10485760, 'INFO', 'SMTP_PASSWORD', 'SMTP_USERNAME', 'api_key', 'config', 'database_only_mode', 'delete_smtp_password', 'email_signature', 'enable_logging', 'get_smtp_password', 'load_config', 'log_level', 'max_retries', 'max_threads', 'password', 'r', 'retry_delay', 'save_config', 'secret', 'send_delay', 'sender_email', 'sender_name', 'set_smtp_password', 'smtp_password', 'smtp_port', 'smtp_server', 'templates/email', 'templates_dir', 'use_authentication', 'use_tls', 'username', 'utf-8', 'w']

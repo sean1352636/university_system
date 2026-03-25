@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/database/dialogs/export.py
-# hypothesis_version: 6.151.9
-
-['*.*', '*.json', '*.pdf', '*.txt', '*.xml', '500x300', 'All files', 'Browse', 'CSV Files', 'Cancel', 'Error', 'Export', 'Export Backup', 'Export Format', 'JSON File', 'JSON files', 'No Output', 'No Selection', 'Output Location', 'PDF File', 'PDF files', 'Save export file', 'Success', 'Text File', 'Text files', 'XML File', 'XML files', 'csv', 'json', 'left', 'path', 'pdf', 'readonly', 'right', 'txt', 'values', 'w', 'x', 'xml']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/course_management/instructors.py
-# hypothesis_version: 6.151.9
-
-['\nAll Instructors:', '\nCourse Schedules:', '%Y-%m-%d %H:%M:%S', '-', '====================', 'Assigned', 'Creating instructor', 'Enter department: ', 'Enter email: ', 'Enter first name: ', 'Enter last name: ', 'Invalid schedule ID.', 'None', 'Viewing instructors', 'conn', 'course_management', 'manage_courses', 'y']

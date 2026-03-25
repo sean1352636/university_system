@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/operations/staff_management.py
-# hypothesis_version: 6.151.9
-
-[1000000, '\nWelcome email sent.', '#333333', '#7f8c8d', '#e74c3c', '#ecf0f1', '#ffffff', '%Y-%m-%d', '*', '+ Add Staff', '-', '.', '400x450', 'Add Staff', 'Card.TFrame', 'Confirm Password:*', 'Email', 'Email:', 'Helvetica', 'ID', 'Main.TFrame', 'Name', 'Name:*', 'Password:*', 'Role', 'Role:', 'Status', 'Subtitle.TLabel', 'Success.TButton', 'Username', 'Username:*', '_', 'bold', 'both', 'cashier', 'cinema.common.error', 'cinema.staff.roles', 'cinema.staff.title', 'email', 'end', 'headings', 'left', 'name', 'pass', 'pass2', 'right', 'role', 'role_var', 'sha256', 'staff_name', 'start_date', 'user', 'username', 'vertical', 'w', 'x', 'y']

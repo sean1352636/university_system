@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/alumni_management/communications.py
-# hypothesis_version: 6.151.9
-
-['\nTarget Audience:', '%Y-%m-%d %H:%M', '%Y-%m-%d %H:%M:%S', '1. All Alumni', '2', '3', '3. By Industry', '4', '4. By Location', '5', '5. Donors Only', '6', '6. Mentors Only', 'Enter industry: ', 'Newsletter Title: ', 'Select template: ', 'all', 'alumni_newsletter', 'donors', 'draft', 'graduation_year = ?', 'industry LIKE ?', 'is_donor = 1', 'is_mentor = 1', 'mentors', 'newsletter_content', 'newsletter_title', 'recipient_name', 's', 'scheduled', 'send_newsletters', 'sending', 'username']

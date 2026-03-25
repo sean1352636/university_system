@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/batch_operations/main_gui.py
-# hypothesis_version: 6.151.9
-
-[0.0, 1.0, 100, 150, 200, 250, '#28a745', '#dc3545', '#ffc107', '10', '1200x800', '<Configure>', 'Action.TButton', 'Arial', 'Bulk User Creation', 'Danger.TButton', 'Header.TLabel', 'Import', 'Send Email Campaign', 'Status.TLabel', 'Subheader.TLabel', 'Success.TButton', 'User Operations', 'Warning.TButton', 'all', 'backup_dir', 'backups', 'batch_ops.menu.about', 'batch_ops.menu.file', 'batch_ops.menu.help', 'batch_ops.menu.tools', 'batch_ops.menu.view', 'batch_ops.title', 'bold', 'both', 'complete', 'current', 'db_path', 'determinate', 'error', 'errors', 'ew', 'headings', 'indeterminate', 'left', 'mode', 'ne', 'nw', 'operation', 'progress', 'r', 'readonly', 'records', 'right', 'status', 'success', 'text', 'timestamp', 'total', 'type', 'value', 'vertical', 'y']

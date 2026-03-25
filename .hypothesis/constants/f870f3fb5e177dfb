@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/email_service/notifications/library.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d %H:%M:%S', 'book_id', 'book_title', 'days_overdue', 'due_date', 'error', 'failed', 'first_name', 'info', 'last_name', 'sent', 'title']

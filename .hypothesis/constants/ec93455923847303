@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/timetable_routes.py
-# hypothesis_version: 6.151.9
-
-['/api/timetable', 'GET', 'module_code', 'module_schedule', 'schedule', 'student_id', 'student_timetable', 'sub', 'timetable', 'view']

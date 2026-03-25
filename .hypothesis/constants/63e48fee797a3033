@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/auth/managers/account_linking_manager.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d %H:%M:%S', 'Account unlinked', 'Unknown', '_role_switch_id', 'approved', 'error', 'id', 'link_id', 'linked_role', 'linked_user_id', 'linked_username', 'manage_account_links', 'message', 'new_role', 'original_role', 'pending', 'permissions', 'primary_role', 'primary_user_id', 'primary_username', 'rejected', 'request_id', 'resolved_by', 'resolved_by_username', 'restored_role', 'reverted_from', 'role', 'secondary_role', 'secondary_user_id', 'secondary_username', 'success', 'switch_id', 'username']

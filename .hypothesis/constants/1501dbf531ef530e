@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/simple_activity_logger/plugins/email.py
-# hypothesis_version: 6.151.9
-
-[587, 600, 'action', 'details', 'from_email', 'ip_address', 'module', 'rate_limit_seconds', 'role', 'security_alert', 'security_level', 'smtp_password', 'smtp_port', 'smtp_server', 'smtp_username', 'status', 'timestamp', 'to_emails', 'trace_id', 'username']

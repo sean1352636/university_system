@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/career/services/career_services_core.py
-# hypothesis_version: 6.151.9
-
-[100, ' AND job_type = ?', ' AND location LIKE ?', '1', '2', '3', '4', '5', '6', '7', '8', '9', '=', 'CareerEventManager', 'Error: {error}', 'InterviewManager', 'Invalid choice.', 'JobManager', 'MentorshipManager', 'ResumeManager', 'SkillsManager', 'career.error', 'career.returning', 'job_type', 'location', 'monthly']

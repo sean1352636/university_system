@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/pastoral_care/exclusions/services/exclusion_service.py
-# hypothesis_version: 6.151.9
-
-[' AND e.status = ?', 'active', 'bullying', 'damage', 'drugs_alcohol', 'fixed_term', 'internal', 'lunchtime', 'other', 'permanent', 'racist_abuse', 'sexual_misconduct', 'theft', 'verbal_abuse_adult', 'verbal_abuse_pupil']

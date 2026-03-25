@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/validation/config_validators.py
-# hypothesis_version: 6.151.9
-
-[65535, "'host' must be str", "'jwt' must be a dict", 'DEBUG', 'ERROR', 'HS256', 'HS384', 'HS512', 'INFO', 'WARNING', 'algorithm', 'api_config', 'aws_sns', 'debug', 'email_config', 'email_gateway', 'enabled', 'fallback_provider', 'host', 'jwt', 'log_level', 'max_content_length', 'max_retries', 'mock', 'port', 'primary_provider', 'rate_limiting', 'requests_per_minute', 'send_delay', 'sender_email', 'sms_config', 'smtp_port', 'smtp_server', 'ssl_enabled', 'twilio', 'use_tls']

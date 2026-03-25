@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/reports/reports_page.py
-# hypothesis_version: 6.151.9
-
-['#333333', '#ffffff', '%Y-%m-%d', 'Card.TFrame', 'Main.TFrame', 'Primary.TButton', 'Secondary.TButton', 'Subtitle.TLabel', 'Success.TButton', 'booking_status', 'both', 'cinema.reports.title', 'daily_sales', 'left', 'occupancy', 'payment_methods', 'revenue_by_movie', 'sales_summary', 'x']

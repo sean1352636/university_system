@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/database/data_backup/exports.py
-# hypothesis_version: 6.151.9
-
-['SELECT * FROM [', ']', 'database', 'row', 'table', 'utf-8', 'w']

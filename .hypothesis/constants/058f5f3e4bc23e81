@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/student_union/clubs/club_management/rewards.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', '1', '1. All students', '1. View all badges', '2', '2. Edit badge', '3', '3. Delete badge', '3. View leaderboard', '4', '4. Bulk award points', '5', '5. Redeem points', '6', '7', '7. Create new badge', '8', '=', 'ALL', 'Activity type: ', 'Available clubs:', 'Badge description: ', 'Badge name: ', 'Badge not found.', 'Choose an option: ', 'Choose option: ', 'Coming soon...', 'Description: ', 'General', 'Invalid badge ID.', 'Invalid choice.', 'Invalid option', 'Invalid selection.', 'No badges available.', 'Student not found.', 'id', 'manage_all_clubs', 'manage_union_reps', 'y', '🏆']

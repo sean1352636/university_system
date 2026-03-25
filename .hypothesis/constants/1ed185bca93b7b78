@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/records/records/crud.py
-# hypothesis_version: 6.151.9
-
-['\nRecord Types:', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', 'Deletion cancelled.', 'Description: ', 'Emergency Treatment', 'Enter student ID: ', 'Follow-up Visit', 'General Medical', 'Injury Treatment', 'Mental Health', 'Preventive Care', 'add_health_record', 'delete_health_record', 'health_record', 'id', 'n', 'update_health_record', 'y', 'yes', '🔒 CONFIDENTIAL']

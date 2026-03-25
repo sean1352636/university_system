@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/email/email_gui/notification_dialogs_academic.py
-# hypothesis_version: 6.151.9
-
-[1.0, 100, ',', '400x200', '400x250', '450x300', '500x250', '500x350', '500x400', 'Arial', 'Assignment ID:', 'Assignment Title:', 'Cancel', 'Description:', 'Error', 'Extension Days:', 'Feedback (Optional):', 'Generate Code', 'Grade:', 'Module Code:', 'Module Name:', 'New Value:', 'Old Value:', 'Reset Code:', 'Schedule ID:', 'Send', 'Send Password Reset', 'Student Email:', 'Student ID:', 'Success', 'default', 'en', 'italic', 'value']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/blockchain_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/blockchain', '/badges', '/credentials', 'GET', 'POST', 'badge_name', 'blockchain', 'create', 'credential_type', 'description', 'digital_badges', 'issue_date', 'issuer', 'items', 'search', 'status', 'status = ?', 'student_id', 'student_id = ?', 'sub', 'total', 'view']

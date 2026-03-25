@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/student_analytics_gui/data.py
-# hypothesis_version: 6.151.9
-
-[0.0, 0.6, 0.95, 1.0, 2.0, 3.0, 4.0, 200, 300, '%Y%m%d_%H%M%S', 'A', 'Active', 'Advanced', 'Art', 'B', 'Beginner', 'Biology', 'C', 'Chemistry', 'Computer Science', 'D', 'Economics', 'F', 'History', 'Intermediate', 'Literature', 'Mathematics', 'Physics', 'Psychology', 'age', 'age_range', 'completion_status', 'course', 'credits', 'difficulty_level', 'enrollment_count', 'gender', 'gpa', 'gpa_range', 'grade', 'module_id', 'module_name', 'pass_rate', 'png', 'status', 'tight']

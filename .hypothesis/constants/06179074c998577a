@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/logging/log_management/cli/scheduled_reports.py
-# hypothesis_version: 6.151.9
-
-[587, '\n📅 SCHEDULED REPORTS', '\n📋 SCHEDULED TASKS', '1', '2', '3', '4', '5. Return', '=', 'Alert thresholds:', 'Choose option: ', 'Friday', 'Monday', 'SMTP password: ', 'SMTP username: ', 'Saturday', 'Sunday', 'Thursday', 'Tuesday', 'Wednesday', 'alert_email', 'security_alert_email', 'smtp_password', 'smtp_port', 'smtp_server', 'smtp_username', 'weekly_report_day', 'weekly_report_email']

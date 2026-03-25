@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/gui/medical_accommodation/dialogs/export_filter.py
-# hypothesis_version: 6.151.9
-
-['400x250', 'Accommodation Type:', 'Cancel', 'Export', 'Export Filters', 'Status:', 'Student ID:', 'accommodation_type', 'active', 'ew', 'expired', 'pending', 'status', 'student_id', 'suspended', 'values', 'w']

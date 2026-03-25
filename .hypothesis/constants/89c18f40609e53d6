@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/library/fines/display.py
-# hypothesis_version: 6.151.9
-
-[100, '$5.00', ', grade_level', '1.0', '700x500', 'B10001', 'Book ID', 'Days Overdue', 'Demo Book', 'Find User', 'Fine Amount', 'Loan ID', 'N/A', 'Outstanding Fines', 'Payment Amount: £', 'Process Payment', 'Title', 'Title.TLabel', 'User ID:', 'Waive All Fines', 'common.close', 'common.error', 'common.search', 'common.warning', 'end', 'grade_level', 'headings', 'manage_loans', '🔄 Refund Fine']

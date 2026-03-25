@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/course_management_gui/waitlists/process_dialog.py
-# hypothesis_version: 6.151.9
-
-[10.0, 30.0, 100, 250, '700x500', 'Arial', 'Available', 'Close', 'Code', 'Complete', 'Course ID', 'Name', 'No Spots', 'Process All', 'Process Selected', 'Refresh', 'Waitlist Count', 'bold', 'common.confirm', 'common.success', 'headings', 'values']

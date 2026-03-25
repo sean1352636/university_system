@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/financial_aid/admin_portal/fafsa_import.py
-# hypothesis_version: 6.151.9
-
-['*.*', '*.csv', 'All files', 'Arial', 'Back to Dashboard', 'Browse...', 'CSV files', 'Cancel', 'FAFSA Data Import', 'Import Data', 'Import Error', 'Import FAFSA Data', 'Import Started', 'No File Selected', 'Success.TButton', 'Title.TLabel', 'blue', 'bold', 'both', 'fafsa_data', 'file', 'import', 'left', 'readonly', 'right', 'w', 'x']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/integrations/integration_marketplace_core/scheduling.py
-# hypothesis_version: 6.151.9
-
-[2.0, '      SCHEDULE SYNC', ',', '-', '00:00', '=', 'ALL integrations', 'Cancelled.', 'DISABLED', 'ENABLED', 'End time (HH:MM): ', 'Enter install ID: ', 'Invalid ID format.', 'Invalid install ID.', 'Never', 'Not set', 'PAUSED', 'Saturday', 'Start time (HH:MM): ', 'Sunday', 'backoff_multiplier', 'backoff_seconds', 'config', 'configuration', 'created_at', 'cron_expression', 'daily', 'days_of_week', 'end_time', 'frequency', 'hourly', 'install_id', 'integration_name', 'is_enabled', 'is_paused', 'last_sync', 'last_sync_date', 'max_retries', 'monthly', 'paused', 'paused_all', 'r', 'retry_policy', 'schedule', 'start_time', 'sync_frequency', 'time_of_day', 'w', 'weekly', 'y']

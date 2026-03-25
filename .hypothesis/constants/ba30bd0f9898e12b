@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/course_planning_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/course-planning', '/planned-courses', '/prerequisites', '/semester-plans', 'GET', 'POST', 'can_be_concurrent', 'course_id', 'course_id = ?', 'course_planning', 'course_prerequisites', 'create', 'credits_per_semester', 'include_summer', 'is_locked', 'items', 'minimum_grade', 'notes', 'plan_id', 'plan_id = ?', 'plan_name', 'planned_courses', 'prerequisite_type', 'priority', 'program_code', 'search', 'semester_name', 'semester_number', 'semester_number = ?', 'semester_plans', 'start_semester', 'status', 'status = ?', 'student_id', 'student_id = ?', 'sub', 'total', 'total_semesters', 'view']

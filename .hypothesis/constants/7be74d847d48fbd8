@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/integrations/integration_marketplace_core/notifications.py
-# hypothesis_version: 6.151.9
-
-[',', '=', '@', 'Channel type: ', 'Condition type: ', 'Email address: ', 'Enter install ID: ', 'Invalid install ID.', 'No rules defined.', 'Target is required.', 'Threshold value: ', 'Webhook URL: ', '[...]', '[?]', '[OK]', '[X]', 'admin@university.edu', 'channel_type', 'condition_type', 'configuration', 'delivered', 'email', 'event_type', 'event_types', 'failed', 'install_id', 'message', 'name', 'notification_id', 'pending', 'rules', 'rules_configured', 'sent', 'sent_at', 'sent_to', 'severity', 'slack', 'status', 'subject', 'subscribed_at', 'subscription', 'subscriptions', 'sync_failed', 'target', 'threshold', 'user_email', 'warning', 'webhook']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/records/clinical/conditions.py
-# hypothesis_version: 6.151.9
-
-[100, '\nCare Plan Coverage:', '\nSeverity Levels:', '\nStatus Options:', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', '...', '1', '2', '3', '4', '5', 'Additional notes: ', 'Asthma', 'Condition name: ', 'Diabetes', 'Enter student ID: ', 'Hypertension', 'Mild', 'Moderate', 'Severe', 'active', 'goals', 'id', 'inactive', 'interventions', 'managed', 'medical_condition', 'resolved', 'y']

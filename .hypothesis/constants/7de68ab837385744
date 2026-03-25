@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/finance_routes.py
-# hypothesis_version: 6.151.9
-
-[201, '%Y-%m-%d %H:%M:%S', '/api/finance', '/fees', '/payments', '/scholarships', 'GET', 'POST', 'amount', 'balance', 'completed', 'create', 'description', 'fees', 'finance', 'payment', 'payment_date', 'payment_type', 'payments', 'scholarships', 'status', 'student_account', 'student_fees', 'student_id', 'sub', 'total_fees', 'total_payments', 'view']

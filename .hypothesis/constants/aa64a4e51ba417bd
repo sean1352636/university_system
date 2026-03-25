@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/alumni_management/chapters.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d %H:%M:%S', '-', '1', '1. View All Chapters', '2', '2. View All Chapters', '3', '3. Join a Chapter', '3. Update Chapter', '4', '4. Delete Chapter', '4. My Chapters', '5', 'A', 'Chapter Location: ', 'Chapter Name: ', 'Chapter deleted.', 'Enter chapter name: ', 'Enter description: ', 'Enter location: ', 'Enter your choice: ', 'Invalid choice.', 'Invalid input.', 'Invalid selection.', 'No coordinator', 'chapter_joined', 'coordinator', 'id', 'manage_alumni', 'member', 'user_id', 'yes']

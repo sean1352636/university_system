@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/services/launcher.py
-# hypothesis_version: 6.151.9
-
-['*.py', ', ', '--interface', '--list', '--service', '-i', '-l', '-s', '=', '__init__.py', '__main__', 'auth', 'cli', 'gui', 'main', 'store_true']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/financial_aid/admin_portal/packages.py
-# hypothesis_version: 6.151.9
-
-['$0.00', '0', 'Academic Year:', 'Aid Components:', 'Aid Package Details', 'Arial', 'Back to Dashboard', 'Cancel', 'Create Package', 'Error', 'Grant Amount:', 'Invalid amounts', 'Loan Amount:', 'Package Name:', 'Student ID:', 'Success', 'Success.TButton', 'Title.TLabel', 'Total Package:', 'Validation Error', 'Work-Study Amount:', 'academic_year', 'aid_package', 'bold', 'both', 'create', 'grant_amount', 'green', 'left', 'loan_amount', 'package_name', 'readonly', 'right', 'student_id', 'total_amount', 'w', 'work_study_amount', 'x']

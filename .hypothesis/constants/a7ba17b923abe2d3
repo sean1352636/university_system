@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/events_discovery_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/events', '/events', '/rsvps', '/rsvps/<int:rsvp_id>', 'GET', 'Other', 'POST', 'Student', 'building', 'campus_events', 'category', 'create', 'description', 'end_datetime', 'event_category = ?', 'event_id', 'event_id = ?', 'events_discovery', 'items', 'location', 'max_capacity', 'organizer_id', 'organizer_id = ?', 'organizer_name', 'organizer_type', 'room', 'rsvp_status', 'rsvp_status = ?', 'search', 'start_datetime', 'sub', 'tags', 'title', 'total', 'user_id', 'user_id = ?', 'view']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/transaction_manager/analytics_email.py
-# hypothesis_version: 6.151.9
-
-[120, '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', '.', '1.0', '20', '500x400', '700x500', '700x600', '750x680', '<Configure>', '<MouseWheel>', '=', '@', 'Arial', 'Courier', 'TkDefaultFont', '[Balance]', '[Student Name]', 'all', 'all_students', 'balance', 'bold', 'both', 'custom', 'disabled', 'email', 'fee_notification', 'financial_aid', 'financial_hold', 'generated_timestamp', 'left', 'name', 'nw', 'overdue_payment', 'overdue_students', 'payment_confirmation', 'report_content', 'report_date', 'right', 'scholarship_update', 'student_id', 'units', 'upcoming_due', 'upcoming_payment', 'vertical', 'w', 'white', 'x', 'y']

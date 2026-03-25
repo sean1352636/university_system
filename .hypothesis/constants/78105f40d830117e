@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/academic_calendar/dialogs_categories.py
-# hypothesis_version: 6.151.9
-
-['#0', ',', '450x200', '700x500', 'Arial', 'Assign Tags', 'Color', 'Description', 'Event:', 'N/A', 'bold', 'color_code', 'common.close', 'common.description', 'common.error', 'common.refresh', 'common.success', 'common.warning', 'description', 'end', 'id', 'name', 'readonly', 'tree headings']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/assignments/core/database.py
-# hypothesis_version: 6.151.9
-
-['ALTER TABLE [', 'INTEGER', 'INTEGER DEFAULT 0', 'INTEGER DEFAULT 1', 'REAL', 'REAL DEFAULT 0', 'TEXT', '] ', '] ADD COLUMN [', 'assignment_type', 'assignments', 'auto_release_grades', 'backups', 'column', 'exports', 'feedback', 'grade', 'graded', 'graded_by', 'graded_date', 'group_id', 'group_size_max', 'group_size_min', 'instructions', 'ip_address', 'is_final_submission', 'late_days', 'late_penalty_per_day', 'peer_review_enabled', 'pending', 'previews', 'rubric_id', 'submitted', 'templates', 'version_number']

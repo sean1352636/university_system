@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/templates.py
-# hypothesis_version: 6.151.9
-
-['*.*', '*.json', '-', '.', '..', '1', '2', '3', '4', '5', '6', '7', '8', '9', '=', 'All files', 'Data Table {number}', 'JSON files', 'analytics', 'chart_caption', 'config', 'data_table', 'dict', 'email', 'footer', 'header', 'name', 'notification', 'r', 'reminder', 'report', 'report_header', 'summary_section', 'templates', 'templates.json', 'w', 'welcome', 'y']

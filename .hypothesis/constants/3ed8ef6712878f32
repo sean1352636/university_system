@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/logic/student_form_logic.py
-# hypothesis_version: 6.151.9
-
-[100, '%Y-%m-%d', '@', 'Email is required', 'Invalid email format', 'Name is required', '[\\s\\-\\(\\)\\.]', '[a-zA-Z]', '^[A-Z]{2,4}\\d{3,8}$', "^[a-zA-Z\\s\\-'\\.]+$", '^\\+?\\d{10,15}$', 'address', 'date_of_birth', 'email', 'enrollment_date', 'max_age', 'max_name_length', 'min_age', 'min_name_length', 'name', 'phone', 'program', 'student_id', 'student_id_pattern', 'valid_email_domains']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/logging/log_management/cli/menus.py
-# hypothesis_version: 6.151.9
-
-['\n⚙️  ADMINISTRATION', '1', '10', '11', '12', '13', '13. Anonymize Data', '14', '14. Enhanced Export', '15', '15. Bulk Operations', '16', '16. API Management', '17', '18', '19', '2', '20', '3', '4', '5', '6', '7', '7.  Saved Searches', '8', '9', '9.  View Alerts', '=', 'Please try again.', 'system_config', 'view_logs']

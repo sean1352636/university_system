@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/attendance_tracker/qr_windows.py
-# hypothesis_version: 6.151.9
-
-[1.0, 200, 250, '%A', '%H:%M', '09:00', '10:00', '500x600', '600x500', 'Arial', 'Check In', 'Check-in', 'Danger.TButton', 'Date:', 'End Time:', 'Generate QR Code', 'Generated QR Code', 'Location (optional):', 'Location:', 'Manual Check-in', 'Module Code:', 'Primary.TButton', 'QR Code', 'Session Details', 'Start Time:', 'Student ID:', 'Success.TButton', 'bold', 'common.close', 'common.error', 'common.success', 'common.warning', 'w', '📱 QR Code Generator']

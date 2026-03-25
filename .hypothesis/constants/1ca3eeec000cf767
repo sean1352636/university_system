@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/records/wellness/programs.py
-# hypothesis_version: 6.151.9
-
-[100, '\nAvailable Programs:', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', '1', '2', '2. Enroll in Program', '3', '3. Track Progress', '4', '4. Health Challenges', '5', '6', '7', 'enrolled', 'id', 'role', 'student']

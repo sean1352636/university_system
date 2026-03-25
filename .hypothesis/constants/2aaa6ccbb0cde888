@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/student_support/database.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d %H:%M:%S', '0.5', '2', '72', 'Academic', 'Acknowledgment', 'BOOLEAN DEFAULT 0', 'Critical', 'General', 'Grade Inquiry', 'High', 'Housing', 'Housing Issue', 'INTEGER', 'Issue Resolved', 'Long Open Ticket', 'Medium', 'Password Reset', 'REAL', 'Resolution', 'TEXT', 'Technical', 'Ticket Received', '["RESET_URL"]', '[]', 'closed_at', 'column', 'created_datetime', 'data', 'duration', 'error_message', 'escalate', 'escalated_at', 'estimated_resolution', 'expires_at', 'ip_address', 'is_read', 'message', 'new_values', 'notification_type', 'notify', 'old_values', 'parent_ticket_id', 'read_datetime', 'related_ticket_id', 'resolved_at', 'satisfaction_rating', 'sentiment', 'subject', 'supervisor', 'system', 'tags', 'time_based', 'title', 'user_agent', 'user_id']

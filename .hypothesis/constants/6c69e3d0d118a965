@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/community/reviews.py
-# hypothesis_version: 6.151.9
-
-[100, 120, 150, 250, 400, ' - ', '#16213e', '#333333', '#7f8c8d', '#e74c3c', '#ecf0f1', '#ffd700', '#ffffff', '+ Add Review', '-', '.', '...', '1.0', '500x400', '500x450', 'Add Review', 'All Movies', 'Anonymous', 'Card.TFrame', 'Danger.TButton', 'Date', 'Helvetica', 'ID', 'Main.TFrame', 'Movie', 'No written review', 'Primary.TButton', 'Rating', 'Review', 'Secondary.TButton', 'Status', 'Subtitle.TLabel', 'Success.TButton', '_', 'active', 'all', 'bold', 'both', 'cinema.btn.approve', 'cinema.btn.filter', 'cinema.reviews.title', 'end', 'headings', 'hidden', 'left', 'nw', 'right', 'values', 'vertical', 'w', 'x', 'y', '★', '☆']

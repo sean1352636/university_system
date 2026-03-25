@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/mobility_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/mobility', '/devices', '/sessions', 'GET', 'POST', 'app_version', 'create', 'device_id', 'device_id = ?', 'device_name', 'device_token', 'ip_address', 'items', 'mobile_devices', 'mobile_sessions', 'mobility', 'os_version', 'platform', 'platform = ?', 'search', 'sub', 'total', 'user_agent', 'user_id', 'user_id = ?', 'view']

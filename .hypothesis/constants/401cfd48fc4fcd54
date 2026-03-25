@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/admin/__init__.py
-# hypothesis_version: 6.151.9
-
-['database_only_mode', 'db_path', 'error', 'info', 'list_all_users', 'search_users', 'sender_email', 'set_auth', 'smtp_server', 'test_email_system', 'warning']

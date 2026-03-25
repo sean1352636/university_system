@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/student_grades/grades.py
-# hypothesis_version: 6.151.9
-
-[0.0, 100, 120, 250, '*.*', '*.txt', '-', '--', '.txt', '1.0', '=', 'A', 'A+', 'A-', 'ACADEMIC TRANSCRIPT', 'Academic Transcript', 'All files', 'Arial', 'B', 'B+', 'B-', 'C', 'C+', 'C-', 'Courier', 'Cumulative GPA: N/A', 'D', 'D+', 'D-', 'Error', 'Export', 'Export Error', 'Export Successful', 'F', 'GPA Points', 'Grade', 'Letter Grade', 'Module Code', 'Module Name', 'My Grades', 'N/A', 'No grades found', 'Refresh', 'Text files', 'bold', 'both', 'disabled', 'end', 'ew', 'headings', 'horizontal', 'left', 'normal', 'ns', 'nsew', 'primary', 'right', 'utf-8', 'vertical', 'w', 'word', 'x']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/primary_school/modules/domain/staff/hr/services/hr_service.py
-# hypothesis_version: 6.151.9
-
-[' AND role = ?', ' AND staff_id = ?', ' AND status = ?', ', ', 'Active', 'Deleted staff: %s', 'STF', 'Teacher', 'Updated staff: %s', 'class_teacher_of', 'dbs_check_date', 'dbs_number', 'department', 'email', 'first_name', 'last_name', 'leaving_date', 'notes', 'phone', 'qualifications', 'role', 'staff_id', 'start_date', 'status']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/cli/utils.py
-# hypothesis_version: 6.151.9
-
-['cleanup_connections', 'current_user', 'last_activity', 'lockout_time', 'login_attempts', 'max_attempts', 'safe_auth_check', 'session_timeout']

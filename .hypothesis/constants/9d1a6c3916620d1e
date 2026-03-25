@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/ai/ai_detector/features/predictive_analytics.py
-# hypothesis_version: 6.151.9
-
-[0.5, 0.8, 100, 'avg_ai_score', 'avg_submission_hour', 'avg_word_count', 'error', 'features_used', 'high', 'insufficient_data', 'low', 'max_ai_score', 'medium', 'risk_level', 'risk_score', 'submission_count', 'unknown', 'violations']

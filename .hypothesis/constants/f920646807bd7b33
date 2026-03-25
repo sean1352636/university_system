@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/library/analytics.py
-# hypothesis_version: 6.151.9
-
-[150, 200, 300, '#2ecc71', '#3498db', '#95a5a6', '#9b59b6', '#e74c3c', '#f39c12', '*.*', '*.xlsx', '.xlsx', '1.0', '1200x800', 'All Books', 'All files', 'Arial', 'Author', 'Available', 'Books by Category', 'Categories', 'Category', 'Checked Out', 'Circulation', 'Collection Overview', 'Count', 'Courier', 'Date', 'Excel files', 'Export Full Report', 'Loan Count', 'Loans', 'Metric', 'Most Active Users', 'Overdue', 'Recently Added Books', 'Reserved', 'SELECT * FROM books', 'Statistics', 'Title', 'Total', 'Total Books', 'Total Loans', 'Unavailable', 'User Activity', 'User ID', 'available', 'bold', 'checked_out', 'common.error', 'common.success', 'end', 'headings', 'nsew', 'openpyxl', 'overdue', 'status', 'white', '━', '🔄 Refresh Overview']

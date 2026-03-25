@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/grading/common_utilities.py
-# hypothesis_version: 6.151.9
-
-['\nSelect Assessment:', ' FROM [', ', [', ': ', 'PRAGMA table_info([', 'SELECT ', '[', ']', '] DESC LIMIT 100', '] ORDER BY [', '])', '], [', 'assessment', 'assessment_date', 'assessment_id', 'assessment_name', 'assessments', 'assignments', 'column', 'created_at', 'date', 'date_col', 'due_date', 'exam_date', 'exam_id', 'exam_name', 'exams', 'exit', 'id', 'id_col', 'name', 'name_col', 'q', 'quit', 'table', 'test_date', 'test_id', 'test_name', 'tests', 'title']

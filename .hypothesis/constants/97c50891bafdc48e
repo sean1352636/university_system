@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/grade_tracking_management_gui/competency.py
-# hypothesis_version: 6.151.9
-
-['common.error', 'manage_competencies', 'manage_grades', 'view_risk_analysis']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/commerce/services/shop_management/database.py
-# hypothesis_version: 6.151.9
-
-[0.0, 0.2, 4.99, 7.99, 9.99, 10.0, 12.99, 14.99, 15.0, 15.99, 16.99, 19.99, 20.0, 29.99, 34.99, '%Y-%m-%d %H:%M:%S', ',', '?', 'Accessories', 'Baseball Cap', 'Bulk Purchase', 'Clothing', 'Clothing Sale', 'Coffee Mug', 'D001', 'D002', 'D003', 'Electronics', 'Keychain', 'Laptop Bag', 'Notebook Pack', 'P001', 'P002', 'P003', 'P004', 'P005', 'P006', 'P007', 'P008', 'P009', 'P010', 'Pen Set', 'Shop Manager role', 'Stationery', 'Student Discount', 'USB Drive', 'University Hoodie', 'University T-Shirt', 'Water Bottle', 'admin', 'all', 'conn', 'id', 'make_purchase', 'manage_discounts', 'manage_inventory', 'manage_products', 'percentage', 'permission_id', 'permission_name', 'role_id', 'role_name', 'shop', 'shop_manager', 'staff', 'student', 'view_products']

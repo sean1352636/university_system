@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/operations/corporate.py
-# hypothesis_version: 6.151.9
-
-[1000, '#333333', '#e74c3c', '#ecf0f1', '#ffffff', '+ Add Account', '.', '10', '1000', '450x400', 'Account created!', 'Balance', 'Card.TFrame', 'Company', 'Company:*', 'Contact', 'Contact:*', 'Credit', 'Credit Limit:', 'Discount', 'Discount %:', 'Email', 'Email:*', 'Helvetica', 'ID', 'Main.TFrame', 'Phone:', 'Status', 'Subtitle.TLabel', 'Success.TButton', '_', 'bold', 'both', 'cinema.btn.create', 'company', 'contact', 'credit', 'discount', 'email', 'end', 'headings', 'left', 'phone', 'right', 'vertical', 'w', 'x', 'y']

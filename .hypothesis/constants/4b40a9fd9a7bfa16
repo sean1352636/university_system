@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/ai/university_chatbot/voice_interface.py
-# hypothesis_version: 6.151.9
-
-[0.3, 0.5, 0.8, 3.0, 5.0, 500, 1024, 16000, 'DISPLAY', 'Stopped listening', 'WAYLAND_DISPLAY', 'channels', 'chunk_size', 'defaultSampleRate', 'devices', 'disabled', 'enabled', 'error', 'format', 'index', 'maxInputChannels', 'message', 'name', 'prev_audio', 'pyaudio', 'sample_rate', 'silence_limit', 'speech_recognition', 'status', 'stop listening', 'success', 'temp_audio.wav', 'test_recording', 'threshold', 'wb']

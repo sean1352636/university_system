@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/academic_calendar/web_api.py
-# hypothesis_version: 6.151.9
-
-[400, 401, 403, 500, 5000, ',', '/', '/api/calendar/view', '/api/events', 'APP_ENV', 'Academic', 'Authorization', 'Bearer ', 'CORS_ALLOWED_ORIGINS', 'GET', 'JSON data required', 'POST', 'academic_year', 'api', 'count', 'data', 'date', 'date_end', 'date_start', 'description', 'dev', 'development', 'end_date', 'error', 'event_type', 'events', 'local', 'localhost', 'name', 'production', 'semester', 'start_date', 'success']

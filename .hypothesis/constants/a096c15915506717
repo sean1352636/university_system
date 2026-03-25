@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/carrental/services/carrental_core.py
-# hypothesis_version: 6.151.9
-
-[' = ?', ' AND category = ?', '%H:%M', '%Y%m%d%H%M%S', '%Y-%m-%d', ', ', 'active', 'automatic', 'available', 'cancelled', 'car_rental', 'color', 'column', 'compact', 'completed', 'convertible', 'created_by', 'customer_email', 'customer_phone', 'deposit_amount', 'economy', 'electric', 'features', 'fuel_type', 'fullsize', 'hybrid', 'insurance_fee', 'insurance_info', 'luxury', 'maintenance', 'midsize', 'mileage', 'minivan', 'overdue', 'petrol', 'pickup', 'pickup_location', 'rental', 'rented', 'reserved', 'return_location', 'seats', 'suv', 'transmission', 'unavailable']

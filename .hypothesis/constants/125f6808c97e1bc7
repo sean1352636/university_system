@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/staff_hr/services/managers/directory_manager.py
-# hypothesis_version: 6.151.9
-
-[' = ?', ' AND ', ' WHERE ', ' WHERE hours_id = ?', ', ', 'academic', 'category', 'column', 'create', 'day_of_week', 'delete', 'end_time', 'expertise', 'expertise_area', 'expertise_id', 'hours_id', 'intermediate', 'is_by_appointment', 'is_public', 'keywords', 'location', 'office_hours', 'proficiency', 'profile', 'semester', 'sp.department = ?', 'staff_expertise', 'staff_office_hours', 'start_time', 'update', 'updated_fields', 'user_id', 'virtual_link']

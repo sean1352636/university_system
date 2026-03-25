@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/layout/_payment_plans.py
-# hypothesis_version: 6.151.9
-
-[100, 120, '500x400', ':', 'Arial', '_', 'biweekly', 'bold', 'both', 'common.error', 'common.success', 'danger', 'end', 'ew', 'frequency', 'headings', 'horizontal', 'installments', 'left', 'monthly', 'ns', 'nsew', 'payment_plans', 'plan_id', 'quarterly', 'readonly', 'right', 'secondary', 'start_date', 'status', 'student_id', 'success', 'total_amount', 'values', 'vertical', 'w', 'warning', 'weekly', 'white', 'x']

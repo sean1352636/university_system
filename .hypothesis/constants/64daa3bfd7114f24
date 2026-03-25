@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/reporting/financial_reports/alerts.py
-# hypothesis_version: 6.151.9
-
-[85.0, 1000.0, 5000.0, 10000.0, 50000.0, 100, '%Y-%m-%d', 'ANOMALY_DETECTED', 'CASH_FLOW_WARNING', 'COLLECTION_RATE_LOW', 'DAILY_PAYMENTS_LOW', 'admin@university.edu', 'amount', 'cash_flow_warning', 'collected', 'collection_rate_min', 'current_rate', 'daily_payment_min', 'daily_total', 'date', 'overdue_balance_max', 'payment_method', 'student_id', 'student_name', 'threshold', 'total']

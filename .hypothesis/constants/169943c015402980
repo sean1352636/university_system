@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/gym/services/__init__.py
-# hypothesis_version: 6.151.9
-
-['CLASS_TYPES', 'ClassManager', 'EquipmentManager', 'MEMBERSHIP_TYPES', 'MembershipManager', 'PTSessionManager', 'PT_SESSION_FEES', 'ReportManager', 'TransactionManager', 'init_gym_db']

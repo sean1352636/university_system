@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/staff_hr/gui/validators.py
-# hypothesis_version: 6.151.9
-
-['#ffcccc', '%Y-%m-%d', '1.0', 'Amount', 'Date', 'Email', 'End Date', 'Rating', 'Selection', 'Start Date', 'Validation Error', 'Value', '[$,]', '^\\d{4}-\\d{2}-\\d{2}$', '_', 'delete', 'end', 'end-1c', 'field_name', 'focus_set', 'func', 'integer', 'key', 'kwargs', 'max_length', 'max_rating', 'max_value', 'min_length', 'min_rating', 'min_value', 'number', 'required', 'white', 'widget']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/commerce/gui/cafe_inventory.py
-# hypothesis_version: 6.151.9
-
-[100, 120, 150, 200, 250, '800x600', 'Category', 'Date', 'ID', 'Item', 'Notes', 'Quantity', 'Status', 'Stock', 'Type', 'cafe.columns.change', 'cafe.columns.date', 'cafe.columns.id', 'cafe.columns.item', 'cafe.columns.notes', 'cafe.columns.status', 'cafe.columns.type', 'cafe.inventory.good', 'cafe.tab_inventory', 'common.error', 'common.success', 'common.warning', 'headings', 'values']

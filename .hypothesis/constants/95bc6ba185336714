@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/email/email_queue_scheduler_gui.py
-# hypothesis_version: 6.151.9
-
-[100, 150, '%02.0f', '%Y-%m-%d %H:%M:%S', ',', '00', '09', '1.0', '1000x700', '300x100', ':', 'Arial', 'ID', '__main__', 'bold', 'cancelled', 'common.confirm', 'common.error', 'common.info', 'common.success', 'common.warning', 'email_queue.details', 'email_queue.title', 'failed', 'green', 'headings', 'pending', 'readonly', 'red', 'sent', 'values', 'yyyy-mm-dd']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/academic_calendar/validators.py
-# hypothesis_version: 6.151.9
-
-[255, 1000, '\x00', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '--', '.', '. ', '..', '/', '/..', '/\\*.*?\\*/', '@', 'Invalid URL format', 'Invalid file path', '[^a-zA-Z0-9\\s\\.\\-_]', '\\', '_', 'data:', 'http', 'https', 'javascript:', 'on\\w+\\s*=', 'unnamed_file', '~']

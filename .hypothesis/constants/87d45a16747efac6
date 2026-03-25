@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/gui/trip_management_gui/trip_dialogs.py
-# hypothesis_version: 6.151.9
-
-[1.0, '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '0.0', '50', ':', 'Arial', 'Close', 'Cost per person (£):', 'Cost:', 'Create New Trip', 'Created By:', 'Created:', 'Description:', 'Destination:', 'Email', 'End Date:', 'Error', 'ID:', 'Max Participants:', 'N/A', 'Name', 'Name:', 'No Selection', 'None', 'Payment Status', 'Registration Date', 'Select Trip', 'Select a trip:', 'Start Date:', 'Status:', 'Success', 'Trip Details', 'Trip Information', 'Trip Name:', 'Trip not found.', 'Unknown', 'Update Trip', 'Updated:', 'Validation Error', 'bold', 'cancelled', 'completed', 'email', 'end', 'full', 'headings', 'id', 'manage_trips', 'name', 'open', 'payment', 'planning', 'readonly', 'registration', '£0.00']

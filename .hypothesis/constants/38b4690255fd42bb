@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/email/email_gui/__init__.py
-# hypothesis_version: 6.151.9
-
-['AboutDialog', 'AdvancedSearchDialog', 'AlumniWelcomeDialog', 'BulkEmailDialog', 'ChatRoomWindow', 'ComposeEmailDialog', 'ComposeMessageDialog', 'ConfigManager', 'CreateChatRoomDialog', 'EmailConfigDialog', 'EmailDetailsDialog', 'EmailManagerGUI', 'EmailReportsDialog', 'ExportDataDialog', 'HelpDialog', 'PasswordResetDialog', 'ProgressDialog', 'ReplyMessageDialog', 'SLAAlertDialog', 'ScheduleEmailDialog', 'SingletonApp', 'StatusNotification', 'SystemHealthDialog', 'TemplateEditDialog', 'TemplateEditor', 'ThemeManager', 'handle_gui_error', 'integrate_with_cli', 'main', 'run_gui_mode']

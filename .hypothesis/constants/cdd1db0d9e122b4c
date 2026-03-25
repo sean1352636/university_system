@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/election_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' ORDER BY position', ' ORDER BY votes DESC', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/elections', '/candidates', '/polls', '/polls/<int:poll_id>', '/representatives', '/vote', 'GET', 'POST', 'Poll is not active', 'SELECT * FROM polls', 'Vote recorded', 'active', 'candidate_id', 'create', 'department', 'department = ?', 'description', 'election_candidate', 'election_candidates', 'election_id', 'election_id = ?', 'election_vote', 'elections', 'end_date', 'general', 'items', 'manifesto', 'max_votes_per_user', 'message', 'option_id', 'options', 'poll', 'poll_type', 'poll_vote', 'polls', 'start_date', 'status', 'status = ?', 'student_id', 'sub', 'title', 'total', 'user_id', 'view']

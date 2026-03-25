@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/charity_shop_cli/__init__.py
-# hypothesis_version: 6.151.9
-
-['add_item', 'add_location', 'apply_discount', 'archive_old_items', 'bulk_export_items', 'bulk_import_items', 'create_sale_bundle', 'customer_wishlist', 'delete_item', 'donor_database', 'get_all_locations', 'get_all_staff', 'get_all_stock', 'get_archived_items', 'get_bundles', 'get_customer', 'get_layaways', 'get_revenue_summary', 'get_stock_summary', 'gift_card_management', 'init_charity_shop_db', 'layaway_system', 'mark_as_available', 'mark_as_sold', 'process_refund', 'record_donation', 'register_customer', 'register_staff', 'sales_pricing_cli', 'search_stock', 'set_auth', 'set_item_barcode', 'set_low_stock_alert', 'shift_scheduling', 'staff_operations_cli', 'tax_deduction_report', 'update_item', 'view_low_stock_items']

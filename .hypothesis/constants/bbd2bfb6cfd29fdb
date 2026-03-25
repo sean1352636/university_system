@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/housing_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' = ?', ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', ', ', '/api/housing', '/applications', '/assignments', '/buildings', '/rooms', '/rooms/<room_id>', 'GET', 'POST', 'PUT', 'building_id', 'building_id = ?', 'create', 'housing', 'housing_application', 'housing_applications', 'housing_assignments', 'housing_buildings', 'housing_room', 'housing_rooms', 'items', 'notes', 'preferred_room_type', 'review_date', 'reviewed_by', 'special_requirements', 'status', 'status = ?', 'student_id', 'student_id = ?', 'sub', 'total', 'update', 'updated_at = ?', 'view']

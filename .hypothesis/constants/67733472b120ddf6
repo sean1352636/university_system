@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/helpdesk/tickets/search.py
-# hypothesis_version: 6.151.9
-
-[100, 120, '\nPriority filter:', '\nSaved Searches:', '\nStatus filter:', ' AND ', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '0. All categories', '1. All priorities', '1. All statuses', '1=1', '2', '2. Low only', '2. Open only', '3', '3. In progress only', '3. Medium only', '4', '4. High only', '4. Resolved only', '5', '5. Closed only', '=', 'Academic Inquiry', 'Account Access', 'Enter search name: ', 'Financial Services', 'Other', 'Technical Support', 'Unassigned', 'assigned_user', 'assignee', 'category', 'closed', 'end_date', 'high', 'id', 'in progress', 'low', 'medium', 'open', 'priority', 'resolved', 'start_date', 'status', 't.category = ?', 't.priority = ?', 't.status = ?', 't.user_id = ?', 'text', 'u2.username = ?', 'view_all_tickets', 'y']

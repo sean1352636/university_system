@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/career_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '%Y-%m-%d', '/api/career', '/applications', '/internships', '/jobs', '/jobs/<int:job_id>', 'GET', 'POST', 'applicant_id', 'application_method', 'career', 'category', 'category = ?', 'company_name', 'contact_email', 'cover_letter', 'create', 'experience_level', 'expiry_date', 'full-time', 'internships', 'is_active = 1', 'items', 'ja.applicant_id = ?', 'ja.job_id = ?', 'job_application', 'job_applications', 'job_description', 'job_id', 'job_posting', 'job_postings', 'job_title', 'job_type', 'job_type = ?', 'location', 'posted_by', 'requirements', 'resume_path', 'salary_range', 'search', 'sub', 'total', 'view']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/management/screening_management.py
-# hypothesis_version: 6.151.9
-
-[150, 200, ' - ', '#333333', '#e74c3c', '#ecf0f1', '#ffffff', '%Y-%m-%d', '.', '1', '10:00', '13:00', '14.99', '16:00', '19:00', '22:00', '400x300', '500x400', 'A', 'Add Screening', 'All Movies', 'Available', 'B', 'Booked', 'C', 'Card.TFrame', 'D', 'Danger.TButton', 'Date/Time', 'E', 'Edit Screening', 'F', 'G', 'H', 'Helvetica', 'ID', 'Main.TFrame', 'Movie', 'Price', 'Primary.TButton', 'Screen', 'Screening cancelled', 'Screening updated!', 'Secondary.TButton', 'Status', 'Subtitle.TLabel', 'Success', 'Success.TButton', '_', 'active', 'all', 'bold', 'both', 'cancelled', 'cinema.buttons.save', 'cinema.common.error', 'end', 'headings', 'left', 'right', 'standard', 'values', 'vertical', 'vip', 'w', 'x', 'y']

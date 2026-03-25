@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/dentist/__init__.py
-# hypothesis_version: 6.151.9
-
-['AppointmentManager', 'DENTIST_STAFF', 'DentistGUI', 'PatientManager', 'PrescriptionManager', 'ReportManager', 'TREATMENT_TYPES', 'TransactionManager', 'TreatmentManager', 'init_dentist_db', 'launch_dentist_gui']

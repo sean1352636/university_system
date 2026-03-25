@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/parent_portal/library.py
-# hypothesis_version: 6.151.9
-
-[100, 120, 150, 200, '%Y-%m-%d', ')', '800x600', 'Account Summary', 'Arial', 'Author', 'Checked Out', 'Close', 'Due Date', 'Error', 'ID: ', 'Library Account', 'Library Information', 'Load Library Info', 'Reading History', 'Returned', 'Select Student:', 'Status', 'Title', 'Title.TLabel', 'View Reading History', 'bold', 'headings', 'readonly', 'red', 'values', 'w']

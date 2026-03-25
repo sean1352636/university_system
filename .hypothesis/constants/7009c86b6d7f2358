@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/database/schemas/admin_support_schemas.py
-# hypothesis_version: 6.151.9
-
-['Course Evaluation', 'audit', 'auth', 'commerce', 'conn', 'documents', 'library', 'other', 'parent', 'schemas.init_error', 'schemas.initializing', 'support']

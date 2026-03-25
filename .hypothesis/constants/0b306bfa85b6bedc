@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/assignment_system/assignment_manager/email_notifications.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d %H:%M:%S', '1.0', '500x400', '600x500', '700x500', 'Cancel', 'Close', 'Custom Message', 'Custom Recipients', 'Email Details', 'Email Options', 'Email Type:', 'Error', 'Info', 'Message', 'Message:', 'Preview Recipients', 'Recipients', 'Send Emails', 'Subject:', 'Success', 'TkDefaultFont', 'Warning', '[Student Name]', 'assignment_due_date', 'assignment_new', 'assignment_title', 'bold', 'both', 'custom', 'days_overdue', 'disabled', 'due_date', 'email', 'enrolled', 'first_name', 'late_submissions', 'left', 'module_code', 'module_name', 'name', 'new', 'not_submitted', 'overdue', 'right', 'student_id', 'upcoming', 'values', 'w', 'x']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/parent_portal/analytics.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d %H:%M:%S', '=', 'Above', 'At', 'Below', 'Invalid choice.', 'PRAGMA table_info([', 'QR Code data:', 'SELECT * FROM [', 'Trend: Declining ↘️', 'Trend: Improving ↗️', 'Trend: Stable ➡️', '] = ?', '] WHERE [', '])', 'activities', 'assignments', 'attendance', 'behavior', 'column', 'course', 'data', 'data_export', 'declining', 'export_date', 'fees', 'grades', 'homework_assignments', 'id', 'improving', 'library', 'library_accounts', 'meal_transactions', 'medical', 'minimal', 'name', 'parent', 'parent_id', 'pickup_authorization', 'role', 'student_activities', 'student_behavior', 'student_fees', 'student_grades', 'student_id', 'student_info', 'student_medical_info', 'timestamp', 'transactions', 'type', 'view_analytics', '↗️', '↘️', '➡️']

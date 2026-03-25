@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/gui/medical_accommodation/dialogs/accommodation_dialog.py
-# hypothesis_version: 6.151.9
-
-[1.0, '%Y-%m-%d', '+%d+%d', '500x600', 'Accommodation Type:', 'Cancel', 'Description:', 'End Date:', 'Error', 'Notes:', 'Save', 'Start Date:', 'Status:', 'Student is required', 'Student:', 'accommodation_type', 'active', 'description', 'end', 'end_date', 'ew', 'expired', 'notes', 'nw', 'pending', 'start', 'start_date', 'status', 'student_id', 'suspended', 'values', 'w', 'yyyy-mm-dd']

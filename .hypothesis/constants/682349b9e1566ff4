@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/assignments/analytics/analytics.py
-# hypothesis_version: 6.151.9
-
-[100, '\nAnalytics Dashboard', '\nGrade Distribution:', '%Y%m%d_%H%M%S', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', '=', 'Assignment', 'Avg Grade', 'Due Date', 'Graded', 'Late', 'Max Grade', 'Min Grade', 'Module', 'N/A', 'Submissions', 'Unknown report type', 'average_grade', 'count', 'date', 'exports', 'graded_count', 'late_submissions', 'max', 'mean', 'median', 'min', 'module_performance', 'on_time_submissions', 'std_dev', 'student_summary', 'submission_count', 'submission_rate', 'total_students', 'total_submissions', 'view_all_submissions', 'view_assignments', 'w', 'y']

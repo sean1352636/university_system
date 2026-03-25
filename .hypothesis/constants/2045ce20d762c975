@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/services/vitals.py
-# hypothesis_version: 6.151.9
-
-[18.5, 96.0, 100.4, 100, 140, 365, 703, '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', '.', '1', '2', '3', '4', '5', 'id', 'record_vital_signs', 'vital_signs']

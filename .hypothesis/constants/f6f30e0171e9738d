@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/logging/log_management/cli/views.py
-# hypothesis_version: 6.151.9
-
-[100, 365, '\nTop Actions:', '\n📊 ACTIVITY REPORT', '\n🔍 SEARCH LOGS', '%Y-%m-%d', '-', '1', '2', '3', '4', '4. Return', '=', 'Action (optional): ', 'Current Settings:', 'Invalid number', 'Module (optional): ', 'action', 'activity_by_action', 'date_from', 'date_to', 'enable_alerts', 'enable_real_time', 'error', 'module', 'most_active_users', 'n', 'retention_days', 'status', 'success', 'timestamp', 'username', 'y', '✅', '❌']

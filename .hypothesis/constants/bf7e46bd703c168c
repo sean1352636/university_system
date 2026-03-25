@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/records/records/templates.py
-# hypothesis_version: 6.151.9
-
-['1', '2', '3', '3. Edit Template', '4', '5', '5. Import Templates', '6', '7', '7. Shared Templates', '8', '9', 'Annual Physical', 'Annual Physical Exam', 'General Medical', 'Injury Assessment', 'Injury Treatment', 'Mental Health', 'Sick Visit', 'Vaccination', 'Vaccination Record', 'description', 'q', 'record_type', 'y']

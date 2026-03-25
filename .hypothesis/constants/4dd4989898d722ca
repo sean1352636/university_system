@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/plagiarism_main_gui/common.py
-# hypothesis_version: 6.151.9
-
-[1.0, 100, 120, 200, '%H:%M:%S', '<Configure>', '<Enter>', '<Leave>', '<MouseWheel>', 'Admin', 'Administrator', 'EXACT_MATCH', 'HIGH_SIMILARITY', 'MODERATE_SIMILARITY', 'NLTK available', 'NLTK not available', 'Ready', 'Repository Search', 'System', 'TEST_MODULE', 'UNKNOWN', 'Unknown', 'User', 'admin', 'admin@university.edu', 'all', 'check_date', 'common.close', 'common.results', 'common.view_details', 'content', 'corpora/stopwords', 'email', 'filename', 'first_name', 'id', 'indeterminate', 'last_name', 'logs', 'nltk', 'nw', 'original_paper.txt', 'permissions', 'punkt', 'return_to_main_menu', 'roles', 'similarity_score', 'status', 'stopwords', 'text_files', 'textract', 'textract available', 'title', 'tokenizers/punkt', 'txt', 'units', 'username', 'users', 'utf-8', 'w']

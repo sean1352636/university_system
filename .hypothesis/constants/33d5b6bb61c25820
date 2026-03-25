@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/gui/trip_management_gui/report_dialogs.py
-# hypothesis_version: 6.151.9
-
-[1.0, ' - ', '%H:%M:%S', '*.*', '*.pdf', '*.txt', '.pdf', '.txt', '400x300', '900x700', '=', 'All files', 'Arial', 'Cancel', 'Close', 'Courier', 'Email Error', 'Email Not Available', 'Email Sent', 'Error', 'Export Error', 'Export as PDF', 'Export as TXT', 'FINANCIAL_REPORT', 'No Admins Found', 'No Selection', 'Options:', 'PARTICIPANT_LIST', 'PDF', 'PDF Not Available', 'PDF files', 'Permission Denied', 'Report Content', 'Report Error', 'Reports Unavailable', 'Select format:', 'Select trip:', 'Send', 'Send to Admin', 'Success', 'TRIP_SUMMARY', 'TXT', 'Text (TXT)', 'Text files', '_', 'admin_name', 'bold', 'disabled', 'email', 'generated_at', 'name', 'parent', 'readonly', 'report_content', 'report_title', 'separator', 'specific_trip_var', 'utf-8', 'values', 'view_trip_reports', 'w']

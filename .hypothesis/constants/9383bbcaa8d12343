@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/admin/mailbox.py
-# hypothesis_version: 6.151.9
-
-['READ', 'UNREAD', 'Unknown', 'assignment_id', 'content', 'deletion_status', 'error', 'id', 'is_archived', 'is_deleted', 'is_deleted_by_sender', 'is_read', 'limit', 'm', 'messages', 'not_deleted', 'page', 'read_at', 'recipient', 'recipient_id', 'reply_to', 'sender', 'sender_id', 'sent_at', 'subject', 'total_count', 'total_pages', 'unread_count', 'username']

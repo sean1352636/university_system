@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/logging/log_management/cli/retention_ops.py
-# hypothesis_version: 6.151.9
-
-[1000, 10000, '%Y-%m-%d', '1', '2', '3', '3. Manual archive', '4', '4. Manual cleanup', '5. Return', '=', 'Choose option: ', 'Cleanup cancelled', 'Continue? (y/n): ', 'DELETE', 'Invalid number', 'auto_archive_days', 'date_from', 'date_to', 'hash', 'retention_days', 'y']

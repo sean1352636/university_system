@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/housing/services/housing_accommodation/buildings.py
-# hypothesis_version: 6.151.9
-
-[' $', ' (y/n): ', '%Y-%m-%d %H:%M:%S', '-', '1. ', '2. ', '3. ', '4. ', '5. ', '6. ', ':', ': ', '=', '?', 'Apartment', 'Available', 'BLD', 'Creating new rooms', 'Deleting building', 'Double', 'Single', 'Studio', 'Suite', 'Triple', 'common.yes', 'common.yes_no_prompt', 'housing', 'housing.room.create', 'view_accommodations', 'y']

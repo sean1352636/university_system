@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/enhanced_reporting/standalone/chart_builders.py
-# hypothesis_version: 6.151.9
-
-[0.3, 0.7, 2.0, 2.5, 100, 300, '#1f77b4', '#66B2FF', '#99FF99', '#FF9999', '#ff7f0e', '%1.1f%%', '%Y-%m-%d', '--', 'Age Distribution', 'Age Group', 'Count', 'Course', 'Course Distribution', 'Date', 'Gender Distribution', 'Numeric Analysis:\n', 'Registration Trends', 'Registrations', 'Student Count', 'Trend', '_', 'age_distribution', 'bold', 'bottom', 'center', 'course_distribution', 'data-table', 'default', 'enhanced-table', 'float64', 'fontsize', 'gender_distribution', 'int64', 'o', 'object', 'red', 'registration_trends', 'right', 'seaborn-v0_8', 'tight', 'viridis', 'white']

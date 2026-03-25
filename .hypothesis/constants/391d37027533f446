@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/gui/parking_management/main_gui.py
-# hypothesis_version: 6.151.9
-
-[0.0, 1.0, 600, 800, 3000, '--console', '1200x800', 'About', 'All data refreshed', 'Interface', 'Payments & Refunds', 'Switch to Console', 'Unknown', '__main__', 'admin', 'administrator', 'common.error', 'common.exit', 'common.ready', 'current_user', 'faculty', 'first_name', 'id', 'last_name', 'main_menu_button', 'menu', 'menu.file', 'menu.help', 'menu.tools', 'ne', 'parking.menu.about', 'parking.menu.reports', 'parking.tabs.permits', 'parking.title', 'permissions', 'role', 'staff', 'student', 'user', 'username']

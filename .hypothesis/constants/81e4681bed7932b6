@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/commerce/gui/restaurant_management_gui/core/main_gui.py
-# hypothesis_version: 6.151.9
-
-[0.0, 1.0, 200, '!pressed', '#f0f0f0', '1200x800', 'Arial', 'Custom.TButton', 'DATABASE_FILE', 'Heading.TLabel', 'Title.TLabel', 'Unknown', 'User', '_parent_root', 'bold', 'both', 'clam', 'common.error', 'common.navigation', 'current_user', 'customers', 'email', 'id', 'inventory', 'left', 'main_menu_button', 'manager', 'menu', 'menu.about', 'menu.backup_database', 'menu.file', 'menu.help', 'menu.language', 'ne', 'orders', 'permissions', 'place_order', 'pressed', 'refunds', 'reports', 'restaurant_manager', 'restaurant_window', 'role', 'solid', 'staff', 'student_id', 'tables', 'user', 'username', 'x', 'y', '🍽️  Menu Items', '👔  Staff', '👥  Customers', '💰  Refunds', '📊  Reports', '📋  Orders', '📝  Place Order', '📦  Inventory', '🪑  Tables']

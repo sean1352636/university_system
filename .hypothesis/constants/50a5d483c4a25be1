@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/student_support/operations/merge.py
-# hypothesis_version: 6.151.9
-
-['\n🔗 MERGE TICKETS', '%Y-%m-%d %H:%M:%S', ',', '=', 'Reason for merge: ', 'admin', 'id', 'role', 'staff', 'y']

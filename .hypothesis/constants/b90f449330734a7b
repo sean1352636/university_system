@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/database.py
-# hypothesis_version: 6.151.9
-
-[3600, 'ANALYZE', 'DB_PATH', 'MAIN_DIR', 'PRAGMA journal_mode', 'PROJECT_ROOT', 'SimpleDBManager', 'USE_AUTH_DB', 'VACUUM', '_DB_READY', '_db_manager', '_db_manager_lock', '_ensure_db_ready', 'ensure_db_directory', 'ensure_parent_dir', 'execute_db_operation', 'get_db_manager', 'initialize_email_db', 'ok', 'optimize_database', 'safe_db_operation', 'wal']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/ai/university_chatbot.py
-# hypothesis_version: 6.151.9
-
-['AUTH_AVAILABLE', 'AdminPanel', 'AnalyticsService', 'AuthenticatedSession', 'BackgroundScheduler', 'ConversationContext', 'LIBRARIES_AVAILABLE', 'MinimalChatbot', 'NotificationChannel', 'NotificationService', 'QueryType', 'StudentProfile', 'UniversityChatbot', 'UserAuth', 'UserRole', 'UserSession', 'VoiceInterface', 'get_current_user']

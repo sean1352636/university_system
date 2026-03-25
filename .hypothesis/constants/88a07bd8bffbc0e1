@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/student_union/clubs/club_management/media.py
-# hypothesis_version: 6.151.9
-
-[100, '\nYour clubs:', '%Y-%m-%d %H:%M:%S', '-', '.', '0. No event', '1', '1. View recent media', '2', '2. Upload new media', '3', '4', '4. Search media', '5', 'Caption (optional): ', 'Choose an action: ', 'Enter search term: ', 'File path: ', 'General', 'Invalid choice.', 'Invalid selection.', 'avi', 'gif', 'id', 'image', 'jpeg', 'jpg', 'mov', 'mp4', 'png', 'video', 'wmv']

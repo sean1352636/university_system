@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/student_outcomes_gui.py
-# hypothesis_version: 6.151.9
-
-[3.0, 110, 120, 130, 300, '#2196F3', '#4CAF50', '#9E9E9E', '#FF9800', '*.*', '*.csv', '.csv', '0', 'Achieved', 'Achievement Level', 'All files', 'Arial', 'CSV files', 'Category', 'Date Assessed', 'Description', 'Export', 'Export Error', 'Export failed', 'Export to CSV', 'In Progress', 'Learning Outcomes', 'No data to export.', 'Not Started', 'Not assessed', 'Outcome Code', 'Refresh', 'Summary', 'Total Outcomes', 'achieved', 'achievement_level', 'bold', 'category', 'current_user', 'date_assessed', 'description', 'ew', 'gray', 'headings', 'in_progress', 'n', 'no such table', 'not_started', 'ns', 'nsew', 'outcome_code', 'student_id', 'total', 'username', 'utf-8', 'w']

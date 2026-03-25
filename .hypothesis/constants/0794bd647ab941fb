@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/primary_school/modules/domain/academics/homework/services/homework_service.py
-# hypothesis_version: 6.151.9
-
-[' AND class_name = ?', ' AND status = ?', ', ', 'Active', 'Deleted homework: %d', 'Due date is required', 'Pupil ID is required', 'Submission not found', 'Submitted', 'Title is required', 'Updated homework: %d', 'class_name', 'description', 'due_date', 'gold_star', 'good_effort', 'homework_id', 'id', 'keep_trying', 'pupil_id', 'set_by', 'status', 'subject_code', 'submission_id', 'title', 'well_done']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/betting_shop_cli/admin.py
-# hypothesis_version: 6.151.9
-
-[0.0, '\nEnter result: ', '\nEvent name: ', '\nMarket title: ', '\n🎰 CASINO GAMES:', '\n🏆 SPORTS BETTING:', '\n💰 OVERALL:', '\n📅 Events to Settle:', '\n📅 Upcoming Events:', '\n🔮 Open Markets:', 'A', 'B', 'BETTING STATISTICS', 'CREATE SPORTS EVENT', 'Category: ', 'D', 'Draw', 'New odds for draw: ', 'Outcome A: ', 'Outcome B: ', 'SETTLE SPORTS EVENT', 'Sport type: ', 'Team/Player A name: ', 'Team/Player B name: ', 'UPDATE EVENT ODDS', 'V', 'other', 'outcome_a', 'outcome_b', 'username', 'void', 'yes', '❌ Event not found', '❌ Invalid draw odds', '❌ Invalid event ID', '❌ Invalid market ID', '❌ Invalid odds', '❌ Invalid result', '❌ Market not found', '❌ Title required']

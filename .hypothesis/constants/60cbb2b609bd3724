@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/transaction_manager/payments_tab.py
-# hypothesis_version: 6.151.9
-
-[100, 120, '*.*', '*.csv', '.csv', '<Button-3>', 'All files', 'Amount', 'Arial', 'CSV files', 'Date', 'First Name', 'Last Name', 'Method', 'Payment ID', 'Status', 'Student ID', 'amount', 'bold', 'both', 'dark', 'date', 'end', 'ew', 'exists', 'headings', 'horizontal', 'info', 'left', 'method', 'ns', 'nsew', 'payment_id', 'payments', 'right', 'secondary', 'status', 'student_id', 'success', 'vertical', 'w', 'warning', 'white', 'winfo', 'x']

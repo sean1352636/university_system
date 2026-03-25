@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/email_db_utilities.py
-# hypothesis_version: 6.151.9
-
-[30.0, '02:00', '@', 'ANALYZE', 'INTEGER', 'INTEGER DEFAULT 0', 'PRAGMA optimize', 'TEXT', '[^\\w]', 'admin', 'applied', 'applied_at', 'assignment_id', 'attachment_info', 'attachment_path', 'bcc_recipients', 'bounce_reason', 'cc_recipients', 'clicked_at', 'content', 'created_at', 'delivery_status', 'email_log', 'error', 'error_message', 'failed', 'func', 'ignore', 'info', 'initial_email_schema', 'is_archived', 'is_deleted_by_sender', 'locked', 'message', 'messages', 'migration_name', 'name', 'noreply', 'opened_at', 'read_at', 'recipient_email', 'reply_to', 'rollback', 'scheduled_date', 'scheduled_emails', 'scheduled_for', 'sender_email', 'sender_name', 'skipped', 'status', 'system', 'template_name', 'template_vars', 'university', 'version', 'warning']

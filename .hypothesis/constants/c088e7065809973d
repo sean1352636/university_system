@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/equipment_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '/<int:equipment_id>', '/api/equipment', '/assets', '/checkouts', '/inventory', '/maintenance', '/rentals', 'GET', 'POST', 'asset_type', 'asset_type = ?', 'borrower_id', 'borrower_id = ?', 'building_id', 'building_id = ?', 'checkout_date', 'club_id', 'condition_out', 'cost', 'create', 'description', 'equipment', 'equipment_checkout', 'equipment_checkouts', 'equipment_id', 'equipment_item', 'equipment_rentals', 'equipment_type', 'equipment_type = ?', 'expected_return', 'facility_assets', 'inventory', 'item_id', 'item_id = ?', 'items', 'maintenance_type', 'notes', 'performed_by', 'performed_date', 'search', 'status', 'status = ?', 'sub', 'total', 'view']

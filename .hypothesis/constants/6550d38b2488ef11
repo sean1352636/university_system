@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/community/waitlist.py
-# hypothesis_version: 6.151.9
-
-[100, 120, 130, 150, ' WHERE w.status = ?', '#333333', '#ffffff', '-', '.', 'Card.TFrame', 'Created', 'Danger.TButton', 'Email', 'ID', 'Main.TFrame', 'Movie', 'Primary.TButton', 'Screening', 'Seats', 'Status', 'Subtitle.TLabel', 'Success.TButton', '_', 'all', 'both', 'cinema.btn.filter', 'end', 'expired', 'fulfilled', 'headings', 'left', 'notified', 'right', 'values', 'vertical', 'waiting', 'x', 'y']

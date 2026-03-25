@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/integrity_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' = ?', ' AND ', ' WHERE ', ' WHERE id = ?', '%Y-%m-%d %H:%M:%S', ', ', '/ai-detection', '/api/integrity', '/forensic', '/forensic/<case_id>', '/misconduct', '/plagiarism', 'GET', 'POST', 'PUT', 'ai_detection_results', 'course', 'create', 'forensic_case', 'forensic_cases', 'hearing_date', 'hearing_location', 'hearing_time', 'integrity', 'misconduct_case', 'misconduct_cases', 'notes', 'plagiarism_results', 'priority', 'priority = ?', 'ruling', 'ruling_rationale', 'severity', 'severity = ?', 'status', 'status = ?', 'student_email', 'student_id', 'student_id = ?', 'student_name', 'sub', 'update', 'view', 'violation_type']

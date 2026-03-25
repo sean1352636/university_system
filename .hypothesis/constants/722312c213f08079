@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/module_scheduling/constants.py
-# hypothesis_version: 6.151.9
-
-['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', 'Computer Lab', 'Friday', 'Lab', 'Lecture', 'Lecture Hall', 'Monday', 'Other', 'Seminar', 'Seminar Room', 'Thursday', 'Tuesday', 'Tutorial', 'Tutorial Room', 'Wednesday', 'Workshop', 'Workshop Room']

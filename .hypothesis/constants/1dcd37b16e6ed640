@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/gui/student_union_gui/competitions/competition_admin.py
-# hypothesis_version: 6.151.9
-
-[1.0, 150, '%Y-%m-%d', '10', '700x650', '800x600', '<<ComboboxSelected>>', 'Academic', 'Arial', 'Auto-Calculate Ranks', 'Cancel', 'Close', 'Club ID', 'Club Name', 'Community Service', 'Competition Name:', 'Competition Type:', 'Create Competition', 'Creative', 'Cultural', 'Current Score', 'Description:', 'End Date:', 'Error', 'New Score:', 'Other', 'Participating Clubs', 'Permission Denied', 'Please log in first.', 'Prizes:', 'Rank', 'Rank:', 'Refresh', 'Rules & Criteria:', 'Select Competition', 'Sports', 'Start Date:', 'Success', 'TBD', 'Technology', 'Update Score', 'Update Selected', 'Warning', 'bold', 'both', 'end', 'left', 'manage_all_clubs', 'readonly', 'right', 'tree headings', 'values', 'vertical', 'w', 'x', 'y']

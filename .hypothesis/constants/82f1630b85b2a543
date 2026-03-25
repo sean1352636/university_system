@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/facilities/assets/services/asset_service.py
-# hypothesis_version: 6.151.9
-
-[' AND category = ?', ' AND status = ?', ' ORDER BY name', ', ', 'IT', 'assigned_to', 'audio_visual', 'available', 'category', 'condition', 'damaged', 'department', 'description', 'disposed', 'fair', 'furniture', 'good', 'in_repair', 'in_use', 'location', 'lost', 'musical_instruments', 'name', 'new', 'notes', 'other', 'poor', 'science_equipment', 'serial_number', 'sports_equipment', 'status', 'textbooks', 'vehicles', 'write_off']

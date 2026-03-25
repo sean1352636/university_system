@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/special_features/heatmap.py
-# hypothesis_version: 6.151.9
-
-[0.3, 0.6, 0.8, 300, 400, 550, 600, '#1a1a2e', '#27ae60', '#2d5a27', '#333333', '#444444', '#4ecca3', '#555555', '#7f8c8d', '#e74c3c', '#e94560', '#ecf0f1', '#f4a261', '#ffffff', ', ', '.', '0', 'ABCDEFGHIJ', 'Card.TFrame', 'Helvetica', 'High', 'Low', 'Main.TFrame', 'Medium', 'Subtitle.TLabel', 'Very High', '_', 'bold', 'both', 'cinema.labels.screen', 'left', 'w', 'white', 'x']

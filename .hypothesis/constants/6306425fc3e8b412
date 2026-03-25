@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/academic_calendar/events_view.py
-# hypothesis_version: 6.151.9
-
-[100, 110, 130, 150, 200, 220, 350, 365, '#0', '%Y-%m-%d', '...', '500x400', '600x500', '<Button-3>', '<Double-1>', '<KeyRelease>', 'Academic', 'Administrative', 'Arial', 'Date', 'Deadline', 'Description', 'End Date', 'Event', 'Fee', 'Finance', 'Header.TLabel', 'Holiday', 'ID', 'Library', 'Payment', 'Social', 'Sports', 'Students/Staff', 'Trip', 'Type', 'Unknown', 'assignments', 'bold', 'calendar_tree', 'common.close', 'date', 'date_end', 'date_start', 'description', 'end', 'event_date', 'event_name', 'event_type', 'events_tree', 'ew', 'finance', 'full_data', 'id', 'keys', 'library', 'manage_events', 'message', 'name', 'ns', 'nsew', 'recipient_name', 'set_email_content', 'source', 'success', 'text', 'tree headings', 'trip_management', 'values', 'w', '⏰', '⚽', '🎉', '🎊', '🎒', '💰', '💳', '📅', '📋', '📖', '📚']

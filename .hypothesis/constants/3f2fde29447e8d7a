@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/database/data_backup/compression.py
-# hypothesis_version: 6.151.9
-
-['.gz', '.zip', 'bz2', 'format', 'gzip', 'lzma', 'r', 'rb', 'supported', 'w', 'wb', 'zip']

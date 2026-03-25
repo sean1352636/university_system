@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/analytics/enhanced_reporting/predictive.py
-# hypothesis_version: 6.151.9
-
-[0.1, 0.2, 0.3, 0.7, 0.8, 100, 'CS', 'DS', 'age', 'anomalous_students', 'anomaly_rate', 'attendance_count', 'attendance_rate', 'attendance_records', 'avg_grade', 'course', 'course_numeric', 'dropout_risk', 'error', 'feature_importance', 'high_risk_students', 'is_anomaly', 'model_accuracy', 'module_count', 'present_count', 'records', 'risk_score', 'status', 'student_id', 'total_anomalies', 'unique_modules']

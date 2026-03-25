@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/alumni_management/reunions.py
-# hypothesis_version: 6.151.9
-
-[1900, '\nAttendees:', '%Y-%m-%d %H:%M', '%Y-%m-%d %H:%M:%S', '-', '1', '1. Update Details', '2', '2. View Attendees', '3', '3. Cancel Reunion', '====================', 'A', 'Enter your choice: ', 'Graduation Year: ', 'Invalid choice.', 'Reunion Location: ', 'Reunion cancelled.', 'TBD', 'graduation_year', 'id', 'recipient_name', 'reunion_date', 'reunion_description', 'reunion_location', 'y', 'yes']

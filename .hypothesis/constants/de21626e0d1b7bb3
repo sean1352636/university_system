@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/ai/ai_detector/ml/advanced_trainer.py
-# hypothesis_version: 6.151.9
-
-[0.0, 0.1, 0.2, 0.5, 0.7, 1.0, 100, 200, '[.!?]+', '[.,;:!?]', 'a', 'ai_score', 'and', 'as', 'at', 'avg_sentence_length', 'be', 'char_wb', 'character_count', 'confidence', 'do', 'ensemble_score', 'feature_importance', 'for', 'function_word_ratio', 'have', 'he', 'i', 'in', 'isolation_forest', 'it', 'lexical_diversity', 'linguistic', 'max_sentence_length', 'model_scores', 'models', 'models_trained', 'neural_network', 'not', 'of', 'on', 'predict_proba', 'punctuation_density', 'random_forest', 'sentence_length_std', 'style_deviation', 'submission_text', 'tfidf', 'that', 'the', 'to', 'weights', 'with', 'word_count', 'you']

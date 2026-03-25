@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/college_system/modules/domain/feedback/services/feedback_service.py
-# hypothesis_version: 6.151.9
-
-[100, ', ', '?', 'Feedback not found.', 'admin_response', 'category', 'cnt', 'description', 'id', 'is_anonymous', 'status', 'submitted_by', 'title', 'title is required.', 'updated_at', 'upvote_count']

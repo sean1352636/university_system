@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/__init__.py
-# hypothesis_version: 6.151.9
-
-['AnalyticsManager', 'BudgetManager', 'ComplianceManager', 'DashboardManager', 'DatabaseManager', 'ExpenseManager', 'FinanceGUI', 'InvoiceManager', 'LayoutManager', 'ReportManager', 'SettingsManager', 'TransactionManager']

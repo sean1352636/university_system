@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/database/entry_points.py
-# hypothesis_version: 6.151.9
-
-['-', '--backup', '--cli', '--gui', '--list', '--restore', '--tray', '--validate', '-b', '-c', '-g', '-l', '-r', '-t', '-v', 'BACKUP_FILE', 'Backup System', 'Backup failed!', 'BackupSystem', 'Creating backup...', 'Errors:', 'No backups found', 'Open Backup System', 'Quit', 'RGB', 'Restore failed!', 'Start CLI interface', 'Start GUI interface', 'Validation Results:', 'WM_DELETE_WINDOW', '__main__', 'blue', 'errors', 'store_true']

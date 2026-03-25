@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/gui/alumni/reunions.py
-# hypothesis_version: 6.151.9
-
-[1.0, 'Arial', 'Cancel Reunion', 'Class Reunions', 'Confirm Cancellation', 'Database Error', 'Description:', 'Error', 'Expected Attendees', 'Graduation Year*', 'ID:\\s*(\\d+)', 'Load Reunion', 'Location*', 'Manage Reunion', 'Module Import Error', 'No Selection', 'Plan a Class Reunion', 'Plan a Reunion', 'Registration Fee', 'Reunion Date*', 'Reunion Description:', 'Reunion Details', 'Reunion Planned', 'Reunion not found.', 'Save Changes', 'Select Reunion:', 'Status*', 'Submit Reunion Plan', 'Success', 'Unknown function', 'Upcoming Reunions', 'Validation Error', '_func_name', 'action', 'bold', 'cancelled', 'completed', 'default', 'en', 'expected_attendees', 'fee', 'graduation_year', 'location', 'planning', 'reg_deadline', 'registration_closed', 'registration_open', 'reunion', 'reunion_date', 'status', 'update', 'w']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/reporting/financial_reports/ml.py
-# hypothesis_version: 6.151.9
-
-[0.1, 0.2, 0.3, 0.7, 100, ',', '.', 'High', 'Low', 'Medium', '__import__', '_codecs', 'amount', 'anomaly_reason', 'avg_payment_amount', 'builtins', 'coerce', 'collections', 'compile', 'copyreg', 'credit_hours', 'day_of_week', 'eval', 'exec', 'globals', 'gpa', 'hour_of_day', 'is_at_risk', 'locals', 'model', 'numpy', 'os', 'payment_date', 'payment_frequency', 'payment_id', 'payment_method', 'payments_made', 'popen', 'rb', 'risk_level', 'risk_score', 'scaler', 'scholarship_amount', 'scipy', 'sklearn', 'student_id', 'student_name', 'subprocess', 'sys', 'system', 'total_fees', 'wb']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/butcher_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/butcher', '/orders', '/products', 'GET', 'POST', 'butcher', 'butcher_orders', 'butcher_products', 'category', 'category = ?', 'create', 'customer_email', 'customer_id', 'customer_id = ?', 'customer_name', 'customer_phone', 'description', 'is_available', 'is_available = ?', 'items', 'name', 'order_type', 'origin', 'pickup_date', 'pickup_time', 'price_per_unit', 'search', 'shelf_life_days', 'special_instructions', 'status', 'status = ?', 'stock_quantity', 'storage_temp', 'sub', 'total', 'unit_type', 'view']

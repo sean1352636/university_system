@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/assignments/extensions/extensions.py
-# hypothesis_version: 6.151.9
-
-[100, '%Y-%m-%d %H:%M', '%Y-%m-%d %H:%M:%S', '-', '=', 'Extension Approved', 'Extension Rejected', 'Invalid selection.', 'Permission denied', 'Request not found.', 'Reviewer comments: ', 'approved', 'extension_approved', 'extension_rejected', 'extension_requests', 'id', 'manage_assignments', 'manage_extensions', 'pending', 'rejected', 'status', 'submit_assignment', 'update', 'y']

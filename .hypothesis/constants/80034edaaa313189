@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/transaction_manager/student_credits.py
-# hypothesis_version: 6.151.9
-
-[100, 150, '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '1.0', '500x350', '500x400', '600x400', '700x500', '900x600', 'Amount', 'Arial', 'Courier', 'Created', 'Credit ID', 'Description', 'Expires', 'N/A', 'No expiry', 'Remaining', 'Source', 'adjustment', 'both', 'center', 'end', 'goodwill', 'headings', 'left', 'other', 'overpayment', 'readonly', 'refund', 'right', 'scholarship', 'username', 'vertical', 'w', 'x', 'y']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/database/utilities.py
-# hypothesis_version: 6.151.9
-
-['DB_DIR', 'DEFAULT_DB_PATH', 'DatabaseManager', 'EXPORTS_DIR', 'SimpleDBManager', 'create_sqlite_backup', 'ensure_db_directory', 'ensure_parent_dir', 'execute_db_operation', 'get_connection', 'get_db_connection', 'get_db_manager', 'init_email_system_db', 'init_grade_system_db', 'initialize_email_db', 'optimize_database', 'safe_db_operation', 'sqlite3']

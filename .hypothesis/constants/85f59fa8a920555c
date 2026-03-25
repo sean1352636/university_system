@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/analytics/advanced_search/export.py
-# hypothesis_version: 6.151.9
-
-['%Y%m%d_%H%M%S', ',', '-', '.csv', '.xlsx', 'Age', 'Available fields:', 'Course', 'Date of Birth', 'Email', 'First Name', 'Gender', 'Last Name', 'Middle Name', 'Student ID', 'Title', 'age', 'code', 'course', 'date_of_birth', 'email', 'enrollment_date', 'export_date', 'first_name', 'gender', 'grade', 'last_name', 'middle_name', 'modules', 'name', 'student_id', 'student_info', 'title', 'type', 'w']

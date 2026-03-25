@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/campus_navigation_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/buildings', '/poi', '/poi/<int:poi_id>', '/routes', 'GET', 'POST', 'address', 'building_code', 'building_id', 'building_id = ?', 'building_name', 'building_type', 'building_type = ?', 'campus_buildings', 'campus_navigation', 'campus_routes', 'create', 'description', 'distance_meters', 'end_location_id', 'floor_number', 'floors', 'is_accessible', 'is_accessible = ?', 'items', 'latitude', 'longitude', 'operating_hours', 'poi_name', 'poi_type', 'poi_type = ?', 'points_of_interest', 'room_number', 'route_name', 'route_type', 'route_type = ?', 'search', 'start_location_id', 'sub', 'total', 'view']

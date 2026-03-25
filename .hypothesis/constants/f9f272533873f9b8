@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/textbooks_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/textbooks', '/listings', '/textbooks', 'GET', 'POST', 'author', 'condition', 'condition = ?', 'course_id', 'course_id = ?', 'create', 'edition', 'edition = ?', 'isbn', 'items', 'notes', 'photo_url', 'price', 'publisher', 'search', 'seller_id', 'seller_id = ?', 'status', 'status = ?', 'sub', 'textbook_id', 'textbook_listings', 'textbooks', 'title', 'total', 'view']

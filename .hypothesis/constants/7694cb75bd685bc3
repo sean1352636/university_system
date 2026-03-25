@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/cinema_cli/admin/reports.py
-# hypothesis_version: 6.151.9
-
-[100, "\n1. Today's Bookings", '\nEnter choice: ', '\n❌ No bookings found', '1', '2', '3', '4. All Bookings', '=', 'BOOKING REPORTS', 'OCCUPANCY REPORT', 'REVENUE ANALYTICS', '⚪', '🔴', '🟡', '🟢']

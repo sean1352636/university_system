@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/commerce/gui/cafe_orders.py
-# hypothesis_version: 6.151.9
-
-[100, 120, 150, '10', '600x500', 'Customer', 'Date', 'Item', 'Items', 'N/A', 'Order ID', 'Payment', 'Price', 'Qty', 'Status', 'Subtotal', 'This Month', 'This Week', 'Today', 'Total', 'WHERE', 'cafe.columns.date', 'cafe.columns.item', 'cafe.columns.items', 'cafe.columns.payment', 'cafe.columns.qty', 'cafe.columns.status', 'cafe.columns.total', 'cafe.orders.all', 'cafe.orders.filter', 'cafe.orders.today', 'common.error', 'common.warning', 'headings', 'readonly', 'values', 'w']

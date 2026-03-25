@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/database/data_backup/operations.py
-# hypothesis_version: 6.151.9
-
-[100, '%Y%m%d_%H%M%S', ')', ',', '.db', '.encrypted', '.gz', '.zip', '?', 'INSERT INTO [', 'PRAGMA database_list', 'SELECT * FROM [', ']', '] VALUES (', 'aws', 'aws_bucket', 'backup_type', 'cloud_enabled', 'cloud_provider', 'cloud_uploaded', 'compressed', 'compression_enabled', 'compression_format', 'compression_level', 'database_backup', 'encrypted', 'encryption_enabled', 'encryption_password', 'execute', 'file_hash', 'filename', 'ftp', 'full', 'incremental', 'last_full', 'manual', 'operation', 'path', 'point_in_time', 'previous_backup', 'remote_enabled', 'remote_host', 'remote_password', 'remote_path', 'remote_type', 'remote_uploaded', 'remote_username', 'restore', 'schema', 'selective', 'sftp', 'show_progress', 'size', 'size_bytes', 'source_path', 'system', 'target_tables', 'timestamp', 'type']

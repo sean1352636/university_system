@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/staff_hr/services/managers/communication_manager.py
-# hypothesis_version: 6.151.9
-
-[' AND category = ?', 'action_items', 'agenda', 'all', 'apologies', 'attendees', 'carpool', 'category', 'chair_id', 'chair_name', 'committee_id', 'committee_name', 'committee_type', 'contact_info', 'content', 'decisions', 'department', 'description', 'draft', 'end_date', 'events', 'expiry_date', 'for_sale', 'general', 'housing', 'is_pinned', 'location', 'lost_found', 'meeting_frequency', 'meeting_location', 'meeting_time', 'member', 'minutes_content', 'next_meeting_date', 'notes', 'posted_by_name', 'recorded_by_name', 'role', 'secretary_id', 'secretary_name', 'standing', 'start_date', 'status', 'target_audience', 'target_departments', 'target_roles', 'user_name', 'wanted']

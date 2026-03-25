@@ -22,6 +22,7 @@
 .viminfo
 .cache/
 .pytest_cache/
+.hypothesis/
 
 # Python bytecode
 __pycache__/

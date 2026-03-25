@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/reports/dashboard.py
-# hypothesis_version: 6.151.9
-
-[100, 120, '#45b7d1', '#4ecca3', '#7f8c8d', '#9b59b6', '#e74c3c', '#e94560', '#ffa500', '#ffffff', '%Y-%m-%d', '+ Add Movie', '+ Add Screening', '+ New Booking', '.', 'Active Movies', 'Amount', 'Available Seats', 'Card.TFrame', 'Dashboard', 'Helvetica', 'Main.TFrame', 'Movie', 'Primary.TButton', 'Recent Bookings', 'Ref', 'Screen', 'Secondary.TButton', 'Status', 'Subtitle.TLabel', 'Success.TButton', 'Time', "Today's Bookings", "Today's Revenue", "Today's Screenings", '_', 'bold', 'end', 'headings', 'left', 'nsew', 'w', 'x']

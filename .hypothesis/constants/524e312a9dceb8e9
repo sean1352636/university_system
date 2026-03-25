@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/housing/services/housing_accommodation/applications.py
-# hypothesis_version: 6.151.9
-
-['\n2. ', ' (y/n): ', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '0. ', '1', '1. ', '2', '2. ', '3', '3. ', '4', '4. ', '5', '5. ', ':', ':\n1. ', ': ', '=', 'APP', 'ASG', 'Active', 'Apartment', 'Approved', 'CNT', 'Double', 'More Info Needed', 'Pending', 'Rejected', 'Single', 'Studio', 'Suite', 'Triple', 'Waiting List', 'conn', 'housing', 'housing.student.name', 'id', 'role', 'student', 'username', 'view_accommodations', 'view_own_record', 'y']

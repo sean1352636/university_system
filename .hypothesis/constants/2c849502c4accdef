@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/__init__.py
-# hypothesis_version: 6.151.9
-
-['5.0.0', 'AuthenticationError', 'BASE_DIR', 'CACHE_AVAILABLE', 'ConfigurationError', 'CourseError', 'DATA_DIR', 'DB_DIR', 'DEFAULT_DB_PATH', 'DatabaseError', 'DatabaseManager', 'EmailError', 'EnrollmentError', 'FileError', 'FinanceError', 'GradeError', 'LOG_DIR', 'MIT', 'ML_AVAILABLE', 'REPORTS_DIR', 'SECURITY_AVAILABLE', 'StudentError', 'TEMPLATES_DIR', 'TEMP_DIR', 'UPLOADS_DIR', 'University IT Team', 'UserAuth', 'VALIDATION_AVAILABLE', 'ValidationError', '__author__', '__license__', '__version__', 'get_auth', 'get_connection', 'get_essay_grader', 'require_permission', 'require_role', 'set_auth', 'transaction']

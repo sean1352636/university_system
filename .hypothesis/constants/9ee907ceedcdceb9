@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/assessment_service.py
-# hypothesis_version: 6.151.9
-
-[0.0, '%Y-%m-%d %H:%M:%S', 'Assignment', 'assessment_id', 'assessment_name', 'assessment_type', 'assignment_type', 'description', 'due_date', 'id', 'individual', 'max_marks', 'max_points', 'module_code', 'title']

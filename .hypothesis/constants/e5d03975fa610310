@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/commerce/gui/cafe_refunds.py
-# hypothesis_version: 6.151.9
-
-[100, 120, 150, '%Y-%m-%d %H:%M', '*.*', '*.csv', '.csv', '10', '450x400', '5', 'All files', 'Arial', 'CSV files', 'Card', 'Cash', 'Customer', 'Date/Time', 'N/A', 'Order ID', 'Payment Method', 'Status', 'Student Account', 'Student ID', 'Total', 'account_balance_info', 'amount', 'bold', 'cafe.columns.status', 'cafe.refunds.header', 'cafe.tab_refunds', 'common.confirm', 'common.error', 'common.info', 'common.success', 'common.warning', 'customer', 'customer_name', 'date', 'green', 'headings', 'method', 'order_id', 'refund_date', 'refund_ref', 'refunded', 'status', 'student_id', 'total', 'values', 'w']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/lms_routes.py
-# hypothesis_version: 6.151.9
-
-[70.0, 201, ' = ?', ' AND ', ' WHERE ', ', ', '/api/lms', '/courses', '/forums', '/gradebook', '/quizzes', '/videos', 'GET', 'POST', 'PUT', 'available_from', 'available_until', 'course_description', 'course_id', 'create', 'description', 'duration_minutes', 'end_date', 'enrollment_limit', 'instructor_id', 'instructor_id = ?', 'is_published', 'items', 'lms', 'lms_course', 'lms_course_id', 'lms_course_id = ?', 'lms_courses', 'lms_forum', 'lms_forums', 'lms_gradebook', 'lms_quiz', 'lms_quizzes', 'lms_videos', 'max_attempts', 'module_code', 'module_code = ?', 'passing_score', 'start_date', 'student_id', 'student_id = ?', 'sub', 'syllabus_url', 'title', 'topic', 'total', 'update', 'view']

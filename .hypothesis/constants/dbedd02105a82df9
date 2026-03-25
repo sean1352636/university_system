@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/cli/office_hours_cli.py
-# hypothesis_version: 6.151.9
-
-['\n--- My Bookings ---', '\nEnter your choice: ', ', ', '-', '=', 'Day of week: ', 'Days of week: ', 'Deletion cancelled.', 'End time (HH:MM): ', 'Friday', 'Invalid ID.', 'Location: ', 'Monday', 'New capacity: ', 'New day of week: ', 'New location: ', 'New notes: ', 'Notes (optional): ', 'Saturday', 'Start time (HH:MM): ', 'Sunday', 'Thursday', 'Tuesday', 'Wednesday', 'admin', 'book', 'cancel', 'capacity', 'confirmed', 'create', 'day_of_week', 'delete', 'edit', 'end_time', 'instructor', 'location', 'notes', 'return', 'role', 'staff', 'start_time', 'status', 'student', 'username', 'view_available', 'yes']

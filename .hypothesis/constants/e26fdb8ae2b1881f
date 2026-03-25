@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/mail/services/mail_post_core.py
-# hypothesis_version: 6.151.9
-
-[0.0, 0.5, 1.0, 2.5, 3.0, 5.0, 10.0, 12.0, 15.0, '+00:00', 'Z', 'action', 'active_po_boxes', 'amount', 'box_number', 'by', 'collected', 'count', 'create', 'date', 'domestic', 'end_date', 'express', 'fee', 'forwarded', 'forwarding_id', 'international', 'large', 'large_parcel', 'letter', 'mail_package', 'medium', 'month', 'monthly_fee', 'notified', 'package_id', 'packages_by_type', 'packages_collected', 'packages_received', 'received', 'received_date', 'recipient', 'reference', 'registered', 'rental_fee', 'returned', 'revenue', 'small_parcel', 'standard', 'start_date', 'storage_fee', 'storage_fees', 'stored', 'total_revenue', 'tracking', 'tracking_number', 'transaction_id', 'update', 'year']

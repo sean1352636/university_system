@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/student_union/clubs/club_management/menu.py
-# hypothesis_version: 6.151.9
-
-['\nClub Management', '\nEnter your choice: ', '===============', 'create_club', 'join_club', 'join_clubs', 'manage_all_clubs', 'manage_club', 'manage_own_club', 'view_clubs', 'view_my_clubs']

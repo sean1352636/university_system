@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/gui/parking_management/dialogs/permit_dialog.py
-# hypothesis_version: 6.151.9
-
-[120, ' - ', '%Y-%m-%d', '5', '500x550', '<<ComboboxSelected>>', 'Annual', 'Cancel', 'Daily', 'Email:', 'End Date:', 'Error', 'Full Name:', 'Lookup Student', 'Monthly', 'None', 'Not Found', 'Permit Type:', 'Save', 'Semester', 'Start Date:', 'Student ID:', 'Student Lookup', 'Success', 'Vehicle (optional):', 'Warning', 'Zone:', 'email', 'end_date', 'ew', 'full_name', 'permit_type', 'readonly', 'start_date', 'student_id', 'values', 'vehicle_id', 'w', 'zone']

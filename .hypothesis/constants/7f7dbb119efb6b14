@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/services/parking_management/menus.py
-# hypothesis_version: 6.151.9
-
-[100, '1', '1. ', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '2', '2. ', '20', '21', '22', '23', '24', '25', '26', '27', '3', '3. ', '4', '4. ', '5', '5. ', '6', '6. ', '7', '8', '9', ':', '=', 'Not logged in', 'create_permit', 'create_trips', 'csv', 'delete_any_permit', 'delete_any_vehicle', 'delete_own_vehicle', 'delete_violation', 'excel', 'generate_reports', 'manage_parking_lots', 'parking.logged_in', 'parking.returning', 'pdf', 'record_violation', 'register_for_trips', 'register_own_vehicle', 'register_vehicle', 'role', 'txt', 'update_any_permit', 'update_any_vehicle', 'update_own_permit', 'update_own_vehicle', 'update_violation', 'username', 'view_any_permit', 'view_any_vehicle', 'view_any_violation', 'view_own_permit', 'view_own_vehicle', 'view_own_violation', 'view_trips']

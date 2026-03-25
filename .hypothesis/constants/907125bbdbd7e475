@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/gui/student_union_gui/elections/election_core.py
-# hypothesis_version: 6.151.9
-
-[1.0, 100, 120, 200, 600, '  🏆 WINNER', '1000x700', '700x600', '700x650', '800x600', '900x650', '<<TreeviewSelect>>', '<Double-1>', 'Accent.TButton', 'Already Voted', 'Arial', 'Cancel', 'Candidate', 'Candidate Manifesto', 'Candidates', 'Cast Your Vote', 'Close', 'Confirm Vote', 'Courier', 'Course', 'Department', 'Election Results', 'Error', 'Expenses', 'ID', 'Info', 'Materials', 'Nominate Myself', 'Position', 'Results', 'Select Candidate', 'Select Election:', 'Status', 'Submit Nomination', 'Submit Vote', 'Success', 'View Candidates', 'Vote', 'Voting Period', 'Warning', 'blue', 'bold', 'both', 'center', 'completed', 'end', 'gray', 'id', 'left', 'readonly', 'red', 'right', 'tags', 'tree headings', 'values', 'vertical', 'voting', 'w', 'x', 'y']

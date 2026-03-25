@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/module_scheduling/analytics.py
-# hypothesis_version: 6.151.9
-
-[0.25, 100, 120, '%Y%m%d_%H%M%S', '-', '=', 'ALIGN', 'Avg Duration (min)', 'BACKGROUND', 'BOTTOMPADDING', 'CENTER', 'Capacity', 'Department', 'FONTNAME', 'GRID', 'Helvetica-Bold', 'Instructor', 'Max Hours', 'None', 'Normal', 'Overloaded', 'Room', 'Sessions', 'Status', 'TEXTCOLOR', 'Title', 'Total Hours', 'Type', 'Utilization Rate (%)', 'Workload (%)', 'avg_sessions', 'avg_utilization', 'best_type', 'csv', 'data', 'display', 'instructor_workload', 'most_common_type', 'pdf', 'room_utilization', 'total']

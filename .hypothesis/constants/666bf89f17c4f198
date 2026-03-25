@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/course_management_gui/core/ui_setup.py
-# hypothesis_version: 6.151.9
-
-[100, 120, 250, 500, 600, '#f0f0f0', '<<ComboboxSelected>>', '<Button-4>', '<Button-5>', '<Configure>', '<Double-1>', '<KeyRelease>', '<MouseWheel>', 'Arial', 'Code', 'Credits', 'Department', 'Enrollment', 'ID', 'Level', 'Name', 'Open CLI', 'Status', 'all', 'bold', 'common.active', 'common.all', 'common.archived', 'common.cancelled', 'common.error', 'common.exit', 'common.inactive', 'common.refresh', 'headings', 'nw', 'orange', 'units']

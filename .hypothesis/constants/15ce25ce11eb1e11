@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/campus/services/campus_events_core.py
-# hypothesis_version: 6.151.9
-
-['1', '1. ', '2', '2. ', '3', '3. ', '4', '4. ', '5', '5. ', '6', '6. ', '7', '7. ', '8', '8. ', '=', '@', 'Browse Events', 'CAMPUS EVENTS HUB', 'Campus Events Hub', 'CampusEventManager', 'Create New Event', 'Error: {error}', 'Event Announcements', 'Event Registration', 'EventSeriesManager', 'EventSponsorManager', 'Invalid choice.', 'Recurring Events', 'Return to Main Menu', 'System', 'TBA', 'all_registrants', 'announcement_text', 'capacity', 'current_count', 'email', 'email_address', 'event_date', 'event_location', 'event_name', 'event_time', 'faculty', 'location', 'staff', 'start_time', 'student', 'user_id', 'user_type']

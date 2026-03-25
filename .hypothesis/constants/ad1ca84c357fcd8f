@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/academic_calendar/utils.py
-# hypothesis_version: 6.151.9
-
-['%s: %s', 'An error occurred', 'CONSTRAINT', 'ConnectionError', 'DatabaseError', 'FileNotFoundError', 'IOError', 'OSError', 'OperationalError', 'PermissionError', 'TimeoutError', 'UNIQUE', 'ValueError', 'access denied', 'common.error', 'connection', 'constraint', 'database', 'database_access', 'error', 'field', 'file', 'function', 'grab_release', 'invalid', 'locked', 'network', 'not found', 'original_error', 'permission', 'remote server', 'sqlite', 'sync_source', 'table', 'unique', 'unknown', 'validation']

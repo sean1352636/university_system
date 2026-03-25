@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/document_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' ORDER BY step_order', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/documents', '/repository', '/student-documents', '/workflows', 'GET', 'POST', 'author_id', 'author_id = ?', 'content', 'create', 'document_id', 'document_id = ?', 'document_repository', 'document_workflows', 'documents', 'file_type', 'items', 'module_code', 'module_code = ?', 'repository_document', 'search', 'status', 'status = ?', 'student_document', 'student_documents', 'student_id', 'student_id = ?', 'sub', 'title', 'total', 'user_id', 'verification_status', 'view', 'workflow_status', 'workflow_status = ?']

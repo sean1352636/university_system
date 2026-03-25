@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/health_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' = ?', ' AND ', ' WHERE ', ' WHERE id = ?', '%Y-%m-%d %H:%M:%S', ', ', '/api/health-services', '/appointments', '/records', 'GET', 'POST', 'PUT', 'appointment_date', 'appointment_time', 'appointment_type', 'create', 'health', 'health_appointment', 'health_appointments', 'health_records', 'items', 'notes', 'provider', 'reason', 'status', 'status = ?', 'student_id', 'student_id = ?', 'sub', 'total', 'update', 'view']

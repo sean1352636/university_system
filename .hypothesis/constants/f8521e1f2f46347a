@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/analytics/enhanced_reporting/data_quality.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d %H:%M:%S', 'checks', 'count', 'data_freshness', 'duplicate_emails', 'duplicates', 'email', 'invalid_ages', 'invalid_data', 'invalid_emails', 'missing_courses', 'missing_data', 'missing_emails', 'missing_names', 'students', 'timestamp', 'total_records']

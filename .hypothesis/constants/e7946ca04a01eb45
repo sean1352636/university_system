@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/admin/admissions/services/admissions_service.py
-# hypothesis_version: 6.151.9
-
-[' AND status = ?', 'accepted', 'interview_scheduled', 'offered', 'received', 'rejected', 'under_review', 'withdrawn']

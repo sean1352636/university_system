@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/reporting/financial_reports/export.py
-# hypothesis_version: 6.151.9
-
-[0.5, 100, '\nScheduling Options:', '%Y%m%d_%H%M', '1', '1. CSV format', '2', '3', '3. JSON format', '4', '4. All formats', '5', '6', '7', '=', 'ALIGN', 'Active Students', 'BACKGROUND', 'BOTTOMPADDING', 'Budget Variance', 'CENTER', 'Collection Rate', 'Collection Summary', 'Comparative Analysis', 'Export Options:', 'FONTNAME', 'Fee Type Performance', 'Financial forecasts', 'Forecasting', 'GRID', 'Heading2', 'Helvetica-Bold', 'Key Recommendations', 'Metric', 'Normal', 'Payment Trends', 'Payments', 'Revenue Collected', 'Status', 'Student Fees', 'TEXTCOLOR', 'Title', 'Value', 'daily', 'export_timestamp', 'manage_finances', 'monthly', 'openpyxl', 'payments', 'quarterly', 'records', 'student_fees', 'w', 'weekly', '⚠', '✓']

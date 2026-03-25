@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/gui/medical_accommodation/bulk_operations.py
-# hypothesis_version: 6.151.9
-
-[' AND status = ?', ' AND student_id = ?', '%Y-%m-%d %H:%M:%S', '600x400', 'Add Notes', 'Bulk Operations', 'Close', 'Confirm', 'Current Status:', 'Error', 'Execute', 'Info', 'New Value', 'Preview', 'Select Operation', 'Selection Criteria', 'Set End Date', 'Success', 'Update Status', 'Update Type', 'Value:', 'active', 'add_notes', 'expired', 'pending', 'set_end_date', 'suspended', 'update_status', 'update_type', 'w']

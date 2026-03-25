@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/college_system/core/paths.py
-# hypothesis_version: 6.151.9
-
-['config', 'data', 'db_files', 'en', 'locales', 'logs', 'sixthform.db']

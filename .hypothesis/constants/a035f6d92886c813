@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/academic_calendar/__init__.py
-# hypothesis_version: 6.151.9
-
-['AuditManager', 'AuthenticationError', 'CalendarConfig', 'CalendarError', 'CalendarWebAPI', 'CourseManager', 'DatabaseError', 'DatabaseManager', 'DatabaseTransaction', 'EventCategoryManager', 'ExportError', 'HolidayManager', 'MobileAPIManager', 'NotificationManager', 'PermissionError', 'ResourceManager', 'SecurityUtils', 'SyncError', 'ValidationError', 'ValidationUtils', 'auth', 'display_events_list', 'handle_add_event', 'handle_add_semester', 'handle_delete_event', 'handle_search_events', 'handle_update_event', 'handle_view_calendar', 'set_auth']

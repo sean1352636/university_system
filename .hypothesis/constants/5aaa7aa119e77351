@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/records/analytics/reports.py
-# hypothesis_version: 6.151.9
-
-['%Y%m%d_%H%M%S', '%Y-%m-%d', '-', '=', 'KEY RECOMMENDATIONS', 'Report Types:', 'VACCINATION SUMMARY', 'id', 'no such column: dob', 'report', 'utf-8', 'w', 'y']

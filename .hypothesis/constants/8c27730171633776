@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/expense_manager/fee_types.py
-# hypothesis_version: 6.151.9
-
-[100, 300, 400, '<Double-1>', 'Arial', '_', 'amount', 'bold', 'both', 'common.error', 'common.no_selection', 'common.success', 'danger', 'due_date', 'end', 'fee_id', 'fee_type', 'fees', 'headings', 'horizontal', 'left', 'right', 'secondary', 'status', 'student_id', 'success', 'sunken', 'vertical', 'warning', 'white', 'x', 'y']

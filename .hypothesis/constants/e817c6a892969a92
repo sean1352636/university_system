@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/commerce_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/commerce', '/menu', '/menu/<int:id>', '/orders', '/orders/<int:id>', 'GET', 'POST', 'allergens', 'available', 'available = ?', 'category', 'category = ?', 'commerce', 'create', 'customer_id', 'customer_id = ?', 'delivery_address', 'description', 'ingredients', 'items', 'menu_items', 'name', 'payment_method', 'price', 'restaurant_orders', 'search', 'special_instructions', 'status', 'status = ?', 'sub', 'total', 'total_amount', 'view']

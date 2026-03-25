@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/gui/health_portal/health_records.py
-# hypothesis_version: 6.151.9
-
-[1.0, 100, 120, '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '1.0', '10', '20', '5', '600x500', 'Annual Physical', 'Arial', 'Confidential', 'Confirm Delete', 'Date', 'Error', 'General Medical', 'ID', 'Illness Treatment', 'Injury Treatment', 'Mental Health', 'No', 'No Selection', 'Other', 'Provider', 'Record not found', 'Student ID', 'Student ID not found', 'Success', 'Title.TLabel', 'Type', 'Vaccination', 'WM_DELETE_WINDOW', 'Yes', 'add_health_record', 'bold', 'both', 'common.cancel', 'common.close', 'common.error', 'common.no', 'common.save', 'common.success', 'common.yes', 'delete_health_record', 'headings', 'health_record', 'id', 'left', 'nw', 'role', 'student', 'values', 'w']

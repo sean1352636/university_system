@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/scholarship_finder_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/applications', '/opportunities', 'GET', 'POST', 'academic_level', 'academic_level = ?', 'application_deadline', 'application_url', 'award_amount_max', 'award_amount_min', 'award_type', 'award_type = ?', 'create', 'deadline_date', 'description', 'eligibility_criteria', 'is_active', 'is_active = ?', 'items', 'notes', 'organization', 'scholarship_finder', 'scholarship_id', 'scholarship_id = ?', 'scholarship_name', 'search', 'status', 'status = ?', 'student_id', 'student_id = ?', 'sub', 'total', 'view']

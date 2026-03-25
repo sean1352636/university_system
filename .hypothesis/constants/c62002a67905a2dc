@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/services/cli/charity_shop_cli/promotions.py
-# hypothesis_version: 6.151.9
-
-[365, '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', 'Purchase', 'Redemption', 'active', 'add', 'amount', 'balance', 'category', 'charity_shop_sale', 'check', 'check_balance', 'code', 'customer_id', 'customer_name', 'deposit_paid', 'description', 'discount_type', 'discount_value', 'due_date', 'end_date', 'expiry', 'expiry_days', 'id', 'issue', 'item_id', 'item_name', 'min_purchase', 'name', 'new_balance', 'points', 'reason', 'redeem', 'redeemed', 'refund', 'remaining_balance', 'sale_id', 'start_date', 'status', 'total_price']

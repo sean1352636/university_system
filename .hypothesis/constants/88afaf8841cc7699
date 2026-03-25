@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/student_union/services/__init__.py
-# hypothesis_version: 6.151.9
-
-['auto_award_points', 'context', 'create_support_group', 'join_support_group', 'manage_peer_tutoring', 'manage_study_groups', 'manage_union_reps', 'ranked_choice_voting', 'set_auth', 'view_all_checkouts', 'view_eco_suppliers', 'view_facilities', 'view_leaderboard']

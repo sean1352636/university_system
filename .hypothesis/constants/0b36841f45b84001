@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/database/schemas/aggregators.py
-# hypothesis_version: 6.151.9
-
-['=', '__main__', 'additional missing', 'conn', 'init_email_system_db', 'init_grade_system_db', 'init_lms_system_db', 'schemas.init_error']

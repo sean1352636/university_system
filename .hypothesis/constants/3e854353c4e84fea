@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/commerce/services/restaurant_management.py
-# hypothesis_version: 6.151.9
-
-['\nNo orders found.', '\nNo orders today.', '\nNo pending orders.', '-', '- Cost tracking', '- Customer profiles', '- Loyalty programs', '- Order history', '- Shift scheduling', '- Staff availability', '- Time tracking', '0', '0. Back', '1', '1. Menu Management', '1. View All Orders', '1. View Menu', '2', '2. Add Menu Item', '2. Order Management', '3', '3. Update Menu Item', '4', '4. Remove Menu Item', '4. Staff Scheduling', '5', '5. Sales Reports', '6', '=', 'Appetizer', 'Available', 'Available statuses:', 'Beverage', 'Description: ', 'Dessert', 'Enter order ID: ', 'Invalid input.', 'Invalid order ID.', 'Item name: ', 'Main Course', 'Price: $', 'Removal cancelled.', 'Side', 'Unavailable', 'available', 'cancelled', 'delivered', 'n', 'pending', 'preparing', 'ready', 'restaurant_manager', 'unavailable', 'y']

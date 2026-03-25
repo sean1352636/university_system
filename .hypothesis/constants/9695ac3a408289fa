@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/gui/student_union_gui/events/event_actions.py
-# hypothesis_version: 6.151.9
-
-[1.0, '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '/', '600x700', 'Arial', 'Student', 'TBA', 'bold', 'category', 'common.cancel', 'common.category', 'common.date', 'common.description', 'common.error', 'common.location', 'common.no_selection', 'common.other', 'common.success', 'common.tbd', 'date', 'description', 'email', 'end_time', 'event_date', 'event_name', 'event_time', 'id', 'location', 'max_attendees', 'name', 'registered', 'start_time', 'student', 'student_union', 'upcoming', 'username', 'values']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/library/database.py
-# hypothesis_version: 6.151.9
-
-[0.0, 10.0, 168, 365, '%Y-%m-%d %H:%M:%S', '0.50', '14', '2', '24', '3', '5', 'Existing setting', 'REAL', 'TEXT', 'allowed_values', 'auto_backup', 'barcode_scanning', 'boolean', 'common.error', 'decimal', 'description', 'email_notifications', 'false', 'fine_per_day', 'integer', 'loan_period_days', 'max_loans', 'max_renewals', 'max_value', 'min_value', 'payment_reference', 'reference_id', 'reference_type', 'review_moderation', 'setting_name', 'setting_type', 'setting_value', 'sms_notifications', 'social_features', 'source_type', 'string', 'true', 'true,false', '✅ ', '❌ ', '🔄 ', '🔧 ']

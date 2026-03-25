@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/ai/ai_detector/features/institution_benchmarking.py
-# hypothesis_version: 6.151.9
-
-[0.5, 1.5, 365, '1_month', '1_year', '3_months', 'above_average', 'average', 'avg_ai_score', 'below_average', 'benchmarks', 'error', 'flagged_rate', 'flagged_submissions', 'global_avg_ai_score', 'global_flagged_rate', 'institution_id', 'institution_metrics', 'period', 'total_submissions', 'unique_students']

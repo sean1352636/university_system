@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/attendance/dashboard.py
-# hypothesis_version: 6.151.9
-
-[1000, 8050, ' AND ', '--', '127.0.0.1', 'Active Alerts', 'Attendance Rate (%)', 'Date', 'Error loading data', 'No data available', 'Select Date Range:', 'Select Module:', 'Student', 'Students at Risk', "Today's Sessions", 'active-alerts', 'active_alerts', 'ar.date <= ?', 'ar.date >= ?', 'ar.module_code = ?', 'at-risk-count', 'at_risk_count', 'center', 'children', 'count', 'date', 'date-picker-range', 'end_date', 'figure', 'h', 'interval-component', 'label', 'module-dropdown', 'n_intervals', 'name', 'options', 'overall-rate', 'overall_rate', 'performance_chart', 'rate', 'row', 'six columns', 'start_date', 'status', 'status_chart', 'textAlign', 'three columns', 'todays-sessions', 'todays_sessions', 'trend_chart', 'twelve columns', 'value']

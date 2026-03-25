@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/helpdesk/permissions.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d %H:%M:%S', 'bulk_operations', 'create_ticket', 'manage_departments', 'manage_kb', 'manage_organizations', 'manage_sla', 'manage_tickets', 'manage_workflows', 'reply_to_any_ticket', 'reply_to_own_ticket', 'system_admin', 'view_all_tickets', 'view_analytics', 'view_own_tickets']

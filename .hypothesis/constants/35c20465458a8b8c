@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/gui/helpdesk/dashboard.py
-# hypothesis_version: 6.151.9
-
-[150, '%Y-%m-%d %H:%M:%S', 'Create New Ticket', 'Dashboard', 'Date', 'Description', 'Error', 'Error.TLabel', 'Heading.TLabel', 'My Open Tickets', 'My Resolved Tickets', 'My Total Tickets', 'Primary.TButton', 'Quick Actions', 'Quick Statistics', 'Recent Activity', 'Return to Main Menu', 'System', 'System Open Tickets', 'Title.TLabel', 'Total System Tickets', 'Type', 'Unassigned Tickets', 'User', 'View My Tickets', 'both', 'common.user', 'create_ticket', 'default', 'en', 'end', 'headings', 'helpdesk.welcome', 'id', 'left', 'manage_tickets', 'right', 'subject', 'username', 'vertical', 'view_all_tickets', 'view_own_tickets', 'w', 'x', 'y']

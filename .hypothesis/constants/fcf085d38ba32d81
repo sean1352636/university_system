@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/services/gui/charity_shop_gui/__init__.py
-# hypothesis_version: 6.151.9
-
-['BasketWindow', 'CharityShopApp', 'ChartsWindow', 'CheckoutDialog', 'Database', 'ItemDialog', 'SellDialog', 'load_email_template', 'main']

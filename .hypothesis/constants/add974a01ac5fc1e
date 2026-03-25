@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/email/email_gui/notification_dialogs_library.py
-# hypothesis_version: 6.151.9
-
-[100, '450x300', '450x350', 'common.cancel', 'common.error', 'common.send', 'common.success', 'default', 'en']

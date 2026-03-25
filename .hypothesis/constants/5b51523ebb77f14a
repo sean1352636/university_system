@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/attendance_routes.py
-# hypothesis_version: 6.151.9
-
-[0.0, 100, 201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/attendance', '/records', '/sessions', 'GET', 'POST', 'attendance', 'attendance_analytics', 'attendance_rate', 'attendance_record', 'attendance_records', 'attendance_session', 'attendance_sessions', 'create', 'items', 'location', 'module_code', 'modules', 'notes', 'present', 'session_date', 'session_id', 'session_id = ?', 'session_type', 'status', 'student_id', 'student_id = ?', 'sub', 'total', 'total_sessions', 'view']

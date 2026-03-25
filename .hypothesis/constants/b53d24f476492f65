@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/staff_hr/services/managers/academic_staff_manager.py
-# hypothesis_version: 6.151.9
-
-[' = ?', ' AND status = ?', ')', ') VALUES (', ', ', '?', 'action_points', 'appointment_end', 'appointment_start', 'both', 'class_size', 'column', 'contact_person_id', 'course_code', 'course_name', 'department', 'draft', 'duration_minutes', 'email', 'expected_end_date', 'expertise_area', 'institution', 'notes', 'observation_type', 'observee', 'observee_name', 'observer', 'observer_name', 'overall_rating', 'peer', 'phone', 'primary', 'progress_notes', 'start_date', 'status', 'strengths', 'student_name', 'supervision_role', 'thesis_title', 'user_id']

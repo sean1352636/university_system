@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/college_system/modules/domain/meal_ordering/services/meal_ordering_service.py
-# hypothesis_version: 6.151.9
-
-[100, ', ', '?', 'Item created: id=%d', 'Item deleted: pk=%d', 'Item not found.', 'Item updated: pk=%d', 'category', 'cnt', 'description', 'dietary_tags', 'id', 'is_available', 'name', 'name is required.', 'price', 'updated_at']

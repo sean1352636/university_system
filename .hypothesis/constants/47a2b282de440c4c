@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/library/fines/__init__.py
-# hypothesis_version: 6.151.9
-
-['_record_fine_payment', '_save_text_report', '_show_topup_dialog', 'adjust_fine_amount', 'export_fines_to_csv', 'load_user_fines', 'pay_fine_via_finance', 'process_fine_payment', 'refund_fine_dialog', 'show_fine_management', 'view_fine_history', 'waive_all_fines']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/analytics/student_analytics/config.py
-# hypothesis_version: 6.151.9
-
-[300, 587, '#1f77b4', '#2ca02c', '#8c564b', '#9467bd', '#d62728', '#ff7f0e', 'Agg', 'GTK3Agg', 'Qt5Agg', 'TkAgg', 'colors', 'dpi', 'email_config', 'excel', 'export_formats', 'figure_size', 'ignore', 'pdf', 'png', 'seaborn-v0_8', 'sender_email', 'sender_password', 'smtp.gmail.com', 'smtp_port', 'smtp_server', 'svg', 'whitegrid']

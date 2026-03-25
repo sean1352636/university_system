@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/library/barcode.py
-# hypothesis_version: 6.151.9
-
-[120, 144, 150, 170, 365, 675, 1050, '%Y%m%d_%H%M%S', '%Y-%m-%d', '-', '.png', '.txt', '0', '1', '2', '3', '4', '4. Return to menu', '=', 'Barcode: ', 'Enter barcode: ', 'LIB', 'PNG', 'RGB', 'Student ID Card', 'UNIVERSITY LIBRARY', 'User not found.', 'author', 'barcode', 'black', 'book', 'books', 'card_number', 'expiry_date', 'full_name', 'grade_level', 'id', 'issue_date', 'manage_books', 'manage_users', 'name', 'qr_code_data', 'status', 'title', 'type', 'user', 'user_id', 'w', 'white']

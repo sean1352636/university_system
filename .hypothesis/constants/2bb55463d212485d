@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/settings/general_settings.py
-# hypothesis_version: 6.151.9
-
-['2024-2025', '50.00', '587', '7', 'AUD', 'Arial', 'CAD', 'Courier', 'EUR', 'GBP', 'USD', '_', 'academic_year', 'active', 'bold', 'both', 'columns', 'dark', 'date', 'default_late_fee', 'from_curr', 'grace_period_days', 'headings', 'layout', 'name', 'rate', 'secondary', 'settings', 'success', 'template_id', 'to_curr', 'type', 'update_status', 'updated_at', 'utf-8', 'w', 'warning', 'white', 'x']

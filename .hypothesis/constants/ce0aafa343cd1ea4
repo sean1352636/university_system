@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/credential_routes.py
-# hypothesis_version: 6.151.9
-
-[201, 404, ' AND ', ' WHERE ', '/api/credentials', '/badges', '/blockchain', '/certifications', '/micro', 'Credential not found', 'GET', 'POST', 'badge_image_url', 'badge_name', 'badge_type', 'badge_type = ?', 'blockchain_address', 'blockchain_hash', 'category', 'category = ?', 'certification', 'certifications', 'create', 'credential', 'credential_id', 'credential_name', 'credential_type', 'credential_type = ?', 'credentials', 'criteria', 'description', 'digital_badge', 'digital_badges', 'expiry_date', 'ipfs_hash', 'is_active = 1', 'is_revoked', 'is_revoked = 0', 'issue_date', 'issuer_name', 'issuing_body', 'message', 'metadata', 'micro_credentials', 'name', 'notes', 'skill', 'status', 'status = ?', 'student_id', 'student_id = ?', 'sub', 'user_id', 'user_id = ?', 'verified', 'view']

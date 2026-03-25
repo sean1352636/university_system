@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/logging/log_management/api/__init__.py
-# hypothesis_version: 6.151.9
-
-[200, 'FLASK_SECRET_KEY', 'HS256', 'SECRET_KEY', 'api_secret_key', 'ignore', 'token-', 'user_id']

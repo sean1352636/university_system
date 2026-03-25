@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/plagiarism_main_gui/dialogs/results.py
-# hypothesis_version: 6.151.9
-
-[1.0, 100, 150, 400, 'Author:', 'Check Date:', 'Checked By:', 'Close', 'Document', 'Document Title', 'Document:', 'EXACT_MATCH', 'HIGH_SIMILARITY', 'MODERATE_SIMILARITY', 'Matched Document:', 'Similarity', 'Similarity Score', 'Similarity Score:', 'Status:', 'Summary', 'Threshold Used:', 'UNKNOWN', 'Unknown', 'author_name', 'check_date', 'checker_name', 'document_title', 'headings', 'highest_similarity', 'matched_document_id', 'matches', 'report', 'result_id', 'similarity_score', 'status', 'threshold_used', '⚠️ HIGH RISK', '⚠️ MODERATE RISK', '✅ LOW RISK']

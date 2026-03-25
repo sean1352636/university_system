@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/attendance/predictive_analytics.py
-# hypothesis_version: 6.151.9
-
-[0.2, 0.7, 0.75, 0.8, 100, 999, '%Y-%m-%d', '1.0', 'High Risk', 'Late', 'Low Risk', 'Medium Risk', 'Present', 'True', 'confidence', 'consecutive_absences', 'date', 'day_of_week', 'days_since_last', 'factors', 'is_present', 'module_code', 'risk_level', 'status', 'student_id', 'total_sessions', 'week_of_term']

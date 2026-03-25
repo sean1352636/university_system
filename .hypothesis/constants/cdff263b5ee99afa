@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/attendance_tracker/analytics_tab.py
-# hypothesis_version: 6.151.9
-
-[100, 120, ' - ', '0.750', '0.850', '0.920', 'Alice Brown', 'Bob Wilson', 'CS101', 'CS102', 'High Risk', 'John Doe', 'Low Risk', 'Medium Risk', 'Primary.TButton', 'S001', 'S003', 'S007', 'Success.TButton', 'Warning.TButton', 'common.error', 'common.success', 'common.warning', 'end', 'error', 'headings', 'risk_level', 'success', 'values']

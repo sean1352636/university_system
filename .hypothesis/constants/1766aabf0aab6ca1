@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/simple_activity_logger_gui/tabs/security.py
-# hypothesis_version: 6.151.9
-
-[1.0, 100, 200, 500, '%Y-%m-%d %H:%M:%S', '*.json', '*.txt', '...', '.json', '700x500', 'AL.Card.TFrame', 'AL.Heading.TLabel', 'AL.Title.TLabel', 'Anomaly Detection', 'Block IP', 'Block IP Error', 'CRITICAL', 'HIGH', 'IP Blocked', 'JSON files', 'Report Error', 'Reset Attempts', 'Reset Error', 'Save Security Report', 'Security Report', 'Text files', 'Unknown', 'action', 'analytics', 'anomalies', 'db_logger', 'details', 'detect_anomalies', 'disabled', 'failed_logins', 'failure', 'generate_report', 'logger', 'login', 'security', 'security_alerts', 'security_level', 'security_monitor', 'status', 'suspicious_ips', 'timestamp', 'timestamp_from', 'type', 'user_id', 'username', 'w', '{}']

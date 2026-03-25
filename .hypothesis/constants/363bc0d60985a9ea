@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/layout/_collections.py
-# hypothesis_version: 6.151.9
-
-[0.0, 100, 120, '%Y-%m-%d %H:%M:%S', '0.00', '1.0', '450x320', '550x400', '650x550', '<Configure>', '<Return>', 'Arial', 'Case Details', 'Resolve & Save', '_', 'all', 'amount_collected', 'assigned_date', 'bold', 'both', 'bottom', 'case_id', 'case_status', 'collections', 'danger', 'end', 'ew', 'final_notice', 'first_notice', 'headings', 'horizontal', 'is_logged_in', 'left', 'legal_notice', 'ns', 'nsew', 'nw', 'payment_demand', 'readonly', 'red', 'resolution_date', 'right', 'second_notice', 'secondary', 'student_id', 'success', 'system', 'total_debt', 'username', 'values', 'vertical', 'w', 'warning', 'white', 'word', 'x', 'y']

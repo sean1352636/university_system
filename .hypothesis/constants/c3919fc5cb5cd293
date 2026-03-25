@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/ai/ai_detector/analyzers/behavioral_analyzer.py
-# hypothesis_version: 6.151.9
-
-[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 1.0, 100, 500, 'adn', 'ai-assistant', 'browser_analysis', 'chatgpt', 'device_analysis', 'extensions', 'grammarly', 'its', 'paste_events', 'student_count', 'tab_switches', 'teh', 'text_entry_analysis', 'text_length', 'timing_analysis', 'youre']

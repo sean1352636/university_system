@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/office_hours/office_hours_service.py
-# hypothesis_version: 6.151.9
-
-[' AND location LIKE ?', '%Y-%m-%d %H:%M:%S', ', ', 'capacity', 'cnt', 'day_of_week', 'end_time', 'end_time is required', 'is_active', 'location', 'location is required', 'notes', 'office_hour_booking', 'office_hours', 'start_time', 'updated_at']

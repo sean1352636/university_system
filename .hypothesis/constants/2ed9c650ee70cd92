@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/database/__init__.py
-# hypothesis_version: 6.151.9
-
-['BackupGUI', 'BackupMetadata', 'BackupOptionsDialog', 'BackupViewerDialog', 'ComparisonDialog', 'DownloadDialog', 'EmailConfigDialog', 'ExportDialog', 'IntegrityCheckDialog', 'ProgressTracker', 'ReportDialog', 'RestoreDialog', 'ScheduleConfigDialog', 'StorageUsageDialog', 'TableSelectionDialog', 'UploadDialog', 'ValidationDialog', 'WebhookConfigDialog', 'compare_backups', 'create_backup_gui', 'export_to_csv', 'export_to_json', 'export_to_pdf', 'export_to_txt', 'export_to_xml', 'get_connection', 'get_log_file', 'load_backup_template', 'load_config', 'load_gui_config', 'open_data_backup_gui', 'parse_cron_schedule', 'restore_from_backup', 'save_backup_template', 'save_config', 'save_gui_config', 'scheduled_backup_job', 'start_backup_gui', 'start_scheduler', 'stop_scheduler']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/analytics/advanced_search/db.py
-# hypothesis_version: 6.151.9
-
-[0.0, '  • saved_searches', '  • search_analytics', '  • student_modules', '  • students', '  • user_permissions', '%Y-%m-%d %H:%M:%S', ', ', '=', '?', 'Tables created:', ']', 'clicked_result_id', 'column', 'execution_time', 'result_count', 'results_count', 'search_criteria', 'search_datetime', 'search_query', 'search_type', 'session_id', 'timestamp', 'user_id']

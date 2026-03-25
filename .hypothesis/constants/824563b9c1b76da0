@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/core/payments.py
-# hypothesis_version: 6.151.9
-
-[100, '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', 'GBP', 'PNG', 'amount', 'black', 'currency', 'error', 'expires_at', 'manual', 'payment_url', 'qr_code', 'secret_key', 'stripe', 'student_id', 'succeeded', 'success', 'transaction_id', 'white']

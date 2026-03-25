@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/cinema/gui/cinema_gui/community/series.py
-# hypothesis_version: 6.151.9
-
-['#333333', '#e74c3c', '#ecf0f1', '#ffffff', '-', '.', '1', '400x300', '400x350', ':', '<<TreeviewSelect>>', 'Card.TFrame', 'Created', 'Description', 'Enter series name', 'Helvetica', 'ID', 'Link Movie to Series', 'Main.TFrame', 'Movie Count', 'Movie Title', 'New Series', 'Order', 'Primary.TButton', 'Release Year', 'Series Name', 'Series created', 'Subtitle.TLabel', 'Success.TButton', '_', 'bold', 'both', 'cinema.labels.series', 'cinema.series.title', 'end', 'headings', 'left', 'right', 'values', 'vertical', 'w', 'x', 'y']

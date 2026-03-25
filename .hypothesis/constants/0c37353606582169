@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/ai/gui/features/notifications.py
-# hypothesis_version: 6.151.9
-
-[3000, '#2196F3', '#4CAF50', '#F44336', '#FF9800', 'error', 'info', 'success', 'warning', 'white']

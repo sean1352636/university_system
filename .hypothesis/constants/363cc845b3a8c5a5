@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/gui/medical_accommodation/dialogs/database_info.py
-# hypothesis_version: 6.151.9
-
-['-', '500x400', '=', 'Close', 'Database Information', 'PRAGMA table_info([', ']', '])']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/admin/messaging.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d %H:%M:%S', ')', ',', '?', 'Message not found', 'Subject: %s', 'admin', 'archive', 'archived', 'assignment_id', 'attachment_path', 'content', 'delete', 'error', 'force_delete_message', 'id', 'info', 'is_read', 'mark_read', 'mark_unread', 'marked as read', 'marked as unread', 'message_id', 'notification_body', 'notification_subject', 'read_at', 'recipient', 'recipient_email', 'recipient_id', 'recipient_username', 'reply_to', 'role', 'send_message', 'sender', 'sender_id', 'sender_name', 'sent_at', 'should_notify', 'subject', 'unarchive', 'unarchived', 'username', 'warning']

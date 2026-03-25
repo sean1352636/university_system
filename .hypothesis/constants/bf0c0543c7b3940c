@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/commerce/gui/cafe_reports.py
-# hypothesis_version: 6.151.9
-
-[0.0, '%Y%m%d_%H%M%S', '%Y-%m-%d %H:%M:%S', '*.*', '*.txt', '.txt', '1.0', '700x600', 'All files', 'Courier', 'Daily Sales', 'Helvetica', 'LOW STOCK', 'Low Stock Alert', 'Monthly Sales', 'OUT OF STOCK', 'Popular Items', 'System', 'Text files', 'Total Revenue', 'Unknown', 'Weekly Sales', '_', 'bold', 'cafe.dialogs.close', 'cafe.tab_reports', 'commerce/cafe_report', 'common.confirm', 'common.error', 'common.success', 'common.warning', 'generated_by', 'readonly', 'report_content', 'report_type', 'timestamp', 'username', 'utf-8', 'w']

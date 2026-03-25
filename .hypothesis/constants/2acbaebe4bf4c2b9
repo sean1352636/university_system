@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/database/migrations/fix_facilities_schema.py
-# hypothesis_version: 6.151.9
-
-['DROP TABLE rooms', '__main__', 'building_id']

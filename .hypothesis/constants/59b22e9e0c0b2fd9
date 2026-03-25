@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/records/clinical/care_plans.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', '1', '1. Create Care Plan', '2', '2. View Care Plans', '3', '3. Update Care Plan', '4', '5', 'Care plan goals: ', 'Enter student ID: ', 'General Care', 'Invalid input.', 'Invalid selection.', 'No care plans found.', 'Progress notes: ', 'active', 'care_plan', 'completed', 'create_care_plan', 'discontinued', 'id', 'on_hold', 'update_care_plan']

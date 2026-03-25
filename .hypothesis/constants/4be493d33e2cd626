@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/academics/progress/services/progress_service.py
-# hypothesis_version: 6.151.9
-
-[' ORDER BY sub.title', '1', '2', '2025/2026', '3', '4', '5', '6', '7', '8', '9', 'U', 'autumn', 'current_grade = ?', 'effort = ?', 'id', 'spring', 'summer', 'teacher_comment = ?']

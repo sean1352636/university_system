@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/batch_operations/mixins/__init__.py
-# hypothesis_version: 6.151.9
-
-['ApiServiceMixin', 'BackupRestoreMixin', 'BatchUpdatesMixin', 'DataQualityMixin', 'DuplicatesMixin', 'ExportReportingMixin', 'GradeManagementMixin', 'ImportHandlersMixin', 'SchedulingMixin', 'TemplatesMixin', 'UtilsMixin', 'ValidationMixin']

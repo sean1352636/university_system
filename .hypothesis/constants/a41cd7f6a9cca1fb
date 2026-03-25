@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/logging/gui/tabs/alerts.py
-# hypothesis_version: 6.151.9
-
-[120, 'Message', 'Severity', 'Status', 'Time', 'Type', 'alert_type', 'end', 'headings', 'high', 'low', 'medium', 'message', 'resolved', 'severity', 'triggered_at', '⚪', '✅ ', '🔄 ', '🔍 ', '🔴', '🚨 ', '🟡', '🟢']

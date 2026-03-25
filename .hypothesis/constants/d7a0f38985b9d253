@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/ai/ai_detector/integration/compliance_manager.py
-# hypothesis_version: 6.151.9
-
-[1825, 2555, 'COPPA', 'FERPA', 'GDPR', 'active_regulations', 'audit_trail_required', 'can_process', 'compliant', 'consent_compliance', 'consent_rate', 'consented_students', 'cutoff_date', 'data_minimization', 'data_portability', 'error', 'expired_records', 'generated_at', 'issues', 'needs_attention', 'purpose_limitation', 'regulation', 'requirements', 'requires_consent', 'retention_compliance', 'right_to_deletion', 'status', 'total_students', 'warnings']

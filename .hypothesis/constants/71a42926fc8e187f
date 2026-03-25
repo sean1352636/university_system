@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/__init__.py
-# hypothesis_version: 6.151.9
-
-[', ', '?', 'CircuitBreaker', 'Email', 'EmailService', 'FallbackQueue', 'SMTPClient', 'SMTPConfig', 'SendResult', 'SendStatus', 'University System', '__all__', 'admin', 'assignment_id', 'attachment_path', 'calculate_retry_time', 'content', 'current_user', 'error', 'info', 'is_read', 'message', 'queue_email', 'queue_template_email', 'recipient_id', 'reply_to', 'run_scheduler', 'schedule_send', 'send_bulk', 'send_email', 'send_password_reset', 'send_sla_alert', 'send_template_email', 'sender_email', 'sender_id', 'sender_name', 'sent_at', 'set_auth', 'stored', 'subject', 'username', 'warning']

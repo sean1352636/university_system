@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/course_management_gui/core/analytics.py
-# hypothesis_version: 6.151.9
-
-[0.0, 1.0, 100, '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '*.*', '*.txt', '-', '...', '.txt', '800x600', '900x600', '=', 'Admin Email', 'All Departments', 'All files', 'Arial', 'Capacity', 'Department', 'Detailed', 'N/A', 'OVERALL STATISTICS:\n', 'Summary', 'Text files', 'analytics_content', 'bold', 'common.close', 'department_name', 'disabled', 'generated_timestamp', 'report_action_frame', 'report_content', 'report_date', 'report_type', 'statistics_content', 'text', 'type', 'utf-8', 'w']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/alumni_management/reports.py
-# hypothesis_version: 6.151.9
-
-['active_mentors', 'gift_aid_total', 'manage_alumni', 'total_alumni', 'total_donated', 'upcoming_events']

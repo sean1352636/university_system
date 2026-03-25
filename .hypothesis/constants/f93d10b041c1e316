@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/gui/parking_management/dialogs/refund_dialog.py
-# hypothesis_version: 6.151.9
-
-['#229954', '#27ae60', '#2980b9', '#3498db', '#8e44ad', '#9b59b6', '10', '20', '550x450', 'Amount:', 'Arial', 'Cancel', 'Confirm Refund', 'Payment Date:', 'Payment Details', 'Payment ID:', 'Payment Method:', 'Payment Reference:', 'Select Refund Method', 'Violation ID:', '_', 'amount', 'blue', 'bold', 'card', 'cash', 'green', 'hand2', 'payment_id', 'raised', 'refund_method', 'student_account', 'student_id', 'violation_id', 'white', '💳 Refund to Card', '💵 Refund as Cash']

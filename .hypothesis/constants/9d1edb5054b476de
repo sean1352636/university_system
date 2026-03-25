@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/logging/log_management/alerts.py
-# hypothesis_version: 6.151.9
-
-[1000, '%Y-%m-%d', 'Admin Actions', 'Rapid Fire Actions', 'action', 'anomaly', 'audit', 'check', 'date_from', 'date_to', 'delete', 'failure', 'high', 'login', 'low', 'medium', 'message', 'module', 'name', 'security', 'severity', 'status', 'system_config', 'timestamp', 'type', 'user_id', 'user_management']

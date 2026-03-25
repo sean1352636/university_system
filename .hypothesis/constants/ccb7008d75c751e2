@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/analytics/advanced_search/duplicates.py
-# hypothesis_version: 6.151.9
-
-[0.85, 100, '\n3. Similar names:', '-', '1', '2', '3', '4', '=', '@', 'A', 'B', 'C', 'Course', 'D', 'Date of birth', 'Detection methods:', 'Email addresses', 'Excellent', 'First names', 'Gender', 'Good', 'Last names', 'Poor', '[0-9.]', "] = ''", '] IS NULL OR [', 'course', 'date_of_birth', 'email', 'field', 'first_name', 'gender', 'last_name']

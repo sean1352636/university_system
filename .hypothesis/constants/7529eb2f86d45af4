@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/college_system/core/defaults.py
-# hypothesis_version: 6.151.9
-
-['.jwt_secret', '127.0.0.1', '24', '5000', 'COLLEGE_API_DEBUG', 'COLLEGE_API_HOST', 'COLLEGE_API_PORT', 'COLLEGE_JWT_EXPIRY', 'COLLEGE_JWT_SECRET', 'SFC', 'admin1', 'data', 'false', 'staff1', 'student1', 'true']

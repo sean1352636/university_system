@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/college_system/modules/domain/visitors/services/visitors_service.py
-# hypothesis_version: 6.151.9
-
-[100, ', ', '?', 'Visitor not found.', 'badge_number', 'cnt', 'dbs_checked', 'first_name', 'id', 'last_name', 'organization', 'purpose', 'purpose is required.', 'safeguarding_briefed', 'sign_in_time', 'sign_out_time', 'status', 'updated_at', 'vehicle_reg', 'visiting_staff_id']

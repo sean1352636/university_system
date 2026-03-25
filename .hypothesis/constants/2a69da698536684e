@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/student_dashboard/common_imports.py
-# hypothesis_version: 6.151.9
-
-['#27ae60', '#2c3e50', '#34495e', '#3498db', '#e74c3c', '#ecf0f1', '#f39c12', '#ffffff', 'Arial', 'COLORS', 'Optional', 'Student', '__dict__', '_t', 'bold', 'create_stat_card', 'current_user', 'danger', 'dark', 'datetime', 'display_name', 'first_name', 'full_name', 'get_auth', 'get_connection', 'get_student_id', 'get_student_name', 'id', 'info', 'last_name', 'light', 'logger', 'logging', 'messagebox', 'name', 'primary', 'raised', 'secondary', 'student_id', 'success', 'tk', 'to_dict', 'ttk', 'user_id', 'warning', 'white']

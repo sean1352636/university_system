@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/services/__init__.py
-# hypothesis_version: 6.151.9
-
-['block_time_slots', 'calculate_bmi', 'create_new_template', 'create_sqlite_backup', 'edit_template', 'get_connection', 'get_user_student_id', 'import_templates', 'investigate_outbreak', 'log_audit_event', 'manage_allergies', 'manage_vital_signs', 'patient_queue', 'pending_tasks', 'quick_patient_lookup', 'record_vital_signs', 'report_disease_case', 'shared_templates', 'specialist_directory', 'validate_csv_format', 'view_allergies', 'view_disease_cases', 'view_failed_logins', 'view_vital_signs']

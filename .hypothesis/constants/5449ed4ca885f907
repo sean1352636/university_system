@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/layout/_late_fees.py
-# hypothesis_version: 6.151.9
-
-[0.05, 100, '500x400', 'Arial', '_', 'admin', 'amount', 'applied_date', 'bold', 'both', 'calculation_method', 'daily', 'danger', 'days_overdue', 'end', 'ew', 'fixed', 'headings', 'horizontal', 'late_fee_id', 'late_fees', 'left', 'ns', 'nsew', 'percentage', 'readonly', 'right', 'secondary', 'student_fee_id', 'success', 'username', 'values', 'vertical', 'w', 'waived', 'waiver_reason', 'warning', 'white', 'x']

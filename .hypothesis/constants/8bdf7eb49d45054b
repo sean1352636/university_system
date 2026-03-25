@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/facilities/services/facilities_management_core.py
-# hypothesis_version: 6.151.9
-
-[' AND capacity >= ?', ' AND room_type = ?', '1', '2', '3', '4', '5', '6', '7', '8', '9', '=', 'AssetManager', 'BuildingManager', 'Error: {error}', 'Invalid choice.', 'RoomBookingManager', 'RoomManager', 'WorkOrderManager', 'building', 'conflict_count', 'facilities.error', 'facilities.returning', 'room']

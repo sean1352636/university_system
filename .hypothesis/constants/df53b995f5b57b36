@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/parent_portal/grades.py
-# hypothesis_version: 6.151.9
-
-[1.0, 100, 150, ')', '-', '<<ListboxSelect>>', 'A (90-100)', 'Arial', 'Assessment', 'Available Reports', 'B (80-89)', 'C (70-79)', 'Comments', 'D (60-69)', 'Date', 'ERROR', 'Error', 'F (0-59)', 'Grade', 'Grade Analytics', 'Grade Distribution', 'Grade Management', 'Grades Interface', 'ID: ', 'Info', 'Instructor Reports', 'Load Analytics', 'Module', 'N/A', 'No reports available', 'Performance Overview', 'Performance Trends', 'Recent Grades', 'Report Content', 'Select Student', 'Select Student:', 'Statistics', 'Subject', 'Title.TLabel', 'Trends', 'View Grades', 'View Reports', 'bold', 'content', 'date', 'declining', 'headings', 'id', 'improving', 'module', 'readonly', 'stable', 'teacher', 'type', 'values', 'w', '← Back']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/helpdesk/workflows.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d %H:%M:%S', 'assign_to_department', 'change_status', 'escalate_to_manager', 'manual', 'send_survey', 'set_priority']

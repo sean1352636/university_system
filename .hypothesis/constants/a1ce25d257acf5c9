@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/gui/alumni/__init__.py
-# hypothesis_version: 6.151.9
-
-['AlumniCRUDMixin', 'AlumniGUIApp', 'ChaptersMixin', 'DashboardMixin', 'DirectoryMixin', 'DonationsMixin', 'EventsMixin', 'ForumMixin', 'GamificationMixin', 'JobsCareerMixin', 'MentorshipMixin', 'NotificationsMixin', 'ReportsMixin', 'ReunionsMixin', 'StoriesPhotosMixin', 'launch_alumni_gui', 'main']

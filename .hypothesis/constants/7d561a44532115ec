@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/shared_db_utilities.py
-# hypothesis_version: 6.151.9
-
-['DB_DIR', 'DB_PATH', 'DEFAULT_DB_PATH', 'DatabaseManager', 'EXPORTS_DIR', 'MAIN_DIR', 'PROJECT_ROOT', 'SimpleDBManager', 'USE_AUTH_DB', '_DB_READY', '_db_manager', '_db_manager_lock', '_ensure_db_ready', 'ensure_db_directory', 'ensure_parent_dir', 'execute_db_operation', 'get_connection', 'get_db_connection', 'get_db_manager', 'initialize_email_db', 'optimize_database', 'safe_db_operation', 'sqlite3']

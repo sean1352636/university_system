@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/email/email_gui/dashboard_tab.py
-# hypothesis_version: 6.151.9
-
-['0', 'Active Announcements', 'Arial', 'Chat Rooms', 'Chat Rooms Joined', 'Check Messages', 'Compose Email', 'Dashboard', 'Email Reports', 'Emails Sent', 'Emails Stored', 'Messages Received', 'Quick Actions', 'Settings', 'Statistics', 'Unread Messages', 'View Announcements', 'Welcome', 'announcements', 'bold', 'chat_rooms', 'common.welcome', 'default', 'email', 'email.chat_rooms', 'email.check_messages', 'email.compose_email', 'email.email_reports', 'email.quick_actions', 'email.settings', 'email.statistics', 'email.tabs.dashboard', 'emails_sent', 'emails_stored', 'en', 'get_stored_emails', 'instructor', 'joined', 'messages_received', 'role', 'staff', 'student', 'total_count', 'unread_count', 'unread_messages', 'username']

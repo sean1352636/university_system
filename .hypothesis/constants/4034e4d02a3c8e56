@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/student_jobs_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/student-jobs', '/applications', '/employment', '/postings', 'GET', 'POST', 'application_deadline', 'application_id', 'availability', 'campus_job_postings', 'cover_letter', 'create', 'department', 'department_id', 'employer_name', 'employment_status', 'employment_type', 'employment_type = ?', 'hourly_rate', 'hours_per_week', 'is_active', 'is_active = ?', 'items', 'job_category', 'job_category = ?', 'job_description', 'job_id', 'job_id = ?', 'job_title', 'location', 'max_hours_per_week', 'position_title', 'required_skills', 'resume_url', 'search', 'start_date', 'status', 'status = ?', 'student_employment', 'student_id', 'student_id = ?', 'student_jobs', 'sub', 'supervisor_id', 'total', 'total_positions', 'view']

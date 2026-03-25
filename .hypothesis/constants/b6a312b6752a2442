@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/utils/batch_operations/external.py
-# hypothesis_version: 6.151.9
-
-[200, '.csv', '.json', '.xlsx', '1', '2', '3', '4', 'Authorization', 'api_key', 'csv', 'database', 'excel', 'headers', 'host', 'json', 'mysql', 'password', 'port', 'postgresql', 'r', 'type', 'url', 'user', 'username', 'w']

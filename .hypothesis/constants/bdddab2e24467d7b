@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/gui/trip_management_gui/export_dialog.py
-# hypothesis_version: 6.151.9
-
-['%Y%m%d_%H%M%S', '*.*', ',', '=== TRIPS DATA ===', 'All files', 'Amount', 'Arial', 'Assigned Date', 'Assignment ID', 'CSV', 'Category', 'Cost', 'Created At', 'Created By', 'Date', 'Description', 'Destination', 'Dietary Requirements', 'Email', 'Emergency Contact', 'End Date', 'Error', 'Expense Data', 'Expense ID', 'Export Trip Data', 'Export format:', 'Max Participants', 'Medical Info', 'Name', 'Participant Data', 'Participant ID', 'Payment Status', 'Recorded By', 'Registration Date', 'Role', 'Staff Assignments', 'Staff Name', 'Start Date', 'Status', 'Student ID', 'Student Name', 'Success', 'TSV', 'Trip ID', 'Trip Information', 'Trip Name', 'Updated At', 'Validation Error', 'bold', 'csv', 'manage_trips', 'tsv', 'utf-8', 'w']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/templates.py
-# hypothesis_version: 6.151.9
-
-['DEFAULT_TEMPLATES', 'create_template', 'delete_template', 'list_templates', 'load_template', 'render_template', 'update_template']

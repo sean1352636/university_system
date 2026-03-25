@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/course_management_gui/recommendations/validation.py
-# hypothesis_version: 6.151.9
-
-[',', 'Friday', 'Monday', 'Saturday', 'Sunday', 'Thursday', 'Tuesday', 'Wednesday', '^[A-Z]{2,4}\\d{2,3}$']

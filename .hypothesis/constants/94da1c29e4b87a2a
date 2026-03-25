@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/course_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' = ?', ' WHERE course_id = ?', '%Y-%m-%d %H:%M:%S', ', ', '/<int:course_id>', '/api/courses', 'GET', 'POST', 'PUT', 'UPDATE courses SET ', 'active', 'course', 'course_code', 'course_id', 'course_name', 'course_waitlist', 'courses', 'create', 'credits', 'department', 'description', 'items', 'max_capacity', 'search', 'status', 'sub', 'total', 'update', 'updated_at = ?', 'view', 'waitlist']

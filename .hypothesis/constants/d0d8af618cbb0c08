@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/ai/gui/features/export.py
-# hypothesis_version: 6.151.9
-
-['*.backup', '*.csv', '*.json', '*.txt', '.backup', '.csv', '.json', 'Backup Complete', 'Backup Error', 'Backup files', 'CSV files', 'Create System Backup', 'Export Complete', 'Export Error', 'JSON files', 'Message', 'Response', 'Restore Complete', 'Restore Error', 'Restore Warning', 'Select Backup File', 'Text files', 'Timestamp', 'Type', 'Username', 'analytics', 'chatbot.backup_error', 'chatbot.export_error', 'config', 'conversation_history', 'conversations', 'default', 'en', 'message', 'r', 'response', 'system_status', 'text', 'timestamp', 'type', 'w']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/core/students.py
-# hypothesis_version: 6.151.9
-
-[100, 404, 500, '\nCredit sources:', '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '-', '07000000000', '07123456789', '07123456790', '07123456791', '07123456792', '07123456793', '2024-09-01', '=', 'Brown', 'Computer Science', 'Credit Application', 'Davis', 'Emma', 'Engineering', 'Enter student ID: ', 'Invalid input.', 'Invalid selection.', 'James', 'John', 'Johnson', 'Mathematics', 'Michael', 'N/A', 'No expiry', 'Psychology', 'STU001', 'STU002', 'STU003', 'STU004', 'STU005', 'Sarah', 'Smith', 'Student not found', 'Unknown Student', 'Wilson', 'active', 'add_credit', 'adjustment', 'amount', 'balance_due', 'error', 'goodwill', 'other', 'overpayment', 'paid', 'partial', 'refund', 'scholarship', 'source', 'student_credits', 'student_id', 'system', 'total_fees', 'total_paid', 'total_scholarships', 'unpaid_fees_count', 'used', 'username', 'y']

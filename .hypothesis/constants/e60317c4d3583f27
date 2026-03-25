@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/attendance/audit.py
-# hypothesis_version: 6.151.9
-
-['127.0.0.1', 'boolean', 'enable_audit_log']

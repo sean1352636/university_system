@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/services/plagiarism/tests.py
-# hypothesis_version: 6.151.9
-
-[0.1, 100, 99999, '!@#$%^&*()', '%Y%m%d%H%M%S%f', '123 456 789', '====================', 'AI.', 'FAILED', 'MOD', 'PASSED', 'TEST_MODULE', '_', 'a b c', 'content', 'highest_similarity', 'id', 'invalid', 'matches', 'title', 'txt', 'username']

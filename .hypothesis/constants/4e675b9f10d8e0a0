@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/layout/_core_finance.py
-# hypothesis_version: 6.151.9
-
-[100, 'Arial', 'View All Refunds', 'bold', 'common.error', 'common.loading', 'core_finance', 'core_stat_0', 'core_stat_1', 'core_stat_2', 'core_stat_3', 'danger', 'ew', 'gui_generate_invoice', 'gui_record_payment', 'info', 'invoice_manager', 'invoices', 'left', 'primary', 'raised', 'secondary', 'success', 'transactions', 'warning', 'white', 'x']

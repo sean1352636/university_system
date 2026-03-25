@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/ai/ai_detector/visualization/visual_analyzer.py
-# hypothesis_version: 6.151.9
-
-[0.4, 0.6, 0.7, 0.8, 1.0, '[,;:()]', '[.!?]+', 'avg_paragraph_length', 'avg_sentence_length', 'color', 'complexity_score', 'consequently', 'flow_data', 'furthermore', 'green', 'has_transition', 'heatmap_data', 'high', 'high_risk_sentences', 'however', 'in addition', 'intensity', 'low', 'medium', 'moreover', 'none', 'on the other hand', 'orange', 'overall_score', 'paragraph_index', 'red', 'score', 'sentence_count', 'sentence_index', 'text', 'therefore', 'total_paragraphs', 'total_sentences', 'transition_frequency', 'word_count', 'yellow']

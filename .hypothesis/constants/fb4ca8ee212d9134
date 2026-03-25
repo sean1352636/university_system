@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/services/pdf_export/export_manager.py
-# hypothesis_version: 6.151.9
-
-[0.25, 100, '%Y%m%d_%H%M%S', 'Academic', 'Count', 'Events', 'Events by Type', 'Export complete!', 'Finance', 'Saving PDF file...', 'Starting export...', 'Stats', 'Students by Status', 'by_status', 'by_type', 'categories', 'column_names', 'columns', 'database_pdf_export', 'description', 'display_name', 'estimated_pages', 'export', 'include_charts', 'include_data', 'largest_tables', 'name', 'output_path', 'row_count', 'rows', 'statistics', 'table_count', 'tables', 'total_records', 'total_tables']

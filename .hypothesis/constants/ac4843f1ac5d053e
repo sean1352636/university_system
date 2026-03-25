@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/email/email_gui/chat_tab.py
-# hypothesis_version: 6.151.9
-
-['...', '<Double-1>', 'Admin', 'Chat Rooms', 'Chat rooms refreshed', 'Create Room', 'Creator', 'Description', 'Error', 'Info', 'Invalid Selection', 'Invitations', 'Join Room', 'Member', 'Members', 'Messages', 'My Rooms', 'Name', 'No Selection', 'Public Rooms', 'Refresh', 'Role', 'Success', 'Type', 'Unknown Room', 'already_member', 'common.error', 'common.info', 'common.refresh', 'common.success', 'creator', 'default', 'description', 'email.create_room', 'email.invitations', 'email.join_room', 'email.my_rooms', 'email.public_rooms', 'en', 'headings', 'id', 'is_admin', 'joined', 'member_count', 'message_count', 'name', 'public', 'room_type', 'rooms', 'tags', 'values']

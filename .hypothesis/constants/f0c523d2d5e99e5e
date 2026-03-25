@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/infrastructure/email/email_service/notifications/health.py
-# hypothesis_version: 6.151.9
-
-['%Y-%m-%d %H:%M:%S', 'advisory_description', 'advisory_title', 'appointment_date', 'appointment_id', 'appointment_time', 'appointment_type', 'error', 'failed', 'first_name', 'health_advisory', 'info', 'last_name', 'provider', 'sent', 'severity']

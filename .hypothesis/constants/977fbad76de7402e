@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/enhanced_reporting/standalone/system_ops.py
-# hypothesis_version: 6.151.9
-
-[300, '%Y-%m-%d', '%Y-%m-%d %H:%M:%S', 'ANALYZE', 'Cache cleared', 'Database optimized', 'Old reports cleaned', 'VACUUM', 'daily', 'date_range_days', 'enabled', 'error', 'errors', 'errors_encountered', 'frequency', 'generated_date', 'hour', 'last_run', 'monthly', 'pdf', 'quality_report', 'r', 'recipients', 'reports', 'reports_dir', 'run_count', 'schedule_config', 'system_stats', 'tasks_completed', 'tasks_successful', 'template_name', 'timestamp', 'w', 'weekly']

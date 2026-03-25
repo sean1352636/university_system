@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance/layout/_financial_aid.py
-# hypothesis_version: 6.151.9
-
-[100, 110, ' - ', '#555', '500x450', 'Arial', '_', 'aid', 'aid_id', 'aid_type', 'application_date', 'approved', 'awarded_amount', 'bold', 'both', 'cancelled', 'completed', 'danger', 'disbursed', 'disbursed_amount', 'end', 'ew', 'headings', 'horizontal', 'info', 'left', 'ns', 'nsew', 'pending', 'primary', 'readonly', 'remaining_amount', 'right', 'secondary', 'status', 'student_id', 'success', 'values', 'vertical', 'w', 'white', 'x']

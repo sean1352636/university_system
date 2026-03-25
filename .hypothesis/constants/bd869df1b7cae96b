@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/cli/ta_management_cli.py
-# hypothesis_version: 6.151.9
-
-[10.0, '\nEnter your choice: ', '-', '=', 'Cancelled.', 'Confirm? (y/n): ', 'Enter module code: ', 'Enter student ID: ', 'Granted permissions:', 'Removal cancelled.', 'UNIQUE constraint', '[ ]', '[X]', 'active', 'admin', 'assign', 'assignment_count', 'assignments', 'grade_assignments', 'grader', 'inactive', 'instructor', 'lead_ta', 'manage_discussions', 'module_code', 'my_assignments', 'remove', 'return', 'role', 'set_permissions', 'status', 'student', 'ta', 'take_attendance', 'total_hours', 'upload_materials', 'username', 'view_all', 'view_module_tas', 'view_student_info', 'view_workload', 'y']

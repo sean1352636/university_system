@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/logging/log_management/cli/performance.py
-# hypothesis_version: 6.151.9
-
-[100, 1000, '-', '/', '1', '2', '3', '4', '5. Return', '=', 'Choose metric: ', 'Complex Query', 'Complex filter', 'Connection', 'Date filter', 'Insert Operation', 'Simple Query', 'Simple select', 'User filter', 'action', 'close', 'details', 'inf', 'module', 'perf_test', 'performance_test', 'role', 'status', 'success', 'test', 'test_action', 'timestamp', 'user_id', 'username', 'y']

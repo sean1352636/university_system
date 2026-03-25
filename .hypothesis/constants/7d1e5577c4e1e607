@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/ai/gui/styles.py
-# hypothesis_version: 6.151.9
-
-['#0D47A1', '#1976D2', '#212121', '#2B2B2B', '#2E86AB', '#404040', '#757575', '#A23B72', '#C73E1D', '#E3F2FD', '#F18F01', '#F5F5F5', '#FFFFFF', 'CB.Primary.TButton', 'CB.Secondary.TButton', 'CB.Subtitle.TLabel', 'CB.Title.TLabel', 'Segoe UI', '_parent_window', 'accent', 'background', 'bg', 'blue', 'body', 'bold', 'chat', 'chat_bold', 'chat_display', 'clam', 'dark', 'default', 'en', 'fg', 'message_entry', 'normal', 'primary', 'secondary', 'select_bg', 'select_fg', 'small', 'subtitle', 'success', 'surface', 'text_primary', 'text_secondary', 'title']

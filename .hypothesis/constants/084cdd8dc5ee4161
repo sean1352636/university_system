@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/database/dialogs/validation.py
-# hypothesis_version: 6.151.9
-
-[1.0, '500x400', '=', 'ERRORS FOUND:\n', 'No Selection', 'Please wait...\n\n', 'Validate', 'Validate Backup', 'Validation Results', 'both', 'errors', 'path', 'readonly', 'values', 'x', '✓ PASS', '✗ FAIL']

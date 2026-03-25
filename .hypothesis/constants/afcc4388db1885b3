@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/database/operations/export_ops.py
-# hypothesis_version: 6.151.9
-
-[0.1, 0.3, 0.5, ' | ', '-', '<i>No data</i>', '=', 'ALIGN', 'BACKGROUND', 'BOTTOMPADDING', 'FONTNAME', 'FONTSIZE', 'GRID', 'Heading2', 'Helvetica-Bold', 'LEFT', 'Normal', 'SELECT * FROM [', 'TEXTCOLOR', 'TOP', 'Title', 'VALIGN', ']', '] LIMIT 100', 'database', 'row', 'table', 'utf-8', 'w']

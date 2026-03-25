@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/attendance_tracker/attendance_tab.py
-# hypothesis_version: 6.151.9
-
-[120, 150, 300, ' - ', '15', '2024-12-20 09:15', '2024-12-20 09:25', '40.7128, -74.0060', '50', '700x600', '<<ComboboxSelected>>', '<Configure>', '<Double-1>', 'Absent', 'Bob Wilson', 'CS101', 'CS102', 'Data Structures', 'Jane Smith', 'John Doe', 'Late', 'Not Recorded', 'Present', 'Primary.TButton', 'S001', 'S002', 'S003', 'Success.TButton', 'T', 'Title.TLabel', 'Traffic delay', 'Warning.TButton', 'all', 'attendance.students', 'both', 'common.close', 'common.error', 'common.warning', 'end', 'ew', 'headings', 'left', 'nw', 'readonly', 'right', 'values', 'vertical', 'w', 'x', 'y']

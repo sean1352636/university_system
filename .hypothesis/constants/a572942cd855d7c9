@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/grading/learning_outcomes/menu.py
-# hypothesis_version: 6.151.9
-
-['\nAvailable Courses:', '\nAvailable Modules:', '\nReport Options:', '1', '2', '3', '4', '5', '6', 'Invalid report type.', 'Invalid selection.']

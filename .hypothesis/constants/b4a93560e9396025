@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/finance_reporting/archive_backup/report_display.py
-# hypothesis_version: 6.151.9
-
-[0.95, 300, 700, 900, 1000, 1400, '*.*', '*.pdf', '*.png', '.png', '1.0', '10', 'Arial', 'Courier', 'bold', 'common.close', 'common.error', 'common.success', 'disabled', 'tight']

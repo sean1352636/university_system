@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/utils/ai/gui/screens/settings.py
-# hypothesis_version: 6.151.9
-
-['10', '11', '12', '14', '5', '8', '9', '<<ComboboxSelected>>', 'About', 'Appearance', 'Auto-scroll chat', 'Back to Chat', 'CB.Primary.TButton', 'CB.Title.TLabel', 'Chat Font Size:', 'General', 'Getting Help', 'Notifications', 'Test Microphone', 'Voice', 'Voice Settings', 'Voice Test', 'chatbot.about_info', 'chatbot.appearance', 'chatbot.back_to_chat', 'chatbot.enable_tts', 'chatbot.getting_help', 'chatbot.help_info', 'chatbot.tab_about', 'chatbot.tab_general', 'chatbot.tab_voice', 'chatbot.voice_test', 'default', 'en', 'readonly', 'red']

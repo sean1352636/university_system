@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/parent_portal/financial.py
-# hypothesis_version: 6.151.9
-
-[100, 120, 150, ')', '600x550', '800x600', 'Account Summary', 'Amount', 'Arial', 'Bank Transfer', 'Cancel', 'Cash', 'Check', 'Close', 'Credit Card', 'Currency', 'Date', 'Debit Card', 'Description', 'Due Date', 'Error', 'Fee Information', 'Fee Type', 'Fees & Payments', 'GBP', 'ID: ', 'Load Fees', 'Make Payment', 'Method', 'No Fees Due', 'No outstanding fees', 'Not Available', 'Outstanding Fees', 'Paid', 'Payment History', 'Payment Method:', 'Pending', 'Process Payment', 'Reference', 'Select Student:', 'Status', 'Success', 'Title.TLabel', 'Unknown', 'Unknown Fee', 'Unpaid', 'Validation Error', 'bold', 'completed', 'failed', 'green', 'headings', 'orange', 'pending', 'readonly', 'red', 'unpaid', 'values', 'w']

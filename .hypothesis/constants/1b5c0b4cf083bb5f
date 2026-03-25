@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/staff_hr/services/managers/employee_manager.py
-# hypothesis_version: 6.151.9
-
-[1.0, ' = ?', ' AND semester = ?', ' WHERE user_id = ?', ', ', 'active', 'admin_hours', 'bio', 'column', 'contract_end_date', 'create', 'created_at', 'delete', 'department', 'document_id', 'effective_from', 'effective_to', 'emergency_contact', 'employee_id', 'employment_type', 'expertise_areas', 'expiry_date', 'full-time', 'hire_date', 'is_recurring', 'issue_date', 'job_title', 'location', 'manager_id', 'notes', 'office_hours', 'office_location', 'phone_extension', 'profile_id', 'qualifications', 'research_hours', 'schedule_id', 'schedule_type', 'service_hours', 'staff_document', 'staff_profile', 'staff_schedule', 'staff_workload', 'status', 'teaching_hours', 'total_fte', 'type', 'update', 'updated_at = ?', 'updated_fields', 'uploaded_by', 'user_id', 'workload_id']

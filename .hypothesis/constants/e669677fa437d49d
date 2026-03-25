@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/student_union/administration/finance_oversight.py
-# hypothesis_version: 6.151.9
-
-['%Y', '%Y-%m-%d %H:%M:%S', '-', '0', '1', '1. ', '2', '2. ', '3', '3. ', 'Invalid choice.', 'approved', 'id', 'manage_all_clubs', 'manage_own_club', 'pending', 'rejected', 'y']

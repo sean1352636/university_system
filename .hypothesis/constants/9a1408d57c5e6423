@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/mail/services/__init__.py
-# hypothesis_version: 6.151.9
-
-['FORWARDING_FEES', 'ForwardingManager', 'PACKAGE_STATUSES', 'PACKAGE_TYPES', 'POBoxManager', 'PackageManager', 'ReportManager', 'STORAGE_FEES', 'TransactionManager', 'init_mail_db']

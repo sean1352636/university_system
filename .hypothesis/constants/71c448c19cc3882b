@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/finance/gui/financial_aid/student_portal/awards.py
-# hypothesis_version: 6.151.9
-
-[0.0, 100, 120, 200, 'Amount', 'Arial', 'Award ID', 'Award Summary', 'Awarded Date', 'Back to Dashboard', 'Error', 'General Aid', 'My Awards', 'Name', 'Status', 'Title.TLabel', 'Type', 'active_count', 'aid_id', 'amount', 'approval_date', 'awarded_amount', 'awarded_date', 'both', 'count', 'end', 'left', 'name', 'red', 'remaining', 'right', 'status', 'total', 'total_awarded', 'total_disbursed', 'type', 'x']

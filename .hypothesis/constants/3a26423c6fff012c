@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/health/gui/health_portal/auth_encryption.py
-# hypothesis_version: 6.151.9
-
-[384, 'admin', 'create', 'current_user', 'delete', 'export', 'health_staff', 'id', 'instructor', 'print', 'rb', 'role', 'staff', 'student', 'update', 'view', 'wb']

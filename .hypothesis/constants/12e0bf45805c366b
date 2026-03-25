@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/primary_school/core/defaults.py
-# hypothesis_version: 6.151.9
-
-['.jwt_secret', '127.0.0.1', '5002', 'Developing', 'EYFS', 'Emerging', 'Exceeding', 'Expected', 'Greater Depth', 'KS1', 'KS2', 'PRI', 'Reception', 'Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5', 'Year 6', 'admin3', 'data', 'false', 'parent', 'staff3', 'student3', 'true']

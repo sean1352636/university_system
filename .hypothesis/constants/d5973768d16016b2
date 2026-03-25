@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/mobility/gui/parking_management/tabs/violations.py
-# hypothesis_version: 6.151.9
-
-[100, '$fine_amount', '$license_plate', '$location', '$payment_status', '$signature', '$student_name', '$violation_date', '$violation_id', '$violation_type', '%Y-%m-%d %H:%M:%S', ':', '<KeyRelease>', 'Already Paid', 'Confirm Delete', 'Date', 'Edit Violation', 'Email Error', 'Email Notification', 'Error', 'Fine', 'ID', 'License Plate', 'Location', 'No Selection', 'Officer', 'Paid', 'Pay Fine', 'Record New Violation', 'Status', 'Student', 'Type', 'Unpaid', 'User', 'Warning', '__iter__', 'body', 'common.refresh', 'common.search', 'email', 'fine_amount', 'gray', 'headings', 'hidden', 'id', 'license_plate', 'location', 'payment_status', 'r', 'send_email', 'student_email', 'student_id', 'subject', 'templates', 'values', 'vehicle_id', 'violation_type']

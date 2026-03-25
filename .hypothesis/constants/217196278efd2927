@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/student_support/automation/background_tasks.py
-# hypothesis_version: 6.151.9
-
-[300, '%Y-%m-%d %H:%M:%S', 'SELECT 0', 'active_tickets', 'avg_response_time', 'created_datetime', 'is_primary', 'performance', 'satisfaction', 'staff_id', 'tickets', 'user_satisfaction']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/shared/gui/batch_operations/mixins/external_integration.py
-# hypothesis_version: 6.151.9
-
-[100, 200, 201, 300, 404, '%Y%m%d_%H%M%S', '*.csv', 'Authorization', 'Content-Type', 'Student Data Export', 'X-API-Key', 'address', 'api_key', 'api_url', 'apikey', 'application/json', 'auth_type', 'basic', 'bearer', 'check_interval', 'course', 'created_at', 'csv', 'database', 'date_of_birth', 'email', 'enrollment_date', 'file_pattern', 'first_name', 'host', 'last_name', 'mysql', 'password', 'phone_number', 'port', 'postgresql', 'share_path', 'sqlserver', 'status', 'student_id', 'students', 'type', 'username', 'w']

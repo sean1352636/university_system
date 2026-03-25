@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/primary_school/modules/domain/pupil_life/library/services/library_service.py
-# hypothesis_version: 6.151.9
-
-[' AND category = ?', ' AND ll.pupil_id = ?', ' AND ll.status = ?', ' ORDER BY title', ', ', 'Deleted book id=%s', 'On Loan', 'Updated book id=%s', 'author', 'available_copies', 'book_id', 'category', 'copies', 'due_date', 'id', 'isbn', 'location', 'pupil_id', 'reading_level', 'title']

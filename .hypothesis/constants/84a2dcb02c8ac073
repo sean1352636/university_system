@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/secondary_school/modules/domain/staff/cpd/services/cpd_service.py
-# hypothesis_version: 6.151.9
-
-[0.0, ' AND category = ?', ' AND staff_name = ?', ' ORDER BY date DESC', 'assessment', 'behaviour_management', 'curriculum', 'first_aid', 'general', 'ict', 'leadership', 'safeguarding', 'sen', 'wellbeing']

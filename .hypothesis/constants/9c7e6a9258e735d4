@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/academics/gui/plagiarism_main_gui/launcher.py
-# hypothesis_version: 6.151.9
-
-['--integrate', '--test', '400x300', 'MAIN_WINDOW_WIDTH', 'PRIMARY_COLOR', 'Test Button', 'Test Label', 'Test Window', 'Test status', 'add_menu_option', 'store_true']

@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/shared/api/university/routes/roommate_finder_routes.py
-# hypothesis_version: 6.151.9
-
-[201, ' AND ', ' WHERE ', '%Y-%m-%d %H:%M:%S', '/api/roommate-finder', '/matches', '/profiles', 'GET', 'POST', 'bio', 'budget_max', 'budget_min', 'compatibility_score', 'create', 'display_name', 'is_active', 'is_active = ?', 'items', 'match_reasons', 'move_in_date', 'pet_preference', 'preferred_gender', 'profile_id_1', 'profile_id_2', 'roommate_finder', 'roommate_matches', 'roommate_profiles', 'search', 'smoking_preference', 'status', 'status = ?', 'student_id', 'student_id = ?', 'sub', 'total', 'view']

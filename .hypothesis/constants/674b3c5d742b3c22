@@ -1,4 +1,0 @@
-# file: /home/seancatchpole989/education_system/university_system/modules/domain/student_affairs/services/student_support/features/templates.py
-# hypothesis_version: 6.151.9
-
-['\nCategories:', '\nPriorities:', '\nSelect option: ', '\n📋 MANAGE TEMPLATES', '\n📋 TICKET TEMPLATES', '%Y-%m-%d %H:%M:%S', '*.json', ',', '1', '2', '24 hours', '3', '4', '5', '6', '6. Back', '=', 'Academic', 'Critical', 'Financial Aid', 'General', 'High', 'Library Services', 'Low', 'Medium', 'Other', 'RESPONSE_TIME', 'Student', 'System', 'TICKET_ID', 'Technical', 'Template name: ', 'Title template: ', 'USER_NAME', 'Urgent', '[]', 'admin', 'category', 'created_by', 'description_template', 'file', 'is_active', 'name', 'priority', 'r', 'role', 'source', 'staff', 'subject', 'system', 'template_id', 'title_template', 'usage_count', 'username', 'utf-8', '❌ Invalid category.', '❌ Invalid choice.', '❌ Invalid priority.', '🎫 TICKET TEMPLATES:']
