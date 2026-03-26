@@ -46,7 +46,7 @@ def student_progress_tracking():
                g.letter_grade, g.submission_date, a.assessment_name,
                a.module_code, a.assessment_type
         FROM grades g
-        JOIN assessments a ON g.assessment_id = a.assessment_id
+        JOIN assessments a ON g.assessment_id = a.id
         WHERE g.student_id = ?
         ORDER BY g.submission_date
         ''', (student_id,))
@@ -169,11 +169,11 @@ def calculate_individual_success_probability(cursor, student_id):
 
     # Get submission rate
     cursor.execute('''
-    SELECT COUNT(DISTINCT a.assessment_id) as total,
-           COUNT(g.grade_id) as submitted
+    SELECT COUNT(DISTINCT a.id) as total,
+           COUNT(g.id) as submitted
     FROM assessments a
     JOIN student_modules sm ON a.module_code = sm.module_code
-    LEFT JOIN grades g ON a.assessment_id = g.assessment_id AND g.student_id = sm.student_id
+    LEFT JOIN grades g ON a.id = g.assessment_id AND g.student_id = sm.student_id
     WHERE sm.student_id = ?
     ''', (student_id,))
 
@@ -184,7 +184,7 @@ def calculate_individual_success_probability(cursor, student_id):
     cursor.execute('''
     SELECT g.score / a.max_points * 100
     FROM grades g
-    JOIN assessments a ON g.assessment_id = a.assessment_id
+    JOIN assessments a ON g.assessment_id = a.id
     WHERE g.student_id = ?
     ORDER BY g.submission_date DESC
     LIMIT 5
@@ -317,11 +317,11 @@ def calculate_student_success_probability(cursor, student_id):
 
     # Get submission rate
     cursor.execute('''
-    SELECT COUNT(DISTINCT a.assessment_id) as total,
-           COUNT(g.grade_id) as submitted
+    SELECT COUNT(DISTINCT a.id) as total,
+           COUNT(g.id) as submitted
     FROM assessments a
     JOIN student_modules sm ON a.module_code = sm.module_code
-    LEFT JOIN grades g ON a.assessment_id = g.assessment_id AND g.student_id = sm.student_id
+    LEFT JOIN grades g ON a.id = g.assessment_id AND g.student_id = sm.student_id
     WHERE sm.student_id = ?
     ''', (student_id,))
 
@@ -332,7 +332,7 @@ def calculate_student_success_probability(cursor, student_id):
     cursor.execute('''
     SELECT g.score / a.max_points * 100
     FROM grades g
-    JOIN assessments a ON g.assessment_id = a.assessment_id
+    JOIN assessments a ON g.assessment_id = a.id
     WHERE g.student_id = ?
     ORDER BY g.submission_date DESC
     LIMIT 5
@@ -456,7 +456,7 @@ def collect_dashboard_data(cursor):
     SELECT DATE(g.submission_date) as date,
            AVG(g.score / a.max_points * 100) as avg_percentage
     FROM grades g
-    JOIN assessments a ON g.assessment_id = a.assessment_id
+    JOIN assessments a ON g.assessment_id = a.id
     WHERE g.submission_date >= date('now', '-30 days')
     GROUP BY DATE(g.submission_date)
     ORDER BY date

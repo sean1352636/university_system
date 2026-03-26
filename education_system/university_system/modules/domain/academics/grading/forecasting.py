@@ -13,6 +13,7 @@ from reportlab.lib.units import inch
 from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from education_system.university_system.infrastructure.database.db import get_connection
+from education_system.university_system.modules.domain.academics.grading.grade_calculation.conversions import letter_to_gpa
 from education_system.university_system.modules.shared.utils.i18n import get_text
 
 def export_batch_predictions(predictions, prediction_type):
@@ -52,7 +53,7 @@ def forecast_single_course(cursor, course):
     SELECT strftime('%Y-%m', g.submission_date) as month,
            AVG(g.score / a.max_points * 100) as avg_percentage
     FROM grades g
-    JOIN assessments a ON g.assessment_id = a.assessment_id
+    JOIN assessments a ON g.assessment_id = a.id
     JOIN student_modules sm ON a.module_code = sm.module_code
     JOIN students s ON sm.student_id = s.student_id
     WHERE s.course = ? AND g.submission_date IS NOT NULL
@@ -105,7 +106,7 @@ def forecast_module_difficulty(cursor):
            COUNT(DISTINCT strftime('%Y-%m', g.submission_date)) as months_with_data
     FROM modules m
     JOIN assessments a ON m.module_code = a.module_code
-    JOIN grades g ON a.assessment_id = g.assessment_id
+    JOIN grades g ON a.id = g.assessment_id
     WHERE g.submission_date IS NOT NULL
     GROUP BY m.module_code
     HAVING months_with_data >= 6
@@ -148,7 +149,7 @@ def forecast_module_difficulty_single(cursor, module_code, module_name):
     SELECT strftime('%Y-%m', g.submission_date) as month,
            AVG(g.score / a.max_points * 100) as avg_percentage
     FROM grades g
-    JOIN assessments a ON g.assessment_id = a.assessment_id
+    JOIN assessments a ON g.assessment_id = a.id
     WHERE a.module_code = ? AND g.submission_date IS NOT NULL
     GROUP BY strftime('%Y-%m', g.submission_date)
     ORDER BY month
@@ -254,7 +255,7 @@ def forecast_course_success_rate(cursor, course):
            COUNT(*) as total_grades,
            SUM(CASE WHEN g.letter_grade != 'F' THEN 1 ELSE 0 END) as passing_grades
     FROM grades g
-    JOIN assessments a ON g.assessment_id = a.assessment_id
+    JOIN assessments a ON g.assessment_id = a.id
     JOIN student_modules sm ON a.module_code = sm.module_code
     JOIN students s ON sm.student_id = s.student_id
     WHERE s.course = ? AND g.submission_date IS NOT NULL
@@ -296,7 +297,7 @@ def extract_comprehensive_student_features(cursor, student_id):
     cursor.execute('''
     SELECT g.score / a.max_points * 100, g.submission_date
     FROM grades g
-    JOIN assessments a ON g.assessment_id = a.assessment_id
+    JOIN assessments a ON g.assessment_id = a.id
     WHERE g.student_id = ?
     ORDER BY g.submission_date
     ''', (student_id,))
@@ -330,11 +331,11 @@ def extract_comprehensive_student_features(cursor, student_id):
 
     # Submission rate
     cursor.execute('''
-    SELECT COUNT(DISTINCT a.assessment_id) as total,
-           COUNT(g.grade_id) as submitted
+    SELECT COUNT(DISTINCT a.id) as total,
+           COUNT(g.id) as submitted
     FROM assessments a
     JOIN student_modules sm ON a.module_code = sm.module_code
-    LEFT JOIN grades g ON a.assessment_id = g.assessment_id AND g.student_id = sm.student_id
+    LEFT JOIN grades g ON a.id = g.assessment_id AND g.student_id = sm.student_id
     WHERE sm.student_id = ?
     ''', (student_id,))
 
@@ -764,7 +765,7 @@ def extract_student_features(cursor, student_id):
     cursor.execute('''
     SELECT g.score / a.max_points * 100, g.letter_grade
     FROM grades g
-    JOIN assessments a ON g.assessment_id = a.assessment_id
+    JOIN assessments a ON g.assessment_id = a.id
     WHERE g.student_id = ?
     ''', (student_id,))
 
@@ -783,11 +784,11 @@ def extract_student_features(cursor, student_id):
 
     # Calculate submission rate
     cursor.execute('''
-    SELECT COUNT(DISTINCT a.assessment_id) as total_assessments,
-           COUNT(g.grade_id) as submitted_assessments
+    SELECT COUNT(DISTINCT a.id) as total_assessments,
+           COUNT(g.id) as submitted_assessments
     FROM assessments a
     JOIN student_modules sm ON a.module_code = sm.module_code
-    LEFT JOIN grades g ON a.assessment_id = g.assessment_id AND g.student_id = sm.student_id
+    LEFT JOIN grades g ON a.id = g.assessment_id AND g.student_id = sm.student_id
     WHERE sm.student_id = ?
     ''', (student_id,))
 
