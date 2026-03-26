@@ -20,6 +20,16 @@ from copy import deepcopy
 from flask import Flask, jsonify, redirect
 from flask_cors import CORS
 
+from education_system.shared.core.structured_logging import setup_structured_logging
+
+# Initialise structured logging as early as possible so every record
+# (including blueprint registration warnings) uses the JSON formatter.
+setup_structured_logging(
+    log_level=os.getenv("LOG_LEVEL", "INFO"),
+    log_format=os.getenv("LOG_FORMAT", "json"),
+    system="unified",
+)
+
 logger = logging.getLogger(__name__)
 
 API_VERSION = "v1"
@@ -149,6 +159,37 @@ def create_unified_app() -> Flask:
     init_health(system_name="Education System (Unified)")
     app.register_blueprint(health_bp, url_prefix=f"/api/{API_VERSION}")
 
+    # ── Metrics (Prometheus + enriched health) ───────────────────────
+    from education_system.shared.api.metrics_routes import metrics_bp, init_metrics
+    init_metrics(
+        db_paths={"auth": str(AUTH_DB_FILE)},
+        system_name="Education System (Unified)",
+    )
+    app.register_blueprint(metrics_bp)
+
+    # ── GDPR data retention ──────────────────────────────────────────────
+    try:
+        from education_system.shared.api.retention_routes import retention_bp, init_retention
+        init_retention()
+        app.register_blueprint(retention_bp, url_prefix=f"/api/{API_VERSION}/retention")
+        logger.info("Registered retention routes under /api/%s/retention/", API_VERSION)
+    except Exception as e:
+        logger.warning("Failed to load retention routes (non-fatal): %s", e)
+
+    # ── LMS integration (Canvas, Moodle, Google Classroom) ───────────────
+    try:
+        from education_system.shared.api.lms_routes import lms_bp, init_lms_routes
+        import os as _os
+        _lms_db = _os.getenv(
+            "LMS_DB_PATH",
+            str(AUTH_DB_FILE).replace("auth.db", "lms_integrations.db"),
+        )
+        init_lms_routes(_lms_db)
+        app.register_blueprint(lms_bp, url_prefix=f"/api/{API_VERSION}/lms")
+        logger.info("Registered LMS integration routes under /api/%s/lms/", API_VERSION)
+    except Exception as e:
+        logger.warning("Failed to load LMS integration routes (non-fatal): %s", e)
+
     # ── API documentation (Swagger UI + OpenAPI spec) ───────────────────
     from education_system.shared.api.docs import docs_bp as api_docs_bp
     app.register_blueprint(api_docs_bp)
@@ -172,10 +213,74 @@ def create_unified_app() -> Flask:
     from education_system.shared.api.middleware import register_middleware
     register_middleware(app)
 
+    # ── Multi-tenancy middleware + routes ─────────────────────────────
+    try:
+        from education_system.shared.api.tenant_middleware import register_tenant_middleware
+        from education_system.shared.api.tenant_routes import tenant_bp, init_tenant_routes
+        from education_system.shared.core.tenant_models import init_tenant_db
+        from education_system.shared.auth.db import AUTH_DB_FILE as _AUTH_DB_FILE_INNER
+
+        # Central tenants DB lives alongside the auth DB
+        import os as _os
+        _tenants_db = _os.path.join(
+            _os.path.dirname(str(_AUTH_DB_FILE_INNER)), "tenants.db"
+        )
+        init_tenant_db(_tenants_db)
+        register_tenant_middleware(app, tenants_db_path=_tenants_db)
+        init_tenant_routes(tenants_db_path=_tenants_db)
+        app.register_blueprint(tenant_bp, url_prefix=f"/api/{API_VERSION}/tenants")
+        logger.info("Registered tenant middleware and routes under /api/%s/tenants/", API_VERSION)
+    except Exception as e:
+        logger.warning("Failed to load tenant middleware/routes (non-fatal): %s", e)
+
+    # Add tenant context to request logging
+    @app.before_request
+    def _log_tenant_context():
+        from flask import g as _g
+        tenant = getattr(_g, "tenant", None)
+        if tenant:
+            logger.debug(
+                "Request tenant: slug=%r id=%d",
+                tenant.slug, tenant.id,
+            )
+
     # ── Web frontend (login + dashboard) ─────────────────────────────
     from education_system.shared.api.web.routes import web_bp
     app.register_blueprint(web_bp)
 
+    # ── Parent portal ─────────────────────────────────────────────────
+    try:
+        from education_system.shared.api.parent_portal.routes import parent_portal_bp
+        app.register_blueprint(parent_portal_bp)
+        logger.info("Registered parent portal at /parent/")
+    except Exception as e:
+        logger.error("Failed to load parent portal: %s", e)
+
+    # ── GraphQL API (Strawberry) ──────────────────────────────────────
+    try:
+        from education_system.shared.api.graphql.schema import (
+            make_graphql_view,
+            make_graphiql_view,
+        )
+        app.add_url_rule(
+            f"/api/{API_VERSION}/graphql",
+            view_func=make_graphql_view(),
+        )
+        app_env = os.getenv("APP_ENV", "production").lower()
+        if app_env in ("development", "dev", "local", "test"):
+            app.add_url_rule(
+                f"/api/{API_VERSION}/graphiql",
+                view_func=make_graphiql_view(),
+            )
+            logger.info(
+                "GraphiQL IDE available at /api/%s/graphiql (development mode)",
+                API_VERSION,
+            )
+        logger.info(
+            "GraphQL endpoint mounted at /api/%s/graphql", API_VERSION
+        )
+    except Exception as e:
+        logger.warning("Failed to load GraphQL API (non-fatal): %s", e)
 
     # ── College system ──────────────────────────────────────────────────
     try:
@@ -311,6 +416,7 @@ def create_unified_app() -> Flask:
             "auth": f"/api/{API_VERSION}/auth/login",
             "health": f"/api/{API_VERSION}/health",
             "docs": f"/api/{API_VERSION}/docs",
+            "graphql": f"/api/{API_VERSION}/graphql",
             "systems": {
                 "university": f"/api/{API_VERSION}/university/",
                 "college": f"/api/{API_VERSION}/college/",
@@ -351,6 +457,28 @@ def create_unified_app() -> Flask:
             "details": e.errors,
         }), 422
 
+    # ── WebSocket / Socket.IO ────────────────────────────────────────────
+    try:
+        from education_system.shared.api.websocket_server import init_socketio
+        _socketio = init_socketio(app)
+        if _socketio is not None:
+            # Expose socketio on the app so run_unified_api can use it
+            app.extensions["socketio"] = _socketio
+            logger.info("Socket.IO attached to unified app")
+    except Exception as _ws_exc:
+        logger.warning("WebSocket init failed (non-fatal): %s", _ws_exc)
+
+    # Update CSP to allow WebSocket connections
+    @app.after_request
+    def _allow_ws_csp(response):
+        csp = response.headers.get("Content-Security-Policy", "")
+        if "connect-src" in csp and "ws:" not in csp:
+            response.headers["Content-Security-Policy"] = csp.replace(
+                "connect-src 'self'",
+                "connect-src 'self' ws: wss:",
+            )
+        return response
+
     logger.info("Unified API server created (version=%s)", API_VERSION)
     return app
 
@@ -371,5 +499,12 @@ def run_unified_api(host: str | None = None, port: int | None = None):
     print(f"  Primary:    http://{host}:{port}/api/{API_VERSION}/primary/...")
     print(f"  University: http://{host}:{port}/api/{API_VERSION}/university/...")
     print(f"  Health:     http://{host}:{port}/api/{API_VERSION}/health")
+    print(f"  GraphQL:    http://{host}:{port}/api/{API_VERSION}/graphql")
     print(f"  Press Ctrl+C to stop.\n")
-    app.run(host=host, port=port, debug=debug)
+    # Use socketio.run() when Socket.IO is available for proper async transport
+    _socketio = app.extensions.get("socketio") if hasattr(app, "extensions") else None
+    if _socketio is not None:
+        print("  WebSockets: enabled (Socket.IO)")
+        _socketio.run(app, host=host, port=port, debug=debug, use_reloader=debug)
+    else:
+        app.run(host=host, port=port, debug=debug)

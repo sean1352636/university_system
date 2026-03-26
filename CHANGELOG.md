@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.47.0 — 2026-03-26](#8470---2026-03-26)
 - [8.46.0 — 2026-03-26](#8460---2026-03-26)
 - [8.45.0 — 2026-03-25](#8450---2026-03-25)
 - [8.44.0 — 2026-03-24](#8440---2026-03-24)
@@ -149,6 +150,92 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`.github/workflows/ci.yml`** — Added GUI test step after coverage run; runs college/secondary/primary GUI tests with `-m gui` marker
 
 ---
+
+## [8.47.0] — 2026-03-26
+
+### Added — 11 major platform features
+
+#### Feature 1: Complete Web UI for Secondary & Primary
+- **`shared/api/web/static/js/modules/secondary.js`** — 15 CRUD page renderers for secondary school (students, subjects, grades, attendance, timetable, behaviour, detentions, pastoral, safeguarding, SEND, form groups, homework, exams, parents evening)
+- **`shared/api/web/static/js/modules/primary.js`** — 17 CRUD page renderers for primary school (pupils, classes, subjects, assessment, attendance, timetable, homework, SATs, phonics, reading records, behaviour, rewards, safeguarding, SEND, pastoral, parents evening)
+- **`shared/api/web/static/js/modules/shared_components.js`** — Reusable UI components (DataTable, SearchBar, Modal, Pagination, FormBuilder, ConfirmDialog, StatusBadge)
+- Updated `app.js` with structured navigation sidebar and hash routing for all secondary/primary modules
+- Added 22 new web API endpoints in `routes.py` for secondary and primary-specific entities
+
+#### Feature 2: Real-Time WebSocket Features
+- **`shared/api/websocket_server.py`** — Flask-SocketIO integration with `/notifications`, `/chat`, `/presence` namespaces, JWT auth on connect, room management
+- **`shared/services/chat_service.py`** — SQLite-backed chat with rooms, participants, messages, read receipts
+- **`shared/services/realtime_notifications.py`** — Push notification service with WebSocket delivery and DB persistence
+- **`shared/api/web/static/js/modules/websocket.js`** — Client-side Socket.IO with toast notifications, chat panel, presence indicators
+
+#### Feature 3: Test Coverage Reporting in CI
+- Added Codecov upload step to `.github/workflows/ci.yml`
+- Added PR coverage comment via `MishaKav/pytest-coverage-comment`
+- Added `test-coverage` and `test-coverage-report` Makefile targets
+- Added Codecov badge to README.md
+
+#### Feature 4: External LMS Integration
+- **`shared/integrations/lms_base.py`** — Abstract `LMSProvider` base class with retry logic and grade scale conversion
+- **`shared/integrations/canvas_provider.py`** — Canvas REST API v1 integration
+- **`shared/integrations/moodle_provider.py`** — Moodle Web Services API integration
+- **`shared/integrations/google_classroom_provider.py`** — Google Classroom API integration with OAuth2
+- **`shared/integrations/lms_sync_service.py`** — Sync orchestrator with conflict resolution, ID mapping, sync logging
+- **`shared/api/lms_routes.py`** — REST endpoints for LMS connection management and sync triggers
+
+#### Feature 6: Centralized Structured Logging
+- **`shared/core/structured_logging.py`** — ELK-compatible JSON log formatter with `@timestamp`, `level`, `logger`, `message`, `request_id`, `system`, `user_id` fields
+- **`shared/core/metrics.py`** — In-memory metrics collector with Prometheus exposition format (counters, gauges, histograms)
+- **`shared/core/correlation.py`** — Request correlation ID propagation via contextvars
+- **`shared/api/metrics_routes.py`** — `/metrics` (Prometheus) and `/health/metrics` (JSON) endpoints
+- **`docker/docker-compose.monitoring.yml`** — Loki + Promtail + Prometheus + Grafana stack for local dev
+
+#### Feature 7: Parent/Guardian Mobile-Friendly Portal
+- **`shared/api/parent_portal/`** — Complete mobile-first PWA with routes, templates, CSS, JavaScript
+- 12 API endpoints for child attendance, grades, timetable, homework, behaviour, messages, parents evening booking
+- Service worker for offline access and push notifications
+- PWA manifest for "add to home screen"
+- Dark mode support, bottom navigation, touch-friendly 44px targets
+- **`shared/services/parent_child_link.py`** — Parent-child relationship management service
+
+#### Feature 8: GraphQL API
+- **`shared/api/graphql/`** — Strawberry GraphQL implementation with types, resolvers, mutations, middleware
+- 7 entity types (Student, Course, Grade, Attendance, Enrollment, User, Timetable)
+- Query resolvers with per-system database routing and schema-aware field mapping
+- Mutations for student/grade/attendance CRUD
+- Depth limiting, JWT auth, and per-user rate limiting middleware
+- Mounted at `/api/v1/graphql` with GraphiQL IDE in development mode
+
+#### Feature 9: Multi-Tenancy Support
+- **`shared/core/tenant.py`** — Tenant context management with ContextVar + threading.local dual storage
+- **`shared/core/tenant_models.py`** — Tenant CRUD with `tenants` and `tenant_users` tables
+- **`shared/core/tenant_db.py`** — Database-per-tenant provisioning, connection pooling, backup, cleanup
+- **`shared/core/tenant_config.py`** — Per-tenant branding, feature flags, limits configuration
+- **`shared/api/tenant_middleware.py`** — Tenant resolution from header, subdomain, JWT, or query param
+- **`shared/api/tenant_routes.py`** — Superadmin API for tenant lifecycle management
+- Fully backward-compatible: single-tenant mode works unchanged when no tenant is specified
+
+#### Feature 10: Architecture Decision Records
+- **`docs/adr/`** — 12 ADRs documenting key architectural decisions
+- 7 retroactive ADRs (0001-0007): unified server, shared auth, SQLite-per-system, vanilla JS SPA, service layer pattern, domain-driven modules, multi-interface architecture
+- 5 proposed ADRs (0008-0012): GraphQL, WebSocket, multi-tenancy, data retention, structured logging
+
+#### Feature 11: Load/Performance Testing
+- **`tests/performance/locustfile.py`** — Main load test with 8 weighted task scenarios
+- **`tests/performance/scenarios/`** — Specialized scenarios for auth, CRUD lifecycle, dashboard load
+- **`tests/performance/benchmark_db.py`** — SQLite concurrent read/write benchmarks with threshold validation
+- **`tests/performance/conftest.py`** — Fixtures seeding 10K students, 500 courses, 100K grades
+- **`.github/workflows/performance.yml`** — Weekly CI performance tests with p95 latency threshold
+- Added `load-test`, `load-test-ui`, `perf-test` Makefile targets
+
+#### Feature 12: GDPR Data Retention Policies
+- **`shared/services/data_retention/`** — Automated data lifecycle management
+- `policy_engine.py` — Retention policy CRUD and execution engine with cross-system DB support
+- `anonymizer.py` — Field-level PII anonymization (email hashing, name/phone/address redaction)
+- `archiver.py` — Record archival to archive tables or encrypted JSON files
+- `gdpr_report.py` — Data Subject Access Request (DSAR) report generation and erasure processing across all 4 systems
+- `scheduler.py` — Cron-based retention job scheduler (daily at 2 AM)
+- **`shared/api/retention_routes.py`** — Admin API for policy management, manual runs, DSAR/erasure requests
+- 6 default retention policies seeded (graduated students 7y, attendance 3y, chat 1y, sessions 90d, audit 5y, temp 30d)
 
 ## [8.46.0] — 2026-03-26
 

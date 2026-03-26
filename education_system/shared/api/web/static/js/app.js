@@ -1614,37 +1614,36 @@
             ` : ''}
             ${state.activeSystem === 'school' ? `
             <div class="nav-section">
-              <div class="nav-section-label">Academics</div>
-              ${navItem('tbl:enrollments', icons.clipboard, 'Enrollments')}
-              ${navItem('tbl:subjects', icons.book, 'Subjects')}
-              ${navItem('tbl:timetable_slots', icons.calendar, 'Timetable')}
-              ${navItem('tbl:exams', icons.clipboard, 'Exams')}
-              ${navItem('tbl:exam_results', icons.award, 'Exam Results')}
-              ${navItem('tbl:homework', icons.book, 'Homework')}
-              ${navItem('tbl:homework_submissions', icons.check, 'Submissions')}
-              ${navItem('tbl:progress_targets', icons.activity, 'Progress Targets')}
-              ${navItem('tbl:intervention_groups', icons.users, 'Interventions')}
+              <div class="nav-section-label">Overview</div>
+              ${navItem('sec:dashboard', icons.home, 'Dashboard')}
+              ${isStaff ? navItem('sec:students', icons.users, 'Students') : ''}
+              ${navItem('sec:subjects', icons.book, 'Subjects')}
+              ${navItem('sec:grades', icons.award, 'Grades')}
+              ${navItem('sec:attendance', icons.check, 'Attendance')}
+              ${navItem('sec:timetable', icons.calendar, 'Timetable')}
             </div>
             <div class="nav-section">
               <div class="nav-section-label">Pastoral Care</div>
-              ${navItem('tbl:behaviour_records', icons.shield, 'Behaviour')}
-              ${navItem('tbl:detentions', icons.shield, 'Detentions')}
-              ${navItem('tbl:exclusions', icons.shield, 'Exclusions')}
-              ${navItem('tbl:rewards', icons.award, 'Rewards')}
-              ${navItem('tbl:pastoral_notes', icons.clipboard, 'Pastoral Notes')}
-              ${navItem('tbl:house_points', icons.award, 'House Points')}
-              ${navItem('tbl:safeguarding_concerns', icons.shield, 'Safeguarding')}
-              ${navItem('tbl:send_records', icons.users, 'SEND')}
-              ${navItem('tbl:send_provisions', icons.clipboard, 'SEND Provisions')}
+              ${navItem('sec:behaviour', icons.shield, 'Behaviour')}
+              ${navItem('sec:detentions', icons.shield, 'Detentions')}
+              ${navItem('sec:pastoral', icons.clipboard, 'Pastoral Notes')}
+              ${navItem('sec:safeguarding', icons.shield, 'Safeguarding')}
+              ${navItem('sec:send', icons.users, 'SEND')}
+              ${navItem('sec:form_groups', icons.users, 'Form Groups')}
             </div>
             <div class="nav-section">
-              <div class="nav-section-label">Communication</div>
-              ${navItem('tbl:announcements', icons.bell, 'Announcements')}
-              ${navItem('tbl:notifications', icons.bell, 'Notifications')}
-              ${navItem('tbl:emails', icons.clipboard, 'Email')}
-              ${navItem('tbl:school_events', icons.calendar, 'Calendar')}
-              ${navItem('tbl:communication_log', icons.clipboard, 'Communication Log')}
-              ${navItem('tbl:parents_evening_events', icons.calendar, 'Parents Evening')}
+              <div class="nav-section-label">Curriculum</div>
+              ${navItem('sec:homework', icons.book, 'Homework')}
+              ${navItem('sec:exams', icons.clipboard, 'Exams')}
+              ${navItem('sec:parents_evening', icons.calendar, 'Parents Evening')}
+            </div>
+            <div class="nav-section">
+              <div class="nav-section-label">Academics (Tables)</div>
+              ${navItem('tbl:enrollments', icons.clipboard, 'Enrollments')}
+              ${navItem('tbl:exam_results', icons.award, 'Exam Results')}
+              ${navItem('tbl:homework_submissions', icons.check, 'Submissions')}
+              ${navItem('tbl:progress_targets', icons.activity, 'Progress Targets')}
+              ${navItem('tbl:intervention_groups', icons.users, 'Interventions')}
             </div>
             <div class="nav-section">
               <div class="nav-section-label">Student Life</div>
@@ -1658,8 +1657,18 @@
               ${navItem('tbl:medical_conditions', icons.activity, 'Medical')}
               ${navItem('tbl:first_aid_log', icons.activity, 'First Aid')}
               ${navItem('tbl:consent_records', icons.check, 'Consent')}
-              ${navItem('tbl:form_groups', icons.users, 'Form Groups')}
               ${navItem('tbl:transport_routes', icons.activity, 'Transport')}
+              ${navItem('tbl:exclusions', icons.shield, 'Exclusions')}
+              ${navItem('tbl:rewards', icons.award, 'Rewards')}
+              ${navItem('tbl:house_points', icons.award, 'House Points')}
+            </div>
+            <div class="nav-section">
+              <div class="nav-section-label">Communication</div>
+              ${navItem('tbl:announcements', icons.bell, 'Announcements')}
+              ${navItem('tbl:notifications', icons.bell, 'Notifications')}
+              ${navItem('tbl:emails', icons.clipboard, 'Email')}
+              ${navItem('tbl:school_events', icons.calendar, 'Calendar')}
+              ${navItem('tbl:communication_log', icons.clipboard, 'Communication Log')}
             </div>
             <div class="nav-section">
               <div class="nav-section-label">Staff & HR</div>
@@ -1685,36 +1694,33 @@
             ` : ''}
             ${state.activeSystem === 'primary' ? `
             <div class="nav-section">
-              <div class="nav-section-label">Academics</div>
-              ${navItem('tbl:classes', icons.users, 'Classes')}
-              ${navItem('tbl:subjects', icons.book, 'Subjects')}
-              ${navItem('tbl:timetable_slots', icons.calendar, 'Timetable')}
-              ${navItem('tbl:assessments', icons.award, 'Assessments')}
-              ${navItem('tbl:homework', icons.book, 'Homework')}
-              ${navItem('tbl:phonics_results', icons.book, 'Phonics')}
-              ${navItem('tbl:sats_results', icons.award, 'SATs')}
-              ${navItem('tbl:reading_records', icons.book, 'Reading Records')}
-              ${navItem('tbl:progress_records', icons.activity, 'Progress')}
+              <div class="nav-section-label">Overview</div>
+              ${navItem('pri:dashboard', icons.home, 'Dashboard')}
+              ${isStaff ? navItem('pri:pupils', icons.users, 'Pupils') : ''}
+              ${navItem('pri:classes', icons.users, 'Classes')}
+              ${navItem('pri:subjects', icons.book, 'Subjects')}
+              ${navItem('pri:attendance', icons.check, 'Attendance')}
+              ${navItem('pri:timetable', icons.calendar, 'Timetable')}
+            </div>
+            <div class="nav-section">
+              <div class="nav-section-label">Assessment</div>
+              ${navItem('pri:assessment', icons.award, 'Assessment')}
+              ${navItem('pri:homework', icons.book, 'Homework')}
+              ${navItem('pri:sats', icons.award, 'SATs')}
+              ${navItem('pri:phonics', icons.book, 'Phonics')}
+              ${navItem('pri:reading_records', icons.book, 'Reading Records')}
             </div>
             <div class="nav-section">
               <div class="nav-section-label">Pastoral Care</div>
-              ${navItem('tbl:behaviour_records', icons.shield, 'Behaviour')}
-              ${navItem('tbl:rewards', icons.award, 'Rewards')}
-              ${navItem('tbl:safeguarding_concerns', icons.shield, 'Safeguarding')}
-              ${navItem('tbl:send_records', icons.users, 'SEND')}
-              ${navItem('tbl:pastoral_notes', icons.clipboard, 'Pastoral Notes')}
+              ${navItem('pri:behaviour', icons.shield, 'Behaviour')}
+              ${navItem('pri:rewards', icons.award, 'Rewards')}
+              ${navItem('pri:safeguarding', icons.shield, 'Safeguarding')}
+              ${navItem('pri:send', icons.users, 'SEND')}
+              ${navItem('pri:pastoral', icons.clipboard, 'Pastoral Notes')}
+              ${navItem('pri:parents_evening', icons.calendar, 'Parents Evening')}
             </div>
             <div class="nav-section">
-              <div class="nav-section-label">Communication</div>
-              ${navItem('tbl:announcements', icons.bell, 'Announcements')}
-              ${navItem('tbl:notifications', icons.bell, 'Notifications')}
-              ${navItem('tbl:email_log', icons.clipboard, 'Email')}
-              ${navItem('tbl:calendar_events', icons.calendar, 'Calendar')}
-              ${navItem('tbl:communication_log', icons.clipboard, 'Communication Log')}
-              ${navItem('tbl:parents_evening_events', icons.calendar, 'Parents Evening')}
-            </div>
-            <div class="nav-section">
-              <div class="nav-section-label">Pupil Life</div>
+              <div class="nav-section-label">Pupil Life (Tables)</div>
               ${navItem('tbl:clubs', icons.users, 'Clubs')}
               ${navItem('tbl:trips', icons.activity, 'Trips')}
               ${navItem('tbl:library_books', icons.book, 'Library')}
@@ -1723,6 +1729,15 @@
               ${navItem('tbl:medical_records', icons.activity, 'Medical')}
               ${navItem('tbl:consent_records', icons.check, 'Consent')}
               ${navItem('tbl:transport', icons.activity, 'Transport')}
+              ${navItem('tbl:progress_records', icons.activity, 'Progress')}
+            </div>
+            <div class="nav-section">
+              <div class="nav-section-label">Communication</div>
+              ${navItem('tbl:announcements', icons.bell, 'Announcements')}
+              ${navItem('tbl:notifications', icons.bell, 'Notifications')}
+              ${navItem('tbl:email_log', icons.clipboard, 'Email')}
+              ${navItem('tbl:calendar_events', icons.calendar, 'Calendar')}
+              ${navItem('tbl:communication_log', icons.clipboard, 'Communication Log')}
             </div>
             <div class="nav-section">
               <div class="nav-section-label">Staff & HR</div>
@@ -1884,6 +1899,43 @@
     };
     if (page.startsWith("tbl:")) {
       title.textContent = page.slice(4).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    } else if (page.startsWith("sec:") || page.startsWith("pri:")) {
+      const prefix = page.startsWith("sec:") ? "sec:" : "pri:";
+      const pageTitles = {
+        "sec:dashboard": "Secondary School Dashboard",
+        "sec:students": "Students",
+        "sec:subjects": "Subjects",
+        "sec:grades": "Grades",
+        "sec:attendance": "Attendance",
+        "sec:timetable": "Timetable",
+        "sec:behaviour": "Behaviour Records",
+        "sec:detentions": "Detentions",
+        "sec:pastoral": "Pastoral Notes",
+        "sec:safeguarding": "Safeguarding Concerns",
+        "sec:send": "SEND Records",
+        "sec:form_groups": "Form Groups",
+        "sec:homework": "Homework",
+        "sec:exams": "Exams",
+        "sec:parents_evening": "Parents Evening",
+        "pri:dashboard": "Primary School Dashboard",
+        "pri:pupils": "Pupils",
+        "pri:classes": "Classes",
+        "pri:subjects": "Subjects",
+        "pri:assessment": "Assessment",
+        "pri:attendance": "Attendance",
+        "pri:timetable": "Timetable",
+        "pri:homework": "Homework",
+        "pri:sats": "SATs Results",
+        "pri:phonics": "Phonics Screening",
+        "pri:reading_records": "Reading Records",
+        "pri:behaviour": "Behaviour Records",
+        "pri:rewards": "Rewards",
+        "pri:safeguarding": "Safeguarding Concerns",
+        "pri:send": "SEND Records",
+        "pri:pastoral": "Pastoral Notes",
+        "pri:parents_evening": "Parents Evening",
+      };
+      title.textContent = pageTitles[page] || page.slice(4).replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
     } else {
       title.textContent = titles[page] || "Dashboard";
     }
@@ -1894,6 +1946,10 @@
       if (page.startsWith("tbl:")) {
         _genericTablePage = 1;
         await loadGenericTable(page.slice(4), content);
+      } else if (page.startsWith("sec:")) {
+        await loadSecondaryPage(page.slice(4), content);
+      } else if (page.startsWith("pri:")) {
+        await loadPrimaryPage(page.slice(4), content);
       } else {
         switch (page) {
           case "dashboard": await loadDashboard(content); break;
@@ -1911,6 +1967,86 @@
       }
     } catch (err) {
       content.innerHTML = `<div class="alert alert-error">Failed to load data: ${esc(err.message)}</div>`;
+    }
+  }
+
+  // ── Secondary & Primary module page dispatchers ─────────────────
+
+  async function loadSecondaryPage(subPage, el) {
+    if (typeof SecondaryModule === "undefined") {
+      el.innerHTML = '<div class="alert alert-error">Secondary module not loaded. Check that secondary.js is included.</div>';
+      return;
+    }
+    const map = {
+      dashboard:      SecondaryModule.renderSecondaryDashboard,
+      students:       SecondaryModule.renderStudentsPage,
+      subjects:       SecondaryModule.renderSubjectsPage,
+      grades:         SecondaryModule.renderGradesPage,
+      attendance:     SecondaryModule.renderAttendancePage,
+      timetable:      SecondaryModule.renderTimetablePage,
+      behaviour:      SecondaryModule.renderBehaviourPage,
+      detentions:     SecondaryModule.renderDetentionsPage,
+      pastoral:       SecondaryModule.renderPastoralPage,
+      safeguarding:   SecondaryModule.renderSafeguardingPage,
+      send:           SecondaryModule.renderSENDPage,
+      form_groups:    SecondaryModule.renderFormGroupsPage,
+      homework:       SecondaryModule.renderHomeworkPage,
+      exams:          SecondaryModule.renderExamsPage,
+      parents_evening: SecondaryModule.renderParentsEveningPage,
+    };
+    const fn = map[subPage];
+    if (fn) {
+      await fn(el);
+      // Wire any quick-link sc-nav-link elements rendered by dashboard
+      el.querySelectorAll(".sc-nav-link[data-page]").forEach((a) => {
+        a.addEventListener("click", (e) => {
+          e.preventDefault();
+          currentPage = a.dataset.page;
+          renderApp();
+        });
+      });
+    } else {
+      el.innerHTML = `<div class="empty-state"><div class="empty-icon">&#128203;</div><p>Page "${esc(subPage)}" not found.</p></div>`;
+    }
+  }
+
+  async function loadPrimaryPage(subPage, el) {
+    if (typeof PrimaryModule === "undefined") {
+      el.innerHTML = '<div class="alert alert-error">Primary module not loaded. Check that primary.js is included.</div>';
+      return;
+    }
+    const map = {
+      dashboard:       PrimaryModule.renderPrimaryDashboard,
+      pupils:          PrimaryModule.renderPupilsPage,
+      classes:         PrimaryModule.renderClassesPage,
+      subjects:        PrimaryModule.renderSubjectsPage,
+      assessment:      PrimaryModule.renderAssessmentPage,
+      attendance:      PrimaryModule.renderAttendancePage,
+      timetable:       PrimaryModule.renderTimetablePage,
+      homework:        PrimaryModule.renderHomeworkPage,
+      sats:            PrimaryModule.renderSATsPage,
+      phonics:         PrimaryModule.renderPhonicsPage,
+      reading_records: PrimaryModule.renderReadingRecordsPage,
+      behaviour:       PrimaryModule.renderBehaviourPage,
+      rewards:         PrimaryModule.renderRewardsPage,
+      safeguarding:    PrimaryModule.renderSafeguardingPage,
+      send:            PrimaryModule.renderSENDPage,
+      pastoral:        PrimaryModule.renderPastoralPage,
+      parents_evening: PrimaryModule.renderParentsEveningPage,
+    };
+    const fn = map[subPage];
+    if (fn) {
+      await fn(el);
+      // Wire any quick-link sc-nav-link elements rendered by dashboard
+      el.querySelectorAll(".sc-nav-link[data-page]").forEach((a) => {
+        a.addEventListener("click", (e) => {
+          e.preventDefault();
+          currentPage = a.dataset.page;
+          renderApp();
+        });
+      });
+    } else {
+      el.innerHTML = `<div class="empty-state"><div class="empty-icon">&#128203;</div><p>Page "${esc(subPage)}" not found.</p></div>`;
     }
   }
 
@@ -2487,6 +2623,13 @@
   function stopHeartbeat() {
     if (_heartbeatTimer) { clearInterval(_heartbeatTimer); _heartbeatTimer = null; }
   }
+
+  // ── Expose globals for module scripts (secondary.js, primary.js) ─
+  // apiFetch and state are defined inside the IIFE; expose them so
+  // module scripts loaded before app.js finishes can call them at
+  // runtime (after the IIFE has run).
+  window.apiFetch = apiFetch;
+  window.state    = state;
 
   // ── Boot ─────────────────────────────────────────────────────────
   render();

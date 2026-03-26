@@ -1179,3 +1179,386 @@ def superadmin_batch_deactivate():
         return jsonify({"ok": True, "count": len(active_users)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ═══════════════════════════════════════════════════════════════════════
+#  SECONDARY SCHOOL — dedicated CRUD data endpoints
+# ═══════════════════════════════════════════════════════════════════════
+#
+# All endpoints follow the same pattern:
+#   GET  ?page=1&per_page=50&search=...  → paginated list
+#   POST (JSON body)                     → create record (staff/admin only)
+#
+# The secondary school system key is "school".
+# ───────────────────────────────────────────────────────────────────────
+
+def _secondary_db():
+    """Return the path to the secondary school database, or None."""
+    return _resolve_db("school")
+
+
+def _primary_db():
+    """Return the path to the primary school database, or None."""
+    return _resolve_db("primary")
+
+
+def _paginate_query(db: str, table: str, page: int, per_page: int, search: str) -> dict:
+    """Return paginated rows from *table* with optional full-text search."""
+    safe_table = _validated_table(table, db)
+    if not safe_table:
+        return {"error": f"Table '{table}' not found or access denied"}
+
+    from flask import request as _req  # noqa: F811
+
+    # Resolve column names
+    col_rows = _query(db, "SELECT name FROM pragma_table_info(?)", (safe_table,))
+    if col_rows:
+        col_names = [r["name"] for r in col_rows]
+    else:
+        try:
+            import sqlite3 as _s3
+            conn = _s3.connect(db, timeout=10)
+            try:
+                col_names = [r[1] for r in conn.execute(f"PRAGMA table_info([{safe_table}])").fetchall()]
+            finally:
+                conn.close()
+        except Exception:
+            col_names = []
+
+    offset = (page - 1) * per_page
+
+    if search:
+        from education_system.shared.database.sql_safety import escape_like
+        escaped = escape_like(search)
+        text_cols = col_names[:6]
+        if not text_cols:
+            return {"records": [], "total": 0, "page": page, "per_page": per_page, "pages": 1}
+        like_clauses = " OR ".join(f"CAST([{c}] AS TEXT) LIKE ?" for c in text_cols)
+        pattern = f"%{escaped}%"
+        params = tuple([pattern] * len(text_cols))
+        rows = _query(db, f"SELECT * FROM [{safe_table}] WHERE {like_clauses} ORDER BY rowid DESC LIMIT ?",
+                      params + (per_page,))
+        total_q = _query(db, f"SELECT COUNT(*) as c FROM [{safe_table}] WHERE {like_clauses}", params)
+        total = total_q[0]["c"] if total_q else 0
+    else:
+        total_q = _query(db, f"SELECT COUNT(*) as c FROM [{safe_table}]")
+        total = total_q[0]["c"] if total_q else 0
+        rows = _query(db, f"SELECT * FROM [{safe_table}] ORDER BY rowid DESC LIMIT ? OFFSET ?", (per_page, offset))
+
+    return {
+        "records": rows,
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "pages": max(1, (total + per_page - 1) // per_page),
+    }
+
+
+def _secondary_list_or_create(table: str, system_key: str = "school"):
+    """Handle GET (paginated list) and POST (insert) for a secondary table."""
+    from flask import request
+
+    if not _has_system_access(system_key):
+        return jsonify({"error": "Access denied"}), 403
+
+    role = _user_role_for(system_key)
+
+    db = _resolve_db(system_key)
+    if not db:
+        return jsonify({"error": "Database not found"}), 404
+
+    if request.method == "GET":
+        page = int(request.args.get("page", 1))
+        per_page = min(int(request.args.get("per_page", 50)), 500)
+        search = request.args.get("search", "").strip()
+        result = _paginate_query(db, table, page, per_page, search)
+        if "error" in result:
+            return jsonify(result), 404
+        return jsonify(result)
+
+    # POST — staff/admin only
+    if role not in ("admin", "staff", "teacher", "instructor"):
+        return jsonify({"error": "Staff access required"}), 403
+
+    body = request.get_json(silent=True) or {}
+    safe_table = _validated_table(table, db)
+    if not safe_table:
+        return jsonify({"error": f"Table '{table}' not accessible"}), 404
+
+    # Resolve column names for the table
+    col_rows = _query(db, "SELECT name FROM pragma_table_info(?)", (safe_table,))
+    if col_rows:
+        allowed_cols = {r["name"] for r in col_rows}
+    else:
+        try:
+            import sqlite3 as _s3
+            conn = _s3.connect(db, timeout=10)
+            try:
+                allowed_cols = {r[1] for r in conn.execute(f"PRAGMA table_info([{safe_table}])").fetchall()}
+            finally:
+                conn.close()
+        except Exception:
+            allowed_cols = set()
+
+    # Filter body to only valid column names (prevents injection via column names)
+    filtered = {k: v for k, v in body.items() if k in allowed_cols}
+    if not filtered:
+        return jsonify({"error": "No valid fields provided"}), 400
+
+    cols_str = ", ".join(f"[{c}]" for c in filtered)
+    placeholders = ", ".join("?" for _ in filtered)
+    values = list(filtered.values())
+
+    try:
+        import sqlite3 as _s3
+        conn = _s3.connect(db, timeout=10)
+        try:
+            cursor = conn.execute(
+                f"INSERT INTO [{safe_table}] ({cols_str}) VALUES ({placeholders})",
+                values,
+            )
+            conn.commit()
+            new_id = cursor.lastrowid
+            new_row = _query(db, f"SELECT * FROM [{safe_table}] WHERE rowid = ?", (new_id,))
+            return jsonify({"ok": True, "record": new_row[0] if new_row else {}, "id": new_id}), 201
+        finally:
+            conn.close()
+    except Exception as exc:
+        logger.warning("Insert failed on %s.%s: %s", db, safe_table, exc)
+        return jsonify({"error": "Insert failed: " + str(exc)}), 500
+
+
+# ── Secondary: Behaviour ─────────────────────────────────────────────
+
+@web_bp.route("/api/v1/web/api/secondary/behaviour", methods=["GET", "POST"])
+@_require_token
+def secondary_behaviour():
+    return _secondary_list_or_create("behaviour_records", "school")
+
+
+# ── Secondary: Detentions ────────────────────────────────────────────
+
+@web_bp.route("/api/v1/web/api/secondary/detentions", methods=["GET", "POST"])
+@_require_token
+def secondary_detentions():
+    return _secondary_list_or_create("detentions", "school")
+
+
+# ── Secondary: Form Groups ────────────────────────────────────────────
+
+@web_bp.route("/api/v1/web/api/secondary/form_groups", methods=["GET", "POST"])
+@_require_token
+def secondary_form_groups():
+    return _secondary_list_or_create("form_groups", "school")
+
+
+# ── Secondary: Pastoral ───────────────────────────────────────────────
+
+@web_bp.route("/api/v1/web/api/secondary/pastoral", methods=["GET", "POST"])
+@_require_token
+def secondary_pastoral():
+    return _secondary_list_or_create("pastoral_notes", "school")
+
+
+# ── Secondary: Safeguarding ───────────────────────────────────────────
+
+@web_bp.route("/api/v1/web/api/secondary/safeguarding", methods=["GET", "POST"])
+@_require_token
+def secondary_safeguarding():
+    return _secondary_list_or_create("safeguarding_concerns", "school")
+
+
+# ── Secondary: SEND ──────────────────────────────────────────────────
+
+@web_bp.route("/api/v1/web/api/secondary/send", methods=["GET", "POST"])
+@_require_token
+def secondary_send():
+    return _secondary_list_or_create("send_records", "school")
+
+
+# ── Secondary: Homework ──────────────────────────────────────────────
+
+@web_bp.route("/api/v1/web/api/secondary/homework", methods=["GET", "POST"])
+@_require_token
+def secondary_homework():
+    return _secondary_list_or_create("homework", "school")
+
+
+# ── Secondary: Exams ─────────────────────────────────────────────────
+
+@web_bp.route("/api/v1/web/api/secondary/exams", methods=["GET", "POST"])
+@_require_token
+def secondary_exams():
+    return _secondary_list_or_create("exams", "school")
+
+
+# ── Secondary: Parents Evening ────────────────────────────────────────
+
+@web_bp.route("/api/v1/web/api/secondary/parents_evening", methods=["GET", "POST"])
+@_require_token
+def secondary_parents_evening():
+    # Try both possible table names
+    db = _secondary_db()
+    if db:
+        tables = _safe_tables(db)
+        tbl = next((t for t in ("parents_evening_events", "parents_evening", "parents_evenings") if t in tables), None)
+        if tbl:
+            return _secondary_list_or_create(tbl, "school")
+    return _secondary_list_or_create("parents_evening_events", "school")
+
+
+# ── Secondary: Timetable ──────────────────────────────────────────────
+
+@web_bp.route("/api/v1/web/api/secondary/timetable", methods=["GET", "POST"])
+@_require_token
+def secondary_timetable():
+    db = _secondary_db()
+    if db:
+        tables = _safe_tables(db)
+        tbl = next((t for t in ("timetable_slots", "timetable", "timetable_entries") if t in tables), None)
+        if tbl:
+            return _secondary_list_or_create(tbl, "school")
+    return _secondary_list_or_create("timetable_slots", "school")
+
+
+# ═══════════════════════════════════════════════════════════════════════
+#  PRIMARY SCHOOL — dedicated CRUD data endpoints
+# ═══════════════════════════════════════════════════════════════════════
+
+def _primary_list_or_create(table: str):
+    """Handle GET (paginated list) and POST (insert) for a primary table."""
+    return _secondary_list_or_create(table, "primary")
+
+
+# ── Primary: Classes ─────────────────────────────────────────────────
+
+@web_bp.route("/api/v1/web/api/primary/classes", methods=["GET", "POST"])
+@_require_token
+def primary_classes():
+    return _primary_list_or_create("classes")
+
+
+# ── Primary: Assessment ───────────────────────────────────────────────
+
+@web_bp.route("/api/v1/web/api/primary/assessment", methods=["GET", "POST"])
+@_require_token
+def primary_assessment():
+    db = _primary_db()
+    if db:
+        tables = _safe_tables(db)
+        tbl = next((t for t in ("assessments", "assessment", "assessment_records") if t in tables), None)
+        if tbl:
+            return _primary_list_or_create(tbl)
+    return _primary_list_or_create("assessments")
+
+
+# ── Primary: SATs ─────────────────────────────────────────────────────
+
+@web_bp.route("/api/v1/web/api/primary/sats", methods=["GET", "POST"])
+@_require_token
+def primary_sats():
+    db = _primary_db()
+    if db:
+        tables = _safe_tables(db)
+        tbl = next((t for t in ("sats_results", "sats", "sats_scores") if t in tables), None)
+        if tbl:
+            return _primary_list_or_create(tbl)
+    return _primary_list_or_create("sats_results")
+
+
+# ── Primary: Phonics ─────────────────────────────────────────────────
+
+@web_bp.route("/api/v1/web/api/primary/phonics", methods=["GET", "POST"])
+@_require_token
+def primary_phonics():
+    db = _primary_db()
+    if db:
+        tables = _safe_tables(db)
+        tbl = next((t for t in ("phonics_results", "phonics", "phonics_screening") if t in tables), None)
+        if tbl:
+            return _primary_list_or_create(tbl)
+    return _primary_list_or_create("phonics_results")
+
+
+# ── Primary: Reading Records ──────────────────────────────────────────
+
+@web_bp.route("/api/v1/web/api/primary/reading_records", methods=["GET", "POST"])
+@_require_token
+def primary_reading_records():
+    return _primary_list_or_create("reading_records")
+
+
+# ── Primary: Rewards ──────────────────────────────────────────────────
+
+@web_bp.route("/api/v1/web/api/primary/rewards", methods=["GET", "POST"])
+@_require_token
+def primary_rewards():
+    return _primary_list_or_create("rewards")
+
+
+# ── Primary: Safeguarding ─────────────────────────────────────────────
+
+@web_bp.route("/api/v1/web/api/primary/safeguarding", methods=["GET", "POST"])
+@_require_token
+def primary_safeguarding():
+    return _primary_list_or_create("safeguarding_concerns")
+
+
+# ── Primary: SEND ─────────────────────────────────────────────────────
+
+@web_bp.route("/api/v1/web/api/primary/send", methods=["GET", "POST"])
+@_require_token
+def primary_send():
+    return _primary_list_or_create("send_records")
+
+
+# ── Primary: Pastoral ─────────────────────────────────────────────────
+
+@web_bp.route("/api/v1/web/api/primary/pastoral", methods=["GET", "POST"])
+@_require_token
+def primary_pastoral():
+    return _primary_list_or_create("pastoral_notes")
+
+
+# ── Primary: Parents Evening ──────────────────────────────────────────
+
+@web_bp.route("/api/v1/web/api/primary/parents_evening", methods=["GET", "POST"])
+@_require_token
+def primary_parents_evening():
+    db = _primary_db()
+    if db:
+        tables = _safe_tables(db)
+        tbl = next((t for t in ("parents_evening_events", "parents_evening", "parents_evenings") if t in tables), None)
+        if tbl:
+            return _primary_list_or_create(tbl)
+    return _primary_list_or_create("parents_evening_events")
+
+
+# ── Primary: Behaviour ────────────────────────────────────────────────
+
+@web_bp.route("/api/v1/web/api/primary/behaviour", methods=["GET", "POST"])
+@_require_token
+def primary_behaviour():
+    return _primary_list_or_create("behaviour_records")
+
+
+# ── Primary: Timetable ────────────────────────────────────────────────
+
+@web_bp.route("/api/v1/web/api/primary/timetable", methods=["GET", "POST"])
+@_require_token
+def primary_timetable():
+    db = _primary_db()
+    if db:
+        tables = _safe_tables(db)
+        tbl = next((t for t in ("timetable_slots", "timetable", "timetable_entries") if t in tables), None)
+        if tbl:
+            return _primary_list_or_create(tbl)
+    return _primary_list_or_create("timetable_slots")
+
+
+# ── Primary: Homework ─────────────────────────────────────────────────
+
+@web_bp.route("/api/v1/web/api/primary/homework", methods=["GET", "POST"])
+@_require_token
+def primary_homework():
+    return _primary_list_or_create("homework")

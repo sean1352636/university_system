@@ -3,9 +3,10 @@
 Improvement #12: Consistent API middleware across all systems.
 
 Provides:
-- Request logging
-- Request ID tracking
+- Request logging (structured JSON when LOG_FORMAT=json)
+- Correlation / request ID tracking via contextvars
 - Response time headers
+- Prometheus metrics recording
 - Standard error response format
 """
 
@@ -13,7 +14,13 @@ import logging
 import time
 import uuid
 
+from education_system.shared.core.correlation import set_correlation_id
+from education_system.shared.core.metrics import metrics
+
 logger = logging.getLogger(__name__)
+
+# Paths that are too noisy / low-value to log on every scrape
+_SILENT_PATHS = frozenset({"/metrics", "/api/v1/health", "/health"})
 
 
 def register_middleware(app):
@@ -27,18 +34,21 @@ def register_middleware(app):
     @app.before_request
     def add_request_id():
         from flask import request, g
-        g.request_id = request.headers.get("X-Request-ID", str(uuid.uuid4())[:8])
+        # Honour an incoming correlation header; generate one if absent
+        cid = request.headers.get("X-Request-ID") or uuid.uuid4().hex[:16]
+        g.request_id = cid
         g.request_start = time.time()
+        # Propagate into the correlation context so all log records carry it
+        set_correlation_id(cid)
+        metrics.gauge_inc("active_connections")
 
     @app.after_request
     def add_response_headers(response):
         from flask import g
-        # Request ID for tracing
         request_id = getattr(g, "request_id", None)
         if request_id:
             response.headers["X-Request-ID"] = request_id
 
-        # Response time
         start = getattr(g, "request_start", None)
         if start:
             elapsed = (time.time() - start) * 1000
@@ -47,22 +57,39 @@ def register_middleware(app):
         return response
 
     @app.after_request
-    def log_request(response):
+    def record_metrics_and_log(response):
         from flask import request, g
-        if request.path.startswith("/api/health"):
-            return response  # Don't log health checks
+
+        start = getattr(g, "request_start", None)
+        duration = (time.time() - start) if start else 0.0
+
+        # Record Prometheus metrics (also decrements active_connections)
+        metrics.record_request(
+            method=request.method,
+            status_code=response.status_code,
+            duration_seconds=duration,
+        )
+
+        # Skip structured log for high-frequency scrape endpoints
+        if any(request.path.startswith(p) for p in _SILENT_PATHS):
+            return response
 
         request_id = getattr(g, "request_id", "-")
-        start = getattr(g, "request_start", None)
-        elapsed = f"{(time.time() - start) * 1000:.0f}ms" if start else "-"
+        elapsed_ms = duration * 1000
 
         logger.info(
-            "%s %s %s %s [%s]",
+            "%s %s %s %.0fms",
             request.method,
             request.path,
             response.status_code,
-            elapsed,
-            request_id,
+            elapsed_ms,
+            extra={
+                "request_id": request_id,
+                "http_method": request.method,
+                "http_path": request.path,
+                "http_status": response.status_code,
+                "duration_ms": round(elapsed_ms, 1),
+            },
         )
         return response
 

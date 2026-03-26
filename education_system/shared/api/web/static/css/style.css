@@ -419,3 +419,37 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans
 
 /* Badge spacing in tables */
 .badge-spaced{margin-right:.25rem}
+
+/* ── Shared Components (SC) — secondary.js / primary.js ─────────── */
+
+/* Pagination bar */
+.sc-pagination{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;flex-wrap:wrap}
+.sc-page-info{font-size:.85rem;color:var(--text-muted)}
+
+/* Empty table cell */
+.sc-empty-cell{text-align:center;padding:2rem;color:var(--text-muted);font-style:italic}
+
+/* Modal header with close button */
+.sc-modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
+.sc-modal-header h2{margin:0;font-size:1.1rem;font-weight:700}
+.sc-modal-x{background:none;border:none;font-size:1.5rem;line-height:1;cursor:pointer;color:var(--text-muted);padding:0}
+.sc-modal-x:hover{color:var(--text)}
+
+/* Confirm dialog */
+.sc-confirm-modal{max-width:360px}
+.sc-confirm-msg{margin-bottom:1.5rem;font-size:1rem;color:var(--text)}
+
+/* Textarea inside forms */
+.sc-textarea{width:100%;padding:.5rem .75rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);font-size:.875rem;resize:vertical;min-height:80px}
+.sc-textarea:focus{outline:none;border-color:var(--accent)}
+
+/* Checkbox group */
+.sc-checkbox-group label{display:flex;align-items:center;gap:.5rem;cursor:pointer}
+.sc-checkbox-group input[type=checkbox]{width:1rem;height:1rem;cursor:pointer}
+
+/* Grade / level badges */
+.sc-grade-badge,.sc-level-badge{display:inline-block;padding:.1rem .45rem;border-radius:4px;background:var(--accent);color:#fff;font-weight:700;font-size:.8rem}
+
+/* Confirm / danger button */
+.btn-danger{background:#e74c3c;color:#fff;border:none}
+.btn-danger:hover{background:#c0392b}

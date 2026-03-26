@@ -3,6 +3,7 @@
 [![Python Version](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 [![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![codecov](https://codecov.io/gh/sean1352636/university_system/branch/main/graph/badge.svg)](https://codecov.io/gh/sean1352636/university_system)
 
 A comprehensive, enterprise-grade education management platform spanning four distinct systems — **University**, **Sixth Form College**, **Secondary School**, and **Primary School** — with CLI, GUI, REST API, and Web Portal interfaces, shared authentication, and a unified launcher.
 
@@ -300,6 +301,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit format, PR proc
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Docker, nginx, production deployment |
 | [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues and solutions |
 | [docs/MODULE_GUIDES.md](docs/MODULE_GUIDES.md) | Per-module user guides (20+) |
+| [docs/adr/README.md](docs/adr/README.md) | Architecture Decision Records (ADRs) — 12 decisions |
 | [.env.example](.env.example) | Environment variable reference |
 
 ### System-Specific Docs

@@ -29,6 +29,10 @@ PyPDF2==3.0.1                  # PDF file processing and manipulation
 requests==2.33.0               # HTTP library for API calls
 Flask==3.1.3                   # Web framework (used by finance, attendance, calendar APIs)
 flask-cors==6.0.2              # CORS support for Flask APIs
+strawberry-graphql[flask]>=0.215.0  # GraphQL API layer (type-safe, Python-native)
+flask-socketio>=5.3.0          # WebSocket / Socket.IO integration for Flask
+python-socketio>=5.10.0        # Python Socket.IO server (dependency of flask-socketio)
+eventlet>=0.36.0               # Async networking library for Socket.IO concurrency
 Jinja2==3.1.6                  # Template engine for email templates
 Werkzeug==3.1.7                # WSGI utilities
 urllib3==2.6.3                 # HTTP client library
@@ -79,6 +83,11 @@ pytz==2025.2                   # Timezone handling
 PyYAML==6.0.3                  # YAML configuration files
 python-dateutil==2.9.0.post0   # Date parsing and manipulation
 python-dotenv==1.2.2           # Environment variable management
+
+# ===============================
+# LOGGING & OBSERVABILITY
+# ===============================
+python-json-logger>=2.0.0      # Structured JSON logging (ELK / OpenSearch compatible)
 
 # ===============================
 # EMAIL & COMMUNICATIONS
@@ -145,6 +154,13 @@ nltk==3.9.4                    # Natural language processing toolkit
 # pyttsx3>=2.90                # Text-to-speech
 
 # ===============================
+# LMS INTEGRATION
+# ===============================
+google-api-python-client>=2.100.0  # Google Classroom API client
+google-auth>=2.23.0                # Google authentication library
+google-auth-oauthlib>=1.1.0        # OAuth2 flow helpers for Google APIs
+
+# ===============================
 # OPTIONAL: CLOUD INTEGRATION
 # ===============================
 # Uncomment the following lines if you want cloud service integration:
@@ -156,6 +172,7 @@ boto3==1.42.76                 # AWS services integration (required by some modu
 # DEVELOPMENT & TESTING
 # ===============================
 # Testing framework and tools
+locust>=2.20.0                 # Load and performance testing
 pytest>=7.4.0                  # Testing framework
 pytest-cov>=4.1.0              # Coverage reporting
 pytest-asyncio>=0.21.0         # Async test support

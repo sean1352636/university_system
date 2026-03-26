@@ -1,0 +1,18 @@
+# Prometheus scrape configuration for the education system
+# Place this file at docker/prometheus.yml (referenced by docker-compose.monitoring.yml)
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: education-system
+
+scrape_configs:
+  - job_name: education_system
+    static_configs:
+      - targets:
+          # host.docker.internal resolves to the host machine from inside Docker.
+          # Change to the actual IP/hostname if running on a remote server.
+          - "host.docker.internal:5000"
+    metrics_path: /metrics
+    scheme: http

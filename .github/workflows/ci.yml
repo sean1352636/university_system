@@ -84,6 +84,18 @@ jobs:
             coverage.xml
             htmlcov/
 
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: coverage.xml
+          fail_ci_if_error: false
+
+      - name: Post coverage as PR comment
+        if: github.event_name == 'pull_request'
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-xml-coverage-path: coverage.xml
+
   security:
     name: Security Scan
     runs-on: ubuntu-latest
