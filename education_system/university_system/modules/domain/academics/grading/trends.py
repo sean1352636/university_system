@@ -300,7 +300,11 @@ def trend_forecasting():
                 print(f"(course forecast unavailable: {e})")
 
         elif choice == '3':
-            forecast_module_difficulty(cursor)
+            try:
+                from education_system.university_system.modules.domain.academics.grading.forecasting import forecast_module_difficulty
+                forecast_module_difficulty(cursor)
+            except Exception as e:
+                print(f"(module difficulty forecast unavailable: {e})")
 
         elif choice == '4':
             try:
@@ -321,58 +325,61 @@ def trend_forecasting():
 
 def create_trend_visualization(daily_trends, monthly_trends, chart_type):
     """Create trend visualization charts"""
-    viz_dir = 'trend_visualizations'
-    if not os.path.exists(viz_dir):
-        os.makedirs(viz_dir)
+    try:
+        viz_dir = 'trend_visualizations'
+        if not os.path.exists(viz_dir):
+            os.makedirs(viz_dir)
 
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 
-    # Create figure with subplots
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
+        # Create figure with subplots
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
 
-    # Daily trends
-    if daily_trends:
-        dates = [trend[0] for trend in daily_trends]
-        averages = [trend[1] for trend in daily_trends]
+        # Daily trends
+        if daily_trends:
+            dates = [trend[0] for trend in daily_trends]
+            averages = [trend[1] for trend in daily_trends]
 
-        ax1.plot(dates, averages, 'b-', marker='o', markersize=4)
-        ax1.set_title('Daily Performance Trends')
-        ax1.set_xlabel('Date')
-        ax1.set_ylabel('Average Performance (%)')
-        ax1.grid(True, alpha=0.3)
+            ax1.plot(dates, averages, 'b-', marker='o', markersize=4)
+            ax1.set_title('Daily Performance Trends')
+            ax1.set_xlabel('Date')
+            ax1.set_ylabel('Average Performance (%)')
+            ax1.grid(True, alpha=0.3)
 
-        # Add trend line
-        x = np.arange(len(averages))
-        z = np.polyfit(x, averages, 1)
-        p = np.poly1d(z)
-        ax1.plot(dates, p(x), "r--", alpha=0.8, label=f'Trend: {z[0]:.2f}%/day')
-        ax1.legend()
+            # Add trend line
+            x = np.arange(len(averages))
+            z = np.polyfit(x, averages, 1)
+            p = np.poly1d(z)
+            ax1.plot(dates, p(x), "r--", alpha=0.8, label=f'Trend: {z[0]:.2f}%/day')
+            ax1.legend()
 
-        # Rotate x-axis labels for better readability
-        plt.setp(ax1.xaxis.get_majorticklabels(), rotation=45)
+            # Rotate x-axis labels for better readability
+            plt.setp(ax1.xaxis.get_majorticklabels(), rotation=45)
 
-    # Monthly trends
-    if monthly_trends:
-        months = [trend[0] for trend in monthly_trends]
-        monthly_averages = [trend[1] for trend in monthly_trends]
+        # Monthly trends
+        if monthly_trends:
+            months = [trend[0] for trend in monthly_trends]
+            monthly_averages = [trend[1] for trend in monthly_trends]
 
-        ax2.bar(months, monthly_averages, color='skyblue', alpha=0.7)
-        ax2.set_title('Monthly Performance Trends')
-        ax2.set_xlabel('Month')
-        ax2.set_ylabel('Average Performance (%)')
-        ax2.grid(True, alpha=0.3, axis='y')
+            ax2.bar(months, monthly_averages, color='skyblue', alpha=0.7)
+            ax2.set_title('Monthly Performance Trends')
+            ax2.set_xlabel('Month')
+            ax2.set_ylabel('Average Performance (%)')
+            ax2.grid(True, alpha=0.3, axis='y')
 
-        # Rotate x-axis labels
-        plt.setp(ax2.xaxis.get_majorticklabels(), rotation=45)
+            # Rotate x-axis labels
+            plt.setp(ax2.xaxis.get_majorticklabels(), rotation=45)
 
-    plt.tight_layout()
+        plt.tight_layout()
 
-    # Save the visualization
-    viz_filename = f"{viz_dir}/{chart_type}_{timestamp}.png"
-    plt.savefig(viz_filename, dpi=300, bbox_inches='tight')
-    plt.close()
+        # Save the visualization
+        viz_filename = f"{viz_dir}/{chart_type}_{timestamp}.png"
+        plt.savefig(viz_filename, dpi=300, bbox_inches='tight')
+        plt.close()
 
-    print(f"Trend visualization saved: {viz_filename}")
+        print(f"Trend visualization saved: {viz_filename}")
+    except Exception as e:
+        print(f"Error creating trend visualization: {e}")
 
 def create_individual_trend_visualization(student_grades, student_id, first_name, last_name):
     """Create individual student trend visualization"""
@@ -434,61 +441,64 @@ def create_individual_trend_visualization(student_grades, student_id, first_name
 
 def create_course_comparison_charts(comparison_data):
     """Create course comparison charts"""
-    viz_dir = 'course_comparisons'
-    if not os.path.exists(viz_dir):
-        os.makedirs(viz_dir)
+    try:
+        viz_dir = 'course_comparisons'
+        if not os.path.exists(viz_dir):
+            os.makedirs(viz_dir)
 
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 
-    # Create figure with multiple subplots
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 12))
+        # Create figure with multiple subplots
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 12))
 
-    courses = [data['course'] for data in comparison_data]
+        courses = [data['course'] for data in comparison_data]
 
-    # 1. Average GPA comparison
-    gpas = [data['avg_gpa'] for data in comparison_data]
-    ax1.bar(courses, gpas, color='skyblue', alpha=0.7)
-    ax1.set_title('Average GPA by Course')
-    ax1.set_ylabel('Average GPA')
-    ax1.set_ylim(0, 4.5)
-    for i, gpa in enumerate(gpas):
-        ax1.text(i, gpa + 0.05, f'{gpa:.2f}', ha='center', va='bottom')
-    plt.setp(ax1.xaxis.get_majorticklabels(), rotation=45)
+        # 1. Average GPA comparison
+        gpas = [data['avg_gpa'] for data in comparison_data]
+        ax1.bar(courses, gpas, color='skyblue', alpha=0.7)
+        ax1.set_title('Average GPA by Course')
+        ax1.set_ylabel('Average GPA')
+        ax1.set_ylim(0, 4.5)
+        for i, gpa in enumerate(gpas):
+            ax1.text(i, gpa + 0.05, f'{gpa:.2f}', ha='center', va='bottom')
+        plt.setp(ax1.xaxis.get_majorticklabels(), rotation=45)
 
-    # 2. Passing rate comparison
-    passing_rates = [data['passing_rate'] for data in comparison_data]
-    ax2.bar(courses, passing_rates, color='lightgreen', alpha=0.7)
-    ax2.set_title('Passing Rate by Course')
-    ax2.set_ylabel('Passing Rate (%)')
-    ax2.set_ylim(0, 105)
-    for i, rate in enumerate(passing_rates):
-        ax2.text(i, rate + 1, f'{rate:.1f}%', ha='center', va='bottom')
-    plt.setp(ax2.xaxis.get_majorticklabels(), rotation=45)
+        # 2. Passing rate comparison
+        passing_rates = [data['passing_rate'] for data in comparison_data]
+        ax2.bar(courses, passing_rates, color='lightgreen', alpha=0.7)
+        ax2.set_title('Passing Rate by Course')
+        ax2.set_ylabel('Passing Rate (%)')
+        ax2.set_ylim(0, 105)
+        for i, rate in enumerate(passing_rates):
+            ax2.text(i, rate + 1, f'{rate:.1f}%', ha='center', va='bottom')
+        plt.setp(ax2.xaxis.get_majorticklabels(), rotation=45)
 
-    # 3. Excellence rate comparison
-    excellence_rates = [data['excellence_rate'] for data in comparison_data]
-    ax3.bar(courses, excellence_rates, color='gold', alpha=0.7)
-    ax3.set_title('Excellence Rate by Course (A grades)')
-    ax3.set_ylabel('Excellence Rate (%)')
-    ax3.set_ylim(0, max(excellence_rates) + 10 if excellence_rates else 10)
-    for i, rate in enumerate(excellence_rates):
-        ax3.text(i, rate + 0.5, f'{rate:.1f}%', ha='center', va='bottom')
-    plt.setp(ax3.xaxis.get_majorticklabels(), rotation=45)
+        # 3. Excellence rate comparison
+        excellence_rates = [data['excellence_rate'] for data in comparison_data]
+        ax3.bar(courses, excellence_rates, color='gold', alpha=0.7)
+        ax3.set_title('Excellence Rate by Course (A grades)')
+        ax3.set_ylabel('Excellence Rate (%)')
+        ax3.set_ylim(0, max(excellence_rates) + 10 if excellence_rates else 10)
+        for i, rate in enumerate(excellence_rates):
+            ax3.text(i, rate + 0.5, f'{rate:.1f}%', ha='center', va='bottom')
+        plt.setp(ax3.xaxis.get_majorticklabels(), rotation=45)
 
-    # 4. Standard deviation comparison
-    std_devs = [data['std_dev'] for data in comparison_data]
-    ax4.bar(courses, std_devs, color='salmon', alpha=0.7)
-    ax4.set_title('Performance Variability by Course')
-    ax4.set_ylabel('Standard Deviation')
-    for i, std in enumerate(std_devs):
-        ax4.text(i, std + 0.2, f'{std:.1f}', ha='center', va='bottom')
-    plt.setp(ax4.xaxis.get_majorticklabels(), rotation=45)
+        # 4. Standard deviation comparison
+        std_devs = [data['std_dev'] for data in comparison_data]
+        ax4.bar(courses, std_devs, color='salmon', alpha=0.7)
+        ax4.set_title('Performance Variability by Course')
+        ax4.set_ylabel('Standard Deviation')
+        for i, std in enumerate(std_devs):
+            ax4.text(i, std + 0.2, f'{std:.1f}', ha='center', va='bottom')
+        plt.setp(ax4.xaxis.get_majorticklabels(), rotation=45)
 
-    plt.tight_layout()
+        plt.tight_layout()
 
-    # Save the visualization
-    viz_filename = f"{viz_dir}/course_comparison_{timestamp}.png"
-    plt.savefig(viz_filename, dpi=300, bbox_inches='tight')
-    plt.close()
+        # Save the visualization
+        viz_filename = f"{viz_dir}/course_comparison_{timestamp}.png"
+        plt.savefig(viz_filename, dpi=300, bbox_inches='tight')
+        plt.close()
 
-    print(f"Course comparison charts saved: {viz_filename}")
+        print(f"Course comparison charts saved: {viz_filename}")
+    except Exception as e:
+        print(f"Error creating course comparison charts: {e}")
