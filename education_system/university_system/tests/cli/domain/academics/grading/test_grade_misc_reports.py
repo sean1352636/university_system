@@ -35,10 +35,10 @@ class TestGenerateStatisticalReport:
         yield temp_dir
         shutil.rmtree(temp_dir, ignore_errors=True)
 
-    @patch('education_system.university_system.modules.domain.academics.grade_misc.reports.get_connection')
-    @patch('education_system.university_system.modules.domain.academics.grade_misc.reports._get_grading_imports')
+    @patch('education_system.university_system.modules.domain.academics.grading.reports.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.reports._get_grading_imports')
     @patch('builtins.input', side_effect=['4'])
-    @patch('education_system.university_system.modules.domain.academics.grade_misc.reports.generate_comprehensive_stats_report')
+    @patch('education_system.university_system.modules.domain.academics.grading.reports.generate_comprehensive_stats_report')
     def test_generate_statistical_report_comprehensive(
         self, mock_comprehensive, mock_input, mock_imports, mock_get_conn
     ):
@@ -46,14 +46,15 @@ class TestGenerateStatisticalReport:
         conn, cursor = Mock(), Mock()
         mock_get_conn.return_value = conn
         conn.cursor.return_value = cursor
+        mock_imports.return_value = (Mock(), Mock(), Mock())
 
         generate_statistical_report()
 
         mock_comprehensive.assert_called_once()
-        cursor.close.assert_called_once()
+        conn.close.assert_called_once()
 
-    @patch('education_system.university_system.modules.domain.academics.grade_misc.reports.get_connection')
-    @patch('education_system.university_system.modules.domain.academics.grade_misc.reports._get_grading_imports')
+    @patch('education_system.university_system.modules.domain.academics.grading.reports.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.reports._get_grading_imports')
     @patch('builtins.input', side_effect=['1'])
     def test_generate_statistical_report_assessment_no_selection(
         self, mock_input, mock_imports, mock_get_conn
@@ -70,7 +71,7 @@ class TestGenerateStatisticalReport:
 
         conn.close.assert_called_once()
 
-    @patch('education_system.university_system.modules.domain.academics.grade_misc.reports.get_connection')
+    @patch('education_system.university_system.modules.domain.academics.grading.reports.get_connection')
     @patch('builtins.input', side_effect=['invalid'])
     def test_generate_statistical_report_invalid_choice(self, mock_input, mock_get_conn):
         """Test with invalid report type choice"""
@@ -103,23 +104,24 @@ class TestGenerateModuleStatsReport:
 
         return cursor
 
-    @patch('education_system.university_system.modules.domain.academics.grade_misc.reports.os.path.exists')
-    @patch('education_system.university_system.modules.domain.academics.grade_misc.reports.SimpleDocTemplate')
-    @patch('education_system.university_system.modules.domain.academics.grade_misc.reports.plt')
+    @patch('education_system.university_system.modules.domain.academics.grading.reports._get_grading_imports')
+    @patch('education_system.university_system.modules.domain.academics.grading.reports.os.path.exists')
+    @patch('education_system.university_system.modules.domain.academics.grading.reports.SimpleDocTemplate')
+    @patch('education_system.university_system.modules.domain.academics.grading.reports.plt')
     @patch('builtins.print')
     def test_generate_module_stats_report_success(
-        self, mock_print, mock_plt, mock_doc, mock_exists, mock_cursor
+        self, mock_print, mock_plt, mock_doc, mock_exists, mock_imports, mock_cursor
     ):
         """Test successful generation of module stats report"""
         mock_exists.return_value = True
         reports_dir = 'test_reports'
         timestamp = '20250101_120000'
 
-        # Mock GRADE_SYSTEMS
-        with patch('education_system.university_system.modules.domain.academics.grade_misc.reports.GRADE_SYSTEMS', {
+        mock_imports.return_value = (Mock(), Mock(), {
             'letter': {'A+': 4.3, 'A': 4.0, 'B': 3.0, 'C': 2.0, 'F': 0.0}
-        }):
-            generate_module_stats_report(mock_cursor, 'CS101', reports_dir, timestamp)
+        })
+
+        generate_module_stats_report(mock_cursor, 'CS101', reports_dir, timestamp)
 
         # Verify database queries were made
         assert mock_cursor.execute.call_count >= 3
@@ -170,20 +172,21 @@ class TestGenerateCourseStatsReport:
 
         return cursor
 
-    @patch('education_system.university_system.modules.domain.academics.grade_misc.reports.calculate_student_gpa')
-    @patch('education_system.university_system.modules.domain.academics.grade_misc.reports.SimpleDocTemplate')
-    @patch('education_system.university_system.modules.domain.academics.grade_misc.reports.plt')
+    @patch('education_system.university_system.modules.domain.academics.grading.reports._get_grading_imports')
+    @patch('education_system.university_system.modules.domain.academics.grading.reports.SimpleDocTemplate')
+    @patch('education_system.university_system.modules.domain.academics.grading.reports.plt')
     @patch('builtins.print')
     def test_generate_course_stats_report_success(
-        self, mock_print, mock_plt, mock_doc, mock_gpa, mock_cursor_with_data
+        self, mock_print, mock_plt, mock_doc, mock_imports, mock_cursor_with_data
     ):
         """Test successful course stats report generation"""
-        # Mock GPA calculations
+        mock_gpa = Mock()
         mock_gpa.side_effect = [
             (3.5, 30, []),  # Student 1
             (3.2, 30, []),  # Student 2
             (2.8, 30, []),  # Student 3
         ]
+        mock_imports.return_value = (Mock(), mock_gpa, {'A': 4.0, 'B': 3.0, 'C': 2.0, 'D': 1.0, 'F': 0.0})
 
         generate_course_stats_report(
             mock_cursor_with_data, 'Computer Science', 'reports', '20250101'
@@ -246,38 +249,36 @@ class TestGenerateComprehensiveStatsReport:
 
         return cursor
 
-    @patch('education_system.university_system.modules.domain.academics.grade_misc.reports.calculate_student_gpa')
-    @patch('education_system.university_system.modules.domain.academics.grade_misc.reports.GRADE_SYSTEMS')
-    @patch('education_system.university_system.modules.domain.academics.grade_misc.reports.SimpleDocTemplate')
-    @patch('education_system.university_system.modules.domain.academics.grade_misc.reports.plt')
+    @patch('education_system.university_system.modules.domain.academics.grading.reports._get_grading_imports')
+    @patch('education_system.university_system.modules.domain.academics.grading.reports.SimpleDocTemplate')
+    @patch('education_system.university_system.modules.domain.academics.grading.reports.plt')
     @patch('builtins.print')
     def test_generate_comprehensive_stats_report_success(
-        self, mock_print, mock_plt, mock_doc, mock_grade_sys, mock_gpa, comprehensive_cursor
+        self, mock_print, mock_plt, mock_doc, mock_imports, comprehensive_cursor
     ):
         """Test successful comprehensive report generation"""
-        # Mock grade systems
-        mock_grade_sys.__getitem__.return_value = {
-            'A': 4.0, 'B': 3.0, 'C': 2.0, 'F': 0.0
-        }
-
-        # Mock GPA calculations
+        mock_gpa = Mock()
         mock_gpa.side_effect = [
             (3.5, 30, []),
             (3.2, 30, []),
             (2.8, 30, []),
         ]
+        mock_imports.return_value = (Mock(), mock_gpa, {
+            'letter': {'A': 4.0, 'B': 3.0, 'C': 2.0, 'F': 0.0}
+        })
 
         generate_comprehensive_stats_report(comprehensive_cursor, 'reports', '20250101')
 
         # Verify report was generated
         assert any('generated' in str(call).lower() for call in mock_print.call_args_list)
 
-    @patch('education_system.university_system.modules.domain.academics.grade_misc.reports.calculate_student_gpa')
+    @patch('education_system.university_system.modules.domain.academics.grading.reports._get_grading_imports')
     @patch('builtins.print')
     def test_generate_comprehensive_stats_report_error_handling(
-        self, mock_print, mock_gpa
+        self, mock_print, mock_imports
     ):
         """Test error handling in comprehensive report"""
+        mock_imports.return_value = (Mock(), Mock(), {'letter': {'A': 4.0, 'F': 0.0}})
         cursor = Mock()
         cursor.fetchone.side_effect = Exception("Database error")
 
@@ -298,13 +299,18 @@ class TestGenerateAllModulesStatsReport:
             ('CS201', 'Algorithms')
         ]
 
-    @patch('education_system.university_system.modules.domain.academics.grade_misc.reports.SimpleDocTemplate')
-    @patch('education_system.university_system.modules.domain.academics.grade_misc.reports.plt')
+    @patch('education_system.university_system.modules.domain.academics.grading.reports._get_grading_imports')
+    @patch('education_system.university_system.modules.domain.academics.grading.reports.SimpleDocTemplate')
+    @patch('education_system.university_system.modules.domain.academics.grading.reports.plt')
     @patch('builtins.print')
     def test_generate_all_modules_stats_report(
-        self, mock_print, mock_plt, mock_doc, modules_data
+        self, mock_print, mock_plt, mock_doc, mock_imports, modules_data
     ):
         """Test generation of all modules stats report"""
+        mock_imports.return_value = (Mock(), Mock(), {
+            'letter': {'A+': 4.3, 'A': 4.0, 'B+': 3.3, 'B': 3.0, 'C+': 2.3, 'C': 2.0}
+        })
+
         cursor = Mock()
 
         # Mock module grades data for each module
@@ -320,39 +326,37 @@ class TestGenerateAllModulesStatsReport:
             ('Algorithms', 'Core'),  # CS201
         ]
 
-        with patch('education_system.university_system.modules.domain.academics.grade_misc.reports.GRADE_SYSTEMS', {
-            'letter': {'A+': 4.3, 'A': 4.0, 'B+': 3.3, 'B': 3.0, 'C+': 2.3, 'C': 2.0}
-        }):
-            generate_all_modules_stats_report(cursor, modules_data, 'reports', '20250101')
+        generate_all_modules_stats_report(cursor, modules_data, 'reports', '20250101')
 
 class TestGenerateAllCoursesStatsReport:
     """Test the generate_all_courses_stats_report function"""
 
-    @patch('education_system.university_system.modules.domain.academics.grade_misc.reports.calculate_student_gpa')
-    @patch('education_system.university_system.modules.domain.academics.grade_misc.reports.SimpleDocTemplate')
-    @patch('education_system.university_system.modules.domain.academics.grade_misc.reports.plt')
+    @patch('education_system.university_system.modules.domain.academics.grading.reports._get_grading_imports')
+    @patch('education_system.university_system.modules.domain.academics.grading.reports.SimpleDocTemplate')
+    @patch('education_system.university_system.modules.domain.academics.grading.reports.plt')
     @patch('builtins.print')
     def test_generate_all_courses_stats_report(
-        self, mock_print, mock_plt, mock_doc, mock_gpa
+        self, mock_print, mock_plt, mock_doc, mock_imports
     ):
         """Test generation of all courses comparison report"""
-        cursor = Mock()
-
-        # Students per course
-        cursor.fetchall.side_effect = [
-            [('S001',), ('S002',), ('S003',)],  # CS students
-            [('S004',), ('S005',)],  # DS students
-            [('male', 2), ('female', 1)],  # CS gender
-            [('male', 1), ('female', 1)],  # DS gender
-        ]
-
-        # Mock GPA calculations
+        mock_gpa = Mock()
         mock_gpa.side_effect = [
             (3.5, 30, []),
             (3.2, 30, []),
             (2.8, 30, []),
             (3.6, 30, []),
             (3.4, 30, []),
+        ]
+        mock_imports.return_value = (Mock(), mock_gpa, {'A': 4.0, 'B': 3.0, 'C': 2.0, 'D': 1.0, 'F': 0.0})
+
+        cursor = Mock()
+
+        # Students per course (interleaved: students then gender per course)
+        cursor.fetchall.side_effect = [
+            [('S001',), ('S002',), ('S003',)],  # CS students
+            [('male', 2), ('female', 1)],  # CS gender
+            [('S004',), ('S005',)],  # DS students
+            [('male', 1), ('female', 1)],  # DS gender
         ]
 
         courses = ['Computer Science', 'Data Science']

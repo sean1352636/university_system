@@ -159,6 +159,7 @@ def generate_statistical_report():
 
 def generate_module_stats_report(cursor, module_code, reports_dir, timestamp):
     """Generate a statistical report for a specific module"""
+    _, calculate_student_gpa, GRADE_SYSTEMS = _get_grading_imports()
     try:
         # Get module details
         cursor.execute('''
@@ -471,6 +472,7 @@ def generate_module_stats_report(cursor, module_code, reports_dir, timestamp):
 
 def generate_all_modules_stats_report(cursor, modules, reports_dir, timestamp):
     """Generate a statistical report for all modules"""
+    _, calculate_student_gpa, GRADE_SYSTEMS = _get_grading_imports()
     try:
         # ... [previous code]
 
@@ -555,6 +557,7 @@ def generate_all_modules_stats_report(cursor, modules, reports_dir, timestamp):
 
 def generate_course_stats_report(cursor, course, reports_dir, timestamp):
     """Generate a statistical report for a specific course"""
+    _, calculate_student_gpa, GRADE_SYSTEMS = _get_grading_imports()
     try:
         # Get all students in this course
         cursor.execute('''
@@ -1013,6 +1016,7 @@ def generate_course_stats_report(cursor, course, reports_dir, timestamp):
 
 def generate_all_courses_stats_report(cursor, courses, reports_dir, timestamp):
     """Generate a statistical report comparing all courses"""
+    _, calculate_student_gpa, GRADE_SYSTEMS = _get_grading_imports()
     try:
         # Create a pandas DataFrame to store course statistics
         course_stats = []
@@ -1381,6 +1385,7 @@ def generate_all_courses_stats_report(cursor, courses, reports_dir, timestamp):
 
 def generate_comprehensive_stats_report(cursor, reports_dir, timestamp):
     """Generate a comprehensive statistical report covering all aspects of student performance"""
+    _, calculate_student_gpa, GRADE_SYSTEMS = _get_grading_imports()
     try:
         # Get overview of database
         cursor.execute('SELECT COUNT(*) FROM students')
