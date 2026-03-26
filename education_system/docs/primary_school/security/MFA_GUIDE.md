@@ -79,10 +79,10 @@ For administrators managing accounts in bulk or via scripting:
 
 ```bash
 # Enable MFA for a specific user (interactive)
-/home/seancatchpole989/venv/bin/python -m primary_school.cli mfa enable --username primary_admin
+python -m primary_school.cli mfa enable --username primary_admin
 
 # Generate new recovery codes for a user
-/home/seancatchpole989/venv/bin/python -m primary_school.cli mfa recovery --username primary_admin
+python -m primary_school.cli mfa recovery --username primary_admin
 ```
 
 ---

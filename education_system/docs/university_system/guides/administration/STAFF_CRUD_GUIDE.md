@@ -276,7 +276,7 @@ Your Staff CRUD system is **fully functional** and ready to use!
 
 ### Step 1: Run the Application
 ```bash
-cd /home/seancatchpole989/university_system
+cd university_system
 python run.py --gui
 ```
 

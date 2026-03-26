@@ -201,7 +201,7 @@ The Education System platform provides a universal login window (`education_syst
 Individual system launchers can also be started directly for development or testing:
 
 ```bash
-/home/seancatchpole989/venv/bin/python -m secondary_school.main
+python -m secondary_school.main
 ```
 
 This will show the system's own login screen, which delegates to the shared auth module.

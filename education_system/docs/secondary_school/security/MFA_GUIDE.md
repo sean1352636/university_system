@@ -52,7 +52,7 @@ A one-time code is sent to the user's registered email address. This method is a
 ### Via the CLI
 
 ```bash
-/home/seancatchpole989/venv/bin/python -m secondary_school.cli mfa enable --username <username>
+python -m secondary_school.cli mfa enable --username <username>
 ```
 
 The CLI will:
@@ -123,7 +123,7 @@ Administrators can disable MFA for a user account (e.g., if a user has lost both
 
 **Via CLI:**
 ```bash
-/home/seancatchpole989/venv/bin/python -m secondary_school.cli mfa disable --username <username> --admin
+python -m secondary_school.cli mfa disable --username <username> --admin
 ```
 
 This action is recorded in the audit log with the administrator's identity.

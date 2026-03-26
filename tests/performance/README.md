@@ -18,7 +18,7 @@ Education Management System's Flask APIs and SQLite data layer.
    ```bash
    make run-api        # college API on http://localhost:5000
    # or start a specific system:
-   /home/seancatchpole989/venv/bin/python -m education_system.shared.api.college.api_server
+   python -m education_system.shared.api.college.api_server
    ```
    The server must be reachable at the `--host` you supply to Locust.
 
@@ -50,7 +50,7 @@ make load-test-ui
 ```bash
 make perf-test
 # Equivalent to:
-/home/seancatchpole989/venv/bin/python tests/performance/benchmark_db.py
+python tests/performance/benchmark_db.py
 ```
 
 ### Run a single scenario

@@ -29,10 +29,10 @@ The project uses a shared virtual environment located at the repository root:
 
 ```bash
 # The venv is at:
-/home/seancatchpole989/venv/bin/python
+python
 
 # Always use the full path -- there is no bare `python` on the system
-/home/seancatchpole989/venv/bin/python -m pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 ### Dependencies
@@ -40,7 +40,7 @@ The project uses a shared virtual environment located at the repository root:
 Install from the project root:
 
 ```bash
-/home/seancatchpole989/venv/bin/python -m pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 Key dependencies include:
@@ -62,42 +62,42 @@ The system supports three modes: GUI (default), CLI, and REST API.
 
 ```bash
 # GUI mode (default)
-/home/seancatchpole989/venv/bin/python -m education_system.secondary_school
+python -m education_system.secondary_school
 
 # CLI mode
-/home/seancatchpole989/venv/bin/python -m education_system.secondary_school --cli
+python -m education_system.secondary_school --cli
 
 # REST API server
-/home/seancatchpole989/venv/bin/python -m education_system.secondary_school --api
+python -m education_system.secondary_school --api
 ```
 
 You can also launch through the universal login (all four systems):
 
 ```bash
-/home/seancatchpole989/venv/bin/python run.py
+python run.py
 ```
 
 ### Running Tests
 
 ```bash
 # All secondary school tests
-/home/seancatchpole989/venv/bin/python -m pytest education_system/secondary_school/tests/ -v
+python -m pytest education_system/secondary_school/tests/ -v
 
 # Single test file
-/home/seancatchpole989/venv/bin/python -m pytest education_system/secondary_school/tests/test_student_service.py -v
+python -m pytest education_system/secondary_school/tests/test_student_service.py -v
 
 # With coverage
-/home/seancatchpole989/venv/bin/python -m pytest education_system/secondary_school/tests/ --cov=education_system.secondary_school -v
+python -m pytest education_system/secondary_school/tests/ --cov=education_system.secondary_school -v
 ```
 
 ### Code Style
 
 ```bash
 # Format with Black
-/home/seancatchpole989/venv/bin/python -m black education_system/secondary_school/
+python -m black education_system/secondary_school/
 
 # Lint with Ruff
-/home/seancatchpole989/venv/bin/python -m ruff check education_system/secondary_school/
+python -m ruff check education_system/secondary_school/
 ```
 
 ---
@@ -365,25 +365,25 @@ from education_system.secondary_school.core.defaults import STUDENT_ID_PREFIX
 
 ```bash
 # Run the app (GUI)
-/home/seancatchpole989/venv/bin/python -m education_system.secondary_school
+python -m education_system.secondary_school
 
 # Run all tests
-/home/seancatchpole989/venv/bin/python -m pytest education_system/secondary_school/tests/ -v
+python -m pytest education_system/secondary_school/tests/ -v
 
 # Run a specific test class
-/home/seancatchpole989/venv/bin/python -m pytest education_system/secondary_school/tests/test_student_service.py::TestStudentService -v
+python -m pytest education_system/secondary_school/tests/test_student_service.py::TestStudentService -v
 
 # Format code
-/home/seancatchpole989/venv/bin/python -m black education_system/secondary_school/
+python -m black education_system/secondary_school/
 
 # Lint code
-/home/seancatchpole989/venv/bin/python -m ruff check education_system/secondary_school/
+python -m ruff check education_system/secondary_school/
 
 # Auto-fix lint issues
-/home/seancatchpole989/venv/bin/python -m ruff check education_system/secondary_school/ --fix
+python -m ruff check education_system/secondary_school/ --fix
 
 # Initialize / reset the database
-/home/seancatchpole989/venv/bin/python -c "
+python -c "
 from education_system.secondary_school.infrastructure.database.schema import initialise_database, seed_default_users
 initialise_database()
 seed_default_users()

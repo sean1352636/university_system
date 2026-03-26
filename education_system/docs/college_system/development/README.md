@@ -28,7 +28,7 @@ Optional dependency groups:
 The project expects a virtual environment. On this machine, the venv is located at:
 
 ```
-/home/seancatchpole989/venv/bin/python
+python
 ```
 
 Always use the full venv path when running Python commands outside of an activated environment.

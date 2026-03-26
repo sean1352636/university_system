@@ -4,7 +4,7 @@ Provides a login screen and a tabbed main interface with modules for:
 - Students, Subjects, Enrollment, Grades, Attendance, Timetable, Behaviour
 
 Run with:
-    /home/seancatchpole989/venv/bin/python -m education_system.secondary_school.main_gui
+    python -m education_system.secondary_school.main_gui
 """
 
 import tkinter as tk

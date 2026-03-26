@@ -23,7 +23,7 @@ from education_system.university_system.modules.domain.cinema.gui.cinema_gui.dat
 
 def load_audit_from_logs(self, action_filter="all"):
     """Load audit entries from university system log files."""
-    logs_dir = "/home/seancatchpole989/university_system/logs"
+    logs_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '..', '..', '..', 'logs')
     entries = []
     entry_id = 1
 

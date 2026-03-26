@@ -12,7 +12,7 @@ Runs a suite of micro-benchmarks covering:
 No external dependencies required beyond the Python standard library.
 
 Usage:
-    /home/seancatchpole989/venv/bin/python tests/performance/benchmark_db.py
+    python tests/performance/benchmark_db.py
     # or via Makefile:
     make perf-test
 """

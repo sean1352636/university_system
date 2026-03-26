@@ -13,12 +13,12 @@ The Primary School Management System is one of four subsystems in the Education 
 ### Prerequisites
 
 - Python 3.11+
-- The project virtualenv at `/home/seancatchpole989/venv/`
+- The project virtualenv at `./venv/`
 
 ### Install Dependencies
 
 ```bash
-/home/seancatchpole989/venv/bin/pip install -r requirements.txt
+./venv/bin/pip install -r requirements.txt
 ```
 
 Key dependencies: `tkinter` (stdlib), `sqlite3` (stdlib), `flask`, `bcrypt`, `pyotp`, `pytest`, `black`, `ruff`.
@@ -26,7 +26,7 @@ Key dependencies: `tkinter` (stdlib), `sqlite3` (stdlib), `flask`, `bcrypt`, `py
 ### Verify Setup
 
 ```bash
-/home/seancatchpole989/venv/bin/python -c "from education_system.primary_school.core.paths import DB_FILE; print(DB_FILE)"
+python -c "from education_system.primary_school.core.paths import DB_FILE; print(DB_FILE)"
 ```
 
 ---
@@ -37,29 +37,29 @@ Key dependencies: `tkinter` (stdlib), `sqlite3` (stdlib), `flask`, `bcrypt`, `py
 
 ```bash
 # Via the universal launcher (shared login across all 4 systems)
-/home/seancatchpole989/venv/bin/python run.py
+python run.py
 
 # Directly (standalone login)
-/home/seancatchpole989/venv/bin/python -m education_system.primary_school
+python -m education_system.primary_school
 ```
 
 ### CLI Mode
 
 ```bash
-/home/seancatchpole989/venv/bin/python -m education_system.primary_school.cli.cli_main
+python -m education_system.primary_school.cli.cli_main
 ```
 
 ### Running Tests
 
 ```bash
 # All primary school tests
-/home/seancatchpole989/venv/bin/python -m pytest education_system/primary_school/tests/ -v
+python -m pytest education_system/primary_school/tests/ -v
 
 # Specific test file
-/home/seancatchpole989/venv/bin/python -m pytest education_system/primary_school/tests/test_pupil_service.py -v
+python -m pytest education_system/primary_school/tests/test_pupil_service.py -v
 
 # With coverage
-/home/seancatchpole989/venv/bin/python -m pytest education_system/primary_school/tests/ --cov=education_system.primary_school -v
+python -m pytest education_system/primary_school/tests/ --cov=education_system.primary_school -v
 ```
 
 ### Default Login Credentials
@@ -217,13 +217,13 @@ from education_system.primary_school.core.paths import DB_FILE, DATA_DIR, LOGS_D
 
 ```bash
 # Format code with Black
-/home/seancatchpole989/venv/bin/python -m black education_system/primary_school/
+python -m black education_system/primary_school/
 
 # Lint with Ruff
-/home/seancatchpole989/venv/bin/python -m ruff check education_system/primary_school/
+python -m ruff check education_system/primary_school/
 
 # Auto-fix linting issues
-/home/seancatchpole989/venv/bin/python -m ruff check --fix education_system/primary_school/
+python -m ruff check --fix education_system/primary_school/
 ```
 
 ### Style Rules
@@ -240,21 +240,21 @@ from education_system.primary_school.core.paths import DB_FILE, DATA_DIR, LOGS_D
 
 ```bash
 # Run the full application (GUI)
-/home/seancatchpole989/venv/bin/python run.py
+python run.py
 
 # Run CLI
-/home/seancatchpole989/venv/bin/python -m education_system.primary_school.cli.cli_main
+python -m education_system.primary_school.cli.cli_main
 
 # Format + lint
-/home/seancatchpole989/venv/bin/python -m black education_system/primary_school/ && \
-/home/seancatchpole989/venv/bin/python -m ruff check education_system/primary_school/
+python -m black education_system/primary_school/ && \
+python -m ruff check education_system/primary_school/
 
 # Run tests with coverage
-/home/seancatchpole989/venv/bin/python -m pytest education_system/primary_school/tests/ \
+python -m pytest education_system/primary_school/tests/ \
     --cov=education_system.primary_school --cov-report=term-missing -v
 
 # Check database schema
-/home/seancatchpole989/venv/bin/python -c "
+python -c "
 from education_system.primary_school.infrastructure.database.db import connect
 conn = connect()
 tables = conn.execute(\"SELECT name FROM sqlite_master WHERE type='table'\").fetchall()

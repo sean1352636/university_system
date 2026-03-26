@@ -12,28 +12,28 @@ All commands use the project virtualenv:
 
 ```bash
 # Run all primary school tests
-/home/seancatchpole989/venv/bin/python -m pytest education_system/primary_school/tests/ -v
+python -m pytest education_system/primary_school/tests/ -v
 
 # Run a specific test file
-/home/seancatchpole989/venv/bin/python -m pytest education_system/primary_school/tests/test_pupil_service.py -v
+python -m pytest education_system/primary_school/tests/test_pupil_service.py -v
 
 # Run a specific test class or method
-/home/seancatchpole989/venv/bin/python -m pytest education_system/primary_school/tests/test_pupil_service.py::TestPupilService -v
-/home/seancatchpole989/venv/bin/python -m pytest education_system/primary_school/tests/test_pupil_service.py::TestPupilService::test_create_pupil -v
+python -m pytest education_system/primary_school/tests/test_pupil_service.py::TestPupilService -v
+python -m pytest education_system/primary_school/tests/test_pupil_service.py::TestPupilService::test_create_pupil -v
 
 # Run with coverage report
-/home/seancatchpole989/venv/bin/python -m pytest education_system/primary_school/tests/ \
+python -m pytest education_system/primary_school/tests/ \
     --cov=education_system.primary_school --cov-report=term-missing -v
 
 # Run with HTML coverage report
-/home/seancatchpole989/venv/bin/python -m pytest education_system/primary_school/tests/ \
+python -m pytest education_system/primary_school/tests/ \
     --cov=education_system.primary_school --cov-report=html -v
 
 # Run tests matching a keyword
-/home/seancatchpole989/venv/bin/python -m pytest education_system/primary_school/tests/ -k "attendance" -v
+python -m pytest education_system/primary_school/tests/ -k "attendance" -v
 
 # Stop on first failure
-/home/seancatchpole989/venv/bin/python -m pytest education_system/primary_school/tests/ -x -v
+python -m pytest education_system/primary_school/tests/ -x -v
 ```
 
 ---
@@ -390,17 +390,17 @@ The service layer carries the most business logic and should have the highest co
 
 ```bash
 # Terminal summary with missing lines highlighted
-/home/seancatchpole989/venv/bin/python -m pytest education_system/primary_school/tests/ \
+python -m pytest education_system/primary_school/tests/ \
     --cov=education_system.primary_school \
     --cov-report=term-missing -v
 
 # Generate an HTML report (open htmlcov/index.html in a browser)
-/home/seancatchpole989/venv/bin/python -m pytest education_system/primary_school/tests/ \
+python -m pytest education_system/primary_school/tests/ \
     --cov=education_system.primary_school \
     --cov-report=html -v
 
 # Fail the run if coverage drops below threshold
-/home/seancatchpole989/venv/bin/python -m pytest education_system/primary_school/tests/ \
+python -m pytest education_system/primary_school/tests/ \
     --cov=education_system.primary_school \
     --cov-fail-under=80 -v
 ```

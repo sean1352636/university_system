@@ -348,7 +348,7 @@ Ensure you are using the correct virtual environment:
 
 ```bash
 which python
-# Should point to: /home/seancatchpole989/venv/bin/python (or your venv path)
+# Should point to: python (or your venv path)
 
 python -c "import tkinter; print('tkinter OK')"
 python -c "import sqlite3; print('sqlite3 OK')"

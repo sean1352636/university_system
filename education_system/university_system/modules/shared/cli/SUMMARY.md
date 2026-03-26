@@ -2,7 +2,7 @@
 
 ## What Was Done
 
-Successfully refactored `/home/seancatchpole989/university_system/modules/shared/cli/cli_main.py` from a **monolithic 8,935-line file** into a **modular structure** with **17 specialized modules**.
+Successfully refactored `university_system/modules/shared/cli/cli_main.py` from a **monolithic 8,935-line file** into a **modular structure** with **17 specialized modules**.
 
 ## Results
 

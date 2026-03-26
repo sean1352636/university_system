@@ -207,7 +207,7 @@ pip install flask flask-cors
 
 ```bash
 # Run from the project root directory
-cd /home/seancatchpole989/education_system
+cd education_system
 python -m education_system.college_system.api.api_server
 ```
 
@@ -366,7 +366,7 @@ Ensure you are using the correct virtual environment:
 
 ```bash
 which python
-# Should point to: /home/seancatchpole989/venv/bin/python (or your venv path)
+# Should point to: python (or your venv path)
 
 python -c "import flask; print(flask.__version__)"
 ```

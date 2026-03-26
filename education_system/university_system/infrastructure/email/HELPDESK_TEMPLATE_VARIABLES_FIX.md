@@ -80,7 +80,7 @@ Modified `send_ticket_notification()` to query the `support_tickets` table for t
 
 ### File Modified
 
-**`/home/seancatchpole989/university_system/infrastructure/email/email_service.py`**
+**`university_system/infrastructure/email/email_service.py`**
 
 ---
 

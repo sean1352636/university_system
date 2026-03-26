@@ -9914,8 +9914,8 @@ This commit addresses incorrect backup directory path and auth module initializa
 **1. Backups Folder Created in Home Directory Instead of university_system Directory**
 - **Location**: `university_system/modules/shared/config/backup_config.json:2`
 - **Problem**: Config file had relative path `"backups"` which created folder in current working directory (home directory) instead of the correct location within university_system directory
-- **Impact**: Backups were being saved to `/home/seancatchpole989/backups/` instead of `/home/seancatchpole989/university_system/backups/`
-- **Fix**: Changed `"backup_directory": "backups"` to `"backup_directory": "/home/seancatchpole989/university_system/backups"`
+- **Impact**: Backups were being saved to `./backups/` instead of `university_system/backups/`
+- **Fix**: Changed `"backup_directory": "backups"` to `"backup_directory": "university_system/backups"`
 - **Files Modified**: `university_system/modules/shared/config/backup_config.json`
 
 **2. Auth Instance Warning on Startup**

@@ -199,20 +199,20 @@ export INITIAL_STUDENT_PASSWORD="student123"
 
 ```
 University System DB:
-  /home/seancatchpole989/university_system/data/db_files/university_system.db
+  university_system/data/db_files/university_system.db
 
 Backup Location:
-  /home/seancatchpole989/university_system/data/db_exports/
+  university_system/data/db_exports/
 
 Logs:
-  /home/seancatchpole989/university_system/logs/
+  university_system/logs/
 ```
 
 ## Quick Debug Commands
 
 ```bash
 # Check database exists
-ls -la /home/seancatchpole989/university_system/data/db_files/
+ls -la university_system/data/db_files/
 
 # View SQLite schema
 sqlite3 /path/to/database.db ".schema users"
@@ -221,7 +221,7 @@ sqlite3 /path/to/database.db ".schema users"
 python3 -c "from university_system.infrastructure.auth.user_authentication import UserAuth; print('OK')"
 
 # View login logs
-tail -f /home/seancatchpole989/university_system/logs/activity_log_*.json
+tail -f university_system/logs/activity_log_*.json
 ```
 
 ## Performance Notes

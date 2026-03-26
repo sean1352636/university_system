@@ -65,7 +65,7 @@ if not email:
 
 ### File Modified
 
-**`/home/seancatchpole989/university_system/infrastructure/email/email_service.py`**
+**`university_system/infrastructure/email/email_service.py`**
 
 ### Functions Updated
 

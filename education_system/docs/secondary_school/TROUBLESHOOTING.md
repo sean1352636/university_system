@@ -329,7 +329,7 @@ Ensure you are using the correct virtual environment:
 
 ```bash
 which python
-# Should point to: /home/seancatchpole989/venv/bin/python (or your venv path)
+# Should point to: python (or your venv path)
 
 python -c "import flask; print(flask.__version__)"
 ```

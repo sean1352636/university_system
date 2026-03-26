@@ -26,7 +26,7 @@ Environment variables can be set in the shell before launching the application:
 ```bash
 export SCHOOL_API_PORT=5002
 export LOG_LEVEL=DEBUG
-/home/seancatchpole989/venv/bin/python -m secondary_school.main
+python -m secondary_school.main
 ```
 
 ## Core Modules

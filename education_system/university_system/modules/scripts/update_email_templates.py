@@ -11,7 +11,7 @@ from education_system.university_system.modules.shared.utils.i18n import get_tex
 # File paths and their email template mappings
 file_updates = {
     # Student Union GUI
-    '/home/seancatchpole989/university_system/modules/interfaces/gui/student_union_gui.py': {
+    'university_system/modules/interfaces/gui/student_union_gui.py': {
         'imports': 'from education_system.university_system.infrastructure.email.template_utils import render_template',
         'replacements': [
             {
@@ -67,17 +67,17 @@ def update_file_simple(filepath):
 
 # List of all files to update
 files_to_update = [
-    '/home/seancatchpole989/university_system/modules/interfaces/gui/student_union_gui.py',
-    '/home/seancatchpole989/university_system/modules/domain/student_affairs/gui/alumni/main_gui.py',
-    '/home/seancatchpole989/university_system/modules/interfaces/gui/internship_management_gui.py',
-    '/home/seancatchpole989/university_system/modules/interfaces/gui/health_portal_gui.py',
-    '/home/seancatchpole989/university_system/modules/domain/academics/gui/attendance_tracker/',
-    '/home/seancatchpole989/university_system/modules/interfaces/gui/library_gui.py',
-    '/home/seancatchpole989/university_system/modules/interfaces/gui/restaurant_management_gui.py',
-    '/home/seancatchpole989/university_system/modules/interfaces/gui/shop_management_gui.py',
-    '/home/seancatchpole989/university_system/modules/domain/academics/gui/module_scheduling/',
-    '/home/seancatchpole989/university_system/modules/domain/student_affairs/student_union/administration/admin_management.py',
-    '/home/seancatchpole989/university_system/modules/core/services/student_union_misc/voting.py',
+    'university_system/modules/interfaces/gui/student_union_gui.py',
+    'university_system/modules/domain/student_affairs/gui/alumni/main_gui.py',
+    'university_system/modules/interfaces/gui/internship_management_gui.py',
+    'university_system/modules/interfaces/gui/health_portal_gui.py',
+    'university_system/modules/domain/academics/gui/attendance_tracker/',
+    'university_system/modules/interfaces/gui/library_gui.py',
+    'university_system/modules/interfaces/gui/restaurant_management_gui.py',
+    'university_system/modules/interfaces/gui/shop_management_gui.py',
+    'university_system/modules/domain/academics/gui/module_scheduling/',
+    'university_system/modules/domain/student_affairs/student_union/administration/admin_management.py',
+    'university_system/modules/core/services/student_union_misc/voting.py',
 ]
 
 if __name__ == '__main__':

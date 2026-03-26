@@ -31,7 +31,7 @@ export PRIMARY_SCHOOL_API_PORT=5002
 export PRIMARY_SCHOOL_DEBUG=true
 
 # Or inline when running
-PRIMARY_SCHOOL_DEBUG=true /home/seancatchpole989/venv/bin/python run.py
+PRIMARY_SCHOOL_DEBUG=true python run.py
 ```
 
 ---

@@ -182,7 +182,7 @@ To reset the database (destroys all data):
 
 ```bash
 rm education_system/primary_school/data/db_files/primary_school.db
-/home/seancatchpole989/venv/bin/python run.py
+python run.py
 ```
 
 The schema will be recreated automatically on the next launch.

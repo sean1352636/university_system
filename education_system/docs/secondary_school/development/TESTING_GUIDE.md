@@ -24,53 +24,53 @@ All commands use the project virtual environment.
 
 ```bash
 # Run all secondary school tests
-/home/seancatchpole989/venv/bin/python -m pytest education_system/secondary_school/tests/ -v
+python -m pytest education_system/secondary_school/tests/ -v
 
 # Run a specific test file
-/home/seancatchpole989/venv/bin/python -m pytest education_system/secondary_school/tests/test_student_service.py -v
+python -m pytest education_system/secondary_school/tests/test_student_service.py -v
 
 # Run a specific test class
-/home/seancatchpole989/venv/bin/python -m pytest education_system/secondary_school/tests/test_student_service.py::TestStudentService -v
+python -m pytest education_system/secondary_school/tests/test_student_service.py::TestStudentService -v
 
 # Run a single test method
-/home/seancatchpole989/venv/bin/python -m pytest education_system/secondary_school/tests/test_student_service.py::TestStudentService::test_create_student -v
+python -m pytest education_system/secondary_school/tests/test_student_service.py::TestStudentService::test_create_student -v
 ```
 
 ### Useful Flags
 
 ```bash
 # Stop on first failure
-/home/seancatchpole989/venv/bin/python -m pytest education_system/secondary_school/tests/ -x
+python -m pytest education_system/secondary_school/tests/ -x
 
 # Show print output
-/home/seancatchpole989/venv/bin/python -m pytest education_system/secondary_school/tests/ -s
+python -m pytest education_system/secondary_school/tests/ -s
 
 # Run tests matching a keyword
-/home/seancatchpole989/venv/bin/python -m pytest education_system/secondary_school/tests/ -k "student"
+python -m pytest education_system/secondary_school/tests/ -k "student"
 
 # Verbose with short traceback
-/home/seancatchpole989/venv/bin/python -m pytest education_system/secondary_school/tests/ -v --tb=short
+python -m pytest education_system/secondary_school/tests/ -v --tb=short
 
 # Parallel execution (if pytest-xdist is installed)
-/home/seancatchpole989/venv/bin/python -m pytest education_system/secondary_school/tests/ -n auto
+python -m pytest education_system/secondary_school/tests/ -n auto
 ```
 
 ### Coverage
 
 ```bash
 # Run with coverage report
-/home/seancatchpole989/venv/bin/python -m pytest education_system/secondary_school/tests/ \
+python -m pytest education_system/secondary_school/tests/ \
     --cov=education_system.secondary_school \
     --cov-report=term-missing \
     -v
 
 # Generate HTML coverage report
-/home/seancatchpole989/venv/bin/python -m pytest education_system/secondary_school/tests/ \
+python -m pytest education_system/secondary_school/tests/ \
     --cov=education_system.secondary_school \
     --cov-report=html:education_system/secondary_school/tests/htmlcov
 
 # Coverage for a specific module
-/home/seancatchpole989/venv/bin/python -m pytest education_system/secondary_school/tests/test_grade_service.py \
+python -m pytest education_system/secondary_school/tests/test_grade_service.py \
     --cov=education_system.secondary_school.modules.domain.academics.grades \
     --cov-report=term-missing
 ```
@@ -537,12 +537,12 @@ For each service method, aim to test:
 
 ```bash
 # Quick summary
-/home/seancatchpole989/venv/bin/python -m pytest education_system/secondary_school/tests/ \
+python -m pytest education_system/secondary_school/tests/ \
     --cov=education_system.secondary_school.modules.domain \
     --cov-report=term-missing -q
 
 # Identify untested files
-/home/seancatchpole989/venv/bin/python -m pytest education_system/secondary_school/tests/ \
+python -m pytest education_system/secondary_school/tests/ \
     --cov=education_system.secondary_school \
     --cov-report=term:skip-covered -q
 ```

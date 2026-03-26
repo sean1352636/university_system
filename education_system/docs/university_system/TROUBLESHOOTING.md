@@ -31,7 +31,7 @@ Use the password reset utility to reset user passwords:
 
 ```bash
 # From project root
-cd /home/seancatchpole989
+cd .
 
 # Reset all default development accounts
 python3 university_system/utils/reset_password.py --reset-defaults
@@ -180,7 +180,7 @@ unable to open database file
 Initialize the database:
 
 ```bash
-cd /home/seancatchpole989
+cd .
 python3 -c "
 from university_system.infrastructure.database.schemas import initialize_all_schemas
 initialize_all_schemas()
@@ -228,19 +228,19 @@ ModuleNotFoundError: No module named 'university_system'
 
 1. **Always run from project root:**
    ```bash
-   cd /home/seancatchpole989
+   cd .
    python3 -m university_system.modules.shared.cli.cli_main
    ```
 
 2. **Or use the run script:**
    ```bash
-   cd /home/seancatchpole989
+   cd .
    python3 run.py
    ```
 
 3. **Check PYTHONPATH:**
    ```bash
-   export PYTHONPATH="/home/seancatchpole989:$PYTHONPATH"
+   export PYTHONPATH=".:$PYTHONPATH"
    ```
 
 ### After Refactoring Import Errors
@@ -278,7 +278,7 @@ PermissionError: [Errno 13] Permission denied: 'data/db_files/student_records.db
 Fix file permissions:
 
 ```bash
-cd /home/seancatchpole989/university_system
+cd university_system
 chmod -R 755 data/ logs/ backups/
 chmod 644 data/db_files/*.db
 ```
@@ -416,9 +416,9 @@ If you're still experiencing issues:
    ```
 
 4. **Consult documentation:**
-   - `/home/seancatchpole989/university_system/CLAUDE.md` - Project guide
-   - `/home/seancatchpole989/university_system/docs/` - Full documentation
-   - `/home/seancatchpole989/university_system/docs/SECURITY.md` - Security guide
+   - `university_system/CLAUDE.md` - Project guide
+   - `university_system/docs/` - Full documentation
+   - `university_system/docs/SECURITY.md` - Security guide
 
 ---
 

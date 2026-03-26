@@ -130,7 +130,7 @@ def process_file(filepath):
 
 def main():
     """Main function to process all priority files."""
-    base_dir = Path('/home/seancatchpole989/university_system')
+    base_dir = Path(__file__).resolve().parent.parent.parent
 
     # Priority files from improvements.txt
     priority_files = [

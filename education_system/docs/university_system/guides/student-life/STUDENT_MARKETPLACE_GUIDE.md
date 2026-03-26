@@ -2917,9 +2917,9 @@ The system includes comprehensive error handling:
 
 ## File Locations
 
-- **Main GUI**: `/home/seancatchpole989/university_system/modules/domain/carrental/gui/carrental_gui.py`
-- **Core Services**: `/home/seancatchpole989/university_system/modules/domain/carrental/services/carrental_core.py`
-- **Database**: `/home/seancatchpole989/university_system/data/db_files/student_records.db`
+- **Main GUI**: `university_system/modules/domain/carrental/gui/carrental_gui.py`
+- **Core Services**: `university_system/modules/domain/carrental/services/carrental_core.py`
+- **Database**: `university_system/data/db_files/student_records.db`
 
 ## Key Methods
 
@@ -4244,9 +4244,9 @@ Manual testing:
 
 ## File Locations
 
-- Service: `/home/seancatchpole989/university_system/modules/domain/feedback/services/feedback_service.py`
-- CLI: `/home/seancatchpole989/university_system/modules/domain/feedback/cli/feedback_cli.py`
-- GUI: `/home/seancatchpole989/university_system/modules/domain/feedback/gui/feedback_gui.py`
+- Service: `university_system/modules/domain/feedback/services/feedback_service.py`
+- CLI: `university_system/modules/domain/feedback/cli/feedback_cli.py`
+- GUI: `university_system/modules/domain/feedback/gui/feedback_gui.py`
 
 ## License
 
