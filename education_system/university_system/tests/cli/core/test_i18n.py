@@ -13,6 +13,10 @@ import pytest
 from unittest.mock import patch, MagicMock, mock_open, call
 
 import education_system.university_system.core.i18n as i18n_mod
+# The university i18n module now delegates to the shared engine;
+# internal state (_current_language, _translations, _loaded) lives
+# in the shared core module.
+import education_system.shared.i18n.core as _core
 
 
 # ---------------------------------------------------------------------------
@@ -22,21 +26,22 @@ import education_system.university_system.core.i18n as i18n_mod
 @pytest.fixture(autouse=True)
 def reset_i18n_state():
     """Reset global state before and after every test."""
-    original_lang = i18n_mod._current_language
-    original_trans = i18n_mod._translations.copy()
-    original_loaded = i18n_mod._loaded
+    original_lang = _core._current_language
+    original_trans = _core._translations.copy()
+    original_loaded = _core._loaded
 
-    # Reset to clean state
-    i18n_mod._current_language = "en"
-    i18n_mod._translations = {}
-    i18n_mod._loaded = False
+    # Reset to clean state — mark as loaded to prevent _ensure_loaded()
+    # from calling init_i18n() which reads the real config file
+    _core._current_language = "en"
+    _core._translations = {}
+    _core._loaded = True
 
     yield
 
     # Restore original state
-    i18n_mod._current_language = original_lang
-    i18n_mod._translations = original_trans
-    i18n_mod._loaded = original_loaded
+    _core._current_language = original_lang
+    _core._translations = original_trans
+    _core._loaded = original_loaded
 
 
 # ---------------------------------------------------------------------------
@@ -46,8 +51,8 @@ def reset_i18n_state():
 class TestSupportedLanguages:
     """Tests for the SUPPORTED_LANGUAGES constant."""
 
-    def test_supported_languages_has_10_entries(self):
-        assert len(i18n_mod.SUPPORTED_LANGUAGES) == 10
+    def test_supported_languages_has_13_entries(self):
+        assert len(i18n_mod.SUPPORTED_LANGUAGES) == 13
 
     def test_english_is_supported(self):
         assert "en" in i18n_mod.SUPPORTED_LANGUAGES
@@ -60,7 +65,7 @@ class TestSupportedLanguages:
             assert len(code) == 2
 
     def test_expected_languages_present(self):
-        expected = ["en", "es", "fr", "de", "zh", "ar", "pt", "ru", "ja", "ko"]
+        expected = ["en", "es", "fr", "de", "zh", "ar", "pt", "ru", "ja", "ko", "cy", "pl", "ur"]
         for code in expected:
             assert code in i18n_mod.SUPPORTED_LANGUAGES
 
@@ -75,56 +80,56 @@ class TestDeepMergeDicts:
     def test_simple_merge(self):
         base = {"a": 1, "b": 2}
         update = {"c": 3}
-        result = i18n_mod._deep_merge_dicts(base, update)
+        result = _core._deep_merge(base, update)
         assert result == {"a": 1, "b": 2, "c": 3}
 
     def test_overwrite_value(self):
         base = {"a": 1}
         update = {"a": 2}
-        result = i18n_mod._deep_merge_dicts(base, update)
+        result = _core._deep_merge(base, update)
         assert result == {"a": 2}
 
     def test_nested_merge(self):
         base = {"level1": {"a": 1, "b": 2}}
         update = {"level1": {"b": 3, "c": 4}}
-        result = i18n_mod._deep_merge_dicts(base, update)
+        result = _core._deep_merge(base, update)
         assert result == {"level1": {"a": 1, "b": 3, "c": 4}}
 
     def test_deeply_nested_merge(self):
         base = {"l1": {"l2": {"l3": {"a": 1}}}}
         update = {"l1": {"l2": {"l3": {"b": 2}}}}
-        result = i18n_mod._deep_merge_dicts(base, update)
+        result = _core._deep_merge(base, update)
         assert result == {"l1": {"l2": {"l3": {"a": 1, "b": 2}}}}
 
     def test_base_not_mutated(self):
         base = {"a": {"x": 1}}
         update = {"a": {"y": 2}}
-        result = i18n_mod._deep_merge_dicts(base, update)
+        result = _core._deep_merge(base, update)
         assert result == {"a": {"x": 1, "y": 2}}
         assert base == {"a": {"x": 1}}  # original untouched
 
     def test_empty_base(self):
-        result = i18n_mod._deep_merge_dicts({}, {"a": 1})
+        result = _core._deep_merge({}, {"a": 1})
         assert result == {"a": 1}
 
     def test_empty_update(self):
-        result = i18n_mod._deep_merge_dicts({"a": 1}, {})
+        result = _core._deep_merge({"a": 1}, {})
         assert result == {"a": 1}
 
     def test_both_empty(self):
-        result = i18n_mod._deep_merge_dicts({}, {})
+        result = _core._deep_merge({}, {})
         assert result == {}
 
     def test_dict_overrides_non_dict(self):
         base = {"a": "string"}
         update = {"a": {"nested": True}}
-        result = i18n_mod._deep_merge_dicts(base, update)
+        result = _core._deep_merge(base, update)
         assert result == {"a": {"nested": True}}
 
     def test_non_dict_overrides_dict(self):
         base = {"a": {"nested": True}}
         update = {"a": "string"}
-        result = i18n_mod._deep_merge_dicts(base, update)
+        result = _core._deep_merge(base, update)
         assert result == {"a": "string"}
 
 
@@ -148,7 +153,7 @@ class TestLoadSplitTranslations:
             encoding="utf-8"
         )
 
-        result = i18n_mod._load_split_translations(lang_dir)
+        result = _core._load_json_files_from_dir(lang_dir)
         assert result["menu"]["home"] == "Home"
         assert result["errors"]["not_found"] == "Not Found"
 
@@ -165,7 +170,7 @@ class TestLoadSplitTranslations:
             encoding="utf-8"
         )
 
-        result = i18n_mod._load_split_translations(lang_dir)
+        result = _core._load_json_files_from_dir(lang_dir)
         assert result["shared"]["key1"] == "val1"
         assert result["shared"]["key2"] == "val2"
 
@@ -179,14 +184,14 @@ class TestLoadSplitTranslations:
             encoding="utf-8"
         )
 
-        result = i18n_mod._load_split_translations(lang_dir)
+        result = _core._load_json_files_from_dir(lang_dir)
         assert result.get("ok") == "yes"
 
     def test_handles_empty_directory(self, tmp_path):
         lang_dir = tmp_path / "en"
         lang_dir.mkdir()
 
-        result = i18n_mod._load_split_translations(lang_dir)
+        result = _core._load_json_files_from_dir(lang_dir)
         assert result == {}
 
     def test_recursively_loads_subdirectories(self, tmp_path):
@@ -199,7 +204,7 @@ class TestLoadSplitTranslations:
             encoding="utf-8"
         )
 
-        result = i18n_mod._load_split_translations(lang_dir)
+        result = _core._load_json_files_from_dir(lang_dir)
         assert result["system"]["name"] == "Test"
 
 
@@ -218,21 +223,21 @@ class TestLoadTranslationFile:
             encoding="utf-8"
         )
 
-        with patch.object(i18n_mod, '_ensure_locales_dir', return_value=tmp_path / "locales"):
-            result = i18n_mod._load_translation_file("en")
+        with patch.object(_core, '_locale_dirs', [tmp_path / "locales"]):
+            result = _core._load_language("en")
             assert result.get("hello") == "Hello"
 
     def test_returns_empty_when_dir_missing(self, tmp_path):
-        with patch.object(i18n_mod, '_ensure_locales_dir', return_value=tmp_path / "locales"):
-            result = i18n_mod._load_translation_file("xx")
+        with patch.object(_core, '_locale_dirs', [tmp_path / "locales"]):
+            result = _core._load_language("xx")
             assert result == {}
 
     def test_returns_empty_when_dir_empty(self, tmp_path):
         lang_dir = tmp_path / "locales" / "en"
         lang_dir.mkdir(parents=True)
 
-        with patch.object(i18n_mod, '_ensure_locales_dir', return_value=tmp_path / "locales"):
-            result = i18n_mod._load_translation_file("en")
+        with patch.object(_core, '_locale_dirs', [tmp_path / "locales"]):
+            result = _core._load_language("en")
             assert result == {}
 
 
@@ -244,39 +249,39 @@ class TestGetText:
     """Tests for get_text function."""
 
     def test_simple_key_lookup(self):
-        i18n_mod._loaded = True
-        i18n_mod._current_language = "en"
-        i18n_mod._translations = {"en": {"greeting": "Hello"}}
+        _core._loaded = True
+        _core._current_language = "en"
+        _core._translations = {"en": {"greeting": "Hello"}}
 
         assert i18n_mod.get_text("greeting") == "Hello"
 
     def test_dot_notation_nested_lookup(self):
-        i18n_mod._loaded = True
-        i18n_mod._current_language = "en"
-        i18n_mod._translations = {
+        _core._loaded = True
+        _core._current_language = "en"
+        _core._translations = {
             "en": {"menu": {"file": {"open": "Open File"}}}
         }
 
         assert i18n_mod.get_text("menu.file.open") == "Open File"
 
     def test_returns_key_when_not_found(self):
-        i18n_mod._loaded = True
-        i18n_mod._current_language = "en"
-        i18n_mod._translations = {"en": {}}
+        _core._loaded = True
+        _core._current_language = "en"
+        _core._translations = {"en": {}}
 
         assert i18n_mod.get_text("nonexistent.key") == "nonexistent.key"
 
     def test_returns_default_when_not_found(self):
-        i18n_mod._loaded = True
-        i18n_mod._current_language = "en"
-        i18n_mod._translations = {"en": {}}
+        _core._loaded = True
+        _core._current_language = "en"
+        _core._translations = {"en": {}}
 
         assert i18n_mod.get_text("missing", default="Default Text") == "Default Text"
 
     def test_english_fallback_for_missing_translation(self):
-        i18n_mod._loaded = True
-        i18n_mod._current_language = "fr"
-        i18n_mod._translations = {
+        _core._loaded = True
+        _core._current_language = "fr"
+        _core._translations = {
             "fr": {},
             "en": {"greeting": "Hello (English)"}
         }
@@ -284,17 +289,17 @@ class TestGetText:
         assert i18n_mod.get_text("greeting") == "Hello (English)"
 
     def test_no_english_fallback_when_already_english(self):
-        i18n_mod._loaded = True
-        i18n_mod._current_language = "en"
-        i18n_mod._translations = {"en": {}}
+        _core._loaded = True
+        _core._current_language = "en"
+        _core._translations = {"en": {}}
 
         # Should return key, not try fallback
         assert i18n_mod.get_text("missing_key") == "missing_key"
 
     def test_format_kwargs(self):
-        i18n_mod._loaded = True
-        i18n_mod._current_language = "en"
-        i18n_mod._translations = {
+        _core._loaded = True
+        _core._current_language = "en"
+        _core._translations = {
             "en": {"welcome": "Hello, {name}! You have {count} messages."}
         }
 
@@ -302,9 +307,9 @@ class TestGetText:
         assert result == "Hello, Alice! You have 5 messages."
 
     def test_format_kwargs_missing_key_returns_unformatted(self):
-        i18n_mod._loaded = True
-        i18n_mod._current_language = "en"
-        i18n_mod._translations = {
+        _core._loaded = True
+        _core._current_language = "en"
+        _core._translations = {
             "en": {"msg": "Hello {name}, your id is {id}"}
         }
 
@@ -313,9 +318,9 @@ class TestGetText:
         assert result == "Hello {name}, your id is {id}"
 
     def test_returns_key_when_value_is_non_string(self):
-        i18n_mod._loaded = True
-        i18n_mod._current_language = "en"
-        i18n_mod._translations = {
+        _core._loaded = True
+        _core._current_language = "en"
+        _core._translations = {
             "en": {"number_value": 42}
         }
 
@@ -323,12 +328,12 @@ class TestGetText:
         assert result == "number_value"
 
     def test_triggers_load_when_not_loaded(self):
-        i18n_mod._loaded = False
+        _core._loaded = False
 
-        with patch.object(i18n_mod, '_load_all_translations') as mock_load:
+        with patch.object(_core, '_load_all_translations') as mock_load:
             def do_load():
-                i18n_mod._loaded = True
-                i18n_mod._translations = {"en": {"test": "value"}}
+                _core._loaded = True
+                _core._translations = {"en": {"test": "value"}}
             mock_load.side_effect = do_load
 
             result = i18n_mod.get_text("test")
@@ -336,9 +341,9 @@ class TestGetText:
             assert result == "value"
 
     def test_dot_notation_stops_at_non_dict(self):
-        i18n_mod._loaded = True
-        i18n_mod._current_language = "en"
-        i18n_mod._translations = {
+        _core._loaded = True
+        _core._current_language = "en"
+        _core._translations = {
             "en": {"a": "leaf_string"}
         }
 
@@ -347,9 +352,9 @@ class TestGetText:
         assert result == "a.b"
 
     def test_english_fallback_with_dot_notation(self):
-        i18n_mod._loaded = True
-        i18n_mod._current_language = "es"
-        i18n_mod._translations = {
+        _core._loaded = True
+        _core._current_language = "es"
+        _core._translations = {
             "es": {"menu": {}},
             "en": {"menu": {"help": "Help"}}
         }
@@ -366,30 +371,30 @@ class TestSetLanguage:
     """Tests for set_language function."""
 
     def test_set_supported_language(self):
-        with patch.object(i18n_mod, 'save_language_preference') as mock_save:
+        with patch.object(_core, 'save_language_preference') as mock_save:
             result = i18n_mod.set_language("es")
 
         assert result is True
-        assert i18n_mod._current_language == "es"
+        assert _core._current_language == "es"
         mock_save.assert_called_once_with("es")
 
     def test_set_unsupported_language_returns_false(self):
-        i18n_mod._current_language = "en"
+        _core._current_language = "en"
         result = i18n_mod.set_language("xx")
 
         assert result is False
-        assert i18n_mod._current_language == "en"  # unchanged
+        assert _core._current_language == "en"  # unchanged
 
     def test_set_language_without_save(self):
-        with patch.object(i18n_mod, 'save_language_preference') as mock_save:
+        with patch.object(_core, 'save_language_preference') as mock_save:
             result = i18n_mod.set_language("fr", save=False)
 
         assert result is True
-        assert i18n_mod._current_language == "fr"
+        assert _core._current_language == "fr"
         mock_save.assert_not_called()
 
     def test_set_language_with_save(self):
-        with patch.object(i18n_mod, 'save_language_preference') as mock_save:
+        with patch.object(_core, 'save_language_preference') as mock_save:
             i18n_mod.set_language("de", save=True)
 
         mock_save.assert_called_once_with("de")
@@ -403,16 +408,17 @@ class TestGetCurrentLanguage:
     """Tests for get_current_language and get_current_language_name."""
 
     def test_get_current_language(self):
-        i18n_mod._current_language = "ja"
+        _core._current_language = "ja"
         assert i18n_mod.get_current_language() == "ja"
 
     def test_get_current_language_name(self):
-        i18n_mod._current_language = "en"
+        _core._current_language = "en"
         assert i18n_mod.get_current_language_name() == "English"
 
     def test_get_current_language_name_unknown(self):
-        i18n_mod._current_language = "zz"
-        assert i18n_mod.get_current_language_name() == "Unknown"
+        _core._current_language = "zz"
+        # Shared i18n returns the code itself for unsupported languages
+        assert i18n_mod.get_current_language_name() == "zz"
 
 
 # ---------------------------------------------------------------------------
@@ -449,7 +455,7 @@ class TestLoadSavedLanguage:
         mock_path = MagicMock()
         mock_path.exists.return_value = False
 
-        with patch.object(i18n_mod, '_get_config_path', return_value=mock_path):
+        with patch.object(_core, '_LANGUAGE_CONFIG_PATH',mock_path):
             result = i18n_mod.load_saved_language()
             assert result == "en"
 
@@ -457,7 +463,7 @@ class TestLoadSavedLanguage:
         config_file = tmp_path / "language_config.json"
         config_file.write_text(json.dumps({"language": "es"}), encoding="utf-8")
 
-        with patch.object(i18n_mod, '_get_config_path', return_value=config_file):
+        with patch.object(_core, '_LANGUAGE_CONFIG_PATH',config_file):
             result = i18n_mod.load_saved_language()
             assert result == "es"
 
@@ -465,7 +471,7 @@ class TestLoadSavedLanguage:
         config_file = tmp_path / "language_config.json"
         config_file.write_text("not json", encoding="utf-8")
 
-        with patch.object(i18n_mod, '_get_config_path', return_value=config_file):
+        with patch.object(_core, '_LANGUAGE_CONFIG_PATH',config_file):
             result = i18n_mod.load_saved_language()
             assert result == "en"
 
@@ -473,7 +479,7 @@ class TestLoadSavedLanguage:
         config_file = tmp_path / "language_config.json"
         config_file.write_text(json.dumps({"other": "data"}), encoding="utf-8")
 
-        with patch.object(i18n_mod, '_get_config_path', return_value=config_file):
+        with patch.object(_core, '_LANGUAGE_CONFIG_PATH',config_file):
             result = i18n_mod.load_saved_language()
             assert result == "en"
 
@@ -488,7 +494,8 @@ class TestSaveLanguagePreference:
     def test_saves_successfully(self, tmp_path):
         config_file = tmp_path / "config" / "language_config.json"
 
-        with patch.object(i18n_mod, '_get_config_path', return_value=config_file):
+        with patch.object(_core, '_LANGUAGE_CONFIG_PATH', config_file), \
+             patch.object(_core, '_CONFIG_DIR', tmp_path / "config"):
             result = i18n_mod.save_language_preference("fr")
 
         assert result is True
@@ -499,7 +506,7 @@ class TestSaveLanguagePreference:
     def test_returns_false_on_io_error(self, tmp_path):
         config_file = tmp_path / "config" / "language_config.json"
 
-        with patch.object(i18n_mod, '_get_config_path', return_value=config_file):
+        with patch.object(_core, '_LANGUAGE_CONFIG_PATH',config_file):
             with patch("builtins.open", side_effect=IOError("Permission denied")):
                 result = i18n_mod.save_language_preference("de")
 
@@ -508,7 +515,8 @@ class TestSaveLanguagePreference:
     def test_creates_parent_directory(self, tmp_path):
         config_file = tmp_path / "deep" / "nested" / "lang.json"
 
-        with patch.object(i18n_mod, '_get_config_path', return_value=config_file):
+        with patch.object(_core, '_LANGUAGE_CONFIG_PATH', config_file), \
+             patch.object(_core, '_CONFIG_DIR', tmp_path / "deep" / "nested"):
             result = i18n_mod.save_language_preference("ko")
 
         assert result is True
@@ -523,40 +531,46 @@ class TestInitI18n:
     """Tests for init_i18n."""
 
     def test_init_with_language_code(self):
-        with patch.object(i18n_mod, '_load_all_translations') as mock_load:
-            result = i18n_mod.init_i18n("fr")
+        i18n_mod._initialised = False
+        _core._loaded = False
+        _core._locale_dirs = []
+        result = i18n_mod.init_i18n("fr")
 
         assert result == "fr"
-        assert i18n_mod._current_language == "fr"
-        mock_load.assert_called_once()
+        assert _core._current_language == "fr"
+        assert _core._loaded is True
 
     def test_init_without_language_loads_saved(self):
-        with patch.object(i18n_mod, '_load_all_translations'):
-            with patch.object(i18n_mod, 'load_saved_language', return_value="de"):
-                result = i18n_mod.init_i18n()
+        i18n_mod._initialised = False
+        _core._loaded = False
+        _core._locale_dirs = []
+        with patch.object(_core, 'load_saved_language', return_value="de"):
+            result = i18n_mod.init_i18n()
 
         assert result == "de"
-        assert i18n_mod._current_language == "de"
+        assert _core._current_language == "de"
 
     def test_init_unsupported_language_falls_back_to_english(self):
-        with patch.object(i18n_mod, '_load_all_translations'):
-            result = i18n_mod.init_i18n("zz")
+        i18n_mod._initialised = False
+        _core._loaded = False
+        _core._locale_dirs = []
+        result = i18n_mod.init_i18n("zz")
 
         assert result == "en"
-        assert i18n_mod._current_language == "en"
+        assert _core._current_language == "en"
 
     def test_init_does_not_reload_if_already_loaded(self):
         # First call loads (manually set _loaded to True to simulate)
-        i18n_mod._loaded = True
-        i18n_mod._translations = {"en": {}, "fr": {}}
+        _core._loaded = True
+        _core._translations = {"en": {}, "fr": {}}
 
         # Since _loaded is True, _load_all_translations should NOT be called
-        with patch.object(i18n_mod, '_load_all_translations') as mock_load:
+        with patch.object(_core, '_load_all_translations') as mock_load:
             i18n_mod.init_i18n("fr")
             mock_load.assert_not_called()
 
     def test_init_returns_current_language(self):
-        with patch.object(i18n_mod, '_load_all_translations'):
+        with patch.object(_core, '_load_all_translations'):
             result = i18n_mod.init_i18n("ja")
         assert result == "ja"
 
@@ -569,9 +583,9 @@ class TestReloadTranslations:
     """Tests for reload_translations."""
 
     def test_reload_resets_loaded_flag_and_reloads(self):
-        i18n_mod._loaded = True
+        _core._loaded = True
 
-        with patch.object(i18n_mod, '_load_all_translations') as mock_load:
+        with patch.object(_core, '_load_all_translations') as mock_load:
             i18n_mod.reload_translations()
 
         assert mock_load.call_count == 1
@@ -579,18 +593,18 @@ class TestReloadTranslations:
         # but _load_all_translations sets it to True again
 
     def test_reload_forces_fresh_load(self):
-        i18n_mod._loaded = True
-        i18n_mod._translations = {"en": {"old": "data"}}
+        _core._loaded = True
+        _core._translations = {"en": {"old": "data"}}
 
-        with patch.object(i18n_mod, '_load_all_translations') as mock_load:
+        with patch.object(_core, '_load_all_translations') as mock_load:
             def do_load():
-                i18n_mod._translations = {"en": {"new": "data"}}
-                i18n_mod._loaded = True
+                _core._translations = {"en": {"new": "data"}}
+                _core._loaded = True
             mock_load.side_effect = do_load
 
             i18n_mod.reload_translations()
 
-        assert i18n_mod._translations == {"en": {"new": "data"}}
+        assert _core._translations == {"en": {"new": "data"}}
 
 
 # ---------------------------------------------------------------------------
@@ -604,9 +618,9 @@ class TestUnderscoreAlias:
         assert i18n_mod._ is i18n_mod.get_text
 
     def test_underscore_works_as_function(self):
-        i18n_mod._loaded = True
-        i18n_mod._current_language = "en"
-        i18n_mod._translations = {"en": {"test": "Test Value"}}
+        _core._loaded = True
+        _core._current_language = "en"
+        _core._translations = {"en": {"test": "Test Value"}}
 
         result = i18n_mod._("test")
         assert result == "Test Value"
@@ -630,27 +644,27 @@ class TestLoadAllTranslations:
                 encoding="utf-8"
             )
 
-        with patch.object(i18n_mod, '_ensure_locales_dir', return_value=locales_dir):
-            i18n_mod._load_all_translations()
+        with patch.object(_core, '_locale_dirs', [locales_dir]):
+            _core._load_all_translations()
 
-        assert i18n_mod._loaded is True
-        assert "en" in i18n_mod._translations
-        assert "es" in i18n_mod._translations
-        assert i18n_mod._translations["en"].get("en_key") == "en_value"
-        assert i18n_mod._translations["es"].get("es_key") == "es_value"
+        assert _core._loaded is True
+        assert "en" in _core._translations
+        assert "es" in _core._translations
+        assert _core._translations["en"].get("en_key") == "en_value"
+        assert _core._translations["es"].get("es_key") == "es_value"
 
     def test_sets_empty_dict_for_missing_language_dir(self, tmp_path):
         locales_dir = tmp_path / "locales"
         locales_dir.mkdir(parents=True)
         # No language directories at all
 
-        with patch.object(i18n_mod, '_ensure_locales_dir', return_value=locales_dir):
-            i18n_mod._load_all_translations()
+        with patch.object(_core, '_locale_dirs', [locales_dir]):
+            _core._load_all_translations()
 
-        assert i18n_mod._loaded is True
+        assert _core._loaded is True
         # All languages should have empty dicts
         for lang_code in i18n_mod.SUPPORTED_LANGUAGES:
-            assert i18n_mod._translations.get(lang_code) == {}
+            assert _core._translations.get(lang_code) == {}
 
 
 # ---------------------------------------------------------------------------
