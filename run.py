@@ -807,10 +807,18 @@ def main():
         return
 
     # Non-CLI/GUI modes or system already specified: select system if needed
-    if system is None:
+    while system is None:
         system = cli_select_system()
         if system is None:
-            return
+            # User chose "Back" — return to mode selection
+            mode = cli_select_mode()
+            if mode is None:
+                return
+            # Handle test-all if re-selected
+            if mode == "test-all":
+                success = run_all_system_tests()
+                sys.exit(0 if success else 1)
+            continue
 
     # Launch with switch dispatch loop
     while True:
