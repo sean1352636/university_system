@@ -284,7 +284,7 @@ class TestCalculateTrendSlope:
         values = [10, 20]
         slope = calculate_trend_slope(values)
 
-        assert slope == 10.0
+        assert slope == pytest.approx(10.0)
 
     def test_calculate_trend_slope_fluctuating(self):
         """Test with fluctuating values"""
@@ -381,8 +381,8 @@ class TestEdgeCases:
 
     def test_percentage_to_letter_with_none(self):
         """Test percentage_to_letter with None"""
-        with pytest.raises((TypeError, AttributeError)):
-            percentage_to_letter(None)
+        result = percentage_to_letter(None)
+        assert result == 'F'  # Should handle gracefully
 
     def test_letter_to_percentage_with_none(self):
         """Test letter_to_percentage with None"""

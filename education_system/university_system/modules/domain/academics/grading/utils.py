@@ -39,6 +39,11 @@ def select_student(cursor):
 
 def percentage_to_letter(percentage):
     """Convert a percentage score to a letter grade"""
+    if percentage is None:
+        return 'F'
+    # Cap at 100+ → A+
+    if percentage > 100:
+        percentage = 100
     for score_range, letter in GRADE_SYSTEMS["percentage"]["conversion"].items():
         min_score, max_score = score_range
         if min_score <= percentage <= max_score:
@@ -48,6 +53,8 @@ def percentage_to_letter(percentage):
 
 def letter_to_percentage(letter_grade):
     """Convert a letter grade to a percentage score (midpoint of range)"""
+    if not letter_grade:
+        return 0
     for score_range, letter in GRADE_SYSTEMS["percentage"]["conversion"].items():
         if letter == letter_grade:
             min_score, max_score = score_range
