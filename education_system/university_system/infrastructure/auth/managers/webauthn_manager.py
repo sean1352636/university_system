@@ -173,10 +173,10 @@ class WebAuthnManager:
             }
 
         except sqlite3.Error as e:
-            logger.error(f"Database error during WebAuthn registration: {e}")
+            logger.error("Database error during WebAuthn registration")
             return {'success': False, 'message': 'Failed to initiate security key registration.'}
         except Exception as e:
-            logger.error(f"Unexpected error during WebAuthn registration: {e}")
+            logger.error("Unexpected error during WebAuthn registration")
             return {'success': False, 'message': 'An unexpected error occurred.'}
 
     def complete_registration(
@@ -274,13 +274,13 @@ class WebAuthnManager:
             }
 
         except sqlite3.IntegrityError as e:
-            logger.error(f"Integrity error during WebAuthn registration completion: {e}")
+            logger.error("Integrity error during WebAuthn registration completion")
             return {'success': False, 'message': 'This security key is already registered.'}
         except sqlite3.Error as e:
-            logger.error(f"Database error during WebAuthn registration completion: {e}")
+            logger.error("Database error during WebAuthn registration completion")
             return {'success': False, 'message': 'Failed to complete security key registration.'}
         except Exception as e:
-            logger.error(f"Unexpected error during WebAuthn registration completion: {e}")
+            logger.error("Unexpected error during WebAuthn registration completion")
             return {'success': False, 'message': 'An unexpected error occurred.'}
 
     def begin_authentication(self, username: Optional[str] = None) -> Dict[str, Any]:
@@ -385,10 +385,10 @@ class WebAuthnManager:
             }
 
         except sqlite3.Error as e:
-            logger.error(f"Database error during WebAuthn authentication: {e}")
+            logger.error("Database error during WebAuthn authentication")
             return {'success': False, 'message': 'Failed to initiate security key authentication.'}
         except Exception as e:
-            logger.error(f"Unexpected error during WebAuthn authentication: {e}")
+            logger.error("Unexpected error during WebAuthn authentication")
             return {'success': False, 'message': 'An unexpected error occurred.'}
 
     def complete_authentication(
@@ -501,10 +501,10 @@ class WebAuthnManager:
             }
 
         except sqlite3.Error as e:
-            logger.error(f"Database error during WebAuthn authentication completion: {e}")
+            logger.error("Database error during WebAuthn authentication completion")
             return {'success': False, 'message': 'Failed to complete security key authentication.'}
         except Exception as e:
-            logger.error(f"Unexpected error during WebAuthn authentication completion: {e}")
+            logger.error("Unexpected error during WebAuthn authentication completion")
             return {'success': False, 'message': 'An unexpected error occurred.'}
 
     def list_user_keys(self, user_id: Optional[int] = None) -> List[Dict[str, Any]]:
@@ -564,10 +564,10 @@ class WebAuthnManager:
                 return keys
 
         except sqlite3.Error as e:
-            logger.error(f"Database error listing WebAuthn keys: {e}")
+            logger.error("Database error listing WebAuthn keys")
             return []
         except Exception as e:
-            logger.error(f"Unexpected error listing WebAuthn keys: {e}")
+            logger.error("Unexpected error listing WebAuthn keys")
             return []
 
     def remove_key(self, credential_id: str) -> Dict[str, Any]:
@@ -634,10 +634,10 @@ class WebAuthnManager:
             }
 
         except sqlite3.Error as e:
-            logger.error(f"Database error removing WebAuthn key: {e}")
+            logger.error("Database error removing WebAuthn key")
             return {'success': False, 'message': 'Failed to remove security key.'}
         except Exception as e:
-            logger.error(f"Unexpected error removing WebAuthn key: {e}")
+            logger.error("Unexpected error removing WebAuthn key")
             return {'success': False, 'message': 'An unexpected error occurred.'}
 
     def rename_key(self, credential_id: str, new_name: str) -> Dict[str, Any]:
@@ -711,8 +711,8 @@ class WebAuthnManager:
             }
 
         except sqlite3.Error as e:
-            logger.error(f"Database error renaming WebAuthn key: {e}")
+            logger.error("Database error renaming WebAuthn key")
             return {'success': False, 'message': 'Failed to rename security key.'}
         except Exception as e:
-            logger.error(f"Unexpected error renaming WebAuthn key: {e}")
+            logger.error("Unexpected error renaming WebAuthn key")
             return {'success': False, 'message': 'An unexpected error occurred.'}

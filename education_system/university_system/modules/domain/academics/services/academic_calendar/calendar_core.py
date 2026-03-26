@@ -46,7 +46,7 @@ except ImportError:
 try:
     from ics import Calendar as ICSCalendar, Event as ICSEvent
     ICS_AVAILABLE = True
-except ImportError:
+except Exception:
     ICS_AVAILABLE = False
 
 try:

@@ -760,7 +760,7 @@ class SSOService:
 
         except sqlite3.Error as e:
             # Session storage failure is non-fatal; log and continue
-            logger.warning(f"Failed to store SSO session for '{provider_id}': {e}")
+            logger.warning(f"Failed to store SSO session for '{provider_id}'")
 
     # ------------------------------------------------------------------
     # User provisioning and identity linking

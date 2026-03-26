@@ -597,7 +597,7 @@ class BlockchainCredentialsGUI:
             logger.info(f"Loaded {len(credentials)} credentials")
 
         except Exception as e:
-            logger.error(f"Error loading credentials: {e}\n{traceback.format_exc()}")
+            logger.error("Error loading credentials")
             messagebox.showerror(_t("common.error"), f"{_t('blockchain.failed_load_credentials')}: {e}")
 
     def load_badges(self):
@@ -888,7 +888,7 @@ class BlockchainCredentialsGUI:
                     self.load_credentials()
 
                 except Exception as e:
-                    logger.error(f"Error issuing credential: {e}\n{traceback.format_exc()}")
+                    logger.error("Error issuing credential")
                     messagebox.showerror(_t("common.error"), _t("blockchain.errors.failed_issue_credential", error=str(e)))
 
             ttk.Button(dialog, text=_t("blockchain.btn.issue_credential"), command=save_credential).grid(
@@ -936,7 +936,7 @@ class BlockchainCredentialsGUI:
             self.load_verifications()
 
         except Exception as e:
-            logger.error(f"Error verifying credential: {e}")
+            logger.error("Error verifying credential")
             messagebox.showerror(_t("common.error"), _t("blockchain.errors.failed_verify_credential", error=str(e)))
 
     def revoke_credential(self):
@@ -984,7 +984,7 @@ class BlockchainCredentialsGUI:
                 self.load_credentials()
 
         except Exception as e:
-            logger.error(f"Error revoking credential: {e}")
+            logger.error("Error revoking credential")
             messagebox.showerror(_t("common.error"), _t("blockchain.errors.failed_revoke_credential", error=str(e)))
 
     def create_badge(self):

@@ -198,9 +198,7 @@ class OIDCProvider:
             )
 
         except Exception as e:
-            logger.error(
-                "Failed to generate authorization URL: %s", e, exc_info=True
-            )
+            logger.error("Failed to generate authorization URL")
             return {
                 "success": False,
                 "error": f"Failed to generate authorization URL: {e}",
@@ -350,9 +348,7 @@ class OIDCProvider:
             }
 
         except Exception as e:
-            logger.error(
-                "Token exchange failed (authlib): %s", e, exc_info=True
-            )
+            logger.error("Token exchange failed (authlib)")
             return {
                 "success": False,
                 "error": f"Token exchange failed: {e}",
@@ -415,7 +411,7 @@ class OIDCProvider:
                     "error_description",
                     error_data.get("error", f"HTTP {response.status_code}"),
                 )
-                logger.error("Token exchange failed: %s", error_msg)
+                logger.error("Token exchange failed")
                 return {
                     "success": False,
                     "error": f"Token exchange failed: {error_msg}",
@@ -449,9 +445,7 @@ class OIDCProvider:
                 "expires_in": 0,
             }
         except http_requests.RequestException as e:
-            logger.error(
-                "Token exchange request failed: %s", e, exc_info=True
-            )
+            logger.error("Token exchange request failed")
             return {
                 "success": False,
                 "error": f"Token exchange request failed: {e}",
@@ -574,9 +568,7 @@ class OIDCProvider:
             }
 
         except Exception as e:
-            logger.error(
-                "ID token validation failed (authlib): %s", e, exc_info=True
-            )
+            logger.error("ID token validation failed (authlib)")
             return {
                 "success": False,
                 "error": f"ID token validation failed: {e}",
@@ -717,9 +709,7 @@ class OIDCProvider:
             }
 
         except Exception as e:
-            logger.error(
-                "ID token validation failed (fallback): %s", e, exc_info=True
-            )
+            logger.error("ID token validation failed (fallback)")
             return {
                 "success": False,
                 "error": f"ID token validation failed: {e}",
@@ -787,9 +777,7 @@ class OIDCProvider:
             }
 
         except Exception as e:
-            logger.error(
-                "Failed to fetch userinfo (authlib): %s", e, exc_info=True
-            )
+            logger.error("Failed to fetch userinfo (authlib)")
             return {
                 "success": False,
                 "error": f"Failed to fetch userinfo: {e}",
@@ -854,9 +842,7 @@ class OIDCProvider:
                 "userinfo": {},
             }
         except http_requests.RequestException as e:
-            logger.error(
-                "UserInfo request failed: %s", e, exc_info=True
-            )
+            logger.error("UserInfo request failed")
             return {
                 "success": False,
                 "error": f"UserInfo request failed: {e}",
@@ -945,9 +931,7 @@ class OIDCProvider:
             }
 
         except Exception as e:
-            logger.error(
-                "Token refresh failed (authlib): %s", e, exc_info=True
-            )
+            logger.error("Token refresh failed (authlib)")
             return {
                 "success": False,
                 "error": f"Token refresh failed: {e}",
@@ -1006,7 +990,7 @@ class OIDCProvider:
                     "error_description",
                     error_data.get("error", f"HTTP {response.status_code}"),
                 )
-                logger.error("Token refresh failed: %s", error_msg)
+                logger.error("Token refresh failed")
                 return {
                     "success": False,
                     "error": f"Token refresh failed: {error_msg}",
@@ -1040,9 +1024,7 @@ class OIDCProvider:
                 "expires_in": 0,
             }
         except http_requests.RequestException as e:
-            logger.error(
-                "Token refresh request failed: %s", e, exc_info=True
-            )
+            logger.error("Token refresh request failed")
             return {
                 "success": False,
                 "error": f"Token refresh request failed: {e}",

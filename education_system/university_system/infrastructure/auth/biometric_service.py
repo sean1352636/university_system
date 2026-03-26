@@ -253,7 +253,7 @@ class BiometricService:
                 logger.debug("Biometric database tables ensured")
 
         except sqlite3.Error as e:
-            logger.error("Failed to create biometric tables: %s", e)
+            logger.error("Failed to create biometric tables")
 
     # =========================================================================
     # Face Enrollment and Verification
@@ -1071,7 +1071,7 @@ class BiometricService:
             }
 
         except sqlite3.Error as e:
-            logger.error("Failed to revoke biometric enrollment: %s", e)
+            logger.error("Failed to revoke biometric enrollment")
             return {
                 'success': False,
                 'error': f'Database error while revoking enrollment: {e}',
@@ -1142,7 +1142,7 @@ class BiometricService:
 
         except sqlite3.Error as e:
             # Logging failures should never break authentication flow
-            logger.error("Failed to log biometric auth attempt: %s", e)
+            logger.error("Failed to log biometric auth attempt")
 
     # =========================================================================
     # Internal Helpers
@@ -1317,7 +1317,7 @@ class BiometricService:
                 """, (user_id, biometric_type, template_hash))
                 return cursor.fetchone()[0] > 0
         except sqlite3.Error as e:
-            logger.error("Failed to check duplicate template: %s", e)
+            logger.error("Failed to check duplicate template")
             return False
 
     def _update_enrollment_stats(

@@ -45,7 +45,7 @@ def upload_to_sftp(file_path: str, host: str, username: str, password: str, remo
         logger.info(f"Uploaded {file_path} to SFTP: {host}{remote_path}")
         return True
     except paramiko.AuthenticationException as e:
-        logger.error(f"SFTP authentication failed: {e}")
+        logger.error("SFTP authentication failed")
         return False
     except paramiko.SSHException as e:
         logger.error(f"SSH/SFTP connection error: {e}")

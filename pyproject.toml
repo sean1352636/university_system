@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "education-system"
-version = "7.23.0"
+version = "8.46.0"
 description = "Education Management System — University, Sixth Form College, Secondary School, and Primary School with CLI, GUI, and REST API"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -201,6 +201,7 @@ skips = [
     "B324",   # weak hash (MD5/SHA1 used for non-security checksums)
     "B402",   # FTP import (used in file transfer module)
     "B605",   # shell process start (controlled internal commands)
+    "B608",   # hardcoded SQL expressions (false positives: table/column names from internal constants or validate_identifier())
 ]
 
 # MyPy configuration

@@ -3,7 +3,11 @@ from datetime import datetime, timedelta
 from education_system.university_system.modules.domain.academics.services.module_scheduling.constants import DAYS_OF_WEEK
 import os
 import pandas as pd
-from icalendar import Calendar, Event
+try:
+    from icalendar import Calendar, Event
+    ICALENDAR_AVAILABLE = True
+except Exception:
+    ICALENDAR_AVAILABLE = False
 
 
 class ImportExportMixin:
@@ -78,6 +82,8 @@ class ImportExportMixin:
 
     def export_to_ical(self, entity_type, entity_id, filename=None):
         """Export schedule to iCal format"""
+        if not ICALENDAR_AVAILABLE:
+            raise ImportError("icalendar library not available. Install with: pip install icalendar")
         cal = Calendar()
         cal.add('prodid', '-//University Schedule//EN')
         cal.add('version', '2.0')

@@ -122,9 +122,9 @@ class EncryptionManager:
                         "Falling back to file-based key storage."
                     )
             except KMSError as e:
-                logger.error(f"KMS error: {e}. Falling back to file-based key storage.")
+                logger.error("KMS error. Falling back to file-based key storage.")
             except Exception as e:
-                logger.error(f"Unexpected KMS error: {e}. Falling back to file-based key storage.")
+                logger.error("Unexpected KMS error. Falling back to file-based key storage.")
 
         # Fall back to file-based storage (development/non-production)
         return self._get_or_create_file_based_key()
@@ -170,7 +170,7 @@ class EncryptionManager:
                 shutil.move(legacy_key_path, master_key_path)
                 os.chmod(master_key_path, 0o600)
             except Exception as e:
-                logger.error("Failed to migrate legacy key file: %s", e)
+                logger.error("Failed to migrate legacy key file")
                 # Fall back to legacy path if migration fails
                 master_key_path = legacy_key_path
 
@@ -182,7 +182,7 @@ class EncryptionManager:
                 logger.debug("Master key loaded from file")
                 return key
             except Exception as e:
-                logger.error(f"Failed to load master key: {e}")
+                logger.error("Failed to load master key")
 
         # Generate new master key
         logger.warning(
@@ -215,7 +215,7 @@ class EncryptionManager:
                 )
 
         except Exception as e:
-            logger.error(f"Failed to save master key: {e}")
+            logger.error("Failed to save master key")
 
         return master_key
 

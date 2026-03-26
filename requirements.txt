@@ -6,34 +6,34 @@
 # DATA PROCESSING & ANALYTICS
 # ===============================
 pandas==2.3.3                  # Data manipulation and analysis
-numpy==2.3.5                   # Numerical computing
-matplotlib==3.10.7             # Data visualization and plotting
+numpy==2.4.3                   # Numerical computing
+matplotlib==3.10.8             # Data visualization and plotting
 seaborn==0.13.2                # Statistical data visualization
-plotly==6.4.0                  # Interactive plots and dashboards
-scikit-learn==1.7.2            # Machine learning algorithms
-scipy==1.16.3                  # Scientific computing and statistics
+plotly==6.6.0                  # Interactive plots and dashboards
+scikit-learn==1.8.0            # Machine learning algorithms
+scipy==1.17.1                  # Scientific computing and statistics
 joblib==1.5.2                  # Parallel computing and model persistence
 
 # ===============================
 # DOCUMENT GENERATION & REPORTS
 # ===============================
-reportlab==4.4.4               # PDF generation and reports
+reportlab==4.4.10              # PDF generation and reports
 openpyxl==3.1.5                # Excel file handling and export
-fpdf2==2.8.5                   # Alternative PDF generation
+fpdf2==2.8.7                   # Alternative PDF generation
 python-docx==1.2.0             # Word document support
 PyPDF2==3.0.1                  # PDF file processing and manipulation
 
 # ===============================
 # WEB & NETWORKING
 # ===============================
-requests==2.32.5               # HTTP library for API calls
-Flask==3.1.1                   # Web framework (used by finance, attendance, calendar APIs)
-flask-cors==5.0.1              # CORS support for Flask APIs
+requests==2.33.0               # HTTP library for API calls
+Flask==3.1.3                   # Web framework (used by finance, attendance, calendar APIs)
+flask-cors==6.0.2              # CORS support for Flask APIs
 Jinja2==3.1.6                  # Template engine for email templates
-Werkzeug==3.1.3                # WSGI utilities
-urllib3==2.5.0                 # HTTP client library
-aiohttp==3.13.2                # Async HTTP client/server
-pydantic==2.12.4               # Data validation and schema definition
+Werkzeug==3.1.7                # WSGI utilities
+urllib3==2.6.3                 # HTTP client library
+aiohttp==3.13.3                # Async HTTP client/server
+pydantic==2.12.5               # Data validation and schema definition
 
 # ===============================
 # DATABASE & DATA STORAGE
@@ -47,9 +47,9 @@ PyMySQL==1.1.2                 # MySQL database support
 # ===============================
 pyotp==2.9.0                   # Two-factor authentication (TOTP)
 qrcode==8.2                    # QR code generation for 2FA
-cryptography==46.0.3           # Cryptographic functions and data encryption
+cryptography==46.0.6           # Cryptographic functions and data encryption
 bcrypt==5.0.0                  # Password hashing
-PyJWT==2.10.1                  # JSON Web Token authentication
+PyJWT==2.12.1                  # JSON Web Token authentication
 
 # OPTIONAL: SSO/Federated Authentication
 # python3-saml>=1.16.0           # SAML 2.0 SSO support (optional)
@@ -61,15 +61,15 @@ PyJWT==2.10.1                  # JSON Web Token authentication
 # ===============================
 # IMAGE PROCESSING & BARCODES
 # ===============================
-Pillow==12.0.0                 # Image processing library
+Pillow==12.1.1                 # Image processing library
 python-barcode==0.16.1         # Barcode generation for library cards
 
 # ===============================
 # SYSTEM UTILITIES & SCHEDULING
 # ===============================
 schedule==1.2.2                # Task scheduling and automation
-croniter==6.0.0                # Cron expression parsing for scheduled tasks
-psutil==7.1.3                  # System monitoring and process management
+croniter==6.2.2                # Cron expression parsing for scheduled tasks
+psutil==7.2.2                  # System monitoring and process management
 paramiko==4.0.0                # SSH connectivity for remote operations
 
 # ===============================
@@ -78,7 +78,7 @@ paramiko==4.0.0                # SSH connectivity for remote operations
 pytz==2025.2                   # Timezone handling
 PyYAML==6.0.3                  # YAML configuration files
 python-dateutil==2.9.0.post0   # Date parsing and manipulation
-python-dotenv==1.2.1           # Environment variable management
+python-dotenv==1.2.2           # Environment variable management
 
 # ===============================
 # EMAIL & COMMUNICATIONS
@@ -94,8 +94,8 @@ email-validator==2.3.0         # Email address validation
 # CALENDAR & SCHEDULING EXTRAS
 # ===============================
 ics==0.7.2                     # ICS/iCalendar file generation and parsing
-holidays==0.84                 # Holiday calendar and date checking
-recurring-ical-events==3.8.0   # Recurring event support for iCalendar
+holidays==0.93                 # Holiday calendar and date checking
+recurring-ical-events==3.8.1   # Recurring event support for iCalendar
 
 # ===============================
 # TEXT PROCESSING EXTRAS
@@ -115,7 +115,7 @@ tkcalendar==1.6.1              # Calendar widget for Tkinter
 # AI & NLP FEATURES
 # ===============================
 # Basic NLP (included by default)
-nltk==3.9.2                    # Natural language processing toolkit
+nltk==3.9.4                    # Natural language processing toolkit
 
 # OPTIONAL: Enhanced NLP (better entity recognition)
 # Uncomment and run: python -m spacy download en_core_web_sm
@@ -148,7 +148,7 @@ nltk==3.9.2                    # Natural language processing toolkit
 # OPTIONAL: CLOUD INTEGRATION
 # ===============================
 # Uncomment the following lines if you want cloud service integration:
-boto3==1.40.74                 # AWS services integration (required by some modules)
+boto3==1.42.76                 # AWS services integration (required by some modules)
 # azure-storage-blob>=12.0.0   # Azure blob storage
 # google-cloud-storage>=2.0.0  # Google Cloud storage
 
@@ -180,16 +180,16 @@ semgrep>=1.45.0                # Static analysis security scanner (optional)
 # ===============================
 # ADDITIONAL UTILITIES
 # ===============================
-tqdm==4.67.1                   # Progress bars for loops
+tqdm==4.67.3                   # Progress bars for loops
 tabulate==0.9.0                # Pretty-print tabular data
 colorama==0.4.6                # Cross-platform colored terminal text
 colorlog==6.10.1               # Colored logging output
-jsonschema==4.25.1             # JSON schema validation
+jsonschema==4.26.0             # JSON schema validation
 chardet>=5.1.0                 # Character encoding detection
-certifi==2025.11.12            # SSL certificate bundle
-cachetools==6.2.2              # Caching utilities
+certifi==2026.2.25             # SSL certificate bundle
+cachetools==7.0.5              # Caching utilities
 fuzzywuzzy==0.18.0             # Fuzzy string matching
-icalendar==6.3.2               # iCalendar file handling and parsing
+icalendar==7.0.3               # iCalendar file handling and parsing
 python-Levenshtein==0.27.3     # Fast string matching (optional speedup for fuzzywuzzy)
 
 # ===============================

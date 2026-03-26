@@ -101,14 +101,14 @@ class CredentialsMixin:
                     self.load_credentials()
 
                 except Exception as e:
-                    logger.error(f"Error saving credentials: {e}")
+                    logger.error("Error saving credentials")
                     messagebox.showerror(_t("common.error"), f"Failed to save credentials: {e}")
 
             ttk.Button(dialog, text="Save Credentials", command=save_credentials).grid(
                 row=6, column=0, columnspan=2, pady=20)
 
         except Exception as e:
-            logger.error(f"Error opening credentials dialog: {e}")
+            logger.error("Error opening credentials dialog")
             messagebox.showerror(_t("common.error"), f"Failed to open dialog: {e}")
 
     def edit_credentials(self):
@@ -184,14 +184,14 @@ class CredentialsMixin:
                     self.load_credentials()
 
                 except Exception as e:
-                    logger.error(f"Error updating credentials: {e}")
+                    logger.error("Error updating credentials")
                     messagebox.showerror(_t("common.error"), f"Failed to update credentials: {e}")
 
             ttk.Button(dialog, text="Update Credentials", command=update_credentials).grid(
                 row=3, column=0, columnspan=2, pady=20)
 
         except Exception as e:
-            logger.error(f"Error editing credentials: {e}")
+            logger.error("Error editing credentials")
             messagebox.showerror(_t("common.error"), f"Failed to edit credentials: {e}")
 
     def delete_credentials(self):
@@ -219,7 +219,7 @@ class CredentialsMixin:
                 self.load_credentials()
 
         except Exception as e:
-            logger.error(f"Error deleting credentials: {e}")
+            logger.error("Error deleting credentials")
             messagebox.showerror(_t("common.error"), f"Failed to delete credentials: {e}")
 
     def rotate_api_credentials(self):
@@ -257,7 +257,7 @@ class CredentialsMixin:
                 self.load_credentials()
 
         except Exception as e:
-            logger.error(f"Error rotating credentials: {e}")
+            logger.error("Error rotating credentials")
             messagebox.showerror(_t("common.error"), f"Failed to rotate credentials: {e}")
 
     def check_credential_expiry(self):
@@ -330,7 +330,7 @@ class CredentialsMixin:
             ttk.Button(dialog, text=_t("common.close"), command=dialog.destroy).pack(pady=5)
 
         except Exception as e:
-            logger.error(f"Error checking credential expiry: {e}")
+            logger.error("Error checking credential expiry")
             messagebox.showerror(_t("common.error"), f"Failed to check expiry: {e}")
 
     def validate_credentials(self):
@@ -381,7 +381,7 @@ class CredentialsMixin:
             messagebox.showinfo("Validation Result", result)
 
         except Exception as e:
-            logger.error(f"Error validating credentials: {e}")
+            logger.error("Error validating credentials")
             messagebox.showerror(_t("common.error"), f"Failed to validate credentials: {e}")
 
     def encrypt_export_credentials(self):
@@ -436,7 +436,7 @@ class CredentialsMixin:
                                f"Exported {len(credentials)} credentials (encrypted) to:\n{filename}")
 
         except Exception as e:
-            logger.error(f"Error exporting encrypted credentials: {e}")
+            logger.error("Error exporting encrypted credentials")
             messagebox.showerror(_t("common.error"), f"Failed to export credentials: {e}")
 
     def audit_credential_access(self):
@@ -529,5 +529,5 @@ class CredentialsMixin:
                 self.load_credentials()
 
         except Exception as e:
-            logger.error(f"Error revoking tokens: {e}")
+            logger.error("Error revoking tokens")
             messagebox.showerror(_t("common.error"), f"Failed to revoke tokens: {e}")

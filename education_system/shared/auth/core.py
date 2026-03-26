@@ -291,7 +291,7 @@ class UserAuth:
             conn.rollback()
             if "UNIQUE" in str(e):
                 raise AuthError(f"Username '{username}' already exists.") from e
-            logger.error("Failed to create user '%s': %s", username, e)
+            logger.error("Failed to create user '%s'", username)
             raise AuthError("Failed to create user.") from e
         finally:
             conn.close()

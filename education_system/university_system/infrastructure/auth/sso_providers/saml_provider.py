@@ -163,7 +163,7 @@ class SAMLProvider:
             )
 
         except Exception as e:
-            logger.error("Failed to create SAML AuthnRequest: %s", e, exc_info=True)
+            logger.error("Failed to create SAML AuthnRequest")
             return {
                 "success": False,
                 "error": f"Failed to create AuthnRequest: {e}",
@@ -338,7 +338,7 @@ class SAMLProvider:
         try:
             return self._process_response_onelogin(saml_response, request_id)
         except Exception as e:
-            logger.error("Failed to process SAML response: %s", e, exc_info=True)
+            logger.error("Failed to process SAML response")
             return {
                 "success": False,
                 "error": f"Failed to process SAML response: {e}",
@@ -521,11 +521,7 @@ class SAMLProvider:
                 "session_index": "",
             }
         except Exception as e:
-            logger.error(
-                "Failed to process SAML response (fallback): %s",
-                e,
-                exc_info=True,
-            )
+            logger.error("Failed to process SAML response (fallback)")
             return {
                 "success": False,
                 "error": f"Failed to process SAML response: {e}",
@@ -626,9 +622,7 @@ class SAMLProvider:
             return True
 
         except Exception as e:
-            logger.error(
-                "Error validating SAML assertion: %s", e, exc_info=True
-            )
+            logger.error("Error validating SAML assertion")
             return False
 
     def extract_attributes(self, assertion: Any) -> Dict[str, Any]:
@@ -694,9 +688,7 @@ class SAMLProvider:
             )
 
         except Exception as e:
-            logger.error(
-                "Error extracting SAML attributes: %s", e, exc_info=True
-            )
+            logger.error("Error extracting SAML attributes")
 
         return attributes
 
@@ -763,9 +755,7 @@ class SAMLProvider:
             }
 
         except Exception as e:
-            logger.error(
-                "Failed to create SAML LogoutRequest: %s", e, exc_info=True
-            )
+            logger.error("Failed to create SAML LogoutRequest")
             return {
                 "success": False,
                 "error": f"Failed to create LogoutRequest: {e}",

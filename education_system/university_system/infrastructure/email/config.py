@@ -65,7 +65,7 @@ def _get_keyring_password(username: str) -> str:
         password = keyring.get_password(_KEYRING_SERVICE, username)
         return password or ''
     except Exception as e:
-        _logger.debug("Could not retrieve password from keyring: %s", e)
+        _logger.debug("Could not retrieve password from keyring")
         return ''
 
 
@@ -128,7 +128,7 @@ def set_smtp_password(username: str, password: str) -> bool:
         _logger.info("SMTP password stored securely in system keyring")
         return True
     except Exception as e:
-        _logger.error("Failed to store password in keyring: %s", e)
+        _logger.error("Failed to store password in keyring")
         return False
 
 
@@ -149,7 +149,7 @@ def delete_smtp_password(username: str) -> bool:
         _logger.info("SMTP password removed from system keyring")
         return True
     except Exception as e:
-        _logger.debug("Could not delete password from keyring: %s", e)
+        _logger.debug("Could not delete password from keyring")
         return False
 
 

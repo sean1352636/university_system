@@ -113,7 +113,7 @@ class AWSKMSProvider(BaseKMSProvider):
             logger.info("Successfully retrieved master key from AWS KMS")
             return response['Plaintext']
         except Exception as e:
-            logger.error(f"Failed to retrieve key from AWS KMS: {e}")
+            logger.error("Failed to retrieve key from AWS KMS")
             raise KMSKeyRetrievalError(f"AWS KMS key retrieval failed: {e}")
 
 
@@ -173,7 +173,7 @@ class AzureKeyVaultProvider(BaseKMSProvider):
             logger.info("Successfully retrieved master key from Azure Key Vault")
             return secret.value.encode()
         except Exception as e:
-            logger.error(f"Failed to retrieve key from Azure Key Vault: {e}")
+            logger.error("Failed to retrieve key from Azure Key Vault")
             raise KMSKeyRetrievalError(f"Azure Key Vault key retrieval failed: {e}")
 
 
@@ -242,7 +242,7 @@ class HashiCorpVaultProvider(BaseKMSProvider):
         except KMSKeyRetrievalError:
             raise
         except Exception as e:
-            logger.error(f"Failed to retrieve key from HashiCorp Vault: {e}")
+            logger.error("Failed to retrieve key from HashiCorp Vault")
             raise KMSKeyRetrievalError(f"HashiCorp Vault key retrieval failed: {e}")
 
 
@@ -323,7 +323,7 @@ class KMSIntegration:
             logger.info(f"Key rotation prepared: {old_key_id} -> {new_key_id}")
             return True
         except Exception as e:
-            logger.error(f"Key rotation preparation failed: {e}")
+            logger.error("Key rotation preparation failed")
             return False
 
 

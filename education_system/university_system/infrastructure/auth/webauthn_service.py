@@ -209,7 +209,7 @@ class WebAuthnService:
                 logger.debug("WebAuthn database tables ensured")
 
         except sqlite3.Error as e:
-            logger.error("Failed to create WebAuthn tables: %s", e)
+            logger.error("Failed to create WebAuthn tables")
 
     # =========================================================================
     # Registration Flow
@@ -540,7 +540,7 @@ class WebAuthnService:
             }
 
         except Exception as e:
-            logger.error("Failed to begin WebAuthn authentication: %s", e)
+            logger.error("Failed to begin WebAuthn authentication")
             return {
                 'success': False,
                 'error': f'Failed to generate authentication options: {e}',
@@ -663,7 +663,7 @@ class WebAuthnService:
             }
 
         except Exception as e:
-            logger.error("Failed to complete WebAuthn authentication: %s", e)
+            logger.error("Failed to complete WebAuthn authentication")
 
             # Audit log the failed authentication
             if IMMUTABLE_AUDIT_AVAILABLE:
@@ -807,7 +807,7 @@ class WebAuthnService:
             return {'success': True, 'credential_id': credential_id}
 
         except sqlite3.Error as e:
-            logger.error("Failed to revoke WebAuthn credential: %s", e)
+            logger.error("Failed to revoke WebAuthn credential")
             return {
                 'success': False,
                 'error': f'Database error while revoking credential: {e}',
@@ -875,7 +875,7 @@ class WebAuthnService:
             }
 
         except sqlite3.Error as e:
-            logger.error("Failed to rename WebAuthn credential: %s", e)
+            logger.error("Failed to rename WebAuthn credential")
             return {
                 'success': False,
                 'error': f'Database error while renaming credential: {e}',
@@ -946,7 +946,7 @@ class WebAuthnService:
             )
 
         except sqlite3.Error as e:
-            logger.error("Failed to store WebAuthn challenge: %s", e)
+            logger.error("Failed to store WebAuthn challenge")
             raise
 
     def _verify_challenge(
@@ -1031,7 +1031,7 @@ class WebAuthnService:
                 return challenge_data
 
         except sqlite3.Error as e:
-            logger.error("Failed to verify WebAuthn challenge: %s", e)
+            logger.error("Failed to verify WebAuthn challenge")
             return None
 
     # =========================================================================
@@ -1212,7 +1212,7 @@ class WebAuthnService:
             return deleted
 
         except sqlite3.Error as e:
-            logger.error("Failed to clean up WebAuthn challenges: %s", e)
+            logger.error("Failed to clean up WebAuthn challenges")
             return 0
 
     def is_available(self) -> bool:

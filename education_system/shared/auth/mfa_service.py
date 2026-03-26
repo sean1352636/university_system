@@ -79,7 +79,7 @@ class MFAService:
             }
         except Exception as e:
             conn.rollback()
-            logger.error("Failed to setup MFA for user_id=%d: %s", user_id, e)
+            logger.error("Failed to setup MFA for user_id=%d", user_id)
             raise MFAError("Failed to set up MFA. Please try again.") from e
         finally:
             conn.close()

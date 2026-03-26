@@ -64,7 +64,7 @@ class EnhancedAuth:
         try:
             self.remember_me_manager.initialize_database()
         except Exception as e:
-            logger.warning(f"Could not initialize remember me database: {e}")
+            logger.warning("Could not initialize remember me database")
 
     def login_with_remember_me(
         self,
@@ -144,7 +144,7 @@ class EnhancedAuth:
                     result['remember_token'] = token
                     logger.info(f"Created remember me token for user {user['id']}")
                 except Exception as e:
-                    logger.error(f"Failed to create remember me token: {e}")
+                    logger.error("Failed to create remember me token")
                     result['session_warnings'].append("Could not create remember me token")
 
             # Create session with enhanced features
@@ -203,7 +203,7 @@ class EnhancedAuth:
             return user_id
 
         except Exception as e:
-            logger.error(f"Error verifying remember me token: {e}")
+            logger.error("Error verifying remember me token")
             return None
 
     def _restore_session_from_user_id(self, user_id: int):
@@ -256,7 +256,7 @@ class EnhancedAuth:
                 count = self.remember_me_manager.revoke_all_user_tokens(user_id)
                 logger.info(f"Revoked {count} remember me tokens for user {user_id}")
             except Exception as e:
-                logger.error(f"Error revoking remember me tokens: {e}")
+                logger.error("Error revoking remember me tokens")
 
     def get_active_sessions(self, user_id: Optional[int] = None) -> list:
         """

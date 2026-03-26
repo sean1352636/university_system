@@ -262,7 +262,7 @@ class ImportCalendarDialog:
                                 imported_count += 1
                             except Exception:
                                 error_count += 1
-                    except ImportError:
+                    except (ImportError, ValueError):
                         messagebox.showerror(_("common.error"), _("academic_calendar.messages.ics_library_unavailable"))
                         return
 

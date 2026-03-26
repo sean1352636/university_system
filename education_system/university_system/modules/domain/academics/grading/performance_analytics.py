@@ -69,7 +69,7 @@ def _table_exists(cur, name: str) -> bool:
 def _cols(cur, table: str) -> set:
     try:
         safe_table = validate_identifier(table, "table")
-        return {row[1] for row in cur.execute("PRAGMA table_info([" + safe_table + "])").fetchall()}
+        return {row[1] for row in cur.execute("PRAGMA table_info([" + safe_table + "])").fetchall()}  # nosec B608
     except Exception:
         return set()
 
@@ -132,35 +132,35 @@ def collect_dashboard_data(cursor) -> DataBag:
     # ---- Totals / counts ----
     safe_grades_t = validate_identifier(grades_t, "table")
     try:
-        bag["total_grades"] = cursor.execute("SELECT COUNT(*) FROM [" + safe_grades_t + "]").fetchone()[0] or 0
+        bag["total_grades"] = cursor.execute("SELECT COUNT(*) FROM [" + safe_grades_t + "]").fetchone()[0] or 0  # nosec B608
     except Exception as e:
         logger.warning(f"Failed to count grades from table '{grades_t}': {e}")
 
     if students_t:
         safe_students_t = validate_identifier(students_t, "table")
         try:
-            bag["total_students"] = cursor.execute("SELECT COUNT(*) FROM [" + safe_students_t + "]").fetchone()[0] or 0
+            bag["total_students"] = cursor.execute("SELECT COUNT(*) FROM [" + safe_students_t + "]").fetchone()[0] or 0  # nosec B608
         except Exception as e:
             logger.warning(f"Failed to count students from table '{students_t}': {e}")
 
     if courses_t:
         safe_courses_t = validate_identifier(courses_t, "table")
         try:
-            bag["total_courses"] = cursor.execute("SELECT COUNT(*) FROM [" + safe_courses_t + "]").fetchone()[0] or 0
+            bag["total_courses"] = cursor.execute("SELECT COUNT(*) FROM [" + safe_courses_t + "]").fetchone()[0] or 0  # nosec B608
         except Exception as e:
             logger.warning(f"Failed to count courses from table '{courses_t}': {e}")
 
     # ---- Overall average ----
     try:
         bag["avg_score"] = cursor.execute(
-            "SELECT ROUND(AVG(CAST([" + safe_score_col + "] AS REAL)),2) FROM [" + safe_grades_t_q + "] WHERE [" + safe_score_col + "] IS NOT NULL AND TRIM([" + safe_score_col + "])<>''"
+            "SELECT ROUND(AVG(CAST([" + safe_score_col + "] AS REAL)),2) FROM [" + safe_grades_t_q + "] WHERE [" + safe_score_col + "] IS NOT NULL AND TRIM([" + safe_score_col + "])<>''"  # nosec B608
         ).fetchone()[0]
     except Exception as e:
         logger.warning(f"Failed to calculate average score: {e}")
 
     # ---- Grade distribution (A/B/C/D/F by numeric cutoffs; adjust to your scale if needed) ----
     try:
-        row = cursor.execute(
+        row = cursor.execute(  # nosec B608
             """
             SELECT
               SUM(CASE WHEN CAST([""" + safe_score_col + """] AS REAL) >= 85 THEN 1 ELSE 0 END) AS A_cnt,
@@ -183,7 +183,7 @@ def collect_dashboard_data(cursor) -> DataBag:
         try:
             bag["course_averages"] = [
                 {"course": r[0], "avg_score": r[1], "count": r[2]}
-                for r in cursor.execute(
+                for r in cursor.execute(  # nosec B608
                     """
                     SELECT [""" + safe_course_col + """] AS course, ROUND(AVG(CAST([""" + safe_score_col + """] AS REAL)),2) AS avg_score, COUNT(*)
                       FROM [""" + safe_grades_t_q + """]
@@ -203,7 +203,7 @@ def collect_dashboard_data(cursor) -> DataBag:
         try:
             bag["student_averages"] = [
                 {"student_id": r[0], "avg_score": r[1], "count": r[2]}
-                for r in cursor.execute(
+                for r in cursor.execute(  # nosec B608
                     """
                     SELECT [""" + safe_student_col + """] AS student_id, ROUND(AVG(CAST([""" + safe_score_col + """] AS REAL)),2) AS avg_score, COUNT(*)
                       FROM [""" + safe_grades_t_q + """]
@@ -223,7 +223,7 @@ def collect_dashboard_data(cursor) -> DataBag:
         try:
             bag["at_risk_students"] = [
                 {"student_id": r[0], "avg_score": r[1], "count": r[2]}
-                for r in cursor.execute(
+                for r in cursor.execute(  # nosec B608
                     """
                     SELECT [""" + safe_student_col + """] AS student_id, ROUND(AVG(CAST([""" + safe_score_col + """] AS REAL)),2) AS avg_score, COUNT(*)
                       FROM [""" + safe_grades_t_q + """]
@@ -244,7 +244,7 @@ def collect_dashboard_data(cursor) -> DataBag:
         try:
             bag["monthly_trends"] = [
                 {"month": r[0], "avg_score": r[1], "count": r[2]}
-                for r in cursor.execute(
+                for r in cursor.execute(  # nosec B608
                     """
                     SELECT strftime('%Y-%m', [""" + safe_date_col + """]) AS month,
                            ROUND(AVG(CAST([""" + safe_score_col + """] AS REAL)),2) AS avg_score,
@@ -263,7 +263,7 @@ def collect_dashboard_data(cursor) -> DataBag:
     # ---- Missing grades ----
     try:
         bag["missing_grades"] = cursor.execute(
-            "SELECT COUNT(*) FROM [" + safe_grades_t_q + "] WHERE [" + safe_score_col + "] IS NULL OR TRIM([" + safe_score_col + "])=''"
+            "SELECT COUNT(*) FROM [" + safe_grades_t_q + "] WHERE [" + safe_score_col + "] IS NULL OR TRIM([" + safe_score_col + "])=''"  # nosec B608
         ).fetchone()[0] or 0
     except Exception as e:
         logger.warning(f"Failed to count missing grades: {e}")

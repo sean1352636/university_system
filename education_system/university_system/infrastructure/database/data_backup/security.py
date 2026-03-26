@@ -55,7 +55,7 @@ def encrypt_file(file_path: str, password: str) -> str:
         logger.error(f"File I/O error during encryption: {e}")
         return None
     except (ValueError, TypeError) as e:
-        logger.error(f"Encryption error (invalid key or data): {e}")
+        logger.error("Encryption error (invalid key or data)")
         return None
 
 
@@ -82,10 +82,10 @@ def decrypt_file(encrypted_path: str, password: str, output_path: str = None) ->
         logger.error(f"File I/O error during decryption: {e}")
         return None
     except InvalidToken as e:
-        logger.error(f"Decryption failed - invalid password or corrupted data: {e}")
+        logger.error("Decryption failed - invalid password or corrupted data")
         return None
     except (ValueError, TypeError) as e:
-        logger.error(f"Decryption error (invalid key format): {e}")
+        logger.error("Decryption error (invalid key format)")
         return None
 
 

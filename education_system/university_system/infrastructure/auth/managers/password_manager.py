@@ -257,7 +257,7 @@ def change_user_password(
             return True
 
     except sqlite3.Error as e:
-        logger.error(f"Database error during password change: {e}")
+        logger.error("Database error during password change")
         return False
 
 def reset_user_password(
@@ -395,7 +395,7 @@ def reset_user_password(
                 conn.close()
 
     except sqlite3.Error as e:
-        logger.error(f"Database error during password reset: {e}")
+        logger.error("Database error during password reset")
         return False, None
 
 def check_password_reset_required(db_manager, username: str) -> bool:
@@ -424,5 +424,5 @@ def check_password_reset_required(db_manager, username: str) -> bool:
             result = cursor.fetchone()
             return bool(result[0]) if result else False
     except sqlite3.Error as e:
-        logger.error(f"Database error checking password reset status: {e}")
+        logger.error("Database error checking password reset status")
         return False

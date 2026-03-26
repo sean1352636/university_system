@@ -231,7 +231,7 @@ def login():
         auth = UserAuth(_auth_db_path or str(AUTH_DB_FILE))
         result = auth.login(data["username"], data["password"])
     except Exception as e:
-        logger.warning("Login failed for '%s': %s", data.get("username"), e)
+        logger.warning("Login failed for '%s'", data.get("username"))
         return jsonify({"error": "Invalid credentials"}), 401
 
     if not result:

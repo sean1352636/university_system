@@ -310,7 +310,7 @@ def show_mfa_for_login(parent, user_id: int, username: str) -> Tuple[bool, Optio
         return verified, trust_token
 
     except Exception as e:
-        logger.error("Error showing MFA verification: %s", e)
+        logger.error("Error showing MFA verification")
         return False, None
 
 
@@ -341,7 +341,7 @@ def show_mfa_setup_for_login(parent, user_id: int, username: str, required: bool
         return setup_completed
 
     except Exception as e:
-        logger.error("Error showing MFA setup: %s", e)
+        logger.error("Error showing MFA setup")
         return False
 
 

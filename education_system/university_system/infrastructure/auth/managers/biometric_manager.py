@@ -317,10 +317,10 @@ class BiometricManager:
             }
 
         except sqlite3.Error as e:
-            logger.error(f"Database error during biometric authentication: {e}")
+            logger.error("Database error during biometric authentication")
             return {'success': False, 'message': 'Database error during biometric authentication.'}
         except Exception as e:
-            logger.error(f"Unexpected error during biometric authentication: {e}")
+            logger.error("Unexpected error during biometric authentication")
             return {'success': False, 'message': 'An unexpected error occurred during authentication.'}
 
     def list_enrollments(self, user_id: Optional[int] = None) -> List[Dict[str, Any]]:

@@ -158,7 +158,7 @@ def create_unified_app() -> Flask:
     try:
         init_api_keys(str(AUTH_DB_FILE))
     except Exception as e:
-        logger.warning("API key init failed (non-fatal): %s", e)
+        logger.warning("API key init failed (non-fatal)")
 
     # ── Rate limiting ───────────────────────────────────────────────────
     from education_system.shared.api.rate_limiter import rate_limiter
