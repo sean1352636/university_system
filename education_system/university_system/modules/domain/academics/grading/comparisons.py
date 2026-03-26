@@ -74,6 +74,10 @@ def display_course_comparison(comparison_data):
     gpas = [d['avg_gpa'] for d in comparison_data]
     scores = [d['avg_score'] for d in comparison_data]
 
+    if not gpas:
+        print("No data available for statistical analysis.")
+        return
+
     print(f"GPA Range: {min(gpas):.2f} - {max(gpas):.2f}")
     print(f"Score Range: {min(scores):.1f}% - {max(scores):.1f}%")
     print(f"GPA Standard Deviation: {np.std(gpas):.2f}")
@@ -528,11 +532,15 @@ def compare_by_specific_courses(cursor):
     print(f"\nComparing courses: {', '.join(valid_courses)}")
 
     # Get performance data for each course
+    calc_fn = _get_calculate_course_statistics()
     for course in valid_courses:
-        stats = _get_calculate_course_statistics()(cursor, course)
-        if stats:
-            print(f"\n{course}:")
-            print(f"  Students: {stats['student_count']}")
-            print(f"  Average GPA: {stats['avg_gpa']:.2f}")
-            print(f"  Average Score: {stats['avg_score']:.1f}%")
-            print(f"  Passing Rate: {stats['passing_rate']:.1f}%")
+        try:
+            stats = calc_fn(cursor, course) if calc_fn else None
+            if stats:
+                print(f"\n{course}:")
+                print(f"  Students: {stats.get('student_count', stats.get('count', 'N/A'))}")
+                print(f"  Average GPA: {stats.get('avg_gpa', 0):.2f}")
+                print(f"  Average Score: {stats.get('avg_score', 0):.1f}%")
+                print(f"  Passing Rate: {stats.get('passing_rate', 0):.1f}%")
+        except Exception:
+            print(f"\n{course}: Unable to calculate statistics")

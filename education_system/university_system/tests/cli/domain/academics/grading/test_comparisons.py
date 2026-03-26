@@ -42,6 +42,20 @@ def setup_test_data():
     with transaction() as conn:
         cursor = conn.cursor()
 
+        # Ensure assignment_submissions table exists (used by GPA calculator)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS assignment_submissions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_id TEXT NOT NULL,
+                module_code TEXT NOT NULL,
+                assessment_id INTEGER,
+                score REAL,
+                max_score REAL DEFAULT 100,
+                submitted_at TEXT,
+                FOREIGN KEY (assessment_id) REFERENCES assessments(id)
+            )
+        """)
+
         # Create test students with different genders and courses
         cursor.execute("""
             INSERT INTO students (student_id, first_name, last_name, email, gender, course, enrollment_date)
