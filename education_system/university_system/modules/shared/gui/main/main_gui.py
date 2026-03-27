@@ -694,11 +694,11 @@ UnifiedManagementGUI.show_printing_services_gui = show_printing_services_gui
 UnifiedManagementGUI.show_textbook_store_gui = show_textbook_store_gui
 
 
-def show_cross_system_notifications_gui(self):
-    """Launch the Cross-System Notifications frame in a top-level window."""
-    from education_system.shared.notifications.gui import CrossSystemNotificationsFrame
-    win = self.create_themed_toplevel(title="Cross-System Notifications", geometry="900x600")
-    frame = CrossSystemNotificationsFrame(win, db_path=None, auth=self.auth)
+def show_cross_system_communications_gui(self):
+    """Launch the Cross-System Communications frame in a top-level window."""
+    from education_system.shared.communications.gui import CrossSystemCommunicationsFrame
+    win = self.create_themed_toplevel(title="Cross-System Communications", geometry="900x600")
+    frame = CrossSystemCommunicationsFrame(win, db_path=None, auth=self.auth)
     frame.pack(fill='both', expand=True)
 
 
@@ -774,12 +774,6 @@ def show_cross_system_calendar_gui(self):
     frame.pack(fill='both', expand=True)
 
 
-def show_inter_system_messaging_gui(self):
-    """Launch the Inter-System Messaging frame in a top-level window."""
-    from education_system.shared.messaging.messaging_gui import InterSystemMessagingFrame
-    win = self.create_themed_toplevel(title="Inter-System Messaging", geometry="900x600")
-    frame = InterSystemMessagingFrame(win, db_path=None, auth=self.auth)
-    frame.pack(fill='both', expand=True)
 
 
 def show_central_admin_gui(self):
@@ -822,7 +816,7 @@ def show_digital_transcript_gui(self):
     frame.pack(fill='both', expand=True)
 
 
-UnifiedManagementGUI.show_cross_system_notifications_gui = show_cross_system_notifications_gui
+UnifiedManagementGUI.show_cross_system_communications_gui = show_cross_system_communications_gui
 UnifiedManagementGUI.show_student_journey_gui = show_student_journey_gui
 UnifiedManagementGUI.show_analytics_dashboard_gui = show_analytics_dashboard_gui
 UnifiedManagementGUI.show_outcome_tracking_gui = show_outcome_tracking_gui
@@ -832,7 +826,6 @@ UnifiedManagementGUI.show_transfer_documents_gui = show_transfer_documents_gui
 UnifiedManagementGUI.show_reverse_lookup_gui = show_reverse_lookup_gui
 UnifiedManagementGUI.show_parent_continuity_gui = show_parent_continuity_gui
 UnifiedManagementGUI.show_cross_system_calendar_gui = show_cross_system_calendar_gui
-UnifiedManagementGUI.show_inter_system_messaging_gui = show_inter_system_messaging_gui
 UnifiedManagementGUI.show_central_admin_gui = show_central_admin_gui
 UnifiedManagementGUI.show_gdpr_compliance_gui = show_gdpr_compliance_gui
 UnifiedManagementGUI.show_shared_documents_gui = show_shared_documents_gui

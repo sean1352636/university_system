@@ -662,7 +662,7 @@ def create_navigation_panel(self, parent):
 
     # ---------- Cross-System ----------
     cross_system_buttons_data = [
-        ('cross_system_notifications', 'Cross-System Notifications', self.show_cross_system_notifications_gui),
+        ('cross_system_communications', 'Cross-System Communications', self.show_cross_system_communications_gui),
         ('student_journey', 'Student Journey', self.show_student_journey_gui),
         ('analytics_dashboard', 'Analytics Dashboard', self.show_analytics_dashboard_gui),
         ('outcome_tracking', 'Outcome Tracking', self.show_outcome_tracking_gui),
@@ -672,7 +672,6 @@ def create_navigation_panel(self, parent):
         ('reverse_lookup', 'Reverse Lookup', self.show_reverse_lookup_gui),
         ('parent_continuity', 'Parent Continuity', self.show_parent_continuity_gui),
         ('cross_system_calendar', 'Cross-System Calendar', self.show_cross_system_calendar_gui),
-        ('inter_system_messaging', 'Inter-System Messaging', self.show_inter_system_messaging_gui),
         ('central_admin_portal', 'Central Admin Portal', self.show_central_admin_gui),
         ('gdpr_compliance', 'GDPR Compliance', self.show_gdpr_compliance_gui),
         ('shared_documents', 'Shared Documents', self.show_shared_documents_gui),
@@ -856,11 +855,11 @@ def get_visible_buttons_for_role(self, role=None):
             # New features - staff level
             'external_examiners',
             # Cross-system modules
-            'cross_system_notifications', 'student_journey',
+            'cross_system_communications', 'student_journey',
             'analytics_dashboard', 'outcome_tracking', 'predictive_alerts',
             'bulk_transfer', 'transfer_documents', 'reverse_lookup',
             'parent_continuity', 'cross_system_calendar',
-            'inter_system_messaging', 'shared_documents',
+            'shared_documents',
             'student_self_service', 'digital_transcript',
         })
 

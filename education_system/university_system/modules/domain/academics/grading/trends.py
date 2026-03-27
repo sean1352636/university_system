@@ -10,6 +10,10 @@ import numpy as np
 from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.modules.domain.academics.grading.utils import calculate_trend_slope, select_student
 
+_DATA_REPORTS_DIR = os.path.join(
+    os.path.dirname(__file__), '..', '..', '..', '..', 'data', 'reports'
+)
+
 def analyze_individual_student_trends(cursor):
     """Analyze performance trends for individual students"""
     print("\nIndividual Student Trends Analysis")
@@ -326,7 +330,7 @@ def trend_forecasting():
 def create_trend_visualization(daily_trends, monthly_trends, chart_type):
     """Create trend visualization charts"""
     try:
-        viz_dir = 'trend_visualizations'
+        viz_dir = os.path.join(_DATA_REPORTS_DIR, 'trend_visualizations')
         if not os.path.exists(viz_dir):
             os.makedirs(viz_dir)
 
@@ -383,7 +387,7 @@ def create_trend_visualization(daily_trends, monthly_trends, chart_type):
 
 def create_individual_trend_visualization(student_grades, student_id, first_name, last_name):
     """Create individual student trend visualization"""
-    viz_dir = 'student_trends'
+    viz_dir = os.path.join(_DATA_REPORTS_DIR, 'student_trends')
     if not os.path.exists(viz_dir):
         os.makedirs(viz_dir)
 
@@ -442,7 +446,7 @@ def create_individual_trend_visualization(student_grades, student_id, first_name
 def create_course_comparison_charts(comparison_data):
     """Create course comparison charts"""
     try:
-        viz_dir = 'course_comparisons'
+        viz_dir = os.path.join(_DATA_REPORTS_DIR, 'course_comparisons')
         if not os.path.exists(viz_dir):
             os.makedirs(viz_dir)
 

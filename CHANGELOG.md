@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.48.0 — 2026-03-27](#8480---2026-03-27)
 - [8.47.0 — 2026-03-26](#8470---2026-03-26)
 - [8.46.0 — 2026-03-26](#8460---2026-03-26)
 - [8.45.0 — 2026-03-25](#8450---2026-03-25)
@@ -148,6 +149,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`secondary_school/tests/test_services.py`** — Removed 4 inline fixtures and 4 direct imports; services now provided by conftest
 - **`Makefile`** — Added `test-gui` target (runs `pytest -m gui`) and `test-auth` target (runs all shared auth + security tests); updated `.PHONY` with all test targets
 - **`.github/workflows/ci.yml`** — Added GUI test step after coverage run; runs college/secondary/primary GUI tests with `-m gui` marker
+
+---
+
+## [8.48.0] — 2026-03-27
+
+### All Systems — Unified cross-system communications GUI & report path fixes
+
+#### Changed
+
+- **`shared/communications/gui.py`** — New unified `CrossSystemCommunicationsFrame` merging the former `CrossSystemNotificationsFrame` and `InterSystemMessagingFrame` into a single tabbed GUI (Notifications, Inbox, Sent, Compose)
+- **`shared/notifications/gui.py`** — Replaced with backward-compatible re-export of unified frame
+- **`shared/messaging/messaging_gui.py`** — Replaced with backward-compatible re-export of unified frame
+- **`primary_school/main_gui.py`** — Updated to use single "Cross-System Communications" sidebar entry
+- **`secondary_school/main_gui.py`** — Updated to use single "Cross-System Communications" sidebar entry
+- **`college_system/modules/shared/gui/main_gui.py`** — Updated to use single "Cross-System Communications" sidebar entry
+- **`university_system/modules/shared/gui/main/main_gui.py`** — Merged two launcher functions into one `show_cross_system_communications_gui`
+- **`university_system/modules/shared/gui/main/core/gui_setup.py`** — Updated sidebar and visibility sets for unified communications entry
+
+#### Fixed
+
+- **`university_system/modules/domain/academics/grading/trends.py`** — Fixed relative output paths for `trend_visualizations/`, `student_trends/`, and `course_comparisons/` directories; now write to `university_system/data/reports/` using `__file__`-based absolute paths
+- **`university_system/modules/domain/academics/grading/reports.py`** — Fixed relative output path for `statistical_reports/` directory; now writes to `university_system/data/reports/` using `__file__`-based absolute paths
 
 ---
 

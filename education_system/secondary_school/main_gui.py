@@ -362,7 +362,7 @@ class MainApplication(tk.Tk):
         from education_system.secondary_school.modules.domain.student_life.consent.gui.consent_gui import ConsentFrame
         from education_system.secondary_school.modules.domain.facilities.incidents.gui.incident_gui import IncidentFrame
         from education_system.secondary_school.modules.shared.gui.mfa_gui import MFASettingsFrame
-        from education_system.shared.notifications.gui import CrossSystemNotificationsFrame
+        from education_system.shared.communications.gui import CrossSystemCommunicationsFrame
         from education_system.shared.cross_system.journey_dashboard import JourneyDashboardFrame
         from education_system.shared.analytics.analytics_gui import AnalyticsDashboardFrame
         from education_system.shared.outcomes.outcomes_gui import OutcomeTrackingFrame
@@ -372,7 +372,6 @@ class MainApplication(tk.Tk):
         from education_system.shared.reverse_lookup.reverse_lookup_gui import ReverseLookupFrame
         from education_system.shared.parent_continuity.parent_gui import ParentContinuityFrame
         from education_system.shared.calendar.calendar_gui import CrossSystemCalendarFrame
-        from education_system.shared.messaging.messaging_gui import InterSystemMessagingFrame
         from education_system.shared.admin_portal.admin_gui import CentralAdminFrame
         from education_system.shared.gdpr.gdpr_gui import GDPRComplianceFrame
         from education_system.shared.documents.document_gui import SharedDocumentsFrame
@@ -452,7 +451,7 @@ class MainApplication(tk.Tk):
             "Consent": ConsentFrame,
             "Incidents": IncidentFrame,
             "MFA Settings": MFASettingsFrame,
-            "Cross-System Notifications": CrossSystemNotificationsFrame,
+            "Cross-System Communications": CrossSystemCommunicationsFrame,
             "Student Journey": JourneyDashboardFrame,
             # Shared modules
             "Analytics Dashboard": AnalyticsDashboardFrame,
@@ -463,7 +462,6 @@ class MainApplication(tk.Tk):
             "Reverse Lookup": ReverseLookupFrame,
             "Parent Continuity": ParentContinuityFrame,
             "Cross-System Calendar": CrossSystemCalendarFrame,
-            "Inter-System Messaging": InterSystemMessagingFrame,
             "Central Admin Portal": CentralAdminFrame,
             "GDPR Compliance": GDPRComplianceFrame,
             "Shared Documents": SharedDocumentsFrame,

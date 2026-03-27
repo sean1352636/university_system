@@ -4,6 +4,10 @@ import os
 from education_system.university_system.infrastructure.database.db import sqlite3
 from datetime import datetime
 
+_DATA_REPORTS_DIR = os.path.join(
+    os.path.dirname(__file__), '..', '..', '..', '..', 'data', 'reports'
+)
+
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -42,7 +46,7 @@ def generate_statistical_report():
         report_type = input("Select report type (1-4): ")
 
         # Create the reports directory if it doesn't exist
-        reports_dir = 'statistical_reports'
+        reports_dir = os.path.join(_DATA_REPORTS_DIR, 'statistical_reports')
         if not os.path.exists(reports_dir):
             os.makedirs(reports_dir)
 
