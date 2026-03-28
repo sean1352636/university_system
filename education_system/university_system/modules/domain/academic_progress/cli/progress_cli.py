@@ -62,6 +62,12 @@ class AcademicProgressCLI:
             print("  14. Create Progress Snapshot")
             print("  15. Comprehensive Progress Report")
 
+            print("\nGRADES & TRANSCRIPT:")
+            print("  16. View My Grades")
+            print("  17. View Transcript")
+            print("  18. Export Transcript")
+            print("  19. Grades Breakdown by Module")
+
             print("\n  0. Back to Main Menu")
             print("=" * 70)
 
@@ -99,6 +105,14 @@ class AcademicProgressCLI:
                 self.create_snapshot()
             elif choice == '15':
                 self.comprehensive_report()
+            elif choice == '16':
+                self.view_my_grades()
+            elif choice == '17':
+                self.view_transcript()
+            elif choice == '18':
+                self.export_transcript()
+            elif choice == '19':
+                self.grades_breakdown_by_module()
             else:
                 print("\nInvalid option. Please try again.")
                 input("\nPress Enter to continue...")
@@ -870,6 +884,349 @@ class AcademicProgressCLI:
 
         except Exception as e:
             print(f"\nError generating comprehensive report: {str(e)}")
+
+        input("\nPress Enter to continue...")
+
+    # ========== Grades & Transcript ==========
+
+    def _numeric_to_letter_grade(self, score: float) -> str:
+        """Convert a numeric score to a letter grade."""
+        if score >= 97:
+            return 'A+'
+        elif score >= 93:
+            return 'A'
+        elif score >= 90:
+            return 'A-'
+        elif score >= 87:
+            return 'B+'
+        elif score >= 83:
+            return 'B'
+        elif score >= 80:
+            return 'B-'
+        elif score >= 77:
+            return 'C+'
+        elif score >= 73:
+            return 'C'
+        elif score >= 70:
+            return 'C-'
+        elif score >= 67:
+            return 'D+'
+        elif score >= 63:
+            return 'D'
+        elif score >= 60:
+            return 'D-'
+        else:
+            return 'F'
+
+    def _letter_to_gpa_points(self, letter: str) -> float:
+        """Convert a letter grade to GPA points."""
+        gpa_map = {
+            'A+': 4.0, 'A': 4.0, 'A-': 3.7,
+            'B+': 3.3, 'B': 3.0, 'B-': 2.7,
+            'C+': 2.3, 'C': 2.0, 'C-': 1.7,
+            'D+': 1.3, 'D': 1.0, 'D-': 0.7,
+            'F': 0.0,
+        }
+        return gpa_map.get(letter, 0.0)
+
+    def _get_student_id(self):
+        """Get the current student ID with fallback."""
+        user = self.auth.get_current_user()
+        return user.get('user_id') or user.get('id')
+
+    def _fetch_grades(self, student_id: str) -> list:
+        """Fetch grades for a student from the database.
+
+        Returns a list of dicts with keys: module_code, module_name, final_grade,
+        letter_grade, gpa_points.
+        """
+        from education_system.university_system.infrastructure.database.db import get_connection
+        conn = get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT mg.module_code, m.module_name, mg.final_grade
+                FROM module_grades mg
+                LEFT JOIN modules m ON mg.module_code = m.module_code
+                WHERE mg.student_id = ?
+                ORDER BY mg.module_code
+                """,
+                (student_id,),
+            )
+            rows = cursor.fetchall()
+            grades = []
+            for row in rows:
+                grade = row[2] if row[2] is not None else 0.0
+                letter = self._numeric_to_letter_grade(grade)
+                gpa_pts = self._letter_to_gpa_points(letter)
+                grades.append({
+                    'module_code': row[0],
+                    'module_name': row[1] or 'Unknown',
+                    'final_grade': grade,
+                    'letter_grade': letter,
+                    'gpa_points': gpa_pts,
+                })
+            return grades
+        finally:
+            conn.close()
+
+    def view_my_grades(self):
+        """View current student grades in a formatted table."""
+        print("\n" + "=" * 70)
+        print("  VIEW MY GRADES".center(70))
+        print("=" * 70)
+
+        student_id = self._get_student_id()
+
+        try:
+            grades = self._fetch_grades(student_id)
+
+            if not grades:
+                print("\nNo grades found.")
+                input("\nPress Enter to continue...")
+                return
+
+            # Table header
+            print(f"\n{'Module Code':<14} {'Module Name':<25} {'Grade':>6} {'Letter':>7} {'GPA Pts':>8}")
+            print("-" * 62)
+
+            for g in grades:
+                name = g['module_name'][:24] if len(g['module_name']) > 24 else g['module_name']
+                print(f"{g['module_code']:<14} {name:<25} {g['final_grade']:>6.1f} {g['letter_grade']:>7} {g['gpa_points']:>8.1f}")
+
+            # Summary
+            if grades:
+                total_gpa = sum(g['gpa_points'] for g in grades) / len(grades)
+                print("-" * 62)
+                print(f"{'Total Modules: ' + str(len(grades)):<40} {'Cum. GPA:':>13} {total_gpa:>5.2f}")
+
+        except Exception as e:
+            print(f"\nError retrieving grades: {str(e)}")
+
+        input("\nPress Enter to continue...")
+
+    def _generate_transcript_text(self, student_id: str) -> str:
+        """Generate a formatted academic transcript as a string."""
+        from education_system.university_system.infrastructure.database.db import get_connection
+
+        # Fetch student name
+        conn = get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT first_name, middle_name, last_name
+                FROM students
+                WHERE student_id = ?
+                """,
+                (student_id,),
+            )
+            student_row = cursor.fetchone()
+        finally:
+            conn.close()
+
+        if student_row:
+            parts = [student_row[0] or '']
+            if student_row[1]:
+                parts.append(student_row[1])
+            parts.append(student_row[2] or '')
+            student_name = ' '.join(p for p in parts if p)
+        else:
+            student_name = 'Unknown Student'
+
+        grades = self._fetch_grades(student_id)
+        date_str = datetime.now().strftime('%Y-%m-%d %H:%M')
+
+        lines = []
+        lines.append("=" * 70)
+        lines.append("ACADEMIC TRANSCRIPT".center(70))
+        lines.append("=" * 70)
+        lines.append(f"  Student Name: {student_name}")
+        lines.append(f"  Student ID:   {student_id}")
+        lines.append(f"  Date:         {date_str}")
+        lines.append("=" * 70)
+        lines.append("")
+
+        if not grades:
+            lines.append("  No grades on record.")
+        else:
+            header = f"{'Module Code':<14} {'Module Name':<25} {'Grade':>6} {'Letter':>7} {'GPA Pts':>8}"
+            lines.append(header)
+            lines.append("-" * 62)
+
+            for g in grades:
+                name = g['module_name'][:24] if len(g['module_name']) > 24 else g['module_name']
+                lines.append(
+                    f"{g['module_code']:<14} {name:<25} {g['final_grade']:>6.1f} {g['letter_grade']:>7} {g['gpa_points']:>8.1f}"
+                )
+
+            total_gpa = sum(g['gpa_points'] for g in grades) / len(grades)
+            lines.append("-" * 62)
+            lines.append(f"  Total Modules: {len(grades)}")
+            lines.append(f"  Cumulative GPA: {total_gpa:.2f}")
+
+        lines.append("")
+        lines.append("=" * 70)
+        lines.append("END OF TRANSCRIPT".center(70))
+        lines.append("=" * 70)
+
+        return '\n'.join(lines)
+
+    def view_transcript(self):
+        """View a formatted academic transcript."""
+        print("\n" + "=" * 70)
+        print("  ACADEMIC TRANSCRIPT".center(70))
+        print("=" * 70)
+
+        student_id = self._get_student_id()
+
+        try:
+            transcript = self._generate_transcript_text(student_id)
+            print("\n" + transcript)
+        except Exception as e:
+            print(f"\nError generating transcript: {str(e)}")
+
+        input("\nPress Enter to continue...")
+
+    def export_transcript(self):
+        """Export the academic transcript to a file."""
+        print("\n" + "=" * 70)
+        print("  EXPORT TRANSCRIPT".center(70))
+        print("=" * 70)
+
+        student_id = self._get_student_id()
+        filename = input("\nEnter filename to save transcript (e.g., transcript.txt): ").strip()
+
+        if not filename:
+            print("\nFilename is required.")
+            input("\nPress Enter to continue...")
+            return
+
+        try:
+            transcript = self._generate_transcript_text(student_id)
+            with open(filename, 'w') as f:
+                f.write(transcript)
+            print(f"\nTranscript exported successfully to: {filename}")
+        except Exception as e:
+            print(f"\nError exporting transcript: {str(e)}")
+
+        input("\nPress Enter to continue...")
+
+    def grades_breakdown_by_module(self):
+        """Show grades breakdown for a specific module."""
+        print("\n" + "=" * 70)
+        print("  GRADES BREAKDOWN BY MODULE".center(70))
+        print("=" * 70)
+
+        student_id = self._get_student_id()
+
+        try:
+            from education_system.university_system.infrastructure.database.db import get_connection
+
+            # Fetch enrolled modules
+            conn = get_connection()
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    SELECT sm.module_code, m.module_name
+                    FROM student_modules sm
+                    LEFT JOIN modules m ON sm.module_code = m.module_code
+                    WHERE sm.student_id = ?
+                    ORDER BY sm.module_code
+                    """,
+                    (student_id,),
+                )
+                enrolled = cursor.fetchall()
+            finally:
+                conn.close()
+
+            if not enrolled:
+                print("\nNo enrolled modules found.")
+                input("\nPress Enter to continue...")
+                return
+
+            print("\nEnrolled Modules:")
+            for i, mod in enumerate(enrolled, 1):
+                mod_name = mod[1] or 'Unknown'
+                print(f"  {i}. {mod[0]} - {mod_name}")
+
+            try:
+                choice = int(input("\nSelect a module number: "))
+                if choice < 1 or choice > len(enrolled):
+                    raise ValueError
+            except ValueError:
+                print("\nInvalid selection.")
+                input("\nPress Enter to continue...")
+                return
+
+            selected_code = enrolled[choice - 1][0]
+            selected_name = enrolled[choice - 1][1] or 'Unknown'
+
+            # Fetch assignments and submissions for the selected module
+            conn = get_connection()
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    """
+                    SELECT a.title, a.assignment_type, a.max_marks, a.due_date,
+                           asub.grade
+                    FROM assignments a
+                    LEFT JOIN assignment_submissions asub
+                        ON a.id = asub.assignment_id AND asub.student_id = ?
+                    WHERE a.module_code = ?
+                    ORDER BY a.due_date
+                    """,
+                    (student_id, selected_code),
+                )
+                assignments = cursor.fetchall()
+            finally:
+                conn.close()
+
+            print(f"\n{'=' * 70}")
+            print(f"  {selected_code} - {selected_name}".center(70))
+            print(f"{'=' * 70}")
+
+            if not assignments:
+                print("\nNo assignments found for this module.")
+                input("\nPress Enter to continue...")
+                return
+
+            print(f"\n{'Assignment':<25} {'Type':<14} {'Score':>6} {'Max':>6} {'Due Date':<12}")
+            print("-" * 65)
+
+            scores = []
+            for asgn in assignments:
+                title = asgn[0][:24] if len(asgn[0]) > 24 else asgn[0]
+                atype = (asgn[1] or 'N/A')[:13]
+                max_marks = asgn[2] if asgn[2] is not None else 0
+                due = asgn[3] or 'N/A'
+                grade = asgn[4]
+
+                if grade is not None:
+                    scores.append((grade, max_marks))
+                    print(f"{title:<25} {atype:<14} {grade:>6.1f} {max_marks:>6.1f} {due:<12}")
+                else:
+                    print(f"{title:<25} {atype:<14} {'--':>6} {max_marks:>6.1f} {due:<12}")
+
+            print("-" * 65)
+
+            if scores:
+                # Calculate average as percentage
+                total_earned = sum(s[0] for s in scores)
+                total_max = sum(s[1] for s in scores)
+                if total_max > 0:
+                    avg_pct = (total_earned / total_max) * 100
+                else:
+                    avg_pct = 0.0
+                letter = self._numeric_to_letter_grade(avg_pct)
+                print(f"\n  Module Average: {avg_pct:.1f}%  |  Letter Grade: {letter}")
+            else:
+                print("\n  No graded assignments yet.")
+
+        except Exception as e:
+            print(f"\nError retrieving module breakdown: {str(e)}")
 
         input("\nPress Enter to continue...")
 
