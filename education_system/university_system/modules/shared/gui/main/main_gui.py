@@ -71,8 +71,14 @@ def init_gui(session_user=None):
             from datetime import datetime
             auth.last_activity = datetime.now()
 
-    # Create and return the GUI with the configured auth
-    app = UnifiedManagementGUI(auth)
+    # Route students to the dedicated Student Portal; everyone else gets
+    # the full UnifiedManagementGUI.
+    role = (session_user or {}).get('role', '') if session_user else ''
+    if role == 'student':
+        from education_system.university_system.modules.shared.gui.main.student_portal import StudentPortalGUI
+        app = StudentPortalGUI(auth)
+    else:
+        app = UnifiedManagementGUI(auth)
     return app
 
 
