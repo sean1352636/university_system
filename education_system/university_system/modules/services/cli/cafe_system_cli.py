@@ -157,6 +157,86 @@ def init_cafe_db() -> bool:
         # NOTE: cafe inventory transactions now use the unified 'transactions' table
         # with source_type = 'cafe_inventory'
 
+        # Suppliers table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS cafe_suppliers (
+                supplier_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                contact_person TEXT,
+                email TEXT,
+                phone TEXT,
+                address TEXT,
+                payment_terms TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+
+        # Supplier-product link table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS cafe_supplier_products (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                supplier_id INTEGER NOT NULL,
+                product_id INTEGER NOT NULL,
+                cost_per_unit REAL,
+                notes TEXT,
+                FOREIGN KEY (supplier_id) REFERENCES cafe_suppliers(supplier_id),
+                FOREIGN KEY (product_id) REFERENCES products(product_id)
+            )
+        ''')
+
+        # Reservations table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS cafe_reservations (
+                reservation_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                customer_name TEXT NOT NULL,
+                student_id TEXT,
+                reservation_date DATE NOT NULL,
+                reservation_time TIME NOT NULL,
+                party_size INTEGER NOT NULL,
+                status TEXT DEFAULT 'confirmed',
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+
+        # Loyalty points table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS cafe_loyalty (
+                loyalty_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_id TEXT NOT NULL UNIQUE,
+                customer_name TEXT NOT NULL,
+                points INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+
+        # Loyalty points log table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS cafe_loyalty_log (
+                log_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_id TEXT NOT NULL,
+                points_change INTEGER NOT NULL,
+                transaction_type TEXT NOT NULL,
+                reason TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (student_id) REFERENCES cafe_loyalty(student_id)
+            )
+        ''')
+
+        # Staff scheduling table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS cafe_staff_schedules (
+                schedule_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                staff_name TEXT NOT NULL,
+                position TEXT NOT NULL DEFAULT 'barista',
+                day_of_week TEXT NOT NULL,
+                start_time TIME NOT NULL,
+                end_time TIME NOT NULL,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+
         conn.commit()
 
         # Insert sample menu items if table is empty
@@ -586,6 +666,450 @@ def get_low_stock_items(threshold: int = 20) -> List[Tuple]:
     return results
 
 # ============================================================================
+# Supplier Database Operations
+# ============================================================================
+
+def add_supplier(name: str, contact_person: str, email: str, phone: str, address: str, payment_terms: str) -> Optional[int]:
+    """Add a new supplier. Returns supplier_id or None."""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return None
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO cafe_suppliers (name, contact_person, email, phone, address, payment_terms) VALUES (?, ?, ?, ?, ?, ?)",
+            (name, contact_person or None, email or None, phone or None, address or None, payment_terms or None)
+        )
+        conn.commit()
+        supplier_id = cursor.lastrowid
+        conn.close()
+        if ACTIVITY_LOGGER_AVAILABLE:
+            log_create('cafe_supplier', supplier_name=name)
+        return supplier_id
+    except sqlite3.Error as e:
+        logger.error(f"Error adding supplier: {e}")
+        return None
+
+def get_all_suppliers() -> List[Tuple]:
+    """Get all suppliers."""
+    conn = get_db_connection()
+    if not conn:
+        return []
+    cursor = conn.cursor()
+    cursor.execute("SELECT supplier_id, name, contact_person, email, phone, address, payment_terms FROM cafe_suppliers ORDER BY name")
+    results = cursor.fetchall()
+    conn.close()
+    return results
+
+def get_supplier(supplier_id: int) -> Optional[Tuple]:
+    """Get a single supplier by ID."""
+    conn = get_db_connection()
+    if not conn:
+        return None
+    cursor = conn.cursor()
+    cursor.execute("SELECT supplier_id, name, contact_person, email, phone, address, payment_terms FROM cafe_suppliers WHERE supplier_id = ?", (supplier_id,))
+    result = cursor.fetchone()
+    conn.close()
+    return result
+
+def update_supplier(supplier_id: int, name: str, contact_person: str, email: str, phone: str, address: str, payment_terms: str) -> bool:
+    """Update a supplier."""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE cafe_suppliers SET name = ?, contact_person = ?, email = ?, phone = ?, address = ?, payment_terms = ? WHERE supplier_id = ?",
+            (name, contact_person, email, phone, address, payment_terms, supplier_id)
+        )
+        conn.commit()
+        conn.close()
+        if ACTIVITY_LOGGER_AVAILABLE:
+            log_update('cafe_supplier', supplier_id=supplier_id)
+        return True
+    except sqlite3.Error as e:
+        logger.error(f"Error updating supplier: {e}")
+        return False
+
+def delete_supplier(supplier_id: int) -> bool:
+    """Delete a supplier."""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM cafe_supplier_products WHERE supplier_id = ?", (supplier_id,))
+        cursor.execute("DELETE FROM cafe_suppliers WHERE supplier_id = ?", (supplier_id,))
+        conn.commit()
+        conn.close()
+        if ACTIVITY_LOGGER_AVAILABLE:
+            log_delete('cafe_supplier', supplier_id=supplier_id)
+        return True
+    except sqlite3.Error as e:
+        logger.error(f"Error deleting supplier: {e}")
+        return False
+
+def link_supplier_to_product(supplier_id: int, product_id: int, cost_per_unit: float = None, notes: str = "") -> bool:
+    """Link a supplier to a product/inventory item."""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO cafe_supplier_products (supplier_id, product_id, cost_per_unit, notes) VALUES (?, ?, ?, ?)",
+            (supplier_id, product_id, cost_per_unit, notes)
+        )
+        conn.commit()
+        conn.close()
+        return True
+    except sqlite3.Error as e:
+        logger.error(f"Error linking supplier to product: {e}")
+        return False
+
+def get_supplier_products(supplier_id: int) -> List[Tuple]:
+    """Get products linked to a supplier."""
+    conn = get_db_connection()
+    if not conn:
+        return []
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT p.product_id, p.name, p.category, sp.cost_per_unit, sp.notes
+        FROM cafe_supplier_products sp
+        JOIN products p ON sp.product_id = p.product_id AND p.source_type = 'cafe'
+        WHERE sp.supplier_id = ?
+        ORDER BY p.name
+    ''', (supplier_id,))
+    results = cursor.fetchall()
+    conn.close()
+    return results
+
+# ============================================================================
+# Reservation Database Operations
+# ============================================================================
+
+def create_reservation(customer_name: str, student_id: str, reservation_date: str, reservation_time: str, party_size: int, notes: str = "") -> Optional[int]:
+    """Create a new reservation. Returns reservation_id or None."""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return None
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO cafe_reservations (customer_name, student_id, reservation_date, reservation_time, party_size, status, notes) VALUES (?, ?, ?, ?, ?, 'confirmed', ?)",
+            (customer_name, student_id or None, reservation_date, reservation_time, party_size, notes or None)
+        )
+        conn.commit()
+        reservation_id = cursor.lastrowid
+        conn.close()
+        if ACTIVITY_LOGGER_AVAILABLE:
+            log_create('cafe_reservation', customer=customer_name, date=reservation_date)
+        return reservation_id
+    except sqlite3.Error as e:
+        logger.error(f"Error creating reservation: {e}")
+        return None
+
+def get_all_reservations(filter_type: str = "all") -> List[Tuple]:
+    """Get reservations with optional date filter."""
+    conn = get_db_connection()
+    if not conn:
+        return []
+    cursor = conn.cursor()
+
+    date_filter = ""
+    if filter_type == "today":
+        date_filter = "AND reservation_date = DATE('now')"
+    elif filter_type == "upcoming":
+        date_filter = "AND reservation_date >= DATE('now')"
+    elif filter_type == "past":
+        date_filter = "AND reservation_date < DATE('now')"
+
+    cursor.execute(f'''
+        SELECT reservation_id, customer_name, student_id, reservation_date, reservation_time, party_size, status, notes
+        FROM cafe_reservations
+        WHERE 1=1 {date_filter}
+        ORDER BY reservation_date DESC, reservation_time DESC
+    ''')
+    results = cursor.fetchall()
+    conn.close()
+    return results
+
+def get_reservation(reservation_id: int) -> Optional[Tuple]:
+    """Get a single reservation by ID."""
+    conn = get_db_connection()
+    if not conn:
+        return None
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT reservation_id, customer_name, student_id, reservation_date, reservation_time, party_size, status, notes FROM cafe_reservations WHERE reservation_id = ?",
+        (reservation_id,)
+    )
+    result = cursor.fetchone()
+    conn.close()
+    return result
+
+def update_reservation_details(reservation_id: int, customer_name: str, reservation_date: str, reservation_time: str, party_size: int, notes: str) -> bool:
+    """Update a reservation."""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE cafe_reservations SET customer_name = ?, reservation_date = ?, reservation_time = ?, party_size = ?, notes = ? WHERE reservation_id = ?",
+            (customer_name, reservation_date, reservation_time, party_size, notes, reservation_id)
+        )
+        conn.commit()
+        conn.close()
+        if ACTIVITY_LOGGER_AVAILABLE:
+            log_update('cafe_reservation', reservation_id=reservation_id)
+        return True
+    except sqlite3.Error as e:
+        logger.error(f"Error updating reservation: {e}")
+        return False
+
+def cancel_reservation(reservation_id: int) -> bool:
+    """Cancel a reservation by setting status to cancelled."""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE cafe_reservations SET status = 'cancelled' WHERE reservation_id = ?",
+            (reservation_id,)
+        )
+        conn.commit()
+        conn.close()
+        if ACTIVITY_LOGGER_AVAILABLE:
+            log_update('cafe_reservation', reservation_id=reservation_id, action='cancelled')
+        return True
+    except sqlite3.Error as e:
+        logger.error(f"Error cancelling reservation: {e}")
+        return False
+
+# ============================================================================
+# Loyalty Points Database Operations
+# ============================================================================
+
+def get_or_create_loyalty_account(student_id: str, customer_name: str) -> Optional[Tuple]:
+    """Get or create a loyalty account. Returns (loyalty_id, student_id, customer_name, points)."""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return None
+        cursor = conn.cursor()
+        cursor.execute("SELECT loyalty_id, student_id, customer_name, points FROM cafe_loyalty WHERE student_id = ?", (student_id,))
+        result = cursor.fetchone()
+        if result:
+            conn.close()
+            return result
+        # Create new account
+        cursor.execute(
+            "INSERT INTO cafe_loyalty (student_id, customer_name, points) VALUES (?, ?, 0)",
+            (student_id, customer_name)
+        )
+        conn.commit()
+        loyalty_id = cursor.lastrowid
+        conn.close()
+        return (loyalty_id, student_id, customer_name, 0)
+    except sqlite3.Error as e:
+        logger.error(f"Error with loyalty account: {e}")
+        return None
+
+def get_loyalty_account(student_id: str) -> Optional[Tuple]:
+    """Get loyalty account by student ID."""
+    conn = get_db_connection()
+    if not conn:
+        return None
+    cursor = conn.cursor()
+    cursor.execute("SELECT loyalty_id, student_id, customer_name, points FROM cafe_loyalty WHERE student_id = ?", (student_id,))
+    result = cursor.fetchone()
+    conn.close()
+    return result
+
+def get_all_loyalty_accounts() -> List[Tuple]:
+    """Get all loyalty accounts."""
+    conn = get_db_connection()
+    if not conn:
+        return []
+    cursor = conn.cursor()
+    cursor.execute("SELECT loyalty_id, student_id, customer_name, points FROM cafe_loyalty ORDER BY points DESC")
+    results = cursor.fetchall()
+    conn.close()
+    return results
+
+def add_loyalty_points(student_id: str, points: int, reason: str = "") -> bool:
+    """Add loyalty points to an account."""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        cursor.execute("UPDATE cafe_loyalty SET points = points + ? WHERE student_id = ?", (points, student_id))
+        cursor.execute(
+            "INSERT INTO cafe_loyalty_log (student_id, points_change, transaction_type, reason) VALUES (?, ?, 'added', ?)",
+            (student_id, points, reason or 'Manual addition')
+        )
+        conn.commit()
+        conn.close()
+        if ACTIVITY_LOGGER_AVAILABLE:
+            log_activity('loyalty', 'cafe_loyalty_add', student_id=student_id, points=points)
+        return True
+    except sqlite3.Error as e:
+        logger.error(f"Error adding loyalty points: {e}")
+        return False
+
+def redeem_loyalty_points(student_id: str, points: int, reason: str = "") -> bool:
+    """Redeem loyalty points from an account."""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        # Check sufficient points
+        cursor.execute("SELECT points FROM cafe_loyalty WHERE student_id = ?", (student_id,))
+        row = cursor.fetchone()
+        if not row or row[0] < points:
+            conn.close()
+            return False
+        cursor.execute("UPDATE cafe_loyalty SET points = points - ? WHERE student_id = ?", (points, student_id))
+        cursor.execute(
+            "INSERT INTO cafe_loyalty_log (student_id, points_change, transaction_type, reason) VALUES (?, ?, 'redeemed', ?)",
+            (student_id, -points, reason or 'Manual redemption')
+        )
+        conn.commit()
+        conn.close()
+        if ACTIVITY_LOGGER_AVAILABLE:
+            log_activity('loyalty', 'cafe_loyalty_redeem', student_id=student_id, points=points)
+        return True
+    except sqlite3.Error as e:
+        logger.error(f"Error redeeming loyalty points: {e}")
+        return False
+
+def get_loyalty_log(student_id: str, limit: int = 50) -> List[Tuple]:
+    """Get loyalty points transaction log for a student."""
+    conn = get_db_connection()
+    if not conn:
+        return []
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT log_id, points_change, transaction_type, reason, created_at FROM cafe_loyalty_log WHERE student_id = ? ORDER BY created_at DESC LIMIT ?",
+        (student_id, limit)
+    )
+    results = cursor.fetchall()
+    conn.close()
+    return results
+
+# ============================================================================
+# Staff Schedule Database Operations
+# ============================================================================
+
+def add_staff_schedule(staff_name: str, position: str, day_of_week: str, start_time: str, end_time: str, notes: str = "") -> bool:
+    """Add a staff schedule entry."""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO cafe_staff_schedules (staff_name, position, day_of_week, start_time, end_time, notes) VALUES (?, ?, ?, ?, ?, ?)",
+            (staff_name, position, day_of_week, start_time, end_time, notes or None)
+        )
+        conn.commit()
+        conn.close()
+        if ACTIVITY_LOGGER_AVAILABLE:
+            log_create('cafe_staff_schedule', staff_name=staff_name, day=day_of_week)
+        return True
+    except sqlite3.Error as e:
+        logger.error(f"Error adding staff schedule: {e}")
+        return False
+
+def get_all_staff_schedules() -> List[Tuple]:
+    """Get all staff schedules."""
+    conn = get_db_connection()
+    if not conn:
+        return []
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT schedule_id, staff_name, position, day_of_week, start_time, end_time, notes
+        FROM cafe_staff_schedules
+        ORDER BY
+            CASE day_of_week
+                WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2 WHEN 'Wednesday' THEN 3
+                WHEN 'Thursday' THEN 4 WHEN 'Friday' THEN 5 WHEN 'Saturday' THEN 6
+                WHEN 'Sunday' THEN 7 ELSE 8
+            END,
+            start_time
+    ''')
+    results = cursor.fetchall()
+    conn.close()
+    return results
+
+def get_staff_schedule_by_name(staff_name: str) -> List[Tuple]:
+    """Get schedules for a specific staff member."""
+    conn = get_db_connection()
+    if not conn:
+        return []
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT schedule_id, staff_name, position, day_of_week, start_time, end_time, notes FROM cafe_staff_schedules WHERE LOWER(staff_name) LIKE ? ORDER BY CASE day_of_week WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2 WHEN 'Wednesday' THEN 3 WHEN 'Thursday' THEN 4 WHEN 'Friday' THEN 5 WHEN 'Saturday' THEN 6 WHEN 'Sunday' THEN 7 ELSE 8 END",
+        (f"%{staff_name.lower()}%",)
+    )
+    results = cursor.fetchall()
+    conn.close()
+    return results
+
+def update_staff_schedule_entry(schedule_id: int, day_of_week: str, start_time: str, end_time: str, notes: str) -> bool:
+    """Update a staff schedule entry."""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE cafe_staff_schedules SET day_of_week = ?, start_time = ?, end_time = ?, notes = ? WHERE schedule_id = ?",
+            (day_of_week, start_time, end_time, notes, schedule_id)
+        )
+        conn.commit()
+        conn.close()
+        if ACTIVITY_LOGGER_AVAILABLE:
+            log_update('cafe_staff_schedule', schedule_id=schedule_id)
+        return True
+    except sqlite3.Error as e:
+        logger.error(f"Error updating staff schedule: {e}")
+        return False
+
+def delete_staff_schedule_entry(schedule_id: int) -> bool:
+    """Delete a staff schedule entry."""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return False
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM cafe_staff_schedules WHERE schedule_id = ?", (schedule_id,))
+        conn.commit()
+        conn.close()
+        if ACTIVITY_LOGGER_AVAILABLE:
+            log_delete('cafe_staff_schedule', schedule_id=schedule_id)
+        return True
+    except sqlite3.Error as e:
+        logger.error(f"Error deleting staff schedule: {e}")
+        return False
+
+def get_unique_staff_names() -> List[str]:
+    """Get unique staff names from schedules."""
+    conn = get_db_connection()
+    if not conn:
+        return []
+    cursor = conn.cursor()
+    cursor.execute("SELECT DISTINCT staff_name FROM cafe_staff_schedules ORDER BY staff_name")
+    results = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    return results
+
+# ============================================================================
 # CLI Menu Functions
 # ============================================================================
 
@@ -675,6 +1199,30 @@ def display_cafe_menu() -> None:
             options.append('reports')
             option_num += 1
 
+        # Supplier management
+        if auth.check_permission('manage_cafe_inventory') or auth.check_permission('manage_cafe'):
+            print(f"{option_num}. {get_text('cafe.menu.suppliers', default='Supplier Management')}")
+            options.append('suppliers')
+            option_num += 1
+
+        # Reservations
+        if auth.check_permission('process_cafe_order') or auth.check_permission('manage_cafe'):
+            print(f"{option_num}. {get_text('cafe.menu.reservations', default='Reservations')}")
+            options.append('reservations')
+            option_num += 1
+
+        # Loyalty points
+        if auth.check_permission('process_cafe_order') or auth.check_permission('manage_cafe'):
+            print(f"{option_num}. {get_text('cafe.menu.loyalty', default='Loyalty Points')}")
+            options.append('loyalty')
+            option_num += 1
+
+        # Staff scheduling
+        if auth.check_permission('manage_cafe') or auth.check_permission('manage_cafe_inventory'):
+            print(f"{option_num}. {get_text('cafe.menu.scheduling', default='Staff Scheduling')}")
+            options.append('scheduling')
+            option_num += 1
+
         # Language option
         print(f"{option_num}. {get_text('cafe.menu.language', default='Language')}")
         options.append('language')
@@ -702,6 +1250,14 @@ def display_cafe_menu() -> None:
                     inventory_management_cli()
                 elif selected == 'reports':
                     reports_cli()
+                elif selected == 'suppliers':
+                    supplier_management_cli()
+                elif selected == 'reservations':
+                    reservations_cli()
+                elif selected == 'loyalty':
+                    loyalty_points_cli()
+                elif selected == 'scheduling':
+                    staff_scheduling_cli()
                 elif selected == 'language':
                     display_language_menu_option()
 
@@ -1281,6 +1837,749 @@ def reports_cli() -> None:
 
         elif choice == '6':
             break
+
+def supplier_management_cli() -> None:
+    """Supplier management submenu."""
+    while True:
+        print("\n--- Supplier Management ---")
+        print("1. View All Suppliers")
+        print("2. Add New Supplier")
+        print("3. View Supplier Details")
+        print("4. Update Supplier")
+        print("5. Delete Supplier")
+        print("6. Link Supplier to Menu Item")
+        print("7. Back")
+
+        choice = input("\nEnter choice: ").strip()
+
+        if choice == '1':
+            suppliers = get_all_suppliers()
+            if not suppliers:
+                print("\nNo suppliers found.")
+                input("\nPress Enter to continue...")
+                continue
+
+            print(f"\n{'=' * 90}")
+            print(f"{'ID':<5} {'Name':<25} {'Contact':<20} {'Email':<25} {'Phone':<15}")
+            print(f"{'=' * 90}")
+            for s in suppliers:
+                sid, name, contact, email, phone, addr, terms = s
+                print(f"{sid:<5} {(name or '')[:24]:<25} {(contact or 'N/A')[:19]:<20} {(email or 'N/A')[:24]:<25} {(phone or 'N/A')[:14]:<15}")
+            print(f"\nTotal: {len(suppliers)} suppliers")
+            input("\nPress Enter to continue...")
+
+        elif choice == '2':
+            print("\n--- Add New Supplier ---")
+            name = input("Supplier name: ").strip()
+            if not name:
+                print("Name is required.")
+                continue
+            contact_person = input("Contact person (optional): ").strip()
+            email = input("Email (optional): ").strip()
+            phone = input("Phone (optional): ").strip()
+            address = input("Address (optional): ").strip()
+            payment_terms = input("Payment terms (e.g. Net 30, COD, optional): ").strip()
+
+            supplier_id = add_supplier(name, contact_person, email, phone, address, payment_terms)
+            if supplier_id:
+                print(f"\n Supplier '{name}' added with ID: {supplier_id}")
+            else:
+                print("\n Failed to add supplier.")
+
+        elif choice == '3':
+            try:
+                supplier_id = int(input("Enter Supplier ID: "))
+            except ValueError:
+                print("Invalid ID.")
+                continue
+
+            supplier = get_supplier(supplier_id)
+            if not supplier:
+                print("Supplier not found.")
+                continue
+
+            sid, name, contact, email, phone, address, terms = supplier
+            print(f"\n{'=' * 50}")
+            print(f"SUPPLIER DETAILS (ID: {sid})")
+            print(f"{'=' * 50}")
+            print(f"Name:           {name}")
+            print(f"Contact Person: {contact or 'N/A'}")
+            print(f"Email:          {email or 'N/A'}")
+            print(f"Phone:          {phone or 'N/A'}")
+            print(f"Address:        {address or 'N/A'}")
+            print(f"Payment Terms:  {terms or 'N/A'}")
+
+            # Show linked products
+            products = get_supplier_products(supplier_id)
+            if products:
+                print(f"\nLinked Menu Items:")
+                print(f"  {'ID':<5} {'Item':<25} {'Category':<15} {'Cost/Unit':<10}")
+                print(f"  {'-' * 55}")
+                for pid, pname, pcat, cost, pnotes in products:
+                    cost_str = f"£{cost:.2f}" if cost else "N/A"
+                    print(f"  {pid:<5} {pname[:24]:<25} {pcat:<15} {cost_str:<10}")
+            else:
+                print("\nNo menu items linked to this supplier.")
+            input("\nPress Enter to continue...")
+
+        elif choice == '4':
+            try:
+                supplier_id = int(input("Enter Supplier ID to update: "))
+            except ValueError:
+                print("Invalid ID.")
+                continue
+
+            supplier = get_supplier(supplier_id)
+            if not supplier:
+                print("Supplier not found.")
+                continue
+
+            sid, name, contact, email, phone, address, terms = supplier
+            print(f"\nUpdating: {name}")
+            print("(Press Enter to keep current value)")
+
+            new_name = input(f"Name [{name}]: ").strip() or name
+            new_contact = input(f"Contact [{contact or ''}]: ").strip() or contact
+            new_email = input(f"Email [{email or ''}]: ").strip() or email
+            new_phone = input(f"Phone [{phone or ''}]: ").strip() or phone
+            new_address = input(f"Address [{address or ''}]: ").strip() or address
+            new_terms = input(f"Payment Terms [{terms or ''}]: ").strip() or terms
+
+            if update_supplier(supplier_id, new_name, new_contact, new_email, new_phone, new_address, new_terms):
+                print(f"\n Supplier '{new_name}' updated!")
+            else:
+                print("\n Failed to update supplier.")
+
+        elif choice == '5':
+            try:
+                supplier_id = int(input("Enter Supplier ID to delete: "))
+            except ValueError:
+                print("Invalid ID.")
+                continue
+
+            supplier = get_supplier(supplier_id)
+            if not supplier:
+                print("Supplier not found.")
+                continue
+
+            confirm = input(f"Delete supplier '{supplier[1]}'? This also removes product links. (y/n): ").strip().lower()
+            if confirm == 'y':
+                if delete_supplier(supplier_id):
+                    print(f"\n Supplier '{supplier[1]}' deleted!")
+                else:
+                    print("\n Failed to delete supplier.")
+
+        elif choice == '6':
+            # Link supplier to menu item
+            try:
+                supplier_id = int(input("Enter Supplier ID: "))
+            except ValueError:
+                print("Invalid ID.")
+                continue
+
+            supplier = get_supplier(supplier_id)
+            if not supplier:
+                print("Supplier not found.")
+                continue
+
+            items = get_all_menu_items()
+            if not items:
+                print("No menu items available.")
+                continue
+
+            print(f"\n{'ID':<5} {'Item':<25} {'Category':<15}")
+            print("-" * 45)
+            for item in items:
+                item_id, name, cat, desc, price, available, stock = item
+                print(f"{item_id:<5} {name[:24]:<25} {cat:<15}")
+
+            try:
+                product_id = int(input("\nEnter Item ID to link: "))
+            except ValueError:
+                print("Invalid ID.")
+                continue
+
+            cost_input = input("Cost per unit from this supplier (optional, press Enter to skip): ").strip()
+            cost = float(cost_input) if cost_input else None
+            notes = input("Notes (optional): ").strip()
+
+            if link_supplier_to_product(supplier_id, product_id, cost, notes):
+                print(f"\n Supplier '{supplier[1]}' linked to item #{product_id}!")
+            else:
+                print("\n Failed to link supplier to item.")
+
+        elif choice == '7':
+            break
+
+
+def reservations_cli() -> None:
+    """Reservations management submenu."""
+    while True:
+        print("\n--- Reservations ---")
+        print("1. Create Reservation")
+        print("2. View Today's Reservations")
+        print("3. View Upcoming Reservations")
+        print("4. View All Reservations")
+        print("5. View Reservation Details")
+        print("6. Update Reservation")
+        print("7. Cancel Reservation")
+        print("8. Back")
+
+        choice = input("\nEnter choice: ").strip()
+
+        if choice == '1':
+            print("\n--- Create New Reservation ---")
+            customer_name = input("Customer name: ").strip()
+            if not customer_name:
+                print("Customer name is required.")
+                continue
+            student_id = input("Student ID (optional, press Enter to skip): ").strip()
+
+            res_date = input("Reservation date (YYYY-MM-DD): ").strip()
+            try:
+                parsed_date = datetime.strptime(res_date, "%Y-%m-%d").date()
+                if parsed_date < datetime.now().date():
+                    print("Date cannot be in the past.")
+                    continue
+            except ValueError:
+                print("Invalid date format. Use YYYY-MM-DD.")
+                continue
+
+            res_time = input("Reservation time (HH:MM, 24-hour): ").strip()
+            try:
+                datetime.strptime(res_time, "%H:%M")
+            except ValueError:
+                print("Invalid time format. Use HH:MM.")
+                continue
+
+            try:
+                party_size = int(input("Party size: "))
+                if party_size < 1:
+                    print("Party size must be at least 1.")
+                    continue
+            except ValueError:
+                print("Invalid party size.")
+                continue
+
+            notes = input("Notes (optional): ").strip()
+
+            reservation_id = create_reservation(customer_name, student_id, res_date, res_time, party_size, notes)
+            if reservation_id:
+                print(f"\n Reservation #{reservation_id} created!")
+                print(f"  {customer_name} | {res_date} at {res_time} | Party of {party_size}")
+            else:
+                print("\n Failed to create reservation.")
+
+        elif choice in ('2', '3', '4'):
+            filter_map = {'2': 'today', '3': 'upcoming', '4': 'all'}
+            label_map = {'2': "Today's", '3': 'Upcoming', '4': 'All'}
+            reservations = get_all_reservations(filter_map[choice])
+            if not reservations:
+                print(f"\nNo {label_map[choice].lower()} reservations found.")
+                input("\nPress Enter to continue...")
+                continue
+
+            print(f"\n{'=' * 100}")
+            print(f"{'ID':<6} {'Customer':<20} {'Date':<12} {'Time':<8} {'Party':<7} {'Status':<12} {'Notes':<20}")
+            print(f"{'=' * 100}")
+            for res in reservations:
+                rid, cname, sid, rdate, rtime, psize, status, rnotes = res
+                print(f"{rid:<6} {cname[:19]:<20} {rdate:<12} {rtime:<8} {psize:<7} {status:<12} {(rnotes or '')[:19]:<20}")
+            print(f"\nTotal: {len(reservations)} reservations")
+            input("\nPress Enter to continue...")
+
+        elif choice == '5':
+            try:
+                reservation_id = int(input("Enter Reservation ID: "))
+            except ValueError:
+                print("Invalid ID.")
+                continue
+
+            res = get_reservation(reservation_id)
+            if not res:
+                print("Reservation not found.")
+                continue
+
+            rid, cname, sid, rdate, rtime, psize, status, rnotes = res
+            print(f"\n{'=' * 50}")
+            print(f"RESERVATION #{rid}")
+            print(f"{'=' * 50}")
+            print(f"Customer:   {cname}")
+            print(f"Student ID: {sid or 'N/A'}")
+            print(f"Date:       {rdate}")
+            print(f"Time:       {rtime}")
+            print(f"Party Size: {psize}")
+            print(f"Status:     {status}")
+            print(f"Notes:      {rnotes or 'N/A'}")
+            input("\nPress Enter to continue...")
+
+        elif choice == '6':
+            try:
+                reservation_id = int(input("Enter Reservation ID to update: "))
+            except ValueError:
+                print("Invalid ID.")
+                continue
+
+            res = get_reservation(reservation_id)
+            if not res:
+                print("Reservation not found.")
+                continue
+
+            if res[6] == 'cancelled':
+                print("Cannot update a cancelled reservation.")
+                continue
+
+            rid, cname, sid, rdate, rtime, psize, status, rnotes = res
+            print(f"\nUpdating Reservation #{rid}")
+            print("(Press Enter to keep current value)")
+
+            new_name = input(f"Customer [{cname}]: ").strip() or cname
+
+            new_date = input(f"Date [{rdate}] (YYYY-MM-DD): ").strip()
+            if new_date:
+                try:
+                    datetime.strptime(new_date, "%Y-%m-%d")
+                except ValueError:
+                    print("Invalid date. Keeping current.")
+                    new_date = rdate
+            else:
+                new_date = rdate
+
+            new_time = input(f"Time [{rtime}] (HH:MM): ").strip()
+            if new_time:
+                try:
+                    datetime.strptime(new_time, "%H:%M")
+                except ValueError:
+                    print("Invalid time. Keeping current.")
+                    new_time = rtime
+            else:
+                new_time = rtime
+
+            size_input = input(f"Party size [{psize}]: ").strip()
+            try:
+                new_size = int(size_input) if size_input else psize
+            except ValueError:
+                new_size = psize
+
+            new_notes = input(f"Notes [{rnotes or ''}]: ").strip()
+            if not new_notes:
+                new_notes = rnotes or ""
+
+            if update_reservation_details(reservation_id, new_name, new_date, new_time, new_size, new_notes):
+                print(f"\n Reservation #{reservation_id} updated!")
+            else:
+                print("\n Failed to update reservation.")
+
+        elif choice == '7':
+            try:
+                reservation_id = int(input("Enter Reservation ID to cancel: "))
+            except ValueError:
+                print("Invalid ID.")
+                continue
+
+            res = get_reservation(reservation_id)
+            if not res:
+                print("Reservation not found.")
+                continue
+
+            if res[6] == 'cancelled':
+                print("Reservation is already cancelled.")
+                continue
+
+            confirm = input(f"Cancel reservation #{reservation_id} for '{res[1]}'? (y/n): ").strip().lower()
+            if confirm == 'y':
+                if cancel_reservation(reservation_id):
+                    print(f"\n Reservation #{reservation_id} cancelled.")
+                else:
+                    print("\n Failed to cancel reservation.")
+
+        elif choice == '8':
+            break
+
+
+def loyalty_points_cli() -> None:
+    """Loyalty points management submenu."""
+    while True:
+        print("\n--- Loyalty Points ---")
+        print("1. View All Loyalty Accounts")
+        print("2. Look Up Account")
+        print("3. Register New Account")
+        print("4. Add Points")
+        print("5. Redeem Points")
+        print("6. View Points History")
+        print("7. Back")
+
+        choice = input("\nEnter choice: ").strip()
+
+        if choice == '1':
+            accounts = get_all_loyalty_accounts()
+            if not accounts:
+                print("\nNo loyalty accounts found.")
+                input("\nPress Enter to continue...")
+                continue
+
+            print(f"\n{'=' * 65}")
+            print(f"{'ID':<6} {'Student ID':<15} {'Name':<25} {'Points':<10}")
+            print(f"{'=' * 65}")
+            for acc in accounts:
+                lid, sid, cname, points = acc
+                print(f"{lid:<6} {sid:<15} {cname[:24]:<25} {points:<10}")
+            print(f"\nTotal: {len(accounts)} accounts")
+            input("\nPress Enter to continue...")
+
+        elif choice == '2':
+            student_id = input("Enter Student ID: ").strip()
+            if not student_id:
+                print("Student ID is required.")
+                continue
+
+            account = get_loyalty_account(student_id)
+            if not account:
+                print(f"No loyalty account found for Student ID: {student_id}")
+                create = input("Create a new account? (y/n): ").strip().lower()
+                if create == 'y':
+                    cname = input("Customer name: ").strip()
+                    if cname:
+                        account = get_or_create_loyalty_account(student_id, cname)
+                        if account:
+                            print(f"\n Account created for {cname}!")
+                if not account:
+                    continue
+
+            lid, sid, cname, points = account
+            print(f"\n{'=' * 40}")
+            print(f"LOYALTY ACCOUNT")
+            print(f"{'=' * 40}")
+            print(f"Student ID: {sid}")
+            print(f"Name:       {cname}")
+            print(f"Points:     {points}")
+            # Show conversion: 100 points = £1 discount
+            print(f"Value:      £{points / 100:.2f} (100 pts = £1)")
+            input("\nPress Enter to continue...")
+
+        elif choice == '3':
+            student_id = input("Student ID: ").strip()
+            if not student_id:
+                print("Student ID is required.")
+                continue
+            customer_name = input("Customer name: ").strip()
+            if not customer_name:
+                print("Customer name is required.")
+                continue
+
+            account = get_or_create_loyalty_account(student_id, customer_name)
+            if account:
+                print(f"\n Loyalty account ready for {customer_name} (Student: {student_id})")
+                print(f"  Current points: {account[3]}")
+            else:
+                print("\n Failed to create loyalty account.")
+
+        elif choice == '4':
+            student_id = input("Enter Student ID: ").strip()
+            if not student_id:
+                print("Student ID is required.")
+                continue
+
+            account = get_loyalty_account(student_id)
+            if not account:
+                print("No loyalty account found for this student.")
+                continue
+
+            lid, sid, cname, current_points = account
+            print(f"\nCustomer: {cname} | Current Points: {current_points}")
+
+            try:
+                points = int(input("Points to add: "))
+                if points < 1:
+                    print("Points must be greater than zero.")
+                    continue
+            except ValueError:
+                print("Invalid number.")
+                continue
+
+            reason = input("Reason (optional): ").strip()
+
+            if add_loyalty_points(student_id, points, reason):
+                print(f"\n {points} points added to {cname}'s account!")
+                print(f"  New balance: {current_points + points} points")
+            else:
+                print("\n Failed to add points.")
+
+        elif choice == '5':
+            student_id = input("Enter Student ID: ").strip()
+            if not student_id:
+                print("Student ID is required.")
+                continue
+
+            account = get_loyalty_account(student_id)
+            if not account:
+                print("No loyalty account found for this student.")
+                continue
+
+            lid, sid, cname, current_points = account
+            print(f"\nCustomer: {cname} | Current Points: {current_points}")
+            print(f"Redeemable value: £{current_points / 100:.2f} (100 pts = £1)")
+
+            if current_points < 1:
+                print("No points available to redeem.")
+                continue
+
+            try:
+                points = int(input(f"Points to redeem (max {current_points}): "))
+                if points < 1:
+                    print("Points must be greater than zero.")
+                    continue
+                if points > current_points:
+                    print(f"Insufficient points. Maximum: {current_points}")
+                    continue
+            except ValueError:
+                print("Invalid number.")
+                continue
+
+            reason = input("Reason (optional): ").strip()
+
+            if redeem_loyalty_points(student_id, points, reason):
+                print(f"\n {points} points redeemed from {cname}'s account!")
+                print(f"  Discount value: £{points / 100:.2f}")
+                print(f"  Remaining balance: {current_points - points} points")
+            else:
+                print("\n Failed to redeem points.")
+
+        elif choice == '6':
+            student_id = input("Enter Student ID: ").strip()
+            if not student_id:
+                print("Student ID is required.")
+                continue
+
+            account = get_loyalty_account(student_id)
+            if not account:
+                print("No loyalty account found for this student.")
+                continue
+
+            log = get_loyalty_log(student_id)
+            if not log:
+                print(f"\nNo transaction history for {account[2]}.")
+                input("\nPress Enter to continue...")
+                continue
+
+            print(f"\n{'=' * 80}")
+            print(f"LOYALTY POINTS HISTORY - {account[2]} (Balance: {account[3]} pts)")
+            print(f"{'=' * 80}")
+            print(f"{'ID':<6} {'Change':<10} {'Type':<12} {'Reason':<25} {'Date':<20}")
+            print("-" * 80)
+            for entry in log:
+                log_id, change, trans_type, reason, date = entry
+                change_str = f"+{change}" if change > 0 else str(change)
+                print(f"{log_id:<6} {change_str:<10} {trans_type:<12} {(reason or '')[:24]:<25} {str(date)[:19]:<20}")
+            input("\nPress Enter to continue...")
+
+        elif choice == '7':
+            break
+
+
+def staff_scheduling_cli() -> None:
+    """Staff scheduling submenu."""
+    DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    POSITIONS = ["Barista", "Server", "Kitchen", "Supervisor", "Manager"]
+    TEMPLATE_SCHEDULES = [
+        ("Monday-Friday: 9AM-5PM", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], "09:00", "17:00"),
+        ("Monday-Friday: 8AM-4PM", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], "08:00", "16:00"),
+        ("Monday-Friday: 12PM-8PM", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], "12:00", "20:00"),
+        ("Weekends Only: 10AM-6PM", ["Saturday", "Sunday"], "10:00", "18:00"),
+        ("Monday/Wednesday/Friday: 9AM-5PM", ["Monday", "Wednesday", "Friday"], "09:00", "17:00"),
+    ]
+
+    while True:
+        print("\n--- Staff Scheduling ---")
+        print("1. View All Schedules")
+        print("2. View Staff Member Schedule")
+        print("3. Add Shift")
+        print("4. Add Shift from Template")
+        print("5. Update Shift")
+        print("6. Delete Shift")
+        print("7. Back")
+
+        choice = input("\nEnter choice: ").strip()
+
+        if choice == '1':
+            schedules = get_all_staff_schedules()
+            if not schedules:
+                print("\nNo schedules found.")
+                input("\nPress Enter to continue...")
+                continue
+
+            print(f"\n{'=' * 90}")
+            print(f"{'ID':<5} {'Staff':<20} {'Position':<12} {'Day':<12} {'Start':<8} {'End':<8} {'Notes':<20}")
+            print(f"{'=' * 90}")
+            current_day = None
+            for sched in schedules:
+                sid, sname, pos, day, start, end, notes = sched
+                if day != current_day:
+                    current_day = day
+                    print(f"\n--- {day} ---")
+                print(f"{sid:<5} {sname[:19]:<20} {pos:<12} {day:<12} {start:<8} {end:<8} {(notes or '')[:19]:<20}")
+            print(f"\nTotal: {len(schedules)} shifts")
+            input("\nPress Enter to continue...")
+
+        elif choice == '2':
+            staff_name = input("Enter staff name (or part of name): ").strip()
+            if not staff_name:
+                print("Name is required.")
+                continue
+
+            schedules = get_staff_schedule_by_name(staff_name)
+            if not schedules:
+                print(f"No schedules found for '{staff_name}'.")
+                input("\nPress Enter to continue...")
+                continue
+
+            staff_display = schedules[0][1]
+            print(f"\n{'=' * 60}")
+            print(f"SCHEDULE FOR: {staff_display}")
+            print(f"{'=' * 60}")
+            print(f"{'ID':<5} {'Day':<12} {'Start':<8} {'End':<8} {'Notes':<20}")
+            print("-" * 55)
+            for sched in schedules:
+                sid, sname, pos, day, start, end, notes = sched
+                print(f"{sid:<5} {day:<12} {start:<8} {end:<8} {(notes or '')[:19]:<20}")
+            input("\nPress Enter to continue...")
+
+        elif choice == '3':
+            print("\n--- Add New Shift ---")
+            staff_name = input("Staff name: ").strip()
+            if not staff_name:
+                print("Staff name is required.")
+                continue
+
+            print("\nPositions: " + ", ".join(f"{i+1}. {p}" for i, p in enumerate(POSITIONS)))
+            try:
+                pos_choice = int(input("Select position: "))
+                position = POSITIONS[pos_choice - 1] if 1 <= pos_choice <= len(POSITIONS) else "Barista"
+            except (ValueError, IndexError):
+                position = "Barista"
+
+            print("\nDays: " + ", ".join(f"{i+1}. {d}" for i, d in enumerate(DAYS_OF_WEEK)))
+            try:
+                day_choice = int(input("Select day: "))
+                day = DAYS_OF_WEEK[day_choice - 1] if 1 <= day_choice <= len(DAYS_OF_WEEK) else None
+            except (ValueError, IndexError):
+                day = None
+
+            if not day:
+                print("Invalid day selection.")
+                continue
+
+            start_time = input("Start time (HH:MM, 24-hour): ").strip()
+            try:
+                datetime.strptime(start_time, "%H:%M")
+            except ValueError:
+                print("Invalid time format.")
+                continue
+
+            end_time = input("End time (HH:MM, 24-hour): ").strip()
+            try:
+                datetime.strptime(end_time, "%H:%M")
+            except ValueError:
+                print("Invalid time format.")
+                continue
+
+            notes = input("Notes (optional): ").strip()
+
+            if add_staff_schedule(staff_name, position, day, start_time, end_time, notes):
+                print(f"\n Shift added: {staff_name} - {day} {start_time}-{end_time}")
+            else:
+                print("\n Failed to add shift.")
+
+        elif choice == '4':
+            print("\n--- Add Shift from Template ---")
+            staff_name = input("Staff name: ").strip()
+            if not staff_name:
+                print("Staff name is required.")
+                continue
+
+            print("\nPositions: " + ", ".join(f"{i+1}. {p}" for i, p in enumerate(POSITIONS)))
+            try:
+                pos_choice = int(input("Select position: "))
+                position = POSITIONS[pos_choice - 1] if 1 <= pos_choice <= len(POSITIONS) else "Barista"
+            except (ValueError, IndexError):
+                position = "Barista"
+
+            print("\nTemplate Schedules:")
+            for i, (desc, days, start, end) in enumerate(TEMPLATE_SCHEDULES, 1):
+                print(f"  {i}. {desc}")
+
+            try:
+                tmpl_choice = int(input("Select template: "))
+                if 1 <= tmpl_choice <= len(TEMPLATE_SCHEDULES):
+                    desc, days, start, end = TEMPLATE_SCHEDULES[tmpl_choice - 1]
+                    added = 0
+                    for day in days:
+                        if add_staff_schedule(staff_name, position, day, start, end):
+                            added += 1
+                    print(f"\n {added} shifts added for {staff_name} using template '{desc}'")
+                else:
+                    print("Invalid selection.")
+            except ValueError:
+                print("Invalid input.")
+
+        elif choice == '5':
+            try:
+                schedule_id = int(input("Enter Shift ID to update: "))
+            except ValueError:
+                print("Invalid ID.")
+                continue
+
+            # Look up current details
+            schedules = get_all_staff_schedules()
+            current = None
+            for s in schedules:
+                if s[0] == schedule_id:
+                    current = s
+                    break
+
+            if not current:
+                print("Shift not found.")
+                continue
+
+            sid, sname, pos, day, start, end, notes = current
+            print(f"\nUpdating shift for {sname}: {day} {start}-{end}")
+            print("(Press Enter to keep current value)")
+
+            print("\nDays: " + ", ".join(f"{i+1}. {d}" for i, d in enumerate(DAYS_OF_WEEK)))
+            day_input = input(f"Day [{day}]: ").strip()
+            try:
+                new_day = DAYS_OF_WEEK[int(day_input) - 1] if day_input else day
+            except (ValueError, IndexError):
+                new_day = day
+
+            new_start = input(f"Start time [{start}] (HH:MM): ").strip() or start
+            new_end = input(f"End time [{end}] (HH:MM): ").strip() or end
+            new_notes = input(f"Notes [{notes or ''}]: ").strip()
+            if not new_notes:
+                new_notes = notes or ""
+
+            if update_staff_schedule_entry(schedule_id, new_day, new_start, new_end, new_notes):
+                print(f"\n Shift #{schedule_id} updated!")
+            else:
+                print("\n Failed to update shift.")
+
+        elif choice == '6':
+            try:
+                schedule_id = int(input("Enter Shift ID to delete: "))
+            except ValueError:
+                print("Invalid ID.")
+                continue
+
+            confirm = input(f"Delete shift #{schedule_id}? (y/n): ").strip().lower()
+            if confirm == 'y':
+                if delete_staff_schedule_entry(schedule_id):
+                    print(f"\n Shift #{schedule_id} deleted!")
+                else:
+                    print("\n Failed to delete shift.")
+
+        elif choice == '7':
+            break
+
 
 # Export functions for use in cli_main.py
 __all__ = [

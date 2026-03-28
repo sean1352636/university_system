@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.54.0 — 2026-03-28](#8540---2026-03-28)
 - [8.53.0 — 2026-03-28](#8530---2026-03-28)
 - [8.52.0 — 2026-03-28](#8520---2026-03-28)
 - [8.51.0 — 2026-03-28](#8510---2026-03-28)
@@ -154,6 +155,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`secondary_school/tests/test_services.py`** — Removed 4 inline fixtures and 4 direct imports; services now provided by conftest
 - **`Makefile`** — Added `test-gui` target (runs `pytest -m gui`) and `test-auth` target (runs all shared auth + security tests); updated `.PHONY` with all test targets
 - **`.github/workflows/ci.yml`** — Added GUI test step after coverage run; runs college/secondary/primary GUI tests with `-m gui` marker
+
+---
+
+## [8.54.0] — 2026-03-28
+
+### University System — Port missing CLI modules from legacy codebase
+
+#### Added
+
+- **`academics/cli/transfer_credits_cli.py`** — New CLI for transfer credit management: add, view, search, approve, reject, delete, and generate reports with role-based access control
+- **`academics/cli/accreditation_cli.py`** — New CLI for accreditation support: upload documents, schedule reviews, manage standards (add/view/update)
+- **`academics/cli/course_catalog_cli.py`** — New CLI for course catalog: list/search/view courses, manage prerequisites (with circular dependency detection), manage course offerings, role-gated admin operations
+
+#### Changed
+
+- **`services/cli/cafe_system_cli.py`** — Enhanced with 4 new restaurant features from legacy system: supplier management (CRUD + product linking), reservations (create/view/update/cancel), loyalty points (register/add/redeem with transaction log), and staff scheduling (shifts, templates, per-staff views)
+
+#### Removed
+
+- **`university-manager-main/`** — Removed legacy codebase directory (31 files); all functionality has been ported to or already existed in `education_system/university_system/`
 
 ---
 
