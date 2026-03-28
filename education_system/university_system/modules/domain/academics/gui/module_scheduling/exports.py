@@ -207,7 +207,7 @@ def _export_timetable_to_ical(self, timetable_data):
 
                 # Generate unique UID
                 uid_source = f"{module_code}-{day}-{start_time_str}-{end_time_str}"
-                uid = hashlib.md5(uid_source.encode()).hexdigest()
+                uid = hashlib.sha256(uid_source.encode()).hexdigest()
 
                 # Format timestamps for iCal (UTC format)
                 dtstart = start_dt.strftime("%Y%m%dT%H%M%S")

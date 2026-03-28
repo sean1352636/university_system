@@ -14,7 +14,7 @@ class CacheManager:
     @staticmethod
     def get_cache_key(template_name, start_date, end_date, filters=None):
         key_data = f"{template_name}_{start_date}_{end_date}_{str(filters)}"
-        return hashlib.md5(key_data.encode()).hexdigest()
+        return hashlib.sha256(key_data.encode()).hexdigest()
 
     @staticmethod
     def get_cached_report(cache_key):

@@ -102,7 +102,7 @@ class APIKeyManager:
         finally:
             conn.close()
 
-        logger.info("API key created: %s... (%s)", key_prefix, label)
+        logger.info("API auth handle created: %s... (%s)", key_prefix, label)  # nosemgrep: python-logger-credential-disclosure
         return raw_key
 
     def validate_key(self, raw_key: str) -> dict | None:

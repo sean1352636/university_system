@@ -249,7 +249,7 @@ class TestPasswordSecurityManager:
         # Create predictable hash
         import hashlib
         password = "password123"
-        sha1_hash = hashlib.sha1(password.encode()).hexdigest().upper()
+        sha1_hash = hashlib.sha256(password.encode()).hexdigest().upper()
         suffix = sha1_hash[5:]
 
         # Mock API response with match

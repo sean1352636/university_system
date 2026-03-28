@@ -276,7 +276,7 @@ class UploadMixin:
 
         # Generate file hash for duplicate detection
         with open(file_path, 'rb') as f:
-            file_hash = hashlib.md5(f.read()).hexdigest()
+            file_hash = hashlib.sha256(f.read()).hexdigest()
 
         original_filename = os.path.basename(file_path)
 

@@ -57,8 +57,8 @@ class RateLimiter:
         """Rate limit key based on client IP address."""
         forwarded = request.headers.get("X-Forwarded-For")
         if forwarded:
-            return f"ip:{forwarded.split(',')[0].strip()}"
-        return f"ip:{request.remote_addr or 'unknown'}"
+            return f"ip:{forwarded.split(',')[0].strip()}"  # nosemgrep: python.flask.security.audit.directly-returned-format-string
+        return f"ip:{request.remote_addr or 'unknown'}"  # nosemgrep: python.flask.security.audit.directly-returned-format-string
 
     @staticmethod
     def user_key() -> str:
@@ -68,11 +68,11 @@ class RateLimiter:
         """
         user = getattr(g, "current_user", None)
         if user and user.get("user_id"):
-            return f"user:{user['user_id']}"
+            return f"user:{user['user_id']}"  # nosemgrep: python.flask.security.audit.directly-returned-format-string
         # Check API key
         api_info = getattr(g, "api_key_info", None)
         if api_info:
-            return f"apikey:{api_info['id']}"
+            return f"apikey:{api_info['id']}"  # nosemgrep: python.flask.security.audit.directly-returned-format-string
         # Fallback to IP
         return RateLimiter.ip_key()
 
@@ -82,8 +82,8 @@ class RateLimiter:
         user = getattr(g, "current_user", None)
         ip = request.headers.get("X-Forwarded-For", "").split(",")[0].strip() or request.remote_addr or "unknown"
         if user and user.get("user_id"):
-            return f"user:{user['user_id']}+ip:{ip}"
-        return f"ip:{ip}"
+            return f"user:{user['user_id']}+ip:{ip}"  # nosemgrep: python.flask.security.audit.directly-returned-format-string
+        return f"ip:{ip}"  # nosemgrep: python.flask.security.audit.directly-returned-format-string
 
     # ── Decorator ──────────────────────────────────────────────────────
 

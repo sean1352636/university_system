@@ -423,7 +423,7 @@ class WebAuthnService:
                 conn.commit()
 
             logger.info(
-                "WebAuthn credential registered for user '%s': %s",
+                "WebAuthn passkey registered for user '%s': %s",
                 user_id, credential_id_b64[:16] + '...',
             )
 
@@ -727,14 +727,14 @@ class WebAuthnService:
                     })
 
                 logger.debug(
-                    "Listed %d WebAuthn credentials for user '%s'",
+                    "Listed %d WebAuthn passkeys for user '%s'",
                     len(credentials), user_id,
                 )
                 return credentials
 
         except sqlite3.Error as e:
             logger.error(
-                "Failed to list WebAuthn credentials for user '%s': %s",
+                "Failed to list WebAuthn passkeys for user '%s': %s",
                 user_id, e,
             )
             return []
@@ -788,7 +788,7 @@ class WebAuthnService:
                 conn.commit()
 
             logger.info(
-                "WebAuthn credential revoked: %s (user: %s, device: %s)",
+                "WebAuthn passkey revoked: %s (user: %s, device: %s)",
                 credential_id[:16] + '...', user_id, device_name,
             )
 
@@ -807,7 +807,7 @@ class WebAuthnService:
             return {'success': True, 'credential_id': credential_id}
 
         except sqlite3.Error as e:
-            logger.error("Failed to revoke WebAuthn credential")
+            logger.error("Failed to revoke WebAuthn passkey")
             return {
                 'success': False,
                 'error': f'Database error while revoking credential: {e}',
@@ -864,7 +864,7 @@ class WebAuthnService:
                 conn.commit()
 
             logger.info(
-                "WebAuthn credential renamed: %s -> '%s'",
+                "WebAuthn passkey renamed: %s -> '%s'",
                 credential_id[:16] + '...', new_name,
             )
 
@@ -875,7 +875,7 @@ class WebAuthnService:
             }
 
         except sqlite3.Error as e:
-            logger.error("Failed to rename WebAuthn credential")
+            logger.error("Failed to rename WebAuthn passkey")
             return {
                 'success': False,
                 'error': f'Database error while renaming credential: {e}',
@@ -1097,7 +1097,7 @@ class WebAuthnService:
 
         except sqlite3.Error as e:
             logger.error(
-                "Failed to get credential descriptors for user '%s': %s",
+                "Failed to get passkey descriptors for user '%s': %s",
                 user_id, e,
             )
             return []
@@ -1148,7 +1148,7 @@ class WebAuthnService:
 
         except sqlite3.Error as e:
             logger.error(
-                "Failed to retrieve WebAuthn credential '%s': %s",
+                "Failed to retrieve WebAuthn passkey '%s': %s",
                 credential_id[:16] + '...' if credential_id else 'None', e,
             )
             return None
@@ -1176,7 +1176,7 @@ class WebAuthnService:
                 return cursor.fetchone()[0]
         except sqlite3.Error as e:
             logger.error(
-                "Failed to count credentials for user '%s': %s",
+                "Failed to count passkeys for user '%s': %s",
                 user_id, e,
             )
             return 0

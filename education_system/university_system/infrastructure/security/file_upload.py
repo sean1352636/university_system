@@ -41,6 +41,7 @@ import hashlib
 import logging
 import os
 import re
+import tempfile
 import uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Union
@@ -286,7 +287,7 @@ class SecureFileUpload:
                 from education_system.university_system.core import paths
                 upload_dir = paths.UPLOAD_DIR
             except ImportError:
-                upload_dir = '/tmp/uploads'
+                upload_dir = tempfile.mkdtemp(prefix='uploads_')
                 logger.warning(f"Could not import paths module, using {upload_dir}")
 
         self.upload_dir = Path(upload_dir)

@@ -592,7 +592,7 @@ def cached(
                 if kwargs:
                     key_parts.append(str(sorted(kwargs.items())))
                 key_str = ':'.join(key_parts)
-                cache_key = hashlib.md5(key_str.encode()).hexdigest()
+                cache_key = hashlib.sha256(key_str.encode()).hexdigest()
 
             # Try to get from cache
             result = cache.get(cache_key)

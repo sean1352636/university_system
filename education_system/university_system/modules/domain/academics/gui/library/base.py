@@ -773,7 +773,7 @@ class LibraryGUI:
         if restart:
             # Restart the application
             import sys
-            os.execl(sys.executable, sys.executable, *sys.argv)
+            os.execl(sys.executable, sys.executable, *sys.argv)  # nosemgrep: python.lang.security.audit.dangerous-os-exec
             if self.owns_root:
                 self.master.quit()
                 self.master.destroy()

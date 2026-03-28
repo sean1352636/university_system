@@ -193,7 +193,7 @@ class AutomationManager:
             current_schedules = [
                 {"id": "daily_001", "directory": "/data/imports", "time": "09:00", "status": "Active", "next_run": "Tomorrow 09:00"},
                 {"id": "daily_002", "directory": "/data/backup", "time": "23:30", "status": "Active", "next_run": "Today 23:30"},
-                {"id": "daily_003", "directory": "/tmp/imports", "time": "06:00", "status": "Paused", "next_run": "N/A"}
+                {"id": "daily_003", "directory": "/data/imports_staging", "time": "06:00", "status": "Paused", "next_run": "N/A"}
             ]
 
             # Create treeview for current schedules
@@ -292,8 +292,8 @@ echo "Daily import task completed at $(date)"
                     with open(script_filename, 'w') as f:
                         f.write(schedule_script)
 
-                    # Make script executable
-                    os.chmod(script_filename, 0o755)
+                    # Make script executable (owner only)
+                    os.chmod(script_filename, 0o700)
 
                     # Show success message with comprehensive details
                     success_dialog = tk.Toplevel(schedule_dialog)
@@ -772,8 +772,8 @@ if __name__ == '__main__':
                     with open(script_filename, 'w') as f:
                         f.write(server_script)
 
-                    # Make script executable
-                    os.chmod(script_filename, 0o755)
+                    # Make script executable (owner only)
+                    os.chmod(script_filename, 0o700)
 
                     # Show success dialog
                     success_dialog = tk.Toplevel(api_dialog)

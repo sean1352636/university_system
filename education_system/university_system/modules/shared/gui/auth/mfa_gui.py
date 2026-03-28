@@ -1125,7 +1125,7 @@ class MFAVerificationDialog(tk.Toplevel):
 
         # Create simple device fingerprint
         device_info = f"{platform.node()}_{platform.system()}_{platform.machine()}"
-        return hashlib.md5(device_info.encode()).hexdigest()
+        return hashlib.sha256(device_info.encode()).hexdigest()
 
 
 # Convenience functions

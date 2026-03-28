@@ -572,7 +572,7 @@ class BiometricService:
 
             for enrollment in enrollments:
                 try:
-                    enrolled_encoding = pickle.loads(enrollment['template_data'])
+                    enrolled_encoding = pickle.loads(enrollment['template_data'])  # nosec B301 - data from our own DB, not untrusted input
 
                     # Compute face distance (lower = better match)
                     distances = _face_recognition.face_distance(
@@ -851,7 +851,7 @@ class BiometricService:
 
             for enrollment in enrollments:
                 try:
-                    stored_template = pickle.loads(enrollment['template_data'])
+                    stored_template = pickle.loads(enrollment['template_data'])  # nosec B301 - data from our own DB, not untrusted input
 
                     # First check: exact hash match (fast path)
                     if enrollment['template_hash'] == verification_hash:

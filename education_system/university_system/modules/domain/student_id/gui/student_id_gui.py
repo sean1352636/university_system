@@ -104,7 +104,7 @@ class StudentIDGUI:
                     info['status'] = card['status']
                 else:
                     # Auto-generate card
-                    card_num = "UNI-" + hashlib.md5(sid.encode()).hexdigest()[:8].upper()
+                    card_num = "UNI-" + hashlib.sha256(sid.encode()).hexdigest()[:8].upper()
                     qr_data = json.dumps({'student_id': sid, 'card': card_num, 'type': 'student_id'})
                     conn.execute(
                         "INSERT OR IGNORE INTO student_id_cards (student_id, card_number, expiry_date, qr_data) VALUES (?, ?, date('now', '+4 years'), ?)",
@@ -221,7 +221,7 @@ class StudentIDGUI:
                 with get_connection() as conn:
                     conn.execute("UPDATE student_id_cards SET status='lost' WHERE student_id=?", (sid,))
                     # Generate new card
-                    new_num = "UNI-" + hashlib.md5((sid + str(datetime.now())).encode()).hexdigest()[:8].upper()
+                    new_num = "UNI-" + hashlib.sha256((sid + str(datetime.now())).encode()).hexdigest()[:8].upper()
                     qr_data = json.dumps({'student_id': sid, 'card': new_num, 'type': 'student_id'})
                     conn.execute("DELETE FROM student_id_cards WHERE student_id=?", (sid,))
                     conn.execute(

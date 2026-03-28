@@ -24,7 +24,7 @@ class LogSecurity:
         for field in fields_to_anonymize:
             if field in anonymized:
                 # Replace with hashed version
-                anonymized[field] = hashlib.md5(str(anonymized[field]).encode()).hexdigest()[:8]
+                anonymized[field] = hashlib.sha256(str(anonymized[field]).encode()).hexdigest()[:8]
         return anonymized
 
     @staticmethod

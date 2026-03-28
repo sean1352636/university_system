@@ -51,7 +51,7 @@ def generate_barcode(book_id: str) -> str:
     """Generate a unique barcode for a book"""
     # Simple barcode generation - in production, use proper barcode library
     import hashlib
-    hash_object = hashlib.md5(book_id.encode())
+    hash_object = hashlib.sha256(book_id.encode())
     barcode = hash_object.hexdigest()[:12].upper()
     return f"LIB{barcode}"
 

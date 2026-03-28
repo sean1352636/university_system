@@ -163,7 +163,7 @@ class EnhancedActivityLogger:
         """Create the log directory if it doesn't exist"""
         if not os.path.exists(self.log_dir):
             try:
-                os.makedirs(self.log_dir, mode=0o755, exist_ok=True)
+                os.makedirs(self.log_dir, mode=0o700, exist_ok=True)
                 print(f"Created log directory: {self.log_dir}")
             except Exception as e:
                 print(f"Error creating log directory: {e}")

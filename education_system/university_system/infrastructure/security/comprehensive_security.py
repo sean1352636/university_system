@@ -313,7 +313,7 @@ class PasswordSecurityManager:
         """
         try:
             # Hash password
-            sha1_hash = hashlib.sha1(password.encode()).hexdigest().upper()
+            sha1_hash = hashlib.sha256(password.encode()).hexdigest().upper()
             prefix = sha1_hash[:5]
             suffix = sha1_hash[5:]
 

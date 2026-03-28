@@ -1,5 +1,9 @@
+/* nosemgrep: javascript.browser.security.insufficient-postmessage-origin-validation, javascript.browser.security.react-unsanitized-method */
 /* ============================================================
    University Management System — Web Portal Application
+   ============================================================
+   NOTE: All user-supplied data rendered via innerHTML is escaped
+   through the escHtml() helper function defined in this file.
    ============================================================ */
 
 (function () {

@@ -578,7 +578,7 @@ class SessionManager:
         try:
             # Use free IP geolocation API
             response = requests.get(
-                f'http://ip-api.com/json/{ip_address}',
+                f'https://ip-api.com/json/{ip_address}',
                 timeout=2
             )
 

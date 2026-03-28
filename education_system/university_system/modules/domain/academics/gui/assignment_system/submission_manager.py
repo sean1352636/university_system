@@ -50,7 +50,7 @@ class SubmissionManager:
         try:
             import hashlib
 
-            hash_md5 = hashlib.md5()
+            hash_md5 = hashlib.sha256()
             with open(file_path, "rb") as f:
                 for chunk in iter(lambda: f.read(4096), b""):
                     hash_md5.update(chunk)

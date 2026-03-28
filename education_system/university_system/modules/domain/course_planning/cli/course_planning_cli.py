@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import tempfile
 from typing import Any, Optional
 
 from education_system.university_system.infrastructure.database.db import get_connection
@@ -759,7 +761,7 @@ def export_plan_menu(student_id: str) -> None:
 
         # Export as JSON
         export_filename = f"course_plan_{plan_id}.json"
-        export_path = f"/tmp/{export_filename}"
+        export_path = os.path.join(tempfile.gettempdir(), export_filename)
 
         with open(export_path, 'w') as f:
             json.dump(plan_data, f, indent=2, default=str)

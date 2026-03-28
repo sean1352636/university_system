@@ -67,6 +67,7 @@ def get_hsts_value(
     Returns:
         HSTS header value string
     """
+    max_age = int(max_age)  # Ensure integer to prevent NaN injection
     parts = [f"max-age={max_age}"]
     if include_subdomains:
         parts.append("includeSubDomains")

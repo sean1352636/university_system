@@ -58,7 +58,7 @@ def add_attachment(ticket_id, reply_id, file_path, user_id):
             return False
 
         # Generate unique filename
-        file_hash = hashlib.md5()
+        file_hash = hashlib.sha256()
         with open(file_path, 'rb') as f:
             for chunk in iter(lambda: f.read(4096), b""):
                 file_hash.update(chunk)

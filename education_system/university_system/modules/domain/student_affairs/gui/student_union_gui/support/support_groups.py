@@ -223,7 +223,7 @@ class SupportGroupsDialog:
 
                 # Generate anonymous ID
                 import hashlib
-                anonymous_id = hashlib.md5(f"{student_id}{group_id}".encode()).hexdigest()[:8]
+                anonymous_id = hashlib.sha256(f"{student_id}{group_id}".encode()).hexdigest()[:8]
 
                 cursor.execute('''
                 INSERT INTO support_group_members (group_id, student_id, join_date, anonymous_id)
@@ -785,7 +785,7 @@ class BrowseSupportGroupsDialog:
                 return
 
             # Generate anonymous ID
-            anonymous_id = hashlib.md5(f"{student_id}{group_id}".encode()).hexdigest()[:8]
+            anonymous_id = hashlib.sha256(f"{student_id}{group_id}".encode()).hexdigest()[:8]
 
             cursor.execute('''
                 INSERT INTO support_group_members (group_id, student_id, join_date, anonymous_id, status)

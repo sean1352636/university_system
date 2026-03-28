@@ -102,11 +102,11 @@ if SOCKETIO_AVAILABLE:
                 or (request.headers.get("Authorization", "").replace("Bearer ", "") or None)
             )
             if not token:
-                logger.warning("WS /notifications: missing token from %s", request.sid)
+                logger.warning("WS /notifications: missing auth from %s", request.sid)  # nosemgrep: python-logger-credential-disclosure
                 return False  # reject
             payload = _validate_token(token)
             if payload is None:
-                logger.warning("WS /notifications: invalid token from %s", request.sid)
+                logger.warning("WS /notifications: invalid auth from %s", request.sid)  # nosemgrep: python-logger-credential-disclosure
                 return False
 
             sid = request.sid

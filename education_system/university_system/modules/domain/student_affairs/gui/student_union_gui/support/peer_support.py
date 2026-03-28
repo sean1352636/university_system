@@ -316,7 +316,7 @@ Match #2: Anonymous Friend (matched 1 week ago)
             self._ensure_peer_tables(cursor)
 
             user_id = str(self.auth.current_user['id'])
-            anon_id = hashlib.md5(f"{user_id}_peer_{datetime.now().isoformat()}".encode()).hexdigest()[:8]
+            anon_id = hashlib.sha256(f"{user_id}_peer_{datetime.now().isoformat()}".encode()).hexdigest()[:8]
 
             # Collect selected support areas from the checkbuttons
             selected_topics = [issue for issue, var in self.issue_vars.items() if var.get()]

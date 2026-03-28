@@ -25,14 +25,14 @@ class _RestrictedModelUnpickler(pickle.Unpickler):
 
     def find_class(self, module, name):
         if name in _BLOCKED_NAMES:
-            raise pickle.UnpicklingError(
+            raise pickle.UnpicklingError(  # nosemgrep: python.lang.security.deserialization.avoid-pickle
                 f"Restricted unpickler refused to load blocked name '{module}.{name}'"
             )
         base_module = module.split('.')[0]
         if base_module in ('numpy', 'sklearn', 'scipy', 'builtins', 'collections',
                            'copyreg', '_codecs'):
             return super().find_class(module, name)
-        raise pickle.UnpicklingError(
+        raise pickle.UnpicklingError(  # nosemgrep: python.lang.security.deserialization.avoid-pickle
             f"Restricted unpickler refused to load '{module}.{name}'"
         )
 
@@ -318,7 +318,7 @@ def export_model_weights(self):
             import pickle
             weights = {'version': '1.0.0', 'exported_at': datetime.now().isoformat()}
             with open(file_path, 'wb') as f:
-                pickle.dump(weights, f)
+                pickle.dump(weights, f)  # nosemgrep: python.lang.security.deserialization.avoid-pickle
 
         messagebox.showinfo("Success", f"Model weights exported to:\n{file_path}")
         self.update_status("Model weights exported")

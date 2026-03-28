@@ -46,7 +46,7 @@ def multi_criteria_search():
         return
 
     # Check cache first
-    cache_key = hashlib.md5(str(criteria).encode()).hexdigest()
+    cache_key = hashlib.sha256(str(criteria).encode()).hexdigest()
     if cache_key in _globals.search_cache:
         print("📦 Loading results from cache...")
         results = _globals.search_cache[cache_key]

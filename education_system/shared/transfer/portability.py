@@ -15,7 +15,7 @@ import logging
 import defusedxml.ElementTree as ET
 from datetime import datetime
 from pathlib import Path
-from xml.dom.minidom import parseString
+from defusedxml.minidom import parseString
 
 logger = logging.getLogger(__name__)
 

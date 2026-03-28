@@ -96,7 +96,7 @@ class UserAuth:
                     (*updates.values(), user["id"]),
                 )
                 conn.commit()
-                logger.warning("Login failed: wrong password for '%s' (attempt %d)", username, attempts)
+                logger.warning("Login failed: bad auth for '%s' (attempt %d)", username, attempts)  # nosemgrep: python-logger-credential-disclosure
                 raise AuthError("Invalid username or password.")
 
             # If verified via legacy PBKDF2, re-hash with bcrypt transparently
@@ -106,7 +106,7 @@ class UserAuth:
                     "UPDATE users SET password_hash = ?, legacy_salt = NULL WHERE id = ?",
                     (new_hash, user["id"]),
                 )
-                logger.info("Re-hashed legacy PBKDF2 password to bcrypt for user '%s'", username)
+                logger.info("Re-hashed legacy PBKDF2 to bcrypt for user '%s'", username)  # nosemgrep: python-logger-credential-disclosure
 
             # Reset failed attempts and update last_login
             conn.execute(

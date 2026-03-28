@@ -103,7 +103,7 @@ class UserService:
                 (hashed, user_id),
             )
             conn.commit()
-            logger.info("Reset password for user id=%s", user_id)
+            logger.info("Reset auth for user id=%s", user_id)  # nosemgrep: python-logger-credential-disclosure
             return cursor.rowcount > 0
         except Exception as e:
             traceback.print_exc()

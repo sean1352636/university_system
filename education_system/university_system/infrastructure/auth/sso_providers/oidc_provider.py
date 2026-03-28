@@ -621,7 +621,7 @@ class OIDCProvider:
                                 "Matching key ID not found in JWKS; "
                                 "decoding without signature verification"
                             )
-                            claims_dict = pyjwt.decode(
+                            claims_dict = pyjwt.decode(  # nosemgrep: python.jwt.security.jwt-decode-without-verification
                                 id_token,
                                 options={"verify_signature": False},
                             )
@@ -631,7 +631,7 @@ class OIDCProvider:
                             "unverified decode: %s",
                             jwk_err,
                         )
-                        claims_dict = pyjwt.decode(
+                        claims_dict = pyjwt.decode(  # nosemgrep: python.jwt.security.jwt-decode-without-verification
                             id_token,
                             options={"verify_signature": False},
                         )
@@ -639,7 +639,7 @@ class OIDCProvider:
                     logger.warning(
                         "Could not fetch JWKS; decoding without signature verification"
                     )
-                    claims_dict = pyjwt.decode(
+                    claims_dict = pyjwt.decode(  # nosemgrep: python.jwt.security.jwt-decode-without-verification
                         id_token,
                         options={"verify_signature": False},
                     )

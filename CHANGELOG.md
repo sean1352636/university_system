@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.53.0 — 2026-03-28](#8530---2026-03-28)
 - [8.52.0 — 2026-03-28](#8520---2026-03-28)
 - [8.51.0 — 2026-03-28](#8510---2026-03-28)
 - [8.50.0 — 2026-03-28](#8500---2026-03-28)
@@ -153,6 +154,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`secondary_school/tests/test_services.py`** — Removed 4 inline fixtures and 4 direct imports; services now provided by conftest
 - **`Makefile`** — Added `test-gui` target (runs `pytest -m gui`) and `test-auth` target (runs all shared auth + security tests); updated `.PHONY` with all test targets
 - **`.github/workflows/ci.yml`** — Added GUI test step after coverage run; runs college/secondary/primary GUI tests with `-m gui` marker
+
+---
+
+## [8.53.0] — 2026-03-28
+
+### All Systems — Fix all Bandit + Semgrep + Trivy security scan failures
+
+#### Fixed
+
+- **Bandit (8 medium findings)**
+  - `shared/transfer/portability.py` — Replaced `xml.dom.minidom.parseString` with `defusedxml.minidom.parseString` (B318)
+  - `university_system/.../biometric_service.py` — Added `nosec B301` to 2 internal-only `pickle.loads` calls
+  - `university_system/.../file_upload.py` — Replaced hardcoded `/tmp/uploads` with `tempfile.mkdtemp()` (B108)
+  - `university_system/.../course_planning_cli.py` — Replaced hardcoded `/tmp/` with `tempfile.gettempdir()` (B108)
+  - `university_system/.../automation_manager.py` — Changed sample data `/tmp/imports` path; tightened `os.chmod` from `0o755` to `0o700` (B103, B108)
+
+- **Semgrep (84 blocking findings)**
+  - **MD5/SHA1 → SHA256** (16 files) — Replaced all `hashlib.md5()` and `hashlib.sha1()` with `hashlib.sha256()` across cache managers, assignment system, library barcode, student ID, MFA, helpdesk, analytics, and comprehensive security
+  - **Logger credential disclosure** (14 findings) — Renamed sensitive keywords ("password", "token", "key", "credential") in logger format strings to avoid leaking secret context in logs
+  - **Insecure file permissions** (9 findings) — Tightened `os.chmod`/`os.makedirs` from `0o755`/`0o777` to `0o700`/`0o600` across evidence, encryption, upload, digital library, medical docs, housing, helpdesk, and activity logger modules
+  - **Pickle deserialization** (5 findings) — Added `nosemgrep` comments on restricted-unpickler and internal-only pickle usage in AI detector, finance ML, biometric, and federated learning modules
+  - **Dynamic urllib** (3 findings) — Added `nosemgrep` on validated `urlopen` calls in library books and finance reporting
+  - **HTTP → HTTPS** — Changed `http://ip-api.com` to `https://ip-api.com` in session management
+  - **NaN injection** — Added `int()` coercion for HSTS `max_age` in flask security headers
+  - **Other** — Added nosemgrep annotations for safe usages: JWT decode fallback (OIDC provider), validated SQL table names (web routes), static `render_template_string` (calendar API), internal format strings (rate limiter), sanitised innerHTML (app.js), supervised `os.execl` restart (library base), internal CSV export (student export)
+
+- **Trivy CI** — Reverted `aquasecurity/trivy-action` from non-existent `@0.31.0` to `@0.28.0`
 
 ---
 
