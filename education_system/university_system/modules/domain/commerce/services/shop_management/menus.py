@@ -63,6 +63,11 @@ def display_shop_menu():
             options.append('purchase_history')
             option_num += 1
 
+        # Textbook options (available to all authenticated users)
+        print(f"{option_num}. Textbook Store")
+        options.append('textbook_store')
+        option_num += 1
+
         # Admin options
         if config.auth.check_permission('manage_products'):
             print(f"{option_num}. Manage Products")
@@ -117,6 +122,8 @@ def display_shop_menu():
                     display_discount_management_menu()
                 elif selected_option == 'sales_reports':
                     display_sales_reports_menu()
+                elif selected_option == 'textbook_store':
+                    display_textbook_menu()
             elif choice_num == option_num:
                 print("Returning to main menu...")
                 return
@@ -278,6 +285,58 @@ def display_sales_reports_menu():
             return
         else:
             print("Invalid choice. Please try again.")
+
+@log_menu_navigation(description="Displaying textbook store menu")
+def display_textbook_menu():
+    """Display the textbook store sub-menu."""
+    from education_system.university_system.modules.domain.commerce.services.shop_management.textbooks import (
+        browse_textbooks, view_textbook_details, my_course_books,
+        browse_used_books, find_used_copies, buy_used_textbook,
+        sell_textbook, view_textbook_orders, view_my_listings, cancel_listing,
+    )
+
+    while True:
+        print("\nTextbook Store:")
+        print("================")
+        print("1.  Browse / Search Textbooks")
+        print("2.  View Textbook Details")
+        print("3.  My Course Books")
+        print("4.  Used Book Exchange")
+        print("5.  Find Used Copies (by ID)")
+        print("6.  Buy a Used Textbook")
+        print("7.  Sell a Textbook")
+        print("8.  My Textbook Orders")
+        print("9.  My Active Listings")
+        print("10. Cancel a Listing")
+        print("11. Return to Shop Menu")
+
+        choice = input("Enter your choice (1-11): ").strip()
+
+        if choice == '1':
+            browse_textbooks()
+        elif choice == '2':
+            view_textbook_details()
+        elif choice == '3':
+            my_course_books()
+        elif choice == '4':
+            browse_used_books()
+        elif choice == '5':
+            find_used_copies()
+        elif choice == '6':
+            buy_used_textbook()
+        elif choice == '7':
+            sell_textbook()
+        elif choice == '8':
+            view_textbook_orders()
+        elif choice == '9':
+            view_my_listings()
+        elif choice == '10':
+            cancel_listing()
+        elif choice == '11':
+            return
+        else:
+            print("Invalid choice. Please try again.")
+
 
 # Main entry point - add to main.py
 def display_main_menu_extended():

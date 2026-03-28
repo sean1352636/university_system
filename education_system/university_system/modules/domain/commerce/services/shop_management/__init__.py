@@ -32,6 +32,7 @@ from education_system.university_system.modules.domain.commerce.services.shop_ma
     display_inventory_management_menu,
     display_discount_management_menu,
     display_sales_reports_menu,
+    display_textbook_menu,
     display_main_menu_extended,
     add_shop_system_to_main_menu,
     setup_shop_system,
