@@ -482,7 +482,6 @@ def create_navigation_panel(self, parent):
         ('student_id_card', _t('nav.buttons.student_id_card'), self.show_student_id_gui),
         ('study_room_booking', _t('nav.buttons.study_room_booking'), self.show_study_room_booking_gui),
         ('printing_services', _t('nav.buttons.printing_services'), self.show_printing_services_gui),
-        ('textbook_store', _t('nav.buttons.textbook_store'), self.show_textbook_store_gui),
         ('student_app', 'Student App', self.show_student_app_gui),
         ('achievement_badges', 'Achievement Badges', self.show_achievement_badge_gui),
     ]
@@ -797,7 +796,7 @@ def get_visible_buttons_for_role(self, role=None):
         'feedback_system',
         # Student features (v5.40+)
         'advising_portal', 'student_id_card', 'study_room_booking',
-        'printing_services', 'textbook_store',
+        'printing_services',
         # Note: budget_tracker, scholarship_finder moved to Finance GUI
         # Note: notifications_hub moved to Email GUI
         # Shared modules available to all (including parents)

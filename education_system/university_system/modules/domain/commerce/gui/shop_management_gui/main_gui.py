@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
+from education_system.university_system.core.sql_safety import escape_like
 import time
 import os
 import re
@@ -249,6 +250,9 @@ class UniversityShopGUI:
             # Initialize database
             if 'init_shop_db' in globals():
                 init_shop_db()
+            # Initialise textbook tables
+            if hasattr(self, 'init_textbook_db'):
+                self.init_textbook_db()
 
             # Initialize centralized authentication system
             if self.auth is None:  # Only create if not passed from parent
@@ -408,6 +412,42 @@ class UniversityShopGUI:
         ).grid(row=4, column=0, sticky=tk.W, pady=2)
 
         row_counter = 5
+
+        # Textbooks section (available to all)
+        ttk.Separator(self.sidebar_frame, orient='horizontal').grid(
+            row=row_counter, column=0, sticky=(tk.W, tk.E), pady=10
+        )
+        row_counter += 1
+
+        ttk.Label(
+            self.sidebar_frame, text="Textbooks",
+            style='Heading.TLabel'
+        ).grid(row=row_counter, column=0, sticky=tk.W, pady=(0, 5))
+        row_counter += 1
+
+        ttk.Button(
+            self.sidebar_frame, text="Browse Textbooks",
+            command=self.show_textbooks_browse, width=20
+        ).grid(row=row_counter, column=0, sticky=tk.W, pady=2)
+        row_counter += 1
+
+        ttk.Button(
+            self.sidebar_frame, text="Used Book Exchange",
+            command=self.show_textbooks_exchange, width=20
+        ).grid(row=row_counter, column=0, sticky=tk.W, pady=2)
+        row_counter += 1
+
+        ttk.Button(
+            self.sidebar_frame, text="Sell a Book",
+            command=self.show_textbooks_sell, width=20
+        ).grid(row=row_counter, column=0, sticky=tk.W, pady=2)
+        row_counter += 1
+
+        ttk.Button(
+            self.sidebar_frame, text="Textbook Orders",
+            command=self.show_textbooks_orders, width=20
+        ).grid(row=row_counter, column=0, sticky=tk.W, pady=2)
+        row_counter += 1
 
         # Admin/Staff management options
         if is_admin or is_staff:
@@ -663,6 +703,7 @@ try:
     from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import bulk_operations
     from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import utils
     from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import ui_components
+    from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import textbook_manager
 
     # Bind dashboard methods
     if hasattr(dashboard_manager, 'show_dashboard'):
@@ -855,6 +896,34 @@ try:
         UniversityShopGUI.hide_progress = ui_components.hide_progress
     if hasattr(ui_components, 'update_status'):
         UniversityShopGUI.update_status = ui_components.update_status
+
+    # Bind textbook methods
+    if hasattr(textbook_manager, 'init_textbook_db'):
+        UniversityShopGUI.init_textbook_db = textbook_manager.init_textbook_db
+    if hasattr(textbook_manager, 'show_textbooks_browse'):
+        UniversityShopGUI.show_textbooks_browse = textbook_manager.show_textbooks_browse
+    if hasattr(textbook_manager, 'show_textbooks_exchange'):
+        UniversityShopGUI.show_textbooks_exchange = textbook_manager.show_textbooks_exchange
+    if hasattr(textbook_manager, 'show_textbooks_sell'):
+        UniversityShopGUI.show_textbooks_sell = textbook_manager.show_textbooks_sell
+    if hasattr(textbook_manager, 'show_textbooks_orders'):
+        UniversityShopGUI.show_textbooks_orders = textbook_manager.show_textbooks_orders
+    if hasattr(textbook_manager, '_tb_do_search'):
+        UniversityShopGUI._tb_do_search = textbook_manager._tb_do_search
+    if hasattr(textbook_manager, '_tb_load_exchange'):
+        UniversityShopGUI._tb_load_exchange = textbook_manager._tb_load_exchange
+    if hasattr(textbook_manager, '_tb_load_orders'):
+        UniversityShopGUI._tb_load_orders = textbook_manager._tb_load_orders
+    if hasattr(textbook_manager, '_tb_view_details'):
+        UniversityShopGUI._tb_view_details = textbook_manager._tb_view_details
+    if hasattr(textbook_manager, '_tb_find_used'):
+        UniversityShopGUI._tb_find_used = textbook_manager._tb_find_used
+    if hasattr(textbook_manager, '_tb_buy_used'):
+        UniversityShopGUI._tb_buy_used = textbook_manager._tb_buy_used
+    if hasattr(textbook_manager, '_tb_list_for_sale'):
+        UniversityShopGUI._tb_list_for_sale = textbook_manager._tb_list_for_sale
+    if hasattr(textbook_manager, '_get_textbook_user_id'):
+        UniversityShopGUI._get_textbook_user_id = textbook_manager._get_textbook_user_id
 
 except ImportError as e:
     print(f"Warning: Could not bind some methods from manager modules: {e}")

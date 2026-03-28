@@ -422,7 +422,6 @@ from education_system.university_system.modules.shared.gui.main.features.student
     show_student_id_gui,
     show_study_room_booking_gui,
     show_printing_services_gui,
-    show_textbook_store_gui,
 )
 from education_system.university_system.modules.shared.gui.main.email.email_helpers_gui import (
     compose_email,
@@ -691,7 +690,6 @@ UnifiedManagementGUI.show_advising_portal_gui = show_advising_portal_gui
 UnifiedManagementGUI.show_student_id_gui = show_student_id_gui
 UnifiedManagementGUI.show_study_room_booking_gui = show_study_room_booking_gui
 UnifiedManagementGUI.show_printing_services_gui = show_printing_services_gui
-UnifiedManagementGUI.show_textbook_store_gui = show_textbook_store_gui
 
 
 def show_cross_system_communications_gui(self):

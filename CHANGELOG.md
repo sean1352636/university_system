@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.50.0 — 2026-03-28](#8500---2026-03-28)
 - [8.49.0 — 2026-03-28](#8490---2026-03-28)
 - [8.48.0 — 2026-03-27](#8480---2026-03-27)
 - [8.47.0 — 2026-03-26](#8470---2026-03-26)
@@ -150,6 +151,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`secondary_school/tests/test_services.py`** — Removed 4 inline fixtures and 4 direct imports; services now provided by conftest
 - **`Makefile`** — Added `test-gui` target (runs `pytest -m gui`) and `test-auth` target (runs all shared auth + security tests); updated `.PHONY` with all test targets
 - **`.github/workflows/ci.yml`** — Added GUI test step after coverage run; runs college/secondary/primary GUI tests with `-m gui` marker
+
+---
+
+## [8.50.0] — 2026-03-28
+
+### University System — Merge Textbook Store into University Shop
+
+#### Changed
+
+- **`commerce/gui/shop_management_gui/textbook_manager.py`** — New module: textbook browse, used book exchange, sell, and orders panels integrated into the University Shop sidebar
+- **`commerce/gui/shop_management_gui/main_gui.py`** — Added Textbooks sidebar section (Browse, Exchange, Sell, Orders), textbook DB init in backend startup, and method bindings for textbook_manager
+- **`modules/shared/gui/main/main_gui.py`** — Removed standalone `show_textbook_store_gui` import and class binding
+- **`modules/shared/gui/main/core/gui_setup.py`** — Removed `textbook_store` button from Student Services navigation and visibility set
 
 ---
 
