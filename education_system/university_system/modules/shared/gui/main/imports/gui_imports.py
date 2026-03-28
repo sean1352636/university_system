@@ -241,23 +241,57 @@ def _safe_set_combobox(combobox: ttk.Combobox, value) -> None:
 # Import database connection
 from education_system.university_system.infrastructure.database.db import get_db_connection, get_connection, transaction
 
-# Import modular GUI components
-from education_system.university_system.modules.domain.finance.gui.finance_management_gui import FinanceManagementGUI
-from education_system.university_system.modules.domain.finance.gui.financial_aid import FinancialAidGUI
-from education_system.university_system.modules.domain.student_affairs.gui.student_union_management_gui import StudentUnionManagementGUI
-from education_system.university_system.modules.domain.health.gui.health_portal_management_gui import HealthPortalManagementGUI
-from education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui import GradeTrackingManagementGUI
-from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui import RestaurantManagementGUI
-from education_system.university_system.modules.domain.commerce.gui.cafe_system_gui import CafeSystemGUI
-from education_system.university_system.modules.domain.commerce.gui.takeaway_gui import TakeawayGUI
-from education_system.university_system.modules.domain.commerce.gui.grocery_gui import GroceryGUI, GroceryManagementGUI
-try:
-    from education_system.university_system.modules.domain.commerce.gui.bar_gui import BarGUI
-    BAR_GUI_AVAILABLE = True
-except ImportError:
-    BarGUI = None
-    BAR_GUI_AVAILABLE = False
-from education_system.university_system.modules.shared.gui.email.email_manager_management_gui import EmailManagerManagementGUI
+# GUI components — imported lazily on first use to speed up startup.
+# Use _lazy_import('ClassName') to get the class when actually needed.
+FinanceManagementGUI = None
+FinancialAidGUI = None
+StudentUnionManagementGUI = None
+HealthPortalManagementGUI = None
+GradeTrackingManagementGUI = None
+RestaurantManagementGUI = None
+CafeSystemGUI = None
+TakeawayGUI = None
+GroceryGUI = None
+GroceryManagementGUI = None
+BarGUI = None
+BAR_GUI_AVAILABLE = False
+EmailManagerManagementGUI = None
+
+_GUI_IMPORT_MAP = {
+    "FinanceManagementGUI": ("education_system.university_system.modules.domain.finance.gui.finance_management_gui", "FinanceManagementGUI"),
+    "FinancialAidGUI": ("education_system.university_system.modules.domain.finance.gui.financial_aid", "FinancialAidGUI"),
+    "StudentUnionManagementGUI": ("education_system.university_system.modules.domain.student_affairs.gui.student_union_management_gui", "StudentUnionManagementGUI"),
+    "HealthPortalManagementGUI": ("education_system.university_system.modules.domain.health.gui.health_portal_management_gui", "HealthPortalManagementGUI"),
+    "GradeTrackingManagementGUI": ("education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui", "GradeTrackingManagementGUI"),
+    "RestaurantManagementGUI": ("education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui", "RestaurantManagementGUI"),
+    "CafeSystemGUI": ("education_system.university_system.modules.domain.commerce.gui.cafe_system_gui", "CafeSystemGUI"),
+    "TakeawayGUI": ("education_system.university_system.modules.domain.commerce.gui.takeaway_gui", "TakeawayGUI"),
+    "GroceryGUI": ("education_system.university_system.modules.domain.commerce.gui.grocery_gui", "GroceryGUI"),
+    "GroceryManagementGUI": ("education_system.university_system.modules.domain.commerce.gui.grocery_gui", "GroceryManagementGUI"),
+    "BarGUI": ("education_system.university_system.modules.domain.commerce.gui.bar_gui", "BarGUI"),
+    "EmailManagerManagementGUI": ("education_system.university_system.modules.shared.gui.email.email_manager_management_gui", "EmailManagerManagementGUI"),
+}
+
+def _lazy_import(name):
+    """Import a GUI class on first use and cache it in the module globals."""
+    g = globals()
+    if g.get(name) is not None:
+        return g[name]
+    if name not in _GUI_IMPORT_MAP:
+        raise ImportError(f"Unknown lazy GUI import: {name}")
+    mod_path, attr = _GUI_IMPORT_MAP[name]
+    try:
+        import importlib
+        mod = importlib.import_module(mod_path)
+        cls = getattr(mod, attr)
+        g[name] = cls
+        if name == "BarGUI":
+            g["BAR_GUI_AVAILABLE"] = True
+        return cls
+    except ImportError:
+        if name == "BarGUI":
+            g["BAR_GUI_AVAILABLE"] = False
+        return None
 from education_system.university_system.modules.domain.academics.services.modules import (compulsory_module_1, compulsory_module_2,
                                                                optional_module_1, optional_module_2,
                                                                optional_module_3, optional_module_4,
@@ -638,33 +672,57 @@ except Exception as e:
     HELPDESK_CLI_AVAILABLE = False
     print(f"❌ Failed to import Helpdesk CLI: {e}")
 
-# Import advanced feature GUI launchers from core files
-from education_system.university_system.modules.domain.academics.services.attendance.attendance_tracker import launch_advanced_attendance_gui
-from education_system.university_system.modules.domain.student_affairs.services.mental_health.mental_health_core import launch_mental_health_gui
-from education_system.university_system.modules.domain.student_affairs.services.early_warning.early_warning_core import launch_early_warning_gui
-from education_system.university_system.modules.domain.career.services.career_services_core import launch_career_services_gui
+# Advanced feature GUI launchers — lazy-loaded on first call to avoid heavy
+# imports (pandas, matplotlib, reportlab, etc.) at startup.
+_LAUNCHER_MAP = {
+    "launch_advanced_attendance_gui": "education_system.university_system.modules.domain.academics.services.attendance.attendance_tracker",
+    "launch_mental_health_gui": "education_system.university_system.modules.domain.student_affairs.services.mental_health.mental_health_core",
+    "launch_early_warning_gui": "education_system.university_system.modules.domain.student_affairs.services.early_warning.early_warning_core",
+    "launch_career_services_gui": "education_system.university_system.modules.domain.career.services.career_services_core",
+    "launch_extras_gui": "education_system.shared.extras.launcher",
+    "launch_admissions_crm_gui": "education_system.university_system.modules.domain.admissions.services.admissions_crm_core",
+    "launch_predictive_analytics_gui": "education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui",
+    "launch_timetable_optimizer_gui": "education_system.university_system.modules.domain.academics.services.module_scheduling",
+    "launch_campus_events_gui": "education_system.university_system.modules.domain.campus.services.campus_events_gui",
+    "launch_alumni_relations_gui": "education_system.university_system.modules.domain.student_affairs.services.alumni_management",
+    "launch_facilities_management_gui": "education_system.university_system.modules.domain.facilities.services.facilities_management_core",
+    "launch_business_intelligence_gui": "education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui",
+    "launch_ai_features_gui": "education_system.university_system.modules.shared.services.ai_features.ai_features_core",
+    "launch_mobile_app_pwa_gui": "education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui",
+    "launch_blockchain_credentials_gui": "education_system.university_system.modules.domain.academics.gui.blockchain_credentials_gui",
+    "launch_integration_marketplace_gui": "education_system.university_system.modules.services.gui.integration_marketplace_gui",
+}
 
-# Import Extras Launcher (games, utilities, mini-projects)
-try:
-    from education_system.shared.extras.launcher import launch_as_toplevel as launch_extras_gui
-    EXTRAS_LAUNCHER_AVAILABLE = True
-except Exception as e:
-    launch_extras_gui = None
-    EXTRAS_LAUNCHER_AVAILABLE = False
-    print(f"❌ Failed to import Extras Launcher: {e}")
-from education_system.university_system.modules.domain.admissions.services.admissions_crm_core import launch_admissions_crm_gui
-from education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui import launch_predictive_analytics_gui
-from education_system.university_system.modules.domain.academics.services.module_scheduling import launch_timetable_optimizer_gui
-from education_system.university_system.modules.domain.campus.services.campus_events_gui import launch_campus_events_gui
-from education_system.university_system.modules.domain.student_affairs.services.alumni_management import launch_alumni_relations_gui
-from education_system.university_system.modules.domain.facilities.services.facilities_management_core import launch_facilities_management_gui
-from education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui import launch_business_intelligence_gui
-from education_system.university_system.modules.shared.services.ai_features.ai_features_core import launch_ai_features_gui
+# Extras launcher has a different attr name in its module
+_LAUNCHER_ATTR_OVERRIDE = {
+    "launch_extras_gui": "launch_as_toplevel",
+}
 
-# Phase 4: New GUI imports (October 2025)
-from education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui import launch_mobile_app_pwa_gui
-from education_system.university_system.modules.domain.academics.gui.blockchain_credentials_gui import launch_blockchain_credentials_gui
-from education_system.university_system.modules.services.gui.integration_marketplace_gui import launch_integration_marketplace_gui
+EXTRAS_LAUNCHER_AVAILABLE = True  # assume available, will be set False on import failure
+
+def _lazy_launcher(name):
+    """Import a launch_*_gui function on first use."""
+    if name not in _LAUNCHER_MAP:
+        raise ImportError(f"Unknown launcher: {name}")
+    import importlib
+    mod = importlib.import_module(_LAUNCHER_MAP[name])
+    attr = _LAUNCHER_ATTR_OVERRIDE.get(name, name)
+    func = getattr(mod, attr)
+    globals()[name] = func
+    return func
+
+# Create module-level callable stubs that auto-import on first call.
+# Other modules import these names; calling them triggers the real import.
+def _make_lazy_stub(name):
+    def stub(*args, **kwargs):
+        func = _lazy_launcher(name)
+        return func(*args, **kwargs)
+    stub.__name__ = name
+    stub.__qualname__ = name
+    return stub
+
+for _ln in list(_LAUNCHER_MAP):
+    globals()[_ln] = _make_lazy_stub(_ln)
 
 # Legal Services and Betting Shop GUIs
 try:

@@ -3,18 +3,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
 
-# Import GUI classes needed by this module
-from education_system.university_system.modules.domain.commerce.gui.shop_management_gui.main_gui import UniversityShopGUI as ShopManagementGUI
-from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui import RestaurantManagementGUI
-from education_system.university_system.modules.domain.commerce.gui.cafe_system_gui import CafeSystemGUI
-from education_system.university_system.modules.domain.commerce.gui.takeaway_gui import TakeawayGUI
-from education_system.university_system.modules.domain.commerce.gui.grocery_gui import GroceryManagementGUI
-try:
-    from education_system.university_system.modules.domain.commerce.gui.bar_gui import BarGUI
-    BAR_GUI_AVAILABLE = True
-except ImportError:
-    BarGUI = None
-    BAR_GUI_AVAILABLE = False
+# GUI classes — imported lazily when each function is called
+from education_system.university_system.modules.shared.gui.main.imports.gui_imports import _lazy_import
 
 # Import GUI availability flags and classes
 from education_system.university_system.modules.shared.gui.main.imports.gui_imports import (
@@ -88,6 +78,7 @@ def show_university_shop(self):
             pass  # Continue if transient fails
 
         # Initialize the Shop Management GUI
+        from education_system.university_system.modules.domain.commerce.gui.shop_management_gui.main_gui import UniversityShopGUI as ShopManagementGUI
         shop_gui = ShopManagementGUI(shop_window, self.auth)
         print(_t("commerce_facilities.messages.shop_opened_success"))
 
@@ -133,6 +124,7 @@ def show_restaurant_management(self):
     """Open the Restaurant Management GUI in a child window (Toplevel)."""
     if not self.restaurant_gui:
         try:
+            RestaurantManagementGUI = _lazy_import("RestaurantManagementGUI")
             self.restaurant_gui = RestaurantManagementGUI(self.root, self.auth)
         except Exception as e:
             messagebox.showerror(_t("commerce_facilities.errors.error"), _t("commerce_facilities.errors.restaurant_init_failed").format(error=e))
@@ -143,6 +135,7 @@ def show_cafe_system(self):
     """Open the Cafe System GUI in a child window (Toplevel)."""
     if not hasattr(self, 'cafe_gui') or not self.cafe_gui:
         try:
+            CafeSystemGUI = _lazy_import("CafeSystemGUI")
             self.cafe_gui = CafeSystemGUI(self.root, self.auth)
         except Exception as e:
             messagebox.showerror(_t("commerce_facilities.errors.error"), _t("commerce_facilities.errors.cafe_init_failed").format(error=e))
@@ -153,6 +146,7 @@ def show_takeaway_system(self):
     """Open the Takeaway System GUI in a child window (Toplevel)."""
     if not hasattr(self, 'takeaway_gui') or not self.takeaway_gui:
         try:
+            TakeawayGUI = _lazy_import("TakeawayGUI")
             self.takeaway_gui = TakeawayGUI(self.root, self.auth)
         except Exception as e:
             messagebox.showerror(_t("commerce_facilities.errors.error"), _t("commerce_facilities.errors.takeaway_init_failed").format(error=e))
@@ -179,6 +173,7 @@ def show_bar(self):
     """Open the Bar GUI in a child window (Toplevel)."""
     if not hasattr(self, 'bar_gui') or not self.bar_gui:
         try:
+            BarGUI = _lazy_import("BarGUI")
             self.bar_gui = BarGUI(self.root, self.auth)
         except Exception as e:
             messagebox.showerror(_t("commerce_facilities.errors.error"), _t("commerce_facilities.errors.bar_init_failed").format(error=e))

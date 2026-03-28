@@ -3,12 +3,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import logging
 
-# Import GUI managers
-from education_system.university_system.modules.domain.finance.gui.finance_management_gui import FinanceManagementGUI
-from education_system.university_system.modules.domain.student_affairs.gui.student_union_management_gui import StudentUnionManagementGUI
-from education_system.university_system.modules.domain.health.gui.health_portal_management_gui import HealthPortalManagementGUI
-from education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui import GradeTrackingManagementGUI
-from education_system.university_system.modules.shared.gui.email.email_manager_management_gui import EmailManagerManagementGUI
+# GUI managers — imported lazily via _lazy_import() to speed up startup
+from education_system.university_system.modules.shared.gui.main.imports.gui_imports import _lazy_import
 
 # Import i18n
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t, get_current_language_name, init_i18n
@@ -36,38 +32,22 @@ def create_fallback_interface(self):
 def init_gui_managers(self):
     """Initialize modular GUI managers"""
     # Initialize each GUI manager individually to prevent cascade failures
-    try:
-        self.finance_gui = FinanceManagementGUI(self.root, self.auth)
-    except Exception as e:
-        print(f"Warning: Error initializing FinanceManagementGUI: {e}")
-        self.finance_gui = None
-
-    try:
-        self.student_union_gui = StudentUnionManagementGUI(self.root, self.auth)
-    except Exception as e:
-        print(f"Warning: Error initializing StudentUnionManagementGUI: {e}")
-        self.student_union_gui = None
-
-    try:
-        self.health_portal_gui = HealthPortalManagementGUI(self.root, self.auth)
-    except Exception as e:
-        print(f"Warning: Error initializing HealthPortalManagementGUI: {e}")
-        self.health_portal_gui = None
-
-    try:
-        self.grade_tracking_gui = GradeTrackingManagementGUI(self.root, self.auth)
-    except Exception as e:
-        print(f"Warning: Error initializing GradeTrackingManagementGUI: {e}")
-        self.grade_tracking_gui = None
-
-    # Don't initialize restaurant GUI immediately to avoid widget conflicts
-    # self.restaurant_gui = RestaurantManagementGUI(self.root, self.auth)
-
-    try:
-        self.email_manager_gui = EmailManagerManagementGUI(self.root, self.auth)
-    except Exception as e:
-        print(f"Warning: Error initializing EmailManagerManagementGUI: {e}")
-        self.email_manager_gui = None
+    for attr, cls_name in [
+        ("finance_gui", "FinanceManagementGUI"),
+        ("student_union_gui", "StudentUnionManagementGUI"),
+        ("health_portal_gui", "HealthPortalManagementGUI"),
+        ("grade_tracking_gui", "GradeTrackingManagementGUI"),
+        ("email_manager_gui", "EmailManagerManagementGUI"),
+    ]:
+        try:
+            cls = _lazy_import(cls_name)
+            if cls:
+                setattr(self, attr, cls(self.root, self.auth))
+            else:
+                setattr(self, attr, None)
+        except Exception as e:
+            print(f"Warning: Error initializing {cls_name}: {e}")
+            setattr(self, attr, None)
 def create_themed_toplevel(self, title="", geometry=""):
     """Create a Toplevel window"""
     window = tk.Toplevel(self.root)

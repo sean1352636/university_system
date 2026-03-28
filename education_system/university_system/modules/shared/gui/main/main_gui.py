@@ -7,7 +7,8 @@ from datetime import datetime
 # Import authentication
 from education_system.university_system.infrastructure.auth import UserAuth, set_auth_instance
 from education_system.university_system.infrastructure.shared_context import set_auth as set_shared_auth, get_auth
-from education_system.university_system.modules.shared.gui.main.imports.gui_imports import safe_auth_check, HAS_AUTH
+from education_system.university_system.modules.shared.cli.utils import safe_auth_check
+HAS_AUTH = True
 
 # Import i18n
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
