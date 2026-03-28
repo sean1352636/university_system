@@ -26,7 +26,7 @@ except ImportError:
     TEXTRACT_AVAILABLE = False
 
 try:
-    from PyPDF2 import PdfReader
+    from pypdf import PdfReader
     PYPDF2_AVAILABLE = True
 except ImportError:
     PYPDF2_AVAILABLE = False
@@ -604,7 +604,7 @@ def _extract_text_from_file(self, file_path):
             except Exception as e:
                 raise Exception(f"Failed to extract PDF text: {e}")
         else:
-            raise Exception("PDF support not available. Install PyPDF2: pip install PyPDF2")
+            raise Exception("PDF support not available. Install pypdf: pip install pypdf")
 
     elif file_ext in ['.docx', '.doc']:
         if PYTHON_DOCX_AVAILABLE:

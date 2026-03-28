@@ -55,7 +55,7 @@ except ImportError:
     TEXTRACT_AVAILABLE = False
 
 try:
-    from PyPDF2 import PdfReader
+    from pypdf import PdfReader
     PYPDF2_AVAILABLE = True
 except ImportError:
     PYPDF2_AVAILABLE = False
