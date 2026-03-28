@@ -110,13 +110,31 @@ class MobileAppPWAGUI:
             logger.error(f"Error setting up current user: {e}")
 
     def init_database(self):
-        """Initialize database tables"""
+        """Initialize database tables and migrate missing columns."""
         try:
-            # Import and run schema creation
             from education_system.university_system.infrastructure.database.remaining_features_schema import MOBILE_APP_SCHEMA
 
             with transaction() as conn:
                 conn.executescript(MOBILE_APP_SCHEMA)
+                # Migrate older databases that are missing columns added after
+                # the initial schema was deployed.
+                _migrations = [
+                    ("mobile_devices", "is_active", "BOOLEAN DEFAULT 1"),
+                    ("mobile_sessions", "ip_address", "TEXT"),
+                    ("mobile_sessions", "location", "TEXT"),
+                    ("mobile_analytics", "device_id", "INTEGER"),
+                    ("mobile_preferences", "theme", "TEXT DEFAULT 'light'"),
+                    ("mobile_preferences", "offline_mode_enabled", "BOOLEAN DEFAULT 1"),
+                    ("mobile_preferences", "data_saver_mode", "BOOLEAN DEFAULT 0"),
+                    ("mobile_preferences", "auto_sync", "BOOLEAN DEFAULT 1"),
+                    ("app_installations", "installed_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"),
+                    ("app_installations", "uninstalled_at", "TIMESTAMP"),
+                ]
+                for table, col, col_type in _migrations:
+                    try:
+                        conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {col_type}")
+                    except Exception:
+                        pass  # Column already exists
 
             logger.info("Mobile App database tables initialized successfully")
         except Exception as e:
@@ -679,7 +697,7 @@ class MobileAppPWAGUI:
             with get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
-                    SELECT install_id, user_id, device_id, installed_at,
+                    SELECT installation_id, user_id, device_id, installed_at,
                            uninstalled_at
                     FROM app_installations
                     ORDER BY installed_at DESC
