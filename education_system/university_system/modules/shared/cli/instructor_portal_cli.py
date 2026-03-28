@@ -385,17 +385,26 @@ class InstructorPortalCLI:
             print("\n  ACCOUNT:")
             print("    23. Change Password")
 
-            print("\n    0.  Logout")
+            print("\n    R.  Return to Login")
+            print("    Q.  Shutdown")
             print("=" * 50)
 
             choice = input("\n  Enter your choice: ").strip()
 
-            if choice == '0':
-                print("\n  Logging out...")
+            if choice.lower() == 'q':
+                print("\n  Shutting down...")
                 try:
                     self.auth.logout()
                 except Exception:
                     pass
+                raise SystemExit(0)
+            elif choice.lower() == 'r' or choice == '0':
+                print("\n  Returning to login...")
+                try:
+                    self.auth.logout()
+                except Exception:
+                    pass
+                self._return_to_login = True
                 break
             elif choice == '1':
                 self.view_dashboard()
@@ -451,4 +460,16 @@ class InstructorPortalCLI:
 def run_instructor_portal():
     """Create an InstructorPortalCLI instance and run the main menu."""
     portal = InstructorPortalCLI()
+    portal._return_to_login = False
     portal.main_menu()
+    if getattr(portal, '_return_to_login', False):
+        try:
+            from education_system.shared.cli.login_cli import universal_cli_login
+            result = universal_cli_login()
+            if result:
+                user_info, sys_key, role, shared_auth = result
+                if sys_key == 'university':
+                    from run import run_university_cli
+                    run_university_cli(user_info=user_info, role=role, shared_auth=shared_auth)
+        except Exception as e:
+            print(f"Error returning to login: {e}")

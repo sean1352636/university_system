@@ -66,9 +66,13 @@ class StudentPortalGUI:
                  font=('Arial', 15, 'bold'), bg='#2c3e50', fg='white'
                  ).pack(side='left', padx=20, pady=10)
 
-        tk.Button(header, text="Logout", bg='#e74c3c', fg='white',
+        tk.Button(header, text="Shutdown", bg='#c0392b', fg='white',
                   font=('Arial', 10, 'bold'), bd=0, padx=12, pady=4,
-                  command=self._logout).pack(side='right', padx=20, pady=10)
+                  command=self._shutdown).pack(side='right', padx=10, pady=10)
+
+        tk.Button(header, text="Return to Login", bg='#e67e22', fg='white',
+                  font=('Arial', 10, 'bold'), bd=0, padx=12, pady=4,
+                  command=self._return_to_login).pack(side='right', padx=10, pady=10)
 
         # Main paned area: sidebar + content
         paned = ttk.PanedWindow(self.root, orient='horizontal')
@@ -300,10 +304,11 @@ class StudentPortalGUI:
                       font=('Arial', 11)).pack()
 
     # ------------------------------------------------------------------
-    # Logout / close
+    # Navigation / close
     # ------------------------------------------------------------------
 
-    def _logout(self):
+    def _return_to_login(self):
+        """Log out and return to the universal login window."""
         if self.auth:
             try:
                 self.auth.logout()
@@ -311,8 +316,34 @@ class StudentPortalGUI:
                 pass
         self.root.destroy()
 
+        # Re-show the universal login and relaunch the appropriate portal
+        try:
+            from education_system.shared.gui.login_gui import UniversalLoginWindow
+            login = UniversalLoginWindow()
+            login.mainloop()
+
+            if login.user_info and login.system_key:
+                from run import run_university_gui
+                run_university_gui(
+                    user_info=login.user_info,
+                    role=login.system_role,
+                    shared_auth=login.auth,
+                )
+        except Exception as e:
+            logger.error(f"Error returning to login: {e}")
+
+    def _shutdown(self):
+        """Shut down the application entirely."""
+        if self.auth:
+            try:
+                self.auth.logout()
+            except Exception:
+                pass
+        self.root.destroy()
+        raise SystemExit(0)
+
     def _on_close(self):
-        self._logout()
+        self._shutdown()
 
     def run(self):
         self.root.mainloop()

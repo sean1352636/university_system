@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.51.0 — 2026-03-28](#8510---2026-03-28)
 - [8.50.0 — 2026-03-28](#8500---2026-03-28)
 - [8.49.0 — 2026-03-28](#8490---2026-03-28)
 - [8.48.0 — 2026-03-27](#8480---2026-03-27)
@@ -151,6 +152,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`secondary_school/tests/test_services.py`** — Removed 4 inline fixtures and 4 direct imports; services now provided by conftest
 - **`Makefile`** — Added `test-gui` target (runs `pytest -m gui`) and `test-auth` target (runs all shared auth + security tests); updated `.PHONY` with all test targets
 - **`.github/workflows/ci.yml`** — Added GUI test step after coverage run; runs college/secondary/primary GUI tests with `-m gui` marker
+
+---
+
+## [8.51.0] — 2026-03-28
+
+### University System — Portal navigation: Return to Login + Shutdown buttons
+
+#### Changed
+
+- **All 3 portal GUIs** (`student_portal.py`, `staff_portal.py`, `instructor_portal.py`) — Replaced single "Logout" button with two buttons: "Return to Login" (orange, logs out and re-shows universal login window) and "Shutdown" (red, exits application). Window close (X) now triggers shutdown.
+- **All 3 portal CLIs** (`student_portal_cli.py`, `staff_portal_cli.py`, `instructor_portal_cli.py`) — Replaced option "0. Logout" with "R. Return to Login" (logs out and re-runs universal CLI login) and "Q. Shutdown" (exits application). The `run_*_portal()` functions now handle the return-to-login flow.
 
 ---
 
