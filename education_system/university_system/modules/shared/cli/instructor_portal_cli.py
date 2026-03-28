@@ -327,6 +327,30 @@ class InstructorPortalCLI:
             print(f"\n  Error changing password: {e}")
         input("Press Enter to continue...")
 
+    def _handle_transfer_credits(self):
+        try:
+            from education_system.university_system.modules.domain.academics.cli.transfer_credits_cli import display_transfer_credits_menu
+            display_transfer_credits_menu(self.auth)
+        except ImportError as e:
+            print(f"\n  Transfer Credits module is not available: {e}")
+            input("Press Enter to continue...")
+
+    def _handle_accreditation(self):
+        try:
+            from education_system.university_system.modules.domain.academics.cli.accreditation_cli import display_accreditation_menu
+            display_accreditation_menu(self.auth)
+        except ImportError as e:
+            print(f"\n  Accreditation module is not available: {e}")
+            input("Press Enter to continue...")
+
+    def _handle_course_catalog(self):
+        try:
+            from education_system.university_system.modules.domain.academics.cli.course_catalog_cli import display_course_catalog_menu
+            display_course_catalog_menu(self.auth)
+        except ImportError as e:
+            print(f"\n  Course Catalog module is not available: {e}")
+            input("Press Enter to continue...")
+
     # ------------------------------------------------------------------
     # Main menu loop
     # ------------------------------------------------------------------
@@ -381,6 +405,11 @@ class InstructorPortalCLI:
             print("\n  RESOURCES:")
             print("    21. Library")
             print("    22. University Shop")
+
+            print("\n  ACADEMIC ADMIN:")
+            print("    24. Transfer Credits")
+            print("    25. Accreditation")
+            print("    26. Course Catalog")
 
             print("\n  ACCOUNT:")
             print("    23. Change Password")
@@ -452,6 +481,12 @@ class InstructorPortalCLI:
                 self._handle_university_shop()
             elif choice == '23':
                 self._handle_change_password()
+            elif choice == '24':
+                self._handle_transfer_credits()
+            elif choice == '25':
+                self._handle_accreditation()
+            elif choice == '26':
+                self._handle_course_catalog()
             else:
                 print("\n  Invalid choice. Please try again.")
                 input("Press Enter to continue...")

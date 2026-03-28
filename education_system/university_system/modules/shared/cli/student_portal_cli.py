@@ -322,6 +322,22 @@ class StudentPortalCLI:
             print(f"\n  Error changing password: {e}")
         input("Press Enter to continue...")
 
+    def _handle_course_catalog(self):
+        try:
+            from education_system.university_system.modules.domain.academics.cli.course_catalog_cli import display_course_catalog_menu
+            display_course_catalog_menu(self.auth)
+        except ImportError as e:
+            print(f"\n  Course Catalog module is not available: {e}")
+            input("Press Enter to continue...")
+
+    def _handle_transfer_credits(self):
+        try:
+            from education_system.university_system.modules.domain.academics.cli.transfer_credits_cli import display_transfer_credits_menu
+            display_transfer_credits_menu(self.auth)
+        except ImportError as e:
+            print(f"\n  Transfer Credits module is not available: {e}")
+            input("Press Enter to continue...")
+
     # ------------------------------------------------------------------
     # Main menu loop
     # ------------------------------------------------------------------
@@ -380,6 +396,10 @@ class StudentPortalCLI:
             print("\n  COMMUNICATION:")
             print("    21. Communication Hub")
             print("    22. To-Do List")
+
+            print("\n  ACADEMIC:")
+            print("    24. Course Catalog")
+            print("    25. Transfer Credits")
 
             print("\n  ACCOUNT:")
             print("    23. Change Password")
@@ -451,6 +471,10 @@ class StudentPortalCLI:
                 self._handle_todo()
             elif choice == '23':
                 self._handle_change_password()
+            elif choice == '24':
+                self._handle_course_catalog()
+            elif choice == '25':
+                self._handle_transfer_credits()
             else:
                 print("\n  Invalid choice. Please try again.")
                 input("Press Enter to continue...")
