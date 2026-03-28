@@ -304,6 +304,12 @@ def main(user_info=None, role=None, shared_auth=None):
         if current_role == 'student':
             from education_system.university_system.modules.shared.cli.student_portal_cli import run_student_portal
             run_student_portal()
+        elif current_role == 'staff':
+            from education_system.university_system.modules.shared.cli.staff_portal_cli import run_staff_portal
+            run_staff_portal()
+        elif current_role == 'instructor':
+            from education_system.university_system.modules.shared.cli.instructor_portal_cli import run_instructor_portal
+            run_instructor_portal()
         else:
             display_menu()
     finally:
