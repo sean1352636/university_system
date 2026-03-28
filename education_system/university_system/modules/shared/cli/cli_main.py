@@ -294,9 +294,18 @@ def main(user_info=None, role=None, shared_auth=None):
         if not login_prompt(auth):
             sys.exit(1)
 
-    # Display main menu
+    # Route students to the dedicated Student Portal CLI; everyone else
+    # gets the full management menu.
+    current_role = ''
+    if auth and auth.current_user:
+        current_role = (auth.current_user.get('role') or '').lower()
+
     try:
-        display_menu()
+        if current_role == 'student':
+            from education_system.university_system.modules.shared.cli.student_portal_cli import run_student_portal
+            run_student_portal()
+        else:
+            display_menu()
     finally:
         # Clean up on exit
         cleanup_connections()
