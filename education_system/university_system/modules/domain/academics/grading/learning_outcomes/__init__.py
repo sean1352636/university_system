@@ -1,3 +1,5 @@
+from education_system.university_system.infrastructure.database.db import get_connection
+
 from education_system.university_system.modules.domain.academics.grading.learning_outcomes.menu import (
     learning_outcome_menu,
     generate_outcome_report,

@@ -25,6 +25,7 @@ def init_grade_system_db():
             email_address TEXT,
             gender TEXT,
             dob TEXT,
+            age INTEGER,
             enrollment_date TEXT DEFAULT (date('now')),
             status TEXT DEFAULT 'Active',
             grade_level TEXT

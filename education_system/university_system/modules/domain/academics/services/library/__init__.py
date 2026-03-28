@@ -12,6 +12,7 @@ from education_system.university_system.modules.domain.academics.services.librar
 
 # Re-export database helpers
 from education_system.university_system.modules.domain.academics.services.library.database import (
+    DATABASE_FILE,
     get_db_connection,
     init_library_db,
     verify_database_structure,
@@ -182,6 +183,7 @@ __all__ = [
     'BookReview',
     'ReadingList',
     # Database
+    'DATABASE_FILE',
     'get_db_connection',
     'init_library_db',
     'verify_database_structure',

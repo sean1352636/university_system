@@ -11,6 +11,8 @@ from education_system.university_system.modules.domain.finance.gui.finance.setti
     logger,
 )
 
+from education_system.university_system.infrastructure.auth import get_global_auth
+
 __all__ = [
     "SettingsManager",
     "PAYMENT_GATEWAYS",
@@ -20,4 +22,5 @@ __all__ = [
     "cipher_suite",
     "auth",
     "logger",
+    "get_global_auth",
 ]

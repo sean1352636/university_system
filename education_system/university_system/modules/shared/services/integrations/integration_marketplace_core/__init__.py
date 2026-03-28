@@ -16,6 +16,9 @@ Extended with:
 - Notifications & Alerts
 """
 
+# Database helper re-exported for convenience
+from education_system.university_system.modules.shared.services.integrations.integration_marketplace_core._imports import get_connection
+
 # Core manager classes
 from education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.catalog import IntegrationCatalogManager
 from education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.installation import InstallationManager
@@ -97,6 +100,9 @@ from education_system.university_system.modules.shared.services.integrations.int
 
 
 __all__ = [
+    # Database helper
+    'get_connection',
+
     # Manager Classes
     'IntegrationCatalogManager', 'InstallationManager', 'CredentialManager',
     'SyncManager', 'DataMappingManager', 'WebhookManager',

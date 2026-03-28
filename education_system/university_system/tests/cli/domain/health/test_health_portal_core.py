@@ -35,7 +35,7 @@ def test_db():
         student_id TEXT PRIMARY KEY,
         first_name TEXT,
         last_name TEXT,
-        age INTEGER
+        course TEXT
     )
     ''')
 
@@ -50,7 +50,7 @@ def test_db():
     ''')
 
     # Insert test student (use column names to avoid column mismatch)
-    cursor.execute("INSERT INTO students (student_id, first_name, last_name, age) VALUES ('S001', 'Test', 'Student', 20)")
+    cursor.execute("INSERT INTO students (student_id, first_name, last_name, course) VALUES ('S001', 'Test', 'Student', 'CS')")
 
     # Insert security settings
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')

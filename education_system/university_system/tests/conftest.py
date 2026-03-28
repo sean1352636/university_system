@@ -264,6 +264,8 @@ def _create_test_database(db_path):
             phone_number TEXT,
             gender TEXT,
             date_of_birth TEXT,
+            dob TEXT,
+            age INTEGER,
             enrollment_date TEXT,
             graduation_date TEXT,
             major TEXT,

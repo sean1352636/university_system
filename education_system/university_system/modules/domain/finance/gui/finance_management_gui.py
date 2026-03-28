@@ -32,6 +32,7 @@ except Exception:
     _set_finance_cli_auth = None
 
 from education_system.university_system.infrastructure.auth import UserAuth
+from education_system.university_system.modules.shared.gui.theme_config import get_theme_manager
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
 # Configure logging

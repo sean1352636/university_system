@@ -14,3 +14,7 @@ try:
     )
 except ImportError:
     pass
+
+# Alias: tests reference ``housing.gui.accommodation_gui`` rather than the
+# full ``housing.gui.housing_accommodation_gui`` sub-package.
+from education_system.university_system.modules.domain.housing.gui import housing_accommodation_gui as accommodation_gui
