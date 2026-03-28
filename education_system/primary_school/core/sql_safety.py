@@ -2,6 +2,7 @@
 
 from education_system.shared.database.sql_safety import (  # noqa: F401
     ALLOWED_OPERATORS,
+    build_insert_clause,
     build_set_clause,
     build_where_clause,
     escape_like,

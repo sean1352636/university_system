@@ -1,6 +1,7 @@
 """REST API for attendance tracking system."""
 
 import datetime
+import logging
 from flask import Flask, request, jsonify
 from education_system.university_system.modules.domain.academics.services.attendance.settings import get_setting
 from education_system.university_system.modules.domain.academics.services.attendance.records import (
@@ -8,6 +9,8 @@ from education_system.university_system.modules.domain.academics.services.attend
 )
 from education_system.university_system.modules.domain.academics.services.attendance.qr_system import QRAttendanceSystem
 from education_system.university_system.modules.domain.academics.services.attendance.predictive_analytics import AttendancePredictiveAnalytics
+
+logger = logging.getLogger(__name__)
 
 
 class AttendanceAPI:
@@ -64,7 +67,8 @@ class AttendanceAPI:
                     return jsonify({'success': False, 'message': 'Failed to record attendance'}), 500
 
             except Exception as e:
-                return jsonify({'error': str(e)}), 500
+                logger.error("Error recording attendance: %s", e)
+                return jsonify({'error': 'Internal server error'}), 500
 
         @self.app.route('/api/attendance/student/<student_id>', methods=['GET'])
         def get_student_attendance_api(student_id):
@@ -74,7 +78,8 @@ class AttendanceAPI:
                 return jsonify(stats)
 
             except Exception as e:
-                return jsonify({'error': str(e)}), 500
+                logger.error("Error retrieving student attendance: %s", e)
+                return jsonify({'error': 'Internal server error'}), 500
 
         @self.app.route('/api/qr/generate', methods=['POST'])
         def generate_qr_api():
@@ -97,7 +102,8 @@ class AttendanceAPI:
                     return jsonify({'success': False}), 500
 
             except Exception as e:
-                return jsonify({'error': str(e)}), 500
+                logger.error("Error generating QR code: %s", e)
+                return jsonify({'error': 'Internal server error'}), 500
 
         @self.app.route('/api/qr/checkin', methods=['POST'])
         def qr_checkin_api():
@@ -112,7 +118,8 @@ class AttendanceAPI:
                 return jsonify({'success': success, 'message': message})
 
             except Exception as e:
-                return jsonify({'error': str(e)}), 500
+                logger.error("Error processing QR checkin: %s", e)
+                return jsonify({'error': 'Internal server error'}), 500
 
         @self.app.route('/api/predictions/<student_id>/<module_code>', methods=['GET'])
         def get_prediction_api(student_id, module_code):
@@ -126,7 +133,8 @@ class AttendanceAPI:
                     return jsonify({'error': 'No prediction available'}), 404
 
             except Exception as e:
-                return jsonify({'error': str(e)}), 500
+                logger.error("Error getting prediction: %s", e)
+                return jsonify({'error': 'Internal server error'}), 500
 
     def run_api(self, host='127.0.0.1', port=5000, debug=False):
         """Run the API server"""

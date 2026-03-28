@@ -100,11 +100,29 @@ def _open_connection(db_path: str) -> sqlite3.Connection:
     return conn
 
 
+def _validate_slug(slug: str) -> str:
+    """Validate a slug to prevent path traversal attacks.
+
+    Raises ValueError if the slug contains path separators, parent-directory
+    references, or other dangerous characters.
+    """
+    import re
+    if not slug or not re.fullmatch(r'[a-zA-Z0-9_\-]+', slug):
+        raise ValueError(f"Invalid slug: must be alphanumeric/hyphen/underscore only")
+    return slug
+
+
 def _tenant_dir(tenant_slug: str) -> Path:
-    return _TENANTS_BASE / tenant_slug
+    tenant_slug = _validate_slug(tenant_slug)
+    resolved = (_TENANTS_BASE / tenant_slug).resolve()
+    # Ensure the resolved path is still under _TENANTS_BASE
+    if not str(resolved).startswith(str(_TENANTS_BASE.resolve())):
+        raise ValueError("Path traversal detected in tenant slug")
+    return resolved
 
 
 def _db_path_for(tenant_slug: str, system_key: str) -> str:
+    _validate_slug(system_key)
     return str(_tenant_dir(tenant_slug) / f"{system_key}.db")
 
 

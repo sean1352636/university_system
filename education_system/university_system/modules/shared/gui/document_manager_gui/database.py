@@ -272,7 +272,9 @@ class DocumentDatabaseManager:
             except Exception as e:
                 # Fallback to direct insertion if auth system not available during initialization
                 print(f"Using fallback admin creation: {e}")
-                admin_hash = hashlib.sha256(admin_password.encode()).hexdigest()
+                import os as _os
+                _salt = _os.urandom(16)
+                admin_hash = _salt.hex() + ':' + hashlib.pbkdf2_hmac('sha256', admin_password.encode(), _salt, 100000).hex()
                 cursor.execute('''
                 INSERT INTO users (username, password_hash, role, email, first_name, last_name, created_date)
                 VALUES (?, ?, ?, ?, ?, ?, ?)

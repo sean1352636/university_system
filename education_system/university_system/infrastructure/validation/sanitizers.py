@@ -7,9 +7,57 @@ preventing XSS, SQL injection, and other security vulnerabilities.
 
 import re
 import html
+import html.parser
+import io
 import unicodedata
 from typing import Optional, List, Dict, Any
 from pathlib import Path
+
+
+class _ScriptStripper(html.parser.HTMLParser):
+    """HTML parser that removes <script> and <style> elements entirely."""
+
+    _STRIP_TAGS = frozenset(('script', 'style'))
+
+    def __init__(self):
+        super().__init__(convert_charrefs=False)
+        self._out = io.StringIO()
+        self._skip_depth = 0
+        self._skip_tag: str | None = None
+
+    def handle_starttag(self, tag, attrs):
+        if tag.lower() in self._STRIP_TAGS:
+            if self._skip_depth == 0:
+                self._skip_tag = tag.lower()
+            self._skip_depth += 1
+            return
+        if self._skip_depth == 0:
+            attr_str = ''.join(f' {k}="{v}"' if v is not None else f' {k}' for k, v in attrs)
+            self._out.write(f'<{tag}{attr_str}>')
+
+    def handle_endtag(self, tag):
+        if tag.lower() in self._STRIP_TAGS and self._skip_depth > 0:
+            self._skip_depth -= 1
+            if self._skip_depth == 0:
+                self._skip_tag = None
+            return
+        if self._skip_depth == 0:
+            self._out.write(f'</{tag}>')
+
+    def handle_data(self, data):
+        if self._skip_depth == 0:
+            self._out.write(data)
+
+    def handle_entityref(self, name):
+        if self._skip_depth == 0:
+            self._out.write(f'&{name};')
+
+    def handle_charref(self, name):
+        if self._skip_depth == 0:
+            self._out.write(f'&#{name};')
+
+    def get_output(self) -> str:
+        return self._out.getvalue()
 
 
 class Sanitizers:
@@ -35,7 +83,9 @@ class Sanitizers:
     # Characters that are potentially dangerous in various contexts
     SQL_DANGEROUS_CHARS = re.compile(r"['\";\\-]")
     HTML_DANGEROUS_CHARS = re.compile(r'[<>&"\']')
-    SCRIPT_PATTERN = re.compile(r'<script[^>]*>.*?</script>', re.IGNORECASE | re.DOTALL)
+    # NOTE: script removal now uses _ScriptStripper HTML parser (not regex)
+    # to avoid regex-based tag filter bypasses.
+    SCRIPT_PATTERN = None  # deprecated; kept for backward compat
     EVENT_HANDLER_PATTERN = re.compile(r'\s*on\w+\s*=', re.IGNORECASE)
 
     # Allowed HTML tags for rich text (if needed)
@@ -128,8 +178,15 @@ class Sanitizers:
 
         allowed_tags = allowed_tags or cls.ALLOWED_HTML_TAGS
 
-        # Remove script tags completely
-        result = cls.SCRIPT_PATTERN.sub('', html_content)
+        # Remove script/style tags using HTML parser (not regex) to avoid bypasses
+        stripper = _ScriptStripper()
+        try:
+            stripper.feed(html_content)
+            result = stripper.get_output()
+        except Exception:
+            # Fallback: aggressively strip anything that looks like a script tag
+            result = re.sub(r'<\s*script\b[^>]*>.*?<\s*/\s*script\s*>', '', html_content, flags=re.IGNORECASE | re.DOTALL)
+            result = re.sub(r'<\s*script\b[^>]*/?>', '', result, flags=re.IGNORECASE)
 
         # Remove event handlers
         result = cls.EVENT_HANDLER_PATTERN.sub(' data-removed=', result)

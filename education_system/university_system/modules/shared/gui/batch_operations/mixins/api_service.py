@@ -133,8 +133,8 @@ class ApiServiceMixin:
                         return jsonify({'error': f'Unsupported import type: {import_type}'}), 400
 
                 except Exception as e:
-                    logger.error(f"API import error: {e}")
-                    return jsonify({'error': str(e)}), 500
+                    logger.error("API import error: %s", e)
+                    return jsonify({'error': 'Internal server error'}), 500
 
             # Get students endpoint
             @app.route('/api/students', methods=['GET'])
@@ -190,8 +190,8 @@ class ApiServiceMixin:
                         }), 200
 
                 except Exception as e:
-                    logger.error(f"API get students error: {e}")
-                    return jsonify({'error': str(e)}), 500
+                    logger.error("API get students error: %s", e)
+                    return jsonify({'error': 'Internal server error'}), 500
 
             # Update student endpoint
             @app.route('/api/students/<student_id>', methods=['PUT'])
@@ -237,8 +237,8 @@ class ApiServiceMixin:
                         }), 200
 
                 except Exception as e:
-                    logger.error(f"API update student error: {e}")
-                    return jsonify({'error': str(e)}), 500
+                    logger.error("API update student error: %s", e)
+                    return jsonify({'error': 'Internal server error'}), 500
 
             logger.info("API routes configured successfully")
 

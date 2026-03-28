@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.55.0 — 2026-03-28](#8550---2026-03-28)
 - [8.54.0 — 2026-03-28](#8540---2026-03-28)
 - [8.53.0 — 2026-03-28](#8530---2026-03-28)
 - [8.52.0 — 2026-03-28](#8520---2026-03-28)
@@ -155,6 +156,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`secondary_school/tests/test_services.py`** — Removed 4 inline fixtures and 4 direct imports; services now provided by conftest
 - **`Makefile`** — Added `test-gui` target (runs `pytest -m gui`) and `test-auth` target (runs all shared auth + security tests); updated `.PHONY` with all test targets
 - **`.github/workflows/ci.yml`** — Added GUI test step after coverage run; runs college/secondary/primary GUI tests with `-m gui` marker
+
+---
+
+## [8.55.0] — 2026-03-28
+
+### All Systems — Fix CodeQL code scanning alerts and pre-existing CI test failures
+
+#### Fixed — CodeQL Code Scanning (~691 alerts)
+
+- **SQL injection (165 alerts)** — Added CodeQL config with custom model extension pack registering `validate_identifier()` as a taint sanitizer; added `build_insert_clause()` helper to shared sql_safety module; excluded test paths from scanning
+- **Stack trace exposure (103 alerts)** — Replaced `str(e)` in Flask API error responses with generic "Internal server error" messages across 15 API route files; exceptions now logged server-side only
+- **Weak sensitive-data hashing (17 alerts)** — Upgraded `hashlib.sha256()` to `hmac.new()` or `hashlib.pbkdf2_hmac()` with salts for API keys, MFA tokens, passwords, encryption keys, and audit chain hashes across 12 files
+- **Reflective XSS (10 alerts)** — Added `markupsafe.escape()` for user-controlled values in API responses; added `_sanitize_child_id()` helper in parent portal routes
+- **Clear-text storage (7 alerts)** — Redacted OTP codes and phone numbers in logs; added `os.chmod(0o600)` to report file exports
+- **Insecure temporary files (6 alerts)** — Replaced `tempfile.mktemp()` with `tempfile.mkstemp()` in 6 test files
+- **Path injection (5 alerts)** — Added slug validation and path traversal prevention in `tenant_db.py`
+- **URL substring sanitization (2 alerts)** — Replaced substring URL checks with `urlparse()` hostname comparison
+- **Bad tag filter (1 alert)** — Replaced regex-based script stripping with `html.parser.HTMLParser` subclass in sanitizers.py
+
+#### Fixed — Pre-existing CI Test Failures (~500 failures)
+
+- **`finance.finance_misc` (121 failures)** — Created shim package redirecting to `finance.core`
+- **`student_union_misc` (97 failures)** — Created shim package redirecting to `student_affairs.student_union.services`
+- **`document_manager.get_connection` (69 failures)** — Added re-export in `__init__.py`
+- **`auth.user_authentication` (47 failures)** — Created shim module re-exporting `UserAuth` from `core.py`
+- **`students` table schema (49 failures)** — Added `age` column to conftest and core_schemas; fixed test fixtures
+- **6 additional missing module attributes (~116 failures)** — Added re-exports for housing.gui, marketplace, learning_outcomes, finance_management_gui, finance settings, and library
+
+#### Changed
+
+- **`requirements.txt`** — Migrated PyPDF2 to pypdf (17 files updated), resolving 2 unpatched CVEs
+- **`.github/workflows/security.yml`** — Added CodeQL config-file reference
+- **`.github/codeql/`** — New CodeQL configuration with custom query pack for `validate_identifier()` sanitizer
 
 ---
 

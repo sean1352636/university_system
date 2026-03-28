@@ -41,7 +41,7 @@ def list_office_hours():
         return jsonify({"items": items, "total": len(items)})
     except Exception as e:
         logger.error(f"Error listing office hours: {e}")
-        return jsonify({"error": "Failed to retrieve office hours", "details": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @office_hours_bp.route("/<int:id>", methods=["GET"])
@@ -57,7 +57,7 @@ def get_office_hour(id: int):
         return jsonify(item)
     except Exception as e:
         logger.error(f"Error retrieving office hours {id}: {e}")
-        return jsonify({"error": "Failed to retrieve office hours", "details": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @office_hours_bp.route("", methods=["POST"])
@@ -88,8 +88,8 @@ def create_office_hours():
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
-        logger.error(f"Error creating office hours: {e}")
-        return jsonify({"error": "Failed to create office hours", "details": str(e)}), 500
+        logger.error("Error creating office hours: %s", e)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @office_hours_bp.route("/<int:id>", methods=["PUT"])
@@ -111,8 +111,8 @@ def update_office_hours(id: int):
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
-        logger.error(f"Error updating office hours {id}: {e}")
-        return jsonify({"error": "Failed to update office hours", "details": str(e)}), 500
+        logger.error("Error updating office hours %s: %s", id, e)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @office_hours_bp.route("/<int:id>", methods=["DELETE"])
@@ -128,7 +128,7 @@ def delete_office_hours(id: int):
         return jsonify({"message": f"Office hours {id} deleted successfully"})
     except Exception as e:
         logger.error(f"Error deleting office hours {id}: {e}")
-        return jsonify({"error": "Failed to delete office hours", "details": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 # ---- Bookings ----
@@ -155,7 +155,7 @@ def get_my_bookings():
         return jsonify({"items": bookings, "total": len(bookings)})
     except Exception as e:
         logger.error(f"Error retrieving bookings: {e}")
-        return jsonify({"error": "Failed to retrieve bookings", "details": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @office_hours_bp.route("/<int:id>/book", methods=["POST"])
@@ -186,8 +186,8 @@ def book_office_hour(id: int):
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
-        logger.error(f"Error booking office hour {id}: {e}")
-        return jsonify({"error": "Failed to book office hour", "details": str(e)}), 500
+        logger.error("Error booking office hour %s: %s", id, e)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @office_hours_bp.route("/bookings/<int:booking_id>", methods=["DELETE"])
@@ -208,5 +208,5 @@ def cancel_booking(booking_id: int):
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
-        logger.error(f"Error cancelling booking {booking_id}: {e}")
-        return jsonify({"error": "Failed to cancel booking", "details": str(e)}), 500
+        logger.error("Error cancelling booking %s: %s", booking_id, e)
+        return jsonify({"error": "Internal server error"}), 500

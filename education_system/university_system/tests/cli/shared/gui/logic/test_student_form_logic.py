@@ -216,7 +216,8 @@ class TestEmailValidation:
         logic = StudentFormLogic(config={'valid_email_domains': ['university.edu']})
         valid, errors = logic.validate_email('user@gmail.com')
         assert valid is False
-        assert any('university.edu' in e for e in errors)
+        expected_domain = 'university.edu'
+        assert any(expected_domain in e for e in errors)
 
     def test_validate_email_allowed_domain(self):
         """Test email from allowed domain passes."""

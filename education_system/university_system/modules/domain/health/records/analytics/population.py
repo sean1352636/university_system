@@ -169,7 +169,13 @@ def generate_population_health_report(auth, start_date, end_date):
         with open(filename, 'w', encoding='utf-8') as f:
             for line in report_content:
                 f.write(line + '\n')
-        
+
+        # Restrict file permissions — report contains sensitive health data
+        import os
+        try:
+            os.chmod(filename, 0o600)
+        except OSError:
+            pass
         print(f"Report saved to: {filename}")
         log_audit_event(auth.current_user['id'], 'generate_population_health_report', 'report', filename)
     

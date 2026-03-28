@@ -103,7 +103,8 @@ def change_password():
         auth = UserAuth()
         auth.change_password(username, data["new_password"])
     except Exception as exc:
-        return jsonify({"error": str(exc) or "Failed to change password", "status": 500}), 500
+        logger.error("Failed to change password: %s", exc)
+        return jsonify({"error": "Internal server error", "status": 500}), 500
 
     log_activity("change_password", "account", user=username)
     return jsonify({"message": "Password changed successfully"})

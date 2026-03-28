@@ -1782,9 +1782,16 @@ TOP 10 COURSES BY ENROLLMENT
             return
 
         try:
+            import os
             report_text = self._generate_report_text()
             with open(filename, 'w', encoding='utf-8') as f:
                 f.write(report_text)
+
+            # Restrict file permissions — report contains sensitive demographic data
+            try:
+                os.chmod(filename, 0o600)
+            except OSError:
+                pass
 
             messagebox.showinfo("Success", f"Report saved to:\n{filename}")
 
@@ -2412,9 +2419,16 @@ class StudentDemographicReportGUI:
             return
 
         try:
+            import os
             report_text = self._generate_report_text()
             with open(filename, 'w', encoding='utf-8') as f:
                 f.write(report_text)
+
+            # Restrict file permissions — report contains sensitive demographic data
+            try:
+                os.chmod(filename, 0o600)
+            except OSError:
+                pass
 
             messagebox.showinfo("Success", f"Report saved to:\n{filename}")
 

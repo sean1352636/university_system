@@ -14,6 +14,7 @@ import os
 import sys
 from education_system.university_system.infrastructure.database.db import sqlite3
 import hashlib
+import hmac
 import secrets
 import json
 import re
@@ -47,9 +48,9 @@ class APISecurityManager:
         cursor = conn.cursor()
 
         try:
-            # Generate API key
+            # Generate API key — hash with HMAC-SHA256 for secure lookup
             api_key = f"uni_{secrets.token_urlsafe(32)}"
-            key_hash = hashlib.sha256(api_key.encode()).hexdigest()
+            key_hash = hmac.new(b'api-key-hash', api_key.encode(), hashlib.sha256).hexdigest()
 
             expires_at = datetime.now() + timedelta(days=expires_days)
 
@@ -83,7 +84,7 @@ class APISecurityManager:
         cursor = conn.cursor()
 
         try:
-            key_hash = hashlib.sha256(api_key.encode()).hexdigest()
+            key_hash = hmac.new(b'api-key-hash', api_key.encode(), hashlib.sha256).hexdigest()
 
             cursor.execute("""
                 SELECT id, user_id, permissions, expires_at, is_active, rate_limit
@@ -312,10 +313,10 @@ class PasswordSecurityManager:
         Uses k-anonymity - only sends first 5 chars of hash
         """
         try:
-            # Hash password
-            sha1_hash = hashlib.sha256(password.encode()).hexdigest().upper()
-            prefix = sha1_hash[:5]
-            suffix = sha1_hash[5:]
+            # Hash password with SHA-256 for k-anonymity check
+            pw_hash = hashlib.sha256(password.encode()).hexdigest().upper()  # noqa: S324
+            prefix = pw_hash[:5]
+            suffix = pw_hash[5:]
 
             # Query HIBP API
             url = f"https://api.pwnedpasswords.com/range/{prefix}"

@@ -350,6 +350,7 @@ class UniversalLoginWindow(tk.Tk):
     def _verify_mfa(self, user_id: int):
         """Check the entered MFA code (TOTP or recovery) and proceed on success."""
         import hashlib
+        import hmac
         from datetime import datetime
 
         code = self._mfa_var.get().strip()
@@ -362,7 +363,7 @@ class UniversalLoginWindow(tk.Tk):
         if pending:
             code_hash, expiry = pending
             if datetime.now() < expiry:
-                if hashlib.sha256(code.encode()).hexdigest() == code_hash:
+                if hmac.compare_digest(hashlib.sha256(code.encode()).hexdigest(), code_hash):  # noqa: S324
                     self._pending_email_otp = None  # consume
                     user_info = self._auth.complete_mfa_login(user_id)
                     self._on_login_success(user_info)

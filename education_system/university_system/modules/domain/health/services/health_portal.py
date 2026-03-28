@@ -1366,7 +1366,13 @@ def export_custom_dataset(auth):
                             txtfile.write(f"    Email: {contact['email']}\n")
                         txtfile.write("\n")
 
-            print(f"\n✓ Health profile exported to: {filename}")
+            # Restrict file permissions — contains sensitive health data
+            import os
+            try:
+                os.chmod(filename, 0o600)
+            except OSError:
+                pass
+            print(f"\nHealth profile exported to: {filename}")
         else:
             print("Invalid choice.")
             conn.close()

@@ -100,8 +100,8 @@ class ApiMixin:
                     }), 400
 
             except Exception as e:
-                logger.error(f"API import error: {e}")
-                return jsonify({'error': str(e)}), 500
+                logger.error("API import error: %s", e)
+                return jsonify({'error': 'Internal server error'}), 500
 
         @self.api_app.route('/api/students', methods=['GET'])
         def api_get_students():
@@ -142,8 +142,8 @@ class ApiMixin:
                 })
 
             except Exception as e:
-                logger.error(f"API get students error: {e}")
-                return jsonify({'error': str(e)}), 500
+                logger.error("API get students error: %s", e)
+                return jsonify({'error': 'Internal server error'}), 500
 
         @self.api_app.route('/api/students/<student_id>', methods=['PUT'])
         def api_update_student(student_id):
@@ -170,5 +170,5 @@ class ApiMixin:
                 })
 
             except Exception as e:
-                logger.error(f"API update student error: {e}")
-                return jsonify({'error': str(e)}), 500
+                logger.error("API update student error: %s", e)
+                return jsonify({'error': 'Internal server error'}), 500

@@ -295,7 +295,8 @@ def mfa_verify():
         auth = UserAuth(_auth_db_path or str(AUTH_DB_FILE))
         result = auth.verify_mfa(data["user_id"], body["code"])
     except Exception as e:
-        return jsonify({"error": str(e)}), 401
+        logger.error("MFA verification failed: %s", e)
+        return jsonify({"error": "MFA verification failed"}), 401
 
     systems = result.get("systems", [])
     access_token = generate_token(result["user_id"], result["username"], systems, "access")
@@ -374,7 +375,8 @@ def register():
             systems=system_tuples,
         )
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        logger.error("User registration failed: %s", e)
+        return jsonify({"error": "Registration failed"}), 400
 
     return jsonify({"message": "User created.", "user_id": user_id}), 201
 
@@ -405,6 +407,7 @@ def change_password():
         auth.change_password(g.current_user["user_id"],
                              data["old_password"], data["new_password"])
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        logger.error("Password change failed: %s", e)
+        return jsonify({"error": "Password change failed"}), 400
 
     return jsonify({"message": "Password changed successfully."})

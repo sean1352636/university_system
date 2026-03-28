@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3
 from flask import jsonify
+
+logger = logging.getLogger(__name__)
 
 from education_system.university_system.modules.domain.finance.core.finance_context import get_connection, get_current_user
 
@@ -326,7 +329,8 @@ def api_get_student_financial_summary(student_id):
             return jsonify({'error': 'Student not found'}), 404
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error("Financial summary retrieval failed: %s", e)
+        return jsonify({'error': 'Internal server error'}), 500
 
 def apply_credit_to_fees():
     """Apply student credit to outstanding fees"""

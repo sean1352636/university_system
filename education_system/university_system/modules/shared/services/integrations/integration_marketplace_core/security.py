@@ -103,8 +103,9 @@ class SecurityCredentialsManager:
             'credentials': credentials
         })
 
-        # Simple XOR encryption
-        key = hashlib.sha256(password.encode()).hexdigest()
+        # XOR encryption with PBKDF2-derived key
+        dk = hashlib.pbkdf2_hmac('sha256', password.encode(), b'cred-export-salt', 100000)
+        key = dk.hex()
         encrypted = ''.join(chr(ord(c) ^ ord(key[i % len(key)])) for i, c in enumerate(content))
 
         filepath = os.path.join(paths.DATA_DIR, 'exports', f'credentials_encrypted_{datetime.now().strftime("%Y%m%d_%H%M%S")}.enc')

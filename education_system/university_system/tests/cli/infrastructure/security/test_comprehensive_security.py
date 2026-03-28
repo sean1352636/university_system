@@ -100,9 +100,9 @@ class TestAPISecurityManager:
         conn = sqlite3.connect(test_db)
         cursor = conn.cursor()
 
-        import hashlib
+        import hashlib, hmac
         api_key = "uni_test_expired"
-        key_hash = hashlib.sha256(api_key.encode()).hexdigest()
+        key_hash = hmac.new(b'api-key-hash', api_key.encode(), hashlib.sha256).hexdigest()
 
         expired_date = datetime.now() - timedelta(days=1)
         cursor.execute("""
@@ -249,8 +249,8 @@ class TestPasswordSecurityManager:
         # Create predictable hash
         import hashlib
         password = "password123"
-        sha1_hash = hashlib.sha256(password.encode()).hexdigest().upper()
-        suffix = sha1_hash[5:]
+        pw_hash = hashlib.sha256(password.encode()).hexdigest().upper()  # noqa: S324
+        suffix = pw_hash[5:]
 
         # Mock API response with match
         mock_response = Mock()

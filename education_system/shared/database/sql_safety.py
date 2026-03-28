@@ -52,6 +52,32 @@ def build_where_clause(conditions: dict, operator: str = "AND") -> tuple[str, li
     return f"WHERE {op.join(parts)}", params
 
 
+def build_insert_clause(fields: dict) -> tuple[str, str, list]:
+    """Build parameterized column list, placeholders, and values for INSERT.
+
+    Returns ``(columns_sql, placeholders_sql, values_list)``.
+
+    Example::
+
+        cols, phs, vals = build_insert_clause({"name": "Ada", "age": 30})
+        conn.execute(f"INSERT INTO students ({cols}) VALUES ({phs})", vals)
+        # -> INSERT INTO students (name, age) VALUES (?, ?)  with [\"Ada\", 30]
+    """
+    if not fields:
+        raise ValueError("No columns to insert")
+
+    validated_cols: list[str] = []
+    params: list = []
+    for col, val in fields.items():
+        validate_identifier(col)
+        validated_cols.append(col)
+        params.append(val)
+
+    cols_sql = ", ".join(validated_cols)  # nosec B608 - cols validated above
+    placeholders_sql = ", ".join("?" for _ in validated_cols)
+    return cols_sql, placeholders_sql, params
+
+
 def build_set_clause(updates: dict) -> tuple[str, list]:
     """Build a parameterized SET clause from a dict of {column: value}.
 

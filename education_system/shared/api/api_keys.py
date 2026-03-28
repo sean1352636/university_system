@@ -56,8 +56,9 @@ CREATE INDEX IF NOT EXISTS idx_api_key_prefix ON api_keys(key_prefix);
 
 
 def _hash_key(raw_key: str) -> str:
-    """Hash an API key using SHA-256 (fast lookup, key is already high-entropy)."""
-    return hashlib.sha256(raw_key.encode()).hexdigest()
+    """Hash an API key using HMAC-SHA256 (fast lookup, key is already high-entropy)."""
+    import hmac
+    return hmac.new(b'api-key-hash', raw_key.encode(), hashlib.sha256).hexdigest()
 
 
 class APIKeyManager:

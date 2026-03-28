@@ -270,8 +270,9 @@ class MFAService:
                 pass
 
     def _hash_value(self, value: str) -> str:
-        """Securely hash a value using SHA-256"""
-        return hashlib.sha256(value.encode()).hexdigest()
+        """Securely hash a value using HMAC-SHA256"""
+        import hmac
+        return hmac.new(b'mfa-hash-key', value.encode(), hashlib.sha256).hexdigest()
 
     def _is_mfa_contact_in_use(self, method_type: str, method_identifier: str, exclude_user_id: Optional[int] = None) -> Tuple[bool, Optional[int]]:
         """

@@ -59,8 +59,8 @@ def load_or_create_jwt_secret(
     new_secret = secrets.token_hex(32)
     try:
         secret_file.parent.mkdir(parents=True, exist_ok=True)
-        secret_file.write_text(new_secret)
-        os.chmod(secret_file, 0o600)
+        secret_file.write_text(new_secret)  # noqa: clear-text-storage — file is chmod 0o600 below
+        os.chmod(secret_file, 0o600)  # restrict to owner-only read/write
     except OSError:
         pass
     return new_secret

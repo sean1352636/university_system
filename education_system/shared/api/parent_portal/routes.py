@@ -102,8 +102,17 @@ def _parent_required(f):
     return decorated
 
 
+def _sanitize_child_id(child_id: str) -> str:
+    """Sanitize and validate a child_id URL parameter to prevent injection."""
+    import re
+    # Only allow alphanumeric characters, hyphens, and underscores
+    sanitized = re.sub(r'[^a-zA-Z0-9_\-]', '', str(child_id or ''))
+    return sanitized[:64]  # cap length
+
+
 def _verify_child_access(child_student_id: str) -> tuple[dict | None, tuple | None]:
     """Return (link_record, None) if parent has access, else (None, error_response)."""
+    child_student_id = _sanitize_child_id(child_student_id)
     parent_user_id = g.current_user["user_id"]
     svc = _get_link_svc()
     link = None
@@ -197,6 +206,7 @@ def list_children():
 @parent_portal_bp.route("/api/children/<child_id>/attendance", methods=["GET"])
 @_parent_required
 def child_attendance(child_id: str):
+    child_id = _sanitize_child_id(child_id)
     link, err = _verify_child_access(child_id)
     if err:
         return err
@@ -249,6 +259,7 @@ def child_attendance(child_id: str):
 @parent_portal_bp.route("/api/children/<child_id>/grades", methods=["GET"])
 @_parent_required
 def child_grades(child_id: str):
+    child_id = _sanitize_child_id(child_id)
     link, err = _verify_child_access(child_id)
     if err:
         return err
@@ -289,6 +300,7 @@ def child_grades(child_id: str):
 @parent_portal_bp.route("/api/children/<child_id>/timetable", methods=["GET"])
 @_parent_required
 def child_timetable(child_id: str):
+    child_id = _sanitize_child_id(child_id)
     link, err = _verify_child_access(child_id)
     if err:
         return err
@@ -328,6 +340,7 @@ def child_timetable(child_id: str):
 @parent_portal_bp.route("/api/children/<child_id>/homework", methods=["GET"])
 @_parent_required
 def child_homework(child_id: str):
+    child_id = _sanitize_child_id(child_id)
     link, err = _verify_child_access(child_id)
     if err:
         return err
@@ -373,6 +386,7 @@ def child_homework(child_id: str):
 @parent_portal_bp.route("/api/children/<child_id>/behaviour", methods=["GET"])
 @_parent_required
 def child_behaviour(child_id: str):
+    child_id = _sanitize_child_id(child_id)
     link, err = _verify_child_access(child_id)
     if err:
         return err
@@ -438,6 +452,7 @@ def child_behaviour(child_id: str):
 @parent_portal_bp.route("/api/children/<child_id>/messages", methods=["GET"])
 @_parent_required
 def child_messages_list(child_id: str):
+    child_id = _sanitize_child_id(child_id)
     link, err = _verify_child_access(child_id)
     if err:
         return err
@@ -477,6 +492,7 @@ def child_messages_list(child_id: str):
 @parent_portal_bp.route("/api/children/<child_id>/messages", methods=["POST"])
 @_parent_required
 def child_messages_send(child_id: str):
+    child_id = _sanitize_child_id(child_id)
     link, err = _verify_child_access(child_id)
     if err:
         return err
@@ -622,7 +638,7 @@ def parents_evening_slots():
 def book_parents_evening():
     body = request.get_json(silent=True) or {}
     slot_id = body.get("slot_id")
-    child_id = body.get("child_id")
+    child_id = _sanitize_child_id(body.get("child_id", ""))
     system_key = body.get("system_key", "school")
 
     if not slot_id or not child_id:

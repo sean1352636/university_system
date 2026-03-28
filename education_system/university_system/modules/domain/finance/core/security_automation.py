@@ -856,5 +856,6 @@ def api_endpoint(func):
         try:
             return func(*args, **kwargs)
         except Exception as e:
-            return {"error": str(e)}, 500
+            logger.error("API endpoint error: %s", e)
+            return {"error": "Internal server error"}, 500
     return wrapper

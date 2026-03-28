@@ -38,7 +38,8 @@ def health_check():
             conn.close()
             checks["database"] = {"status": "healthy"}
         except Exception as e:
-            checks["database"] = {"status": "unhealthy", "error": str(e)}
+            logger.error("Database health check failed: %s", e)
+            checks["database"] = {"status": "unhealthy", "error": "Database connection failed"}
             healthy = False
     else:
         checks["database"] = {"status": "unconfigured"}

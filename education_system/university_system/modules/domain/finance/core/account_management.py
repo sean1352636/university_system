@@ -790,7 +790,8 @@ def api_record_payment():
         })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error("Payment recording failed: %s", e)
+        return jsonify({'error': 'Internal server error'}), 500
 
 def manage_student_credits():
     """Manage student credit balances"""

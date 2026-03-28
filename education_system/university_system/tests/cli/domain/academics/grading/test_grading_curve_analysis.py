@@ -423,7 +423,8 @@ class TestCurveAnalysisIntegration:
     @pytest.fixture
     def temp_db_with_grades(self):
         """Create temporary database with grade data for curve testing"""
-        db_path = tempfile.mktemp(suffix='.db')
+        fd, db_path = tempfile.mkstemp(suffix='.db')
+        os.close(fd)
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 

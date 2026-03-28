@@ -83,7 +83,9 @@ except ImportError:
     HASH_AVAILABLE = False
     import hashlib
     def hash_password(password):
-        return hashlib.sha256(password.encode()).hexdigest()
+        # Use PBKDF2 for password hashing when main auth module unavailable
+        dk = hashlib.pbkdf2_hmac('sha256', password.encode(), b'cinema-fallback-salt', 100000)
+        return dk.hex()
 
 class CinemaApp:
     def __init__(self, root):

@@ -865,7 +865,8 @@ def superadmin_mark_notifications_read():
         svc.mark_all_read(user_id)
         return jsonify({"ok": True})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Failed to mark notifications read: %s", e)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @web_bp.route("/api/v1/web/superadmin/notifications/send", methods=["POST"])
@@ -897,7 +898,8 @@ def superadmin_send_notification():
         )
         return jsonify({"ok": True})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Failed to send notification: %s", e)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @web_bp.route("/api/v1/web/superadmin/notifications/broadcast", methods=["POST"])
@@ -929,7 +931,8 @@ def superadmin_broadcast_notification():
         )
         return jsonify({"ok": True, "count": count})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Failed to broadcast notification: %s", e)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 # ── Superadmin: Student Search endpoint ───────────────────────────────
@@ -1067,7 +1070,8 @@ def superadmin_backup():
             shutil.copy2(str(auth_path), str(backup_path))
             return jsonify({"ok": True, "backup": backup_name})
         except Exception as e:
-            return jsonify({"error": str(e)}), 500
+            logger.error("Failed to backup auth DB: %s", e)
+            return jsonify({"error": "Internal server error"}), 500
 
     try:
         from education_system.shared.admin_portal.admin_service import AdminService
@@ -1075,7 +1079,8 @@ def superadmin_backup():
         backup_path = svc.backup_database(system_key)
         return jsonify({"ok": True, "backup": str(backup_path).split("/")[-1]})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Failed to backup database for %s: %s", system_key, e)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @web_bp.route("/api/v1/web/superadmin/backup/info")
@@ -1149,7 +1154,8 @@ def superadmin_batch_role_change():
 
         return jsonify({"ok": True, "count": count})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Failed to batch role change: %s", e)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @web_bp.route("/api/v1/web/superadmin/batch/deactivate", methods=["POST"])
@@ -1180,7 +1186,8 @@ def superadmin_batch_deactivate():
 
         return jsonify({"ok": True, "count": len(active_users)})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("Failed to batch deactivate: %s", e)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 # ═══════════════════════════════════════════════════════════════════════

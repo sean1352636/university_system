@@ -42,7 +42,7 @@ def list_tas():
         return jsonify({"items": items, "total": len(items)})
     except Exception as e:
         logger.error(f"Error listing TAs: {e}")
-        return jsonify({"error": "Failed to retrieve teaching assistants", "details": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @ta_bp.route("/<int:id>", methods=["GET"])
@@ -58,7 +58,7 @@ def get_ta(id: int):
         return jsonify(item)
     except Exception as e:
         logger.error(f"Error retrieving TA {id}: {e}")
-        return jsonify({"error": "Failed to retrieve TA assignment", "details": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @ta_bp.route("", methods=["POST"])
@@ -88,7 +88,7 @@ def assign_ta():
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         logger.error(f"Error assigning TA: {e}")
-        return jsonify({"error": "Failed to assign teaching assistant", "details": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @ta_bp.route("/<int:id>", methods=["PUT"])
@@ -115,7 +115,7 @@ def update_ta(id: int):
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         logger.error(f"Error updating TA {id}: {e}")
-        return jsonify({"error": "Failed to update TA assignment", "details": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @ta_bp.route("/<int:id>", methods=["DELETE"])
@@ -131,7 +131,7 @@ def remove_ta(id: int):
         return jsonify({"message": f"TA assignment {id} removed successfully"})
     except Exception as e:
         logger.error(f"Error removing TA {id}: {e}")
-        return jsonify({"error": "Failed to remove TA assignment", "details": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 # ---- Module & Workload Queries ----
@@ -147,7 +147,7 @@ def get_tas_for_module(module_code: str):
         return jsonify({"items": items, "total": len(items), "module_code": module_code})
     except Exception as e:
         logger.error(f"Error retrieving TAs for module {module_code}: {e}")
-        return jsonify({"error": "Failed to retrieve TAs for module", "details": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @ta_bp.route("/workload/<student_id>", methods=["GET"])
@@ -160,7 +160,7 @@ def get_ta_workload(student_id: str):
         return jsonify({"student_id": student_id, **workload})
     except Exception as e:
         logger.error(f"Error retrieving TA workload for student {student_id}: {e}")
-        return jsonify({"error": "Failed to retrieve TA workload", "details": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 # ---- Permissions ----
@@ -203,7 +203,7 @@ def set_ta_permissions(id: int):
         return jsonify({"error": str(e)}), 400
     except Exception as e:
         logger.error(f"Error setting permissions for TA {id}: {e}")
-        return jsonify({"error": "Failed to set TA permissions", "details": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @ta_bp.route("/<int:id>/permissions/<module_code>", methods=["GET"])
@@ -256,4 +256,4 @@ def check_ta_permission(id: int, module_code: str):
         })
     except Exception as e:
         logger.error(f"Error checking permissions for TA {id}: {e}")
-        return jsonify({"error": "Failed to check TA permissions", "details": str(e)}), 500
+        return jsonify({"error": "Internal server error"}), 500

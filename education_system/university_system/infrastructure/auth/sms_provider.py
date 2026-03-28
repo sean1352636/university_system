@@ -354,14 +354,17 @@ class MockSMSProvider(SMSProvider):
     def send_otp(self, phone_number: str, code: str) -> Dict:
         """Mock send - logs to file instead of sending SMS"""
         try:
-            message = f"[{self._get_timestamp()}] SMS to {phone_number}: Your verification code is {code}\n"
+            # Redact sensitive data in logs — only show last 2 digits of code
+            redacted_code = '****' + code[-2:] if len(code) > 2 else '******'
+            redacted_phone = phone_number[:4] + '****' + phone_number[-2:] if len(phone_number) > 6 else '****'
+            message = f"[{self._get_timestamp()}] SMS to {redacted_phone}: verification code sent ({redacted_code})\n"
 
-            # Log to file
+            # Log to file (sensitive data redacted)
             with open(self.log_file, 'a') as f:
                 f.write(message)
 
             # Also print to console for development
-            print(f"📱 MOCK SMS: {phone_number} -> Code: {code}")
+            print(f"MOCK SMS: {redacted_phone} -> Code sent ({redacted_code})")
 
             return {
                 'success': True,

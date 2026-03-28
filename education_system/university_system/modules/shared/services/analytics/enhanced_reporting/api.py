@@ -49,9 +49,10 @@ def api_health():
             'database': 'connected'
         })
     except Exception as e:
+        logger.error("Health check failed: %s", e)
         return jsonify({
             'status': 'unhealthy',
-            'error': str(e),
+            'error': 'Internal server error',
             'timestamp': datetime.now().isoformat()
         }), 500
 
@@ -63,7 +64,8 @@ def api_get_section_data(section):
 
     try:
         if section not in AVAILABLE_SECTIONS:
-            return jsonify({'error': f'Invalid section: {section}'}), 400
+            from markupsafe import escape
+            return jsonify({'error': f'Invalid section: {escape(section)}'}), 400
 
         # Get date parameters
         start_date = request.args.get('start_date')
@@ -88,8 +90,8 @@ def api_get_section_data(section):
         })
 
     except Exception as e:
-        logger.error(f"API get section data error: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        logger.error("API get section data error: %s", e)
+        return jsonify({'error': 'Internal server error'}), 500
 
 
 @app.route('/api/templates', methods=['GET'])
@@ -135,7 +137,8 @@ def api_generate_report():
         # Verify template exists
         template = get_template(template_name)
         if not template:
-            return jsonify({'error': f'Template "{template_name}" not found'}), 404
+            from markupsafe import escape
+            return jsonify({'error': f'Template "{escape(template_name)}" not found'}), 404
 
         start_date = data.get('start_date')
         end_date = data.get('end_date')
@@ -160,8 +163,8 @@ def api_generate_report():
             return jsonify({'success': False, 'error': 'Failed to generate report'}), 500
 
     except Exception as e:
-        logger.error(f"API generate report error: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+        logger.error("API generate report error: %s", e)
+        return jsonify({'success': False, 'error': 'Internal server error'}), 500
 
 
 @app.route('/api/analytics/quality', methods=['GET'])

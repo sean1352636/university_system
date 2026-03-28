@@ -135,7 +135,7 @@ def decrypt_file(encrypted_path, password, output_path=None):
 
 def generate_encryption_key(password):
     """Generate encryption key from password"""
-    return hashlib.sha256(password.encode()).digest()
+    return hashlib.pbkdf2_hmac('sha256', password.encode(), b'backup-encryption-salt', 100000)
 
 def secure_delete_file(file_path, passes=3):
     """Securely delete a file by overwriting it multiple times"""

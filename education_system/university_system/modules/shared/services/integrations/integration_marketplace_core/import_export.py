@@ -109,8 +109,9 @@ class ImportExportManager:
         content = json.dumps(bundle, indent=2, default=str)
 
         if password:
-            # Simple encryption using password hash
-            key = hashlib.sha256(password.encode()).hexdigest()
+            # Derive encryption key from password using PBKDF2
+            dk = hashlib.pbkdf2_hmac('sha256', password.encode(), b'config-bundle-salt', 100000)
+            key = dk.hex()
             encrypted = ''.join(chr(ord(c) ^ ord(key[i % len(key)])) for i, c in enumerate(content))
             content = json.dumps({'encrypted': True, 'data': encrypted})
 
@@ -132,7 +133,8 @@ class ImportExportManager:
         if data.get('encrypted'):
             if not password:
                 raise ValueError("Password required for encrypted bundle")
-            key = hashlib.sha256(password.encode()).hexdigest()
+            dk = hashlib.pbkdf2_hmac('sha256', password.encode(), b'config-bundle-salt', 100000)
+            key = dk.hex()
             decrypted = ''.join(chr(ord(c) ^ ord(key[i % len(key)])) for i, c in enumerate(data['data']))
             data = json.loads(decrypted)
 

@@ -546,7 +546,8 @@ class TestTrendIntegration:
     @pytest.fixture
     def temp_db_with_trends(self):
         """Create temporary database with trend data"""
-        db_path = tempfile.mktemp(suffix='.db')
+        fd, db_path = tempfile.mkstemp(suffix='.db')
+        os.close(fd)
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 

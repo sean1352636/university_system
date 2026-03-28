@@ -246,6 +246,12 @@ class ReportingMixin:
             for desc, corr in correlations:
                 f.write(f"{desc}: {corr:.3f}\n")
 
+        # Restrict file permissions — report may contain sensitive student data
+        import os
+        try:
+            os.chmod(filename, 0o600)
+        except OSError:
+            pass
         print(f"Statistical summary report generated: {filename}")
 
     def email_reports(self):

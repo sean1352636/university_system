@@ -203,7 +203,11 @@ class ImmutableAuditLog:
             session_id or '',
         ])
 
-        return hashlib.sha256(hash_input.encode('utf-8')).hexdigest()
+        return hmac.new(
+            ImmutableAuditLog._SECRET_KEY,
+            hash_input.encode('utf-8'),
+            hashlib.sha256,
+        ).hexdigest()
 
     def _calculate_hmac(self, data: str) -> str:
         """
@@ -218,7 +222,7 @@ class ImmutableAuditLog:
         return hmac.new(
             ImmutableAuditLog._SECRET_KEY,
             data.encode('utf-8'),
-            hashlib.sha256
+            hashlib.sha256,
         ).hexdigest()
 
     def add_entry(

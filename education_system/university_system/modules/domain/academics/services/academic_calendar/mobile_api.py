@@ -111,7 +111,8 @@ class MobileAPIManager:
                 })
 
             except Exception as e:
-                return jsonify({'success': False, 'error': str(e)}), 500
+                logger.error("Error retrieving mobile events: %s", e)
+                return jsonify({'success': False, 'error': 'Internal server error'}), 500
 
         @self.app.route('/api/mobile/events/<event_id>', methods=['GET'])
         def get_mobile_event_details(event_id):
@@ -148,7 +149,8 @@ class MobileAPIManager:
                 })
 
             except Exception as e:
-                return jsonify({'success': False, 'error': str(e)}), 500
+                logger.error("Error retrieving mobile event details: %s", e)
+                return jsonify({'success': False, 'error': 'Internal server error'}), 500
 
         @self.app.route('/api/mobile/sync', methods=['POST'])
         def mobile_sync():
@@ -187,7 +189,8 @@ class MobileAPIManager:
                 })
 
             except Exception as e:
-                return jsonify({'success': False, 'error': str(e)}), 500
+                logger.error("Error syncing mobile data: %s", e)
+                return jsonify({'success': False, 'error': 'Internal server error'}), 500
 
     def _get_event_color(self, event_type: str) -> str:
         """Get color for event type"""

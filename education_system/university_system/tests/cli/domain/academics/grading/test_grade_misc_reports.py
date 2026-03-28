@@ -380,7 +380,8 @@ class TestReportIntegration:
     @pytest.fixture
     def temp_db(self):
         """Create a temporary database with test data"""
-        db_path = tempfile.mktemp(suffix='.db')
+        fd, db_path = tempfile.mkstemp(suffix='.db')
+        os.close(fd)
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 

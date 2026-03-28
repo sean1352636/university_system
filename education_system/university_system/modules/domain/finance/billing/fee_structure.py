@@ -476,7 +476,8 @@ def api_get_exchange_rates():
         return jsonify(exchange_rates)
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error("Exchange rate retrieval failed: %s", e)
+        return jsonify({'error': 'Internal server error'}), 500
 
 def currency_conversion_tool():
     """Interactive currency conversion tool"""

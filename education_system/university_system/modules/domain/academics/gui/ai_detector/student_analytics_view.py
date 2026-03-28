@@ -1039,9 +1039,16 @@ def analyze_reference_authenticity(self):
             elif year_int < 1900:
                 suspicious_refs.append(f"{author}, {year} - Very old reference")
 
-        # Check for fake-looking URLs
+        # Check for fake-looking URLs using proper URL parsing
+        from urllib.parse import urlparse
         for url in urls:
-            if 'fake' in url.lower() or 'example.com' in url.lower():
+            url_lower = url.lower()
+            try:
+                parsed = urlparse(url_lower)
+                hostname = parsed.hostname or ''
+            except Exception:
+                hostname = ''
+            if 'fake' in url_lower or hostname == 'example.com' or hostname.endswith('.example.com'):
                 suspicious_refs.append(f"Suspicious URL: {url[:50]}...")
 
         if suspicious_refs:

@@ -1,0 +1,23 @@
+# CodeQL analysis configuration for the education system.
+#
+# The college system service layer builds SQL queries using column names from
+# hardcoded Python dicts, validated through validate_identifier() which
+# enforces ^[a-zA-Z_][a-zA-Z0-9_]*$.  CodeQL flags these as SQL injection
+# because it sees f-string SQL, but user input never reaches the identifier
+# positions.  See: education_system/shared/database/sql_safety.py
+#
+# A local model extension pack (.github/codeql/custom-queries/) registers
+# validate_identifier() as a taint sanitizer so CodeQL recognises it as
+# making the output safe for SQL identifier interpolation.
+
+name: "education-system"
+
+packs:
+  python:
+    - .github/codeql/custom-queries
+
+paths-ignore:
+  - "**/tests/**"
+  - "**/test_*"
+  - "**/extras/**"
+  - "university-manager-main/**"
