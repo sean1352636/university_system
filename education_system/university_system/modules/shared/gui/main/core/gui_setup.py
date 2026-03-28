@@ -294,7 +294,6 @@ def create_navigation_panel(self, parent):
         ('module_management', _t("nav.buttons.module_management"), self.show_module_management),
         ('assignments', _t("nav.buttons.assignments"), self.show_assignments),
         ('grade_tracking_gui', _t("nav.buttons.grade_tracking"), self.show_grade_tracking_gui),
-        ('student_grades', _t("nav.buttons.student_grades"), self.show_student_grades_gui),
         ('learning_outcomes', _t("nav.buttons.learning_outcomes"), self.show_student_outcomes_gui),
         ('student_registration', _t("nav.buttons.student_registration"), self.show_student_registration_gui),
         ('library', _t("nav.buttons.library"), self.show_library_management),
@@ -794,7 +793,7 @@ def get_visible_buttons_for_role(self, role=None):
             'scheduling', 'trip_management', 'communication_hub',
             'office_hours',
             # Student-facing features
-            'student_analytics', 'student_grades', 'learning_outcomes',
+            'student_analytics', 'learning_outcomes',
             'my_timetable', 'student_registration', 'student_dashboard',
             # Shared cross-system modules for students
             'student_self_service', 'digital_transcript', 'cross_system_calendar',
@@ -810,7 +809,7 @@ def get_visible_buttons_for_role(self, role=None):
             'export', 'early_warning_system', 'communication_hub',
             'office_hours', 'ta_management',
             # Student-facing features also visible to instructors
-            'student_analytics', 'student_grades', 'learning_outcomes',
+            'student_analytics', 'learning_outcomes',
             'my_timetable', 'student_registration', 'student_dashboard',
         })
 

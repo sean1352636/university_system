@@ -14,8 +14,17 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from education_system.university_system.modules.domain.academic_progress.services.progress_service import ProgressService
+from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.infrastructure.shared_context import get_auth
 from education_system.university_system.infrastructure.localization import get_translation
+
+try:
+    from education_system.university_system.modules.domain.academics.grading.grade_calculation import (
+        calculate_student_gpa, letter_to_gpa,
+    )
+except ImportError:
+    calculate_student_gpa = None
+    letter_to_gpa = None
 
 # Translation helper
 _t = get_translation
@@ -63,6 +72,8 @@ class AcademicProgressGUI:
 
         # Create tabs
         self.create_overview_tab()
+        self.create_my_grades_tab()
+        self.create_transcript_tab()
         self.create_degree_progress_tab()
         self.create_milestones_tab()
         self.create_gpa_calculator_tab()
@@ -1097,6 +1108,263 @@ class AcademicProgressGUI:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate forecast: {str(e)}")
+
+    # ------------------------------------------------------------------
+    # Grade helpers (merged from StudentGradesPortal)
+    # ------------------------------------------------------------------
+
+    _LETTER_THRESHOLDS = [
+        (97, 'A+'), (93, 'A'), (90, 'A-'),
+        (87, 'B+'), (83, 'B'), (80, 'B-'),
+        (77, 'C+'), (73, 'C'), (70, 'C-'),
+        (67, 'D+'), (63, 'D'), (60, 'D-'),
+        (0, 'F'),
+    ]
+
+    @staticmethod
+    def _to_letter(grade):
+        if grade is None:
+            return 'N/A'
+        try:
+            numeric = float(grade)
+            for threshold, letter in AcademicProgressGUI._LETTER_THRESHOLDS:
+                if numeric >= threshold:
+                    return letter
+            return 'F'
+        except (ValueError, TypeError):
+            return str(grade)
+
+    @staticmethod
+    def _gpa_points(grade):
+        if letter_to_gpa is not None:
+            letter = AcademicProgressGUI._to_letter(grade)
+            return letter_to_gpa(letter)
+        return 0.0
+
+    @staticmethod
+    def _format_grade(grade):
+        if grade is None:
+            return "N/A"
+        if isinstance(grade, (int, float)):
+            return f"{grade:.1f}"
+        return str(grade)
+
+    def _get_student_id(self):
+        if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
+            u = self.auth.current_user
+            if isinstance(u, dict):
+                return u.get('student_id') or u.get('user_id') or u.get('id')
+            return getattr(u, 'student_id', getattr(u, 'user_id', getattr(u, 'id', None)))
+        return None
+
+    # ------------------------------------------------------------------
+    # My Grades tab (merged from StudentGradesPortal)
+    # ------------------------------------------------------------------
+
+    def create_my_grades_tab(self):
+        """Create the My Grades tab with detailed grade table."""
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=_t("academic_progress.tabs.my_grades", default="My Grades"))
+
+        header = ttk.Frame(tab)
+        header.pack(fill=tk.X, padx=10, pady=(10, 0))
+        ttk.Label(header, text="My Grades", font=('Arial', 14, 'bold')).pack(side='left')
+        ttk.Button(header, text="Refresh", command=self._populate_grades_tree).pack(side='right')
+
+        columns = ('Module Code', 'Module Name', 'Grade', 'Letter Grade', 'GPA Points')
+        col_widths = {'Module Code': 120, 'Module Name': 250, 'Grade': 80,
+                      'Letter Grade': 100, 'GPA Points': 100}
+
+        tree_frame = ttk.Frame(tab)
+        tree_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        self._grades_tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=15)
+        for col in columns:
+            self._grades_tree.heading(col, text=col)
+            self._grades_tree.column(col, width=col_widths.get(col, 100), anchor='w')
+
+        vsb = ttk.Scrollbar(tree_frame, orient='vertical', command=self._grades_tree.yview)
+        hsb = ttk.Scrollbar(tree_frame, orient='horizontal', command=self._grades_tree.xview)
+        self._grades_tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+        self._grades_tree.grid(row=0, column=0, sticky='nsew')
+        vsb.grid(row=0, column=1, sticky='ns')
+        hsb.grid(row=1, column=0, sticky='ew')
+        tree_frame.grid_rowconfigure(0, weight=1)
+        tree_frame.grid_columnconfigure(0, weight=1)
+
+        self._populate_grades_tree()
+
+    def _populate_grades_tree(self):
+        """Fetch grades and populate the grades Treeview."""
+        for item in self._grades_tree.get_children():
+            self._grades_tree.delete(item)
+
+        student_id = self._get_student_id()
+        if not student_id:
+            self._grades_tree.insert('', 'end', values=('--', 'Not logged in', '--', '--', '--'))
+            return
+
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    '''SELECT mg.module_code, m.module_name, mg.final_grade
+                       FROM module_grades mg
+                       JOIN modules m ON mg.module_code = m.module_code
+                       WHERE mg.student_id = ?''',
+                    (student_id,),
+                )
+                module_rows = cursor.fetchall()
+
+                cursor.execute(
+                    '''SELECT a.module_code, a.title, sub.grade
+                       FROM assignment_submissions sub
+                       JOIN assignments a ON sub.assignment_id = a.id
+                       WHERE sub.student_id = ? AND sub.grade IS NOT NULL
+                       ORDER BY sub.graded_date DESC''',
+                    (student_id,),
+                )
+                assignment_rows = cursor.fetchall()
+
+            all_rows = list(module_rows) + list(assignment_rows)
+            if not all_rows:
+                self._grades_tree.insert('', 'end', values=('--', 'No grades found', '--', '--', '--'))
+                return
+
+            for code, name, grade in all_rows:
+                letter = self._to_letter(grade)
+                points = self._gpa_points(grade)
+                self._grades_tree.insert('', 'end', values=(
+                    code, name, self._format_grade(grade), letter, f'{points:.2f}',
+                ))
+        except Exception as e:
+            self._grades_tree.insert('', 'end', values=('--', f'Error: {e}', '--', '--', '--'))
+
+    # ------------------------------------------------------------------
+    # Transcript tab (merged from StudentGradesPortal)
+    # ------------------------------------------------------------------
+
+    def create_transcript_tab(self):
+        """Create the Transcript tab with exportable academic record."""
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=_t("academic_progress.tabs.transcript", default="Transcript"))
+
+        header = ttk.Frame(tab)
+        header.pack(fill=tk.X, padx=10, pady=(10, 0))
+        ttk.Label(header, text="Academic Transcript", font=('Arial', 14, 'bold')).pack(side='left')
+        ttk.Button(header, text="Export", command=self._export_transcript).pack(side='right')
+
+        self._transcript_text = scrolledtext.ScrolledText(
+            tab, wrap='word', font=('Courier', 10), state='disabled',
+        )
+        self._transcript_text.pack(fill='both', expand=True, padx=10, pady=10)
+
+        self._render_transcript()
+
+    def _render_transcript(self):
+        text = self._build_transcript_text()
+        self._transcript_text.configure(state='normal')
+        self._transcript_text.delete('1.0', 'end')
+        self._transcript_text.insert('1.0', text)
+        self._transcript_text.configure(state='disabled')
+
+    def _build_transcript_text(self) -> str:
+        lines = []
+        sep = '=' * 60
+        student_id = self._get_student_id()
+
+        # Student name
+        student_name = str(student_id)
+        try:
+            with get_connection() as conn:
+                row = conn.execute(
+                    "SELECT first_name, middle_name, last_name FROM students WHERE student_id = ?",
+                    (student_id,),
+                ).fetchone()
+                if row:
+                    first, middle, last = row
+                    middle_str = f' {middle} ' if middle else ' '
+                    student_name = f'{first}{middle_str}{last}'
+        except Exception:
+            pass
+
+        lines.append(sep)
+        lines.append('ACADEMIC TRANSCRIPT')
+        lines.append(sep)
+        lines.append(f'Student: {student_name}')
+        lines.append(f'Student ID: {student_id}')
+        lines.append(f'Date: {datetime.now().strftime("%Y-%m-%d")}')
+        lines.append(sep)
+        lines.append('')
+
+        lines.append(f'{"Module Code":<14} {"Module Name":<30} {"Grade":<10} {"Letter":<10} {"Points":<8}')
+        lines.append('-' * 72)
+
+        gpa = None
+        total_modules = 0
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    '''SELECT mg.module_code, m.module_name, mg.final_grade
+                       FROM module_grades mg
+                       JOIN modules m ON mg.module_code = m.module_code
+                       WHERE mg.student_id = ?''',
+                    (student_id,),
+                )
+                module_rows = cursor.fetchall()
+                cursor.execute(
+                    '''SELECT a.module_code, a.title, sub.grade
+                       FROM assignment_submissions sub
+                       JOIN assignments a ON sub.assignment_id = a.id
+                       WHERE sub.student_id = ? AND sub.grade IS NOT NULL
+                       ORDER BY sub.graded_date DESC''',
+                    (student_id,),
+                )
+                assignment_rows = cursor.fetchall()
+
+            rows = list(module_rows) + list(assignment_rows)
+            if not rows:
+                lines.append('No grade records found.')
+            else:
+                total_points = 0.0
+                for code, name, grade in rows:
+                    letter = self._to_letter(grade)
+                    points = self._gpa_points(grade)
+                    total_points += points
+                    total_modules += 1
+                    lines.append(
+                        f'{code:<14} {name:<30} {self._format_grade(grade):<10} {letter:<10} {points:<8.2f}'
+                    )
+                if total_modules > 0:
+                    gpa = total_points / total_modules
+        except Exception as e:
+            lines.append(f'Error retrieving grades: {e}')
+
+        lines.append('')
+        lines.append('-' * 72)
+        lines.append(f'Total Modules: {total_modules}')
+        lines.append(f'Cumulative GPA: {gpa:.2f}' if gpa is not None else 'Cumulative GPA: N/A')
+        lines.append(sep)
+        return '\n'.join(lines)
+
+    def _export_transcript(self):
+        from tkinter import filedialog
+        student_id = self._get_student_id()
+        filepath = filedialog.asksaveasfilename(
+            defaultextension='.txt',
+            filetypes=[('Text files', '*.txt'), ('All files', '*.*')],
+            initialfile=f'transcript_{student_id}.txt',
+        )
+        if not filepath:
+            return
+        try:
+            text = self._build_transcript_text()
+            with open(filepath, 'w', encoding='utf-8') as fh:
+                fh.write(text)
+            messagebox.showinfo('Export Successful', f'Transcript saved to:\n{filepath}')
+        except Exception as e:
+            messagebox.showerror('Export Error', f'Failed to save transcript: {e}')
 
     def create_history_tab(self):
         """Create progress history tab."""

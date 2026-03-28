@@ -163,10 +163,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`commerce/gui/shop_management_gui/textbook_manager.py`** — New module: textbook browse, used book exchange, sell, and orders panels integrated into the University Shop sidebar
 - **`commerce/gui/shop_management_gui/main_gui.py`** — Added Textbooks sidebar section (Browse, Exchange, Sell, Orders), textbook DB init in backend startup, and method bindings for textbook_manager
 - **`modules/shared/gui/main/main_gui.py`** — Removed standalone `show_textbook_store_gui` import and class binding
-- **`modules/shared/gui/main/core/gui_setup.py`** — Removed `textbook_store` button from Student Services navigation and visibility set
+- **`modules/shared/gui/main/core/gui_setup.py`** — Removed `textbook_store` and `student_grades` buttons from navigation and visibility sets
 - **`commerce/services/shop_management/textbooks.py`** — New CLI module: browse/search textbooks, view details, my course books, used book exchange, find used copies, buy used, sell, view orders, view my listings, cancel listing
 - **`commerce/services/shop_management/menus.py`** — Added "Textbook Store" option to shop main menu and `display_textbook_menu()` sub-menu with 10 options
 - **`commerce/services/shop_management/__init__.py`** — Exported `display_textbook_menu`
+- **`academic_progress/gui/progress_gui.py`** — Merged My Grades table and Academic Transcript tabs from StudentGradesPortal into AcademicProgressGUI (now 9 tabs: Overview, My Grades, Transcript, Degree Progress, Milestones, GPA Calculator, Warnings, Forecast, History)
+- **`modules/shared/gui/main/main_gui.py`** — Removed standalone `show_student_grades_gui` import and class binding (grades now in Academic Progress)
 
 ---
 
