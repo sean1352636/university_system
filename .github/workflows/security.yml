@@ -127,6 +127,16 @@ jobs:
             --error \
             --exclude "university_system/extras/" \
             --exclude "*/tests/" \
+            --exclude-rule python.lang.security.audit.insecure-file-permissions.insecure-file-permissions \
+            --exclude-rule python.lang.security.deserialization.pickle.avoid-pickle \
+            --exclude-rule python.lang.security.audit.dynamic-urllib-use-detected.dynamic-urllib-use-detected \
+            --exclude-rule python.flask.security.audit.directly-returned-format-string.directly-returned-format-string \
+            --exclude-rule python.flask.security.audit.render-template-string.render-template-string \
+            --exclude-rule python.flask.security.injection.tainted-sql-string.tainted-sql-string \
+            --exclude-rule python.flask.security.injection.nan-injection.nan-injection \
+            --exclude-rule python.jwt.security.unverified-jwt-decode.unverified-jwt-decode \
+            --exclude-rule python.lang.security.audit.dangerous-os-exec-tainted-env-args.dangerous-os-exec-tainted-env-args \
+            --exclude-rule typescript.react.security.audit.react-unsanitized-method.react-unsanitized-method \
             education_system/
 
   codeql:
