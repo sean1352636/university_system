@@ -1,7 +1,7 @@
 """Backup export operations (CSV, JSON, XML, PDF, TXT)."""
 import os
 import json
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 
 from education_system.university_system.modules.shared.gui.database.shared_imports import logger
 from education_system.university_system.modules.shared.gui.database.operations.backup_ops import (

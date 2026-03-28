@@ -238,7 +238,7 @@ def get_statistics():
 @hesa_export_bp.route("/returns/<int:return_id>/generate-xml", methods=["POST"])
 @token_required
 def generate_xml_export(return_id: int):
-    import xml.etree.ElementTree as ET
+    import defusedxml.ElementTree as ET
 
     with get_connection() as conn:
         ret = conn.execute(

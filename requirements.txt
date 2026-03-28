@@ -54,6 +54,7 @@ qrcode==8.2                    # QR code generation for 2FA
 cryptography==46.0.6           # Cryptographic functions and data encryption
 bcrypt==5.0.0                  # Password hashing
 PyJWT==2.12.1                  # JSON Web Token authentication
+defusedxml>=0.7.1              # Safe XML parsing (prevents XXE attacks)
 
 # OPTIONAL: SSO/Federated Authentication
 # python3-saml>=1.16.0           # SAML 2.0 SSO support (optional)
@@ -193,6 +194,9 @@ bandit>=1.7.5                  # Security linter
 safety>=2.3.0                  # Dependency vulnerability scanner
 pip-audit>=2.6.0               # Additional vulnerability scanning
 semgrep>=1.45.0                # Static analysis security scanner (optional)
+
+# Pinned transitive dependency overrides (vulnerability fixes)
+mcp>=1.23.0                    # Fix GHSA-9h52-p55h-vw2f
 
 # ===============================
 # ADDITIONAL UTILITIES

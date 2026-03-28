@@ -71,7 +71,7 @@ def etag_response(data, status_code: int = 200):
         Flask response with ETag header, or 304 if unchanged
     """
     body = json.dumps(data, sort_keys=True, default=str)
-    etag = hashlib.md5(body.encode()).hexdigest()
+    etag = hashlib.sha256(body.encode()).hexdigest()[:32]
     etag_value = f'"{etag}"'
 
     # Check If-None-Match

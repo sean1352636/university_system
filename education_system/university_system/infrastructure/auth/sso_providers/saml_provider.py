@@ -30,7 +30,7 @@ import hashlib
 import logging
 import secrets
 import uuid
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 import zlib
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional

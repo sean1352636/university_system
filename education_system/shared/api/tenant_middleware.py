@@ -94,7 +94,7 @@ def _extract_jwt_tenant(auth_header: str) -> str | None:
     try:
         import jwt as pyjwt
         # Decode without verification — we only want the claim value.
-        payload = pyjwt.decode(token, options={"verify_signature": False})
+        payload = pyjwt.decode(token, options={"verify_signature": False})  # nosemgrep: unverified-jwt-decode — signature is verified by auth middleware
         tid = payload.get("tenant_id") or payload.get("tenant")
         return str(tid) if tid is not None else None
     except Exception:

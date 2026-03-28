@@ -6,7 +6,7 @@ import threading
 import queue
 import datetime
 import tempfile
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 import shutil
 import os
 import json

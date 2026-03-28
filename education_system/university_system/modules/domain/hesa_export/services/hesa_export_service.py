@@ -1,6 +1,6 @@
 """HESA data export service for statutory XML returns."""
 
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 from datetime import datetime
 from typing import Dict, List, Optional
 

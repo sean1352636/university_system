@@ -12,7 +12,7 @@ import csv
 import io
 import json
 import logging
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 from datetime import datetime
 from pathlib import Path
 from xml.dom.minidom import parseString

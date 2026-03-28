@@ -3,7 +3,7 @@
 from education_system.college_system.core.exceptions import CensusILRError
 from education_system.college_system.infrastructure.database.db import connect
 import logging
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 from datetime import datetime
 
 logger = logging.getLogger(__name__)

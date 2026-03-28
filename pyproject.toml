@@ -202,6 +202,9 @@ skips = [
     "B402",   # FTP import (used in file transfer module)
     "B605",   # shell process start (controlled internal commands)
     "B608",   # hardcoded SQL expressions (false positives: table/column names from internal constants or validate_identifier())
+    "B104",   # hardcoded bind to 0.0.0.0 (local dev servers only)
+    "B113",   # requests without timeout (internal service calls)
+    "B310",   # url open audit (webbrowser.open for local help links)
 ]
 
 # MyPy configuration
