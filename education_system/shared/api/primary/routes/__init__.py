@@ -22,32 +22,32 @@ from education_system.shared.api.primary.routes.hr_routes import hr_bp, init_hr_
 from education_system.shared.api.primary.routes.cpd_routes import cpd_bp, init_cpd_routes
 from education_system.shared.api.primary.routes.cover_routes import cover_bp, init_cover_routes
 from education_system.shared.api.primary.routes.staff_directory_routes import staff_directory_bp, init_staff_directory_routes
-from education_system.shared.api.primary.routes.user_routes import users_bp, init_users_routes
+from education_system.shared.api.primary.routes.users_routes import users_bp, init_users_routes
 from education_system.shared.api.primary.routes.settings_routes import settings_bp, init_settings_routes
 from education_system.shared.api.primary.routes.admissions_routes import admissions_bp, init_admissions_routes
 from education_system.shared.api.primary.routes.finance_routes import finance_bp, init_finance_routes
 from education_system.shared.api.primary.routes.data_export_routes import data_export_bp, init_data_export_routes
 from education_system.shared.api.primary.routes.audit_log_routes import audit_log_bp, init_audit_log_routes
-from education_system.shared.api.primary.routes.policy_routes import policies_bp, init_policies_routes
-from education_system.shared.api.primary.routes.document_routes import documents_bp, init_documents_routes
-from education_system.shared.api.primary.routes.club_routes import clubs_bp, init_clubs_routes
-from education_system.shared.api.primary.routes.meal_routes import meals_bp, init_meals_routes
+from education_system.shared.api.primary.routes.policies_routes import policies_bp, init_policies_routes
+from education_system.shared.api.primary.routes.documents_routes import documents_bp, init_documents_routes
+from education_system.shared.api.primary.routes.clubs_routes import clubs_bp, init_clubs_routes
+from education_system.shared.api.primary.routes.meals_routes import meals_bp, init_meals_routes
 from education_system.shared.api.primary.routes.transport_routes import transport_bp, init_transport_routes
-from education_system.shared.api.primary.routes.trip_routes import trips_bp, init_trips_routes
+from education_system.shared.api.primary.routes.trips_routes import trips_bp, init_trips_routes
 from education_system.shared.api.primary.routes.library_routes import library_bp, init_library_routes
 from education_system.shared.api.primary.routes.medical_routes import medical_bp, init_medical_routes
 from education_system.shared.api.primary.routes.class_group_routes import class_groups_bp, init_class_groups_routes
 from education_system.shared.api.primary.routes.consent_routes import consent_bp, init_consent_routes
 from education_system.shared.api.primary.routes.email_routes import emails_bp, init_emails_routes
-from education_system.shared.api.primary.routes.notification_routes import notifications_bp, init_notifications_routes
-from education_system.shared.api.primary.routes.announcement_routes import announcements_bp, init_announcements_routes
+from education_system.shared.api.primary.routes.notifications_routes import notifications_bp, init_notifications_routes
+from education_system.shared.api.primary.routes.announcements_routes import announcements_bp, init_announcements_routes
 from education_system.shared.api.primary.routes.calendar_routes import calendar_bp, init_calendar_routes
 from education_system.shared.api.primary.routes.parents_evening_routes import parents_evening_bp, init_parents_evening_routes
 from education_system.shared.api.primary.routes.communication_log_routes import communication_log_bp, init_communication_log_routes
 from education_system.shared.api.primary.routes.room_booking_routes import room_bookings_bp, init_room_bookings_routes
-from education_system.shared.api.primary.routes.asset_routes import assets_bp, init_assets_routes
-from education_system.shared.api.primary.routes.visitor_routes import visitors_bp, init_visitors_routes
-from education_system.shared.api.primary.routes.incident_routes import incidents_bp, init_incidents_routes
+from education_system.shared.api.primary.routes.assets_routes import assets_bp, init_assets_routes
+from education_system.shared.api.primary.routes.visitors_routes import visitors_bp, init_visitors_routes
+from education_system.shared.api.primary.routes.incidents_routes import incidents_bp, init_incidents_routes
 
 ALL_BLUEPRINTS = [
     system_bp,

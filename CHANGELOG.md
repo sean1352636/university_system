@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.49.0 — 2026-03-28](#8490---2026-03-28)
 - [8.48.0 — 2026-03-27](#8480---2026-03-27)
 - [8.47.0 — 2026-03-26](#8470---2026-03-26)
 - [8.46.0 — 2026-03-26](#8460---2026-03-26)
@@ -149,6 +150,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`secondary_school/tests/test_services.py`** — Removed 4 inline fixtures and 4 direct imports; services now provided by conftest
 - **`Makefile`** — Added `test-gui` target (runs `pytest -m gui`) and `test-auth` target (runs all shared auth + security tests); updated `.PHONY` with all test targets
 - **`.github/workflows/ci.yml`** — Added GUI test step after coverage run; runs college/secondary/primary GUI tests with `-m gui` marker
+
+---
+
+## [8.49.0] — 2026-03-28
+
+### All Systems — Cross-system audit fixes, SQL safety, and consistency improvements
+
+#### Fixed
+
+- **`shared/transcript/transcript_service.py`** — Attendance queries now check both `attendance` and `attendance_records` tables, fixing failures on college/primary/secondary databases
+- **`shared/student_portal/portal_service.py`** — Same attendance table name fix for student portal
+- **`shared/api/web/routes.py`** — Dashboard, attendance endpoint, and reports endpoint now resolve the correct attendance table per system
+- **`secondary_school/main_gui.py`** — Fixed stale sidebar entries ("Cross-System Notifications" and "Inter-System Messaging") left over from the unified communications merge
+- **`university_system/.../gui_imports.py`** — Removed duplicate `safe_auth_check()` function (was defined identically at lines 922 and 1088)
+
+#### Security
+
+- **`shared/gdpr/gdpr_service.py`** — Added `validate_identifier()` checks on all dynamic table/column names in SQL queries
+- **`shared/admin_portal/admin_service.py`** — Added `validate_identifier()` checks on dynamic table/column names in student/staff counts and last-activity queries
+- **`shared/services/data_retention/archiver.py`** — Added `validate_identifier()` checks before all dynamic SQL operations (archive, delete)
+
+#### Changed
+
+- **`shared/database/paths.py`** — New centralised module for all system database paths (`SYSTEM_DB_PATHS`, `AUTH_DB`, `SYSTEM_LABELS`, `SYSTEM_ORDER`)
+- **`shared/gdpr/gdpr_service.py`** — Now imports DB paths from `shared/database/paths.py` instead of computing them locally
+- **`shared/admin_portal/admin_service.py`** — Same centralised DB path import
+- **`shared/transcript/transcript_service.py`** — Same centralised DB path import
+- **`shared/student_portal/portal_service.py`** — Same centralised DB path import
+- **`shared/api/primary/routes/`** — Renamed 11 route files from singular to plural to match secondary school convention (e.g. `meal_routes.py` → `meals_routes.py`)
 
 ---
 

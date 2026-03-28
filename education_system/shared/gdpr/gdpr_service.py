@@ -10,21 +10,16 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from textwrap import dedent
 
+from education_system.shared.database.paths import SYSTEM_DB_PATHS, AUTH_DB, SYSTEM_LABELS
+from education_system.shared.database.sql_safety import validate_identifier
+
 
 def _default_db_paths():
-    """Resolve default database paths for all 4 systems."""
-    shared_dir = Path(__file__).resolve().parent.parent
-    edu_root = shared_dir.parent
-    return {
-        "primary": edu_root / "primary_school" / "data" / "db_files" / "primary_school.db",
-        "secondary": edu_root / "secondary_school" / "data" / "db_files" / "secondary_school.db",
-        "college": edu_root / "college_system" / "data" / "db_files" / "sixthform.db",
-        "university": edu_root / "university_system" / "data" / "db_files" / "student_records.db",
-    }
+    return dict(SYSTEM_DB_PATHS)
 
 
 def _auth_db_path():
-    return Path(__file__).resolve().parent.parent / "data" / "db_files" / "auth.db"
+    return AUTH_DB
 
 
 def _connect(path):
@@ -44,6 +39,7 @@ def _table_exists(conn, table_name):
 
 
 def _get_columns(conn, table_name):
+    validate_identifier(table_name)
     rows = conn.execute(f"PRAGMA table_info({table_name})").fetchall()
     return {r[1] for r in rows}
 
@@ -64,13 +60,6 @@ def _name_search_expr(columns):
         return "(forename || ' ' || last_name)"
     return None
 
-
-SYSTEM_LABELS = {
-    "primary": "Primary School",
-    "secondary": "Secondary School",
-    "college": "Sixth Form College",
-    "university": "University",
-}
 
 
 class GDPRService:
@@ -140,6 +129,7 @@ class GDPRService:
                 if "status" in cols:
                     select_parts.append("status")
 
+                validate_identifier(table)
                 sql = f"SELECT {', '.join(select_parts)} FROM {table} WHERE {where} LIMIT 100"
                 rows = conn.execute(sql, params).fetchall()
 

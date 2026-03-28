@@ -13,6 +13,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from education_system.shared.database.sql_safety import validate_identifier
+
 logger = logging.getLogger(__name__)
 
 
@@ -75,6 +77,7 @@ class Archiver:
         dict with ``table``, ``archive_destination``, ``records_archived``,
         ``status``.
         """
+        validate_identifier(table)
         conn = _connect(db_path)
         try:
             rows = conn.execute(
@@ -129,7 +132,9 @@ class Archiver:
         records: list[dict[str, Any]],
     ) -> str:
         """Copy *records* into ``{table}_archive``, creating it if needed."""
+        validate_identifier(table)
         archive_table = f"{table}_archive"
+        validate_identifier(archive_table)
         conn = _connect(db_path)
         try:
             # Create archive table mirroring source schema (add archived_at)
@@ -211,6 +216,7 @@ class Archiver:
         where_clause: str,
         where_params: list,
     ) -> int:
+        validate_identifier(table)
         conn = _connect(db_path)
         try:
             cursor = conn.execute(

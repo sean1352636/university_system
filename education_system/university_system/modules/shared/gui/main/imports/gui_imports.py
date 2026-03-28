@@ -919,32 +919,6 @@ def initialize_chatbot_integration():
         print(f"Error initializing chatbot: {e}")
         return False
 
-def safe_auth_check(auth_obj):
-    """Safely check if auth object has required attributes"""
-    if not auth_obj:
-        return False
-
-    # Ensure required attributes exist
-    if not hasattr(auth_obj, 'current_user'):
-        auth_obj.current_user = None
-
-    if not hasattr(auth_obj, 'last_activity'):
-        auth_obj.last_activity = None
-
-    if not hasattr(auth_obj, 'session_timeout'):
-        auth_obj.session_timeout = 30
-
-    if not hasattr(auth_obj, 'login_attempts'):
-        auth_obj.login_attempts = {}
-
-    if not hasattr(auth_obj, 'max_attempts'):
-        auth_obj.max_attempts = 5
-
-    if not hasattr(auth_obj, 'lockout_time'):
-        auth_obj.lockout_time = 15
-
-    return True
-
 def _safe_entry_insert(entry_widget, value, index=0) -> None:
     """
     Insert *value* into a Tk/ttk Entry-like widget without ever passing None to Tcl.

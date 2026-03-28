@@ -160,15 +160,15 @@ def dashboard_data(system_key):
     else:
         data["total_courses"] = 0
 
-    # Attendance
-    if "attendance" in tables:
-        att = _query(db, "SELECT COUNT(*) as t, SUM(CASE WHEN status IN ('present','Present','late','Late') THEN 1 ELSE 0 END) as a FROM attendance")
+    # Attendance — university uses "attendance", others use "attendance_records"
+    att_table = next((t for t in ("attendance", "attendance_records") if t in tables), None)
+    if att_table:
+        att = _query(db, f"SELECT COUNT(*) as t, SUM(CASE WHEN status IN ('present','Present','late','Late') THEN 1 ELSE 0 END) as a FROM {att_table}")
         if att and att[0]["t"]:
             data["attendance_rate"] = round(att[0]["a"] / att[0]["t"] * 100, 1)
         else:
             data["attendance_rate"] = None
-        # Breakdown
-        bd = _query(db, "SELECT status, COUNT(*) as c FROM attendance GROUP BY status")
+        bd = _query(db, f"SELECT status, COUNT(*) as c FROM {att_table} GROUP BY status")
         data["attendance_breakdown"] = {r["status"]: r["c"] for r in bd}
     else:
         data["attendance_rate"] = None
@@ -258,8 +258,9 @@ def attendance_data(system_key):
 
     tables = _safe_tables(db)
     records = []
-    if "attendance" in tables:
-        records = _query(db, "SELECT * FROM attendance ORDER BY rowid DESC LIMIT 200")
+    att_table = next((t for t in ("attendance", "attendance_records") if t in tables), None)
+    if att_table:
+        records = _query(db, f"SELECT * FROM {att_table} ORDER BY rowid DESC LIMIT 200")
 
     return jsonify({"records": records})
 
@@ -322,13 +323,14 @@ def reports_data(system_key):
         data["total_enrollments"] = 0
 
     # Attendance rate
-    if "attendance" in tables:
-        att = _query(db, "SELECT COUNT(*) as t, SUM(CASE WHEN status IN ('present','Present','late','Late') THEN 1 ELSE 0 END) as a FROM attendance")
+    att_table = next((t for t in ("attendance", "attendance_records") if t in tables), None)
+    if att_table:
+        att = _query(db, f"SELECT COUNT(*) as t, SUM(CASE WHEN status IN ('present','Present','late','Late') THEN 1 ELSE 0 END) as a FROM {att_table}")
         if att and att[0]["t"]:
             data["attendance_rate"] = round(att[0]["a"] / att[0]["t"] * 100, 1)
         else:
             data["attendance_rate"] = None
-        data["attendance_by_status"] = _query(db, "SELECT status, COUNT(*) as count FROM attendance GROUP BY status ORDER BY count DESC")
+        data["attendance_by_status"] = _query(db, f"SELECT status, COUNT(*) as count FROM {att_table} GROUP BY status ORDER BY count DESC")
     else:
         data["attendance_rate"] = None
         data["attendance_by_status"] = []

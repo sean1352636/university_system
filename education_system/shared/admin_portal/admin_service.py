@@ -14,24 +14,18 @@ from pathlib import Path
 
 import bcrypt
 
+from education_system.shared.database.paths import SYSTEM_DB_PATHS, AUTH_DB
+from education_system.shared.database.sql_safety import validate_identifier
+
 logger = logging.getLogger(__name__)
 
 
 def _default_db_paths():
-    """Resolve default database paths for all 4 systems."""
-    shared_dir = Path(__file__).resolve().parent.parent  # .../shared
-    edu_root = shared_dir.parent  # .../education_system
-    return {
-        "primary": edu_root / "primary_school" / "data" / "db_files" / "primary_school.db",
-        "secondary": edu_root / "secondary_school" / "data" / "db_files" / "secondary_school.db",
-        "college": edu_root / "college_system" / "data" / "db_files" / "sixthform.db",
-        "university": edu_root / "university_system" / "data" / "db_files" / "student_records.db",
-    }
+    return dict(SYSTEM_DB_PATHS)
 
 
 def _auth_db_path():
-    """Resolve the shared auth database path."""
-    return Path(__file__).resolve().parent.parent / "data" / "db_files" / "auth.db"
+    return AUTH_DB
 
 
 def _connect(path):
@@ -52,6 +46,7 @@ def _table_exists(conn, table_name):
 
 
 def _get_columns(conn, table_name):
+    validate_identifier(table_name)
     rows = conn.execute(f"PRAGMA table_info({table_name})").fetchall()
     return {r[1] for r in rows}
 
@@ -118,15 +113,15 @@ class AdminService:
         table = "pupils" if system == "primary" else "students"
         if not _table_exists(conn, table):
             return 0
+        validate_identifier(table)
         row = conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()
         return row[0] if row else 0
 
     def _count_staff(self, conn, system):
-        # Check all staff tables and return the highest count
-        # (university has both empty 'staff' and populated 'staff_profiles')
         best = 0
         for table in ("staff", "staff_profiles", "instructors", "teachers"):
             if _table_exists(conn, table):
+                validate_identifier(table)
                 row = conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()
                 count = row[0] if row else 0
                 if count > best:
@@ -145,6 +140,8 @@ class AdminService:
                         break
                 if ts_col:
                     try:
+                        validate_identifier(table)
+                        validate_identifier(ts_col)
                         row = conn.execute(
                             f"SELECT {ts_col} FROM {table} ORDER BY rowid DESC LIMIT 1"
                         ).fetchone()

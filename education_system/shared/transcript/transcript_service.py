@@ -14,27 +14,11 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
-# ---------------------------------------------------------------------------
-# Database paths (same convention as journey_service)
-# ---------------------------------------------------------------------------
-
-_SHARED_DIR = Path(__file__).resolve().parent.parent
-_EDU_ROOT = _SHARED_DIR.parent
-
-_DB_PATHS = {
-    "primary": _EDU_ROOT / "primary_school" / "data" / "db_files" / "primary_school.db",
-    "secondary": _EDU_ROOT / "secondary_school" / "data" / "db_files" / "secondary_school.db",
-    "college": _EDU_ROOT / "college_system" / "data" / "db_files" / "sixthform.db",
-    "university": _EDU_ROOT / "university_system" / "data" / "db_files" / "student_records.db",
-}
-
-SYSTEM_ORDER = ["primary", "secondary", "college", "university"]
-SYSTEM_LABELS = {
-    "primary": "Primary School",
-    "secondary": "Secondary School",
-    "college": "Sixth Form College",
-    "university": "University",
-}
+from education_system.shared.database.paths import (
+    SYSTEM_DB_PATHS as _DB_PATHS,
+    SYSTEM_ORDER,
+    SYSTEM_LABELS,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -733,14 +717,19 @@ class TranscriptService:
             except Exception:
                 pass
 
-        # Attendance
-        if _table_exists(conn, "attendance"):
+        # Attendance — university uses "attendance", others use "attendance_records"
+        att_table = None
+        for _tbl in ("attendance", "attendance_records"):
+            if _table_exists(conn, _tbl):
+                att_table = _tbl
+                break
+        if att_table:
             try:
                 total = conn.execute(
-                    "SELECT COUNT(*) AS c FROM attendance WHERE student_id = ?", (pk,)
+                    f"SELECT COUNT(*) AS c FROM {att_table} WHERE student_id = ?", (pk,)
                 ).fetchone()["c"]
                 present = conn.execute(
-                    "SELECT COUNT(*) AS c FROM attendance WHERE student_id = ? "
+                    f"SELECT COUNT(*) AS c FROM {att_table} WHERE student_id = ? "
                     "AND status IN ('present','late')", (pk,)
                 ).fetchone()["c"]
                 data["attendance"] = {

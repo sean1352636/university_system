@@ -214,7 +214,7 @@ class MainApplication(tk.Tk):
             ("Payroll", None),
             ("Data Export", None),
             ("MFA Settings", None),
-            ("Cross-System Notifications", None),
+            ("Cross-System Communications", None),
             ("Student Journey", None),
             # Shared modules
             ("Analytics Dashboard", None),
@@ -225,7 +225,6 @@ class MainApplication(tk.Tk):
             ("Reverse Lookup", None),
             ("Parent Continuity", None),
             ("Cross-System Calendar", None),
-            ("Inter-System Messaging", None),
             ("Central Admin Portal", None),
             ("GDPR Compliance", None),
             ("Shared Documents", None),
