@@ -310,6 +310,9 @@ def main(user_info=None, role=None, shared_auth=None):
         elif current_role == 'instructor':
             from education_system.university_system.modules.shared.cli.instructor_portal_cli import run_instructor_portal
             run_instructor_portal()
+        elif current_role == 'parent':
+            from education_system.university_system.modules.shared.cli.parent_portal_cli import run_parent_portal
+            run_parent_portal()
         else:
             display_menu()
     finally:

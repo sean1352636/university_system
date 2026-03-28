@@ -83,6 +83,9 @@ def init_gui(session_user=None):
     elif role == 'instructor':
         from education_system.university_system.modules.shared.gui.main.instructor_portal import InstructorPortalGUI
         app = InstructorPortalGUI(auth)
+    elif role == 'parent':
+        from education_system.university_system.modules.shared.gui.main.parent_portal_wrapper import ParentPortalWrapper
+        app = ParentPortalWrapper(auth)
     else:
         app = UnifiedManagementGUI(auth)
     return app

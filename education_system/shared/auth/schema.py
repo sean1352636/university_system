@@ -195,6 +195,35 @@ _DEFAULT_ACCOUNTS = [
         "email": "student@primary.local",
         "systems": [("primary", "student")],
     },
+    # ── Parent accounts ─────────────────────────────────────────────────
+    {
+        "username": "parent",
+        "password": "parent123",
+        "display_name": "University Parent",
+        "email": "parent@university.edu",
+        "systems": [("university", "parent")],
+    },
+    {
+        "username": "parent1",
+        "password": "parent1234",
+        "display_name": "College Parent",
+        "email": "parent@college.local",
+        "systems": [("college", "parent")],
+    },
+    {
+        "username": "parent2",
+        "password": "parent1234",
+        "display_name": "School Parent",
+        "email": "parent@school.local",
+        "systems": [("school", "parent")],
+    },
+    {
+        "username": "parent3",
+        "password": "parent1234",
+        "display_name": "Primary Parent",
+        "email": "parent@primary.local",
+        "systems": [("primary", "parent")],
+    },
 ]
 
 
