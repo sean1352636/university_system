@@ -10,11 +10,13 @@ existing imports continue to work:
 """
 
 from education_system.university_system.modules.shared.utils.document_manager.manager import DocumentManager, display_document_management_menu, main
-from education_system.university_system.modules.shared.utils.document_manager._common import get_connection
+from education_system.university_system.modules.shared.utils.document_manager._common import get_connection, get_current_user, set_auth_instance
 
 __all__ = [
     "DocumentManager",
     "display_document_management_menu",
     "main",
     "get_connection",
+    "get_current_user",
+    "set_auth_instance",
 ]
