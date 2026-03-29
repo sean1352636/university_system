@@ -25,13 +25,11 @@ class TestUnionDbSchemaImports:
     @patch('education_system.university_system.infrastructure.database.schemas.init_student_union_db')
     def test_init_student_union_db_delegates(self, mock_init_db):
         """Test that init_student_union_db properly delegates to centralized function."""
-        mock_conn = Mock()
-
-        # Call the function
-        union_db_schema.init_student_union_db(mock_conn)
+        # Call the function (takes no args — manages its own connection)
+        union_db_schema.init_student_union_db()
 
         # Verify it delegates to the centralized function
-        mock_init_db.assert_called_once_with(mock_conn)
+        mock_init_db.assert_called_once()
 
 
 class TestCompatibilityShim:
@@ -59,11 +57,8 @@ class TestCompatibilityShim:
     @patch('education_system.university_system.infrastructure.database.schemas.init_student_union_db')
     def test_function_signature_preserved(self, mock_init_db):
         """Test that the function signature is preserved through the import."""
-        # The function should accept a connection object
-        mock_conn = Mock()
-
         try:
-            union_db_schema.init_student_union_db(mock_conn)
+            union_db_schema.init_student_union_db()
         except Exception as e:
             pytest.fail(f"Function signature not preserved: {e}")
 
@@ -95,27 +90,20 @@ class TestIntegrationDbSchema:
     @patch('education_system.university_system.infrastructure.database.schemas.init_student_union_db')
     def test_init_db_can_be_called_multiple_times(self, mock_init_db):
         """Test that init_student_union_db can be called multiple times safely."""
-        mock_conn = Mock()
-
-        # Call multiple times
-        union_db_schema.init_student_union_db(mock_conn)
-        union_db_schema.init_student_union_db(mock_conn)
-        union_db_schema.init_student_union_db(mock_conn)
+        # Call multiple times (function takes no args)
+        union_db_schema.init_student_union_db()
+        union_db_schema.init_student_union_db()
+        union_db_schema.init_student_union_db()
 
         # Should have been called 3 times
         assert mock_init_db.call_count == 3
 
     @patch('education_system.university_system.infrastructure.database.schemas.init_student_union_db')
-    def test_init_db_passes_connection_correctly(self, mock_init_db):
-        """Test that connection object is passed correctly."""
-        mock_conn = Mock()
-        mock_conn.cursor = Mock(return_value=Mock())
+    def test_init_db_delegates_correctly(self, mock_init_db):
+        """Test that init_student_union_db delegates to centralized function."""
+        union_db_schema.init_student_union_db()
 
-        union_db_schema.init_student_union_db(mock_conn)
-
-        # Verify the exact connection object was passed
-        call_args = mock_init_db.call_args
-        assert call_args[0][0] == mock_conn
+        mock_init_db.assert_called_once()
 
 
 class TestBackwardCompatibility:

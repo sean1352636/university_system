@@ -11,6 +11,15 @@ from unittest.mock import Mock, patch, MagicMock
 from education_system.university_system.modules.services.cli import health_portal
 
 
+@pytest.fixture
+def mock_auth():
+    """Create a mock auth object with required methods."""
+    auth = Mock()
+    auth.check_session.return_value = True
+    auth.get_username.return_value = 'test_user'
+    return auth
+
+
 class TestHealthPortalCLIImports:
     """Test module imports and availability flags"""
 
@@ -47,152 +56,175 @@ class TestDisplayHealthPortalMenu:
     """Test display_health_portal_menu function"""
 
     @patch('builtins.print')
-    def test_display_health_portal_menu_callable(self, mock_print):
+    def test_display_health_portal_menu_callable(self, mock_print, mock_auth):
         """Test that display_health_portal_menu can be called"""
-        result = health_portal.display_health_portal_menu()
-        assert result is None
-
-    @patch('builtins.print')
-    def test_display_health_portal_menu_with_args(self, mock_print):
-        """Test function accepts arbitrary arguments"""
-        result = health_portal.display_health_portal_menu('test_arg', key='value')
-        assert result is None
-
-    @patch('builtins.print')
-    def test_display_health_portal_menu_with_auth(self, mock_print):
-        """Test function works with auth parameter"""
-        mock_auth = Mock()
+        mock_auth.check_session.return_value = False
         result = health_portal.display_health_portal_menu(mock_auth)
         assert result is None
+
+    @patch('builtins.print')
+    def test_display_health_portal_menu_with_auth(self, mock_print, mock_auth):
+        """Test function works with auth parameter"""
+        mock_auth.check_session.return_value = False
+        result = health_portal.display_health_portal_menu(mock_auth)
+        assert result is None
+
+    @patch('builtins.print')
+    def test_display_health_portal_menu_checks_session(self, mock_print, mock_auth):
+        """Test function checks session on auth"""
+        mock_auth.check_session.return_value = False
+        health_portal.display_health_portal_menu(mock_auth)
+        mock_auth.check_session.assert_called()
 
 
 class TestDisplayBasicHealthMenu:
     """Test display_basic_health_menu function"""
 
+    @patch('builtins.input', return_value='0')
     @patch('builtins.print')
-    def test_display_basic_health_menu_callable(self, mock_print):
+    def test_display_basic_health_menu_callable(self, mock_print, mock_input, mock_auth):
         """Test that display_basic_health_menu can be called"""
-        result = health_portal.display_basic_health_menu()
+        result = health_portal.display_basic_health_menu(mock_auth)
         assert result is None
 
+    @patch('builtins.input', return_value='0')
     @patch('builtins.print')
-    def test_display_basic_health_menu_with_args(self, mock_print):
-        """Test function accepts arbitrary arguments"""
-        result = health_portal.display_basic_health_menu('test', param='value')
+    def test_display_basic_health_menu_with_auth(self, mock_print, mock_input, mock_auth):
+        """Test function accepts auth parameter"""
+        result = health_portal.display_basic_health_menu(mock_auth)
         assert result is None
 
 
 class TestViewHealthRecords:
     """Test view_health_records function"""
 
+    @patch('education_system.university_system.modules.domain.health.services.health_portal.get_connection')
     @patch('builtins.print')
-    def test_view_health_records_callable(self, mock_print):
+    def test_view_health_records_callable(self, mock_print, mock_conn, mock_auth):
         """Test that view_health_records can be called"""
-        result = health_portal.view_health_records()
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.return_value = None
+        mock_conn.return_value.cursor.return_value = mock_cursor
+        result = health_portal.view_health_records(mock_auth)
         assert result is None
 
+    @patch('education_system.university_system.modules.domain.health.services.health_portal.get_connection')
     @patch('builtins.print')
-    def test_view_health_records_with_student_id(self, mock_print):
-        """Test function with student_id parameter"""
-        result = health_portal.view_health_records(student_id='STU001')
-        assert result is None
+    def test_view_health_records_uses_auth_username(self, mock_print, mock_conn, mock_auth):
+        """Test function uses auth.get_username()"""
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.return_value = None
+        mock_conn.return_value.cursor.return_value = mock_cursor
+        health_portal.view_health_records(mock_auth)
+        mock_auth.get_username.assert_called()
 
     @patch('builtins.print')
-    def test_view_health_records_with_multiple_args(self, mock_print):
-        """Test function with multiple arguments"""
-        result = health_portal.view_health_records('arg1', 'arg2', kwarg='value')
+    def test_view_health_records_handles_error(self, mock_print, mock_auth):
+        """Test function handles errors gracefully"""
+        mock_auth.get_username.side_effect = Exception("test error")
+        result = health_portal.view_health_records(mock_auth)
         assert result is None
 
 
 class TestScheduleAppointment:
     """Test schedule_appointment function"""
 
+    @patch('builtins.input', return_value='')
     @patch('builtins.print')
-    def test_schedule_appointment_callable(self, mock_print):
+    def test_schedule_appointment_callable(self, mock_print, mock_input, mock_auth):
         """Test that schedule_appointment can be called"""
-        result = health_portal.schedule_appointment()
+        result = health_portal.schedule_appointment(mock_auth)
         assert result is None
 
+    @patch('builtins.input', return_value='')
     @patch('builtins.print')
-    def test_schedule_appointment_with_args(self, mock_print):
-        """Test function with appointment parameters"""
-        result = health_portal.schedule_appointment(
-            student_id='STU001',
-            date='2025-12-01',
-            time='14:00'
-        )
+    def test_schedule_appointment_with_auth(self, mock_print, mock_input, mock_auth):
+        """Test function with auth parameter"""
+        result = health_portal.schedule_appointment(mock_auth)
         assert result is None
 
 
 class TestViewMedicalHistory:
     """Test view_medical_history function"""
 
+    @patch('education_system.university_system.modules.domain.health.services.health_portal.get_connection')
     @patch('builtins.print')
-    def test_view_medical_history_callable(self, mock_print):
+    def test_view_medical_history_callable(self, mock_print, mock_conn, mock_auth):
         """Test that view_medical_history can be called"""
-        result = health_portal.view_medical_history()
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.return_value = None
+        mock_cursor.fetchall.return_value = []
+        mock_conn.return_value.cursor.return_value = mock_cursor
+        result = health_portal.view_medical_history(mock_auth)
         assert result is None
 
     @patch('builtins.print')
-    def test_view_medical_history_with_student_id(self, mock_print):
-        """Test function with student_id parameter"""
-        result = health_portal.view_medical_history(student_id='STU001')
+    def test_view_medical_history_handles_error(self, mock_print, mock_auth):
+        """Test function handles errors gracefully"""
+        mock_auth.get_username.side_effect = Exception("test error")
+        result = health_portal.view_medical_history(mock_auth)
         assert result is None
 
 
 class TestManageEmergencyContacts:
     """Test manage_emergency_contacts function"""
 
+    @patch('builtins.input', return_value='')
+    @patch('education_system.university_system.modules.domain.health.services.health_portal.get_connection')
     @patch('builtins.print')
-    def test_manage_emergency_contacts_callable(self, mock_print):
+    def test_manage_emergency_contacts_callable(self, mock_print, mock_conn, mock_input, mock_auth):
         """Test that manage_emergency_contacts can be called"""
-        result = health_portal.manage_emergency_contacts()
+        mock_cursor = MagicMock()
+        mock_cursor.fetchall.return_value = []
+        mock_conn.return_value.cursor.return_value = mock_cursor
+        result = health_portal.manage_emergency_contacts(mock_auth)
         assert result is None
 
+    @patch('builtins.input', return_value='')
     @patch('builtins.print')
-    def test_manage_emergency_contacts_with_args(self, mock_print):
-        """Test function with contact parameters"""
-        result = health_portal.manage_emergency_contacts(
-            student_id='STU001',
-            contact_name='John Doe',
-            phone='555-1234'
-        )
+    def test_manage_emergency_contacts_with_auth(self, mock_print, mock_input, mock_auth):
+        """Test function with auth parameter"""
+        result = health_portal.manage_emergency_contacts(mock_auth)
         assert result is None
 
 
 class TestGenerateHealthReports:
     """Test generate_health_reports function"""
 
+    @patch('builtins.input', return_value='')
     @patch('builtins.print')
-    def test_generate_health_reports_callable(self, mock_print):
+    def test_generate_health_reports_callable(self, mock_print, mock_input, mock_auth):
         """Test that generate_health_reports can be called"""
-        result = health_portal.generate_health_reports()
+        result = health_portal.generate_health_reports(mock_auth)
         assert result is None
 
+    @patch('builtins.input', return_value='')
     @patch('builtins.print')
-    def test_generate_health_reports_with_args(self, mock_print):
-        """Test function with report parameters"""
-        result = health_portal.generate_health_reports(
-            report_type='vaccination',
-            start_date='2025-01-01',
-            end_date='2025-12-31'
-        )
+    def test_generate_health_reports_with_auth(self, mock_print, mock_input, mock_auth):
+        """Test function with auth parameter"""
+        result = health_portal.generate_health_reports(mock_auth)
         assert result is None
 
 
 class TestViewVaccinationRecords:
     """Test view_vaccination_records function"""
 
+    @patch('education_system.university_system.modules.domain.health.services.health_portal.get_connection')
     @patch('builtins.print')
-    def test_view_vaccination_records_callable(self, mock_print):
+    def test_view_vaccination_records_callable(self, mock_print, mock_conn, mock_auth):
         """Test that view_vaccination_records can be called"""
-        result = health_portal.view_vaccination_records()
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.return_value = None
+        mock_cursor.fetchall.return_value = []
+        mock_conn.return_value.cursor.return_value = mock_cursor
+        result = health_portal.view_vaccination_records(mock_auth)
         assert result is None
 
     @patch('builtins.print')
-    def test_view_vaccination_records_with_student_id(self, mock_print):
-        """Test function with student_id parameter"""
-        result = health_portal.view_vaccination_records(student_id='STU001')
+    def test_view_vaccination_records_handles_error(self, mock_print, mock_auth):
+        """Test function handles errors gracefully"""
+        mock_auth.get_username.side_effect = Exception("test error")
+        result = health_portal.view_vaccination_records(mock_auth)
         assert result is None
 
 
@@ -200,13 +232,11 @@ class TestStubImplementations:
     """Test stub implementation behavior when real implementation unavailable"""
 
     @patch('builtins.print')
-    def test_stub_prints_message(self, mock_print):
-        """Test that stub implementations print messages"""
-        # Call a function (will use either real or stub)
-        health_portal.display_health_portal_menu()
-
-        # If stub is being used, it should print something
-        # If real implementation is used, it might also print
+    def test_stub_prints_message(self, mock_print, mock_auth):
+        """Test that implementations don't crash"""
+        mock_auth.check_session.return_value = False
+        # Call a function - will use either real or stub
+        health_portal.display_health_portal_menu(mock_auth)
         # We just verify it doesn't crash
 
 
@@ -214,21 +244,32 @@ class TestLogging:
     """Test logging behavior"""
 
     @patch('education_system.university_system.modules.services.cli.health_portal.logger')
-    def test_functions_can_log(self, mock_logger):
+    def test_functions_can_log(self, mock_logger, mock_auth):
         """Test that functions can use logger if available"""
-        # Call various functions
+        mock_auth.check_session.return_value = False
+        mock_auth.get_username.side_effect = Exception("test")
         with patch('builtins.print'):
-            health_portal.display_health_portal_menu()
-            health_portal.view_health_records()
-            health_portal.schedule_appointment()
+            health_portal.display_health_portal_menu(mock_auth)
+            health_portal.view_health_records(mock_auth)
+            with patch('builtins.input', return_value=''):
+                health_portal.schedule_appointment(mock_auth)
 
 
 class TestFunctionSignatures:
-    """Test that functions accept flexible signatures"""
+    """Test that functions accept auth as first argument"""
 
+    @patch('builtins.input', return_value='0')
+    @patch('education_system.university_system.modules.domain.health.services.health_portal.get_connection')
     @patch('builtins.print')
-    def test_functions_accept_variable_args(self, mock_print):
-        """Test functions accept *args"""
+    def test_functions_accept_auth_arg(self, mock_print, mock_conn, mock_input, mock_auth):
+        """Test functions accept auth as positional arg"""
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.return_value = None
+        mock_cursor.fetchall.return_value = []
+        mock_conn.return_value.cursor.return_value = mock_cursor
+
+        mock_auth.check_session.return_value = False
+
         funcs = [
             health_portal.display_health_portal_menu,
             health_portal.display_basic_health_menu,
@@ -241,71 +282,59 @@ class TestFunctionSignatures:
         ]
 
         for func in funcs:
-            # Should accept arbitrary positional args
-            result = func('arg1', 'arg2', 'arg3')
-            assert result is None
-
-    @patch('builtins.print')
-    def test_functions_accept_variable_kwargs(self, mock_print):
-        """Test functions accept **kwargs"""
-        funcs = [
-            health_portal.display_health_portal_menu,
-            health_portal.display_basic_health_menu,
-            health_portal.view_health_records,
-            health_portal.schedule_appointment,
-            health_portal.view_medical_history,
-            health_portal.manage_emergency_contacts,
-            health_portal.generate_health_reports,
-            health_portal.view_vaccination_records
-        ]
-
-        for func in funcs:
-            # Should accept arbitrary keyword args
-            result = func(param1='value1', param2='value2', param3='value3')
+            result = func(mock_auth)
             assert result is None
 
 
 class TestIntegration:
     """Integration tests for the health portal CLI"""
 
+    @patch('builtins.input', return_value='0')
+    @patch('education_system.university_system.modules.domain.health.services.health_portal.get_connection')
     @patch('builtins.print')
-    def test_complete_workflow(self, mock_print):
+    def test_complete_workflow(self, mock_print, mock_conn, mock_input, mock_auth):
         """Test a complete health portal workflow"""
-        # Display main menu
-        health_portal.display_health_portal_menu()
+        mock_cursor = MagicMock()
+        mock_cursor.fetchone.return_value = None
+        mock_cursor.fetchall.return_value = []
+        mock_conn.return_value.cursor.return_value = mock_cursor
 
-        # Display basic menu
-        health_portal.display_basic_health_menu()
+        # Display main menu (session check fails -> returns early)
+        mock_auth.check_session.return_value = False
+        health_portal.display_health_portal_menu(mock_auth)
+
+        # Display basic menu (input '0' exits the loop)
+        health_portal.display_basic_health_menu(mock_auth)
 
         # View health records
-        health_portal.view_health_records(student_id='STU001')
+        health_portal.view_health_records(mock_auth)
 
         # View medical history
-        health_portal.view_medical_history(student_id='STU001')
+        health_portal.view_medical_history(mock_auth)
 
         # View vaccination records
-        health_portal.view_vaccination_records(student_id='STU001')
+        health_portal.view_vaccination_records(mock_auth)
 
         # Schedule appointment
-        health_portal.schedule_appointment(
-            student_id='STU001',
-            date='2025-12-01',
-            time='14:00'
-        )
+        health_portal.schedule_appointment(mock_auth)
 
         # Manage emergency contacts
-        health_portal.manage_emergency_contacts(student_id='STU001')
+        health_portal.manage_emergency_contacts(mock_auth)
 
         # Generate reports
-        health_portal.generate_health_reports(report_type='summary')
+        health_portal.generate_health_reports(mock_auth)
 
 
 class TestErrorHandling:
     """Test error handling"""
 
+    @patch('builtins.input', return_value='')
     @patch('builtins.print')
-    def test_functions_handle_none_args(self, mock_print):
-        """Test functions handle None arguments gracefully"""
+    def test_functions_handle_auth_errors(self, mock_print, mock_input, mock_auth):
+        """Test functions handle auth errors gracefully"""
+        mock_auth.check_session.return_value = False
+        mock_auth.get_username.side_effect = Exception("auth error")
+
         funcs = [
             health_portal.display_health_portal_menu,
             health_portal.view_health_records,
@@ -314,12 +343,15 @@ class TestErrorHandling:
 
         for func in funcs:
             # Should not raise exceptions
-            result = func(None, None, student_id=None)
+            result = func(mock_auth)
             assert result is None
 
+    @patch('builtins.input', return_value='')
     @patch('builtins.print')
-    def test_functions_handle_empty_strings(self, mock_print):
-        """Test functions handle empty string arguments"""
+    def test_functions_handle_db_errors(self, mock_print, mock_input, mock_auth):
+        """Test functions handle database errors gracefully"""
+        mock_auth.get_username.side_effect = Exception("db error")
+
         funcs = [
             health_portal.view_health_records,
             health_portal.view_medical_history,
@@ -327,7 +359,7 @@ class TestErrorHandling:
         ]
 
         for func in funcs:
-            result = func(student_id='', name='', date='')
+            result = func(mock_auth)
             assert result is None
 
 

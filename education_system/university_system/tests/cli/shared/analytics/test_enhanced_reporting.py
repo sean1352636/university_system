@@ -341,6 +341,7 @@ class TestReportTemplate:
         """Test converting template to dictionary"""
         template = ReportTemplate(
             name="Test",
+            description="Test Description",
             sections=['students']
         )
 
@@ -358,29 +359,27 @@ class TestAdvancedScheduledReport:
         """Test creating a scheduled report"""
         report = AdvancedScheduledReport(
             template_name="Monthly Report",
-            frequency="monthly",
-            recipients=['test@example.com'],
-            format="pdf"
+            schedule_config={"frequency": "monthly"},
+            recipients=['test@example.com']
         )
 
         assert report.template_name == "Monthly Report"
-        assert report.frequency == "monthly"
+        assert report.schedule_config == {"frequency": "monthly"}
         assert len(report.recipients) == 1
 
     def test_to_dict(self):
         """Test converting scheduled report to dictionary"""
         report = AdvancedScheduledReport(
             template_name="Test",
-            frequency="daily",
-            recipients=[],
-            format="pdf"
+            schedule_config={"frequency": "daily"},
+            recipients=[]
         )
 
         report_dict = report.to_dict()
 
         assert isinstance(report_dict, dict)
         assert report_dict['template_name'] == "Test"
-        assert report_dict['frequency'] == "daily"
+        assert report_dict['schedule_config'] == {"frequency": "daily"}
 
 
 class TestUtilityFunctions:
@@ -406,7 +405,7 @@ class TestUtilityFunctions:
 
     def test_save_template(self):
         """Test saving a template"""
-        template = ReportTemplate(name="Test", sections=[])
+        template = ReportTemplate(name="Test", description="Test", sections=[])
 
         with patch('education_system.university_system.modules.shared.services.analytics.enhanced_reporting.get_reporting_db_connection'):
             with patch('education_system.university_system.modules.shared.services.analytics.enhanced_reporting.save_template_dict'):
@@ -469,7 +468,7 @@ class TestReportGeneration:
 
     def test_generate_report(self):
         """Test generating a complete report"""
-        template = ReportTemplate(name="Test", sections=['students'])
+        template = ReportTemplate(name="Test", description="Test", sections=['students'])
 
         with patch('education_system.university_system.modules.shared.services.analytics.enhanced_reporting.generate_enhanced_pdf_report'):
             result = generate_report(

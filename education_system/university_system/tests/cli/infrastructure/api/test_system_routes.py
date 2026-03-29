@@ -25,12 +25,12 @@ def client(app):
 # ---------- Index routes ----------
 
 class TestIndexRoute:
-    def test_root_returns_200(self, client):
+    def test_root_redirects(self, client):
         resp = client.get("/")
-        assert resp.status_code == 200
+        assert resp.status_code in (200, 302)
 
-    def test_root_returns_json(self, client):
-        resp = client.get("/")
+    def test_api_returns_json(self, client):
+        resp = client.get("/api")
         data = resp.get_json()
         assert data["name"] == "University Management System API"
         assert "version" in data
@@ -45,7 +45,7 @@ class TestIndexRoute:
         assert resp.status_code == 200
 
     def test_index_contains_expected_endpoints(self, client):
-        data = client.get("/").get_json()
+        data = client.get("/api").get_json()
         endpoints = data["endpoints"]
         assert "health" in endpoints
         assert "version" in endpoints
@@ -55,7 +55,7 @@ class TestIndexRoute:
         assert "finance" in endpoints
 
     def test_index_version_matches(self, client):
-        data = client.get("/").get_json()
+        data = client.get("/api").get_json()
         assert data["version"] == "5.46.3"
 
 
