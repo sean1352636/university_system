@@ -971,7 +971,7 @@ def database_security_scan(cursor):
         
         for table_name in [t[0] for t in tables]:
             if table_name in security_critical_tables:
-                safe_table = validate_table_name(table_name, conn=conn)
+                safe_table = validate_table_name(table_name, conn=cursor.connection)
                 cursor.execute('SELECT COUNT(*) FROM [' + safe_table + ']')
                 count = cursor.fetchone()[0]
                 print(f"  ✓ {table_name}: {count} records")

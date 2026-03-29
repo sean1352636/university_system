@@ -16,6 +16,10 @@ from education_system.university_system.modules.domain.finance.gui.financial_aid
     get_current_user,
     check_permission,
 )
+import logging
+
+logger = logging.getLogger(__name__)
+
 from education_system.university_system.modules.domain.finance.gui.financial_aid.student_portal import StudentPortal
 from education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal import AdminPortal
 

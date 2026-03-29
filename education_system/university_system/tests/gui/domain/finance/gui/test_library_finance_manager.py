@@ -1,6 +1,7 @@
 """Tests for LibraryFinanceManager"""
 
 import pytest
+import tkinter as tk
 from tkinter import ttk
 from unittest.mock import Mock, patch, MagicMock, call
 from datetime import datetime, timedelta

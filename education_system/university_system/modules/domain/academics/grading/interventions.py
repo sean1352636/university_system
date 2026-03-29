@@ -192,3 +192,35 @@ def generate_system_recommendations(risk_data):
     ])
 
     return recommendations
+
+
+def save_intervention_recommendations(cursor, recommendations):
+    """Save intervention recommendations to the database."""
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS intervention_recommendations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT NOT NULL,
+            intervention_type TEXT NOT NULL,
+            priority INTEGER,
+            description TEXT,
+            timeline TEXT,
+            risk_score REAL,
+            risk_level TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    for rec in recommendations:
+        for intervention in rec.get('interventions', []):
+            cursor.execute('''
+                INSERT INTO intervention_recommendations
+                (student_id, intervention_type, priority, description, timeline, risk_score, risk_level)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                rec['student_id'],
+                intervention['type'],
+                intervention['priority'],
+                intervention['description'],
+                intervention['timeline'],
+                rec['risk_score'],
+                rec['risk_level'],
+            ))

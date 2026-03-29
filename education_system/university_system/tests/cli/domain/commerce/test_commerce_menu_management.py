@@ -8,7 +8,7 @@ from education_system.university_system.infrastructure.database.db import sqlite
 import csv
 import json
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock, mock_open
 from pathlib import Path
 

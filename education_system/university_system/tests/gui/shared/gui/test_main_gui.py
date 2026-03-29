@@ -116,7 +116,7 @@ class TestAuthenticationSetup:
         """Test set_auth function is defined"""
         from education_system.university_system.modules.shared.gui import main
 
-        assert hasattr(main_gui, 'set_auth')
+        assert hasattr(main, 'set_auth')
         assert callable(main.set_auth)
 
     def test_set_auth_stores_auth_instance(self):
@@ -164,7 +164,7 @@ class TestImportFlags:
         """Test log_activity function is always available (even if stub)"""
         from education_system.university_system.modules.shared.gui import main
 
-        assert hasattr(main_gui, 'log_activity')
+        assert hasattr(main, 'log_activity')
         assert callable(main.log_activity)
 
         # Should not raise error even if logger unavailable
@@ -181,7 +181,7 @@ class TestDatabaseConnection:
         """Test get_db_connection is imported"""
         from education_system.university_system.modules.shared.gui import main
 
-        assert hasattr(main_gui, 'get_db_connection')
+        assert hasattr(main, 'get_db_connection')
         assert callable(main.get_db_connection)
 
 
@@ -192,37 +192,37 @@ class TestGUIModuleImports:
         """Test FinanceManagementGUI is imported"""
         from education_system.university_system.modules.shared.gui import main
 
-        assert hasattr(main_gui, 'FinanceManagementGUI')
+        assert hasattr(main, 'FinanceManagementGUI')
 
     def test_student_union_gui_imported(self):
         """Test StudentUnionManagementGUI is imported"""
         from education_system.university_system.modules.shared.gui import main
 
-        assert hasattr(main_gui, 'StudentUnionManagementGUI')
+        assert hasattr(main, 'StudentUnionManagementGUI')
 
     def test_health_portal_gui_imported(self):
         """Test HealthPortalManagementGUI is imported"""
         from education_system.university_system.modules.shared.gui import main
 
-        assert hasattr(main_gui, 'HealthPortalManagementGUI')
+        assert hasattr(main, 'HealthPortalManagementGUI')
 
     def test_grade_tracking_gui_imported(self):
         """Test GradeTrackingManagementGUI is imported"""
         from education_system.university_system.modules.shared.gui import main
 
-        assert hasattr(main_gui, 'GradeTrackingManagementGUI')
+        assert hasattr(main, 'GradeTrackingManagementGUI')
 
     def test_restaurant_gui_imported(self):
         """Test RestaurantManagementGUI is imported"""
         from education_system.university_system.modules.shared.gui import main
 
-        assert hasattr(main_gui, 'RestaurantManagementGUI')
+        assert hasattr(main, 'RestaurantManagementGUI')
 
     def test_email_manager_gui_imported(self):
         """Test EmailManagerManagementGUI is imported"""
         from education_system.university_system.modules.shared.gui import main
 
-        assert hasattr(main_gui, 'EmailManagerManagementGUI')
+        assert hasattr(main, 'EmailManagerManagementGUI')
 
 
 class TestOptionalFeatureFlags:
@@ -232,42 +232,42 @@ class TestOptionalFeatureFlags:
         """Test ADVANCED_SEARCH_GUI_AVAILABLE flag exists"""
         from education_system.university_system.modules.shared.gui import main
 
-        assert hasattr(main_gui, 'ADVANCED_SEARCH_GUI_AVAILABLE')
+        assert hasattr(main, 'ADVANCED_SEARCH_GUI_AVAILABLE')
         assert isinstance(main.ADVANCED_SEARCH_GUI_AVAILABLE, bool)
 
     def test_assignment_submission_gui_flag_exists(self):
         """Test ASSIGNMENT_SUBMISSION_GUI_AVAILABLE flag exists"""
         from education_system.university_system.modules.shared.gui import main
 
-        assert hasattr(main_gui, 'ASSIGNMENT_SUBMISSION_GUI_AVAILABLE')
+        assert hasattr(main, 'ASSIGNMENT_SUBMISSION_GUI_AVAILABLE')
         assert isinstance(main.ASSIGNMENT_SUBMISSION_GUI_AVAILABLE, bool)
 
     def test_document_manager_gui_flag_exists(self):
         """Test DOCUMENT_MANAGER_GUI_AVAILABLE flag exists"""
         from education_system.university_system.modules.shared.gui import main
 
-        assert hasattr(main_gui, 'DOCUMENT_MANAGER_GUI_AVAILABLE')
+        assert hasattr(main, 'DOCUMENT_MANAGER_GUI_AVAILABLE')
         assert isinstance(main.DOCUMENT_MANAGER_GUI_AVAILABLE, bool)
 
     def test_grade_tracking_gui_flag_exists(self):
         """Test GRADE_TRACKING_GUI_AVAILABLE flag exists"""
         from education_system.university_system.modules.shared.gui import main
 
-        assert hasattr(main_gui, 'GRADE_TRACKING_GUI_AVAILABLE')
+        assert hasattr(main, 'GRADE_TRACKING_GUI_AVAILABLE')
         assert isinstance(main.GRADE_TRACKING_GUI_AVAILABLE, bool)
 
     def test_library_gui_flag_exists(self):
         """Test LIBRARY_GUI_AVAILABLE flag exists"""
         from education_system.university_system.modules.shared.gui import main
 
-        assert hasattr(main_gui, 'LIBRARY_GUI_AVAILABLE')
+        assert hasattr(main, 'LIBRARY_GUI_AVAILABLE')
         assert isinstance(main.LIBRARY_GUI_AVAILABLE, bool)
 
     def test_parent_portal_gui_flag_exists(self):
         """Test PARENT_PORTAL_GUI_AVAILABLE flag exists"""
         from education_system.university_system.modules.shared.gui import main
 
-        assert hasattr(main_gui, 'PARENT_PORTAL_GUI_AVAILABLE')
+        assert hasattr(main, 'PARENT_PORTAL_GUI_AVAILABLE')
         assert isinstance(main.PARENT_PORTAL_GUI_AVAILABLE, bool)
 
 
@@ -278,21 +278,21 @@ class TestPhase4Features:
         """Test VIRTUAL_CLASSROOM_AVAILABLE flag exists"""
         from education_system.university_system.modules.shared.gui import main
 
-        assert hasattr(main_gui, 'VIRTUAL_CLASSROOM_AVAILABLE')
+        assert hasattr(main, 'VIRTUAL_CLASSROOM_AVAILABLE')
         assert isinstance(main.VIRTUAL_CLASSROOM_AVAILABLE, bool)
 
     def test_financial_aid_flag_exists(self):
         """Test FINANCIAL_AID_AVAILABLE flag exists"""
         from education_system.university_system.modules.shared.gui import main
 
-        assert hasattr(main_gui, 'FINANCIAL_AID_AVAILABLE')
+        assert hasattr(main, 'FINANCIAL_AID_AVAILABLE')
         assert isinstance(main.FINANCIAL_AID_AVAILABLE, bool)
 
     def test_communication_hub_flag_exists(self):
         """Test COMMUNICATION_HUB_AVAILABLE flag exists"""
         from education_system.university_system.modules.shared.gui import main
 
-        assert hasattr(main_gui, 'COMMUNICATION_HUB_AVAILABLE')
+        assert hasattr(main, 'COMMUNICATION_HUB_AVAILABLE')
         assert isinstance(main.COMMUNICATION_HUB_AVAILABLE, bool)
 
 
@@ -303,28 +303,28 @@ class TestSecurityFeatureFlags:
         """Test SESSION_MANAGEMENT_AVAILABLE flag exists"""
         from education_system.university_system.modules.shared.gui import main
 
-        assert hasattr(main_gui, 'SESSION_MANAGEMENT_AVAILABLE')
+        assert hasattr(main, 'SESSION_MANAGEMENT_AVAILABLE')
         assert isinstance(main.SESSION_MANAGEMENT_AVAILABLE, bool)
 
     def test_comprehensive_security_flag_exists(self):
         """Test COMPREHENSIVE_SECURITY_AVAILABLE flag exists"""
         from education_system.university_system.modules.shared.gui import main
 
-        assert hasattr(main_gui, 'COMPREHENSIVE_SECURITY_AVAILABLE')
+        assert hasattr(main, 'COMPREHENSIVE_SECURITY_AVAILABLE')
         assert isinstance(main.COMPREHENSIVE_SECURITY_AVAILABLE, bool)
 
     def test_data_encryption_flag_exists(self):
         """Test DATA_ENCRYPTION_AVAILABLE flag exists"""
         from education_system.university_system.modules.shared.gui import main
 
-        assert hasattr(main_gui, 'DATA_ENCRYPTION_AVAILABLE')
+        assert hasattr(main, 'DATA_ENCRYPTION_AVAILABLE')
         assert isinstance(main.DATA_ENCRYPTION_AVAILABLE, bool)
 
     def test_security_dashboard_flag_exists(self):
         """Test SECURITY_DASHBOARD_AVAILABLE flag exists"""
         from education_system.university_system.modules.shared.gui import main
 
-        assert hasattr(main_gui, 'SECURITY_DASHBOARD_AVAILABLE')
+        assert hasattr(main, 'SECURITY_DASHBOARD_AVAILABLE')
         assert isinstance(main.SECURITY_DASHBOARD_AVAILABLE, bool)
 
 
@@ -342,16 +342,16 @@ class TestModuleStructure:
         """Test auth global variable is defined"""
         from education_system.university_system.modules.shared.gui import main
 
-        assert hasattr(main_gui, 'auth')
+        assert hasattr(main, 'auth')
 
     def test_module_has_all_required_imports(self):
         """Test module has required standard library imports"""
         from education_system.university_system.modules.shared.gui import main
 
         # Check for standard library imports
-        assert hasattr(main_gui, 'tk')
-        assert hasattr(main_gui, 'ttk')
-        assert hasattr(main_gui, 'datetime')
+        assert hasattr(main, 'tk')
+        assert hasattr(main, 'ttk')
+        assert hasattr(main, 'datetime')
 
 
 class TestUtilityIntegration:
@@ -362,17 +362,17 @@ class TestUtilityIntegration:
         from education_system.university_system.modules.shared.gui import main
 
         # Should have get_auth or set_shared_auth functions
-        assert hasattr(main_gui, 'get_auth') or hasattr(main_gui, 'set_shared_auth')
+        assert hasattr(main, 'get_auth') or hasattr(main, 'set_shared_auth')
 
     def test_mock_auth_functions_when_unavailable(self):
         """Test that auth functions are mocked when unavailable"""
         from education_system.university_system.modules.shared.gui import main
 
         # Even if auth is not available, functions should exist as stubs
-        assert hasattr(main_gui, 'get_current_user')
+        assert hasattr(main, 'get_current_user')
         assert callable(main.get_current_user)
 
-        assert hasattr(main_gui, 'set_auth_instance')
+        assert hasattr(main, 'set_auth_instance')
         assert callable(main.set_auth_instance)
 
 
@@ -441,12 +441,12 @@ class TestFeatureConsistency:
         from education_system.university_system.modules.shared.gui import main
 
         # Some features track import errors
-        if hasattr(main_gui, 'ADVANCED_SEARCH_GUI_IMPORT_ERROR'):
+        if hasattr(main, 'ADVANCED_SEARCH_GUI_IMPORT_ERROR'):
             # Should be string or None
             assert main.ADVANCED_SEARCH_GUI_IMPORT_ERROR is None or \
                    isinstance(main.ADVANCED_SEARCH_GUI_IMPORT_ERROR, str)
 
-        if hasattr(main_gui, 'PARENT_PORTAL_GUI_IMPORT_ERROR'):
+        if hasattr(main, 'PARENT_PORTAL_GUI_IMPORT_ERROR'):
             assert main.PARENT_PORTAL_GUI_IMPORT_ERROR is None or \
                    isinstance(main.PARENT_PORTAL_GUI_IMPORT_ERROR, str)
 

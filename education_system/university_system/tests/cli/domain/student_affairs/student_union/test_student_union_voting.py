@@ -5,7 +5,7 @@ Tests enhanced voting system including ranked choice voting and campaigns.
 
 import pytest
 from education_system.university_system.infrastructure.database.db import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest.mock import Mock, patch
 
 from education_system.university_system.modules.domain.student_affairs.student_union.services import voting
