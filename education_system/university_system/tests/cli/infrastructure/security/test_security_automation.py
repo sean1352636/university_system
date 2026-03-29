@@ -12,6 +12,24 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 from education_system.university_system.modules.domain.finance.core import security_automation
 
+
+class _UnclosableConnection:
+    """Wrapper that makes close() a no-op so tests can query after production code closes."""
+    def __init__(self, db_path):
+        self._conn = sqlite3.connect(db_path)
+        self._conn.row_factory = sqlite3.Row
+    def close(self):
+        pass
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
+    def __enter__(self):
+        return self._conn.__enter__()
+    def __exit__(self, *args):
+        return self._conn.__exit__(*args)
+
+def _unclosable_connect(db_path):
+    return _UnclosableConnection(db_path)
+
 @pytest.fixture
 def temp_db():
     """Create a temporary database with security schema"""
@@ -203,7 +221,7 @@ class TestAutomatedNotifications:
         with patch('education_system.university_system.modules.domain.finance.core.security_automation.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.core.security_automation.auth', mock_auth):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             security_automation.setup_automated_notifications()
@@ -213,14 +231,12 @@ class TestAutomatedNotifications:
             count = cursor.fetchone()[0]
             assert count > 0, "Notification schedules should be created"
 
-            conn.close()
-
     def test_send_automated_notifications(self, sample_data):
         """Test sending automated notifications"""
         with patch('education_system.university_system.modules.domain.finance.core.security_automation.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.core.security_automation.send_notification', return_value=True):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             # Add notification schedule
@@ -235,8 +251,6 @@ class TestAutomatedNotifications:
             count = security_automation.send_automated_notifications()
             assert count >= 0, "Should return notification count"
 
-            conn.close()
-
 class TestFraudDetection:
     """Test fraud detection functionality"""
 
@@ -246,7 +260,7 @@ class TestFraudDetection:
              patch('education_system.university_system.modules.domain.finance.core.security_automation.auth', mock_auth), \
              patch('education_system.university_system.modules.domain.finance.core.security_automation.log_audit_action'):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             security_automation.detect_payment_fraud()
@@ -257,8 +271,6 @@ class TestFraudDetection:
             score = cursor.fetchone()
             assert score is not None, "Fraud score should be calculated"
 
-            conn.close()
-
 class TestAuditLogging:
     """Test audit logging functionality"""
 
@@ -267,7 +279,7 @@ class TestAuditLogging:
         with patch('education_system.university_system.modules.domain.finance.core.security_automation.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.core.security_automation.auth', mock_auth):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             details = {'action': 'test', 'data': 'test_data'}
@@ -278,8 +290,6 @@ class TestAuditLogging:
             count = cursor.fetchone()[0]
             assert count == 1, "Audit log entry should be created"
 
-            conn.close()
-
 class TestWorkflowManagement:
     """Test workflow management"""
 
@@ -288,7 +298,7 @@ class TestWorkflowManagement:
         with patch('education_system.university_system.modules.domain.finance.core.security_automation.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.core.security_automation.auth', mock_auth):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             security_automation.create_approval_workflow()
@@ -298,8 +308,6 @@ class TestWorkflowManagement:
             count = cursor.fetchone()[0]
             assert count == 1, "Approval workflow should be created"
 
-            conn.close()
-
 class TestNotificationSending:
     """Test notification sending functionality"""
 
@@ -308,7 +316,7 @@ class TestNotificationSending:
         with patch('education_system.university_system.modules.domain.finance.core.security_automation.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.core.security_automation.send_email_notification', return_value=True):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             result = security_automation.send_notification(
@@ -322,8 +330,6 @@ class TestNotificationSending:
             cursor.execute("SELECT COUNT(*) FROM sent_notifications WHERE student_id = 'STU001'")
             count = cursor.fetchone()[0]
             assert count == 1, "Sent notification should be logged"
-
-            conn.close()
 
     def test_send_email_notification(self):
         """Test email notification wrapper"""

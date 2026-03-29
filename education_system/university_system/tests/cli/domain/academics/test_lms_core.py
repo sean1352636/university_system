@@ -10,6 +10,24 @@ import os
 import tempfile
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
+
+
+class _UnclosableConnection:
+    """Wrapper that makes close() a no-op so tests can query after production code closes."""
+    def __init__(self, db_path):
+        self._conn = sqlite3.connect(db_path)
+        self._conn.row_factory = sqlite3.Row
+    def close(self):
+        pass
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
+    def __enter__(self):
+        return self._conn.__enter__()
+    def __exit__(self, *args):
+        return self._conn.__exit__(*args)
+
+def _unclosable_connect(db_path):
+    return _UnclosableConnection(db_path)
 from education_system.university_system.modules.domain.academics.services.lms.lms_core import (
     LMSCourseManager,
     LMSContentManager,
@@ -58,8 +76,7 @@ class TestLMSCourseManager:
     @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_create_lms_course(self, mock_get_connection, temp_db):
         """Test creating an LMS course"""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
+        mock_conn = _unclosable_connect(temp_db)
         mock_get_connection.return_value = mock_conn
 
         course_id = LMSCourseManager.create_lms_course(
@@ -83,13 +100,10 @@ class TestLMSCourseManager:
         assert result['module_code'] == 'CS101'
         assert result['instructor_id'] == 'INST001'
 
-        mock_conn.close()
-
     @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_publish_course(self, mock_get_connection, temp_db):
         """Test publishing a course"""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
+        mock_conn = _unclosable_connect(temp_db)
         mock_get_connection.return_value = mock_conn
 
         # Create a course first
@@ -112,13 +126,10 @@ class TestLMSCourseManager:
 
         assert is_published == 1
 
-        mock_conn.close()
-
     @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_get_course_details(self, mock_get_connection, temp_db):
         """Test getting course details"""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
+        mock_conn = _unclosable_connect(temp_db)
         mock_get_connection.return_value = mock_conn
 
         # Create a course
@@ -137,26 +148,20 @@ class TestLMSCourseManager:
         assert details['module_code'] == 'CS101'
         assert details['instructor_id'] == 'INST001'
 
-        mock_conn.close()
-
     @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_get_course_details_not_found(self, mock_get_connection, temp_db):
         """Test getting details for non-existent course"""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
+        mock_conn = _unclosable_connect(temp_db)
         mock_get_connection.return_value = mock_conn
 
         details = LMSCourseManager.get_course_details(99999)
 
         assert details is None
 
-        mock_conn.close()
-
     @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_get_instructor_courses(self, mock_get_connection, temp_db):
         """Test getting courses by instructor"""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
+        mock_conn = _unclosable_connect(temp_db)
         mock_get_connection.return_value = mock_conn
 
         # Create courses
@@ -180,8 +185,6 @@ class TestLMSCourseManager:
 
         assert len(courses) == 2
         assert all(c['instructor_id'] == 'INST001' for c in courses)
-
-        mock_conn.close()
 
 class TestLMSContentManager:
     """Test suite for LMSContentManager"""
@@ -245,8 +248,7 @@ class TestLMSContentManager:
     @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_add_content(self, mock_get_connection, temp_db):
         """Test adding content to a course"""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
+        mock_conn = _unclosable_connect(temp_db)
         mock_get_connection.return_value = mock_conn
 
         # Create a course first
@@ -275,13 +277,10 @@ class TestLMSContentManager:
         assert result is not None
         assert result['title'] == 'Week 1 Lecture'
 
-        mock_conn.close()
-
     @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_get_course_content(self, mock_get_connection, temp_db):
         """Test getting course content"""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
+        mock_conn = _unclosable_connect(temp_db)
         mock_get_connection.return_value = mock_conn
 
         # Create course and content
@@ -307,13 +306,10 @@ class TestLMSContentManager:
 
         assert len(content) == 2
 
-        mock_conn.close()
-
     @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_add_video_lecture(self, mock_get_connection, temp_db):
         """Test adding a video lecture"""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
+        mock_conn = _unclosable_connect(temp_db)
         mock_get_connection.return_value = mock_conn
 
         # Create course and content
@@ -348,13 +344,10 @@ class TestLMSContentManager:
         assert result['duration_minutes'] == 45
         assert result['video_quality'] == '1080p'
 
-        mock_conn.close()
-
     @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_increment_video_view(self, mock_get_connection, temp_db):
         """Test incrementing video view count"""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
+        mock_conn = _unclosable_connect(temp_db)
         mock_get_connection.return_value = mock_conn
 
         # Create video
@@ -391,8 +384,6 @@ class TestLMSContentManager:
         view_count = cursor.fetchone()['view_count']
 
         assert view_count == 2
-
-        mock_conn.close()
 
 class TestLMSDiscussionManager:
     """Test suite for LMSDiscussionManager"""
@@ -453,8 +444,7 @@ class TestLMSDiscussionManager:
     @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_create_forum(self, mock_get_connection, temp_db):
         """Test creating a discussion forum"""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
+        mock_conn = _unclosable_connect(temp_db)
         mock_get_connection.return_value = mock_conn
 
         # Create course
@@ -483,13 +473,10 @@ class TestLMSDiscussionManager:
         assert result['topic'] == 'General Discussion'
         assert result['is_pinned'] == 1
 
-        mock_conn.close()
-
     @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_add_post(self, mock_get_connection, temp_db):
         """Test adding a post to a forum"""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
+        mock_conn = _unclosable_connect(temp_db)
         mock_get_connection.return_value = mock_conn
 
         # Create forum
@@ -522,13 +509,10 @@ class TestLMSDiscussionManager:
         assert result is not None
         assert result['content'] == 'This is my first post'
 
-        mock_conn.close()
-
     @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_like_post(self, mock_get_connection, temp_db):
         """Test liking a post"""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
+        mock_conn = _unclosable_connect(temp_db)
         mock_get_connection.return_value = mock_conn
 
         # Create post
@@ -558,8 +542,6 @@ class TestLMSDiscussionManager:
         likes = cursor.fetchone()['likes_count']
 
         assert likes == 1
-
-        mock_conn.close()
 
 class TestLMSQuizManager:
     """Test suite for LMSQuizManager"""
@@ -637,8 +619,7 @@ class TestLMSQuizManager:
     @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_create_quiz(self, mock_get_connection, temp_db):
         """Test creating a quiz"""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
+        mock_conn = _unclosable_connect(temp_db)
         mock_get_connection.return_value = mock_conn
 
         # Create course
@@ -668,13 +649,10 @@ class TestLMSQuizManager:
         assert result['title'] == 'Week 1 Quiz'
         assert result['passing_score'] == 80.0
 
-        mock_conn.close()
-
     @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_add_question(self, mock_get_connection, temp_db):
         """Test adding a question to a quiz"""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
+        mock_conn = _unclosable_connect(temp_db)
         mock_get_connection.return_value = mock_conn
 
         # Create quiz
@@ -711,13 +689,10 @@ class TestLMSQuizManager:
         assert result['question_text'] == 'What is 2+2?'
         assert result['points'] == 5
 
-        mock_conn.close()
-
     @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_submit_quiz(self, mock_get_connection, temp_db):
         """Test submitting a quiz"""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
+        mock_conn = _unclosable_connect(temp_db)
         mock_get_connection.return_value = mock_conn
 
         # Create quiz with questions
@@ -762,8 +737,6 @@ class TestLMSQuizManager:
 
         assert submission_id > 0
         assert percentage == 50.0  # Got 1 out of 2 correct
-
-        mock_conn.close()
 
 class TestLMSGradebookManager:
     """Test suite for LMSGradebookManager"""
@@ -812,8 +785,7 @@ class TestLMSGradebookManager:
     @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_add_grade_entry(self, mock_get_connection, temp_db):
         """Test adding a grade entry"""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
+        mock_conn = _unclosable_connect(temp_db)
         mock_get_connection.return_value = mock_conn
 
         # Create course
@@ -846,13 +818,10 @@ class TestLMSGradebookManager:
         assert result['score'] == 85.0
         assert result['feedback'] == 'Good work!'
 
-        mock_conn.close()
-
     @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_get_student_grades(self, mock_get_connection, temp_db):
         """Test getting student grades"""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
+        mock_conn = _unclosable_connect(temp_db)
         mock_get_connection.return_value = mock_conn
 
         # Create course and grades
@@ -879,13 +848,10 @@ class TestLMSGradebookManager:
         assert len(grades) == 2
         assert all(g['student_id'] == 'STU001' for g in grades)
 
-        mock_conn.close()
-
     @patch('education_system.university_system.modules.domain.academics.services.lms.lms_core.get_connection')
     def test_calculate_course_grade(self, mock_get_connection, temp_db):
         """Test calculating overall course grade"""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
+        mock_conn = _unclosable_connect(temp_db)
         mock_get_connection.return_value = mock_conn
 
         # Create course and grades
@@ -914,5 +880,3 @@ class TestLMSGradebookManager:
 
         # Expected: (80% * 0.3 + 90% * 0.7) / (0.3 + 0.7) = 87%
         assert abs(grade - 87.0) < 0.01
-
-        mock_conn.close()

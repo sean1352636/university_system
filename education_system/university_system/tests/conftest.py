@@ -96,6 +96,40 @@ def test_db_path(_template_db):
         pass
 
 
+class _UnclosableConnection:
+    """Wrapper around sqlite3.Connection that makes close() a no-op.
+
+    Production code calls conn.close() at the end of each service method.
+    Tests that patch get_connection to return a real connection need to
+    query it *after* the service call to verify results.  This wrapper
+    makes close() a no-op so the connection stays open; the underlying
+    connection will be closed when the object is garbage-collected.
+
+    Note: sqlite3.Connection is a C type in Python 3.11+ and does not
+    allow setting arbitrary attributes, so we use delegation instead.
+    """
+    def __init__(self, db_path):
+        self._conn = sqlite3.connect(db_path)
+        self._conn.row_factory = sqlite3.Row
+
+    def close(self):
+        pass  # no-op
+
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
+
+    def __enter__(self):
+        return self._conn.__enter__()
+
+    def __exit__(self, *args):
+        return self._conn.__exit__(*args)
+
+
+def unclosable_connect(db_path):
+    """Create a sqlite3 connection whose close() is a no-op."""
+    return _UnclosableConnection(db_path)
+
+
 @pytest.fixture(autouse=True)
 def _isolate_db(_template_db, monkeypatch):
     """Automatically isolate every test from the production database.
@@ -415,6 +449,318 @@ def _create_test_database(db_path):
             ('edit_grades', 'Edit grades', datetime('now')),
             ('manage_users', 'Manage users', datetime('now')),
             ('view_own_grades', 'View own grades', datetime('now'));
+
+        -- Instructors
+        CREATE TABLE IF NOT EXISTS instructors (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            instructor_id TEXT UNIQUE,
+            first_name TEXT,
+            last_name TEXT,
+            email TEXT,
+            department TEXT,
+            specialization TEXT,
+            status TEXT DEFAULT 'active',
+            created_at TEXT
+        );
+
+        -- Document management
+        CREATE TABLE IF NOT EXISTS document_types (
+            type_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            type_name TEXT NOT NULL,
+            description TEXT,
+            has_expiry BOOLEAN DEFAULT 0,
+            requires_approval BOOLEAN DEFAULT 1,
+            category TEXT,
+            is_active BOOLEAN DEFAULT 1
+        );
+
+        CREATE TABLE IF NOT EXISTS student_documents (
+            document_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT NOT NULL,
+            document_type_id INTEGER,
+            file_name TEXT,
+            file_path TEXT,
+            upload_date TEXT,
+            expiry_date TEXT,
+            status TEXT DEFAULT 'Pending',
+            verified_by TEXT,
+            verification_date TEXT,
+            notes TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS documents (
+            document_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_type TEXT DEFAULT 'general',
+            owner_id TEXT,
+            document_type TEXT,
+            document_name TEXT,
+            file_path TEXT,
+            file_size INTEGER,
+            upload_date TEXT,
+            status TEXT DEFAULT 'active',
+            version_number INTEGER DEFAULT 1,
+            tags TEXT,
+            notes TEXT,
+            uploaded_by TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS document_workflow (
+            workflow_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            document_id INTEGER,
+            step_name TEXT,
+            step_order INTEGER,
+            assigned_to TEXT,
+            status TEXT,
+            comments TEXT,
+            completed_date TEXT,
+            completed_by TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS document_tags (
+            tag_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tag_name TEXT UNIQUE,
+            tag_color TEXT,
+            description TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS course_requirements (
+            requirement_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            course_code TEXT,
+            program TEXT,
+            type_id INTEGER,
+            is_mandatory BOOLEAN DEFAULT 1,
+            deadline_days INTEGER
+        );
+
+        -- Notifications
+        CREATE TABLE IF NOT EXISTS notifications (
+            notification_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT,
+            recipient_id TEXT,
+            title TEXT,
+            message TEXT,
+            notification_type TEXT,
+            is_read BOOLEAN DEFAULT 0,
+            created_date TEXT DEFAULT CURRENT_TIMESTAMP,
+            sent_date TEXT,
+            priority TEXT DEFAULT 'normal',
+            related_document_id INTEGER
+        );
+
+        -- Audit log
+        CREATE TABLE IF NOT EXISTS audit_log (
+            log_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT,
+            action TEXT,
+            table_name TEXT,
+            record_id TEXT,
+            old_values TEXT,
+            new_values TEXT,
+            timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+            ip_address TEXT
+        );
+
+        -- System settings
+        CREATE TABLE IF NOT EXISTS system_settings (
+            setting_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            setting_name TEXT UNIQUE,
+            setting_value TEXT,
+            description TEXT,
+            updated_by TEXT,
+            updated_date TEXT
+        );
+
+        -- LMS
+        CREATE TABLE IF NOT EXISTS lms_courses (
+            lms_course_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            module_code TEXT,
+            instructor_id TEXT,
+            course_description TEXT,
+            syllabus_url TEXT,
+            start_date TEXT,
+            end_date TEXT,
+            is_published BOOLEAN DEFAULT 0,
+            enrollment_limit INTEGER,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        -- Evaluation
+        CREATE TABLE IF NOT EXISTS evaluation_templates (
+            template_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            template_name TEXT NOT NULL,
+            template_type TEXT NOT NULL,
+            description TEXT,
+            created_by TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            is_active INTEGER DEFAULT 1
+        );
+
+        -- Learning outcomes
+        CREATE TABLE IF NOT EXISTS learning_outcomes (
+            outcome_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            course TEXT,
+            outcome_code TEXT,
+            description TEXT,
+            category TEXT,
+            importance INTEGER
+        );
+
+        -- Accommodations
+        CREATE TABLE IF NOT EXISTS accommodations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT,
+            accommodation_type TEXT,
+            description TEXT,
+            start_date TEXT,
+            end_date TEXT,
+            status TEXT DEFAULT 'active',
+            approved_by TEXT,
+            notes TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT
+        );
+
+        -- Library
+        CREATE TABLE IF NOT EXISTS books (
+            book_id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            author TEXT NOT NULL,
+            isbn TEXT UNIQUE,
+            publisher TEXT,
+            category TEXT,
+            year_published INTEGER,
+            description TEXT,
+            location TEXT,
+            status TEXT DEFAULT 'available',
+            added_date TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS book_reviews (
+            review_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            book_id TEXT,
+            user_id TEXT,
+            rating INTEGER,
+            review_text TEXT,
+            review_date TEXT,
+            status TEXT DEFAULT 'pending'
+        );
+
+        CREATE TABLE IF NOT EXISTS library_settings (
+            setting_name TEXT PRIMARY KEY,
+            setting_value TEXT NOT NULL,
+            description TEXT,
+            setting_type TEXT DEFAULT 'string'
+        );
+
+        -- Restaurant
+        CREATE TABLE IF NOT EXISTS restaurant_orders (
+            order_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_id INTEGER,
+            order_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+            total_price REAL,
+            tax_amount REAL,
+            status TEXT DEFAULT 'Pending',
+            payment_method TEXT
+        );
+
+        -- Health
+        CREATE TABLE IF NOT EXISTS health_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT,
+            email TEXT,
+            last_checkup TEXT,
+            screening_type TEXT,
+            next_screening_due TEXT
+        );
+
+        -- Email
+        CREATE TABLE IF NOT EXISTS email_templates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE,
+            category TEXT,
+            subject TEXT,
+            body TEXT,
+            created_by TEXT,
+            is_shared INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        -- Contract alerts
+        CREATE TABLE IF NOT EXISTS contract_renewal_alerts (
+            alert_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            staff_id TEXT,
+            contract_end_date TEXT,
+            alert_date TEXT,
+            status TEXT DEFAULT 'pending',
+            notes TEXT
+        );
+
+        -- Integration marketplace
+        CREATE TABLE IF NOT EXISTS integration_catalog (
+            integration_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            integration_name TEXT NOT NULL,
+            provider_name TEXT NOT NULL,
+            integration_type TEXT NOT NULL,
+            category TEXT NOT NULL,
+            description TEXT,
+            version TEXT,
+            is_active BOOLEAN DEFAULT 1,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS installed_integrations (
+            install_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            integration_id INTEGER NOT NULL,
+            installed_by TEXT NOT NULL,
+            installation_date TEXT DEFAULT CURRENT_TIMESTAMP,
+            status TEXT DEFAULT 'active',
+            is_enabled BOOLEAN DEFAULT 1
+        );
+
+        CREATE TABLE IF NOT EXISTS integration_credentials (
+            credential_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            install_id INTEGER NOT NULL,
+            credential_type TEXT NOT NULL,
+            api_key TEXT,
+            api_secret TEXT,
+            endpoint_url TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS integration_sync_logs (
+            log_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            install_id INTEGER NOT NULL,
+            sync_start_time TEXT DEFAULT CURRENT_TIMESTAMP,
+            sync_end_time TEXT,
+            sync_status TEXT NOT NULL,
+            records_synced INTEGER DEFAULT 0,
+            errors_encountered INTEGER DEFAULT 0,
+            error_details TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS integration_data_mappings (
+            mapping_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            install_id INTEGER NOT NULL,
+            source_field TEXT NOT NULL,
+            target_field TEXT NOT NULL,
+            transformation_rule TEXT,
+            is_active BOOLEAN DEFAULT 1
+        );
+
+        CREATE TABLE IF NOT EXISTS integration_webhooks (
+            webhook_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            install_id INTEGER NOT NULL,
+            webhook_url TEXT NOT NULL,
+            event_type TEXT NOT NULL,
+            secret_key TEXT,
+            is_active BOOLEAN DEFAULT 1,
+            last_triggered_at TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
     """)
 
     conn.commit()

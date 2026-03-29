@@ -12,6 +12,24 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 from education_system.university_system.modules.domain.finance.billing import fee_structure
 
+
+class _UnclosableConnection:
+    """Wrapper that makes close() a no-op so tests can query after production code closes."""
+    def __init__(self, db_path):
+        self._conn = sqlite3.connect(db_path)
+        self._conn.row_factory = sqlite3.Row
+    def close(self):
+        pass
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
+    def __enter__(self):
+        return self._conn.__enter__()
+    def __exit__(self, *args):
+        return self._conn.__exit__(*args)
+
+def _unclosable_connect(db_path):
+    return _UnclosableConnection(db_path)
+
 @pytest.fixture
 def temp_db():
     """Create a temporary database with finance schema for testing"""
@@ -204,7 +222,7 @@ class TestLateFeeCalculations:
              patch('education_system.university_system.modules.domain.finance.billing.fee_structure.auth', mock_auth):
 
             # Mock database connection
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             # Calculate late fees
@@ -216,14 +234,12 @@ class TestLateFeeCalculations:
             count = cursor.fetchone()[0]
             assert count > 0, "Late fees should be created"
 
-            conn.close()
-
     def test_calculate_percentage_late_fees(self, sample_data, mock_auth):
         """Test calculation of percentage-based late fees"""
         with patch('education_system.university_system.modules.domain.finance.billing.fee_structure.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.billing.fee_structure.auth', mock_auth):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             fee_structure.calculate_late_fees()
@@ -244,14 +260,12 @@ class TestLateFeeCalculations:
                 expected_fee = original_amount * (percentage / 100)
                 assert late_fee == expected_fee, f"Percentage late fee should be {expected_fee}"
 
-            conn.close()
-
     def test_calculate_daily_late_fees(self, sample_data, mock_auth):
         """Test calculation of daily late fees"""
         with patch('education_system.university_system.modules.domain.finance.billing.fee_structure.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.billing.fee_structure.auth', mock_auth):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             fee_structure.calculate_late_fees()
@@ -272,14 +286,12 @@ class TestLateFeeCalculations:
                 # Account for grace period
                 assert late_fee > 0, "Daily late fee should be positive"
 
-            conn.close()
-
     def test_grace_period_respected(self, sample_data, mock_auth):
         """Test that grace period is respected in late fee calculations"""
         with patch('education_system.university_system.modules.domain.finance.billing.fee_structure.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.billing.fee_structure.auth', mock_auth):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             # Add a fee that's within grace period
@@ -303,14 +315,12 @@ class TestLateFeeCalculations:
             count = cursor.fetchone()[0]
             assert count == 0, "No late fee should be applied within grace period"
 
-            conn.close()
-
     def test_no_duplicate_late_fees(self, sample_data, mock_auth):
         """Test that late fees are not duplicated on the same day"""
         with patch('education_system.university_system.modules.domain.finance.billing.fee_structure.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.billing.fee_structure.auth', mock_auth):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             # Calculate late fees twice
@@ -321,8 +331,6 @@ class TestLateFeeCalculations:
             final_count = conn.execute("SELECT COUNT(*) FROM late_fees").fetchone()[0]
 
             assert initial_count == final_count, "Late fees should not be duplicated"
-
-            conn.close()
 
 class TestLateFeeWaiver:
     """Test late fee waiver functionality"""
@@ -336,7 +344,7 @@ class TestLateFeeWaiver:
              patch('education_system.university_system.modules.domain.finance.billing.fee_structure.get_student_name', return_value='John Doe'), \
              patch('education_system.university_system.modules.domain.finance.billing.fee_structure.log_audit_action'):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             # Create a late fee first
@@ -355,8 +363,6 @@ class TestLateFeeWaiver:
             assert result[0] == 1, "Late fee should be marked as waived"
             assert result[1] == 'Financial hardship', "Waiver reason should be recorded"
 
-            conn.close()
-
 class TestExchangeRates:
     """Test exchange rate functionality"""
 
@@ -365,7 +371,7 @@ class TestExchangeRates:
         with patch('education_system.university_system.modules.domain.finance.billing.fee_structure.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.billing.fee_structure.auth', mock_auth):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             fee_structure.update_exchange_rates()
@@ -376,36 +382,30 @@ class TestExchangeRates:
             count = cursor.fetchone()[0]
             assert count > 0, "Exchange rates should be present"
 
-            conn.close()
-
     def test_convert_currency_same_currency(self, sample_data):
         """Test currency conversion with same currency"""
         with patch('education_system.university_system.modules.domain.finance.billing.fee_structure.get_connection') as mock_conn:
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             amount = 100.00
             result = fee_structure.convert_currency(amount, 'GBP', 'GBP')
 
             assert result == amount, "Same currency conversion should return original amount"
-            conn.close()
-
     def test_convert_currency_different_currencies(self, sample_data):
         """Test currency conversion between different currencies"""
         with patch('education_system.university_system.modules.domain.finance.billing.fee_structure.get_connection') as mock_conn:
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             amount = 100.00
             result = fee_structure.convert_currency(amount, 'GBP', 'USD')
 
             assert result == 127.00, "GBP to USD conversion should use exchange rate"
-            conn.close()
-
     def test_convert_currency_reverse_conversion(self, sample_data):
         """Test reverse currency conversion"""
         with patch('education_system.university_system.modules.domain.finance.billing.fee_structure.get_connection') as mock_conn:
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             amount = 127.00
@@ -415,12 +415,10 @@ class TestExchangeRates:
             assert result > 0, "Reverse conversion should return positive value"
             assert result < amount, "Reverse conversion from USD to GBP should reduce value"
 
-            conn.close()
-
     def test_convert_currency_missing_rate(self, sample_data):
         """Test currency conversion with missing exchange rate"""
         with patch('education_system.university_system.modules.domain.finance.billing.fee_structure.get_connection') as mock_conn:
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             amount = 100.00
@@ -428,8 +426,6 @@ class TestExchangeRates:
 
             # Should return original amount if rate not found
             assert result == amount, "Missing rate should return original amount"
-            conn.close()
-
 class TestCurrencyConversionTool:
     """Test currency conversion tool"""
 
@@ -439,13 +435,11 @@ class TestCurrencyConversionTool:
              patch('builtins.input', side_effect=['GBP', 'USD', '100']), \
              patch('education_system.university_system.modules.domain.finance.billing.fee_structure.convert_currency', return_value=127.00):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             # Should not raise exception
             fee_structure.currency_conversion_tool()
-
-            conn.close()
 
     def test_currency_conversion_tool_invalid_currency(self, sample_data):
         """Test currency conversion tool with invalid currency"""
@@ -465,15 +459,13 @@ class TestAPIEndpoints:
     def test_api_get_exchange_rates(self, sample_data):
         """Test API endpoint for getting exchange rates"""
         with patch('education_system.university_system.modules.domain.finance.billing.fee_structure.get_connection') as mock_conn:
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             response = fee_structure.api_get_exchange_rates()
 
             # Verify response contains exchange rates
             assert isinstance(response.json, dict) or callable(response.json)
-            conn.close()
-
 class TestPermissions:
     """Test permission requirements"""
 
@@ -505,7 +497,7 @@ class TestEdgeCases:
         with patch('education_system.university_system.modules.domain.finance.billing.fee_structure.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.billing.fee_structure.auth', mock_auth):
 
-            conn = sqlite3.connect(temp_db)
+            conn = _unclosable_connect(temp_db)
             mock_conn.return_value = conn
 
             # Insert only current fees
@@ -532,29 +524,23 @@ class TestEdgeCases:
             count = cursor.fetchone()[0]
             assert count == 0, "No late fees should be created for future-due fees"
 
-            conn.close()
-
     def test_convert_currency_with_zero_amount(self, sample_data):
         """Test currency conversion with zero amount"""
         with patch('education_system.university_system.modules.domain.finance.billing.fee_structure.get_connection') as mock_conn:
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             result = fee_structure.convert_currency(0, 'GBP', 'USD')
             assert result == 0, "Zero amount should convert to zero"
 
-            conn.close()
-
     def test_convert_currency_with_negative_amount(self, sample_data):
         """Test currency conversion with negative amount"""
         with patch('education_system.university_system.modules.domain.finance.billing.fee_structure.get_connection') as mock_conn:
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             result = fee_structure.convert_currency(-100, 'GBP', 'USD')
             assert result < 0, "Negative amount should remain negative"
-
-            conn.close()
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

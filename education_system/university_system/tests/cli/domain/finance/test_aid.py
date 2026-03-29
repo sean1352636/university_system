@@ -12,6 +12,24 @@ from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 from education_system.university_system.modules.domain.finance.core import aid
 
+
+class _UnclosableConnection:
+    """Wrapper that makes close() a no-op so tests can query after production code closes."""
+    def __init__(self, db_path):
+        self._conn = sqlite3.connect(db_path)
+        self._conn.row_factory = sqlite3.Row
+    def close(self):
+        pass
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
+    def __enter__(self):
+        return self._conn.__enter__()
+    def __exit__(self, *args):
+        return self._conn.__exit__(*args)
+
+def _unclosable_connect(db_path):
+    return _UnclosableConnection(db_path)
+
 @pytest.fixture
 def temp_db():
     """Create a temporary database with financial aid schema"""
@@ -229,7 +247,7 @@ class TestAidApplicationApproval:
              patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_current_user', return_value={'username': 'admin'}), \
              patch('education_system.university_system.modules.domain.finance.finance_misc.aid.log_audit_action'):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             aid.approve_reject_aid_application()
@@ -239,8 +257,6 @@ class TestAidApplicationApproval:
             status = cursor.fetchone()[0]
             assert status == 'approved', "Aid should be approved"
 
-            conn.close()
-
     def test_approve_partial_amount(self, sample_data):
         """Test approving aid application for partial amount"""
         with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
@@ -248,7 +264,7 @@ class TestAidApplicationApproval:
              patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_current_user', return_value={'username': 'admin'}), \
              patch('education_system.university_system.modules.domain.finance.finance_misc.aid.log_audit_action'):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             aid.approve_reject_aid_application()
@@ -260,8 +276,6 @@ class TestAidApplicationApproval:
             assert status == 'approved', "Aid should be approved"
             assert amount == 3000.00, "Awarded amount should be partial"
 
-            conn.close()
-
     def test_reject_application(self, sample_data):
         """Test rejecting aid application"""
         with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
@@ -269,7 +283,7 @@ class TestAidApplicationApproval:
              patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_current_user', return_value={'username': 'admin'}), \
              patch('education_system.university_system.modules.domain.finance.finance_misc.aid.log_audit_action'):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             aid.approve_reject_aid_application()
@@ -281,8 +295,6 @@ class TestAidApplicationApproval:
             assert status == 'rejected', "Aid should be rejected"
             assert 'REJECTED' in notes, "Rejection reason should be in notes"
 
-            conn.close()
-
 class TestAidTypeManagement:
     """Test aid type management"""
 
@@ -290,12 +302,10 @@ class TestAidTypeManagement:
         """Test viewing aid types"""
         with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn:
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             aid.view_aid_types()
-
-            conn.close()
 
     def test_create_aid_type(self, sample_data):
         """Test creating a new aid type"""
@@ -305,7 +315,7 @@ class TestAidTypeManagement:
                  'Enrolled students', 'y', 'n'
              ]):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             aid.create_aid_type()
@@ -315,14 +325,12 @@ class TestAidTypeManagement:
             count = cursor.fetchone()[0]
             assert count == 1, "Aid type should be created"
 
-            conn.close()
-
     def test_deactivate_aid_type(self, sample_data):
         """Test deactivating an aid type"""
         with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
              patch('builtins.input', side_effect=['1', 'y']):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             aid.deactivate_aid_type()
@@ -332,8 +340,6 @@ class TestAidTypeManagement:
             is_active = cursor.fetchone()[0]
             assert is_active == 0, "Aid type should be deactivated"
 
-            conn.close()
-
 class TestLoanTracking:
     """Test loan repayment tracking"""
 
@@ -341,21 +347,19 @@ class TestLoanTracking:
         """Test tracking loan repayments"""
         with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn:
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             aid.track_loan_repayments()
 
             # Should display loans without errors
-            conn.close()
-
     def test_process_loan_payment(self, sample_data):
         """Test processing a loan payment"""
         with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
              patch('builtins.input', side_effect=['200.00']), \
              patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_current_user', return_value={'username': 'admin'}):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             # Get loans first
@@ -379,8 +383,6 @@ class TestLoanTracking:
                 count = cursor.fetchone()[0]
                 assert count > 0, "Loan payment should be recorded"
 
-            conn.close()
-
 class TestAidReporting:
     """Test aid reporting functionality"""
 
@@ -388,38 +390,32 @@ class TestAidReporting:
         """Test aid distribution summary report"""
         with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn:
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             aid.aid_distribution_summary()
 
             # Should display summary without errors
-            conn.close()
-
     def test_aid_by_academic_year(self, sample_data):
         """Test aid by academic year report"""
         with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
              patch('builtins.input', side_effect=['2024-2025']):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             aid.aid_by_academic_year()
-
-            conn.close()
 
     def test_aid_effectiveness_analysis(self, sample_data):
         """Test aid effectiveness analysis"""
         with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn:
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             aid.aid_effectiveness_analysis()
 
             # Should display analysis without errors
-            conn.close()
-
 class TestAidApplication:
     """Test aid application to fees"""
 
@@ -428,7 +424,7 @@ class TestAidApplication:
         with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_current_user', return_value={'username': 'admin'}):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             aid.apply_aid_to_fees('STU001', 3000.00, 1)
@@ -443,8 +439,6 @@ class TestAidApplication:
             cursor.execute("SELECT status FROM student_fees WHERE student_id = 'STU001'")
             status = cursor.fetchone()[0]
             assert status in ['paid', 'partial'], "Fee status should be updated"
-
-            conn.close()
 
 class TestPaymentArrangement:
     """Test payment arrangement creation"""
@@ -461,7 +455,7 @@ class TestPaymentArrangement:
              patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_current_user', return_value={'username': 'admin'}), \
              patch('education_system.university_system.modules.domain.finance.finance_misc.aid.send_arrangement_confirmation'):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             aid.create_payment_arrangement()
@@ -474,8 +468,6 @@ class TestPaymentArrangement:
             assert status == 'in_progress', "Case status should be updated"
             assert 'PAYMENT ARRANGEMENT' in notes, "Arrangement should be in notes"
 
-            conn.close()
-
 class TestEdgeCases:
     """Test edge cases and error handling"""
 
@@ -483,7 +475,7 @@ class TestEdgeCases:
         """Test approving when no pending applications exist"""
         with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn:
 
-            conn = sqlite3.connect(temp_db)
+            conn = _unclosable_connect(temp_db)
             mock_conn.return_value = conn
 
             # Setup minimal schema
@@ -501,20 +493,16 @@ class TestEdgeCases:
             aid.approve_reject_aid_application()
 
             # Should handle empty case gracefully
-            conn.close()
-
     def test_deactivate_nonexistent_aid_type(self, sample_data):
         """Test deactivating non-existent aid type"""
         with patch('education_system.university_system.modules.domain.finance.finance_misc.aid.get_connection') as mock_conn, \
              patch('builtins.input', side_effect=['999']):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             aid.deactivate_aid_type()
 
             # Should handle gracefully
-            conn.close()
-
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

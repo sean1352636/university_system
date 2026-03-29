@@ -106,7 +106,21 @@ def mock_db_connection(tmp_path):
     ''')
 
     conn.commit()
-    return conn
+
+    class _UnclosableWrapper:
+        """Wrapper that makes close() a no-op so tests can query after production code closes."""
+        def __init__(self, connection):
+            self._conn = connection
+        def close(self):
+            pass
+        def __getattr__(self, name):
+            return getattr(self._conn, name)
+        def __enter__(self):
+            return self._conn.__enter__()
+        def __exit__(self, *args):
+            return self._conn.__exit__(*args)
+
+    return _UnclosableWrapper(conn)
 
 class TestTableManagement:
     """Tests for table management functionality."""

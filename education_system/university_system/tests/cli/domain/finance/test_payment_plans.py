@@ -12,6 +12,24 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 from education_system.university_system.modules.domain.finance.billing import payment_plans
 
+
+class _UnclosableConnection:
+    """Wrapper that makes close() a no-op so tests can query after production code closes."""
+    def __init__(self, db_path):
+        self._conn = sqlite3.connect(db_path)
+        self._conn.row_factory = sqlite3.Row
+    def close(self):
+        pass
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
+    def __enter__(self):
+        return self._conn.__enter__()
+    def __exit__(self, *args):
+        return self._conn.__exit__(*args)
+
+def _unclosable_connect(db_path):
+    return _UnclosableConnection(db_path)
+
 @pytest.fixture
 def temp_db():
     """Create a temporary database with payment plan schema for testing"""
@@ -222,7 +240,7 @@ class TestPaymentPlanCreation:
              patch('education_system.university_system.modules.domain.finance.billing.payment_plans.student_exists', return_value=True), \
              patch('education_system.university_system.modules.domain.finance.billing.payment_plans.send_payment_plan_notification'):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             payment_plans.create_payment_plan()
@@ -242,8 +260,6 @@ class TestPaymentPlanCreation:
             installment_count = cursor.fetchone()[0]
             assert installment_count == 3, "3 installments should be created"
 
-            conn.close()
-
     def test_create_payment_plan_calculates_amounts_correctly(self, sample_data, mock_auth):
         """Test that payment plan amounts are calculated correctly"""
         with patch('education_system.university_system.modules.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
@@ -252,7 +268,7 @@ class TestPaymentPlanCreation:
              patch('education_system.university_system.modules.domain.finance.billing.payment_plans.student_exists', return_value=True), \
              patch('education_system.university_system.modules.domain.finance.billing.payment_plans.send_payment_plan_notification'):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             payment_plans.create_payment_plan()
@@ -274,8 +290,6 @@ class TestPaymentPlanCreation:
             assert total_amount > 5200, "Total should include setup fee and interest"
             assert remaining_amount == total_amount, "Initially, remaining should equal total"
 
-            conn.close()
-
     def test_create_payment_plan_no_outstanding_fees(self, sample_data, mock_auth):
         """Test creating payment plan when student has no outstanding fees"""
         with patch('education_system.university_system.modules.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
@@ -283,7 +297,7 @@ class TestPaymentPlanCreation:
              patch('builtins.input', side_effect=['STU002']), \
              patch('education_system.university_system.modules.domain.finance.billing.payment_plans.student_exists', return_value=True):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             # Remove all fees for STU002
@@ -298,8 +312,6 @@ class TestPaymentPlanCreation:
             count = cursor.fetchone()[0]
             assert count == 0, "No payment plan should be created without outstanding fees"
 
-            conn.close()
-
 class TestPaymentPlanViewing:
     """Test payment plan viewing functionality"""
 
@@ -307,7 +319,7 @@ class TestPaymentPlanViewing:
         """Test viewing all active payment plans"""
         with patch('education_system.university_system.modules.domain.finance.billing.payment_plans.get_connection') as mock_conn:
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             # Create a payment plan
@@ -326,20 +338,16 @@ class TestPaymentPlanViewing:
             count = cursor.fetchone()[0]
             assert count == 1, "Active payment plan should be visible"
 
-            conn.close()
-
     def test_view_active_payment_plans_empty(self, sample_data):
         """Test viewing when no active payment plans exist"""
         with patch('education_system.university_system.modules.domain.finance.billing.payment_plans.get_connection') as mock_conn:
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             payment_plans.view_active_payment_plans()
 
             # Should handle empty case gracefully
-            conn.close()
-
 class TestPaymentPlanPaymentProcessing:
     """Test payment plan payment processing"""
 
@@ -349,7 +357,7 @@ class TestPaymentPlanPaymentProcessing:
              patch('education_system.university_system.modules.domain.finance.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['1', '1828.33']):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             # Create payment plan and installments
@@ -385,15 +393,13 @@ class TestPaymentPlanPaymentProcessing:
             remaining = cursor.fetchone()[0]
             assert remaining < 5485.00, "Remaining amount should be reduced"
 
-            conn.close()
-
     def test_process_payment_plan_payment_partial(self, sample_data, mock_auth):
         """Test processing a partial installment payment"""
         with patch('education_system.university_system.modules.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['1', '500.00']):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             # Create payment plan
@@ -425,15 +431,13 @@ class TestPaymentPlanPaymentProcessing:
             # Status might remain pending for partial payment
             assert status in ['pending', 'partial'], "Installment should remain pending or partial"
 
-            conn.close()
-
     def test_process_payment_completes_plan(self, sample_data, mock_auth):
         """Test that final payment completes the plan"""
         with patch('education_system.university_system.modules.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['1', '100.00']):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             # Create payment plan with small remaining amount
@@ -461,8 +465,6 @@ class TestPaymentPlanPaymentProcessing:
             assert status == 'completed', "Plan should be marked as completed"
             assert remaining == 0, "Remaining amount should be zero"
 
-            conn.close()
-
 class TestPaymentPlanModification:
     """Test payment plan modification functionality"""
 
@@ -472,7 +474,7 @@ class TestPaymentPlanModification:
              patch('education_system.university_system.modules.domain.finance.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['1', '1', '6000.00']):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             # Create payment plan
@@ -493,15 +495,13 @@ class TestPaymentPlanModification:
             assert total == 6000.00, "Total amount should be updated"
             assert remaining == 6000.00, "Remaining amount should be updated"
 
-            conn.close()
-
     def test_modify_payment_plan_change_due_date(self, sample_data, mock_auth):
         """Test changing payment plan due date"""
         with patch('education_system.university_system.modules.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['1', '2', '2025-12-31']):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             # Create payment plan
@@ -520,15 +520,13 @@ class TestPaymentPlanModification:
             next_due = cursor.fetchone()[0]
             assert next_due == '2025-12-31', "Due date should be updated"
 
-            conn.close()
-
     def test_modify_payment_plan_pause(self, sample_data, mock_auth):
         """Test pausing a payment plan"""
         with patch('education_system.university_system.modules.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['1', '3']):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             # Create payment plan
@@ -547,15 +545,13 @@ class TestPaymentPlanModification:
             status = cursor.fetchone()[0]
             assert status == 'paused', "Plan should be paused"
 
-            conn.close()
-
     def test_modify_payment_plan_resume(self, sample_data, mock_auth):
         """Test resuming a paused payment plan"""
         with patch('education_system.university_system.modules.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['1', '4']):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             # Create paused payment plan
@@ -574,8 +570,6 @@ class TestPaymentPlanModification:
             status = cursor.fetchone()[0]
             assert status == 'active', "Plan should be active"
 
-            conn.close()
-
 class TestPaymentPlanCancellation:
     """Test payment plan cancellation"""
 
@@ -586,7 +580,7 @@ class TestPaymentPlanCancellation:
              patch('builtins.input', side_effect=['1', 'Student withdrawal', 'y']), \
              patch('education_system.university_system.modules.domain.finance.billing.payment_plans.log_audit_action'):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             # Create payment plan
@@ -616,8 +610,6 @@ class TestPaymentPlanCancellation:
             cursor.execute("SELECT status FROM payment_plan_installments WHERE payment_plan_id = ?", (plan_id,))
             installment_status = cursor.fetchone()[0]
             assert installment_status == 'cancelled', "Installments should be cancelled"
-
-            conn.close()
 
 class TestPermissions:
     """Test permission requirements"""
@@ -652,7 +644,7 @@ class TestEdgeCases:
              patch('builtins.input', side_effect=['STU999']), \
              patch('education_system.university_system.modules.domain.finance.billing.payment_plans.student_exists', return_value=False):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             payment_plans.create_payment_plan()
@@ -663,29 +655,25 @@ class TestEdgeCases:
             count = cursor.fetchone()[0]
             assert count == 0, "No plan should be created for invalid student"
 
-            conn.close()
-
     def test_process_payment_invalid_plan(self, sample_data, mock_auth):
         """Test processing payment for non-existent plan"""
         with patch('education_system.university_system.modules.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['999']):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             payment_plans.process_payment_plan_payment()
 
             # Should handle gracefully
-            conn.close()
-
     def test_overpayment_handling(self, sample_data, mock_auth):
         """Test handling of overpayments"""
         with patch('education_system.university_system.modules.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['1', '2000.00']):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             # Create payment plan with small amount
@@ -710,8 +698,6 @@ class TestEdgeCases:
             cursor.execute("SELECT remaining_amount FROM student_payment_plans WHERE payment_plan_id = ?", (plan_id,))
             remaining = cursor.fetchone()[0]
             assert remaining >= 0, "Remaining amount should not be negative"
-
-            conn.close()
 
 class TestNotifications:
     """Test payment plan notification functionality"""

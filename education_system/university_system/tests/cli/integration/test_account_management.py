@@ -12,6 +12,24 @@ from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 from education_system.university_system.modules.domain.finance.core import account_management
 
+
+class _UnclosableConnection:
+    """Wrapper that makes close() a no-op so tests can query after production code closes."""
+    def __init__(self, db_path):
+        self._conn = sqlite3.connect(db_path)
+        self._conn.row_factory = sqlite3.Row
+    def close(self):
+        pass
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
+    def __enter__(self):
+        return self._conn.__enter__()
+    def __exit__(self, *args):
+        return self._conn.__exit__(*args)
+
+def _unclosable_connect(db_path):
+    return _UnclosableConnection(db_path)
+
 @pytest.fixture
 def temp_db():
     """Create a temporary database with account management schema"""
@@ -182,7 +200,7 @@ class TestFeeAssignment:
              patch('education_system.university_system.modules.domain.finance.core.account_management.student_exists', return_value=True), \
              patch('education_system.university_system.modules.domain.finance.core.account_management.get_student_name', return_value='John Doe'):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             account_management.assign_fees_to_student()
@@ -191,8 +209,6 @@ class TestFeeAssignment:
             cursor.execute("SELECT COUNT(*) FROM student_fees WHERE amount = 1000.00")
             count = cursor.fetchone()[0]
             assert count == 1, "Fee should be assigned"
-
-            conn.close()
 
 class TestPaymentRecording:
     """Test payment recording functionality"""
@@ -205,7 +221,7 @@ class TestPaymentRecording:
              patch('education_system.university_system.modules.domain.finance.core.account_management.student_exists', return_value=True), \
              patch('education_system.university_system.modules.domain.finance.core.account_management.get_student_name', return_value='John Doe'):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             account_management.record_payment()
@@ -217,8 +233,6 @@ class TestPaymentRecording:
             assert result[0] == 5000.00, "Payment amount should match"
             assert result[1] == 'Card', "Payment method should match"
 
-            conn.close()
-
     def test_payment_allocation_to_fees(self, sample_data, mock_auth):
         """Test that payment is allocated to outstanding fees"""
         with patch('education_system.university_system.modules.domain.finance.core.account_management.get_connection') as mock_conn, \
@@ -227,7 +241,7 @@ class TestPaymentRecording:
              patch('education_system.university_system.modules.domain.finance.core.account_management.student_exists', return_value=True), \
              patch('education_system.university_system.modules.domain.finance.core.account_management.get_student_name', return_value='John Doe'):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             account_management.record_payment()
@@ -242,8 +256,6 @@ class TestPaymentRecording:
             status = cursor.fetchone()[0]
             assert status in ['paid', 'partial'], "Fee status should be updated"
 
-            conn.close()
-
     def test_overpayment_creates_credit(self, sample_data, mock_auth):
         """Test that overpayment creates a credit"""
         with patch('education_system.university_system.modules.domain.finance.core.account_management.get_connection') as mock_conn, \
@@ -252,7 +264,7 @@ class TestPaymentRecording:
              patch('education_system.university_system.modules.domain.finance.core.account_management.student_exists', return_value=True), \
              patch('education_system.university_system.modules.domain.finance.core.account_management.get_student_name', return_value='John Doe'):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             account_management.record_payment()
@@ -261,8 +273,6 @@ class TestPaymentRecording:
             cursor.execute("SELECT COUNT(*) FROM student_credits WHERE student_id = 'STU001'")
             count = cursor.fetchone()[0]
             assert count > 0, "Credit should be created for overpayment"
-
-            conn.close()
 
 class TestInvoiceGeneration:
     """Test invoice generation functionality"""
@@ -275,14 +285,12 @@ class TestInvoiceGeneration:
              patch('education_system.university_system.modules.domain.finance.core.account_management.student_exists', return_value=True), \
              patch('education_system.university_system.modules.domain.finance.core.account_management.send_email_notification'):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             account_management.generate_invoice()
 
             # Verify invoice was generated (file created)
-            conn.close()
-
 class TestRefundProcessing:
     """Test refund processing functionality"""
 
@@ -295,7 +303,7 @@ class TestRefundProcessing:
              patch('education_system.university_system.modules.domain.finance.core.account_management.get_student_name', return_value='John Doe'), \
              patch('education_system.university_system.modules.domain.finance.core.account_management.log_audit_action'):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             # Create a payment first
@@ -312,8 +320,6 @@ class TestRefundProcessing:
             count = cursor.fetchone()[0]
             assert count == 1, "Refund should be created"
 
-            conn.close()
-
 class TestFinancialStatements:
     """Test financial statement functionality"""
 
@@ -323,14 +329,12 @@ class TestFinancialStatements:
              patch('builtins.input', side_effect=['STU001']), \
              patch('education_system.university_system.modules.domain.finance.core.account_management.student_exists', return_value=True):
 
-            conn = sqlite3.connect(sample_data)
+            conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             account_management.view_student_financial_statement()
 
             # Should display statement without errors
-            conn.close()
-
 class TestCreditManagement:
     """Test student credit management"""
 

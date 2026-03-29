@@ -11,6 +11,24 @@ import os
 from unittest.mock import Mock, patch, MagicMock
 from education_system.university_system.modules.domain.finance.core import financial_core
 
+
+class _UnclosableConnection:
+    """Wrapper that makes close() a no-op so tests can query after production code closes."""
+    def __init__(self, db_path):
+        self._conn = sqlite3.connect(db_path)
+        self._conn.row_factory = sqlite3.Row
+    def close(self):
+        pass
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
+    def __enter__(self):
+        return self._conn.__enter__()
+    def __exit__(self, *args):
+        return self._conn.__exit__(*args)
+
+def _unclosable_connect(db_path):
+    return _UnclosableConnection(db_path)
+
 @pytest.fixture
 def temp_db():
     """Create a temporary database"""
@@ -36,7 +54,7 @@ class TestDatabaseInitialization:
     def test_init_enhanced_finance_db(self, temp_db):
         """Test enhanced finance database initialization"""
         with patch('education_system.university_system.modules.domain.finance.core.financial_core.get_connection') as mock_conn:
-            conn = sqlite3.connect(temp_db)
+            conn = _unclosable_connect(temp_db)
             mock_conn.return_value = conn
 
             financial_core.init_enhanced_finance_db()
@@ -51,12 +69,10 @@ class TestDatabaseInitialization:
             assert 'scholarships' in tables, "scholarships table should be created"
             assert 'exchange_rates' in tables, "exchange_rates table should be created"
 
-            conn.close()
-
     def test_warn_if_table_empty(self, temp_db):
         """Test empty table warning functionality"""
         with patch('education_system.university_system.modules.domain.finance.core.financial_core.get_connection') as mock_conn:
-            conn = sqlite3.connect(temp_db)
+            conn = _unclosable_connect(temp_db)
             mock_conn.return_value = conn
 
             cursor = conn.cursor()
@@ -65,8 +81,6 @@ class TestDatabaseInitialization:
 
             # Should log warning for empty table
             financial_core.warn_if_table_empty(cursor, 'test_table', 'Test warning')
-
-            conn.close()
 
 class TestAuthSetup:
     """Test authentication setup"""
@@ -85,13 +99,11 @@ class TestInitialization:
              patch('education_system.university_system.modules.domain.finance.core.financial_core.get_auth') as mock_get_auth, \
              patch('education_system.university_system.modules.domain.finance.core.financial_core.init_enhanced_finance_db'):
 
-            conn = sqlite3.connect(temp_db)
+            conn = _unclosable_connect(temp_db)
             mock_conn.return_value = conn
             mock_get_auth.return_value = MagicMock()
 
             financial_core.initialize_finance()
-
-            conn.close()
 
 class TestFinanceMenu:
     """Test finance menu functionality"""
