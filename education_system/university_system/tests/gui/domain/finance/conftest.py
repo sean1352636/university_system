@@ -1,7 +1,7 @@
 """
 Pytest configuration for finance GUI tests.
 
-Mocks matplotlib and tkinter to allow tests to run in headless environments.
+Mocks matplotlib and optional dependencies for headless test environments.
 """
 
 import sys
@@ -23,46 +23,10 @@ sys.modules['matplotlib.backends.backend_agg'] = MagicMock()
 # Mock seaborn
 sys.modules['seaborn'] = MagicMock()
 
-# Mock tkinter components
-mock_tk = MagicMock()
-mock_tk.Tk = MagicMock
-mock_tk.Toplevel = MagicMock
-mock_tk.Frame = MagicMock
-mock_tk.Label = MagicMock
-mock_tk.Button = MagicMock
-mock_tk.Entry = MagicMock
-mock_tk.Text = MagicMock
-mock_tk.Canvas = MagicMock
-mock_tk.Listbox = MagicMock
-mock_tk.Scrollbar = MagicMock
-mock_tk.Menu = MagicMock
-mock_tk.StringVar = MagicMock
-mock_tk.IntVar = MagicMock
-mock_tk.DoubleVar = MagicMock
-mock_tk.BooleanVar = MagicMock
-mock_tk.END = 'end'
-mock_tk.BOTH = 'both'
-mock_tk.LEFT = 'left'
-mock_tk.RIGHT = 'right'
-mock_tk.TOP = 'top'
-mock_tk.BOTTOM = 'bottom'
-mock_tk.X = 'x'
-mock_tk.Y = 'y'
-mock_tk.HORIZONTAL = 'horizontal'
-mock_tk.VERTICAL = 'vertical'
-mock_tk.NORMAL = 'normal'
-mock_tk.DISABLED = 'disabled'
-mock_tk.WORD = 'word'
-mock_tk.NONE = 'none'
-
-sys.modules['tkinter'] = mock_tk
-sys.modules['tkinter.ttk'] = MagicMock()
-sys.modules['tkinter.messagebox'] = MagicMock()
-sys.modules['tkinter.simpledialog'] = MagicMock()
-sys.modules['tkinter.filedialog'] = MagicMock()
-sys.modules['tkinter.colorchooser'] = MagicMock()
-sys.modules['tkinter.font'] = MagicMock()
-sys.modules['tkinter.scrolledtext'] = MagicMock()
+# NOTE: Do NOT mock tkinter here — it poisons sys.modules globally for
+# the entire pytest session, causing InvalidSpecError in any test that
+# later does Mock(spec=tk.Widget).  GitHub Actions runners have tkinter
+# installed, so the mocking is unnecessary.
 
 # Mock PIL/Pillow (used by some finance modules)
 sys.modules['PIL'] = MagicMock()
