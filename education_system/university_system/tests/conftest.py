@@ -31,8 +31,66 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "gui: GUI tests requiring tkinter")
     config.addinivalue_line("markers", "database: Database tests")
 
+    # Mock tkinter ONCE, centrally, before any test module imports.
+    # We use the real tkinter classes (so spec= works) but replace Tk()
+    # instantiation with a MagicMock (so no windows open).
+    _setup_headless_tkinter()
+
     # Initialize authentication system before any imports that might need it
     _initialize_test_auth()
+
+
+def _setup_headless_tkinter():
+    """Make tkinter importable without opening windows.
+
+    Import the real tkinter module so that ``Mock(spec=tk.Frame)`` etc.
+    resolve to real classes, then neuter ``Tk.__init__`` so that no
+    display connection is attempted.
+    """
+    try:
+        import tkinter as tk
+        from unittest.mock import MagicMock
+
+        # Save the real Tk.__init__ and replace it with a no-op so that
+        # ``tk.Tk()`` never tries to connect to a display server.
+        _real_tk_init = tk.Tk.__init__
+
+        def _mock_tk_init(self, *args, **kwargs):
+            # Initialise just enough for widget code to not crash
+            self.tk = MagicMock()
+            self.children = {}
+            self._tclCommands = None
+            self._w = '.'
+            self.master = None
+
+        tk.Tk.__init__ = _mock_tk_init
+        tk.Tk.mainloop = MagicMock()
+        tk.Tk.destroy = MagicMock()
+        tk.Tk.update = MagicMock()
+        tk.Tk.update_idletasks = MagicMock()
+        tk.Tk.winfo_screenwidth = MagicMock(return_value=1920)
+        tk.Tk.winfo_screenheight = MagicMock(return_value=1080)
+        tk.Tk.winfo_exists = MagicMock(return_value=True)
+        tk.Tk.withdraw = MagicMock()
+        tk.Tk.deiconify = MagicMock()
+        tk.Tk.title = MagicMock()
+        tk.Tk.geometry = MagicMock()
+        tk.Tk.protocol = MagicMock()
+        tk.Tk.after = MagicMock()
+        tk.Tk.configure = MagicMock()
+        tk.Tk.config = MagicMock()
+    except (ImportError, Exception):
+        # If tkinter genuinely isn't installed, fall back to MagicMock
+        from unittest.mock import MagicMock
+        mock_tk = MagicMock()
+        mock_tk.TclError = Exception
+        sys.modules.setdefault('tkinter', mock_tk)
+        sys.modules.setdefault('tkinter.ttk', MagicMock())
+        sys.modules.setdefault('tkinter.messagebox', MagicMock())
+        sys.modules.setdefault('tkinter.simpledialog', MagicMock())
+        sys.modules.setdefault('tkinter.filedialog', MagicMock())
+        sys.modules.setdefault('tkinter.font', MagicMock())
+        sys.modules.setdefault('tkinter.scrolledtext', MagicMock())
 
 def _initialize_test_auth():
     """Initialize the authentication system for test collection.
