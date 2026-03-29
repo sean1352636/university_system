@@ -12,12 +12,7 @@ sys.modules['matplotlib.pyplot'] = MagicMock()
 sys.modules['matplotlib.backends'] = MagicMock()
 sys.modules['matplotlib.backends.backend_tkagg'] = MagicMock()
 sys.modules['seaborn'] = MagicMock()
-sys.modules['tkinter'] = MagicMock()
-sys.modules['tkinter.ttk'] = MagicMock()
-sys.modules['tkinter.messagebox'] = MagicMock()
-sys.modules['tkinter.simpledialog'] = MagicMock()
-sys.modules['tkinter.filedialog'] = MagicMock()
-sys.modules['tkinter.scrolledtext'] = MagicMock()
+# NOTE: Do NOT mock tkinter — it poisons sys.modules globally
 
 # Try to import, skip tests if it still fails
 try:
