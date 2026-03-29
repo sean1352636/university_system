@@ -65,6 +65,11 @@ def _setup_headless_tkinter():
 
         tk.Tk.__init__ = _mock_tk_init
         tk.Tk.mainloop = MagicMock()
+
+        # Create a default root so that tk.StringVar() etc. work at
+        # module level without raising "Too early to create variable".
+        _default_root = tk.Tk()
+        tk._default_root = _default_root
         tk.Tk.destroy = MagicMock()
         tk.Tk.update = MagicMock()
         tk.Tk.update_idletasks = MagicMock()
