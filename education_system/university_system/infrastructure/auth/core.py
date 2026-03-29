@@ -219,6 +219,12 @@ class UserAuth:
     _init_lock = threading.Lock()
     _db_initialized = False
 
+    # Re-export as a static method so tests can patch UserAuth.log_activity_with_connection
+    from education_system.university_system.infrastructure.auth.managers.activity_logger import (
+        log_activity_with_connection,
+    )
+    log_activity_with_connection = staticmethod(log_activity_with_connection)
+
     def __init__(self, db_path=None, config_path=None):
         """
         Initialize UserAuth with proper attribute initialization.

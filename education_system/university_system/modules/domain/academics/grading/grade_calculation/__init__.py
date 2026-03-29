@@ -11,6 +11,8 @@ from education_system.university_system.modules.domain.academics.grading.grade_c
     GRADE_SYSTEMS,
 )
 
+from education_system.university_system.infrastructure.database.db import get_connection
+
 from education_system.university_system.modules.domain.academics.grading.grade_calculation.conversions import (
     percentage_to_letter,
     letter_to_percentage,

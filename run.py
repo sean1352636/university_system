@@ -445,6 +445,98 @@ _AUTH_GUI_SYSTEMS = {"university", "college", "school", "primary"}
 _AUTH_CLI_SYSTEMS = {"university", "college", "school", "primary"}
 
 
+# ── Backward-compatible functions expected by tests ──────────────────────────
+
+def log_error(message, error=None):
+    """Log an error message. Used by tests; delegates to the module logger."""
+    if error:
+        logger.error("%s: %s", message, error, exc_info=True)
+    else:
+        logger.error(message)
+
+
+def display_interface_menu():
+    """Interactive menu that returns 'cli' or 'gui', or exits."""
+    while True:
+        print()
+        print("=" * 54)
+        print("       UNIVERSITY MANAGEMENT SYSTEM")
+        print("=" * 54)
+        print()
+        print("  [1] Command Line Interface (CLI)")
+        print("  [2] Graphical User Interface (GUI)")
+        print("  [3] Run Tests")
+        print("  [4] Exit")
+        print()
+        try:
+            choice = input("  Select option: ").strip()
+        except (KeyboardInterrupt, EOFError):
+            print("\n  Exiting...")
+            sys.exit(0)
+
+        if choice == "1":
+            return "cli"
+        elif choice == "2":
+            return "gui"
+        elif choice == "3":
+            try:
+                from education_system.university_system.tests.run_all_tests import main as run_tests_main
+                run_tests_main()
+            except Exception:
+                pass
+            sys.exit(0)
+        elif choice == "4":
+            print("  Goodbye!")
+            sys.exit(0)
+        else:
+            print("  Invalid choice. Please try again.")
+
+
+def run_cli_mode():
+    """Launch CLI mode with error handling. Returns True on success, False on failure."""
+    print("  Starting Command Line Interface...")
+    try:
+        from education_system.university_system.modules.shared.cli.cli_main import main as cli_main
+        cli_main()
+        return True
+    except ImportError as e:
+        print(f"  CLI Import Error: {e}")
+        log_error("CLI import error", e)
+        return False
+    except OSError as e:
+        print(f"  CLI Application Error: {e}")
+        log_error("CLI OS error", e)
+        return False
+    except Exception as e:
+        print(f"  Unexpected error: {e}")
+        log_error("CLI unexpected error", e)
+        return False
+
+
+def run_gui_mode():
+    """Launch GUI mode with error handling and CLI fallback. Returns True on success."""
+    print("  Starting Graphical User Interface...")
+    try:
+        from education_system.university_system.modules.shared.gui.main_gui import run_gui_interface
+        run_gui_interface()
+        return True
+    except ImportError as e:
+        print(f"  GUI Import Error: {e}")
+        print("  Falling back to CLI mode...")
+        log_error("GUI import error", e)
+        return run_cli_mode()
+    except OSError as e:
+        print(f"  GUI Application Error: {e}")
+        print("  Falling back to CLI mode...")
+        log_error("GUI OS error", e)
+        return run_cli_mode()
+    except Exception as e:
+        print(f"  Unexpected error: {e}")
+        print("  Falling back to CLI mode...")
+        log_error("GUI unexpected error", e)
+        return run_cli_mode()
+
+
 # ── CLI interactive menus ─────────────────────────────────────────────────────
 
 def _flush_stdin():

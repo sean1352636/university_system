@@ -14,6 +14,8 @@ For backward compatibility, all public functions are re-exported from this modul
 
 # Import the main GUI class
 from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.main_gui import HousingGUI
+from education_system.university_system.infrastructure.database.db import get_connection
+from education_system.university_system.modules.domain.housing.services.accommodation.db import init_accommodation_db
 
 # Import the HousingFinanceManager class
 try:

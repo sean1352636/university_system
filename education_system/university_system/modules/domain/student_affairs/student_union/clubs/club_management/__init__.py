@@ -1,4 +1,4 @@
-from education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management._imports import set_auth
+from education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management._imports import set_auth, get_connection
 from education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management.clubs import (
     create_club,
     view_clubs,

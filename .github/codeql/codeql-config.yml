@@ -12,10 +12,6 @@
 
 name: "education-system"
 
-packs:
-  python:
-    - .github/codeql/custom-queries
-
 paths-ignore:
   - "**/tests/**"
   - "**/test_*"

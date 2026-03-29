@@ -20,7 +20,10 @@ from education_system.university_system.modules.shared.gui.security.security_das
     show_security_dashboard,
 )
 
+from education_system.university_system.infrastructure.security.init_security_tables import init_security_tables
+
 __all__ = [
     'SecurityDashboard',
     'show_security_dashboard',
+    'init_security_tables',
 ]

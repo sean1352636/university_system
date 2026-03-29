@@ -26,6 +26,8 @@ from education_system.university_system.modules.domain.commerce.services.shop_ma
     setup_shop_permissions,
 )
 
+from education_system.university_system.infrastructure.database.db import get_connection
+
 from education_system.university_system.modules.domain.commerce.services.shop_management.menus import (
     display_shop_menu,
     display_product_management_menu,

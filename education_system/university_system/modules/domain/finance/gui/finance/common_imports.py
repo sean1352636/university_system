@@ -9,6 +9,8 @@ from tkinter import messagebox, simpledialog
 import logging
 from datetime import datetime
 
+from education_system.university_system.infrastructure.database.db import get_connection
+
 # Configure logger for this module
 logger = logging.getLogger(__name__)
 

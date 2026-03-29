@@ -13,5 +13,6 @@ Split into submodules for maintainability:
 """
 
 from education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.portal import AdminPortal
+from education_system.university_system.infrastructure.database.db import get_connection
 
-__all__ = ['AdminPortal']
+__all__ = ['AdminPortal', 'get_connection']

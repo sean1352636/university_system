@@ -407,7 +407,7 @@ def change_password():
         auth.change_password(g.current_user["user_id"],
                              data["old_password"], data["new_password"])
     except Exception as e:
-        logger.error("Password change failed: %s", e)
+        logger.error("Credential update failed: %s", e)
         return jsonify({"error": "Password change failed"}), 400
 
     return jsonify({"message": "Password changed successfully."})

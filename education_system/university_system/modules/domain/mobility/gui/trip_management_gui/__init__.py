@@ -1,5 +1,13 @@
 from education_system.university_system.modules.domain.mobility.gui.trip_management_gui.main_gui import TripManagementGUI
 from education_system.university_system.modules.domain.mobility.gui.trip_management_gui._imports import safe_db_operation
+from education_system.university_system.infrastructure.database.db import get_connection
+from tkinter import messagebox
+
+try:
+    from education_system.university_system.core.activity_logger import log_activity
+except ImportError:
+    def log_activity(*args, **kwargs):
+        pass
 
 import logging
 

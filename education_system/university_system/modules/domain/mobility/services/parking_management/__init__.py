@@ -12,7 +12,14 @@ from education_system.university_system.modules.domain.mobility.services.parking
 from education_system.university_system.modules.domain.mobility.services.parking_management.models import ParkingPermit, Vehicle, ParkingViolation
 
 # Core (DB init, auth)
-from education_system.university_system.modules.domain.mobility.services.parking_management.core import set_auth, init_db, logger
+from education_system.university_system.modules.domain.mobility.services.parking_management.core import set_auth, init_db, logger, get_connection
+
+# Activity logging
+try:
+    from education_system.university_system.core.activity_logger import log_activity
+except ImportError:
+    def log_activity(*args, **kwargs):
+        pass
 
 # Helpers
 from education_system.university_system.modules.domain.mobility.services.parking_management.helpers import get_file_path

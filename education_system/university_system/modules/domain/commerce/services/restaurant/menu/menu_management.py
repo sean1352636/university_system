@@ -3,6 +3,7 @@ from education_system.university_system.infrastructure.database.data_backup impo
 from education_system.university_system.infrastructure.email import send_confirmation_email
 from education_system.university_system.infrastructure.database.db import sqlite3, DatabaseManager
 from education_system.university_system.modules.domain.commerce.services.restaurant.operations.connection import get_db_connection
+from education_system.university_system.modules.domain.commerce.services.restaurant.operations.audit import log_audit_action
 from education_system.university_system.modules.domain.commerce.services.restaurant.operations.order_processing import (
     view_orders,
     update_order_status,

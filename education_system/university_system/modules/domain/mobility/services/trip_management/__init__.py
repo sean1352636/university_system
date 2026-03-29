@@ -3,6 +3,14 @@
 
 from education_system.university_system.modules.domain.mobility.services.trip_management._common import set_auth, PDF_AVAILABLE, CALENDAR_AVAILABLE, HAS_AUTH
 
+from education_system.university_system.infrastructure.database.db import get_connection
+
+try:
+    from education_system.university_system.core.activity_logger import log_activity
+except ImportError:
+    def log_activity(*args, **kwargs):
+        pass
+
 from education_system.university_system.modules.domain.mobility.services.trip_management.database import get_db_connection, safe_db_operation, init_trip_db
 
 from education_system.university_system.modules.domain.mobility.services.trip_management.permissions import setup_trip_permissions, setup_report_permissions

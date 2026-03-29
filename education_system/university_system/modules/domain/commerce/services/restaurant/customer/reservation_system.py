@@ -1,4 +1,5 @@
 from education_system.university_system.infrastructure.auth import UserAuth, display_auth_menu
+from education_system.university_system.modules.domain.commerce.services.restaurant.operations.audit import log_audit_action
 from education_system.university_system.infrastructure.database.data_backup import display_backup_menu, backup_before_operation
 from education_system.university_system.infrastructure.email import send_confirmation_email
 from education_system.university_system.infrastructure.database.db import sqlite3, DatabaseManager
