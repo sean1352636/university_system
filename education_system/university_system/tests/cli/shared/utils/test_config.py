@@ -331,7 +331,7 @@ class TestConfigValidation:
         assert result is False
 
     @patch('jsonschema.validate')
-    @patch('education_system.university_system.modules.shared.utils.config.send_email_via_smtp')
+    @patch('education_system.university_system.infrastructure.email.smtp.send_email_via_smtp')
     def test_validate_config_smtp_test_success(self, mock_smtp, mock_validate, sample_config):
         """Test SMTP connection test succeeds"""
         from education_system.university_system.modules.shared.utils.config import validate_config, config
@@ -347,7 +347,7 @@ class TestConfigValidation:
         mock_smtp.assert_called_once()
 
     @patch('jsonschema.validate')
-    @patch('education_system.university_system.modules.shared.utils.config.send_email_via_smtp')
+    @patch('education_system.university_system.infrastructure.email.smtp.send_email_via_smtp')
     def test_validate_config_smtp_test_failure(self, mock_smtp, mock_validate, sample_config):
         """Test SMTP connection test fails"""
         from education_system.university_system.modules.shared.utils.config import validate_config, config
@@ -564,8 +564,8 @@ class TestInteractiveConfiguration:
 class TestEmailConfiguration:
     """Test test_email_configuration function"""
 
-    @patch('education_system.university_system.modules.shared.utils.config.send_email')
-    @patch('education_system.university_system.modules.shared.utils.config.render_template')
+    @patch('education_system.university_system.modules.shared.utils.email_service.send_email')
+    @patch('education_system.university_system.infrastructure.email.template_utils.render_template')
     def test_test_email_configuration_success(self, mock_render, mock_send, sample_config):
         """Test sending test email successfully"""
         from education_system.university_system.modules.shared.utils.config import test_email_configuration, config
@@ -580,8 +580,8 @@ class TestEmailConfiguration:
         assert result is True
         mock_send.assert_called_once()
 
-    @patch('education_system.university_system.modules.shared.utils.config.send_email')
-    @patch('education_system.university_system.modules.shared.utils.config.render_template')
+    @patch('education_system.university_system.modules.shared.utils.email_service.send_email')
+    @patch('education_system.university_system.infrastructure.email.template_utils.render_template')
     def test_test_email_configuration_no_recipient(self, mock_render, mock_send, sample_config):
         """Test sending test email to self when no recipient"""
         from education_system.university_system.modules.shared.utils.config import test_email_configuration, config
@@ -598,8 +598,8 @@ class TestEmailConfiguration:
         call_args = mock_send.call_args
         assert call_args[0][0] == config['sender_email']
 
-    @patch('education_system.university_system.modules.shared.utils.config.send_email')
-    @patch('education_system.university_system.modules.shared.utils.config.render_template')
+    @patch('education_system.university_system.modules.shared.utils.email_service.send_email')
+    @patch('education_system.university_system.infrastructure.email.template_utils.render_template')
     def test_test_email_configuration_template_error(self, mock_render, mock_send, sample_config):
         """Test test email with template rendering error"""
         from education_system.university_system.modules.shared.utils.config import test_email_configuration, config
@@ -615,7 +615,7 @@ class TestEmailConfiguration:
         assert result is True
         mock_send.assert_called_once()
 
-    @patch('education_system.university_system.modules.shared.utils.config.send_email')
+    @patch('education_system.university_system.modules.shared.utils.email_service.send_email')
     def test_test_email_configuration_no_sender(self, mock_send):
         """Test test email with no sender configured"""
         from education_system.university_system.modules.shared.utils.config import test_email_configuration, config
@@ -627,8 +627,8 @@ class TestEmailConfiguration:
         assert result is False
         mock_send.assert_not_called()
 
-    @patch('education_system.university_system.modules.shared.utils.config.send_email')
-    @patch('education_system.university_system.modules.shared.utils.config.render_template')
+    @patch('education_system.university_system.modules.shared.utils.email_service.send_email')
+    @patch('education_system.university_system.infrastructure.email.template_utils.render_template')
     def test_test_email_configuration_send_failure(self, mock_render, mock_send, sample_config):
         """Test test email send failure"""
         from education_system.university_system.modules.shared.utils.config import test_email_configuration, config

@@ -32,9 +32,19 @@ def test_db():
     # Initialize security tables
     init_security_tables(path)
 
-    # Add session_activity_log table if not exists
+    # Add users table so that FK constraints on session_activity_log are satisfied
     conn = sqlite3.connect(path)
     cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY,
+            username TEXT
+        )
+    """)
+    cursor.execute("INSERT OR IGNORE INTO users (id, username) VALUES (1, 'testuser1')")
+    cursor.execute("INSERT OR IGNORE INTO users (id, username) VALUES (2, 'testuser2')")
+
+    # Add session_activity_log table if not exists
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS session_activity_log (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

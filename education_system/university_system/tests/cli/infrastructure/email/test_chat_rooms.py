@@ -132,7 +132,7 @@ class TestDisplayMyChatRooms:
         }
         mock_dashboard.get_room_members.return_value = []
 
-        with patch('builtins.input', side_effect=['1', '1', '/quit']), \
+        with patch('builtins.input', side_effect=['1', '1', '/quit', '6']), \
              patch('builtins.print'):
 
             chat_rooms.display_my_chat_rooms(mock_dashboard)
@@ -382,7 +382,7 @@ class TestDisplayPublicRooms:
         }
         mock_dashboard.get_room_members.return_value = []
 
-        with patch('builtins.input', side_effect=['1', '1', 'y', 'y', '/quit']), \
+        with patch('builtins.input', side_effect=['1', '1', 'y', 'y', '/quit', '5']), \
              patch('builtins.print'):
 
             chat_rooms.display_public_rooms(mock_dashboard)
@@ -440,7 +440,7 @@ class TestDisplayPublicRooms:
             'total_pages': 1
         }
 
-        with patch('builtins.input', side_effect=['2', '1', '5']), \
+        with patch('builtins.input', side_effect=['2', '1', '', '5']), \
              patch('builtins.print') as mock_print:
 
             chat_rooms.display_public_rooms(mock_dashboard)
@@ -796,7 +796,7 @@ class TestDisplayRoomInvitations:
         ]
         mock_dashboard.respond_to_invitation.return_value = True
 
-        with patch('builtins.input', side_effect=['2', '1', 'y']), \
+        with patch('builtins.input', side_effect=['2', '1', 'y', '']), \
              patch('builtins.print'):
 
             chat_rooms.display_room_invitations(mock_dashboard)
@@ -819,7 +819,7 @@ class TestDisplayRoomInvitations:
             }
         ]
 
-        with patch('builtins.input', side_effect=['3', '1', '4']), \
+        with patch('builtins.input', side_effect=['3', '1', '', '4']), \
              patch('builtins.print') as mock_print:
 
             chat_rooms.display_room_invitations(mock_dashboard)
@@ -843,7 +843,7 @@ class TestManageChatRoom:
             }
         ]
 
-        with patch('builtins.input', side_effect=['1', '7']), \
+        with patch('builtins.input', side_effect=['1', '', '7']), \
              patch('builtins.print'):
 
             chat_rooms.manage_chat_room(mock_dashboard, 1, 'Test Room')
@@ -875,7 +875,7 @@ class TestManageChatRoom:
             mock_cursor.rowcount = 1
             return func(mock_cursor)
 
-        with patch('builtins.input', side_effect=['3', 'otheruser', '7']), \
+        with patch('builtins.input', side_effect=['3', 'otheruser', '', '7']), \
              patch('builtins.print'), \
              patch('education_system.university_system.infrastructure.email.chat_rooms.execute_db_operation', side_effect=mock_operation):
 
@@ -898,7 +898,7 @@ class TestManageChatRoom:
                 mock_cursor.rowcount = 1
             return func(mock_cursor)
 
-        with patch('builtins.input', side_effect=['4', 'otheruser', '1', '7']), \
+        with patch('builtins.input', side_effect=['4', 'otheruser', '1', '', '7']), \
              patch('builtins.print'), \
              patch('education_system.university_system.infrastructure.email.chat_rooms.execute_db_operation', side_effect=mock_operation):
 
@@ -920,7 +920,7 @@ class TestManageChatRoom:
             'total_pages': 1
         }
 
-        with patch('builtins.input', side_effect=['5', '7']), \
+        with patch('builtins.input', side_effect=['5', '', '7']), \
              patch('builtins.print'):
 
             chat_rooms.manage_chat_room(mock_dashboard, 1, 'Test Room')
@@ -936,7 +936,7 @@ class TestManageChatRoom:
             mock_cursor.rowcount = 1
             return func(mock_cursor)
 
-        with patch('builtins.input', side_effect=['6', '1', 'New Room Name', '7']), \
+        with patch('builtins.input', side_effect=['6', '1', 'New Room Name', '', '7']), \
              patch('builtins.print'), \
              patch('education_system.university_system.infrastructure.email.chat_rooms.execute_db_operation', side_effect=mock_operation):
 
@@ -952,7 +952,7 @@ class TestManageChatRoom:
             mock_cursor.rowcount = 1
             return func(mock_cursor)
 
-        with patch('builtins.input', side_effect=['6', '3', '7']), \
+        with patch('builtins.input', side_effect=['6', '3', '', '7']), \
              patch('builtins.print'), \
              patch('education_system.university_system.infrastructure.email.chat_rooms.execute_db_operation', side_effect=mock_operation):
 

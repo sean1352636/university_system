@@ -119,12 +119,15 @@ def temp_db():
         CREATE TABLE IF NOT EXISTS mfa_user_settings (
             user_id INTEGER PRIMARY KEY,
             mfa_enabled INTEGER DEFAULT 0,
+            mfa_status TEXT DEFAULT 'disabled',
             backup_codes_generated INTEGER DEFAULT 0,
             last_successful_verification TIMESTAMP,
             failed_attempts INTEGER DEFAULT 0,
             locked_until TIMESTAMP,
             enforcement_deadline TIMESTAMP,
             bypass_until TIMESTAMP,
+            disabled_at TIMESTAMP,
+            verification_disabled INTEGER DEFAULT 0,
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
     """)

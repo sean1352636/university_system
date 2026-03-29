@@ -148,8 +148,9 @@ class TestConfigureVotingMethods:
 class TestHelperFunctions:
     """Tests for helper functions in voting module."""
 
+    @patch('builtins.input', return_value='0')
     @patch('builtins.print')
-    def test_review_pending_materials(self, mock_print, mock_cursor):
+    def test_review_pending_materials(self, mock_print, mock_input, mock_cursor):
         """Test reviewing pending campaign materials."""
         pending_materials = [
             (1, 'poster', 'Vote for Alice!', '2024-11-15', 'Alice', 'Brown', 'President'),
@@ -162,8 +163,9 @@ class TestHelperFunctions:
         # Should display pending materials
         assert any('Pending' in str(call) for call in mock_print.call_args_list)
 
+    @patch('builtins.input', return_value='0')
     @patch('builtins.print')
-    def test_view_detailed_spending(self, mock_print, mock_cursor):
+    def test_view_detailed_spending(self, mock_print, mock_input, mock_cursor):
         """Test viewing detailed campaign spending."""
         expenses = [
             ('Alice', 'Brown', 'President', 50.00, 'Posters', '2024-11-15', '/receipt.pdf'),

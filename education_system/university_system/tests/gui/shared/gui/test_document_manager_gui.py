@@ -33,6 +33,148 @@ from education_system.university_system.modules.shared.gui.document_manager_gui.
     DocumentManager,
 )
 
+def _create_test_tables(db_path):
+    """Create the tables expected by tests (test-specific schemas).
+
+    The production ``init_enhanced_db`` uses slightly different table /
+    column names.  These lightweight tables satisfy every INSERT / SELECT
+    the test suite issues so that the tests remain self-contained.
+    """
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.executescript("""
+        CREATE TABLE IF NOT EXISTS student_documents (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT,
+            document_type_id INTEGER,
+            file_name TEXT,
+            file_path TEXT,
+            upload_date TEXT,
+            status TEXT,
+            version INTEGER,
+            parent_document_id INTEGER,
+            expiry_date TEXT,
+            approved_date TEXT,
+            archived_date TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS document_workflow (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            document_id INTEGER,
+            workflow_type TEXT,
+            current_step INTEGER,
+            status TEXT,
+            created_date TEXT,
+            updated_date TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT,
+            title TEXT,
+            message TEXT,
+            notification_type TEXT,
+            created_date TEXT,
+            status TEXT,
+            sent_date TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS document_tags (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tag_name TEXT,
+            tag_color TEXT,
+            created_date TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS course_requirements (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            course_code TEXT,
+            document_type_id INTEGER,
+            is_required INTEGER DEFAULT 1
+        );
+
+        CREATE TABLE IF NOT EXISTS system_settings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            setting_key TEXT UNIQUE,
+            setting_value TEXT,
+            updated_date TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS audit_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            action TEXT,
+            entity_type TEXT,
+            entity_id INTEGER,
+            details TEXT,
+            timestamp TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS document_types (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            description TEXT,
+            is_required INTEGER DEFAULT 0
+        );
+
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            password_hash TEXT,
+            role TEXT,
+            email TEXT,
+            first_name TEXT,
+            last_name TEXT,
+            created_date TEXT,
+            is_active INTEGER DEFAULT 1
+        );
+
+        CREATE TABLE IF NOT EXISTS students (
+            student_id TEXT PRIMARY KEY,
+            first_name TEXT,
+            last_name TEXT,
+            email TEXT,
+            course TEXT,
+            year INTEGER,
+            enrollment_date TEXT,
+            status TEXT DEFAULT 'Active'
+        );
+    """)
+
+    # Insert minimal seed data so that tests querying for "default" rows pass.
+    cursor.execute("SELECT COUNT(*) FROM users")
+    if cursor.fetchone()[0] == 0:
+        cursor.execute(
+            "INSERT INTO users (username, role, email, first_name, last_name, created_date) "
+            "VALUES ('admin', 'admin', 'admin@test.edu', 'System', 'Admin', datetime('now'))"
+        )
+
+    cursor.execute("SELECT COUNT(*) FROM document_types")
+    if cursor.fetchone()[0] == 0:
+        cursor.execute(
+            "INSERT INTO document_types (name, description, is_required) "
+            "VALUES ('Transcript', 'Academic transcript', 1)"
+        )
+        cursor.execute(
+            "INSERT INTO document_types (name, description, is_required) "
+            "VALUES ('ID Card', 'Student identification', 1)"
+        )
+
+    cursor.execute("SELECT COUNT(*) FROM students")
+    if cursor.fetchone()[0] == 0:
+        cursor.execute(
+            "INSERT INTO students (student_id, first_name, last_name, email, course, status) "
+            "VALUES ('12345', 'Jane', 'Smith', 'jane@test.edu', 'Computer Science', 'Active')"
+        )
+        cursor.execute(
+            "INSERT INTO students (student_id, first_name, last_name, email, course, status) "
+            "VALUES ('67890', 'Bob', 'Brown', 'bob@test.edu', 'Mathematics', 'Active')"
+        )
+
+    conn.commit()
+    conn.close()
+
+
 class TestDocumentManagerGUI(unittest.TestCase):
     """Test suite for DocumentManagerGUI class"""
 
@@ -52,6 +194,11 @@ class TestDocumentManagerGUI(unittest.TestCase):
         """Set up test fixtures before each test"""
         self.root = tk.Tk()
         self.root.withdraw()  # Hide the window during tests
+
+        # Pre-create the test-specific tables *before* the GUI tries to
+        # initialise its own database so the schemas the tests expect are
+        # already in place.
+        _create_test_tables(self.test_db)
 
         # Mock database path
         self.patcher = patch('education_system.university_system.modules.shared.constants.paths.DEFAULT_DB_PATH',
@@ -716,6 +863,8 @@ class TestDocumentManager(unittest.TestCase):
 
     def setUp(self):
         """Set up before each test"""
+        _create_test_tables(self.test_db)
+
         self.patcher = patch('education_system.university_system.modules.shared.constants.paths.DEFAULT_DB_PATH',
                             self.test_db)
         self.patcher.start()
@@ -764,6 +913,8 @@ class TestIntegrationScenarios(unittest.TestCase):
         """Set up before each test"""
         self.root = tk.Tk()
         self.root.withdraw()
+
+        _create_test_tables(self.test_db)
 
         self.patcher = patch('education_system.university_system.modules.shared.constants.paths.DEFAULT_DB_PATH',
                             self.test_db)

@@ -252,6 +252,7 @@ class TestRunGuiMode:
 class TestMain:
     """Test suite for main() function"""
 
+    @patch('builtins.input', return_value='0')
     @patch('run.run_cli_mode')
     @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
     @patch('education_system.university_system.infrastructure.shared_context.set_auth')
@@ -259,7 +260,7 @@ class TestMain:
     @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_with_cli_argument(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                    mock_set_auth, mock_init_db, mock_run_cli):
+                                    mock_set_auth, mock_init_db, mock_run_cli, mock_input):
         """Test main() with --cli command-line argument"""
         mock_init_db.return_value = True
         mock_run_cli.return_value = True
@@ -272,6 +273,7 @@ class TestMain:
         mock_init_db.assert_called_once()
         mock_run_cli.assert_called_once()
 
+    @patch('builtins.input', return_value='0')
     @patch('run.run_gui_mode')
     @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
     @patch('education_system.university_system.infrastructure.shared_context.set_auth')
@@ -279,7 +281,7 @@ class TestMain:
     @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_with_gui_argument(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                   mock_set_auth, mock_init_db, mock_run_gui):
+                                   mock_set_auth, mock_init_db, mock_run_gui, mock_input):
         """Test main() with --gui command-line argument"""
         mock_init_db.return_value = True
         mock_run_gui.return_value = True
@@ -290,6 +292,7 @@ class TestMain:
         assert result is True
         mock_run_gui.assert_called_once()
 
+    @patch('builtins.input', return_value='0')
     @patch('education_system.university_system.tests.run_all_tests.main')
     @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
     @patch('education_system.university_system.infrastructure.shared_context.set_auth')
@@ -297,7 +300,7 @@ class TestMain:
     @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_with_test_argument(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                    mock_set_auth, mock_init_db, mock_run_tests):
+                                    mock_set_auth, mock_init_db, mock_run_tests, mock_input):
         """Test main() with --test command-line argument"""
         mock_init_db.return_value = True
 
@@ -309,13 +312,14 @@ class TestMain:
         output = mock_stdout.getvalue()
         assert "Running all tests" in output
 
+    @patch('builtins.input', return_value='0')
     @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
     @patch('education_system.university_system.infrastructure.shared_context.set_auth')
     @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
     @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_with_help_argument(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                    mock_set_auth, mock_init_db):
+                                    mock_set_auth, mock_init_db, mock_input):
         """Test main() with --help command-line argument"""
         mock_init_db.return_value = True
 
@@ -324,13 +328,14 @@ class TestMain:
                 run.main()
             assert exc_info.value.code == 0
 
+    @patch('builtins.input', return_value='0')
     @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
     @patch('education_system.university_system.infrastructure.shared_context.set_auth')
     @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
     @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_with_unknown_argument(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                       mock_set_auth, mock_init_db):
+                                       mock_set_auth, mock_init_db, mock_input):
         """Test main() with unknown command-line argument — argparse exits with code 2"""
         mock_init_db.return_value = True
 
@@ -339,6 +344,7 @@ class TestMain:
                 run.main()
             assert exc_info.value.code == 2
 
+    @patch('builtins.input', return_value='0')
     @patch('run.run_cli_mode')
     @patch('run.display_interface_menu')
     @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
@@ -347,7 +353,7 @@ class TestMain:
     @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_interactive_menu_cli(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                      mock_set_auth, mock_init_db, mock_menu, mock_run_cli):
+                                      mock_set_auth, mock_init_db, mock_menu, mock_run_cli, mock_input):
         """Test main() with interactive menu choosing CLI"""
         mock_init_db.return_value = True
         mock_menu.return_value = 'cli'
@@ -360,6 +366,7 @@ class TestMain:
         mock_menu.assert_called_once()
         mock_run_cli.assert_called_once()
 
+    @patch('builtins.input', return_value='0')
     @patch('run.run_gui_mode')
     @patch('run.display_interface_menu')
     @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
@@ -368,7 +375,7 @@ class TestMain:
     @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_interactive_menu_gui(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                      mock_set_auth, mock_init_db, mock_menu, mock_run_gui):
+                                      mock_set_auth, mock_init_db, mock_menu, mock_run_gui, mock_input):
         """Test main() with interactive menu choosing GUI"""
         mock_init_db.return_value = True
         mock_menu.return_value = 'gui'
@@ -381,13 +388,14 @@ class TestMain:
         mock_menu.assert_called_once()
         mock_run_gui.assert_called_once()
 
+    @patch('builtins.input', return_value='0')
     @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
     @patch('education_system.university_system.infrastructure.shared_context.set_auth')
     @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
     @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_database_init_warning(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                       mock_set_auth, mock_init_db):
+                                       mock_set_auth, mock_init_db, mock_input):
         """Test main() when --help is passed (argparse exits regardless of init_db)"""
         mock_init_db.return_value = False
 
@@ -396,13 +404,14 @@ class TestMain:
                 run.main()
             assert exc_info.value.code == 0
 
+    @patch('builtins.input', return_value='0')
     @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
     @patch('education_system.university_system.infrastructure.shared_context.set_auth')
     @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
     @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_keyboard_interrupt(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                    mock_set_auth, mock_init_db):
+                                    mock_set_auth, mock_init_db, mock_input):
         """Test main() handling of KeyboardInterrupt"""
         mock_init_db.side_effect = KeyboardInterrupt()
 
@@ -413,11 +422,12 @@ class TestMain:
         output = mock_stdout.getvalue()
         assert "Application interrupted by user" in output
 
+    @patch('builtins.input', return_value='0')
     @patch('run.log_error')
     @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories',
            side_effect=ImportError("Cannot import"))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_main_import_error(self, mock_stdout, mock_ensure_dirs, mock_log_error):
+    def test_main_import_error(self, mock_stdout, mock_ensure_dirs, mock_log_error, mock_input):
         """Test main() handling of ImportError"""
         with patch.object(sys, 'argv', ['run.py']):
             result = run.main()
@@ -425,6 +435,7 @@ class TestMain:
         assert result is False
         mock_log_error.assert_called_once()
 
+    @patch('builtins.input', return_value='0')
     @patch('run.log_error')
     @patch('education_system.university_system.infrastructure.database.database_utils.init_db',
            side_effect=OSError("File system error"))
@@ -433,7 +444,7 @@ class TestMain:
     @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_os_error(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                          mock_set_auth, mock_init_db, mock_log_error):
+                          mock_set_auth, mock_init_db, mock_log_error, mock_input):
         """Test main() handling of OSError"""
         with patch.object(sys, 'argv', ['run.py']):
             result = run.main()
@@ -441,6 +452,7 @@ class TestMain:
         assert result is False
         mock_log_error.assert_called_once()
 
+    @patch('builtins.input', return_value='0')
     @patch('run.log_error')
     @patch('education_system.university_system.infrastructure.database.database_utils.init_db',
            side_effect=RuntimeError("Runtime issue"))
@@ -449,7 +461,7 @@ class TestMain:
     @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_runtime_error(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                               mock_set_auth, mock_init_db, mock_log_error):
+                               mock_set_auth, mock_init_db, mock_log_error, mock_input):
         """Test main() handling of RuntimeError"""
         with patch.object(sys, 'argv', ['run.py']):
             result = run.main()
@@ -457,6 +469,7 @@ class TestMain:
         assert result is False
         mock_log_error.assert_called_once()
 
+    @patch('builtins.input', return_value='0')
     @patch('run.log_error')
     @patch('education_system.university_system.infrastructure.database.database_utils.init_db',
            side_effect=Exception("Unexpected error"))
@@ -465,7 +478,7 @@ class TestMain:
     @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_general_exception(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                   mock_set_auth, mock_init_db, mock_log_error):
+                                   mock_set_auth, mock_init_db, mock_log_error, mock_input):
         """Test main() handling of general Exception"""
         with patch.object(sys, 'argv', ['run.py']):
             result = run.main()
@@ -473,6 +486,7 @@ class TestMain:
         assert result is False
         mock_log_error.assert_called_once()
 
+    @patch('builtins.input', return_value='0')
     @patch('run.run_cli_mode')
     @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
     @patch('education_system.university_system.infrastructure.shared_context.set_auth')
@@ -480,7 +494,7 @@ class TestMain:
     @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_cli_argument_variations(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                    mock_set_auth, mock_init_db, mock_run_cli):
+                                    mock_set_auth, mock_init_db, mock_run_cli, mock_input):
         """Test all variations of CLI argument (-c, --cli, cli)"""
         mock_init_db.return_value = True
         mock_run_cli.return_value = True
@@ -490,6 +504,7 @@ class TestMain:
                 result = run.main()
                 assert result is True
 
+    @patch('builtins.input', return_value='0')
     @patch('run.run_gui_mode')
     @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
     @patch('education_system.university_system.infrastructure.shared_context.set_auth')
@@ -497,7 +512,7 @@ class TestMain:
     @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_gui_argument_variations(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                    mock_set_auth, mock_init_db, mock_run_gui):
+                                    mock_set_auth, mock_init_db, mock_run_gui, mock_input):
         """Test all variations of GUI argument (-g, --gui, gui)"""
         mock_init_db.return_value = True
         mock_run_gui.return_value = True
@@ -507,6 +522,7 @@ class TestMain:
                 result = run.main()
                 assert result is True
 
+    @patch('builtins.input', return_value='0')
     @patch('education_system.university_system.tests.run_all_tests.main')
     @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
     @patch('education_system.university_system.infrastructure.shared_context.set_auth')
@@ -514,7 +530,7 @@ class TestMain:
     @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_test_argument_variations(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                     mock_set_auth, mock_init_db, mock_run_tests):
+                                     mock_set_auth, mock_init_db, mock_run_tests, mock_input):
         """Test all variations of test argument (-t, --test, test)"""
         mock_init_db.return_value = True
 
@@ -523,13 +539,14 @@ class TestMain:
                 result = run.main()
                 assert result is True
 
+    @patch('builtins.input', return_value='0')
     @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
     @patch('education_system.university_system.infrastructure.shared_context.set_auth')
     @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
     @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_help_argument_variations(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                     mock_set_auth, mock_init_db):
+                                     mock_set_auth, mock_init_db, mock_input):
         """Test all variations of help argument (-h, --help, help)"""
         mock_init_db.return_value = True
 
@@ -694,13 +711,14 @@ class TestOutputFormatting:
         assert "-" * 60 in output  # Footer separator
         assert "UNIVERSITY MANAGEMENT SYSTEM" in output
 
+    @patch('builtins.input', return_value='0')
     @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
     @patch('education_system.university_system.infrastructure.shared_context.set_auth')
     @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
     @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_help_message_formatting(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                    mock_set_auth, mock_init_db):
+                                    mock_set_auth, mock_init_db, mock_input):
         """Test that --help triggers argparse help and exits cleanly"""
         mock_init_db.return_value = True
 

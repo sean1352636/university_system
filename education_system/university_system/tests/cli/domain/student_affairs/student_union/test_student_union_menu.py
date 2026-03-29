@@ -22,9 +22,10 @@ def mock_context():
 class TestDisplayStudentUnionMenu:
     """Tests for display_student_union_menu function."""
 
+    @patch('builtins.input', return_value='0')
     @patch('builtins.print')
     @patch('education_system.university_system.modules.core.services.student_union_misc.context')
-    def test_menu_not_logged_in(self, mock_ctx, mock_print):
+    def test_menu_not_logged_in(self, mock_ctx, mock_print, mock_input):
         """Test menu when not logged in."""
         # Setup mocks
         mock_ctx.auth = None

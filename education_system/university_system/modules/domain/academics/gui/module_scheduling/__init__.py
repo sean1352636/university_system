@@ -1,5 +1,8 @@
 from education_system.university_system.modules.domain.academics.gui.module_scheduling.main_gui import ModuleSchedulingGUI, main, launch_gui, launch_cli, create_desktop_shortcut, setup_application, launch_module_scheduling_gui, run_gui_with_database
 
+# Re-export dependencies used by tests and external consumers
+from education_system.university_system.modules.domain.academics.gui.module_scheduling.exports import ModuleScheduler, get_connection, filedialog
+
 # Import all tab modules to attach methods to ModuleSchedulingGUI
 from education_system.university_system.modules.domain.academics.gui.module_scheduling import dashboard_tab
 from education_system.university_system.modules.domain.academics.gui.module_scheduling import schedules_tab

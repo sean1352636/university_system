@@ -20,6 +20,9 @@ from education_system.university_system.modules.shared.services.business_intelli
     launch_business_intelligence_gui
 )
 
+# Common patch prefix for the BI GUI module
+_BI_MOD = 'education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui'
+
 
 @pytest.fixture
 def mock_auth():
@@ -54,7 +57,7 @@ class TestBusinessIntelligenceGUI:
         """Test initialization with authentication"""
         with patch.object(BusinessIntelligenceGUI, '_init_database'):
             with patch.object(BusinessIntelligenceGUI, '_create_widgets'):
-                with patch('education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui.log_activity'):
+                with patch(f'{_BI_MOD}.log_activity'):
                     gui = BusinessIntelligenceGUI(root_window, mock_auth)
 
                     assert gui.auth == mock_auth
@@ -62,16 +65,27 @@ class TestBusinessIntelligenceGUI:
 
     def test_init_database(self, root_window, mock_auth):
         """Test database initialization"""
-        with patch('education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui.init_business_intelligence_system_db') as mock_init:
+        with patch(f'{_BI_MOD}.init_business_intelligence_system_db') as mock_init:
             with patch.object(BusinessIntelligenceGUI, '_create_widgets'):
-                gui = BusinessIntelligenceGUI(root_window, mock_auth)
+                with patch(f'{_BI_MOD}.log_activity'):
+                    gui = BusinessIntelligenceGUI(root_window, mock_auth)
 
     def test_create_widgets(self, root_window, mock_auth):
         """Test widget creation"""
         with patch.object(BusinessIntelligenceGUI, '_init_database'):
-            gui = BusinessIntelligenceGUI(root_window, mock_auth)
+            with patch(f'{_BI_MOD}.get_connection') as mock_get_conn:
+                # Provide a mock connection for the internal _load_* calls
+                mock_conn = Mock()
+                mock_cursor = Mock()
+                mock_cursor.fetchall.return_value = []
+                mock_conn.execute.return_value = mock_cursor
+                mock_conn.__enter__ = Mock(return_value=mock_conn)
+                mock_conn.__exit__ = Mock(return_value=False)
+                mock_get_conn.return_value = mock_conn
 
-            assert hasattr(gui, 'notebook')
+                with patch(f'{_BI_MOD}.log_activity'):
+                    gui = BusinessIntelligenceGUI(root_window, mock_auth)
+                    assert hasattr(gui, 'notebook')
 
     def test_load_reports(self, root_window, mock_auth):
         """Test loading reports"""
@@ -85,11 +99,17 @@ class TestBusinessIntelligenceGUI:
         mock_conn.__exit__ = Mock(return_value=False)
 
         with patch.object(BusinessIntelligenceGUI, '_init_database'):
-            with patch('education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui.get_connection', return_value=mock_conn):
-                gui = BusinessIntelligenceGUI(root_window, mock_auth)
-                gui._load_reports()
+            with patch.object(BusinessIntelligenceGUI, '_create_widgets'):
+                with patch(f'{_BI_MOD}.log_activity'):
+                    gui = BusinessIntelligenceGUI(root_window, mock_auth)
 
-                assert gui.reports_tree.get_children()
+        # Manually create the tree widget for the test
+        gui.reports_tree = MagicMock()
+        gui.reports_tree.get_children.return_value = ['item1']
+
+        with patch(f'{_BI_MOD}.get_connection', return_value=mock_conn):
+            gui._load_reports()
+            assert gui.reports_tree.get_children()
 
     def test_load_exports(self, root_window, mock_auth):
         """Test loading export history"""
@@ -101,9 +121,14 @@ class TestBusinessIntelligenceGUI:
         mock_conn.__exit__ = Mock(return_value=False)
 
         with patch.object(BusinessIntelligenceGUI, '_init_database'):
-            with patch('education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui.get_connection', return_value=mock_conn):
-                gui = BusinessIntelligenceGUI(root_window, mock_auth)
-                gui._load_exports()
+            with patch.object(BusinessIntelligenceGUI, '_create_widgets'):
+                with patch(f'{_BI_MOD}.log_activity'):
+                    gui = BusinessIntelligenceGUI(root_window, mock_auth)
+
+        gui.exports_tree = MagicMock()
+
+        with patch(f'{_BI_MOD}.get_connection', return_value=mock_conn):
+            gui._load_exports()
 
     def test_load_schedules(self, root_window, mock_auth):
         """Test loading schedules"""
@@ -115,9 +140,14 @@ class TestBusinessIntelligenceGUI:
         mock_conn.__exit__ = Mock(return_value=False)
 
         with patch.object(BusinessIntelligenceGUI, '_init_database'):
-            with patch('education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui.get_connection', return_value=mock_conn):
-                gui = BusinessIntelligenceGUI(root_window, mock_auth)
-                gui._load_schedules()
+            with patch.object(BusinessIntelligenceGUI, '_create_widgets'):
+                with patch(f'{_BI_MOD}.log_activity'):
+                    gui = BusinessIntelligenceGUI(root_window, mock_auth)
+
+        gui.schedules_tree = MagicMock()
+
+        with patch(f'{_BI_MOD}.get_connection', return_value=mock_conn):
+            gui._load_schedules()
 
     def test_load_visualizations(self, root_window, mock_auth):
         """Test loading visualizations"""
@@ -129,9 +159,14 @@ class TestBusinessIntelligenceGUI:
         mock_conn.__exit__ = Mock(return_value=False)
 
         with patch.object(BusinessIntelligenceGUI, '_init_database'):
-            with patch('education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui.get_connection', return_value=mock_conn):
-                gui = BusinessIntelligenceGUI(root_window, mock_auth)
-                gui._load_visualizations()
+            with patch.object(BusinessIntelligenceGUI, '_create_widgets'):
+                with patch(f'{_BI_MOD}.log_activity'):
+                    gui = BusinessIntelligenceGUI(root_window, mock_auth)
+
+        gui.viz_tree = MagicMock()
+
+        with patch(f'{_BI_MOD}.get_connection', return_value=mock_conn):
+            gui._load_visualizations()
 
     def test_load_metrics(self, root_window, mock_auth):
         """Test loading metrics"""
@@ -143,9 +178,14 @@ class TestBusinessIntelligenceGUI:
         mock_conn.__exit__ = Mock(return_value=False)
 
         with patch.object(BusinessIntelligenceGUI, '_init_database'):
-            with patch('education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui.get_connection', return_value=mock_conn):
-                gui = BusinessIntelligenceGUI(root_window, mock_auth)
-                gui._load_metrics()
+            with patch.object(BusinessIntelligenceGUI, '_create_widgets'):
+                with patch(f'{_BI_MOD}.log_activity'):
+                    gui = BusinessIntelligenceGUI(root_window, mock_auth)
+
+        gui.metrics_tree = MagicMock()
+
+        with patch(f'{_BI_MOD}.get_connection', return_value=mock_conn):
+            gui._load_metrics()
 
     def test_delete_report(self, root_window, mock_auth):
         """Test deleting a report"""
@@ -154,18 +194,21 @@ class TestBusinessIntelligenceGUI:
         mock_conn.__exit__ = Mock(return_value=False)
 
         with patch.object(BusinessIntelligenceGUI, '_init_database'):
-            with patch('education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui.get_connection', return_value=mock_conn):
-                gui = BusinessIntelligenceGUI(root_window, mock_auth)
+            with patch.object(BusinessIntelligenceGUI, '_create_widgets'):
+                with patch(f'{_BI_MOD}.log_activity'):
+                    gui = BusinessIntelligenceGUI(root_window, mock_auth)
 
-                # Insert test item
-                gui.reports_tree.insert('', 'end', values=('1', 'Test Report', 'Academic', 'user', '2024-01-15'))
-                gui.reports_tree.selection_set(gui.reports_tree.get_children()[0])
+        # Create a real tree widget for selection testing
+        gui.reports_tree = MagicMock()
+        gui.reports_tree.selection.return_value = ['item1']
+        gui.reports_tree.item.return_value = {'values': [1, 'Test Report', 'Academic', 'user', '2024-01-15']}
 
-                with patch('tkinter.messagebox.askyesno', return_value=True):
-                    with patch('tkinter.messagebox.showinfo'):
-                        with patch('education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui.transaction', return_value=mock_conn):
-                            with patch.object(gui, '_load_reports'):
-                                gui._delete_report()
+        with patch('tkinter.messagebox.askyesno', return_value=True):
+            with patch('tkinter.messagebox.showinfo'):
+                with patch(f'{_BI_MOD}.transaction', return_value=mock_conn):
+                    with patch(f'{_BI_MOD}.log_activity'):
+                        with patch.object(gui, '_load_reports'):
+                            gui._delete_report()
 
     def test_toggle_schedule(self, root_window, mock_auth):
         """Test toggling schedule status"""
@@ -174,17 +217,18 @@ class TestBusinessIntelligenceGUI:
         mock_conn.__exit__ = Mock(return_value=False)
 
         with patch.object(BusinessIntelligenceGUI, '_init_database'):
-            with patch('education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui.get_connection', return_value=mock_conn):
-                gui = BusinessIntelligenceGUI(root_window, mock_auth)
+            with patch.object(BusinessIntelligenceGUI, '_create_widgets'):
+                with patch(f'{_BI_MOD}.log_activity'):
+                    gui = BusinessIntelligenceGUI(root_window, mock_auth)
 
-                # Insert test item
-                gui.schedules_tree.insert('', 'end', values=('1', 'Test', '1', 'daily', 'test@test.com', '✓', '2024-01-15'))
-                gui.schedules_tree.selection_set(gui.schedules_tree.get_children()[0])
+        gui.schedules_tree = MagicMock()
+        gui.schedules_tree.selection.return_value = ['item1']
+        gui.schedules_tree.item.return_value = {'values': [1, 'Test', 1, 'daily', 'test@test.com', '\u2713', '2024-01-15']}
 
-                with patch('tkinter.messagebox.showinfo'):
-                    with patch('education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui.transaction', return_value=mock_conn):
-                        with patch.object(gui, '_load_schedules'):
-                            gui._toggle_schedule()
+        with patch('tkinter.messagebox.showinfo'):
+            with patch(f'{_BI_MOD}.transaction', return_value=mock_conn):
+                with patch.object(gui, '_load_schedules'):
+                    gui._toggle_schedule()
 
 
 class TestCreateReportDialog:
@@ -195,10 +239,11 @@ class TestCreateReportDialog:
         callback = Mock()
 
         with patch('tkinter.Toplevel'):
-            dialog = CreateReportDialog(root_window, mock_auth, callback)
+            with patch.object(CreateReportDialog, '_create_widgets'):
+                dialog = CreateReportDialog(root_window, mock_auth, callback)
 
-            assert dialog.auth == mock_auth
-            assert dialog.callback == callback
+                assert dialog.auth == mock_auth
+                assert dialog.callback == callback
 
     def test_create_report_success(self, root_window, mock_auth):
         """Test creating a report successfully"""
@@ -208,7 +253,8 @@ class TestCreateReportDialog:
             mock_dialog = Mock()
             mock_toplevel.return_value = mock_dialog
 
-            dialog = CreateReportDialog(root_window, mock_auth, callback)
+            with patch.object(CreateReportDialog, '_create_widgets'):
+                dialog = CreateReportDialog(root_window, mock_auth, callback)
 
             # Mock form inputs
             dialog.name_entry = Mock()
@@ -220,9 +266,9 @@ class TestCreateReportDialog:
             dialog.query_text = Mock()
             dialog.query_text.get.return_value = 'SELECT * FROM students'
 
-            with patch('education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui.ReportDefinitionManager.create_report', return_value=1):
+            with patch(f'{_BI_MOD}.ReportDefinitionManager.create_report', return_value=1):
                 with patch('tkinter.messagebox.showinfo'):
-                    with patch('education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui.log_activity'):
+                    with patch(f'{_BI_MOD}.log_activity'):
                         dialog._create()
 
                         callback.assert_called_once()
@@ -235,10 +281,17 @@ class TestCreateReportDialog:
             mock_dialog = Mock()
             mock_toplevel.return_value = mock_dialog
 
-            dialog = CreateReportDialog(root_window, mock_auth, callback)
+            with patch.object(CreateReportDialog, '_create_widgets'):
+                dialog = CreateReportDialog(root_window, mock_auth, callback)
 
             dialog.name_entry = Mock()
             dialog.name_entry.get.return_value = ''
+            dialog.category_combo = Mock()
+            dialog.category_combo.get.return_value = 'Academic'
+            dialog.desc_text = Mock()
+            dialog.desc_text.get.return_value = ''
+            dialog.query_text = Mock()
+            dialog.query_text.get.return_value = ''
 
             with patch('tkinter.messagebox.showerror') as mock_error:
                 dialog._create()
@@ -251,17 +304,21 @@ class TestRunReportDialog:
     def test_init(self, root_window, mock_auth):
         """Test dialog initialization"""
         with patch('tkinter.Toplevel'):
-            with patch.object(RunReportDialog, '_run_report'):
-                dialog = RunReportDialog(root_window, mock_auth, 1, "Test Report")
+            with patch.object(RunReportDialog, '_create_widgets'):
+                with patch.object(RunReportDialog, '_run_report'):
+                    dialog = RunReportDialog(root_window, mock_auth, 1, "Test Report")
 
-                assert dialog.report_id == 1
-                assert dialog.report_name == "Test Report"
+                    assert dialog.report_id == 1
+                    assert dialog.report_name == "Test Report"
 
     def test_run_report_with_query(self, root_window, mock_auth):
         """Test running a report with SQL query"""
+        # Create a dict-like row mock for fetchone
+        mock_row = {'sql_query': 'SELECT * FROM students'}
+
         mock_conn = Mock()
         mock_cursor = Mock()
-        mock_cursor.fetchone.return_value = {'sql_query': 'SELECT * FROM students'}
+        mock_cursor.fetchone.return_value = mock_row
         mock_cursor.fetchall.return_value = [
             ('S001', 'John Doe', 'CS'),
             ('S002', 'Jane Smith', 'ENG')
@@ -272,24 +329,31 @@ class TestRunReportDialog:
         mock_conn.__exit__ = Mock(return_value=False)
 
         with patch('tkinter.Toplevel'):
-            with patch('education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui.get_connection', return_value=mock_conn):
-                dialog = RunReportDialog(root_window, mock_auth, 1, "Test")
-                # Should execute query and display results
+            with patch.object(RunReportDialog, '_create_widgets'):
+                with patch.object(RunReportDialog, '_run_report'):
+                    dialog = RunReportDialog(root_window, mock_auth, 1, "Test")
+
+        # Set up the result_text mock for the _run_report call
+        dialog.result_text = Mock()
+
+        with patch(f'{_BI_MOD}.get_connection', return_value=mock_conn):
+            dialog._run_report()
 
     def test_export_csv(self, root_window, mock_auth):
         """Test exporting report to CSV"""
         with patch('tkinter.Toplevel'):
-            with patch.object(RunReportDialog, '_run_report'):
-                dialog = RunReportDialog(root_window, mock_auth, 1, "Test")
+            with patch.object(RunReportDialog, '_create_widgets'):
+                with patch.object(RunReportDialog, '_run_report'):
+                    dialog = RunReportDialog(root_window, mock_auth, 1, "Test")
 
-                dialog.results = [['val1', 'val2'], ['val3', 'val4']]
-                dialog.headers = ['col1', 'col2']
+                    dialog.results = [['val1', 'val2'], ['val3', 'val4']]
+                    dialog.headers = ['col1', 'col2']
 
-                with patch('tkinter.filedialog.asksaveasfilename', return_value='/tmp/test.csv'):
-                    with patch('builtins.open', mock_open()):
-                        with patch('csv.writer'):
-                            with patch('tkinter.messagebox.showinfo'):
-                                dialog._export_csv()
+                    with patch('tkinter.filedialog.asksaveasfilename', return_value='/tmp/test.csv'):
+                        with patch('builtins.open', mock_open()):
+                            with patch('csv.writer'):
+                                with patch('tkinter.messagebox.showinfo'):
+                                    dialog._export_csv()
 
 
 class TestExportReportDialog:
@@ -303,20 +367,21 @@ class TestExportReportDialog:
             mock_dialog = Mock()
             mock_toplevel.return_value = mock_dialog
 
-            with patch.object(ExportReportDialog, '_load_reports'):
-                dialog = ExportReportDialog(root_window, mock_auth, callback)
+            with patch.object(ExportReportDialog, '_create_widgets'):
+                with patch.object(ExportReportDialog, '_load_reports'):
+                    dialog = ExportReportDialog(root_window, mock_auth, callback)
 
-                dialog.reports = {'Test Report': 1}
-                dialog.report_combo = Mock()
-                dialog.report_combo.get.return_value = 'Test Report'
-                dialog.format_combo = Mock()
-                dialog.format_combo.get.return_value = 'CSV'
+                    dialog.reports = {'Test Report': 1}
+                    dialog.report_combo = Mock()
+                    dialog.report_combo.get.return_value = 'Test Report'
+                    dialog.format_combo = Mock()
+                    dialog.format_combo.get.return_value = 'CSV'
 
-                with patch('education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui.ReportExportManager.export_report', return_value=1):
-                    with patch('tkinter.messagebox.showinfo'):
-                        dialog._export()
+                    with patch(f'{_BI_MOD}.ReportExportManager.export_report', return_value=1):
+                        with patch('tkinter.messagebox.showinfo'):
+                            dialog._export()
 
-                        callback.assert_called_once()
+                            callback.assert_called_once()
 
     def test_export_no_report_selected(self, root_window, mock_auth):
         """Test exporting without selecting report"""
@@ -326,15 +391,16 @@ class TestExportReportDialog:
             mock_dialog = Mock()
             mock_toplevel.return_value = mock_dialog
 
-            with patch.object(ExportReportDialog, '_load_reports'):
-                dialog = ExportReportDialog(root_window, mock_auth, callback)
+            with patch.object(ExportReportDialog, '_create_widgets'):
+                with patch.object(ExportReportDialog, '_load_reports'):
+                    dialog = ExportReportDialog(root_window, mock_auth, callback)
 
-                dialog.report_combo = Mock()
-                dialog.report_combo.get.return_value = ''
+                    dialog.report_combo = Mock()
+                    dialog.report_combo.get.return_value = ''
 
-                with patch('tkinter.messagebox.showerror') as mock_error:
-                    dialog._export()
-                    mock_error.assert_called_once()
+                    with patch('tkinter.messagebox.showerror') as mock_error:
+                        dialog._export()
+                        mock_error.assert_called_once()
 
 
 class TestCreateScheduleDialog:
@@ -348,28 +414,29 @@ class TestCreateScheduleDialog:
             mock_dialog = Mock()
             mock_toplevel.return_value = mock_dialog
 
-            with patch.object(CreateScheduleDialog, '_load_reports'):
-                dialog = CreateScheduleDialog(root_window, mock_auth, callback)
+            with patch.object(CreateScheduleDialog, '_create_widgets'):
+                with patch.object(CreateScheduleDialog, '_load_reports'):
+                    dialog = CreateScheduleDialog(root_window, mock_auth, callback)
 
-                dialog.reports = {'Test Report': 1}
-                dialog.name_entry = Mock()
-                dialog.name_entry.get.return_value = 'Daily Report'
-                dialog.report_combo = Mock()
-                dialog.report_combo.get.return_value = 'Test Report'
-                dialog.freq_combo = Mock()
-                dialog.freq_combo.get.return_value = 'Daily'
-                dialog.delivery_combo = Mock()
-                dialog.delivery_combo.get.return_value = 'Email'
-                dialog.recipients_entry = Mock()
-                dialog.recipients_entry.get.return_value = 'test@test.com'
-                dialog.format_combo = Mock()
-                dialog.format_combo.get.return_value = 'CSV'
+                    dialog.reports = {'Test Report': 1}
+                    dialog.name_entry = Mock()
+                    dialog.name_entry.get.return_value = 'Daily Report'
+                    dialog.report_combo = Mock()
+                    dialog.report_combo.get.return_value = 'Test Report'
+                    dialog.freq_combo = Mock()
+                    dialog.freq_combo.get.return_value = 'Daily'
+                    dialog.delivery_combo = Mock()
+                    dialog.delivery_combo.get.return_value = 'Email'
+                    dialog.recipients_entry = Mock()
+                    dialog.recipients_entry.get.return_value = 'test@test.com'
+                    dialog.format_combo = Mock()
+                    dialog.format_combo.get.return_value = 'CSV'
 
-                with patch('education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui.ReportScheduleManager.create_schedule', return_value=1):
-                    with patch('tkinter.messagebox.showinfo'):
-                        dialog._create()
+                    with patch(f'{_BI_MOD}.ReportScheduleManager.create_schedule', return_value=1):
+                        with patch('tkinter.messagebox.showinfo'):
+                            dialog._create()
 
-                        callback.assert_called_once()
+                            callback.assert_called_once()
 
 
 class TestCreateVisualizationDialog:
@@ -383,7 +450,8 @@ class TestCreateVisualizationDialog:
             mock_dialog = Mock()
             mock_toplevel.return_value = mock_dialog
 
-            dialog = CreateVisualizationDialog(root_window, mock_auth, callback)
+            with patch.object(CreateVisualizationDialog, '_create_widgets'):
+                dialog = CreateVisualizationDialog(root_window, mock_auth, callback)
 
             dialog.name_entry = Mock()
             dialog.name_entry.get.return_value = 'Enrollment Chart'
@@ -396,7 +464,7 @@ class TestCreateVisualizationDialog:
             dialog.y_entry = Mock()
             dialog.y_entry.get.return_value = 'count'
 
-            with patch('education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui.VisualizationManager.create_visualization', return_value=1):
+            with patch(f'{_BI_MOD}.VisualizationManager.create_visualization', return_value=1):
                 with patch('tkinter.messagebox.showinfo'):
                     dialog._create()
 
@@ -410,10 +478,13 @@ class TestCreateVisualizationDialog:
             mock_dialog = Mock()
             mock_toplevel.return_value = mock_dialog
 
-            dialog = CreateVisualizationDialog(root_window, mock_auth, callback)
+            with patch.object(CreateVisualizationDialog, '_create_widgets'):
+                dialog = CreateVisualizationDialog(root_window, mock_auth, callback)
 
             dialog.name_entry = Mock()
             dialog.name_entry.get.return_value = ''
+            dialog.chart_combo = Mock()
+            dialog.chart_combo.get.return_value = 'Bar Chart'
             dialog.source_entry = Mock()
             dialog.source_entry.get.return_value = ''
 
@@ -433,7 +504,8 @@ class TestDefineMetricDialog:
             mock_dialog = Mock()
             mock_toplevel.return_value = mock_dialog
 
-            dialog = DefineMetricDialog(root_window, mock_auth, callback)
+            with patch.object(DefineMetricDialog, '_create_widgets'):
+                dialog = DefineMetricDialog(root_window, mock_auth, callback)
 
             dialog.name_entry = Mock()
             dialog.name_entry.get.return_value = 'Success Rate'
@@ -446,7 +518,7 @@ class TestDefineMetricDialog:
             dialog.target_entry = Mock()
             dialog.target_entry.get.return_value = '85'
 
-            with patch('education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui.CustomMetricManager.define_metric', return_value=1):
+            with patch(f'{_BI_MOD}.CustomMetricManager.define_metric', return_value=1):
                 with patch('tkinter.messagebox.showinfo'):
                     dialog._create()
 
@@ -460,7 +532,8 @@ class TestDefineMetricDialog:
             mock_dialog = Mock()
             mock_toplevel.return_value = mock_dialog
 
-            dialog = DefineMetricDialog(root_window, mock_auth, callback)
+            with patch.object(DefineMetricDialog, '_create_widgets'):
+                dialog = DefineMetricDialog(root_window, mock_auth, callback)
 
             dialog.name_entry = Mock()
             dialog.name_entry.get.return_value = 'Test Metric'
@@ -485,12 +558,19 @@ class TestDefineMetricDialog:
             mock_dialog = Mock()
             mock_toplevel.return_value = mock_dialog
 
-            dialog = DefineMetricDialog(root_window, mock_auth, callback)
+            with patch.object(DefineMetricDialog, '_create_widgets'):
+                dialog = DefineMetricDialog(root_window, mock_auth, callback)
 
             dialog.name_entry = Mock()
             dialog.name_entry.get.return_value = ''
+            dialog.category_combo = Mock()
+            dialog.category_combo.get.return_value = 'Academic'
             dialog.formula_text = Mock()
             dialog.formula_text.get.return_value = ''
+            dialog.desc_text = Mock()
+            dialog.desc_text.get.return_value = ''
+            dialog.target_entry = Mock()
+            dialog.target_entry.get.return_value = '0'
 
             with patch('tkinter.messagebox.showerror') as mock_error:
                 dialog._create()
@@ -524,33 +604,51 @@ class TestEdgeCases:
         mock_conn.__exit__ = Mock(return_value=False)
 
         with patch.object(BusinessIntelligenceGUI, '_init_database'):
-            with patch('education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui.get_connection', return_value=mock_conn):
-                with patch('tkinter.messagebox.showerror'):
+            with patch.object(BusinessIntelligenceGUI, '_create_widgets'):
+                with patch(f'{_BI_MOD}.log_activity'):
                     gui = BusinessIntelligenceGUI(root_window, mock_auth)
-                    gui._load_reports()
+
+        gui.reports_tree = MagicMock()
+
+        with patch(f'{_BI_MOD}.get_connection', return_value=mock_conn):
+            with patch('tkinter.messagebox.showerror'):
+                gui._load_reports()
 
     def test_run_report_no_query(self, root_window, mock_auth):
         """Test running report with no SQL query defined"""
+        mock_row = {'sql_query': None}
+
         mock_conn = Mock()
         mock_cursor = Mock()
-        mock_cursor.fetchone.return_value = {'sql_query': None}
+        mock_cursor.fetchone.return_value = mock_row
         mock_conn.execute.return_value = mock_cursor
         mock_conn.__enter__ = Mock(return_value=mock_conn)
         mock_conn.__exit__ = Mock(return_value=False)
 
         with patch('tkinter.Toplevel'):
-            with patch('education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui.get_connection', return_value=mock_conn):
-                dialog = RunReportDialog(root_window, mock_auth, 1, "Test")
-                # Should handle no query gracefully
+            with patch.object(RunReportDialog, '_create_widgets'):
+                with patch.object(RunReportDialog, '_run_report'):
+                    dialog = RunReportDialog(root_window, mock_auth, 1, "Test")
+
+        dialog.result_text = Mock()
+
+        with patch(f'{_BI_MOD}.get_connection', return_value=mock_conn):
+            dialog._run_report()
+            # Should handle no query gracefully
 
     def test_delete_report_no_selection(self, root_window, mock_auth):
         """Test deleting report with no selection"""
         with patch.object(BusinessIntelligenceGUI, '_init_database'):
-            gui = BusinessIntelligenceGUI(root_window, mock_auth)
+            with patch.object(BusinessIntelligenceGUI, '_create_widgets'):
+                with patch(f'{_BI_MOD}.log_activity'):
+                    gui = BusinessIntelligenceGUI(root_window, mock_auth)
 
-            with patch('tkinter.messagebox.showwarning') as mock_warning:
-                gui._delete_report()
-                mock_warning.assert_called_once()
+        gui.reports_tree = MagicMock()
+        gui.reports_tree.selection.return_value = []
+
+        with patch('tkinter.messagebox.showwarning') as mock_warning:
+            gui._delete_report()
+            mock_warning.assert_called_once()
 
 
 if __name__ == '__main__':

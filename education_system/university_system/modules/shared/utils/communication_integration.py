@@ -13,6 +13,52 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+# ---------------------------------------------------------------------------
+# Module-level imports from infrastructure services.
+# These are imported at module level so that they can be patched in tests.
+# If the infrastructure packages are unavailable (e.g. during isolated unit
+# testing) we fall back to None; the wrapper functions below handle the
+# ImportError case gracefully.
+# ---------------------------------------------------------------------------
+
+try:
+    from education_system.university_system.infrastructure.email.email_service import (
+        send_email,
+        send_template_email,
+        send_email_as_system,
+        queue_email,
+    )
+    from education_system.university_system.infrastructure.email.email_service import (
+        send_bulk,
+    )
+except ImportError:
+    send_email = None  # type: ignore[assignment]
+    send_template_email = None  # type: ignore[assignment]
+    send_email_as_system = None  # type: ignore[assignment]
+    queue_email = None  # type: ignore[assignment]
+    send_bulk = None  # type: ignore[assignment]
+
+try:
+    from education_system.university_system.infrastructure.communication.sms_service import (
+        send_sms,
+    )
+except ImportError:
+    send_sms = None  # type: ignore[assignment]
+
+try:
+    from education_system.university_system.infrastructure.communication.sms_service import (
+        send_bulk_sms,
+    )
+except ImportError:
+    send_bulk_sms = None  # type: ignore[assignment]
+
+try:
+    from education_system.university_system.infrastructure.email.template_utils import (
+        render_template,
+    )
+except ImportError:
+    render_template = None  # type: ignore[assignment]
+
 
 # ============================================================================
 # EMAIL INTEGRATION
@@ -69,13 +115,6 @@ def send_email_unified(
         )
     """
     try:
-        from education_system.university_system.infrastructure.email.email_service import (
-            send_email,
-            send_template_email,
-            send_email_as_system,
-            queue_email
-        )
-
         # Use template if provided
         if template_name and template_vars:
             return send_template_email(
@@ -136,8 +175,6 @@ def send_bulk_email_unified(
         dict: {'sent': count, 'failed': count}
     """
     try:
-        from education_system.university_system.infrastructure.email.email_service import send_bulk
-
         result = send_bulk(recipients, template_name, template_vars_list, **kwargs)
         return {'sent': len(recipients), 'failed': 0}  # send_bulk doesn't return counts
 
@@ -165,8 +202,6 @@ def queue_email_unified(
         bool: True if queued successfully
     """
     try:
-        from education_system.university_system.infrastructure.email.email_service import queue_email
-
         queue_email(recipient, subject, body, **kwargs)
         return True
 
@@ -218,13 +253,6 @@ def send_sms_unified(
         )
     """
     try:
-        from education_system.university_system.infrastructure.communication.sms_service import (
-            send_sms,
-            SMSProvider
-        )
-
-        # Note: Provider should be configured globally, not per-message
-        # This parameter is for backward compatibility
         return send_sms(
             phone_number,
             message,
@@ -259,8 +287,6 @@ def send_bulk_sms_unified(
         dict: {'sent': count, 'failed': count}
     """
     try:
-        from education_system.university_system.infrastructure.communication.sms_service import send_bulk_sms
-
         return send_bulk_sms(recipients, message, student_ids=student_ids, related_to=related_to)
 
     except Exception as e:
@@ -299,7 +325,6 @@ def send_library_notification(
         bool: True if notification sent successfully
     """
     try:
-        from education_system.university_system.infrastructure.email.template_utils import render_template
 
         # Build message based on type
         if notification_type == 'due_soon':
@@ -376,7 +401,6 @@ def send_calendar_reminder(
         bool: True if reminder sent successfully
     """
     try:
-        from education_system.university_system.infrastructure.email.template_utils import render_template
 
         location_line = f"Location: {location}\n" if location else ""
 
@@ -432,7 +456,6 @@ def send_restaurant_notification(
         bool: True if notification sent successfully
     """
     try:
-        from education_system.university_system.infrastructure.email.template_utils import render_template
 
         details = details or {}
 

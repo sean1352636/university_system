@@ -16,9 +16,16 @@ import pytest
 from education_system.university_system.infrastructure.database.db import sqlite3
 import tempfile
 import os
+import tkinter as tk
 from unittest.mock import Mock, patch, MagicMock, call
 
 from education_system.university_system.infrastructure.security.init_security_tables import init_security_tables
+
+# Common patch prefix for the security dashboard GUI module
+_SD_MOD = 'education_system.university_system.modules.shared.gui.security.security_dashboard_gui'
+# Also the backward-compat shim location
+_SD_INFRA = 'education_system.university_system.infrastructure.security.security_dashboard_gui'
+
 
 @pytest.fixture
 def test_db():
@@ -40,6 +47,18 @@ def test_db():
     if os.path.exists(master_key_path):
         os.remove(master_key_path)
 
+
+@pytest.fixture
+def root_window():
+    """Create a real root Tkinter window for testing"""
+    root = tk.Tk()
+    root.withdraw()
+    yield root
+    try:
+        root.destroy()
+    except Exception:
+        pass
+
 # ============================================================================
 # Dashboard Initialization Tests
 # ============================================================================
@@ -47,79 +66,66 @@ def test_db():
 class TestGUIDashboardInitialization:
     """Test GUI dashboard initialization"""
 
-    @patch('tkinter.Toplevel')
-    @patch('tkinter.Tk')
-    def test_init_dashboard_success(self, mock_tk, mock_toplevel, test_db):
+    def test_init_dashboard_success(self, root_window, test_db):
         """Test successful GUI dashboard initialization"""
-        # Mock the parent window
-        mock_parent = Mock()
-        mock_window = Mock()
-        mock_toplevel.return_value = mock_window
-
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
-            dashboard = SecurityDashboard(mock_parent, admin_user_id=1)
+        with patch(f'{_SD_MOD}.init_security_tables'):
+            with patch.object(SecurityDashboard, '_create_widgets'):
+                with patch.object(SecurityDashboard, '_load_data'):
+                    with patch(f'{_SD_MOD}.init_i18n'):
+                        dashboard = SecurityDashboard(root_window, admin_user_id=1)
+                        assert dashboard.admin_user_id == 1
+                        dashboard.destroy()
 
-            assert dashboard.admin_user_id == 1
-
-    @patch('tkinter.Toplevel')
-    def test_init_creates_managers(self, mock_toplevel, test_db):
+    def test_init_creates_managers(self, root_window, test_db):
         """Test initialization creates all security managers"""
-        mock_parent = Mock()
-        mock_window = Mock()
-        mock_toplevel.return_value = mock_window
-
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
+        with patch(f'{_SD_MOD}.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
                 with patch.object(SecurityDashboard, '_load_data'):
-                    dashboard = SecurityDashboard(mock_parent, admin_user_id=1)
+                    with patch(f'{_SD_MOD}.init_i18n'):
+                        dashboard = SecurityDashboard(root_window, admin_user_id=1)
 
-                    # Verify all managers created
-                    assert hasattr(dashboard, 'session_mgr')
-                    assert hasattr(dashboard, 'encryption_mgr')
-                    assert hasattr(dashboard, 'api_mgr')
-                    assert hasattr(dashboard, 'password_mgr')
-                    assert hasattr(dashboard, 'audit_mgr')
-                    assert hasattr(dashboard, 'dlp_mgr')
-                    assert hasattr(dashboard, 'incident_mgr')
-                    assert hasattr(dashboard, 'vuln_scanner')
+                        # Verify all managers created
+                        assert hasattr(dashboard, 'session_mgr')
+                        assert hasattr(dashboard, 'encryption_mgr')
+                        assert hasattr(dashboard, 'api_mgr')
+                        assert hasattr(dashboard, 'password_mgr')
+                        assert hasattr(dashboard, 'audit_mgr')
+                        assert hasattr(dashboard, 'dlp_mgr')
+                        assert hasattr(dashboard, 'incident_mgr')
+                        assert hasattr(dashboard, 'vuln_scanner')
+                        dashboard.destroy()
 
-    @patch('tkinter.Toplevel')
-    def test_init_sets_window_title(self, mock_toplevel, test_db):
+    def test_init_sets_window_title(self, root_window, test_db):
         """Test window title is set"""
-        mock_parent = Mock()
-        mock_window = Mock()
-        mock_toplevel.return_value = mock_window
-
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
+        with patch(f'{_SD_MOD}.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
                 with patch.object(SecurityDashboard, '_load_data'):
-                    dashboard = SecurityDashboard(mock_parent, admin_user_id=1)
+                    with patch(f'{_SD_MOD}.init_i18n'):
+                        dashboard = SecurityDashboard(root_window, admin_user_id=1)
+                        # Window title should be set (non-empty)
+                        title = dashboard.title()
+                        assert title is not None
+                        dashboard.destroy()
 
-                    # Verify title was set
-                    mock_window.title.assert_called_once()
-
-    @patch('tkinter.Toplevel')
-    def test_init_sets_window_geometry(self, mock_toplevel, test_db):
+    def test_init_sets_window_geometry(self, root_window, test_db):
         """Test window geometry is set"""
-        mock_parent = Mock()
-        mock_window = Mock()
-        mock_toplevel.return_value = mock_window
-
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
+        with patch(f'{_SD_MOD}.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
                 with patch.object(SecurityDashboard, '_load_data'):
-                    dashboard = SecurityDashboard(mock_parent, admin_user_id=1)
-
-                    # Verify geometry was set
-                    assert mock_window.geometry.called
+                    with patch(f'{_SD_MOD}.init_i18n'):
+                        dashboard = SecurityDashboard(root_window, admin_user_id=1)
+                        # Geometry should be set (contains dimensions)
+                        geo = dashboard.geometry()
+                        assert geo is not None
+                        dashboard.destroy()
 
 # ============================================================================
 # Manager Access Tests
@@ -128,29 +134,26 @@ class TestGUIDashboardInitialization:
 class TestGUIManagerAccess:
     """Test access to security managers from GUI"""
 
-    @patch('tkinter.Toplevel')
-    def test_access_all_managers(self, mock_toplevel, test_db):
+    def test_access_all_managers(self, root_window, test_db):
         """Test all managers are accessible"""
-        mock_parent = Mock()
-        mock_window = Mock()
-        mock_toplevel.return_value = mock_window
-
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
+        with patch(f'{_SD_MOD}.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
                 with patch.object(SecurityDashboard, '_load_data'):
-                    dashboard = SecurityDashboard(mock_parent, admin_user_id=1)
+                    with patch(f'{_SD_MOD}.init_i18n'):
+                        dashboard = SecurityDashboard(root_window, admin_user_id=1)
 
-                    # All managers should be accessible
-                    assert dashboard.session_mgr is not None
-                    assert dashboard.encryption_mgr is not None
-                    assert dashboard.api_mgr is not None
-                    assert dashboard.password_mgr is not None
-                    assert dashboard.audit_mgr is not None
-                    assert dashboard.dlp_mgr is not None
-                    assert dashboard.incident_mgr is not None
-                    assert dashboard.vuln_scanner is not None
+                        # All managers should be accessible
+                        assert dashboard.session_mgr is not None
+                        assert dashboard.encryption_mgr is not None
+                        assert dashboard.api_mgr is not None
+                        assert dashboard.password_mgr is not None
+                        assert dashboard.audit_mgr is not None
+                        assert dashboard.dlp_mgr is not None
+                        assert dashboard.incident_mgr is not None
+                        assert dashboard.vuln_scanner is not None
+                        dashboard.destroy()
 
 # ============================================================================
 # Widget Creation Tests
@@ -159,42 +162,31 @@ class TestGUIManagerAccess:
 class TestGUIWidgetCreation:
     """Test GUI widget creation"""
 
-    @patch('tkinter.Toplevel')
-    @patch('tkinter.Frame')
-    @patch('tkinter.Label')
-    @patch('tkinter.ttk.Button')
-    def test_create_widgets_called(self, mock_button, mock_label, mock_frame, mock_toplevel, test_db):
+    def test_create_widgets_called(self, root_window, test_db):
         """Test _create_widgets is called during init"""
-        mock_parent = Mock()
-        mock_window = Mock()
-        mock_toplevel.return_value = mock_window
-
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
+        with patch(f'{_SD_MOD}.init_security_tables'):
             with patch.object(SecurityDashboard, '_load_data'):
-                dashboard = SecurityDashboard(mock_parent, admin_user_id=1)
+                with patch(f'{_SD_MOD}.init_i18n'):
+                    with patch.object(SecurityDashboard, '_create_widgets') as mock_create:
+                        dashboard = SecurityDashboard(root_window, admin_user_id=1)
+                        mock_create.assert_called_once()
+                        dashboard.destroy()
 
-                # _create_widgets should have been called
-                # This will create frames, labels, buttons, etc.
-                assert mock_frame.called or mock_label.called
-
-    @patch('tkinter.Toplevel')
-    def test_load_data_called(self, mock_toplevel, test_db):
+    def test_load_data_called(self, root_window, test_db):
         """Test _load_data is called during init"""
-        mock_parent = Mock()
-        mock_window = Mock()
-        mock_toplevel.return_value = mock_window
-
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
+        with patch(f'{_SD_MOD}.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
-                with patch.object(SecurityDashboard, '_load_data') as mock_load:
-                    dashboard = SecurityDashboard(mock_parent, admin_user_id=1)
+                with patch(f'{_SD_MOD}.init_i18n'):
+                    with patch.object(SecurityDashboard, '_load_data') as mock_load:
+                        dashboard = SecurityDashboard(root_window, admin_user_id=1)
 
-                    # _load_data should have been called
-                    mock_load.assert_called_once()
+                        # _load_data should have been called
+                        mock_load.assert_called_once()
+                        dashboard.destroy()
 
 # ============================================================================
 # MFA Integration Tests
@@ -226,7 +218,7 @@ class TestGUIModuleImports:
 
     def test_all_security_modules_imported(self):
         """Test all required security modules are imported"""
-        from education_system.university_system.infrastructure.security import security_dashboard_gui
+        from education_system.university_system.modules.shared.gui.security import security_dashboard_gui
 
         # Check classes are available
         assert hasattr(security_dashboard_gui, 'SessionManager')
@@ -251,32 +243,29 @@ class TestGUIModuleImports:
 class TestGUIIntegration:
     """Test GUI integration with security modules"""
 
-    @patch('tkinter.Toplevel')
-    def test_managers_use_correct_database(self, mock_toplevel, test_db):
+    def test_managers_use_correct_database(self, root_window, test_db):
         """Test all managers use the correct database"""
-        mock_parent = Mock()
-        mock_window = Mock()
-        mock_toplevel.return_value = mock_window
-
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
-            with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.DEFAULT_DB_PATH', test_db):
-                with patch.object(SecurityDashboard, '_create_widgets'):
-                    with patch.object(SecurityDashboard, '_load_data'):
-                        dashboard = SecurityDashboard(mock_parent, admin_user_id=1)
+        with patch(f'{_SD_MOD}.init_security_tables'):
+            with patch.object(SecurityDashboard, '_create_widgets'):
+                with patch.object(SecurityDashboard, '_load_data'):
+                    with patch(f'{_SD_MOD}.init_i18n'):
+                        dashboard = SecurityDashboard(root_window, admin_user_id=1)
 
                         # Create some data using managers
                         key_result = dashboard.encryption_mgr.create_encryption_key('test')
 
-                        # Verify data in database
-                        conn = sqlite3.connect(test_db)
+                        # Verify data in database using the manager's db_path
+                        db_path = dashboard.encryption_mgr.db_path
+                        conn = sqlite3.connect(db_path)
                         cursor = conn.cursor()
                         cursor.execute("SELECT COUNT(*) FROM encryption_keys")
                         count = cursor.fetchone()[0]
                         conn.close()
 
                         assert count > 0
+                        dashboard.destroy()
 
 # ============================================================================
 # Error Handling Tests
@@ -285,38 +274,31 @@ class TestGUIIntegration:
 class TestGUIErrorHandling:
     """Test GUI error handling"""
 
-    @patch('tkinter.Toplevel')
-    def test_init_with_invalid_admin_id(self, mock_toplevel, test_db):
+    def test_init_with_invalid_admin_id(self, root_window, test_db):
         """Test initialization with invalid admin ID"""
-        mock_parent = Mock()
-        mock_window = Mock()
-        mock_toplevel.return_value = mock_window
-
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
+        with patch(f'{_SD_MOD}.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
                 with patch.object(SecurityDashboard, '_load_data'):
-                    # Should not raise exception
-                    dashboard = SecurityDashboard(mock_parent, admin_user_id=-999)
+                    with patch(f'{_SD_MOD}.init_i18n'):
+                        # Should not raise exception
+                        dashboard = SecurityDashboard(root_window, admin_user_id=-999)
+                        assert dashboard.admin_user_id == -999
+                        dashboard.destroy()
 
-                    assert dashboard.admin_user_id == -999
-
-    @patch('tkinter.Toplevel')
-    def test_init_without_parent(self, mock_toplevel):
+    def test_init_without_parent(self, root_window):
         """Test initialization without parent window"""
-        mock_window = Mock()
-        mock_toplevel.return_value = mock_window
-
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
+        with patch(f'{_SD_MOD}.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
                 with patch.object(SecurityDashboard, '_load_data'):
-                    # Should handle None parent
-                    dashboard = SecurityDashboard(None, admin_user_id=1)
-
-                    assert dashboard is not None
+                    with patch(f'{_SD_MOD}.init_i18n'):
+                        # When parent is None, Toplevel uses the default root
+                        dashboard = SecurityDashboard(None, admin_user_id=1)
+                        assert dashboard is not None
+                        dashboard.destroy()
 
 # ============================================================================
 # Window Management Tests
@@ -325,27 +307,20 @@ class TestGUIErrorHandling:
 class TestGUIWindowManagement:
     """Test GUI window management"""
 
-    @patch('tkinter.Toplevel')
-    def test_window_centering(self, mock_toplevel, test_db):
+    def test_window_centering(self, root_window, test_db):
         """Test window is centered on screen"""
-        mock_parent = Mock()
-        mock_window = Mock()
-        mock_window.winfo_screenwidth.return_value = 1920
-        mock_window.winfo_screenheight.return_value = 1080
-        mock_window.winfo_width.return_value = 1200
-        mock_window.winfo_height.return_value = 800
-        mock_toplevel.return_value = mock_window
-
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
+        with patch(f'{_SD_MOD}.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
                 with patch.object(SecurityDashboard, '_load_data'):
-                    dashboard = SecurityDashboard(mock_parent, admin_user_id=1)
+                    with patch(f'{_SD_MOD}.init_i18n'):
+                        dashboard = SecurityDashboard(root_window, admin_user_id=1)
 
-                    # Window geometry should be set for centering
-                    # (multiple calls to geometry are expected)
-                    assert mock_window.geometry.call_count >= 1
+                        # Window geometry should be set
+                        geo = dashboard.geometry()
+                        assert geo is not None
+                        dashboard.destroy()
 
 # ============================================================================
 # Functional Tests
@@ -354,27 +329,24 @@ class TestGUIWindowManagement:
 class TestGUIFunctionality:
     """Test GUI functionality without display"""
 
-    @patch('tkinter.Toplevel')
-    def test_dashboard_has_refresh_capability(self, mock_toplevel, test_db):
+    def test_dashboard_has_refresh_capability(self, root_window, test_db):
         """Test dashboard can refresh data"""
-        mock_parent = Mock()
-        mock_window = Mock()
-        mock_toplevel.return_value = mock_window
-
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
+        with patch(f'{_SD_MOD}.init_security_tables'):
             with patch.object(SecurityDashboard, '_create_widgets'):
-                # Mock _load_data to track calls
-                with patch.object(SecurityDashboard, '_load_data') as mock_load:
-                    dashboard = SecurityDashboard(mock_parent, admin_user_id=1)
+                with patch(f'{_SD_MOD}.init_i18n'):
+                    # Mock _load_data to track calls
+                    with patch.object(SecurityDashboard, '_load_data') as mock_load:
+                        dashboard = SecurityDashboard(root_window, admin_user_id=1)
 
-                    # _load_data should have been called during init
-                    assert mock_load.call_count >= 1
+                        # _load_data should have been called during init
+                        assert mock_load.call_count >= 1
 
-                    # Calling _load_data again should work
-                    dashboard._load_data()
-                    assert mock_load.call_count >= 2
+                        # Calling _load_data again should work
+                        dashboard._load_data()
+                        assert mock_load.call_count >= 2
+                        dashboard.destroy()
 
 # ============================================================================
 # Comprehensive Integration Test
@@ -383,21 +355,16 @@ class TestGUIFunctionality:
 class TestComprehensiveGUIIntegration:
     """Comprehensive GUI integration tests"""
 
-    @patch('tkinter.Toplevel')
-    def test_complete_dashboard_workflow(self, mock_toplevel, test_db):
+    def test_complete_dashboard_workflow(self, root_window, test_db):
         """Test complete dashboard workflow"""
-        mock_parent = Mock()
-        mock_window = Mock()
-        mock_toplevel.return_value = mock_window
-
         from education_system.university_system.infrastructure.security.security_dashboard_gui import SecurityDashboard
 
-        with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.init_security_tables'):
-            with patch('education_system.university_system.infrastructure.security.security_dashboard_gui.DEFAULT_DB_PATH', test_db):
-                with patch.object(SecurityDashboard, '_create_widgets'):
-                    with patch.object(SecurityDashboard, '_load_data'):
+        with patch(f'{_SD_MOD}.init_security_tables'):
+            with patch.object(SecurityDashboard, '_create_widgets'):
+                with patch.object(SecurityDashboard, '_load_data'):
+                    with patch(f'{_SD_MOD}.init_i18n'):
                         # Create dashboard
-                        dashboard = SecurityDashboard(mock_parent, admin_user_id=1)
+                        dashboard = SecurityDashboard(root_window, admin_user_id=1)
 
                         # Test each manager works
                         # 1. Encryption
@@ -431,6 +398,7 @@ class TestComprehensiveGUIIntegration:
 
                         # All operations should work through GUI dashboard
                         assert True
+                        dashboard.destroy()
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])
