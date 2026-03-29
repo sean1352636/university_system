@@ -24,7 +24,7 @@ class TestDisplayStudentUnionMenu:
 
     @patch('builtins.input', return_value='0')
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
     def test_menu_not_logged_in(self, mock_ctx, mock_print, mock_input):
         """Test menu when not logged in."""
         # Setup mocks
@@ -39,7 +39,7 @@ class TestDisplayStudentUnionMenu:
 
     @patch('builtins.input', side_effect=['18'])
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
     def test_menu_basic_display_and_exit(self, mock_ctx, mock_print, mock_input):
         """Test menu displays and exits correctly."""
         # Setup mocks
@@ -61,7 +61,7 @@ class TestDisplayStudentUnionMenu:
     @patch('builtins.input', side_effect=['1', '18'])
     @patch('builtins.print')
     @patch('education_system.university_system.modules.core.services.student_union_misc.union_context.display_club_menu')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
     def test_menu_club_management(self, mock_ctx, mock_display_club, mock_print, mock_input):
         """Test accessing club management."""
         # Setup mocks
@@ -78,7 +78,7 @@ class TestDisplayStudentUnionMenu:
     @patch('builtins.input', side_effect=['5', '18'])
     @patch('builtins.print')
     @patch('education_system.university_system.modules.core.services.student_union_misc.union_context.manage_engagement_rewards')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
     def test_menu_engagement_rewards(self, mock_ctx, mock_engagement, mock_print, mock_input):
         """Test accessing engagement rewards."""
         # Setup mocks
@@ -95,7 +95,7 @@ class TestDisplayStudentUnionMenu:
     @patch('builtins.input', side_effect=['15', '18'])
     @patch('builtins.print')
     @patch('education_system.university_system.modules.core.services.student_union_misc.union_context.generate_advanced_analytics')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
     def test_menu_admin_analytics(self, mock_ctx, mock_analytics, mock_print, mock_input):
         """Test accessing analytics as admin."""
         # Setup mocks
@@ -112,7 +112,7 @@ class TestDisplayStudentUnionMenu:
     @patch('builtins.input', side_effect=['19', 'https://calendar.example.com/ical', '18'])
     @patch('builtins.print')
     @patch('education_system.university_system.modules.domain.academics.services.academic_calendar.AcademicCalendarManager')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
     def test_menu_calendar_sync(self, mock_ctx, mock_calendar_manager, mock_print, mock_input):
         """Test calendar sync functionality."""
         # Setup mocks
@@ -132,7 +132,7 @@ class TestDisplayStudentUnionMenu:
 
     @patch('builtins.input', side_effect=['999', '18'])
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
     def test_menu_invalid_choice(self, mock_ctx, mock_print, mock_input):
         """Test handling of invalid menu choice."""
         # Setup mocks
@@ -152,7 +152,7 @@ class TestDisplayStudentUnionMenu:
     @patch('education_system.university_system.modules.core.services.student_union_misc.union_context.display_event_menu')
     @patch('education_system.university_system.modules.core.services.student_union_misc.union_context.display_facility_menu')
     @patch('education_system.university_system.modules.core.services.student_union_misc.union_context.display_election_menu')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
     def test_menu_multiple_options(self, mock_ctx, mock_election, mock_facility,
                                     mock_event, mock_print, mock_input):
         """Test selecting multiple menu options in sequence."""
@@ -171,7 +171,7 @@ class TestDisplayStudentUnionMenu:
 
     @patch('builtins.input', side_effect=['18'])
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
     def test_menu_shows_admin_options_for_admin(self, mock_ctx, mock_print, mock_input):
         """Test that admin options are shown for admins."""
         # Setup mocks
@@ -190,7 +190,7 @@ class TestDisplayStudentUnionMenu:
 
     @patch('builtins.input', side_effect=['18'])
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
     def test_menu_hides_admin_options_for_students(self, mock_ctx, mock_print, mock_input):
         """Test that admin options are hidden for students."""
         # Setup mocks
@@ -213,7 +213,7 @@ class TestMenuStructure:
 
     @patch('builtins.input', side_effect=['18'])
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
     def test_menu_shows_core_features(self, mock_ctx, mock_print, mock_input):
         """Test that core features section is displayed."""
         # Setup mocks
@@ -230,7 +230,7 @@ class TestMenuStructure:
 
     @patch('builtins.input', side_effect=['18'])
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
     def test_menu_shows_enhanced_features(self, mock_ctx, mock_print, mock_input):
         """Test that enhanced features section is displayed."""
         # Setup mocks
@@ -247,7 +247,7 @@ class TestMenuStructure:
 
     @patch('builtins.input', side_effect=['18'])
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
     def test_menu_shows_specialized_systems(self, mock_ctx, mock_print, mock_input):
         """Test that specialized systems section is displayed."""
         # Setup mocks
