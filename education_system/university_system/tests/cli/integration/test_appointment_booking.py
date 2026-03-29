@@ -141,13 +141,48 @@ def test_db():
         action TEXT,
         resource_type TEXT,
         resource_id TEXT,
-        timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+        old_values TEXT,
+        new_values TEXT,
+        ip_address TEXT,
+        user_agent TEXT,
+        timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+        session_id TEXT
     )
     ''')
 
-    # Insert test data (use column names to avoid column mismatch)
-    cursor.execute("INSERT INTO students (student_id, first_name, last_name, course) VALUES ('S001', 'John', 'Doe', 'CS')")
-    cursor.execute("INSERT INTO students (student_id, first_name, last_name, course) VALUES ('S002', 'Jane', 'Smith', 'ENG')")
+    # Insert parent records in the 'users' table (referenced by students.user_id FK)
+    cursor.execute("""
+        INSERT OR IGNORE INTO users (id, username, first_name, last_name, email, role, created_at)
+        VALUES (100, 'jdoe', 'John', 'Doe', 'jdoe@test.edu', 'student', datetime('now'))
+    """)
+    cursor.execute("""
+        INSERT OR IGNORE INTO users (id, username, first_name, last_name, email, role, created_at)
+        VALUES (101, 'jsmith', 'Jane', 'Smith', 'jsmith@test.edu', 'student', datetime('now'))
+    """)
+    cursor.execute("""
+        INSERT OR IGNORE INTO users (id, username, first_name, last_name, email, role, created_at)
+        VALUES (102, 'admin1', 'Admin', 'User', 'admin@test.edu', 'admin', datetime('now'))
+    """)
+
+    # Insert test students (use column names matching the template schema)
+    cursor.execute("""
+        INSERT OR IGNORE INTO students (student_id, user_id, first_name, last_name, course, age, status, created_at)
+        VALUES ('S001', 100, 'John', 'Doe', 'CS', 20, 'active', datetime('now'))
+    """)
+    cursor.execute("""
+        INSERT OR IGNORE INTO students (student_id, user_id, first_name, last_name, course, age, status, created_at)
+        VALUES ('S002', 101, 'Jane', 'Smith', 'ENG', 21, 'active', datetime('now'))
+    """)
+
+    # Insert health_records for test students (referenced by joins in report functions)
+    cursor.execute("""
+        INSERT OR IGNORE INTO health_records (student_id, email, last_checkup, screening_type, next_screening_due)
+        VALUES ('S001', 'jdoe@test.edu', date('now'), 'Annual Physical', date('now', '+365 days'))
+    """)
+    cursor.execute("""
+        INSERT OR IGNORE INTO health_records (student_id, email, last_checkup, screening_type, next_screening_due)
+        VALUES ('S002', 'jsmith@test.edu', date('now'), 'Annual Physical', date('now', '+365 days'))
+    """)
 
     conn.commit()
     yield conn

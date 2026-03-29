@@ -98,6 +98,45 @@ def setup_test_db():
             )
         """)
 
+        # Ensure parent tables exist
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS instructors (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                first_name TEXT NOT NULL,
+                last_name TEXT NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                department TEXT DEFAULT '',
+                specialization TEXT DEFAULT '',
+                max_courses_per_semester INTEGER DEFAULT 4,
+                max_hours_per_week INTEGER DEFAULT 40,
+                preferred_days TEXT,
+                preferred_times TEXT,
+                status TEXT DEFAULT 'Active',
+                is_active BOOLEAN DEFAULT 1,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now'))
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS courses (
+                id TEXT PRIMARY KEY,
+                code TEXT UNIQUE NOT NULL,
+                name TEXT NOT NULL,
+                credits INTEGER DEFAULT 3,
+                department TEXT,
+                instructor_id TEXT,
+                status TEXT DEFAULT 'active',
+                date_added TEXT NOT NULL
+            )
+        """)
+
+        # Insert parent records needed for FK constraints
+        cursor.execute("""
+            INSERT OR IGNORE INTO instructors (id, first_name, last_name, email)
+            VALUES (1, 'Test', 'Instructor', 'test_instructor_vc@test.edu')
+        """)
+
         # Insert test data
         cursor.execute("DELETE FROM virtual_classrooms WHERE session_name LIKE 'TEST_%'")
 
@@ -122,6 +161,7 @@ def setup_test_db():
     with transaction() as conn:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM virtual_classrooms WHERE session_name LIKE 'TEST_%'")
+        cursor.execute("DELETE FROM instructors WHERE email = 'test_instructor_vc@test.edu'")
 
 
 class TestVirtualClassroomGUIInitialization:

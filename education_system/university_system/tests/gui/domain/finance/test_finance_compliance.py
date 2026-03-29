@@ -101,11 +101,11 @@ def test_db_with_collection_data():
     conn.commit()
     yield conn
 
-    # Cleanup
+    # Cleanup — avoid blanket DELETE FROM students which would fail
+    # if other tables have FK references to those students
     cursor.execute('DELETE FROM audit_log')
     cursor.execute('DELETE FROM collection_cases')
     cursor.execute('DELETE FROM collection_agencies')
-    cursor.execute('DELETE FROM students')
     conn.commit()
     conn.close()
 

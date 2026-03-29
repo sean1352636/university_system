@@ -109,12 +109,12 @@ def test_db_with_dashboard_data():
     conn.commit()
     yield conn
 
-    # Cleanup
-    cursor.execute('DELETE FROM payment_allocations')
-    cursor.execute('DELETE FROM payments')
-    cursor.execute('DELETE FROM student_fees')
-    cursor.execute('DELETE FROM student_payment_plans')
-    cursor.execute('DELETE FROM students')
+    # Cleanup — only delete test-specific records to avoid FK issues
+    cursor.execute("DELETE FROM payment_allocations")
+    cursor.execute("DELETE FROM payments WHERE student_id IN ('STU001', 'STU002')")
+    cursor.execute("DELETE FROM student_fees WHERE student_id IN ('STU001', 'STU002')")
+    cursor.execute("DELETE FROM student_payment_plans WHERE student_id IN ('STU001', 'STU002')")
+    cursor.execute("DELETE FROM students WHERE student_id IN ('STU001', 'STU002')")
     conn.commit()
     conn.close()
 
@@ -146,8 +146,12 @@ class TestDashboardRefresh:
         """Test that refresh_dashboard calculates total revenue"""
         mock_conn.return_value = test_db_with_dashboard_data
 
-        # Insert test payment data
+        # Insert test student and payment data
         cursor = test_db_with_dashboard_data.cursor()
+        cursor.execute('''
+            INSERT OR IGNORE INTO students (student_id, first_name, last_name, status)
+            VALUES (?, ?, ?, ?)
+        ''', ('STU001', 'John', 'Doe', 'Active'))
         cursor.execute('''
             INSERT INTO payments (student_id, amount, payment_method, payment_date, status)
             VALUES (?, ?, ?, ?, ?)
@@ -168,11 +172,11 @@ class TestDashboardRefresh:
         # Insert test students
         cursor = test_db_with_dashboard_data.cursor()
         cursor.execute('''
-            INSERT INTO students (student_id, first_name, last_name, status)
+            INSERT OR IGNORE INTO students (student_id, first_name, last_name, status)
             VALUES (?, ?, ?, ?)
         ''', ('STU001', 'John', 'Doe', 'Active'))
         cursor.execute('''
-            INSERT INTO students (student_id, first_name, last_name, status)
+            INSERT OR IGNORE INTO students (student_id, first_name, last_name, status)
             VALUES (?, ?, ?, ?)
         ''', ('STU002', 'Jane', 'Smith', 'Active'))
         test_db_with_dashboard_data.commit()
@@ -240,10 +244,10 @@ class TestRecentActivity:
         """Test loading recent activity"""
         mock_conn.return_value = test_db_with_dashboard_data
 
-        # Insert test data
+        # Insert test data (student first to satisfy FK constraint)
         cursor = test_db_with_dashboard_data.cursor()
         cursor.execute('''
-            INSERT INTO students (student_id, first_name, last_name)
+            INSERT OR IGNORE INTO students (student_id, first_name, last_name)
             VALUES (?, ?, ?)
         ''', ('STU001', 'John', 'Doe'))
         cursor.execute('''
@@ -343,17 +347,17 @@ class TestUpdateQuickStats:
         """Test updating quick statistics display"""
         mock_conn.return_value = test_db_with_dashboard_data
 
-        # Insert test data
+        # Insert test data (student first to satisfy FK constraint)
         cursor = test_db_with_dashboard_data.cursor()
         current_year = datetime.now().year
+        cursor.execute('''
+            INSERT OR IGNORE INTO students (student_id, first_name, last_name, status)
+            VALUES (?, ?, ?, ?)
+        ''', ('STU001', 'John', 'Doe', 'active'))
         cursor.execute('''
             INSERT INTO payments (student_id, amount, payment_date, status)
             VALUES (?, ?, ?, ?)
         ''', ('STU001', 1000.0, f'{current_year}-01-15', 'completed'))
-        cursor.execute('''
-            INSERT INTO students (student_id, first_name, last_name, status)
-            VALUES (?, ?, ?, ?)
-        ''', ('STU001', 'John', 'Doe', 'active'))
         test_db_with_dashboard_data.commit()
 
         parent_frame = Mock()

@@ -119,9 +119,10 @@ def setup_test_data(setup_competency_tables):
 
     yield competency_id
 
-    # Cleanup
+    # Cleanup — delete child records before parent to satisfy FK constraints
     with transaction() as conn:
         cursor = conn.cursor()
+        cursor.execute("DELETE FROM student_competencies WHERE student_id LIKE 'COMP%'")
         cursor.execute("DELETE FROM students WHERE student_id LIKE 'COMP%'")
 
 class TestManageCompetencies:

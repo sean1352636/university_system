@@ -25,6 +25,50 @@ def setup_intervention_tables():
     with transaction() as conn:
         cursor = conn.cursor()
 
+        # Create parent tables required by foreign keys
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS students (
+                student_id TEXT PRIMARY KEY,
+                first_name TEXT NOT NULL,
+                middle_name TEXT,
+                last_name TEXT NOT NULL,
+                course TEXT NOT NULL,
+                email_address TEXT,
+                gender TEXT,
+                dob TEXT,
+                age INTEGER,
+                enrollment_date TEXT DEFAULT (date('now')),
+                status TEXT DEFAULT 'Active',
+                grade_level TEXT
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS modules (
+                module_code TEXT PRIMARY KEY,
+                module_name TEXT NOT NULL,
+                module_type TEXT,
+                credits INTEGER DEFAULT 1,
+                description TEXT,
+                course TEXT,
+                semester TEXT,
+                year INTEGER
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS module_grades (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_id TEXT,
+                module_code TEXT,
+                final_score REAL,
+                final_grade TEXT,
+                completion_date TEXT,
+                FOREIGN KEY (student_id) REFERENCES students (student_id),
+                FOREIGN KEY (module_code) REFERENCES modules (module_code)
+            )
+        """)
+
         # Create student_risk_assessment table if not exists
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS student_risk_assessment (
@@ -93,7 +137,7 @@ def setup_test_data(setup_intervention_tables):
 
         # Create test students
         cursor.execute("""
-            INSERT INTO students (student_id, first_name, last_name, email, course)
+            INSERT OR IGNORE INTO students (student_id, first_name, last_name, email_address, course)
             VALUES
             ('INTV001', 'Alice', 'Smith', 'alice@test.com', 'CS'),
             ('INTV002', 'Bob', 'Jones', 'bob@test.com', 'ENG'),
@@ -102,13 +146,13 @@ def setup_test_data(setup_intervention_tables):
 
         # Create module for grading
         cursor.execute("""
-            INSERT INTO modules (module_code, module_name, credits)
+            INSERT OR IGNORE INTO modules (module_code, module_name, credits)
             VALUES ('INTV101', 'Test Module', 10)
         """)
 
         # Create module grades
         cursor.execute("""
-            INSERT INTO module_grades (student_id, module_code, final_score, final_grade)
+            INSERT OR IGNORE INTO module_grades (student_id, module_code, final_score, final_grade)
             VALUES
             ('INTV001', 'INTV101', 85.0, 'A'),
             ('INTV002', 'INTV101', 65.0, 'C'),
@@ -416,7 +460,7 @@ class TestEdgeCases:
 
             # Create student with no grades
             cursor.execute("""
-                INSERT INTO students (student_id, first_name, last_name, email, course)
+                INSERT OR IGNORE INTO students (student_id, first_name, last_name, email_address, course)
                 VALUES ('INTV999', 'Test', 'NoGrades', 'test@test.com', 'CS')
             """)
 
