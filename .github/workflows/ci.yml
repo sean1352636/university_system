@@ -49,6 +49,7 @@ jobs:
           pip install pytest pytest-cov pytest-timeout pytest-xdist
 
       - name: Run tests with coverage
+        timeout-minutes: 40
         run: |
           pytest \
             education_system/shared/tests/ \
@@ -56,28 +57,25 @@ jobs:
             education_system/college_system/tests/ \
             education_system/secondary_school/tests/ \
             education_system/primary_school/tests/ \
-            -n auto \
-            --dist worksteal \
+            -v \
             --cov=education_system \
             --cov-report=term-missing \
             --cov-report=xml:coverage.xml \
             --cov-report=html:htmlcov \
             --cov-fail-under=30 \
             -m "not slow and not gui" \
-            --timeout=45 \
-            --timeout-method=signal
+            --timeout=45
 
       - name: Run GUI tests (mocked tkinter)
+        timeout-minutes: 10
         run: |
           pytest \
             education_system/college_system/tests/gui/ \
             education_system/secondary_school/tests/gui/ \
             education_system/primary_school/tests/gui/ \
-            -n auto \
-            --dist worksteal \
+            -v \
             -m gui \
-            --timeout=45 \
-            --timeout-method=signal
+            --timeout=45
 
       - name: Upload coverage report
         if: always()
