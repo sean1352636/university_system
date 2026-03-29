@@ -99,6 +99,11 @@ def _register_system_blueprints(app: Flask, blueprints, init_funcs, db_path,
 def create_unified_app() -> Flask:
     """Create the unified Flask application serving all systems."""
     app = Flask(__name__)
+
+    # Disable werkzeug's default request logger — the custom middleware
+    # already logs every request with timing and request_id.
+    logging.getLogger("werkzeug").setLevel(logging.WARNING)
+
     app.config["SECRET_KEY"] = os.getenv("API_SECRET_KEY", os.urandom(32).hex())
     app.config["JSON_SORT_KEYS"] = False
     # Request size limit (default 16 MB)
