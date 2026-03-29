@@ -46,7 +46,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install pytest pytest-cov pytest-timeout
+          pip install pytest pytest-cov pytest-timeout pytest-xdist
 
       - name: Run tests with coverage
         run: |
@@ -56,7 +56,8 @@ jobs:
             education_system/college_system/tests/ \
             education_system/secondary_school/tests/ \
             education_system/primary_school/tests/ \
-            -v \
+            -n auto \
+            --dist worksteal \
             --cov=education_system \
             --cov-report=term-missing \
             --cov-report=xml:coverage.xml \
@@ -71,7 +72,8 @@ jobs:
             education_system/college_system/tests/gui/ \
             education_system/secondary_school/tests/gui/ \
             education_system/primary_school/tests/gui/ \
-            -v \
+            -n auto \
+            --dist worksteal \
             -m gui \
             --timeout=60
 
