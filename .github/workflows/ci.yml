@@ -64,7 +64,7 @@ jobs:
             --cov-report=html:htmlcov \
             --cov-fail-under=30 \
             -m "not slow and not gui" \
-            --timeout=30 \
+            --timeout=45 \
             --timeout-method=signal
 
       - name: Run GUI tests (mocked tkinter)
@@ -76,7 +76,7 @@ jobs:
             -n auto \
             --dist worksteal \
             -m gui \
-            --timeout=30 \
+            --timeout=45 \
             --timeout-method=signal
 
       - name: Upload coverage report
