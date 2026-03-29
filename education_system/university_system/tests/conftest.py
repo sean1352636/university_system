@@ -517,13 +517,15 @@ def _create_test_database(db_path):
         CREATE TABLE IF NOT EXISTS instructors (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             instructor_id TEXT UNIQUE,
-            first_name TEXT,
-            last_name TEXT,
-            email TEXT,
+            first_name TEXT NOT NULL DEFAULT '',
+            last_name TEXT NOT NULL DEFAULT '',
+            email TEXT UNIQUE NOT NULL DEFAULT '',
             department TEXT,
             specialization TEXT,
+            max_courses_per_semester INTEGER DEFAULT 4,
             status TEXT DEFAULT 'active',
-            created_at TEXT
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
 
         -- Document management
