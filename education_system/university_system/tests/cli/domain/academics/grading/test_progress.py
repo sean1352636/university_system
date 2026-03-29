@@ -346,17 +346,30 @@ class TestCalculateAllStudentsSuccessProbability:
 
     def test_calculate_all_students_no_data(self, capsys):
         """Test with no students"""
+        # Save existing data so we can restore it
         with transaction() as conn:
             cursor = conn.cursor()
+            cursor.execute("SELECT * FROM module_grades")
+            saved_rows = cursor.fetchall()
+            col_count = len(saved_rows[0]) if saved_rows else 0
             cursor.execute("DELETE FROM module_grades")
 
         try:
-            calculate_all_students_success_probability(cursor)
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                calculate_all_students_success_probability(cursor)
 
             captured = capsys.readouterr()
             assert "No students" in captured.out or "found" in captured.out.lower()
         finally:
-            conn.rollback()
+            with transaction() as conn:
+                cursor = conn.cursor()
+                for row in saved_rows:
+                    placeholders = ", ".join(["?"] * len(row))
+                    cursor.execute(
+                        f"INSERT INTO module_grades VALUES ({placeholders})",
+                        row
+                    )
 
 class TestCalculateStudentSuccessProbability:
     """Test student success probability calculation helper"""

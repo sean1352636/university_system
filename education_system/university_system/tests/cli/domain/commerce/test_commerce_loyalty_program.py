@@ -9,6 +9,25 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 from education_system.university_system.modules.domain.commerce.services.restaurant.customer import loyalty_program
 
+
+class _UnclosableConnection:
+    """Wrapper that makes close() a no-op so tests can query after service calls."""
+    def __init__(self, db_path):
+        self._conn = sqlite3.connect(db_path)
+        self._conn.row_factory = sqlite3.Row
+    def close(self):
+        pass
+    def __getattr__(self, name):
+        return getattr(self._conn, name)
+    def __enter__(self):
+        return self._conn.__enter__()
+    def __exit__(self, *args):
+        return self._conn.__exit__(*args)
+
+
+def _unclosable_connect(db_path):
+    return _UnclosableConnection(db_path)
+
 @pytest.fixture
 def mock_auth():
     """Create a mock authentication instance."""
@@ -26,7 +45,7 @@ def mock_auth():
 def mock_db_connection(tmp_path):
     """Create a temporary in-memory database for testing."""
     db_path = tmp_path / "test_restaurant.db"
-    conn = sqlite3.connect(str(db_path))
+    conn = _unclosable_connect(str(db_path))
     cursor = conn.cursor()
 
     # Create necessary tables

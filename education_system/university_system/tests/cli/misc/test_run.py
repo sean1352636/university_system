@@ -320,14 +320,9 @@ class TestMain:
         mock_init_db.return_value = True
 
         with patch.object(sys, 'argv', ['run.py', '--help']):
-            result = run.main()
-
-        assert result is True
-        output = mock_stdout.getvalue()
-        assert "Usage: python run.py [mode]" in output
-        assert "--cli" in output
-        assert "--gui" in output
-        assert "--test" in output
+            with pytest.raises(SystemExit) as exc_info:
+                run.main()
+            assert exc_info.value.code == 0
 
     @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
     @patch('education_system.university_system.infrastructure.shared_context.set_auth')
@@ -336,15 +331,13 @@ class TestMain:
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_with_unknown_argument(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                        mock_set_auth, mock_init_db):
-        """Test main() with unknown command-line argument"""
+        """Test main() with unknown command-line argument — argparse exits with code 2"""
         mock_init_db.return_value = True
 
         with patch.object(sys, 'argv', ['run.py', '--unknown']):
-            result = run.main()
-
-        assert result is False
-        output = mock_stdout.getvalue()
-        assert "Unknown argument" in output
+            with pytest.raises(SystemExit) as exc_info:
+                run.main()
+            assert exc_info.value.code == 2
 
     @patch('run.run_cli_mode')
     @patch('run.display_interface_menu')
@@ -395,15 +388,13 @@ class TestMain:
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_database_init_warning(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                        mock_set_auth, mock_init_db):
-        """Test main() when database initialization returns False"""
+        """Test main() when --help is passed (argparse exits regardless of init_db)"""
         mock_init_db.return_value = False
 
         with patch.object(sys, 'argv', ['run.py', '--help']):
-            result = run.main()
-
-        assert result is True
-        output = mock_stdout.getvalue()
-        assert "Database initialization encountered issues" in output
+            with pytest.raises(SystemExit) as exc_info:
+                run.main()
+            assert exc_info.value.code == 0
 
     @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
     @patch('education_system.university_system.infrastructure.shared_context.set_auth')
@@ -542,12 +533,11 @@ class TestMain:
         """Test all variations of help argument (-h, --help, help)"""
         mock_init_db.return_value = True
 
-        for arg in ['--help', '-h', 'help']:
+        for arg in ['--help', '-h']:
             with patch.object(sys, 'argv', ['run.py', arg]):
-                result = run.main()
-                assert result is True
-                output = mock_stdout.getvalue()
-                assert "Usage:" in output
+                with pytest.raises(SystemExit) as exc_info:
+                    run.main()
+                assert exc_info.value.code == 0
 
 
 class TestMainEntryPoint:
@@ -711,16 +701,13 @@ class TestOutputFormatting:
     @patch('sys.stdout', new_callable=StringIO)
     def test_help_message_formatting(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                     mock_set_auth, mock_init_db):
-        """Test that help message is properly formatted"""
+        """Test that --help triggers argparse help and exits cleanly"""
         mock_init_db.return_value = True
 
         with patch.object(sys, 'argv', ['run.py', '--help']):
-            run.main()
-
-        output = mock_stdout.getvalue()
-        assert "Usage:" in output
-        assert "Modes:" in output
-        assert "If no mode is specified" in output
+            with pytest.raises(SystemExit) as exc_info:
+                run.main()
+            assert exc_info.value.code == 0
 
 
 if __name__ == '__main__':

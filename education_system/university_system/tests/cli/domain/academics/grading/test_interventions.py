@@ -145,8 +145,11 @@ class TestInterventionRecommendations:
 
     def test_intervention_recommendations_no_data(self, setup_intervention_tables, capsys):
         """Test with no risk assessments"""
+        # Save existing data so we can restore it
         with transaction() as conn:
             cursor = conn.cursor()
+            cursor.execute("SELECT * FROM student_risk_assessment")
+            saved_rows = cursor.fetchall()
             cursor.execute("DELETE FROM student_risk_assessment")
 
         try:
@@ -155,7 +158,13 @@ class TestInterventionRecommendations:
             captured = capsys.readouterr()
             assert "No risk assessments found" in captured.out or "Run Student Risk Assessment" in captured.out
         finally:
-            conn.rollback()
+            with transaction() as conn:
+                cursor = conn.cursor()
+                for row in saved_rows:
+                    cursor.execute(
+                        "INSERT INTO student_risk_assessment VALUES (?, ?, ?, ?, ?)",
+                        row
+                    )
 
     def test_intervention_recommendations_database_error(self, capsys):
         """Test database error handling"""

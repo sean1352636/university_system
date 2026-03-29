@@ -22,17 +22,18 @@ def temp_db():
     conn = sqlite3.connect(path)
     cursor = conn.cursor()
 
-    # Create minimal required tables
+    # Create minimal required tables matching production schema
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            email TEXT,
             first_name TEXT,
             last_name TEXT,
-            role_id INTEGER,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            email TEXT,
+            role TEXT DEFAULT 'student',
+            student_id TEXT,
+            created_at TEXT,
+            updated_at TEXT,
             is_active INTEGER DEFAULT 1
         )
     """)
@@ -40,15 +41,27 @@ def temp_db():
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS roles (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            role_name TEXT UNIQUE NOT NULL
+            role_name TEXT UNIQUE NOT NULL,
+            description TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL DEFAULT '',
+            updated_at TEXT NOT NULL DEFAULT ''
         )
     """)
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS user_accounts (
-            user_id INTEGER PRIMARY KEY,
-            two_fa_secret TEXT,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            salt TEXT NOT NULL,
+            user_id INTEGER NOT NULL,
+            is_active INTEGER DEFAULT 1,
+            last_login TEXT,
+            created_at TEXT,
+            updated_at TEXT,
+            password_reset_required INTEGER DEFAULT 0,
             two_fa_enabled INTEGER DEFAULT 0,
+            two_fa_secret TEXT,
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
     """)
@@ -59,6 +72,20 @@ def temp_db():
             user_id INTEGER NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             expires_at TIMESTAMP,
+            is_active INTEGER DEFAULT 1,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_token TEXT UNIQUE NOT NULL,
+            user_id INTEGER NOT NULL,
+            ip_address TEXT,
+            user_agent TEXT,
+            created_at TEXT,
+            expires_at TEXT,
             is_active INTEGER DEFAULT 1,
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
@@ -76,10 +103,10 @@ def temp_db():
     """)
 
     # Insert default roles
-    cursor.execute("INSERT INTO roles (id, role_name) VALUES (1, 'student')")
-    cursor.execute("INSERT INTO roles (id, role_name) VALUES (2, 'admin')")
-    cursor.execute("INSERT INTO roles (id, role_name) VALUES (3, 'instructor')")
-    cursor.execute("INSERT INTO roles (id, role_name) VALUES (4, 'staff')")
+    cursor.execute("INSERT INTO roles (id, role_name, description, created_at, updated_at) VALUES (1, 'student', 'Student role', '', '')")
+    cursor.execute("INSERT INTO roles (id, role_name, description, created_at, updated_at) VALUES (2, 'admin', 'Admin role', '', '')")
+    cursor.execute("INSERT INTO roles (id, role_name, description, created_at, updated_at) VALUES (3, 'instructor', 'Instructor role', '', '')")
+    cursor.execute("INSERT INTO roles (id, role_name, description, created_at, updated_at) VALUES (4, 'staff', 'Staff role', '', '')")
 
     conn.commit()
     conn.close()

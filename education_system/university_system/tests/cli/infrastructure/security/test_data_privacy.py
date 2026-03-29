@@ -194,15 +194,13 @@ class TestEncryptionManagement:
 
     def test_get_or_create_encryption_key_creates_new(self):
         """Test creating new encryption key"""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            key_file = os.path.join(temp_dir, 'health_encryption.key')
+        with patch('education_system.university_system.modules.domain.health.portal.data_privacy.os.path.exists', return_value=False), \
+             patch('education_system.university_system.modules.domain.health.portal.data_privacy.os.chmod'), \
+             patch('builtins.open', create=True) as mock_open:
+            get_or_create_encryption_key()
 
-            with patch('education_system.university_system.modules.domain.health.portal.data_privacy.os.path.exists', return_value=False):
-                with patch('builtins.open', create=True) as mock_open:
-                    get_or_create_encryption_key()
-
-                    # Verify file was written
-                    mock_open.assert_called()
+            # Verify file was written
+            mock_open.assert_called()
 
     def test_get_or_create_encryption_key_uses_existing(self):
         """Test using existing encryption key"""
