@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.58.0 — 2026-03-30](#8580---2026-03-30)
 - [8.57.0 — 2026-03-30](#8570---2026-03-30)
 - [8.56.0 — 2026-03-29](#8560---2026-03-29)
 - [8.55.0 — 2026-03-28](#8550---2026-03-28)
@@ -144,6 +145,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](education_system/docs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](education_system/docs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](education_system/docs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.58.0] — 2026-03-30
+
+### All Systems — Infrastructure Hardening Follow-up
+
+#### Added
+
+- **Webhook API routes** — `GET/POST/DELETE /api/v1/webhooks/subscriptions`, `POST /api/v1/webhooks/test/<id>`, `GET /api/v1/webhooks/deliveries`; registered in unified server
+  - Files: `shared/api/webhook_routes.py`, `shared/api/unified_server.py`
+
+- **Database encryption at rest** — New `encrypted_connect()` using pysqlcipher3/sqlcipher3 with AES-256; `encrypt_existing_database()` migration tool; `check_encryption_status()` inspector; transparent fallback to plain sqlite3
+  - Files: `shared/database/encrypted_connect.py`
+
+- **Root `.env.example`** — Comprehensive environment variable reference covering all v8.57.0+ vars: encryption keys, GDPR retention, rate limiting, LMS integrations, Teams, SMTP, payments
+  - Files: `.env.example`
+
+#### Fixed
+
+- **`.gitignore` hardening** — Added rules for `.db.gz`, `.db.enc`, `.db.gz.meta.json` backup artifacts, generated reports/plots/uploads, activity logs, temp files, MagicMock test artifacts, and stale root-level exports
+  - Files: `.gitignore`
+
+- **Timing oracle test updated** — Removed outdated `xfail` marker from `TestTimingAttackResistance` since v8.57.0 added dummy bcrypt hash; test now runs normally
+  - Files: `shared/tests/test_security.py`
+
+- **Missing `__init__.py` files** — Added to `shared/data/` and `shared/services/` for proper Python package resolution
+  - Files: `shared/data/__init__.py`, `shared/services/__init__.py`
 
 ---
 

@@ -237,16 +237,10 @@ class TestBruteForceProtection:
 class TestTimingAttackResistance:
     """Login time should be roughly consistent regardless of username validity.
 
-    NOTE: The current implementation does NOT perform a dummy bcrypt hash for
-    unknown users, so there is a measurable timing difference between
-    existing-user-wrong-password (~400ms for bcrypt) and nonexistent-user
-    (~5ms).  This is a known weakness — the test documents it as xfail.
+    The implementation performs a dummy bcrypt hash for unknown users to
+    prevent timing-based user enumeration (fixed in v8.57.0).
     """
 
-    @pytest.mark.xfail(
-        reason="Login skips bcrypt for unknown users — timing oracle exists (TODO: add dummy hash)",
-        strict=True,
-    )
     def test_consistent_login_timing(self, auth):
         iterations = 3
         valid_times = []

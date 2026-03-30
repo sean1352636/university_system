@@ -196,6 +196,15 @@ def create_unified_app() -> Flask:
     except Exception as e:
         logger.warning("Failed to load LMS integration routes (non-fatal): %s", e)
 
+    # ── Webhook management ───────────────────────────────────────────────
+    try:
+        from education_system.shared.api.webhook_routes import webhook_bp, init_webhook_routes
+        init_webhook_routes()
+        app.register_blueprint(webhook_bp, url_prefix=f"/api/{API_VERSION}/webhooks")
+        logger.info("Registered webhook routes under /api/%s/webhooks/", API_VERSION)
+    except Exception as e:
+        logger.warning("Failed to load webhook routes (non-fatal): %s", e)
+
     # ── API documentation (Swagger UI + OpenAPI spec) ───────────────────
     from education_system.shared.api.docs import docs_bp as api_docs_bp
     app.register_blueprint(api_docs_bp)
