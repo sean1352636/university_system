@@ -11,10 +11,30 @@ education_system/                         # Root education platform
 ├── secondary_school/                     # Secondary School System (290+ files)
 ├── primary_school/                       # Primary School System (280+ files)
 ├── shared/                              # Shared modules across all 4 systems
+│   ├── api/                             # Unified REST API (Flask, GraphQL, WebSocket)
+│   │   ├── web/                         # Web Portal SPA + PWA support
+│   │   └── graphql/                     # GraphQL API (Strawberry)
 │   ├── auth/                            # Unified authentication (bcrypt, MFA, sessions)
+│   │   └── password_reset.py            # Secure token-based password reset
+│   ├── audit/                           # Unified audit logging (tamper detection)
+│   ├── analytics/                       # Analytics & early warning predictions
+│   ├── backup/                          # Encrypted backup/restore with scheduling
 │   ├── cli/                             # Universal CLI login & system selection
+│   ├── gdpr/                            # GDPR compliance (consent, SAR, portability)
+│   │   ├── consent_service.py           # Consent tracking (15 types)
+│   │   └── gdpr_service.py             # Data subject rights & retention
 │   ├── gui/                             # Universal GUI login window
-│   └── data/db_files/auth.db            # Central authentication database
+│   ├── integrations/                    # LMS providers (Canvas, Moodle, Teams)
+│   ├── offline/                         # Offline-first sync infrastructure
+│   ├── security/                        # Field-level encryption (Fernet AES-128)
+│   ├── services/data_retention/         # GDPR data retention policies & automation
+│   ├── validation/                      # Input validation & sanitization
+│   ├── webhooks/                        # Webhook dispatch, HMAC signing, retry
+│   └── data/db_files/                   # Central databases
+│       ├── auth.db                      # Authentication database
+│       ├── audit.db                     # Unified audit trail
+│       ├── webhooks.db                  # Webhook subscriptions & deliveries
+│       └── offline_sync.db             # Offline cache & mutation queue
 ├── docs/                                # Centralised documentation
 │   ├── university_system/               # University system docs
 │   ├── college_system/                  # College system docs
@@ -650,11 +670,11 @@ education_system/secondary_school/
 education_system/primary_school/
 │
 ├── modules/
-│   ├── domain/                        # 7 domain categories, 46 modules
-│   │   ├── academics/                 # 11 modules: pupils, subjects, classes,
+│   ├── domain/                        # 7 domain categories, 47 modules
+│   │   ├── academics/                 # 12 modules: pupils, subjects, classes,
 │   │   │                              #   assessment, attendance, timetable,
 │   │   │                              #   homework, sats, phonics,
-│   │   │                              #   reading_records, progress
+│   │   │                              #   reading_records, progress, skills_tracker
 │   │   ├── pastoral_care/             # 5 modules: behaviour, rewards,
 │   │   │                              #   safeguarding, send, pastoral
 │   │   ├── staff/                     # 4 modules: hr, cpd, cover,
@@ -679,7 +699,7 @@ education_system/primary_school/
 ├── main_gui.py                        # GUI entry point with login/tabbed interface
 ├── data/                              # Data files
 │   └── db_files/primary_school.db     # SQLite database
-├── tests/                             # Test suite
+├── tests/                             # Test suite (13 test files)
 └── __init__.py
 ```
 
@@ -727,6 +747,93 @@ education_system/docs/
 ├── college_system/                      # College system documentation (planned)
 │
 └── secondary_school/                    # Secondary school documentation (planned)
+```
+
+### Shared Infrastructure Structure
+
+```
+education_system/shared/
+│
+├── api/                                 # Unified REST API server
+│   ├── unified_server.py               # Flask app serving all 4 systems
+│   ├── auth.py                         # JWT auth (login, register, MFA, password reset)
+│   ├── api_keys.py                     # API key auth (expiry, rotation)
+│   ├── rate_limiter.py                 # Persistent rate limiting (SQLite-backed)
+│   ├── middleware.py                   # Request logging, correlation IDs
+│   ├── caching.py                      # Response caching middleware
+│   ├── websocket_server.py            # Socket.IO real-time (chat, notifications, presence)
+│   ├── graphql/                        # GraphQL API (Strawberry)
+│   │   ├── schema.py                  # Root Query & Mutation
+│   │   ├── types.py                   # Type definitions
+│   │   ├── resolvers.py              # Query resolvers
+│   │   ├── mutations.py              # Mutation handlers
+│   │   └── middleware.py             # Auth & rate limit middleware
+│   ├── web/                           # Web Portal
+│   │   ├── routes.py                 # Login, dashboard, admin pages
+│   │   └── pwa.py                    # PWA manifest, service worker, offline page
+│   └── {system}/routes.py            # Per-system API route bundles
+│
+├── auth/                               # Unified authentication
+│   ├── core.py                        # UserAuth facade (login, MFA check, password expiry)
+│   ├── password_manager.py            # bcrypt hashing, common password rejection, timing fix
+│   ├── password_reset.py             # Secure token-based password reset (30-min expiry)
+│   ├── session_manager.py            # DB-backed sessions with timeout
+│   ├── role_manager.py               # Role hierarchy (8 roles, per-system)
+│   ├── mfa_service.py                # TOTP MFA with recovery codes
+│   ├── schema.py                     # Auth DB schema (users, sessions, MFA, password history, consent, reset tokens)
+│   └── db.py                         # Connection helper (WAL, retry, chmod 600)
+│
+├── audit/                              # Unified audit logging
+│   └── audit_service.py              # Cross-system audit trail with checksum tamper detection
+│
+├── analytics/                          # Analytics & predictions
+│   └── early_warning.py              # Student risk prediction (attendance, grades, behaviour)
+│
+├── backup/                             # Backup & restore
+│   ├── backup_manager.py             # Backup with optional Fernet encryption
+│   └── backup_scheduler.py           # Automated daily/weekly/hourly backups
+│
+├── gdpr/                               # GDPR compliance
+│   ├── gdpr_service.py               # SAR, anonymisation, rectification, restriction, portability
+│   └── consent_service.py            # 15 consent types (grant, withdraw, export)
+│
+├── integrations/                       # External system integrations
+│   ├── lms_base.py                   # Abstract LMS provider
+│   ├── lms_sync_service.py           # Sync orchestrator (Canvas, Moodle, Classroom)
+│   └── lms_teams.py                  # Microsoft Teams for Education (Graph API)
+│
+├── offline/                            # Offline-first infrastructure
+│   └── sync_service.py               # Local cache, mutation queue, sync state
+│
+├── security/                           # Security services
+│   └── encryption.py                 # Fernet field-level encryption (warns if key missing)
+│
+├── services/data_retention/            # GDPR data retention
+│   ├── models.py                     # Policies, jobs, DSAR tracking
+│   ├── policy_engine.py              # Retention policy execution
+│   ├── anonymizer.py                 # PII anonymisation
+│   ├── archiver.py                   # Data archival
+│   └── scheduler.py                  # Scheduled policy execution
+│
+├── validation/                         # Input validation
+│   └── validators.py                 # Email, date, grade, time validators
+│
+├── webhooks/                           # Webhook system
+│   └── webhook_service.py            # Subscribe, dispatch, HMAC sign, retry
+│
+├── database/                           # Database utilities
+│   ├── paths.py                      # System DB paths (single source of truth)
+│   └── sql_safety.py                 # SQL injection prevention
+│
+├── core/                               # Core infrastructure
+│   └── structured_logging.py         # ELK-compatible JSON logging
+│
+├── data/                               # Shared data
+│   ├── db_files/                     # Central databases (auth.db, audit.db, etc.)
+│   └── locales/                      # i18n translations (10 languages)
+│
+└── tests/                              # Shared test suite
+    └── test_accessibility.py          # WCAG 2.1 AA compliance tests
 ```
 
 ### Directory Consolidation Notes (January-February 2026)

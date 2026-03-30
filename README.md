@@ -64,7 +64,7 @@ make lint                  # Check code quality
 | **Secondary School** | 290+ | 50 domains | CLI, GUI, REST API, Web Dashboard | Years 7-11 — KS3/KS4, GCSE grades 9-1, pastoral care, behaviour, form groups |
 | **Primary School** | 280+ | 46 domains | CLI, GUI, REST API, Web Dashboard | Reception-Year 6 — EYFS/KS1/KS2, phonics, reading records, SATs |
 
-**Combined:** 5,169+ Python files, 257 domain modules, 319 REST API routes, 448+ test files.
+**Combined:** 5,169+ Python files, 257 domain modules, 319 REST API routes, 454+ test files.
 
 All four systems share:
 - **Unified launcher** (`run.py`) with CLI & GUI system selection
@@ -72,6 +72,10 @@ All four systems share:
 - **Unified REST API** (`shared/api/unified_server.py`) — all 4 systems on one server
 - **Web Portal** — browser-based SPA with superadmin dashboard, per-system dashboards, live session monitoring
 - **Cross-system switching** without re-authentication
+- **GDPR compliance** (`shared/gdpr/`) — consent tracking, data subject rights, data retention, portability
+- **Unified audit logging** (`shared/audit/`) — cross-system tamper-detected audit trail
+- **Webhook system** (`shared/webhooks/`) — event dispatch with HMAC signatures and retry
+- **Offline sync** (`shared/offline/`) — local cache, mutation queue, conflict detection
 
 ---
 
@@ -104,6 +108,9 @@ All four systems share:
 | **Docs** | reportlab, openpyxl, fpdf2 |
 | **Testing** | pytest, pytest-cov, pytest-xdist |
 | **Quality** | Black, Ruff, mypy, isort |
+| **Real-time** | Socket.IO (WebSocket), GraphQL (Strawberry) |
+| **Security** | Fernet encryption, HMAC signatures, ClamAV virus scanning |
+| **Integrations** | Canvas, Moodle, Google Classroom, Microsoft Teams |
 
 ### High-Level Structure
 
@@ -119,6 +126,14 @@ education_system/
 │   ├── auth/                # Unified authentication (bcrypt, MFA, sessions)
 │   ├── gui/                 # Universal login window & superadmin dashboard
 │   ├── extras/              # Shared tools (calculator, query builder, etc.)
+│   ├── audit/               # Unified audit logging (tamper detection)
+│   ├── gdpr/                # GDPR compliance (consent, SAR, portability)
+│   ├── webhooks/            # Webhook dispatch and delivery
+│   ├── offline/             # Offline-first sync infrastructure
+│   ├── analytics/           # Analytics & early warning predictions
+│   ├── backup/              # Encrypted backup/restore with scheduling
+│   ├── security/            # Field-level encryption (Fernet AES-128)
+│   ├── integrations/        # LMS integrations (Canvas, Moodle, Teams)
 │   └── data/                # Central auth.db, config, locales (13 languages)
 ├── docs/                    # Centralised documentation (150+ files)
 └── switch.py                # Runtime system/mode switching
@@ -260,6 +275,10 @@ Features: thread-safe connection pooling, WAL mode, ACID compliance, schema migr
 - **MFA**: TOTP (Google Authenticator), Email OTP, SMS OTP, WebAuthn/FIDO2, Biometric, SSO (SAML 2.0 / OIDC)
 - **Sessions**: DB-backed with configurable timeout (`EDU_SESSION_TIMEOUT`, default 30 min)
 - **RBAC**: Fine-grained role-based access control (355+ permissions in university system)
+- **Password security**: history (reuse prevention), common password rejection, expiry enforcement, timing-attack protection
+- **Password reset**: secure token-based flow (`POST /api/v1/auth/forgot-password`, `POST /api/v1/auth/reset-password`)
+- **Consent tracking**: 15 consent types with grant/withdraw/export (GDPR Article 7)
+- **MFA enforcement**: admin/staff users prompted to set up MFA if not configured
 
 ---
 
@@ -615,13 +634,13 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit format, PR proc
 
 ## What's New
 
-### Version 8.47.0 (March 26, 2026) — Latest
+### Version 8.57.0 (March 30, 2026) — Latest
 
-- **11 major platform features** — complete web UI for Secondary & Primary, WebSocket real-time (chat, notifications, presence), GraphQL API, multi-tenancy, parent/guardian mobile portal (PWA), LMS integration (Canvas/Moodle/Google Classroom), centralized structured logging, GDPR data retention, load/performance testing, Architecture Decision Records, test coverage reporting
+- **28-item security & feature hardening** — encryption enforcement, password expiry/history/reuse prevention, forgot password flow, common password blocking, timing oracle fix, MFA enforcement, persistent rate limiting, unified audit logging, zip bomb detection, API key expiry/rotation, backup encryption, webhook system, GDPR consent tracking, data subject rights (rectification/restriction/portability), configurable retention, cross-system consent, offline sync, PWA/mobile support, MS Teams integration, GraphQL additions, real-time WebSocket helpers, AI/ML early warning, primary school skills tracker, WCAG accessibility tests
 
-### Version 8.46.0 (March 26, 2026)
+### Version 8.56.0 (March 29, 2026)
 
-- **Security scan fixes** — updated 28 dependencies, fixed 106 semgrep credential disclosure findings, fixed bandit B608 false positives, fixed 31 test collection errors
+- **Comprehensive CI test failure remediation** — reduced failures from 1615 to ~1000 across 10 commits
 
 See [CHANGELOG.md](CHANGELOG.md) for complete version history.
 
