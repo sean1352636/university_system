@@ -11,7 +11,7 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 
-def backup(db_path, backup_dir, compress=True, label=None):
+def backup(db_path, backup_dir, compress=True, label=None, encrypt=False, encryption_key=None):
     """Create a backup of a SQLite database.
 
     Returns the backup file path.
@@ -33,12 +33,34 @@ def backup(db_path, backup_dir, compress=True, label=None):
     else:
         shutil.copy2(db_path, backup_path)
 
+    if encrypt:
+        try:
+            from cryptography.fernet import Fernet
+            key = encryption_key or os.environ.get("BACKUP_ENCRYPTION_KEY") or os.environ.get("ENCRYPTION_KEY")
+            if not key:
+                logger.warning("Backup encryption requested but no key available")
+            else:
+                fernet = Fernet(key.encode() if isinstance(key, str) else key)
+                with open(backup_path, "rb") as f:
+                    data = f.read()
+                encrypted = fernet.encrypt(data)
+                enc_path = backup_path + ".enc"
+                with open(enc_path, "wb") as f:
+                    f.write(encrypted)
+                os.remove(backup_path)
+                backup_path = enc_path
+                backup_name = os.path.basename(enc_path)
+                logger.info("Backup encrypted: %s", enc_path)
+        except ImportError:
+            logger.warning("cryptography package not installed; backup not encrypted")
+
     checksum = _file_checksum(backup_path)
     meta = {
         "source": db_path,
         "backup": backup_path,
         "timestamp": timestamp,
         "compressed": compress,
+        "encrypted": encrypt,
         "size_bytes": os.path.getsize(backup_path),
         "checksum_sha256": checksum,
     }
@@ -50,8 +72,11 @@ def backup(db_path, backup_dir, compress=True, label=None):
     return backup_path
 
 
-def restore(backup_path, db_path):
-    """Restore a database from a backup file."""
+def restore(backup_path, db_path, encryption_key=None):
+    """Restore a database from a backup file.
+
+    Handles encrypted (.enc), compressed (.gz), and plain backups.
+    """
     if not os.path.exists(backup_path):
         raise FileNotFoundError(f"Backup not found: {backup_path}")
 
@@ -60,11 +85,37 @@ def restore(backup_path, db_path):
         shutil.copy2(db_path, safety)
         logger.info("Pre-restore safety copy: %s", safety)
 
-    if backup_path.endswith(".gz"):
-        with gzip.open(backup_path, "rb") as f_in, open(db_path, "wb") as f_out:
-            shutil.copyfileobj(f_in, f_out)
-    else:
-        shutil.copy2(backup_path, db_path)
+    source_path = backup_path
+
+    # Handle encrypted backups
+    if backup_path.endswith(".enc"):
+        try:
+            from cryptography.fernet import Fernet
+            key = encryption_key or os.environ.get("BACKUP_ENCRYPTION_KEY") or os.environ.get("ENCRYPTION_KEY")
+            if not key:
+                raise ValueError("Encrypted backup requires an encryption key")
+            fernet = Fernet(key.encode() if isinstance(key, str) else key)
+            with open(backup_path, "rb") as f:
+                encrypted_data = f.read()
+            decrypted = fernet.decrypt(encrypted_data)
+            # Write decrypted data to a temp file
+            source_path = backup_path + ".dec"
+            with open(source_path, "wb") as f:
+                f.write(decrypted)
+            logger.info("Backup decrypted for restore")
+        except ImportError:
+            raise ImportError("cryptography package required to restore encrypted backups")
+
+    try:
+        if source_path.endswith(".gz") or (source_path.endswith(".dec") and backup_path.endswith(".gz.enc")):
+            with gzip.open(source_path, "rb") as f_in, open(db_path, "wb") as f_out:
+                shutil.copyfileobj(f_in, f_out)
+        else:
+            shutil.copy2(source_path, db_path)
+    finally:
+        # Clean up temp decrypted file
+        if source_path != backup_path and os.path.exists(source_path):
+            os.remove(source_path)
 
     logger.info("Database restored from %s to %s", backup_path, db_path)
 

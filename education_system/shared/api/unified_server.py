@@ -115,9 +115,10 @@ def create_unified_app() -> Flask:
     if allowed_origins:
         CORS(app, origins=allowed_origins)
     else:
-        # Allow any origin so other devices on the network can access the API.
-        # The CSRF check (Origin/Referer matching request.host) still prevents
-        # cross-site attacks from unrelated origins.
+        logger.warning(
+            "API_CORS_ORIGINS not set — defaulting to allow all origins (*). "
+            "Set API_CORS_ORIGINS for production deployments."
+        )
         CORS(app, origins="*")
 
     _init_security(app)
@@ -252,6 +253,10 @@ def create_unified_app() -> Flask:
     # ── Web frontend (login + dashboard) ─────────────────────────────
     from education_system.shared.api.web.routes import web_bp
     app.register_blueprint(web_bp)
+
+    # ── PWA support ──────────────────────────────────────────────────────
+    from education_system.shared.api.web.pwa import pwa_bp
+    app.register_blueprint(pwa_bp)
 
     # ── Parent portal ─────────────────────────────────────────────────
     try:

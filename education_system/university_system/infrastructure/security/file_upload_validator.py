@@ -355,6 +355,55 @@ class FileUploadValidator:
             logger.error(f"Error scanning file for viruses: {e}")
             return True, None  # Don't fail validation on scanner error
 
+    def _check_archive_bomb(self, file_path: str) -> tuple[bool, str]:
+        """Check if an archive file might be a zip bomb.
+
+        Returns (is_safe, message).
+        """
+        import zipfile
+        import tarfile
+
+        ext = Path(file_path).suffix.lower().lstrip('.')
+        max_ratio = 100  # compression ratio threshold
+        max_total_size = 1 * 1024 * 1024 * 1024  # 1 GB uncompressed max
+        max_entries = 10000  # max number of files in archive
+
+        try:
+            if ext == 'zip' or ext in ('xlsx', 'docx', 'pptx', 'odt'):
+                if not zipfile.is_zipfile(file_path):
+                    return True, ""
+                with zipfile.ZipFile(file_path, 'r') as zf:
+                    entries = zf.infolist()
+                    if len(entries) > max_entries:
+                        return False, f"Archive contains too many entries ({len(entries)} > {max_entries})"
+                    total_uncompressed = sum(e.file_size for e in entries)
+                    compressed_size = os.path.getsize(file_path)
+                    if compressed_size > 0 and total_uncompressed / compressed_size > max_ratio:
+                        return False, f"Suspicious compression ratio ({total_uncompressed / compressed_size:.0f}:1)"
+                    if total_uncompressed > max_total_size:
+                        return False, f"Archive uncompressed size too large ({total_uncompressed / 1024 / 1024:.0f} MB)"
+                    # Check for nested archives (zip bomb technique)
+                    nested_count = sum(1 for e in entries if e.filename.lower().endswith(('.zip', '.gz', '.tar', '.7z', '.rar')))
+                    if nested_count > 5:
+                        return False, f"Too many nested archives ({nested_count})"
+            elif ext in ('tar', 'gz', 'bz2', 'xz', 'tgz'):
+                mode = 'r:gz' if ext in ('gz', 'tgz') else 'r:bz2' if ext == 'bz2' else 'r:xz' if ext == 'xz' else 'r'
+                try:
+                    with tarfile.open(file_path, mode) as tf:
+                        members = tf.getmembers()
+                        if len(members) > max_entries:
+                            return False, f"Archive contains too many entries ({len(members)})"
+                        total_size = sum(m.size for m in members if m.isfile())
+                        if total_size > max_total_size:
+                            return False, f"Archive uncompressed size too large ({total_size / 1024 / 1024:.0f} MB)"
+                except (tarfile.TarError, EOFError):
+                    pass  # Not a tar file or corrupted
+        except Exception as e:
+            logger.warning("Archive bomb check failed for %s: %s", file_path, e)
+            return True, ""  # Allow on check failure (other validations still apply)
+
+        return True, ""
+
     def validate_file(
         self,
         file_path: str,
@@ -400,6 +449,13 @@ class FileUploadValidator:
                 error=size_error,
                 sanitized_filename=sanitized_filename
             )
+
+        # Check for archive bombs
+        ext = Path(file_path).suffix.lower().lstrip('.')
+        if ext in self.ARCHIVE_EXTENSIONS or ext in ('zip',):
+            is_safe, bomb_msg = self._check_archive_bomb(str(file_path))
+            if not is_safe:
+                return UploadValidationResult(valid=False, error=f"Archive security check failed: {bomb_msg}")
 
         # Calculate file hash
         file_hash = self.calculate_file_hash(file_path)

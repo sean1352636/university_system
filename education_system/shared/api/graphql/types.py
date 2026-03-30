@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import List, Optional
 
 import strawberry
 
@@ -91,3 +91,30 @@ class TimetableType:
     end_time: Optional[str]
     room: Optional[str]
     instructor: Optional[str]
+
+
+@strawberry.type
+class ConsentRecordType:
+    consent_type: str
+    granted: bool
+    granted_at: Optional[str] = None
+    withdrawn_at: Optional[str] = None
+    source: Optional[str] = None
+
+@strawberry.type
+class AuditLogEntryType:
+    id: int
+    timestamp: str
+    system_key: str
+    action: str
+    username: Optional[str] = None
+    resource_type: Optional[str] = None
+    severity: str = "info"
+
+@strawberry.type
+class EarlyWarningType:
+    student_id: str
+    system: str
+    risk_score: float
+    risk_level: str
+    recommendations: List[str]

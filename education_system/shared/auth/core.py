@@ -116,6 +116,9 @@ class UserAuth:
             )
             conn.commit()
 
+            # Check password expiry
+            password_expired = self.check_password_expiry(user["id"])
+
             # Fetch systems the user has access to
             systems = conn.execute(
                 "SELECT system_key, role FROM user_systems WHERE user_id = ?",
@@ -134,9 +137,14 @@ class UserAuth:
                     "mfa_required": True,
                     "user_id": user["id"],
                     "username": user["username"],
+                    "password_expired": password_expired,
                 }
         except ImportError:
             pass
+
+        # Enforce MFA for privileged roles
+        user_roles = {s["role"] for s in systems}
+        mfa_setup_required = self._check_mfa_required(user["id"], user_roles)
 
         # Create session
         token = self.session_manager.create_session(user["id"])
@@ -151,6 +159,8 @@ class UserAuth:
                 {"system_key": s["system_key"], "role": s["role"]}
                 for s in systems
             ],
+            "password_expired": password_expired,
+            "mfa_setup_required": mfa_setup_required,
         }
         self._current_token = token
         logger.info("User '%s' logged in", user["username"])
@@ -182,6 +192,9 @@ class UserAuth:
         finally:
             conn.close()
 
+        password_expired = self.check_password_expiry(user["id"])
+        user_roles = {s["role"] for s in systems}
+        mfa_setup_required = self._check_mfa_required(user["id"], user_roles)
         token = self.session_manager.create_session(user["id"])
 
         self._current_user = {
@@ -194,6 +207,8 @@ class UserAuth:
                 {"system_key": s["system_key"], "role": s["role"]}
                 for s in systems
             ],
+            "password_expired": password_expired,
+            "mfa_setup_required": mfa_setup_required,
         }
         self._current_token = token
         logger.info("MFA verified for user '%s'", user["username"])
@@ -220,6 +235,9 @@ class UserAuth:
         finally:
             conn.close()
 
+        password_expired = self.check_password_expiry(user["id"])
+        user_roles = {s["role"] for s in systems}
+        mfa_setup_required = self._check_mfa_required(user["id"], user_roles)
         token = self.session_manager.create_session(user["id"])
 
         self._current_user = {
@@ -232,11 +250,25 @@ class UserAuth:
                 {"system_key": s["system_key"], "role": s["role"]}
                 for s in systems
             ],
+            "password_expired": password_expired,
+            "mfa_setup_required": mfa_setup_required,
         }
         self._current_token = token
         logger.info("MFA login completed for user '%s' (external verification)", user["username"])
 
         return self._current_user
+
+    def _check_mfa_required(self, user_id: int, roles: set[str]) -> bool:
+        """Check if MFA is required but not set up for privileged roles."""
+        _MFA_REQUIRED_ROLES = {"admin", "staff"}
+        if not roles & _MFA_REQUIRED_ROLES:
+            return False
+        try:
+            from education_system.shared.auth.mfa_service import MFAService
+            mfa_svc = MFAService(self._db_path)
+            return not mfa_svc.is_mfa_enabled(user_id)
+        except ImportError:
+            return False
 
     def get_role_for_system(self, system_key: str) -> str | None:
         """Get the current user's role for a specific system."""
@@ -313,6 +345,25 @@ class UserAuth:
             is_valid, msg = validate_password_strength(new_password)
             if not is_valid:
                 raise AuthError(msg)
+
+            # Check password history (last 5)
+            history = conn.execute(
+                "SELECT password_hash FROM password_history WHERE user_id = ? ORDER BY created_at DESC LIMIT 5",
+                (user_id,),
+            ).fetchall()
+            for h in history:
+                if verify_password(new_password, h["password_hash"]):
+                    raise AuthError("Cannot reuse any of your last 5 passwords.")
+
+            # Also check the current password hash against reuse
+            if verify_password(new_password, user["password_hash"]):
+                raise AuthError("Cannot reuse any of your last 5 passwords.")
+
+            # Save old hash to password history
+            conn.execute(
+                "INSERT INTO password_history (user_id, password_hash) VALUES (?, ?)",
+                (user_id, user["password_hash"]),
+            )
 
             new_hash = hash_password(new_password)
             conn.execute(

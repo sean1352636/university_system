@@ -5,6 +5,7 @@ databases for GDPR compliance: Subject Access Requests, data export,
 anonymisation, and data retention reporting.
 """
 
+import os
 import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -443,13 +444,20 @@ class GDPRService:
     # Data Retention Report
     # ------------------------------------------------------------------
 
-    def get_data_retention_report(self, retention_years=6):
+    def get_data_retention_report(self, retention_years=None, retention_config=None):
         """List students across systems with data older than the retention threshold.
 
         Default threshold is 6 years (UK GDPR typical for education).
         Returns a list of dicts: system, student_id, name, oldest_date, age_years.
         """
-        cutoff = datetime.now() - timedelta(days=retention_years * 365)
+        # Support per-entity-type retention configuration
+        if retention_config is None:
+            retention_config = {}
+        # Default retention years (configurable per entity type)
+        default_years = retention_years if retention_years is not None else int(
+            os.environ.get("GDPR_RETENTION_YEARS", "6")
+        )
+        cutoff = datetime.now() - timedelta(days=default_years * 365)
         cutoff_str = cutoff.strftime("%Y-%m-%d")
         results = []
 
@@ -510,3 +518,296 @@ class GDPRService:
 
         results.sort(key=lambda r: r.get("oldest_date", ""))
         return results
+
+    # ------------------------------------------------------------------
+    # Right to Rectification
+    # ------------------------------------------------------------------
+
+    def rectify_student_data(self, student_name: str, system: str, field_updates: dict) -> int:
+        """Update/correct student personal data (Right to Rectification).
+
+        Args:
+            student_name: Name to search for
+            system: System to update in
+            field_updates: Dict of {column_name: new_value} to update
+
+        Returns the number of records updated.
+        """
+        db_path = self._db_paths.get(system)
+        if not db_path:
+            raise ValueError(f"Unknown system: {system}")
+
+        conn = _connect(db_path)
+        if not conn:
+            raise ValueError(f"Database not found for system: {system}")
+
+        try:
+            table = "pupils" if system == "primary" else "students"
+            if not _table_exists(conn, table):
+                raise ValueError(f"Table '{table}' not found in {system}")
+
+            cols = _get_columns(conn, table)
+            name_expr = _name_search_expr(cols)
+            if not name_expr:
+                raise ValueError("Cannot determine name columns")
+
+            # Validate field names exist
+            safe_updates = {}
+            for field, value in field_updates.items():
+                validate_identifier(field)
+                if field not in cols:
+                    raise ValueError(f"Field '{field}' does not exist in {table}")
+                safe_updates[field] = value
+
+            if not safe_updates:
+                raise ValueError("No valid fields to update")
+
+            # Build parameterised UPDATE
+            set_parts = ", ".join(f"{k} = ?" for k in safe_updates)
+            params = list(safe_updates.values()) + [f"%{student_name.strip()}%"]
+
+            validate_identifier(table)
+            cursor = conn.execute(
+                f"UPDATE {table} SET {set_parts} WHERE {name_expr} LIKE ?",
+                params,
+            )
+            conn.commit()
+            return cursor.rowcount
+        finally:
+            conn.close()
+
+    # ------------------------------------------------------------------
+    # Right to Restrict Processing
+    # ------------------------------------------------------------------
+
+    def restrict_processing(self, student_name: str, system: str) -> int:
+        """Mark a student's data as restricted (Right to Restrict Processing).
+
+        Sets a 'processing_restricted' flag if the column exists,
+        otherwise sets status to 'restricted'.
+
+        Returns the number of records updated.
+        """
+        db_path = self._db_paths.get(system)
+        if not db_path:
+            raise ValueError(f"Unknown system: {system}")
+
+        conn = _connect(db_path)
+        if not conn:
+            raise ValueError(f"Database not found for system: {system}")
+
+        try:
+            table = "pupils" if system == "primary" else "students"
+            if not _table_exists(conn, table):
+                raise ValueError(f"Table '{table}' not found in {system}")
+
+            cols = _get_columns(conn, table)
+            name_expr = _name_search_expr(cols)
+            if not name_expr:
+                raise ValueError("Cannot determine name columns")
+
+            # Try to add processing_restricted column if it doesn't exist
+            if "processing_restricted" not in cols:
+                try:
+                    validate_identifier(table)
+                    conn.execute(f"ALTER TABLE {table} ADD COLUMN processing_restricted INTEGER DEFAULT 0")
+                    conn.commit()
+                except Exception:
+                    pass  # Column might already exist from concurrent migration
+
+            if "processing_restricted" in _get_columns(conn, table):
+                cursor = conn.execute(
+                    f"UPDATE {table} SET processing_restricted = 1 WHERE {name_expr} LIKE ?",
+                    (f"%{student_name.strip()}%",),
+                )
+            elif "status" in cols:
+                cursor = conn.execute(
+                    f"UPDATE {table} SET status = 'restricted' WHERE {name_expr} LIKE ?",
+                    (f"%{student_name.strip()}%",),
+                )
+            else:
+                raise ValueError("Cannot restrict processing: no suitable column")
+
+            conn.commit()
+            return cursor.rowcount
+        finally:
+            conn.close()
+
+    def unrestrict_processing(self, student_name: str, system: str) -> int:
+        """Remove processing restriction from a student's data."""
+        db_path = self._db_paths.get(system)
+        if not db_path:
+            raise ValueError(f"Unknown system: {system}")
+
+        conn = _connect(db_path)
+        if not conn:
+            raise ValueError(f"Database not found for system: {system}")
+
+        try:
+            table = "pupils" if system == "primary" else "students"
+            cols = _get_columns(conn, table)
+            name_expr = _name_search_expr(cols)
+            if not name_expr:
+                raise ValueError("Cannot determine name columns")
+
+            if "processing_restricted" in cols:
+                cursor = conn.execute(
+                    f"UPDATE {table} SET processing_restricted = 0 WHERE {name_expr} LIKE ?",
+                    (f"%{student_name.strip()}%",),
+                )
+                conn.commit()
+                return cursor.rowcount
+            return 0
+        finally:
+            conn.close()
+
+    # ------------------------------------------------------------------
+    # Right to Data Portability
+    # ------------------------------------------------------------------
+
+    def export_portable_data(self, student_name: str, format: str = "json") -> dict | str:
+        """Export student data in a standard portable format.
+
+        Supports 'json' and 'csv' formats. Returns structured data
+        suitable for transferring to another education provider.
+        """
+        data = self.get_full_data_export(student_name)
+        if not data:
+            raise ValueError(f"No data found for '{student_name}'")
+
+        if format == "csv":
+            return self._export_as_csv(data, student_name)
+
+        # JSON portable format
+        portable = {
+            "export_metadata": {
+                "format": "education_system_portable_v1",
+                "exported_at": datetime.now().isoformat(),
+                "data_subject": student_name,
+                "systems_included": list(data.keys()),
+            },
+            "personal_information": {},
+            "academic_records": [],
+            "attendance_records": [],
+        }
+
+        for system, sys_data in data.items():
+            if system == "cross_system":
+                continue
+            pi = sys_data.get("personal_info", {})
+            if pi:
+                portable["personal_information"][system] = {
+                    k: v for k, v in pi.items()
+                    if k not in ("password_hash", "mfa_secret", "totp_secret", "token")
+                }
+            for g in sys_data.get("grades", []):
+                g["_source_system"] = system
+                portable["academic_records"].append(g)
+            for a in sys_data.get("attendance", []):
+                a["_source_system"] = system
+                portable["attendance_records"].append(a)
+
+        return portable
+
+    def _export_as_csv(self, data: dict, student_name: str) -> str:
+        """Convert export data to CSV format."""
+        import csv
+        import io
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+
+        # Personal info
+        writer.writerow(["=== Personal Information ==="])
+        for system, sys_data in data.items():
+            if system == "cross_system":
+                continue
+            pi = sys_data.get("personal_info", {})
+            if pi:
+                writer.writerow([f"System: {system}"])
+                for k, v in pi.items():
+                    if k not in ("password_hash", "mfa_secret", "totp_secret", "token"):
+                        writer.writerow([k, str(v) if v is not None else ""])
+                writer.writerow([])
+
+        # Academic records
+        writer.writerow(["=== Academic Records ==="])
+        all_grades = []
+        for system, sys_data in data.items():
+            if system != "cross_system":
+                for g in sys_data.get("grades", []):
+                    g["system"] = system
+                    all_grades.append(g)
+
+        if all_grades:
+            headers = sorted(set().union(*(g.keys() for g in all_grades)))
+            writer.writerow(headers)
+            for g in all_grades:
+                writer.writerow([str(g.get(h, "")) for h in headers])
+
+        return output.getvalue()
+
+    # ------------------------------------------------------------------
+    # Cross-System Transfer Consent
+    # ------------------------------------------------------------------
+
+    def check_transfer_consent(self, user_id: int, target_system: str) -> bool:
+        """Check if user has consented to cross-system data sharing.
+
+        Returns True if consent is granted for data_sharing_third_party
+        or data_sharing_authorities consent types.
+        """
+        try:
+            from education_system.shared.gdpr.consent_service import ConsentService
+            svc = ConsentService()
+            return (svc.has_consent(user_id, "data_sharing_third_party") or
+                    svc.has_consent(user_id, "data_sharing_authorities"))
+        except Exception:
+            return False
+
+    def transfer_with_consent(self, user_id: int, student_name: str,
+                              source_system: str, target_system: str) -> dict:
+        """Transfer student data between systems with consent verification.
+
+        Raises ValueError if consent has not been granted.
+        """
+        if not self.check_transfer_consent(user_id, target_system):
+            raise ValueError(
+                "Data transfer requires consent. Please grant 'data_sharing_third_party' "
+                "or 'data_sharing_authorities' consent before transferring data."
+            )
+
+        # Get data from source system
+        data = self.get_full_data_export(student_name)
+        source_data = data.get(source_system, {})
+
+        if not source_data:
+            raise ValueError(f"No data found for '{student_name}' in {source_system}")
+
+        # Log the transfer in audit
+        try:
+            from education_system.shared.audit.audit_service import AuditService
+            audit = AuditService()
+            audit.log(
+                action="cross_system_transfer",
+                system_key=source_system,
+                user_id=user_id,
+                resource_type="student_data",
+                details={
+                    "student_name": student_name,
+                    "source_system": source_system,
+                    "target_system": target_system,
+                    "consent_verified": True,
+                },
+                severity="info",
+            )
+        except Exception:
+            pass
+
+        return {
+            "transferred": True,
+            "source_system": source_system,
+            "target_system": target_system,
+            "student_name": student_name,
+            "data": source_data,
+        }

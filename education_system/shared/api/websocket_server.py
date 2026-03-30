@@ -341,3 +341,63 @@ def init_socketio(app) -> "SocketIO | None":
 
     logger.info("Socket.IO initialised with namespaces: /notifications, /chat, /presence")
     return socketio
+
+
+# Keep a module-level ref for the helper functions below
+_socketio = None
+
+
+def _get_socketio():
+    """Return the active SocketIO instance."""
+    global _socketio
+    if _socketio is None:
+        _socketio = socketio
+    return _socketio
+
+
+def broadcast_system_alert(system_key: str, title: str, message: str,
+                           severity: str = "info"):
+    """Broadcast a system-wide alert to all connected users in a system."""
+    sio = _get_socketio()
+    if sio is None:
+        return
+    sio.emit("system_alert", {
+        "system_key": system_key,
+        "title": title,
+        "message": message,
+        "severity": severity,
+        "timestamp": datetime.utcnow().isoformat(),
+    }, namespace="/notifications", room=system_key)
+
+
+def emit_grade_update(student_user_id: int, course: str, grade: str,
+                      system_key: str = "university"):
+    """Notify a student in real time that a grade has been posted."""
+    emit_to_user(student_user_id, "grade_update", {
+        "course": course,
+        "grade": grade,
+        "system_key": system_key,
+        "timestamp": datetime.utcnow().isoformat(),
+    })
+
+
+def emit_attendance_alert(student_user_id: int, date: str, status: str,
+                          system_key: str = "university"):
+    """Notify a student/parent about an attendance mark."""
+    emit_to_user(student_user_id, "attendance_alert", {
+        "date": date,
+        "status": status,
+        "system_key": system_key,
+        "timestamp": datetime.utcnow().isoformat(),
+    })
+
+
+def emit_early_warning(staff_user_id: int, student_name: str,
+                       risk_level: str, system_key: str):
+    """Notify staff about a student early warning flag."""
+    emit_to_user(staff_user_id, "early_warning", {
+        "student_name": student_name,
+        "risk_level": risk_level,
+        "system_key": system_key,
+        "timestamp": datetime.utcnow().isoformat(),
+    })

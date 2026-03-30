@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.57.0 — 2026-03-30](#8570---2026-03-30)
 - [8.56.0 — 2026-03-29](#8560---2026-03-29)
 - [8.55.0 — 2026-03-28](#8550---2026-03-28)
 - [8.54.0 — 2026-03-28](#8540---2026-03-28)
@@ -143,6 +144,112 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](education_system/docs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](education_system/docs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](education_system/docs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.57.0] — 2026-03-30
+
+### All Systems — Comprehensive Security, GDPR, and Feature Hardening
+
+Major security hardening, GDPR compliance completion, infrastructure improvements,
+and feature enhancements across all four education systems (28 items).
+
+#### Security Hardening
+
+- **Encryption enforcement warning** — `FieldEncryptor` now logs a WARNING when `ENCRYPTION_KEY` is not set, alerting admins that sensitive fields will be stored in plaintext
+  - Files: `shared/security/encryption.py`
+
+- **Password expiry enforcement** — `check_password_expiry()` is now wired into the login flow; login response includes `password_expired` flag so clients can prompt for password change
+  - Files: `shared/auth/core.py`
+
+- **Password reuse prevention** — New `password_history` table tracks last 5 password hashes; `change_password()` rejects reuse of recent passwords
+  - Files: `shared/auth/schema.py`, `shared/auth/core.py`
+
+- **MFA enforcement for privileged roles** — Login response includes `mfa_setup_required` flag for admin/staff users who haven't configured MFA
+  - Files: `shared/auth/core.py`
+
+- **CORS default warning** — Unified API server now logs a warning when `API_CORS_ORIGINS` is not configured and falls back to allowing all origins
+  - Files: `shared/api/unified_server.py`
+
+- **Forgot password flow** — New `PasswordResetService` with secure SHA-256 hashed tokens (30-min expiry), `POST /api/v1/auth/forgot-password` and `POST /api/v1/auth/reset-password` endpoints with rate limiting and email enumeration protection
+  - Files: `shared/auth/password_reset.py`, `shared/auth/schema.py`, `shared/api/auth.py`
+
+- **Common password checking** — `validate_password_strength()` now rejects ~90 common passwords (password123, admin123, qwerty, etc.) regardless of complexity
+  - Files: `shared/auth/password_manager.py`
+
+- **Timing oracle fix** — `verify_password()` now runs a dummy bcrypt comparison on invalid/missing hashes to prevent timing-based user enumeration attacks
+  - Files: `shared/auth/password_manager.py`
+
+#### Infrastructure Improvements
+
+- **Persistent rate limiting** — New `PersistentRateLimiter` class with SQLite-backed storage that survives application restarts; falls back to in-memory when no DB path configured
+  - Files: `shared/api/rate_limiter.py`
+
+- **Unified audit logging** — New `AuditService` in `shared/audit/` providing cross-system audit trail with checksum-based tamper detection, severity levels, and query/stats API
+  - Files: `shared/audit/__init__.py`, `shared/audit/audit_service.py`
+
+- **Zip bomb detection** — `FileUploadValidator` now checks archives for suspicious compression ratios (>100:1), oversized uncompressed content (>1GB), excessive entries (>10K), and nested archives (>5)
+  - Files: `university_system/infrastructure/security/file_upload_validator.py`
+
+- **API key expiry and rotation** — API keys now support `expires_in_days` parameter; expired keys are automatically rejected; new `rotate_key()` method revokes old key and creates replacement with same config
+  - Files: `shared/api/api_keys.py`
+
+- **Backup encryption** — `backup()` now accepts `encrypt` parameter using Fernet encryption; `restore()` auto-detects and decrypts `.enc` files
+  - Files: `shared/backup/backup_manager.py`
+
+- **Shared webhook system** — New `WebhookService` with subscription management, event dispatch, HMAC signature verification, and automatic retry with exponential backoff (1min/5min/15min)
+  - Files: `shared/webhooks/__init__.py`, `shared/webhooks/webhook_service.py`
+
+#### GDPR & Compliance
+
+- **Consent tracking** — New `consent_records` table in auth DB and `ConsentService` class supporting 15 consent types (data processing, photos, medical, marketing, biometric, etc.) with grant/withdraw/query/export operations
+  - Files: `shared/auth/schema.py`, `shared/gdpr/consent_service.py`
+
+- **Right to Rectification** — New `rectify_student_data()` method for correcting personal data with parameterised updates and column validation
+  - Files: `shared/gdpr/gdpr_service.py`
+
+- **Right to Restrict Processing** — New `restrict_processing()` and `unrestrict_processing()` methods that add/remove processing restriction flags on student records
+  - Files: `shared/gdpr/gdpr_service.py`
+
+- **Right to Data Portability** — New `export_portable_data()` method producing structured JSON or CSV exports in a standardised portable format, stripping sensitive fields (password hashes, MFA secrets)
+  - Files: `shared/gdpr/gdpr_service.py`
+
+- **Configurable data retention** — `get_data_retention_report()` now supports per-entity-type retention configs and reads defaults from `GDPR_RETENTION_YEARS` environment variable (default 6)
+  - Files: `shared/gdpr/gdpr_service.py`
+
+- **Cross-system transfer consent** — New `check_transfer_consent()` and `transfer_with_consent()` methods that verify consent via `ConsentService` before allowing cross-system data transfers, with audit logging
+  - Files: `shared/gdpr/gdpr_service.py`
+
+#### Feature Enhancements
+
+- **Offline sync infrastructure** — New `OfflineSyncService` with SQLite-backed local cache, mutation queue (create/update/delete), sync state tracking, and conflict detection
+  - Files: `shared/offline/__init__.py`, `shared/offline/sync_service.py`
+
+- **PWA / mobile web support** — Progressive Web App blueprint with `manifest.json`, service worker for offline caching, and mobile-friendly offline fallback page
+  - Files: `shared/api/web/pwa.py`, `shared/api/unified_server.py`
+
+- **Microsoft Teams for Education integration** — New `TeamsForEducationProvider` for syncing classes, members, assignments, and grades via Microsoft Graph API
+  - Files: `shared/integrations/lms_teams.py`
+
+- **GraphQL type additions** — Added `ConsentRecordType`, `AuditLogEntryType`, and `EarlyWarningType` to the GraphQL schema
+  - Files: `shared/api/graphql/types.py`
+
+- **Real-time event helpers** — Added `broadcast_system_alert()`, `emit_grade_update()`, `emit_attendance_alert()`, and `emit_early_warning()` WebSocket helpers
+  - Files: `shared/api/websocket_server.py`
+
+- **AI/ML early warning system** — New `EarlyWarningService` that analyses attendance, grades, assignments, and behaviour to compute per-student risk scores with weighted factors and intervention recommendations
+  - Files: `shared/analytics/early_warning.py`
+
+- **Primary school skills tracker** — Enhanced `SkillsTrackerService` with EYFS/KS1/KS2 skill areas, Emerging/Developing/Expected/Greater Depth levels, pupil profiles, progress history, and class summaries
+  - Files: `primary_school/modules/domain/academics/skills_tracker/services/skills_tracker_service.py`
+
+#### Testing
+
+- **Primary school test coverage** — Added 5 new test files (15 tests) covering homework, timetable, safeguarding, SEND, and progress services
+  - Files: `primary_school/tests/test_homework_service.py`, `test_timetable_service.py`, `test_safeguarding_service.py`, `test_send_service.py`, `test_progress_service.py`
+
+- **WCAG accessibility testing** — New accessibility test suite with HTML compliance checks for lang attributes, alt text, form labels, heading hierarchy, viewport meta, and skip navigation
+  - Files: `shared/tests/test_accessibility.py`
 
 ---
 

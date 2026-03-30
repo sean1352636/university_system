@@ -31,7 +31,7 @@ import logging
 import secrets
 import sqlite3
 import functools
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import request, jsonify, g
 
@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS api_keys (
     active INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL,
     last_used_at TEXT,
+    expires_at TEXT,
     created_by INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_api_key_hash ON api_keys(key_hash);
@@ -78,11 +79,18 @@ class APIKeyManager:
         conn = self._conn()
         try:
             conn.executescript(_SCHEMA)
+            # Migration: add expires_at column
+            try:
+                conn.execute("ALTER TABLE api_keys ADD COLUMN expires_at TEXT")
+                conn.commit()
+            except sqlite3.OperationalError:
+                pass  # Column already exists
         finally:
             conn.close()
 
     def create_key(self, label: str, systems: list[str] | None = None,
-                   rate_limit: int | None = None, created_by: int | None = None) -> str:
+                   rate_limit: int | None = None, created_by: int | None = None,
+                   expires_in_days: int | None = None) -> str:
         """Create a new API key. Returns the raw key (shown once)."""
         import json
         raw_key = f"edusys_{secrets.token_urlsafe(32)}"
@@ -90,14 +98,18 @@ class APIKeyManager:
         key_prefix = raw_key[:12]
         systems_json = json.dumps(systems or [])
 
+        expires_at = None
+        if expires_in_days:
+            expires_at = (datetime.utcnow() + timedelta(days=expires_in_days)).isoformat()
+
         conn = self._conn()
         try:
             conn.execute(
                 """INSERT INTO api_keys (key_hash, key_prefix, label, systems,
-                   rate_limit, created_at, created_by)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                   rate_limit, created_at, created_by, expires_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                 (key_hash, key_prefix, label, systems_json, rate_limit,
-                 datetime.utcnow().isoformat(), created_by),
+                 datetime.utcnow().isoformat(), created_by, expires_at),
             )
             conn.commit()
         finally:
@@ -118,6 +130,10 @@ class APIKeyManager:
             ).fetchone()
             if not row:
                 return None
+            if row["expires_at"]:
+                if datetime.fromisoformat(row["expires_at"]) < datetime.utcnow():
+                    logger.warning("Expired API key used: %s", row["key_prefix"])
+                    return None
             # Update last_used_at
             conn.execute(
                 "UPDATE api_keys SET last_used_at = ? WHERE id = ?",
@@ -166,6 +182,31 @@ class APIKeyManager:
             return cursor.rowcount > 0
         finally:
             conn.close()
+
+    def rotate_key(self, key_id: int, expires_in_days: int | None = None) -> str:
+        """Rotate an API key: revoke the old one and create a new one with the same config."""
+        import json
+        conn = self._conn()
+        try:
+            row = conn.execute(
+                "SELECT label, systems, rate_limit, created_by FROM api_keys WHERE id = ? AND active = 1",
+                (key_id,),
+            ).fetchone()
+            if not row:
+                raise ValueError(f"API key {key_id} not found or already revoked")
+            # Revoke old key
+            conn.execute("UPDATE api_keys SET active = 0 WHERE id = ?", (key_id,))
+            conn.commit()
+        finally:
+            conn.close()
+        # Create new key with same config
+        return self.create_key(
+            label=row["label"],
+            systems=json.loads(row["systems"]) if row["systems"] else None,
+            rate_limit=row["rate_limit"],
+            created_by=row["created_by"],
+            expires_in_days=expires_in_days,
+        )
 
 
 # ── Singleton manager (initialised lazily) ───────────────────────────────

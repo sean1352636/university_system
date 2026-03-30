@@ -411,3 +411,53 @@ def change_password():
         return jsonify({"error": "Password change failed"}), 400
 
     return jsonify({"message": "Password changed successfully."})
+
+
+@auth_bp.route("/forgot-password", methods=["POST"])
+def forgot_password():
+    """Request a password reset token.
+
+    Request body:
+        {"email": "user@example.com"}
+    """
+    ip = request.remote_addr or "unknown"
+    if _rate_limited(f"forgot:{ip}", 3, 3600):
+        return jsonify({"error": "Too many reset requests. Try again later."}), 429
+
+    data = request.get_json(silent=True)
+    if not data or not data.get("email"):
+        return jsonify({"error": "email required"}), 400
+
+    try:
+        from education_system.shared.auth.password_reset import PasswordResetService
+        from education_system.shared.auth.db import AUTH_DB_FILE
+        svc = PasswordResetService(_auth_db_path or str(AUTH_DB_FILE))
+        result = svc.request_reset(data["email"])
+    except Exception as e:
+        logger.error("Password reset request failed: %s", e)
+        # Don't reveal errors to prevent email enumeration
+        pass
+
+    return jsonify({"message": "If that email exists, a reset link has been sent."})
+
+
+@auth_bp.route("/reset-password", methods=["POST"])
+def reset_password():
+    """Reset password using a token.
+
+    Request body:
+        {"token": "...", "new_password": "..."}
+    """
+    data = request.get_json(silent=True)
+    if not data or not data.get("token") or not data.get("new_password"):
+        return jsonify({"error": "token and new_password required"}), 400
+
+    try:
+        from education_system.shared.auth.password_reset import PasswordResetService
+        from education_system.shared.auth.db import AUTH_DB_FILE
+        svc = PasswordResetService(_auth_db_path or str(AUTH_DB_FILE))
+        svc.reset_password(data["token"], data["new_password"])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+    return jsonify({"message": "Password reset successful. Please login with your new password."})

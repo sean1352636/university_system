@@ -61,6 +61,23 @@ CREATE TABLE IF NOT EXISTS user_systems (
     UNIQUE(user_id, system_key)
 );
 
+CREATE TABLE IF NOT EXISTS password_history (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id         INTEGER NOT NULL,
+    password_hash   TEXT    NOT NULL,
+    created_at      TEXT    NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id     INTEGER NOT NULL,
+    token_hash  TEXT    NOT NULL,
+    expires_at  TEXT    NOT NULL,
+    created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 CREATE TABLE IF NOT EXISTS cross_system_notifications (
     id                  INTEGER PRIMARY KEY AUTOINCREMENT,
     sender_user_id      INTEGER NOT NULL,
@@ -76,6 +93,23 @@ CREATE TABLE IF NOT EXISTS cross_system_notifications (
     FOREIGN KEY (sender_user_id)    REFERENCES users(id),
     FOREIGN KEY (recipient_user_id) REFERENCES users(id)
 );
+
+CREATE TABLE IF NOT EXISTS consent_records (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id         INTEGER NOT NULL,
+    consent_type    TEXT    NOT NULL,
+    granted         INTEGER NOT NULL DEFAULT 0,
+    granted_at      TEXT,
+    withdrawn_at    TEXT,
+    ip_address      TEXT,
+    source          TEXT    DEFAULT 'manual',
+    version         TEXT    DEFAULT '1.0',
+    created_at      TEXT    NOT NULL DEFAULT (datetime('now')),
+    updated_at      TEXT    NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+CREATE INDEX IF NOT EXISTS idx_consent_user ON consent_records(user_id);
+CREATE INDEX IF NOT EXISTS idx_consent_type ON consent_records(consent_type);
 """
 
 # ── Default account definitions ──────────────────────────────────────────────

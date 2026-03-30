@@ -165,4 +165,84 @@ class RateLimiter:
             del self._buckets[k]
 
 
-rate_limiter = RateLimiter()
+class PersistentRateLimiter(RateLimiter):
+    """Rate limiter with SQLite persistence that survives restarts."""
+
+    def __init__(self, db_path: str | None = None):
+        super().__init__()
+        self._db_path = db_path
+        self._persistent = False
+        if db_path:
+            self._init_db()
+            self._persistent = True
+
+    def _init_db(self):
+        import sqlite3
+        conn = sqlite3.connect(self._db_path, timeout=10)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS rate_limit_buckets (
+                key TEXT PRIMARY KEY,
+                count INTEGER NOT NULL DEFAULT 0,
+                reset_at REAL NOT NULL,
+                max_count INTEGER NOT NULL
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_rl_reset ON rate_limit_buckets(reset_at)")
+        conn.commit()
+        conn.close()
+
+    def _check_rate(self, key: str, max_count: int, period: float) -> tuple[bool, dict]:
+        if not self._persistent:
+            return super()._check_rate(key, max_count, period)
+
+        import sqlite3
+        now = time.time()
+        conn = sqlite3.connect(self._db_path, timeout=10)
+        conn.row_factory = sqlite3.Row
+        try:
+            # Cleanup expired entries periodically
+            if now - self._last_cleanup > self._cleanup_interval:
+                conn.execute("DELETE FROM rate_limit_buckets WHERE reset_at < ?", (now,))
+                conn.commit()
+                self._last_cleanup = now
+
+            row = conn.execute(
+                "SELECT count, reset_at FROM rate_limit_buckets WHERE key = ?", (key,)
+            ).fetchone()
+
+            if not row or now > row["reset_at"]:
+                conn.execute(
+                    "INSERT OR REPLACE INTO rate_limit_buckets (key, count, reset_at, max_count) VALUES (?, 1, ?, ?)",
+                    (key, now + period, max_count),
+                )
+                conn.commit()
+                return True, {"limit": max_count, "remaining": max_count - 1, "reset": now + period}
+
+            new_count = row["count"] + 1
+            conn.execute(
+                "UPDATE rate_limit_buckets SET count = ? WHERE key = ?",
+                (new_count, key),
+            )
+            conn.commit()
+            remaining = max(0, max_count - new_count)
+            info = {"limit": max_count, "remaining": remaining, "reset": row["reset_at"]}
+            return (new_count <= max_count), info
+        finally:
+            conn.close()
+
+    def init_app(self, app):
+        """Register with Flask app, auto-detect DB path if not set."""
+        if not self._persistent:
+            # Try to use a DB path from the app config
+            db_path = app.config.get("RATE_LIMIT_DB_PATH")
+            if db_path:
+                self._db_path = db_path
+                self._init_db()
+                self._persistent = True
+                logger.info("Persistent rate limiting enabled: %s", db_path)
+            else:
+                logger.info("In-memory rate limiting (set RATE_LIMIT_DB_PATH for persistence)")
+        super().init_app(app)
+
+
+rate_limiter = PersistentRateLimiter()

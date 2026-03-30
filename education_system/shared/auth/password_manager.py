@@ -9,6 +9,28 @@ import bcrypt
 
 from education_system.shared.auth.defaults import MIN_PASSWORD_LENGTH
 
+# Top 100 common passwords (lowercase) - reject these regardless of complexity
+_COMMON_PASSWORDS = frozenset({
+    "password", "123456", "12345678", "qwerty", "abc123", "monkey", "1234567",
+    "letmein", "trustno1", "dragon", "baseball", "iloveyou", "master", "sunshine",
+    "ashley", "michael", "shadow", "123123", "654321", "superman", "qazwsx",
+    "football", "password1", "password123", "batman", "login",
+    "admin123", "admin1234", "staff123", "staff1234", "student123", "student1234",
+    "welcome", "welcome1", "changeme", "p@ssw0rd", "passw0rd", "p@ssword",
+    "p@ssword1", "qwerty123", "1q2w3e4r", "1qaz2wsx", "zaq1xsw2",
+    "password1!", "abcdef", "abcd1234", "121212", "flower", "hello", "charlie",
+    "donald", "loveme", "jordan", "access", "ranger", "buster", "thomas",
+    "robert", "soccer", "hockey", "killer", "george", "andrew", "pepper",
+    "ginger", "hunter", "dallas", "matrix", "yankees", "thunder", "starwars",
+    "princess", "mustang", "cheese", "corvette", "merlin", "cookie",
+    "summer", "winter", "spring", "autumn", "january", "february", "march",
+    "education", "teacher", "student", "school", "college", "university",
+    "parent123", "parent1234", "superadmin", "superadmin@123",
+})
+
+# Dummy hash for timing-attack prevention when no valid hash exists
+_DUMMY_HASH = bcrypt.hashpw(b"dummy", bcrypt.gensalt()).decode("utf-8")
+
 
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt."""
@@ -29,6 +51,8 @@ def verify_password(password: str, password_hash: str, legacy_salt: str | None =
     try:
         return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
     except (ValueError, AttributeError):
+        # Run dummy comparison to prevent timing oracle
+        bcrypt.checkpw(password.encode("utf-8"), _DUMMY_HASH.encode("utf-8"))
         return False
 
 
@@ -70,5 +94,8 @@ def validate_password_strength(password: str) -> tuple[bool, str]:
 
     if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
         return False, "Password must contain at least one special character."
+
+    if password.lower() in _COMMON_PASSWORDS:
+        return False, "Password is too common. Please choose a more unique password."
 
     return True, "Password meets requirements."

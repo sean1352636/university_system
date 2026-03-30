@@ -47,6 +47,12 @@ class FieldEncryptor:
                 self._fernet = Fernet(self._key.encode() if isinstance(self._key, str) else self._key)
             except Exception as e:
                 logger.error("Invalid encryption key")
+        if self._fernet is None:
+            logger.warning(
+                "SECURITY WARNING: ENCRYPTION_KEY not set — sensitive fields will be "
+                "stored in plaintext. Set the ENCRYPTION_KEY environment variable for "
+                "production deployments."
+            )
 
     @property
     def is_available(self) -> bool:
