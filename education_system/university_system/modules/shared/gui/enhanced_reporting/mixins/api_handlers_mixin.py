@@ -343,7 +343,9 @@ Enhanced Features: {'Available' if ENHANCED_AVAILABLE else 'Not Available'}
                                     messagebox.showwarning("Feature Unavailable", "Enhanced reporting not available")
                                 ])
                         except Exception as e:
-                            self.root.after(0, lambda: [
+                            _err = str(e)
+                            _err = str(e)
+                                self.update_status(f"Error: {_err}", "error"),
                                 self.update_status(f"Error: {str(e)}", "error"),
                                 messagebox.showerror("Error", f"Generation failed: {str(e)}")
                             ])
@@ -426,7 +428,7 @@ Enhanced Features: {'Available' if ENHANCED_AVAILABLE else 'Not Available'}
                 quality_report = DataQualityMonitor.run_quality_checks()
                 self.root.after(0, lambda: self.display_comprehensive_quality_results(quality_report))
             except Exception as e:
-                self.root.after(0, lambda: [
+                self.root.after(0, lambda _e=e: [
                     self.update_status("Quality check failed", "error"),
                     messagebox.showerror("Error", f"Quality check failed: {str(e)}")
                 ])
@@ -559,7 +561,7 @@ Summary:
                 predictions = PredictiveAnalytics.predict_dropout_risk()
                 self.root.after(0, lambda: self.display_comprehensive_predictions(predictions))
             except Exception as e:
-                self.root.after(0, lambda: [
+                self.root.after(0, lambda _e=e: [
                     self.update_status("Predictions failed", "error"),
                     messagebox.showerror("Error", f"Predictions failed: {str(e)}")
                 ])
@@ -715,7 +717,7 @@ Summary:
                 anomalies = PredictiveAnalytics.detect_anomalies()
                 self.root.after(0, lambda: self.display_comprehensive_anomalies(anomalies))
             except Exception as e:
-                self.root.after(0, lambda: [
+                self.root.after(0, lambda _e=e: [
                     self.update_status("Anomaly detection failed", "error"),
                     messagebox.showerror("Error", f"Anomaly detection failed: {str(e)}")
                 ])
@@ -877,7 +879,7 @@ Summary:
                     ])
 
             except Exception as e:
-                self.root.after(0, lambda: [
+                self.root.after(0, lambda _e=e: [
                     self.update_status("Correlation analysis failed", "error"),
                     messagebox.showerror("Error", f"Correlation analysis failed: {str(e)}")
                 ])
@@ -986,7 +988,7 @@ Summary:
                 ])
 
             except Exception as e:
-                self.root.after(0, lambda: [
+                self.root.after(0, lambda _e=e: [
                     self.update_status("Heatmap generation failed", "error"),
                     messagebox.showerror("Error", f"Heatmap generation failed: {str(e)}")
                 ])

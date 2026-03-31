@@ -141,9 +141,11 @@ class ReportsMixin:
                     ])
 
             except Exception as e:
+                _err = str(e)
+                _err = str(e)
                 self.root.after(0, lambda: [
-                    self.stop_progress(),
-                    self.update_status(f"Error: {str(e)}", "error"),
+                    self.update_status(f"Error: {_err}", "error"),
+                    self.update_status(f"Error: {_err}", "error"),
                     messagebox.showerror("Error", f"Failed to generate report: {str(e)}")
                 ])
 
@@ -469,6 +471,7 @@ University Reporting System
                     else:
                         self.root.after(0, lambda: messagebox.showwarning(
                             "Failed", "Report generation failed"))
+                    _err = str(e)
                 except Exception as e:
                     self.root.after(0, lambda: messagebox.showerror(
                         "Error", f"Report generation failed: {str(e)}"))
@@ -499,6 +502,7 @@ University Reporting System
                             "Success", f"Excel report generated!\n\nLocation: {report_path}"))
                     else:
                         self.root.after(0, lambda: messagebox.showwarning(
+                    _err = str(e)
                             "Failed", "Excel report generation failed"))
                 except Exception as e:
                     self.root.after(0, lambda: messagebox.showerror(
@@ -530,6 +534,7 @@ University Reporting System
                         self.root.after(0, lambda: self.show_visualization_result(
                             report_path, "Interactive Report", is_html=True))
                     else:
+                    _err = str(e)
                         self.root.after(0, lambda: messagebox.showwarning(
                             "Failed", "Interactive report generation failed"))
                 except Exception as e:

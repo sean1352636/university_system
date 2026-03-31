@@ -417,7 +417,7 @@ class PredictiveAnalyticsWindow:
                 
                 self.window.after(0, lambda: self.on_training_complete(success))
             except Exception as e:
-                self.window.after(0, lambda: messagebox.showerror(_("common.error"), f"Training failed: {e}"))
+                self.window.after(0, lambda _e=e: messagebox.showerror(_("common.error"), f"Training failed: {_e}"))
         
         threading.Thread(target=train_in_background, daemon=True).start()
     

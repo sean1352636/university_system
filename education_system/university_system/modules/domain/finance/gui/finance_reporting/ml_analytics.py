@@ -76,10 +76,10 @@ def run_risk_analysis(self):
                 self.show_comprehensive_risk_results(risk_students, anomalies)
             ])
         except Exception as e:
-            self.root.after(0, lambda: [
-                self.log_activity(f"Risk analysis error: {e}"),
+            self.root.after(0, lambda _e=e: [
+                self.log_activity(f"Risk analysis error: {_e}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Risk analysis failed: {e}")
+                messagebox.showerror("Error", f"Risk analysis failed: {_e}")
             ])
 
     thread = threading.Thread(target=risk_in_background)
@@ -223,10 +223,10 @@ def run_ml_model_training(self):
             ])
 
         except Exception as e:
-            self.root.after(0, lambda: [
-                self.log_activity(f"ML training error: {e}"),
+            self.root.after(0, lambda _e=e: [
+                self.log_activity(f"ML training error: {_e}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"ML model training failed: {e}")
+                messagebox.showerror("Error", f"ML model training failed: {_e}")
             ])
 
     thread = threading.Thread(target=train_in_background)
@@ -276,10 +276,10 @@ def run_anomaly_detection(self):
             ])
 
         except Exception as e:
-            self.root.after(0, lambda: [
-                self.log_activity(f"Anomaly detection error: {e}"),
+            self.root.after(0, lambda _e=e: [
+                self.log_activity(f"Anomaly detection error: {_e}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Anomaly detection failed: {e}")
+                messagebox.showerror("Error", f"Anomaly detection failed: {_e}")
             ])
 
     thread = threading.Thread(target=detect_in_background)
@@ -349,10 +349,10 @@ def run_cash_flow_forecasting(self):
             ])
 
         except Exception as e:
-            self.root.after(0, lambda: [
-                self.log_activity(f"Cash flow forecast error: {e}"),
+            self.root.after(0, lambda _e=e: [
+                self.log_activity(f"Cash flow forecast error: {_e}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Cash flow forecasting failed: {e}")
+                messagebox.showerror("Error", f"Cash flow forecasting failed: {_e}")
             ])
 
     thread = threading.Thread(target=forecast_in_background)
@@ -457,10 +457,10 @@ def run_peer_benchmarking(self):
             ])
 
         except Exception as e:
-            self.root.after(0, lambda: [
-                self.log_activity(f"Peer benchmarking error: {e}"),
+            self.root.after(0, lambda _e=e: [
+                self.log_activity(f"Peer benchmarking error: {_e}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Peer benchmarking failed: {e}")
+                messagebox.showerror("Error", f"Peer benchmarking failed: {_e}")
             ])
 
     thread = threading.Thread(target=benchmark_in_background)

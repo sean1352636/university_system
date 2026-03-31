@@ -712,7 +712,7 @@ class CalendarGUI(DashboardMixin, CalendarViewMixin, EventsViewMixin, AcademicVi
                         task()
                     except Exception as e:
                         gui_logger.error(f"Task failed: {e}")
-                        self.root.after(0, lambda: self._show_error(f"Operation failed: {e}"))
+                        self.root.after(0, lambda _e=e: self._show_error(f"Operation failed: {_e}"))
                     finally:
                         self.task_queue.task_done()
             except queue.Empty:

@@ -62,7 +62,7 @@ class ImportExportMixin:
             self.root.after(0, lambda: self.show_import_result(result))
 
         except Exception as e:
-            self.root.after(0, lambda: messagebox.showerror("Import Error", str(e)))
+            self.root.after(0, lambda _e=e: messagebox.showerror("Import Error", str(_e)))
         finally:
             self.root.after(0, lambda: self.status_var.set("Ready"))
             self.root.after(0, self.refresh_data)
@@ -106,10 +106,10 @@ class ImportExportMixin:
                 with open(file_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
             except json.JSONDecodeError as e:
-                self.root.after(0, lambda: messagebox.showerror("JSON Error", f"Invalid JSON format: {e}"))
+                self.root.after(0, lambda _e=e: messagebox.showerror("JSON Error", f"Invalid JSON format: {_e}"))
                 return
             except Exception as e:
-                self.root.after(0, lambda: messagebox.showerror("File Error", f"Could not read file: {e}"))
+                self.root.after(0, lambda _e=e: messagebox.showerror("File Error", f"Could not read file: {_e}"))
                 return
 
             # Handle both list of records and single record
@@ -225,7 +225,7 @@ class ImportExportMixin:
             self.root.after(0, lambda: self.show_import_result(result_message))
 
         except Exception as e:
-            self.root.after(0, lambda: messagebox.showerror("Import Error", f"Unexpected error: {str(e)}"))
+            self.root.after(0, lambda _e=e: messagebox.showerror("Import Error", f"Unexpected error: {str(_e)}"))
         finally:
             self.root.after(0, lambda: self.status_var.set("Ready"))
             self.root.after(0, self.refresh_data)

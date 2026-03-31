@@ -775,9 +775,9 @@ class ReportingSystemGUI(
                 ])
 
             except Exception as e:
+                err_msg = str(e)
                 self._schedule_on_ui_thread(lambda: [
-                    self.stop_progress(),
-                    self.update_status(f"Error refreshing data: {str(e)}", "error")
+                    self.update_status(f"Error refreshing data: {err_msg}", "error")
                 ])
 
         threading.Thread(target=refresh_task, daemon=True).start()

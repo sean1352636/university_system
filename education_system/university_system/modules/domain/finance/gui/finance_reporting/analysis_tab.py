@@ -201,10 +201,10 @@ def run_student_lifecycle_analysis(self):
                     messagebox.showinfo("Analysis Complete", "No data available for student lifecycle analysis")
                 ])
         except Exception as e:
-            self.root.after(0, lambda: [
-                self.log_activity(f"Lifecycle analysis error: {e}"),
+            self.root.after(0, lambda _e=e: [
+                self.log_activity(f"Lifecycle analysis error: {_e}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Student lifecycle analysis failed: {e}")
+                messagebox.showerror("Error", f"Student lifecycle analysis failed: {_e}")
             ])
 
     thread = threading.Thread(target=analysis_in_background)
@@ -382,10 +382,10 @@ def run_performance_optimization(self):
             ])
 
         except Exception as e:
-            self.root.after(0, lambda: [
-                self.log_activity(f"Performance optimization error: {e}"),
+            self.root.after(0, lambda _e=e: [
+                self.log_activity(f"Performance optimization error: {_e}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Performance optimization failed: {e}")
+                messagebox.showerror("Error", f"Performance optimization failed: {_e}")
             ])
 
     thread = threading.Thread(target=optimize_in_background)
@@ -468,10 +468,10 @@ def run_data_quality_assessment(self):
             ])
 
         except Exception as e:
-            self.root.after(0, lambda: [
-                self.log_activity(f"Data quality assessment error: {e}"),
+            self.root.after(0, lambda _e=e: [
+                self.log_activity(f"Data quality assessment error: {_e}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Data quality assessment failed: {e}")
+                messagebox.showerror("Error", f"Data quality assessment failed: {_e}")
             ])
 
     thread = threading.Thread(target=assess_in_background)
@@ -719,8 +719,8 @@ def run_yoy_analysis(self):
             conn.close()
 
         except Exception as e:
-            self.root.after(0, lambda: [
-                messagebox.showerror("Error", f"Year-over-year analysis failed: {e}"),
+            self.root.after(0, lambda _e=e: [
+                messagebox.showerror("Error", f"Year-over-year analysis failed: {_e}"),
                 self.update_status("Error")
             ])
 
@@ -953,8 +953,8 @@ def run_benchmarking_analysis(self):
                 ])
 
         except Exception as e:
-            self.root.after(0, lambda: [
-                messagebox.showerror("Error", f"Benchmarking analysis failed: {e}"),
+            self.root.after(0, lambda _e=e: [
+                messagebox.showerror("Error", f"Benchmarking analysis failed: {_e}"),
                 self.update_status("Error")
             ])
 
@@ -1070,10 +1070,10 @@ def run_payment_frequency_analysis(self):
             ])
 
         except Exception as e:
-            self.root.after(0, lambda: [
-                self.log_activity(f"Payment frequency analysis error: {e}"),
+            self.root.after(0, lambda _e=e: [
+                self.log_activity(f"Payment frequency analysis error: {_e}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Payment frequency analysis failed: {e}")
+                messagebox.showerror("Error", f"Payment frequency analysis failed: {_e}")
             ])
 
     thread = threading.Thread(target=frequency_in_background)
@@ -1146,10 +1146,10 @@ def run_fee_structure_analysis(self):
             ])
 
         except Exception as e:
-            self.root.after(0, lambda: [
-                self.log_activity(f"Fee structure analysis error: {e}"),
+            self.root.after(0, lambda _e=e: [
+                self.log_activity(f"Fee structure analysis error: {_e}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Fee structure analysis failed: {e}")
+                messagebox.showerror("Error", f"Fee structure analysis failed: {_e}")
             ])
 
     thread = threading.Thread(target=fee_analysis_in_background)
@@ -1232,10 +1232,10 @@ def run_student_retention_analysis(self):
             ])
 
         except Exception as e:
-            self.root.after(0, lambda: [
-                self.log_activity(f"Student retention analysis error: {e}"),
+            self.root.after(0, lambda _e=e: [
+                self.log_activity(f"Student retention analysis error: {_e}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Student retention analysis failed: {e}")
+                messagebox.showerror("Error", f"Student retention analysis failed: {_e}")
             ])
 
     thread = threading.Thread(target=retention_in_background)

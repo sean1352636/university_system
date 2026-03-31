@@ -307,10 +307,10 @@ class SchedulingMixin:
                         ])
 
                 except Exception as e:
-                    self.root.after(0, lambda: [
-                        self.stop_progress(),
-                        self.update_status(f"Error: {str(e)}", "error"),
-                        messagebox.showerror("Error", f"Error running scheduled report: {str(e)}")
+                    _err = str(e)
+                    self.root.after(0, lambda _e=_err: [
+                        self.update_status(f"Error: {_e}", "error"),
+                        messagebox.showerror("Error", f"Error running scheduled report: {_e}")
                     ])
 
             threading.Thread(target=run_task, daemon=True).start()

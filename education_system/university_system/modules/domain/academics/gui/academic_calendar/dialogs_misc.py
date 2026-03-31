@@ -441,7 +441,7 @@ class CalendarSyncDialog:
 
                 except Exception as e:
                     progress_dialog.after(0, progress_dialog.destroy)
-                    self.dialog.after(0, lambda: messagebox.showerror(_("academic_calendar.messages.sync_error"), _("academic_calendar.messages.sync_failed").format(error=e)))
+                    self.dialog.after(0, lambda _e=e: messagebox.showerror(_("academic_calendar.messages.sync_error"), _("academic_calendar.messages.sync_failed").format(error=_e)))
 
             sync_thread = threading.Thread(target=sync_worker, daemon=True)
             sync_thread.start()

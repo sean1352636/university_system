@@ -205,7 +205,7 @@ def train_prediction_model(self):
                 success = self.analytics.train_model()
                 self.root.after(0, lambda: self.on_model_trained(success))
             except Exception as e:
-                self.root.after(0, lambda: messagebox.showerror(_("common.error"), _("attendance.messages.model_training_error", error=str(e))))
+                self.root.after(0, lambda _e=e: messagebox.showerror(_("common.error"), _("attendance.messages.model_training_error", error=str(_e))))
 
         threading.Thread(target=train_model, daemon=True).start()
 

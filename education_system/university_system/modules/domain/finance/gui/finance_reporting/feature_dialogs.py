@@ -1247,8 +1247,8 @@ def generate_regulatory_reports(self):
             ])
 
         except Exception as e:
-            self.root.after(0, lambda: [
-                messagebox.showerror("Error", f"Regulatory report generation failed: {e}"),
+            self.root.after(0, lambda _e=e: [
+                messagebox.showerror("Error", f"Regulatory report generation failed: {_e}"),
                 self.update_status("Error")
             ])
 

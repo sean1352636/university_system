@@ -241,7 +241,7 @@ class ReportManager:
                 
             except Exception as e:
                 sys.stdout = old_stdout
-                self.root.after(0, lambda: messagebox.showerror("Report Error", f"Failed to generate revenue report: {str(e)}"))
+                self.root.after(0, lambda _e=e: messagebox.showerror("Report Error", f"Failed to generate revenue report: {str(_e)}"))
         
         threading.Thread(target=generate_thread, daemon=True).start()
     
@@ -264,7 +264,7 @@ class ReportManager:
                 
             except Exception as e:
                 sys.stdout = old_stdout
-                self.root.after(0, lambda: messagebox.showerror("Report Error", f"Failed to generate student summary: {str(e)}"))
+                self.root.after(0, lambda _e=e: messagebox.showerror("Report Error", f"Failed to generate student summary: {str(_e)}"))
         
         threading.Thread(target=generate_thread, daemon=True).start()
     
@@ -287,7 +287,7 @@ class ReportManager:
                 
             except Exception as e:
                 sys.stdout = old_stdout
-                self.root.after(0, lambda: messagebox.showerror("Report Error", f"Failed to generate overdue report: {str(e)}"))
+                self.root.after(0, lambda _e=e: messagebox.showerror("Report Error", f"Failed to generate overdue report: {str(_e)}"))
         
         threading.Thread(target=generate_thread, daemon=True).start()
     
@@ -315,7 +315,7 @@ class ReportManager:
                 
             except Exception as e:
                 sys.stdout = old_stdout
-                self.root.after(0, lambda: messagebox.showerror("Report Error", f"Failed to generate collection report: {str(e)}"))
+                self.root.after(0, lambda _e=e: messagebox.showerror("Report Error", f"Failed to generate collection report: {str(_e)}"))
         
         threading.Thread(target=generate_thread, daemon=True).start()
     
@@ -338,7 +338,7 @@ class ReportManager:
                 
             except Exception as e:
                 sys.stdout = old_stdout
-                self.root.after(0, lambda: messagebox.showerror("Report Error", f"Failed to generate aid report: {str(e)}"))
+                self.root.after(0, lambda _e=e: messagebox.showerror("Report Error", f"Failed to generate aid report: {str(_e)}"))
         
         threading.Thread(target=generate_thread, daemon=True).start()
     
@@ -361,7 +361,7 @@ class ReportManager:
                 
             except Exception as e:
                 sys.stdout = old_stdout
-                self.root.after(0, lambda: messagebox.showerror("Report Error", f"Failed to generate budget analysis: {str(e)}"))
+                self.root.after(0, lambda _e=e: messagebox.showerror("Report Error", f"Failed to generate budget analysis: {str(_e)}"))
         
         threading.Thread(target=generate_thread, daemon=True).start()
     
@@ -384,7 +384,7 @@ class ReportManager:
                 
             except Exception as e:
                 sys.stdout = old_stdout
-                self.root.after(0, lambda: messagebox.showerror("Report Error", f"Failed to generate forecast report: {str(e)}"))
+                self.root.after(0, lambda _e=e: messagebox.showerror("Report Error", f"Failed to generate forecast report: {str(_e)}"))
         
         threading.Thread(target=generate_thread, daemon=True).start()
     

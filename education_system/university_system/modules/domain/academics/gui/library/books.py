@@ -630,7 +630,7 @@ def lookup_isbn_data(self, dialog):
             dialog.after(0, lambda: self._populate_book_data(book_data, dialog, original_text))
 
         except (urllib.error.URLError, json.JSONDecodeError, tk.TclError, ValueError) as e:
-            dialog.after(0, lambda: self._handle_lookup_error(str(e), dialog, original_text))
+            dialog.after(0, lambda _e=e: self._handle_lookup_error(str(_e), dialog, original_text))
 
     # Start lookup in background thread
     thread = threading.Thread(target=lookup_thread, daemon=True)

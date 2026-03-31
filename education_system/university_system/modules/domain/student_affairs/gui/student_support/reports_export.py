@@ -955,7 +955,7 @@ Features:
                 self.root.after(0, lambda: self.show_report_window(report_type, report_data, date_range))
                 
             except Exception as e:
-                self.root.after(0, lambda: messagebox.showerror("Report Error", f"Failed to generate report: {e}"))
+                self.root.after(0, lambda _e=e: messagebox.showerror("Report Error", f"Failed to generate report: {_e}"))
                 self.root.after(0, lambda: self.update_status("Report generation failed"))
         
         # Run in background thread

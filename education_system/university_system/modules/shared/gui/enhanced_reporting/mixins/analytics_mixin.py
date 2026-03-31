@@ -31,10 +31,9 @@ class AnalyticsMixin:
                 quality_report = DataQualityMonitor.run_quality_checks()
                 self.root.after(0, lambda: self._display_quality_results(quality_report))
             except Exception as e:
-                self.root.after(0, lambda: [
-                    self.stop_progress(),
-                    self.update_status(f"Quality check failed: {str(e)}", "error"),
-                    messagebox.showerror("Error", f"Failed to run quality check: {str(e)}")
+                self.root.after(0, lambda _e=e: [
+                    self.update_status(f"Quality check failed: {_e}", "error"),
+                    messagebox.showerror("Error", f"Failed to run quality check: {str(_e)}")
                 ])
 
         threading.Thread(target=quality_task, daemon=True).start()
@@ -169,10 +168,10 @@ class AnalyticsMixin:
                 predictions = PredictiveAnalytics.predict_dropout_risk()
                 self.root.after(0, lambda: self._display_predictions_results(predictions))
             except Exception as e:
-                self.root.after(0, lambda: [
+                self.root.after(0, lambda _e=e: [
                     self.stop_progress(),
-                    self.update_status(f"Predictions failed: {str(e)}", "error"),
-                    messagebox.showerror("Error", f"Failed to run predictions: {str(e)}")
+                    self.update_status(f"Predictions failed: {str(_e)}", "error"),
+                    messagebox.showerror("Error", f"Failed to run predictions: {str(_e)}")
                 ])
 
         threading.Thread(target=predictions_task, daemon=True).start()
@@ -263,10 +262,10 @@ class AnalyticsMixin:
                 anomalies = PredictiveAnalytics.detect_anomalies()
                 self.root.after(0, lambda: self._display_anomaly_results(anomalies))
             except Exception as e:
-                self.root.after(0, lambda: [
+                self.root.after(0, lambda _e=e: [
                     self.stop_progress(),
-                    self.update_status(f"Anomaly detection failed: {str(e)}", "error"),
-                    messagebox.showerror("Error", f"Failed to run anomaly detection: {str(e)}")
+                    self.update_status(f"Anomaly detection failed: {str(_e)}", "error"),
+                    messagebox.showerror("Error", f"Failed to run anomaly detection: {str(_e)}")
                 ])
 
         threading.Thread(target=anomaly_task, daemon=True).start()
@@ -355,10 +354,10 @@ class AnalyticsMixin:
                 ])
 
             except Exception as e:
-                self.root.after(0, lambda: [
+                self.root.after(0, lambda _e=e: [
                     self.stop_progress(),
-                    self.update_status(f"Correlation analysis failed: {str(e)}", "error"),
-                    messagebox.showerror("Error", f"Failed to run correlation analysis: {str(e)}")
+                    self.update_status(f"Correlation analysis failed: {str(_e)}", "error"),
+                    messagebox.showerror("Error", f"Failed to run correlation analysis: {str(_e)}")
                 ])
 
         threading.Thread(target=correlation_task, daemon=True).start()
@@ -393,8 +392,8 @@ class AnalyticsMixin:
                     quality_report = DataQualityMonitor.run_quality_checks()
                     self.root.after(0, lambda: self.display_quality_checks_results(quality_report))
                 except Exception as e:
-                    self.root.after(0, lambda: messagebox.showerror(
-                        "Error", f"Quality check failed: {str(e)}"))
+                    self.root.after(0, lambda _e=e: messagebox.showerror(
+                        "Error", f"Quality check failed: {str(_e)}"))
                 finally:
                     self.root.after(0, self.stop_progress)
                     self.root.after(0, lambda: self.update_status("Quality checks complete"))
@@ -585,8 +584,8 @@ class AnalyticsMixin:
                         self.root.after(0, lambda: messagebox.showwarning(
                             "No Data", "Insufficient data to create correlation matrix"))
                 except Exception as e:
-                    self.root.after(0, lambda: messagebox.showerror(
-                        "Error", f"Failed to create correlation matrix: {str(e)}"))
+                    self.root.after(0, lambda _e=e: messagebox.showerror(
+                        "Error", f"Failed to create correlation matrix: {str(_e)}"))
                 finally:
                     self.root.after(0, self.stop_progress)
                     self.root.after(0, lambda: self.update_status("Ready"))
@@ -650,8 +649,8 @@ class AnalyticsMixin:
                         self.root.after(0, lambda: messagebox.showwarning(
                             "No Data", "Could not create dashboard"))
                 except Exception as e:
-                    self.root.after(0, lambda: messagebox.showerror(
-                        "Error", f"Failed to create dashboard: {str(e)}"))
+                    self.root.after(0, lambda _e=e: messagebox.showerror(
+                        "Error", f"Failed to create dashboard: {str(_e)}"))
                 finally:
                     self.root.after(0, self.stop_progress)
                     self.root.after(0, lambda: self.update_status("Ready"))
@@ -698,6 +697,7 @@ class AnalyticsMixin:
                 return
 
             self.update_status("Detecting anomalies...")
+                    _err = str(e)
             self.start_progress()
 
             def detect():
@@ -723,6 +723,7 @@ class AnalyticsMixin:
                 messagebox.showwarning("Not Available", "Enhanced features not available")
                 return
 
+                    _err = str(e)
             self.update_status("Predicting dropout risk...")
             self.start_progress()
 

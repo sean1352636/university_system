@@ -238,7 +238,7 @@ def generate_quick_report(self):
             ])
 
         except Exception as e:
-            self.root.after(0, lambda: messagebox.showerror("Error", f"Failed to generate report: {e}"))
+            self.root.after(0, lambda _e=e: messagebox.showerror("Error", f"Failed to generate report: {_e}"))
 
     thread = threading.Thread(target=generate_in_background)
     thread.daemon = True

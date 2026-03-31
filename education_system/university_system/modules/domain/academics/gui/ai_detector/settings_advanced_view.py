@@ -160,7 +160,7 @@ def train_models(self):
             result = self.detector.train_advanced_models()
             self.root.after(0, lambda: self.training_complete(result))
         except Exception as e:
-            self.root.after(0, lambda: self.training_error(str(e)))
+            self.root.after(0, lambda _e=e: self.training_error(str(_e)))
 
     threading.Thread(target=train_thread, daemon=True).start()
 

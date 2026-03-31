@@ -790,12 +790,13 @@ class MaintenanceManager:
                 ])
     
             except Exception as e:
+                err_msg = str(e)
                 progress_var.set(0)
                 status_label.config(text="Backup failed!")
                 progress_window.update()
                 self.root.after(1000, lambda: [
                     progress_window.destroy(),
-                    messagebox.showerror("Backup Error", f"Failed to create backup: {str(e)}")
+                    messagebox.showerror("Backup Error", f"Failed to create backup: {err_msg}")
                 ])
     
         # Start backup in background

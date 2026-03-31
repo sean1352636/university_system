@@ -288,7 +288,7 @@ def train_risk_model(self):
                     self.detector.predictive_analytics.train_risk_prediction_model()
                     self.root.after(0, lambda: self.training_complete("Risk prediction model"))
                 except Exception as e:
-                    self.root.after(0, lambda: self.training_error(str(e)))
+                    self.root.after(0, lambda _e=e: self.training_error(str(_e)))
 
             threading.Thread(target=train_thread, daemon=True).start()
         else:
