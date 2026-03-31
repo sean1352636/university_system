@@ -343,11 +343,9 @@ Enhanced Features: {'Available' if ENHANCED_AVAILABLE else 'Not Available'}
                                     messagebox.showwarning("Feature Unavailable", "Enhanced reporting not available")
                                 ])
                         except Exception as e:
-                            _err = str(e)
-                            _err = str(e)
-                                self.update_status(f"Error: {_err}", "error"),
-                                self.update_status(f"Error: {str(e)}", "error"),
-                                messagebox.showerror("Error", f"Generation failed: {str(e)}")
+                            self.root.after(0, lambda _e=e: [
+                                self.update_status(f"Error: {str(_e)}", "error"),
+                                messagebox.showerror("Error", f"Generation failed: {str(_e)}")
                             ])
 
                     threading.Thread(target=generate_task, daemon=True).start()
@@ -430,7 +428,7 @@ Enhanced Features: {'Available' if ENHANCED_AVAILABLE else 'Not Available'}
             except Exception as e:
                 self.root.after(0, lambda _e=e: [
                     self.update_status("Quality check failed", "error"),
-                    messagebox.showerror("Error", f"Quality check failed: {str(e)}")
+                    messagebox.showerror("Error", f"Quality check failed: {str(_e)}")
                 ])
 
         threading.Thread(target=quality_task, daemon=True).start()
@@ -563,7 +561,7 @@ Summary:
             except Exception as e:
                 self.root.after(0, lambda _e=e: [
                     self.update_status("Predictions failed", "error"),
-                    messagebox.showerror("Error", f"Predictions failed: {str(e)}")
+                    messagebox.showerror("Error", f"Predictions failed: {str(_e)}")
                 ])
 
         threading.Thread(target=predictions_task, daemon=True).start()
@@ -719,7 +717,7 @@ Summary:
             except Exception as e:
                 self.root.after(0, lambda _e=e: [
                     self.update_status("Anomaly detection failed", "error"),
-                    messagebox.showerror("Error", f"Anomaly detection failed: {str(e)}")
+                    messagebox.showerror("Error", f"Anomaly detection failed: {str(_e)}")
                 ])
 
         threading.Thread(target=anomaly_task, daemon=True).start()
@@ -881,7 +879,7 @@ Summary:
             except Exception as e:
                 self.root.after(0, lambda _e=e: [
                     self.update_status("Correlation analysis failed", "error"),
-                    messagebox.showerror("Error", f"Correlation analysis failed: {str(e)}")
+                    messagebox.showerror("Error", f"Correlation analysis failed: {str(_e)}")
                 ])
 
         threading.Thread(target=correlation_task, daemon=True).start()
@@ -990,7 +988,7 @@ Summary:
             except Exception as e:
                 self.root.after(0, lambda _e=e: [
                     self.update_status("Heatmap generation failed", "error"),
-                    messagebox.showerror("Error", f"Heatmap generation failed: {str(e)}")
+                    messagebox.showerror("Error", f"Heatmap generation failed: {str(_e)}")
                 ])
 
         threading.Thread(target=heatmap_task, daemon=True).start()

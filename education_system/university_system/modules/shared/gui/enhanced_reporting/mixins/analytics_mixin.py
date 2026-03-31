@@ -697,7 +697,6 @@ class AnalyticsMixin:
                 return
 
             self.update_status("Detecting anomalies...")
-                    _err = str(e)
             self.start_progress()
 
             def detect():
@@ -705,8 +704,8 @@ class AnalyticsMixin:
                     anomalies = PredictiveAnalytics.detect_anomalies()
                     self.root.after(0, lambda: self.display_comprehensive_anomalies(anomalies))
                 except Exception as e:
-                    self.root.after(0, lambda: messagebox.showerror(
-                        "Error", f"Anomaly detection failed: {str(e)}"))
+                    self.root.after(0, lambda _e=e: messagebox.showerror(
+                        "Error", f"Anomaly detection failed: {str(_e)}"))
                 finally:
                     self.root.after(0, self.stop_progress)
                     self.root.after(0, lambda: self.update_status("Anomaly detection complete"))
@@ -723,7 +722,6 @@ class AnalyticsMixin:
                 messagebox.showwarning("Not Available", "Enhanced features not available")
                 return
 
-                    _err = str(e)
             self.update_status("Predicting dropout risk...")
             self.start_progress()
 
@@ -732,8 +730,8 @@ class AnalyticsMixin:
                     predictions = PredictiveAnalytics.predict_dropout_risk()
                     self.root.after(0, lambda: self.display_comprehensive_predictions(predictions))
                 except Exception as e:
-                    self.root.after(0, lambda: messagebox.showerror(
-                        "Error", f"Prediction failed: {str(e)}"))
+                    self.root.after(0, lambda _e=e: messagebox.showerror(
+                        "Error", f"Prediction failed: {str(_e)}"))
                 finally:
                     self.root.after(0, self.stop_progress)
                     self.root.after(0, lambda: self.update_status("Prediction complete"))

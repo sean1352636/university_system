@@ -39,12 +39,9 @@ class MaintenanceMixin:
                 ])
 
             except Exception as e:
-                _err = str(e)
-                _err = str(e)
-                self.root.after(0, lambda: [
-                    self.update_status(f"Cleanup failed: {_err}", "error"),
-                    self.update_status(f"Cleanup failed: {_err}", "error"),
-                    messagebox.showerror("Error", f"Failed to clean old reports: {str(e)}")
+                self.root.after(0, lambda _e=e: [
+                    self.update_status(f"Cleanup failed: {_e}", "error"),
+                    messagebox.showerror("Error", f"Failed to clean old reports: {str(_e)}")
                 ])
 
         threading.Thread(target=clean_task, daemon=True).start()
@@ -65,12 +62,11 @@ class MaintenanceMixin:
                     messagebox.showinfo("Success", "Cache cleared successfully!")
                 ])
 
-                _err = str(e)
             except Exception as e:
                 self.root.after(0, lambda _e=e: [
                     self.stop_progress(),
-                    self.update_status(f"Cache clear failed: {str(e)}", "error"),
-                    messagebox.showerror("Error", f"Failed to clear cache: {str(e)}")
+                    self.update_status(f"Cache clear failed: {str(_e)}", "error"),
+                    messagebox.showerror("Error", f"Failed to clear cache: {str(_e)}")
                 ])
 
         threading.Thread(target=cache_task, daemon=True).start()
@@ -99,13 +95,12 @@ class MaintenanceMixin:
                     self.update_status("Database optimized"),
                     messagebox.showinfo("Success", "Database optimized successfully!")
                 ])
-                _err = str(e)
 
             except Exception as e:
                 self.root.after(0, lambda _e=e: [
                     self.stop_progress(),
-                    self.update_status(f"Optimization failed: {str(e)}", "error"),
-                    messagebox.showerror("Error", f"Failed to optimize database: {str(e)}")
+                    self.update_status(f"Optimization failed: {str(_e)}", "error"),
+                    messagebox.showerror("Error", f"Failed to optimize database: {str(_e)}")
                 ])
 
         threading.Thread(target=optimize_task, daemon=True).start()
@@ -125,14 +120,13 @@ class MaintenanceMixin:
                     self.update_status("All maintenance completed"),
                     self.refresh_data(),
                     messagebox.showinfo("Success", "All maintenance tasks completed successfully!")
-                _err = str(e)
                 ])
 
             except Exception as e:
                 self.root.after(0, lambda _e=e: [
                     self.stop_progress(),
-                    self.update_status(f"Maintenance failed: {str(e)}", "error"),
-                    messagebox.showerror("Error", f"Failed to run maintenance: {str(e)}")
+                    self.update_status(f"Maintenance failed: {str(_e)}", "error"),
+                    messagebox.showerror("Error", f"Failed to run maintenance: {str(_e)}")
                 ])
 
         threading.Thread(target=maintenance_task, daemon=True).start()
