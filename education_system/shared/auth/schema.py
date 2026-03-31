@@ -2,6 +2,9 @@
 
 import hashlib
 import logging
+import os
+
+import bcrypt
 
 from education_system.shared.auth.db import connect
 from education_system.shared.auth.password_manager import hash_password
@@ -122,6 +125,27 @@ CREATE TABLE IF NOT EXISTS security_questions (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 CREATE INDEX IF NOT EXISTS idx_security_questions_user ON security_questions(user_id);
+
+CREATE TABLE IF NOT EXISTS sq_verification_attempts (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    username    TEXT    NOT NULL,
+    success     INTEGER NOT NULL DEFAULT 0,
+    ip_address  TEXT,
+    created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_sq_attempts_user ON sq_verification_attempts(username, created_at);
+
+CREATE TABLE IF NOT EXISTS security_audit_log (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_type  TEXT    NOT NULL,
+    username    TEXT,
+    user_id     INTEGER,
+    detail      TEXT,
+    ip_address  TEXT,
+    created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_audit_event ON security_audit_log(event_type, created_at);
+CREATE INDEX IF NOT EXISTS idx_audit_user ON security_audit_log(username, created_at);
 """
 
 # ── Default account definitions ──────────────────────────────────────────────
@@ -274,8 +298,8 @@ _DEFAULT_ACCOUNTS = [
 
 
 # ── Default security questions for demo accounts ────────────────────────────
-# Maps username → list of (question, answer) tuples
-# Answers are stored as lowercase SHA-256 hashes in the database.
+# Maps username → list of (question, answer) tuples.
+# Only seeded when EDU_DEV_SEED=true or the database is brand-new (empty).
 _DEFAULT_SECURITY_QA = {
     "superadmin": [
         ("What is your mother's maiden name?", "smith"),
@@ -304,20 +328,75 @@ _DEFAULT_SECURITY_QA = {
     ],
 }
 
-# Canonical list of security questions users can choose from
+# Canonical list of security questions users can choose from.
+# Includes knowledge-based, behavioral, and preference-based options.
 SECURITY_QUESTIONS = [
+    # Knowledge-based
     "What is your mother's maiden name?",
     "What city were you born in?",
     "What is the name of your first pet?",
     "What was the name of your first school?",
+    # Preference-based
     "What is your favourite book?",
     "What is your favourite film?",
+    "What is your favourite food?",
+    # Behavioral
+    "What street did you grow up on?",
+    "What was the first concert you attended?",
+    "What was the make of your first car?",
+    "What is the middle name of your oldest sibling?",
+    "What was the name of your childhood best friend?",
 ]
+
+# ── Security-answer policy ──────────────────────────────────────────────────
+
+MIN_ANSWER_LENGTH = 2
+
+# Answers that are too common / obvious to provide meaningful security.
+BANNED_ANSWERS = frozenset({
+    "password", "123456", "none", "n/a", "na", "test", "unknown", "no",
+    "yes", "default", "abc", "xxx", "admin", "user", "answer", "secret",
+    "idk", "null", "blank", "nothing", "same", "me", "myself",
+})
 
 
 def _hash_answer(answer: str) -> str:
-    """Hash a security question answer (case-insensitive)."""
-    return hashlib.sha256(answer.strip().lower().encode()).hexdigest()
+    """Hash a security question answer with bcrypt (case-insensitive).
+
+    Uses bcrypt for adaptive-cost offline attack resistance, unlike the
+    previous SHA-256 approach which was fast and unsalted.
+    """
+    normalised = answer.strip().lower().encode("utf-8")
+    return bcrypt.hashpw(normalised, bcrypt.gensalt()).decode("utf-8")
+
+
+def _verify_answer(answer: str, answer_hash: str) -> bool:
+    """Verify a security question answer against its bcrypt hash.
+
+    Also supports legacy SHA-256 hashes (64 hex chars, no ``$`` prefix)
+    for answers stored before the bcrypt upgrade.
+    """
+    normalised = answer.strip().lower().encode("utf-8")
+    # Legacy SHA-256 detection: 64 hex chars, no bcrypt "$2" prefix
+    if len(answer_hash) == 64 and not answer_hash.startswith("$"):
+        return hashlib.sha256(normalised).hexdigest() == answer_hash
+    try:
+        return bcrypt.checkpw(normalised, answer_hash.encode("utf-8"))
+    except (ValueError, AttributeError):
+        return False
+
+
+def validate_answer(answer: str) -> tuple[bool, str]:
+    """Validate a security-question answer against policy rules.
+
+    Returns (is_valid, error_message).
+    """
+    stripped = answer.strip()
+    if len(stripped) < MIN_ANSWER_LENGTH:
+        return False, f"Answer must be at least {MIN_ANSWER_LENGTH} characters."
+    if stripped.lower() in BANNED_ANSWERS:
+        return False, "That answer is too common. Please choose something more specific."
+    return True, ""
 
 
 def initialise_auth_db(db_path: str | None = None):
@@ -340,14 +419,38 @@ def initialise_auth_db(db_path: str | None = None):
         conn.close()
 
 
+def _is_dev_mode() -> bool:
+    """Check whether dev/demo seeding is enabled.
+
+    Returns True when EDU_DEV_SEED is set to a truthy value, or when the
+    environment doesn't explicitly disable it (backwards-compatible default
+    for local development).  Set ``EDU_DEV_SEED=false`` in production.
+    """
+    val = os.environ.get("EDU_DEV_SEED", "").strip().lower()
+    if val in ("0", "false", "no", "off"):
+        return False
+    # If explicitly set to truthy, always seed
+    if val in ("1", "true", "yes", "on"):
+        return True
+    # Default: seed only for fresh databases (see caller)
+    return True
+
+
 def seed_default_users(db_path: str | None = None):
     """Create the default user accounts on first run, and ensure all system
-    access records exist for existing databases that are being upgraded."""
+    access records exist for existing databases that are being upgraded.
+
+    In non-dev environments (``EDU_DEV_SEED=false``), existing databases are
+    *not* re-seeded with demo accounts or security Q&A.
+    """
+    dev_mode = _is_dev_mode()
     conn = connect(db_path)
     try:
         row = conn.execute("SELECT COUNT(*) as cnt FROM users").fetchone()
-        if row["cnt"] == 0:
-            # Fresh database — create everything
+        is_fresh = row["cnt"] == 0
+
+        if is_fresh:
+            # Fresh database — always create defaults so the system is usable
             for acct in _DEFAULT_ACCOUNTS:
                 _create_default_user(
                     conn,
@@ -362,13 +465,19 @@ def seed_default_users(db_path: str | None = None):
             logger.info("Seeded %d default auth accounts", len(_DEFAULT_ACCOUNTS))
             logger.warning(
                 "Default accounts use WEAK passwords (e.g. admin123, staff1234). "
-                "Change them before any production or internet-facing deployment."
+                "Change them before any production or internet-facing deployment. "
+                "Set EDU_DEV_SEED=false in production to prevent re-seeding."
             )
-        else:
-            # Existing database — ensure new accounts and system access exist
+        elif dev_mode:
+            # Existing database in dev mode — ensure new accounts exist
             _ensure_default_accounts(conn)
             _seed_security_questions(conn)
             conn.commit()
+        else:
+            logger.debug(
+                "Skipping demo account seeding (EDU_DEV_SEED is not enabled "
+                "and database already has %d users)", row["cnt"],
+            )
     finally:
         conn.close()
 

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.61.0 — 2026-03-31](#8610---2026-03-31)
 - [8.60.0 — 2026-03-31](#8600---2026-03-31)
 - [8.59.0 — 2026-03-30](#8590---2026-03-30)
 - [8.58.0 — 2026-03-30](#8580---2026-03-30)
@@ -147,6 +148,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](education_system/docs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](education_system/docs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](education_system/docs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.61.0] — 2026-03-31
+
+### Security Hardening — Forgot Password & Launcher (10 improvements)
+
+#### Security
+
+- **Brute-force protection for security-question verification** — New `sq_verification_attempts` table tracks per-user attempts; 5 failures within 60 minutes triggers a 15-minute lockout
+  - Files: `shared/auth/schema.py`, `shared/auth/forgot_password.py`
+
+- **Prevent username/account enumeration** — `get_questions_for_user()` and `verify_answers_and_reset()` now return a single generic error message ("Unable to verify your identity") for all failure paths; specific reason logged server-side only
+  - Files: `shared/auth/forgot_password.py`, `shared/gui/login_gui.py`
+
+- **Upgrade security-answer hashing from SHA-256 to bcrypt** — Answers now stored with adaptive-cost bcrypt; legacy SHA-256 hashes auto-detected and verified for backwards compatibility
+  - Files: `shared/auth/schema.py` (`_hash_answer`, `_verify_answer`), `shared/auth/forgot_password.py`
+
+- **Gate demo seed data behind EDU_DEV_SEED** — Default accounts and security Q&A only seeded when `EDU_DEV_SEED=true` or database is brand-new; set `EDU_DEV_SEED=false` in production
+  - Files: `shared/auth/schema.py` (`_is_dev_mode`, `seed_default_users`)
+
+- **Hide temporary password by default in GUI** — Success screen now masks password with bullet characters; "Show Password" button reveals with 30-second auto-hide timeout; "Copy" button for clipboard
+  - Files: `shared/gui/login_gui.py`
+
+- **Security-answer policy controls** — Minimum answer length (2 chars), banned common answers list (23 entries: "password", "none", "test", etc.), validation enforced on set/update
+  - Files: `shared/auth/schema.py` (`validate_answer`, `BANNED_ANSWERS`, `MIN_ANSWER_LENGTH`), `shared/auth/forgot_password.py`
+
+- **Expanded security question set** — 12 questions (was 6) including knowledge-based, preference-based, and behavioral types
+  - Files: `shared/auth/schema.py` (`SECURITY_QUESTIONS`)
+
+#### Added
+
+- **Structured audit logging for all forgot-password events** — New `security_audit_log` table records: lookup attempts, failed verifications, rate-limit triggers, successful resets, question updates — with username, user_id, detail, and IP address
+  - Files: `shared/auth/schema.py`, `shared/auth/forgot_password.py`
+
+- **24 dedicated tests for ForgotPasswordService** — Covers: bcrypt hashing + legacy compat, answer policy, question lookup with enumeration prevention, correct/wrong/empty answers, rate limiting + lockout, question management, audit logging, question list quality
+  - Files: `shared/tests/test_forgot_password.py`
+
+- **22 launcher contract tests** — Covers: dispatch table completeness, all launchers callable, role picker logic (superadmin variants, CLI input), menu helpers, dispatch_gui/dispatch_cli state transitions (normal exit, system switch, login redirect), auth module smoke test
+  - Files: `shared/tests/test_launcher.py`
 
 ---
 

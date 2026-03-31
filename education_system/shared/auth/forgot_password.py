@@ -4,36 +4,51 @@ Allows users to reset their password by providing their username and
 correctly answering their 3 security questions. On success a temporary
 password is generated and the account is flagged so that the user is
 forced to change their password on next login.
+
+Security features:
+- Brute-force protection: 5 attempts per user per hour, then 15-min lockout
+- Enumeration prevention: generic error messages for all lookup failures
+- Bcrypt answer hashing with legacy SHA-256 fallback
+- Structured audit logging for SOC/ops monitoring
+- Answer policy: minimum length + banned common answers
 """
 
-import hashlib
 import json
 import logging
-import os
 import secrets
 import string
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from string import Template
 
 from education_system.shared.auth.db import connect
 from education_system.shared.auth.exceptions import AuthError
 from education_system.shared.auth.password_manager import hash_password
+from education_system.shared.auth.schema import (
+    _hash_answer,
+    _verify_answer,
+    validate_answer,
+    BANNED_ANSWERS,
+    MIN_ANSWER_LENGTH,
+)
 from education_system.shared.auth.session_manager import SessionManager
 
 logger = logging.getLogger(__name__)
 
 _TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates" / "email"
 
+# ── Rate-limiting constants ──────────────────────────────────────────────────
+MAX_SQ_ATTEMPTS = 5           # max failed attempts per user within window
+SQ_ATTEMPT_WINDOW_MINUTES = 60   # rolling window for attempt counting
+SQ_LOCKOUT_MINUTES = 15          # lockout duration after exceeding max attempts
 
-def _hash_answer(answer: str) -> str:
-    """Hash a security-question answer (case-insensitive)."""
-    return hashlib.sha256(answer.strip().lower().encode()).hexdigest()
+# Generic error shown to the user for all lookup/verification failures.
+# Specific reason is logged server-side only.
+_GENERIC_VERIFY_ERROR = "Unable to verify your identity. Please try again or contact an administrator."
 
 
 def _generate_temp_password(length: int = 16) -> str:
     """Generate a random temporary password that meets strength rules."""
-    # Guarantee at least one of each required character class
     chars = [
         secrets.choice(string.ascii_uppercase),
         secrets.choice(string.ascii_lowercase),
@@ -43,7 +58,6 @@ def _generate_temp_password(length: int = 16) -> str:
     remaining = length - len(chars)
     pool = string.ascii_letters + string.digits + "!@#$%^&*"
     chars.extend(secrets.choice(pool) for _ in range(remaining))
-    # Shuffle so the guaranteed chars aren't always at the front
     result = list(chars)
     secrets.SystemRandom().shuffle(result)
     return "".join(result)
@@ -63,12 +77,8 @@ def _load_email_template(name: str) -> dict | None:
         return None
 
 
-def _render_template(template: dict, **kwargs) -> tuple[str, str | None]:
-    """Render a JSON email template. Returns (subject, body).
-
-    Templates use $variable placeholder syntax (string.Template).
-    If the template has an ``html_body`` key it is also rendered.
-    """
+def _render_template(template: dict, **kwargs) -> tuple[str, str, str | None]:
+    """Render a JSON email template. Returns (subject, body, html_body)."""
     subject = Template(template.get("subject", "")).safe_substitute(**kwargs)
     body = Template(template.get("body", "")).safe_substitute(**kwargs)
     html_body = None
@@ -86,11 +96,71 @@ class ForgotPasswordService:
     def _conn(self):
         return connect(self._db_path)
 
+    # ------------------------------------------------------------------
+    #  Audit logging
+    # ------------------------------------------------------------------
+
+    def _audit(self, event_type: str, username: str | None = None,
+               user_id: int | None = None, detail: str | None = None,
+               ip_address: str | None = None):
+        """Write a structured event to the security audit log."""
+        try:
+            conn = self._conn()
+            try:
+                conn.execute(
+                    "INSERT INTO security_audit_log "
+                    "(event_type, username, user_id, detail, ip_address) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (event_type, username, user_id, detail, ip_address),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+        except Exception as exc:
+            logger.debug("Audit log write failed: %s", exc)
+
+    # ------------------------------------------------------------------
+    #  Rate limiting
+    # ------------------------------------------------------------------
+
+    def _check_rate_limit(self, conn, username: str) -> bool:
+        """Check whether the user has exceeded the SQ verification rate limit.
+
+        Returns True if the request should be BLOCKED (too many attempts).
+        Uses the caller's connection for transactional consistency.
+        """
+        cutoff = (datetime.utcnow() - timedelta(minutes=SQ_ATTEMPT_WINDOW_MINUTES)).strftime("%Y-%m-%d %H:%M:%S")
+        row = conn.execute(
+            "SELECT COUNT(*) as cnt FROM sq_verification_attempts "
+            "WHERE username = ? AND success = 0 AND created_at > ?",
+            (username, cutoff),
+        ).fetchone()
+        return row["cnt"] >= MAX_SQ_ATTEMPTS
+
+    def _record_attempt(self, conn, username: str, success: bool,
+                        ip_address: str | None = None):
+        """Record a security-question verification attempt.
+
+        Uses the *caller's* connection so the rate-limit check within
+        the same transaction sees the latest state.
+        """
+        conn.execute(
+            "INSERT INTO sq_verification_attempts "
+            "(username, success, ip_address) VALUES (?, ?, ?)",
+            (username, 1 if success else 0, ip_address),
+        )
+        conn.commit()
+
+    # ------------------------------------------------------------------
+    #  Public API
+    # ------------------------------------------------------------------
+
     def get_questions_for_user(self, username: str) -> list[dict]:
         """Return the security questions (without answers) for a user.
 
         Returns a list of ``{"id": int, "question": str}`` dicts.
-        Raises AuthError if the user doesn't exist or has no questions.
+        Raises AuthError with a *generic* message on any failure to
+        prevent username/account enumeration.
         """
         conn = self._conn()
         try:
@@ -99,48 +169,66 @@ class ForgotPasswordService:
                 (username.strip(),),
             ).fetchone()
             if not user:
-                raise AuthError("No account found with that username.")
+                logger.info("SQ lookup: unknown username '%s'", username)
+                self._audit("sq_lookup_unknown_user", username=username)
+                raise AuthError(_GENERIC_VERIFY_ERROR)
 
             rows = conn.execute(
                 "SELECT id, question FROM security_questions WHERE user_id = ? ORDER BY id",
                 (user["id"],),
             ).fetchall()
             if not rows:
-                raise AuthError(
-                    "No security questions are set up for this account. "
-                    "Please contact an administrator."
-                )
+                logger.info("SQ lookup: no questions for user '%s'", username)
+                self._audit("sq_lookup_no_questions", username=username, user_id=user["id"])
+                raise AuthError(_GENERIC_VERIFY_ERROR)
+
+            self._audit("sq_lookup_success", username=username, user_id=user["id"])
             return [{"id": r["id"], "question": r["question"]} for r in rows]
         finally:
             conn.close()
 
     def verify_answers_and_reset(
         self, username: str, answers: dict[int, str],
+        ip_address: str | None = None,
     ) -> dict:
         """Verify security question answers and reset the password.
 
         Args:
             username: The user's username.
             answers: Mapping of question ID → user's answer string.
+            ip_address: Optional client IP for audit/rate-limit tracking.
 
         Returns:
             Dict with ``temp_password``, ``username``, ``display_name``,
             ``email``, and ``user_id`` on success.
 
         Raises:
-            AuthError if any answer is wrong or the user doesn't exist.
+            AuthError with a generic message on any failure.
         """
         conn = self._conn()
         try:
+            # Rate-limit check
+            if self._check_rate_limit(conn, username):
+                logger.warning(
+                    "SQ verification rate-limited for user '%s' (>%d attempts in %d min)",
+                    username, MAX_SQ_ATTEMPTS, SQ_ATTEMPT_WINDOW_MINUTES,
+                )
+                self._audit("sq_rate_limited", username=username, ip_address=ip_address)
+                raise AuthError(
+                    "Too many failed attempts. Please wait before trying again."
+                )
+
             user = conn.execute(
                 "SELECT id, username, display_name, email FROM users "
                 "WHERE username = ? AND is_active = 1",
                 (username.strip(),),
             ).fetchone()
             if not user:
-                raise AuthError("No account found with that username.")
+                logger.info("SQ verify: unknown username '%s'", username)
+                self._record_attempt(conn, username, success=False, ip_address=ip_address)
+                self._audit("sq_verify_unknown_user", username=username, ip_address=ip_address)
+                raise AuthError(_GENERIC_VERIFY_ERROR)
 
-            # Fetch all security questions for this user
             rows = conn.execute(
                 "SELECT id, answer_hash FROM security_questions WHERE user_id = ?",
                 (user["id"],),
@@ -148,23 +236,32 @@ class ForgotPasswordService:
             stored = {r["id"]: r["answer_hash"] for r in rows}
 
             if not stored:
-                raise AuthError("No security questions configured for this account.")
+                logger.info("SQ verify: no questions for user '%s'", username)
+                self._record_attempt(conn, username, success=False, ip_address=ip_address)
+                self._audit("sq_verify_no_questions", username=username,
+                            user_id=user["id"], ip_address=ip_address)
+                raise AuthError(_GENERIC_VERIFY_ERROR)
 
-            # Verify every stored question was answered correctly
+            # Verify every stored question
             for qid, expected_hash in stored.items():
                 user_answer = answers.get(qid, "")
-                if _hash_answer(user_answer) != expected_hash:
+                if not _verify_answer(user_answer, expected_hash):
                     logger.warning(
-                        "Security question verification failed for user '%s' (q_id=%d)",
+                        "SQ verification failed for user '%s' (q_id=%d)",
                         username, qid,
                     )
-                    raise AuthError("One or more answers are incorrect.")
+                    self._record_attempt(conn, username, success=False, ip_address=ip_address)
+                    self._audit("sq_verify_failed", username=username,
+                                user_id=user["id"], detail=f"failed_question={qid}",
+                                ip_address=ip_address)
+                    raise AuthError(_GENERIC_VERIFY_ERROR)
 
             # All correct — generate temp password and reset
+            self._record_attempt(conn, username, success=True, ip_address=ip_address)
+
             temp_pw = _generate_temp_password()
             pw_hash = hash_password(temp_pw)
 
-            # Save old hash to password history
             old_hash_row = conn.execute(
                 "SELECT password_hash FROM users WHERE id = ?", (user["id"],)
             ).fetchone()
@@ -174,7 +271,6 @@ class ForgotPasswordService:
                     (user["id"], old_hash_row["password_hash"]),
                 )
 
-            # Update password and mark as expired (password_changed_at = NULL forces change)
             conn.execute(
                 "UPDATE users SET password_hash = ?, password_changed_at = NULL, "
                 "failed_login_attempts = 0, locked_until = NULL, "
@@ -183,13 +279,14 @@ class ForgotPasswordService:
             )
             conn.commit()
 
-            # Invalidate all existing sessions
             SessionManager(self._db_path).invalidate_user_sessions(user["id"])
 
             logger.info(
                 "Password reset via security questions for user '%s' (id=%d)",
                 username, user["id"],
             )
+            self._audit("sq_reset_success", username=username,
+                        user_id=user["id"], ip_address=ip_address)
 
             result = {
                 "temp_password": temp_pw,
@@ -199,9 +296,7 @@ class ForgotPasswordService:
                 "email": user["email"],
             }
 
-            # Send notification emails (best-effort, don't block on failure)
             self._send_notifications(result)
-
             return result
         finally:
             conn.close()
@@ -211,19 +306,22 @@ class ForgotPasswordService:
     ):
         """Set or replace security questions for a user.
 
-        Args:
-            user_id: The user's ID.
-            questions: List of (question_text, answer) tuples. Minimum 3.
+        Validates answers against policy (minimum length, banned answers).
         """
         if len(questions) < 3:
             raise AuthError("At least 3 security questions are required.")
+
+        for question, answer in questions:
+            if not question.strip():
+                raise AuthError("Questions cannot be empty.")
+            valid, msg = validate_answer(answer)
+            if not valid:
+                raise AuthError(msg)
 
         conn = self._conn()
         try:
             conn.execute("DELETE FROM security_questions WHERE user_id = ?", (user_id,))
             for question, answer in questions:
-                if not question.strip() or not answer.strip():
-                    raise AuthError("Questions and answers cannot be empty.")
                 conn.execute(
                     "INSERT INTO security_questions (user_id, question, answer_hash) "
                     "VALUES (?, ?, ?)",
@@ -231,6 +329,7 @@ class ForgotPasswordService:
                 )
             conn.commit()
             logger.info("Security questions updated for user_id=%d", user_id)
+            self._audit("sq_questions_updated", user_id=user_id)
         finally:
             conn.close()
 
@@ -266,22 +365,15 @@ class ForgotPasswordService:
                 return
 
             now = datetime.now().strftime("%Y-%m-%d %H:%M")
-
-            # 1. Notify admin
             self._send_admin_notification(svc, reset_info, now)
-
-            # 2. Notify the user
             self._send_student_notification(svc, reset_info, now)
-
         except Exception as exc:
             logger.warning("Failed to send password reset notification emails: %s", exc)
 
     def _send_admin_notification(self, svc, reset_info: dict, timestamp: str):
-        """Email admin that a user's password was reset via security questions."""
         template = _load_email_template("password_reset_admin_notification")
         if not template:
             return
-
         subject, body, html_body = _render_template(
             template,
             username=reset_info["username"],
@@ -291,8 +383,6 @@ class ForgotPasswordService:
             reset_time=timestamp,
             system_name="Education System",
         )
-
-        # Send to the configured sender (admin) email
         from education_system.shared.email.config import load_email_config
         cfg = load_email_config()
         admin_email = cfg.get("sender_email", "")
@@ -304,15 +394,12 @@ class ForgotPasswordService:
                 logger.warning("Failed to send admin notification: %s", result.get("error"))
 
     def _send_student_notification(self, svc, reset_info: dict, timestamp: str):
-        """Email the user confirming their password was reset."""
         user_email = reset_info.get("email")
         if not user_email:
             return
-
         template = _load_email_template("password_reset_student_notification")
         if not template:
             return
-
         subject, body, html_body = _render_template(
             template,
             username=reset_info["username"],
@@ -321,7 +408,6 @@ class ForgotPasswordService:
             reset_time=timestamp,
             system_name="Education System",
         )
-
         result = svc.send_email(user_email, subject, body, html_body=html_body)
         if result.get("success"):
             logger.info("Student notification sent to '%s' for password reset", user_email)

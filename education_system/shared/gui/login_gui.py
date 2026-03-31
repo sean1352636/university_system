@@ -452,8 +452,12 @@ class UniversalLoginWindow(tk.Tk):
             from education_system.shared.auth.forgot_password import ForgotPasswordService
             svc = ForgotPasswordService(self._auth_db_path)
             questions = svc.get_questions_for_user(username)
-        except Exception as exc:
-            self._forgot_error_var.set(str(exc))
+        except Exception:
+            # Generic message — specific reason is logged server-side
+            self._forgot_error_var.set(
+                "Unable to verify your identity. Please try again "
+                "or contact an administrator."
+            )
             return
 
         self._show_forgot_questions(username, questions)
@@ -514,7 +518,6 @@ class UniversalLoginWindow(tk.Tk):
         """Verify answers and show temp password on success."""
         answers = {qid: var.get() for qid, var in self._forgot_answer_vars.items()}
 
-        # Check none are blank
         if any(not a.strip() for a in answers.values()):
             self._forgot_q_error_var.set("Please answer all questions.")
             return
@@ -524,17 +527,19 @@ class UniversalLoginWindow(tk.Tk):
             svc = ForgotPasswordService(self._auth_db_path)
             result = svc.verify_answers_and_reset(username, answers)
         except Exception as exc:
+            # Show the error from the service (already generic for
+            # verification failures; rate-limit messages are explicit)
             self._forgot_q_error_var.set(str(exc))
             return
 
         self._show_temp_password(result)
 
     def _show_temp_password(self, reset_info: dict):
-        """Step 3: Show the temporary password to the user."""
+        """Step 3: Show the temporary password to the user (masked by default)."""
         for w in self.winfo_children():
             w.destroy()
 
-        self.geometry("500x460")
+        self.geometry("500x500")
 
         header = tk.Frame(self, bg="#27ae60", height=70)
         header.pack(fill="x")
@@ -557,19 +562,60 @@ class UniversalLoginWindow(tk.Tk):
             font=("Helvetica", 10), bg=_CARD_BG, fg="#555",
         ).pack()
 
-        # Temp password display with copy-friendly styling
+        # Temp password display — masked by default
+        temp_pw = reset_info["temp_password"]
+        masked = "\u2022" * len(temp_pw)
+
         pw_frame = tk.Frame(card, bg="#ecf0f1", bd=1, relief="solid", padx=15, pady=10)
-        pw_frame.pack(fill="x", pady=(8, 15))
+        pw_frame.pack(fill="x", pady=(8, 8))
+        pw_var = tk.StringVar(value=masked)
         pw_label = tk.Label(
-            pw_frame, text=reset_info["temp_password"],
+            pw_frame, textvariable=pw_var,
             font=("Courier", 14, "bold"), bg="#ecf0f1", fg="#2c3e50",
         )
         pw_label.pack()
 
+        # Reveal / Copy buttons
+        btn_row = tk.Frame(card, bg=_CARD_BG)
+        btn_row.pack(fill="x", pady=(0, 12))
+
+        _revealed = {"state": False, "timer": None}
+
+        def _toggle_reveal():
+            if _revealed["state"]:
+                pw_var.set(masked)
+                reveal_btn.configure(text="Show Password")
+                _revealed["state"] = False
+                if _revealed["timer"]:
+                    self.after_cancel(_revealed["timer"])
+                    _revealed["timer"] = None
+            else:
+                pw_var.set(temp_pw)
+                reveal_btn.configure(text="Hide Password")
+                _revealed["state"] = True
+                # Auto-hide after 30 seconds
+                _revealed["timer"] = self.after(
+                    30_000, lambda: (pw_var.set(masked),
+                                    reveal_btn.configure(text="Show Password"),
+                                    _revealed.update(state=False, timer=None)),
+                )
+
+        def _copy_to_clipboard():
+            self.clipboard_clear()
+            self.clipboard_append(temp_pw)
+            copy_btn.configure(text="Copied!")
+            self.after(2000, lambda: copy_btn.configure(text="Copy"))
+
+        reveal_btn = ttk.Button(btn_row, text="Show Password", command=_toggle_reveal)
+        reveal_btn.pack(side="left", padx=(0, 8))
+
+        copy_btn = ttk.Button(btn_row, text="Copy", command=_copy_to_clipboard)
+        copy_btn.pack(side="left")
+
         tk.Label(
             card,
-            text="Please write this down. You will be asked to\n"
-                 "change your password when you log in.",
+            text="You will be asked to change your password\n"
+                 "when you log in. The password auto-hides after 30s.",
             font=("Helvetica", 10), bg=_CARD_BG, fg="#e67e22",
             justify="center",
         ).pack(pady=(0, 5))
