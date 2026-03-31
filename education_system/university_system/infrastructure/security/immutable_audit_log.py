@@ -203,7 +203,7 @@ class ImmutableAuditLog:
             session_id or '',
         ])
 
-        return hmac.new(
+        return hmac.new(  # lgtm [py/weak-sensitive-data-hashing] — HMAC-SHA256 for integrity, not password hashing
             ImmutableAuditLog._SECRET_KEY,
             hash_input.encode('utf-8'),
             hashlib.sha256,
@@ -219,7 +219,7 @@ class ImmutableAuditLog:
         Returns:
             HMAC-SHA256 hex string
         """
-        return hmac.new(
+        return hmac.new(  # lgtm [py/weak-sensitive-data-hashing] — HMAC-SHA256 for integrity, not password hashing
             ImmutableAuditLog._SECRET_KEY,
             data.encode('utf-8'),
             hashlib.sha256,

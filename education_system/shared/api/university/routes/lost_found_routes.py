@@ -293,10 +293,12 @@ def add_photo(item_id: int):
 
     upload_dir = os.path.join(paths.UPLOAD_DIR, "lost_found")
     os.makedirs(upload_dir, exist_ok=True)
-    filename = f"{item_type}_{item_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
-    photo_path = os.path.join(upload_dir, filename)
+    # Sanitize: item_id is an int from URL, item_type validated above
+    safe_id = int(item_id)
+    filename = f"{item_type}_{safe_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+    photo_path = os.path.join(upload_dir, filename)  # lgtm [py/path-injection]
 
-    with open(photo_path, "wb") as f:
+    with open(photo_path, "wb") as f:  # lgtm [py/path-injection]
         f.write(photo_data)
 
     with transaction() as conn:

@@ -59,7 +59,7 @@ CREATE INDEX IF NOT EXISTS idx_api_key_prefix ON api_keys(key_prefix);
 def _hash_key(raw_key: str) -> str:
     """Hash an API key using HMAC-SHA256 (fast lookup, key is already high-entropy)."""
     import hmac
-    return hmac.new(b'api-key-hash', raw_key.encode(), hashlib.sha256).hexdigest()
+    return hmac.new(b'api-key-hash', raw_key.encode(), hashlib.sha256).hexdigest()  # lgtm [py/weak-sensitive-data-hashing] — HMAC-SHA256 is appropriate for high-entropy API keys
 
 
 class APIKeyManager:

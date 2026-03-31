@@ -113,17 +113,18 @@ def _validate_slug(slug: str) -> str:
 
 
 def _tenant_dir(tenant_slug: str) -> Path:
-    tenant_slug = _validate_slug(tenant_slug)
+    tenant_slug = _validate_slug(tenant_slug)  # raises on invalid chars
     resolved = (_TENANTS_BASE / tenant_slug).resolve()
-    # Ensure the resolved path is still under _TENANTS_BASE
-    if not str(resolved).startswith(str(_TENANTS_BASE.resolve())):
+    # Path traversal guard: resolved must stay under the tenants root
+    base_resolved = _TENANTS_BASE.resolve()
+    if not str(resolved).startswith(str(base_resolved) + os.sep) and resolved != base_resolved:
         raise ValueError("Path traversal detected in tenant slug")
-    return resolved
+    return resolved  # lgtm [py/path-injection] — validated above
 
 
 def _db_path_for(tenant_slug: str, system_key: str) -> str:
-    _validate_slug(system_key)
-    return str(_tenant_dir(tenant_slug) / f"{system_key}.db")
+    _validate_slug(system_key)  # raises on invalid chars
+    return str(_tenant_dir(tenant_slug) / f"{system_key}.db")  # lgtm [py/path-injection]
 
 
 # ── Schema initialisation per system ─────────────────────────────────────────

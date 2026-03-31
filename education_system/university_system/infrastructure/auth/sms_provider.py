@@ -359,8 +359,8 @@ class MockSMSProvider(SMSProvider):
             redacted_phone = phone_number[:4] + '****' + phone_number[-2:] if len(phone_number) > 6 else '****'
             message = f"[{self._get_timestamp()}] SMS to {redacted_phone}: verification code sent ({redacted_code})\n"
 
-            # Log to file (sensitive data redacted)
-            with open(self.log_file, 'a') as f:
+            # Log to file (phone/code are already redacted above)
+            with open(self.log_file, 'a') as f:  # lgtm [py/clear-text-storage-sensitive-data]
                 f.write(message)
 
             # Also print to console for development

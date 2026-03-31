@@ -185,7 +185,7 @@ class Sanitizers:
             result = stripper.get_output()
         except Exception:
             # Fallback: aggressively strip anything that looks like a script tag
-            result = re.sub(r'<\s*script\b[^>]*>.*?<\s*/\s*script\s*>', '', html_content, flags=re.IGNORECASE | re.DOTALL)
+            result = re.sub(r'<\s*script\b[^>]*>.*?<\s*/\s*script[^>]*>', '', html_content, flags=re.IGNORECASE | re.DOTALL)
             result = re.sub(r'<\s*script\b[^>]*/?>', '', result, flags=re.IGNORECASE)
 
         # Remove event handlers

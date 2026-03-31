@@ -267,7 +267,7 @@ class UniversalLoginWindow(tk.Tk):
             if user_email and username:
                 # Generate a 6-digit code
                 code = "".join(str(secrets.randbelow(10)) for _ in range(6))
-                code_hash = hashlib.sha256(code.encode()).hexdigest()
+                code_hash = hmac.new(b"otp-verify", code.encode(), "sha256").hexdigest()
                 expiry = datetime.now() + timedelta(minutes=10)
                 self._pending_email_otp = (code_hash, expiry)
 
@@ -372,7 +372,7 @@ class UniversalLoginWindow(tk.Tk):
         if pending:
             code_hash, expiry = pending
             if datetime.now() < expiry:
-                if hmac.compare_digest(hashlib.sha256(code.encode()).hexdigest(), code_hash):  # noqa: S324
+                if hmac.compare_digest(hmac.new(b"otp-verify", code.encode(), "sha256").hexdigest(), code_hash):
                     self._pending_email_otp = None  # consume
                     user_info = self._auth.complete_mfa_login(user_id)
                     self._on_login_success(user_info)

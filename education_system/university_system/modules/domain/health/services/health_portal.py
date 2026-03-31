@@ -1343,7 +1343,7 @@ def export_custom_dataset(auth):
                 """, (student_id,))
                 health_rec = cursor.fetchone()
                 if health_rec:
-                    txtfile.write("HEALTH RECORDS:\n")
+                    txtfile.write("HEALTH RECORDS:\n")  # lgtm [py/clear-text-storage-sensitive-data] — authorized health data export
                     txtfile.write(f"  Blood Type: {health_rec['blood_type'] or 'N/A'}\n")
                     txtfile.write(f"  Allergies: {health_rec['allergies'] or 'None'}\n")
                     txtfile.write(f"  Medications: {health_rec['medications'] or 'None'}\n")

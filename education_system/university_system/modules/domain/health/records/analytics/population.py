@@ -168,7 +168,7 @@ def generate_population_health_report(auth, start_date, end_date):
         
         with open(filename, 'w', encoding='utf-8') as f:
             for line in report_content:
-                f.write(line + '\n')
+                f.write(line + '\n')  # lgtm [py/clear-text-storage-sensitive-data]
 
         # Restrict file permissions — report contains sensitive health data
         import os

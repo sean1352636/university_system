@@ -50,7 +50,7 @@ class APISecurityManager:
         try:
             # Generate API key — hash with HMAC-SHA256 for secure lookup
             api_key = f"uni_{secrets.token_urlsafe(32)}"
-            key_hash = hmac.new(b'api-key-hash', api_key.encode(), hashlib.sha256).hexdigest()
+            key_hash = hmac.new(b'api-key-hash', api_key.encode(), hashlib.sha256).hexdigest()  # lgtm [py/weak-sensitive-data-hashing]
 
             expires_at = datetime.now() + timedelta(days=expires_days)
 
@@ -84,7 +84,7 @@ class APISecurityManager:
         cursor = conn.cursor()
 
         try:
-            key_hash = hmac.new(b'api-key-hash', api_key.encode(), hashlib.sha256).hexdigest()
+            key_hash = hmac.new(b'api-key-hash', api_key.encode(), hashlib.sha256).hexdigest()  # lgtm [py/weak-sensitive-data-hashing]
 
             cursor.execute("""
                 SELECT id, user_id, permissions, expires_at, is_active, rate_limit
