@@ -30,6 +30,7 @@ from datetime import datetime
 from pathlib import Path
 
 from flask import Blueprint, jsonify, request, g, send_from_directory, current_app
+from markupsafe import escape
 
 from education_system.shared.api.auth import token_required, decode_token
 from education_system.shared.auth.db import AUTH_DB_FILE
@@ -103,11 +104,11 @@ def _parent_required(f):
 
 
 def _sanitize_child_id(child_id: str) -> str:
-    """Sanitize and validate a child_id URL parameter to prevent injection."""
+    """Sanitize and validate a child_id URL parameter to prevent injection and XSS."""
     import re
     # Only allow alphanumeric characters, hyphens, and underscores
     sanitized = re.sub(r'[^a-zA-Z0-9_\-]', '', str(child_id or ''))
-    return sanitized[:64]  # cap length
+    return str(escape(sanitized[:64]))  # cap length and escape for safe output
 
 
 def _verify_child_access(child_student_id: str) -> tuple[dict | None, tuple | None]:
@@ -150,6 +151,10 @@ def serve_spa():
 
 @parent_portal_bp.route("/static/<path:filename>")
 def serve_static(filename):
+    import re
+    # Validate filename contains only safe characters to prevent path traversal and XSS
+    if not re.match(r'^[a-zA-Z0-9/_\-][a-zA-Z0-9/._\-]*$', filename):
+        return jsonify({"error": "Invalid filename"}), 400
     return send_from_directory(str(_STATIC_DIR), filename)
 
 
@@ -502,9 +507,9 @@ def child_messages_send(child_id: str):
         return jsonify({"error": "System database unavailable"}), 503
 
     body = request.get_json(silent=True) or {}
-    subject = (body.get("subject") or "").strip()
-    message_body = (body.get("body") or "").strip()
-    recipient_id = body.get("recipient_id")
+    subject = str(escape((body.get("subject") or "").strip()))
+    message_body = str(escape((body.get("body") or "").strip()))
+    recipient_id = str(escape(body.get("recipient_id") or ""))
 
     if not message_body:
         return jsonify({"error": "Message body is required"}), 400
@@ -639,7 +644,11 @@ def book_parents_evening():
     body = request.get_json(silent=True) or {}
     slot_id = body.get("slot_id")
     child_id = _sanitize_child_id(body.get("child_id", ""))
+    # Validate system_key against known values to prevent injection
+    allowed_systems = {"school", "college", "primary", "university"}
     system_key = body.get("system_key", "school")
+    if system_key not in allowed_systems:
+        return jsonify({"error": "Invalid system_key"}), 400
 
     if not slot_id or not child_id:
         return jsonify({"error": "slot_id and child_id are required"}), 400

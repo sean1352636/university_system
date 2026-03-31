@@ -18,11 +18,14 @@ Usage in unified_server.py::
 
 from __future__ import annotations
 
+import logging
 import platform
 import sqlite3
 import time
 
 from flask import Blueprint, Response, jsonify
+
+logger = logging.getLogger(__name__)
 
 from education_system.shared.core.metrics import metrics as _metrics
 
@@ -82,7 +85,8 @@ def health_with_metrics() -> Response:
             conn.close()
             db_checks[label] = {"status": "healthy"}
         except Exception as exc:
-            db_checks[label] = {"status": "unhealthy", "error": str(exc)}
+            logger.warning("Health check failed for %s: %s", label, exc)
+            db_checks[label] = {"status": "unhealthy"}
             overall_healthy = False
 
     uptime = round(time.time() - _start_time, 1)

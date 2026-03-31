@@ -1334,7 +1334,7 @@ def _secondary_list_or_create(table: str, system_key: str = "school"):
             conn.close()
     except Exception as exc:
         logger.warning("Insert failed on %s.%s: %s", db, safe_table, exc)
-        return jsonify({"error": "Insert failed: " + str(exc)}), 500
+        return jsonify({"error": "Insert failed"}), 500
 
 
 # ── Secondary: Behaviour ─────────────────────────────────────────────

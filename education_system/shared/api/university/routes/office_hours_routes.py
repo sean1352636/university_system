@@ -86,7 +86,8 @@ def create_office_hours():
         log_activity("create", "office_hours", user=g.current_user.get("sub"))
         return jsonify(item), 201
     except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+        logger.warning("Invalid office hours creation request: %s", e)
+        return jsonify({"error": "Invalid request parameters"}), 400
     except Exception as e:
         logger.error("Error creating office hours: %s", e)
         return jsonify({"error": "Internal server error"}), 500
@@ -109,7 +110,8 @@ def update_office_hours(id: int):
         log_activity("update", "office_hours", user=g.current_user.get("sub"))
         return jsonify(item)
     except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+        logger.warning("Invalid office hours update for %s: %s", id, e)
+        return jsonify({"error": "Invalid request parameters"}), 400
     except Exception as e:
         logger.error("Error updating office hours %s: %s", id, e)
         return jsonify({"error": "Internal server error"}), 500
@@ -184,7 +186,8 @@ def book_office_hour(id: int):
             "booking_date": data["booking_date"],
         }), 201
     except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+        logger.warning("Invalid booking request for office hour %s: %s", id, e)
+        return jsonify({"error": "Invalid request parameters"}), 400
     except Exception as e:
         logger.error("Error booking office hour %s: %s", id, e)
         return jsonify({"error": "Internal server error"}), 500
@@ -206,7 +209,8 @@ def cancel_booking(booking_id: int):
         log_activity("delete", "office_hour_booking", user=student_id)
         return jsonify({"message": f"Booking {booking_id} cancelled successfully"})
     except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+        logger.warning("Invalid cancellation request for booking %s: %s", booking_id, e)
+        return jsonify({"error": "Invalid request parameters"}), 400
     except Exception as e:
         logger.error("Error cancelling booking %s: %s", booking_id, e)
         return jsonify({"error": "Internal server error"}), 500

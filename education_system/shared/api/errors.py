@@ -18,7 +18,8 @@ def register_common_error_handlers(app):
 
     @app.errorhandler(400)
     def handle_bad_request(e):
-        return jsonify({"error": "Bad Request", "message": str(e)}), 400
+        logger.warning("Bad request: %s", e)
+        return jsonify({"error": "Bad Request", "message": "The request was invalid."}), 400
 
     @app.errorhandler(404)
     def handle_not_found(e):
@@ -26,7 +27,8 @@ def register_common_error_handlers(app):
 
     @app.errorhandler(405)
     def handle_method_not_allowed(e):
-        return jsonify({"error": "Method Not Allowed", "message": str(e)}), 405
+        logger.warning("Method not allowed: %s", e)
+        return jsonify({"error": "Method Not Allowed", "message": "The HTTP method is not allowed for this endpoint."}), 405
 
     @app.errorhandler(413)
     def handle_request_too_large(e):
@@ -52,9 +54,10 @@ def register_common_error_handlers(app):
 
         @app.errorhandler(PayloadValidationError)
         def handle_payload_validation(e):
+            logger.warning("Payload validation error: %s", e)
             return jsonify({
                 "error": "Validation Error",
-                "message": str(e),
+                "message": "The request payload failed validation.",
                 "details": e.errors,
             }), 422
     except ImportError:
@@ -66,7 +69,8 @@ def register_common_error_handlers(app):
 
         @app.errorhandler(APIValidationError)
         def handle_api_validation(e):
-            return jsonify({"error": "Validation Error", "message": str(e)}), 400
+            logger.warning("API validation error: %s", e)
+            return jsonify({"error": "Validation Error", "message": "The request failed validation."}), 400
     except ImportError:
         pass
 
@@ -86,6 +90,6 @@ def domain_error_handler(error_class, label: str, status: int = 400):
             logger.error("%s: %s", label, e)
         else:
             logger.warning("%s: %s", label, e)
-        return jsonify({"error": label, "message": str(e)}), status
+        return jsonify({"error": label, "message": "An error occurred processing your request."}), status
     handler.__name__ = f"handle_{error_class.__name__}"
     return handler

@@ -90,7 +90,8 @@ class CalendarWebAPI:
                 })
 
             except ValidationError as e:
-                return jsonify({'error': str(e)}), 400
+                logger.warning("Calendar validation error: %s", e)
+                return jsonify({'error': 'Invalid request parameters'}), 400
             except Exception as e:
                 logger.error(f"API error: {e}")
                 return jsonify({'error': 'Internal server error'}), 500
@@ -114,9 +115,11 @@ class CalendarWebAPI:
                 return jsonify(result)
 
             except ValidationError as e:
-                return jsonify({'error': str(e)}), 400
+                logger.warning("Event validation error: %s", e)
+                return jsonify({'error': 'Invalid event parameters'}), 400
             except PermissionError as e:
-                return jsonify({'error': str(e)}), 403
+                logger.warning("Permission denied for event creation: %s", e)
+                return jsonify({'error': 'Permission denied'}), 403
             except Exception as e:
                 logger.error(f"API error: {e}")
                 return jsonify({'error': 'Internal server error'}), 500

@@ -98,7 +98,7 @@ def create_policy():
         return jsonify({"policy": policy}), 201
     except Exception as exc:
         logger.error("Failed to create policy: %s", exc)
-        return jsonify({"error": "Failed to create policy", "detail": str(exc)}), 500
+        return jsonify({"error": "Failed to create policy"}), 500
 
 
 @retention_bp.route("/policies/<int:policy_id>", methods=["PUT"])
@@ -116,10 +116,11 @@ def update_policy(policy_id: int):
             return jsonify({"error": "Policy not found"}), 404
         return jsonify({"policy": updated}), 200
     except ValueError as exc:
-        return jsonify({"error": str(exc)}), 400
+        logger.warning("Invalid policy update for %d: %s", policy_id, exc)
+        return jsonify({"error": "Invalid policy update parameters"}), 400
     except Exception as exc:
         logger.error("Failed to update policy %d: %s", policy_id, exc)
-        return jsonify({"error": "Failed to update policy", "detail": str(exc)}), 500
+        return jsonify({"error": "Failed to update policy"}), 500
 
 
 @retention_bp.route("/policies/<int:policy_id>", methods=["DELETE"])
@@ -134,7 +135,7 @@ def deactivate_policy(policy_id: int):
         return jsonify({"message": f"Policy {policy_id} deactivated"}), 200
     except Exception as exc:
         logger.error("Failed to deactivate policy %d: %s", policy_id, exc)
-        return jsonify({"error": "Failed to deactivate policy", "detail": str(exc)}), 500
+        return jsonify({"error": "Failed to deactivate policy"}), 500
 
 
 # ---------------------------------------------------------------------------
@@ -157,7 +158,7 @@ def run_all():
         }), 200
     except Exception as exc:
         logger.error("Manual retention run failed: %s", exc)
-        return jsonify({"error": "Retention run failed", "detail": str(exc)}), 500
+        return jsonify({"error": "Retention run failed"}), 500
 
 
 @retention_bp.route("/run/<int:policy_id>", methods=["POST"])
@@ -169,10 +170,11 @@ def run_single(policy_id: int):
         job = engine.run_policy(policy_id)
         return jsonify({"message": "Policy executed", "job": job}), 200
     except ValueError as exc:
-        return jsonify({"error": str(exc)}), 404
+        logger.warning("Policy %d not found: %s", policy_id, exc)
+        return jsonify({"error": "Policy not found"}), 404
     except Exception as exc:
         logger.error("Failed to run policy %d: %s", policy_id, exc)
-        return jsonify({"error": "Policy execution failed", "detail": str(exc)}), 500
+        return jsonify({"error": "Policy execution failed"}), 500
 
 
 # ---------------------------------------------------------------------------
@@ -195,7 +197,7 @@ def job_history():
         return jsonify({"jobs": jobs, "count": len(jobs)}), 200
     except Exception as exc:
         logger.error("Failed to fetch job history: %s", exc)
-        return jsonify({"error": "Failed to fetch job history", "detail": str(exc)}), 500
+        return jsonify({"error": "Failed to fetch job history"}), 500
 
 
 # ---------------------------------------------------------------------------
@@ -216,7 +218,7 @@ def dsar():
         return jsonify(report), 200
     except Exception as exc:
         logger.error("DSAR generation failed for %s: %s", email, exc)
-        return jsonify({"error": "DSAR generation failed", "detail": str(exc)}), 500
+        return jsonify({"error": "DSAR generation failed"}), 500
 
 
 @retention_bp.route("/erasure", methods=["POST"])
@@ -237,7 +239,7 @@ def erasure():
         return jsonify(result), 200
     except Exception as exc:
         logger.error("Erasure request failed for %s: %s", email, exc)
-        return jsonify({"error": "Erasure request failed", "detail": str(exc)}), 500
+        return jsonify({"error": "Erasure request failed"}), 500
 
 
 # ---------------------------------------------------------------------------
@@ -278,6 +280,6 @@ def list_requests():
         return jsonify({"requests": requests_list, "count": len(requests_list)}), 200
     except Exception as exc:
         logger.error("Failed to fetch data subject requests: %s", exc)
-        return jsonify({"error": "Failed to fetch requests", "detail": str(exc)}), 500
+        return jsonify({"error": "Failed to fetch requests"}), 500
     finally:
         conn.close()

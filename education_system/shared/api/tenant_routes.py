@@ -156,7 +156,7 @@ def create_tenant_endpoint():
         )
     except Exception as exc:
         logger.error("create_tenant failed: %s", exc)
-        return jsonify({"error": "Failed to create tenant", "detail": str(exc)}), 500
+        return jsonify({"error": "Failed to create tenant"}), 500
 
     # Provision databases (non-blocking — errors are logged, not fatal)
     try:
@@ -281,7 +281,7 @@ def provision_tenant_endpoint(slug: str):
         provisioned = TenantDatabaseManager.provision_tenant(slug, systems=systems)
     except Exception as exc:
         logger.error("provision_tenant failed for %r: %s", slug, exc)
-        return jsonify({"error": "Provisioning failed", "detail": str(exc)}), 500
+        return jsonify({"error": "Provisioning failed"}), 500
 
     return jsonify({"slug": slug, "provisioned": provisioned})
 
