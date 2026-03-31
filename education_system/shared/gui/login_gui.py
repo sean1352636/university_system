@@ -689,16 +689,31 @@ class UniversalLoginWindow(tk.Tk):
             bg=_CARD_BG, anchor="w",
         ).pack(fill="x", pady=(0, 4))
         self._cp_new_var = tk.StringVar()
-        ttk.Entry(card, textvariable=self._cp_new_var, width=30,
-                  show="*", font=("Helvetica", 11)).pack(fill="x", ipady=4, pady=(0, 10))
+        new_entry = ttk.Entry(card, textvariable=self._cp_new_var, width=30,
+                              show="*", font=("Helvetica", 11))
+        new_entry.pack(fill="x", ipady=4, pady=(0, 10))
 
         tk.Label(
             card, text="Confirm New Password", font=("Helvetica", 10, "bold"),
             bg=_CARD_BG, anchor="w",
         ).pack(fill="x", pady=(0, 4))
         self._cp_confirm_var = tk.StringVar()
-        ttk.Entry(card, textvariable=self._cp_confirm_var, width=30,
-                  show="*", font=("Helvetica", 11)).pack(fill="x", ipady=4, pady=(0, 14))
+        confirm_entry = ttk.Entry(card, textvariable=self._cp_confirm_var, width=30,
+                                  show="*", font=("Helvetica", 11))
+        confirm_entry.pack(fill="x", ipady=4, pady=(0, 4))
+
+        # Show password toggle
+        self._cp_show_pw_var = tk.BooleanVar()
+        def _toggle_cp_pw():
+            char = "" if self._cp_show_pw_var.get() else "*"
+            old_entry.configure(show=char)
+            new_entry.configure(show=char)
+            confirm_entry.configure(show=char)
+        tk.Checkbutton(
+            card, text="Show passwords", variable=self._cp_show_pw_var,
+            command=_toggle_cp_pw, bg=_CARD_BG, font=("Helvetica", 9),
+            activebackground=_CARD_BG,
+        ).pack(anchor="w", pady=(0, 10))
 
         ttk.Button(
             card, text="Change Password",
