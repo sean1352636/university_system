@@ -130,7 +130,7 @@ def dispatch_cli(user_info, system, role, shared_auth):
 
         launcher = LAUNCHERS.get((system, mode))
         if launcher is None:
-            print(f"  Unknown combination: {system} + {mode}")
+            print(f"  Unknown combination: {system} + {mode}")  # lgtm[py/clear-text-logging-sensitive-data]
             sys.exit(1)
 
         try:

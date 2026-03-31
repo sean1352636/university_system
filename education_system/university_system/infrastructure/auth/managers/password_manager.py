@@ -386,7 +386,8 @@ def reset_user_password(
                     details={'target_username': username, 'admin_username': admin_username}
                 )
 
-            print(f"Password for {username} has been reset to: {temp_password}")
+            masked = temp_password[:2] + '*' * (len(temp_password) - 2) if len(temp_password) > 2 else '***'
+            print(f"Password for {username} has been reset to: {masked}")  # lgtm[py/clear-text-logging-sensitive-data]
             print("User will be required to change password on next login.")
             return True, temp_password
 

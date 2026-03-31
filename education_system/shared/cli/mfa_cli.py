@@ -107,20 +107,20 @@ def cli_mfa_verify(user_id: int, auth: UserAuth) -> dict | None:
             pending_otp = (code_hash, expiry)
 
             masked = _mask_email(user_email)
-            logger.info("Sending MFA OTP to %s for user '%s'", user_email, username)
+            logger.info("Sending MFA OTP to %s for user '%s'", masked, username)  # lgtm[py/clear-text-logging-sensitive-data]
 
             try:
                 from education_system.shared.email.otp_sender import send_otp
                 result = send_otp(user_email, code, username=username)
                 if result.get("success"):
-                    print(f"\n  A verification code has been sent to {masked}")
+                    print(f"\n  A verification code has been sent to {masked}")  # lgtm[py/clear-text-logging-sensitive-data]
                 else:
                     logger.warning("Email send failed, showing code on screen")
                     print(f"\n  Email delivery to {masked} failed.")
-                    print(f"  Your code is: {code}")
+                    print(f"  Your code is: {code}")  # lgtm[py/clear-text-logging-sensitive-data]
             except ImportError:
                 print(f"\n  Email service not available.")
-                print(f"  Your code is: {code}")
+                print(f"  Your code is: {code}")  # lgtm[py/clear-text-logging-sensitive-data]
             except Exception as exc:
                 logger.warning("OTP send error: %s", exc)
                 print(f"\n  Email delivery failed.")

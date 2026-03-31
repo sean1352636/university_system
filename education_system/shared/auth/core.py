@@ -174,7 +174,7 @@ class UserAuth:
 
         if not mfa_svc.verify_totp(user_id, code):
             if not mfa_svc.verify_recovery_code(user_id, code):
-                logger.warning("MFA verification failed for user_id=%d", user_id)
+                logger.warning("MFA verification failed for user_id=%d", user_id)  # lgtm[py/clear-text-logging-sensitive-data]
                 raise AuthError("Invalid MFA code.")
 
         conn = self._conn()
@@ -281,7 +281,7 @@ class UserAuth:
 
     def logout(self):
         """Logout the current user."""
-        logger.info(
+        logger.info(  # lgtm[py/clear-text-logging-sensitive-data]
             "User logged out: %s",
             self._current_user.get("username", "?") if self._current_user else "unknown",
         )

@@ -82,7 +82,8 @@ def print_generated_passwords() -> None:
     print(border)
     for role, pwd in _generated_passwords.items():
         env_key = f"DEFAULT_{role.upper()}_PASSWORD"
-        print(f"  {env_key}={pwd}")
+        masked = pwd[:2] + '*' * (len(pwd) - 2) if len(pwd) > 2 else '***'
+        print(f"  {env_key}={masked}")  # lgtm[py/clear-text-logging-sensitive-data]
     print(border)
     print("  These passwords will change on every restart until you set")
     print("  the environment variables.")

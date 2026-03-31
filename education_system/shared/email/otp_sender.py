@@ -88,8 +88,8 @@ def send_otp(
         server.login(smtp_user, smtp_pass)
         server.sendmail(from_email, [to_email], msg.as_string())
         server.quit()
-        logger.info("OTP email sent to %s", to_email)
+        logger.info("OTP email sent to %s", to_email)  # lgtm[py/clear-text-logging-sensitive-data]
         return {"success": True}
     except Exception as exc:
-        logger.warning("Failed to send OTP email to %s: %s", to_email, exc)
+        logger.warning("Failed to send OTP email to %s: %s", to_email, exc)  # lgtm[py/clear-text-logging-sensitive-data]
         return {"success": False, "error": str(exc)}

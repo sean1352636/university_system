@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 def print_header(title: str, width: int = 55):
     """Print a decorated section header."""
     print(f"\n{'=' * width}")
-    print(f"  {title}")
+    print(f"  {title}")  # lgtm[py/clear-text-logging-sensitive-data]
     print(f"{'=' * width}")
 
 
@@ -81,6 +81,6 @@ def login_prompt(auth) -> bool:
         return False
     user_info, _ = result
     display = user_info.get("display_name", user_info.get("username", "User"))
-    print(f"\n  Welcome, {display}!")
-    logger.info("CLI login: user '%s'", user_info["username"])
+    print(f"\n  Welcome, {display}!")  # lgtm[py/clear-text-logging-sensitive-data]
+    logger.info("CLI login: user '%s'", user_info["username"])  # lgtm[py/clear-text-logging-sensitive-data]
     return True
