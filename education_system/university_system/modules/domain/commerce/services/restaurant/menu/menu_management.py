@@ -833,11 +833,11 @@ def print_menu_pdf():
 
             # Create table with proper colWidths parameter
             table = Table(table_data)
-            
+
             # Set column widths manually after creation
             if hasattr(table, '_colWidths'):
                 table._colWidths = [2.5*inch, 3*inch, 1*inch]
-            
+
             table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -1063,7 +1063,7 @@ def display_customer_menu():
             return
         else:
             print("Invalid choice. Please try again.")
-            
+
 def feedback_analytics(days: int = 30, min_reviews: int = 3):
     """
     Analyze customer feedback for the last `days` days.
@@ -1173,7 +1173,7 @@ def loyalty_analytics():
 
         # Overall statistics
         cursor.execute('''
-            SELECT 
+            SELECT
                 COUNT(*) as total_customers,
                 AVG(loyalty_points) as avg_points,
                 SUM(total_spent) as total_revenue,
@@ -1195,8 +1195,8 @@ def loyalty_analytics():
                    AVG(total_spent) as avg_spent
             FROM restaurant_customers
             GROUP BY loyalty_tier
-            ORDER BY 
-                CASE loyalty_tier 
+            ORDER BY
+                CASE loyalty_tier
                     WHEN 'Bronze' THEN 1
                     WHEN 'Silver' THEN 2
                     WHEN 'Gold' THEN 3
@@ -1319,7 +1319,7 @@ def table_analytics():
 
         # Capacity analysis
         cursor.execute('''
-            SELECT 
+            SELECT
                 COUNT(*) as total_tables,
                 SUM(capacity) as total_capacity,
                 AVG(capacity) as avg_capacity,
@@ -1393,7 +1393,7 @@ def waste_analytics():
 
         # Overall waste statistics
         cursor.execute('''
-            SELECT 
+            SELECT
                 COUNT(*) as total_entries,
                 SUM(cost_impact) as total_cost,
                 AVG(cost_impact) as avg_cost_per_entry
@@ -1432,7 +1432,7 @@ def waste_analytics():
 
         # Most wasted items
         cursor.execute('''
-            SELECT mi.name, COUNT(wt.waste_id) as waste_count, 
+            SELECT mi.name, COUNT(wt.waste_id) as waste_count,
                    SUM(wt.cost_impact) as total_cost
             FROM restaurant_waste_tracking wt
             JOIN menu_items mi ON wt.item_id = mi.item_id
@@ -1494,7 +1494,7 @@ def performance_analytics():
 
         # Overall performance statistics
         cursor.execute('''
-            SELECT 
+            SELECT
                 COUNT(*) as total_staff,
                 AVG(performance_score) as avg_score,
                 MIN(performance_score) as min_score,
@@ -1514,7 +1514,7 @@ def performance_analytics():
 
         # Performance by role
         cursor.execute('''
-            SELECT 
+            SELECT
                 role,
                 COUNT(*) as staff_count,
                 AVG(performance_score) as avg_score
@@ -1536,8 +1536,8 @@ def performance_analytics():
 
         # Performance distribution
         cursor.execute('''
-            SELECT 
-                CASE 
+            SELECT
+                CASE
                     WHEN performance_score >= 9 THEN 'Excellent (9-10)'
                     WHEN performance_score >= 7 THEN 'Good (7-8.9)'
                     WHEN performance_score >= 5 THEN 'Average (5-6.9)'
@@ -1576,7 +1576,7 @@ def staff_analytics():
 
         # Staff overview
         cursor.execute('''
-            SELECT 
+            SELECT
                 COUNT(*) as total_staff,
                 COUNT(CASE WHEN status = 'Active' THEN 1 END) as active_staff,
                 AVG(hourly_rate) as avg_hourly_rate,
@@ -1614,7 +1614,7 @@ def staff_analytics():
 
         # Performance distribution
         cursor.execute('''
-            SELECT 
+            SELECT
                 COUNT(CASE WHEN performance_score >= 9 THEN 1 END) as excellent,
                 COUNT(CASE WHEN performance_score >= 7 AND performance_score < 9 THEN 1 END) as good,
                 COUNT(CASE WHEN performance_score >= 5 AND performance_score < 7 THEN 1 END) as average,
@@ -1650,7 +1650,7 @@ def revenue_analytics():
 
         # Revenue trends (last 30 days)
         cursor.execute('''
-            SELECT 
+            SELECT
                 DATE(order_date) as date,
                 COUNT(*) as orders,
                 SUM(total_amount) as revenue,
@@ -1696,7 +1696,7 @@ def revenue_analytics():
 
         # Peak hours analysis
         cursor.execute('''
-            SELECT 
+            SELECT
                 strftime('%H', order_date) as hour,
                 COUNT(*) as orders,
                 SUM(total_amount) as revenue
@@ -1732,7 +1732,7 @@ def expense_analytics():
 
         # Expenses by category (last 30 days)
         cursor.execute('''
-            SELECT 
+            SELECT
                 category,
                 COUNT(*) as expense_count,
                 SUM(amount) as total_amount,
@@ -1754,7 +1754,7 @@ def expense_analytics():
 
         # Monthly expense trends
         cursor.execute('''
-            SELECT 
+            SELECT
                 strftime('%Y-%m', expense_date) as month,
                 COUNT(*) as expense_count,
                 SUM(amount) as total_amount
@@ -1775,7 +1775,7 @@ def expense_analytics():
 
         # Top vendors
         cursor.execute('''
-            SELECT 
+            SELECT
                 vendor,
                 COUNT(*) as transaction_count,
                 SUM(amount) as total_spent

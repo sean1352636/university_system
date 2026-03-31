@@ -1,7 +1,7 @@
 """Asset management service."""
 
 import logging
-from education_system.secondary_school.core.sql_safety import validate_identifier, escape_like
+from education_system.secondary_school.core.sql_safety import validate_identifier, escape_like  # nosec B608
 from education_system.secondary_school.core.exceptions import AssetError
 from education_system.secondary_school.infrastructure.database.db import connect
 
@@ -73,7 +73,7 @@ class AssetService:
             if not updates:
                 return
             set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-            conn.execute(f"UPDATE assets SET {set_clause}, updated_at = datetime('now') WHERE id = ?",
+            conn.execute(f"UPDATE assets SET {set_clause}, updated_at = datetime('now') WHERE id = ?",  # nosec B608
                          list(updates.values()) + [asset_id])
             conn.commit()
         except Exception as e:

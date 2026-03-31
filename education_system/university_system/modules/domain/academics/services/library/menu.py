@@ -208,7 +208,7 @@ def display_library_menu():
 
         print(f"{option_num}. {get_text('library.menu.return_main', default='Return to Main Menu')}")
         print("="*60)
-        
+
         choice = input(get_text('library.prompt.choice', default='Enter your choice') + ": ").strip()
 
         # Map choice to function
@@ -290,58 +290,58 @@ def show_help():
     print("\n" + "="*60)
     print("LIBRARY SYSTEM HELP")
     print("="*60)
-    
+
     print("\n📚 BOOK MANAGEMENT:")
     print("   • Add Book: Add new books with ISBN metadata fetching")
     print("   • Search: Advanced search with filters and sorting")
     print("   • Update: Modify book information and status")
     print("   • Delete: Remove books (with safety checks)")
-    
+
     print("\n🔄 CIRCULATION:")
     print("   • Checkout: Issue books with barcode/QR support")
     print("   • Return: Process returns with condition checking")
     print("   • Renew: Extend loan periods (with limits)")
     print("   • Reserve: Queue books for future checkout")
-    
+
     print("\n📊 REPORTS & ANALYTICS:")
     print("   • Analytics Dashboard: Real-time library statistics")
     print("   • Generate Reports: Circulation, collection, and user reports")
     print("   • Export Data: Export books and data to CSV/Excel")
     print("   • Audit Log: Track all system activities")
-    
+
     print("\n👥 USER FEATURES:")
     print("   • Reading Lists: Create and share book collections")
     print("   • Reviews & Ratings: Rate and review books")
     print("   • Achievements: Track reading goals and milestones")
     print("   • Recommendations: Get personalized book suggestions")
-    
+
     print("\n⚙️  SYSTEM ADMINISTRATION:")
     print("   • Settings Management: Configure system parameters")
     print("   • Backup & Restore: Protect your data")
     print("   • Notifications: Automated reminders and alerts")
     print("   • Digital Library: Manage digital resources")
-    
+
     print("\n🔍 SEARCH TIPS:")
     print("   • Use partial matches for titles and authors")
     print("   • Filter by category, reading level, or status")
     print("   • Sort results by various criteria")
     print("   • Save frequently used searches")
-    
+
     print("\n📱 QUICK ACCESS:")
     print("   • Book ID format: B10001, B10002, etc.")
     print("   • Barcode scanning supported for fast operations")
     print("   • QR codes for mobile-friendly access")
     print("   • Bulk import/export for large collections")
-    
+
     print("\n💡 TIPS:")
     print("   • Regular backups prevent data loss")
     print("   • Use reading levels to match books to users")
     print("   • Monitor overdue items regularly")
     print("   • Encourage user reviews for better recommendations")
-    
+
     print("="*60)
     print("For technical support, check the system logs or contact your administrator.")
-    
+
     input("\nPress Enter to continue...")
 
 
@@ -359,11 +359,11 @@ def exit_library_system():
 
         print("✅ " + get_text("library.cleanup_completed"))
         print(get_text("library.thank_you"))
-        
+
     except Exception as e:
         logging.error(f"Error during system exit: {e}")
         print("⚠️  " + get_text("library.cleanup_failed"))
-    
+
     return True
 
 
@@ -374,23 +374,23 @@ def bulk_import_books():
     if not auth or not auth.current_user:
         print("You must be logged in to import books.")
         return
-    
+
     if not auth.check_permission('manage_books'):
         print("You don't have permission to import books.")
         return
-    
+
     print("\nBulk Book Import:")
     print("================")
     print("Supported formats: CSV, Excel (.xlsx, .xls)")
     print("Required columns: title, author")
     print("Optional columns: isbn, publisher, category, year_published, description, location, reading_level, tags")
-    
+
     file_path = input("Enter file path: ").strip()
-    
+
     if not os.path.exists(file_path):
         print("File not found.")
         return
-    
+
     try:
         # Read file based on extension
         if file_path.lower().endswith('.csv'):
@@ -400,43 +400,43 @@ def bulk_import_books():
         else:
             print("Unsupported file format.")
             return
-        
+
         # Validate required columns
         required_columns = ['title', 'author']
         missing_columns = [col for col in required_columns if col not in df.columns]
-        
+
         if missing_columns:
             print(f"Missing required columns: {', '.join(missing_columns)}")
             return
-        
+
         print(f"Found {len(df)} books to import.")
         print("Sample data:")
         print(df.head())
-        
+
         confirm = input("\nProceed with import? (y/n): ").strip().lower()
         if confirm != 'y':
             print("Import cancelled.")
             return
-        
+
         conn = get_db_connection()
         if not conn:
             return
-        
+
         cursor = conn.cursor()
-        
+
         # Get next book ID
         cursor.execute('SELECT MAX(CAST(SUBSTR(book_id, 2) AS INTEGER)) FROM books')
         result = cursor.fetchone()[0]
         next_id = 10001 if result is None else result + 1
-        
+
         imported_count = 0
         error_count = 0
         errors = []
-        
+
         for index, row in df.iterrows():
             try:
                 book_id = f"B{next_id + imported_count}"
-                
+
                 # Extract data with defaults
                 title = str(row['title']).strip()
                 author = str(row['author']).strip()
@@ -449,13 +449,13 @@ def bulk_import_books():
                 reading_level = str(row.get('reading_level', 'Unknown')).strip()
                 tags_str = str(row.get('tags', '')).strip() if pd.notna(row.get('tags')) else ''
                 tags = [tag.strip() for tag in tags_str.split(',') if tag.strip()] if tags_str else []
-                
+
                 # Generate barcode and QR code
                 barcode = generate_barcode(book_id)
                 qr_code_path = generate_qr_code(book_id, title)
-                
+
                 now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                
+
                 # Insert book
                 cursor.execute('''
                 INSERT INTO books VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -465,19 +465,19 @@ def bulk_import_books():
                     reading_level, json.dumps(tags), None, None, 0.0,
                     barcode, qr_code_path, None, 'English', None, None
                 ))
-                
+
                 imported_count += 1
-                
+
             except Exception as e:
                 error_count += 1
                 errors.append(f"Row {index + 1}: {str(e)}")
-        
+
         conn.commit()
         conn.close()
-        
+
         # FIXED: Log the action using get_current_user_id() helper function
         log_audit_event(get_current_user_id(), f"Bulk imported {imported_count} books", "books")
-        
+
         print(f"\n✅ Import completed!")
         print(f"Successfully imported: {imported_count} books")
         if error_count > 0:
@@ -485,7 +485,7 @@ def bulk_import_books():
             print("First few errors:")
             for error in errors[:5]:
                 print(f"  • {error}")
-    
+
     except Exception as e:
         print(f"Error during import: {e}")
 
@@ -497,26 +497,26 @@ def bulk_export_books():
     if not auth or not auth.current_user:
         print("You must be logged in to export books.")
         return
-    
+
     if not (auth.check_permission('view_books') or auth.check_permission('manage_books')):
         print("You don't have permission to export books.")
         return
-    
+
     conn = get_db_connection()
     if not conn:
         return
-    
+
     cursor = conn.cursor()
-    
+
     print("\nBulk Book Export:")
     print("================")
     print("1. Export All Books")
     print("2. Export by Category")
     print("3. Export by Status")
     print("4. Export by Date Range")
-    
+
     choice = input("Select export type (1-4): ").strip()
-    
+
     try:
         if choice == '1':
             # Export all books
@@ -527,19 +527,19 @@ def bulk_export_books():
             FROM books
             ORDER BY title
             ''')
-            
+
         elif choice == '2':
             # Export by category
             cursor.execute('SELECT DISTINCT category FROM books ORDER BY category')
             categories = [row[0] for row in cursor.fetchall()]
-            
+
             print("Available categories:")
             for i, cat in enumerate(categories, 1):
                 print(f"{i}. {cat}")
-            
+
             cat_choice = int(input("Select category: ")) - 1
             selected_category = categories[cat_choice]
-            
+
             cursor.execute('''
             SELECT book_id, title, author, isbn, publisher, category, year_published,
                    description, location, status, reading_level, tags, barcode,
@@ -548,11 +548,11 @@ def bulk_export_books():
             WHERE category = ?
             ORDER BY title
             ''', (selected_category,))
-            
+
         elif choice == '3':
             # Export by status
             status = input("Enter status (available/checked_out/reserved/lost/damaged): ").strip()
-            
+
             cursor.execute('''
             SELECT book_id, title, author, isbn, publisher, category, year_published,
                    description, location, status, reading_level, tags, barcode,
@@ -561,12 +561,12 @@ def bulk_export_books():
             WHERE status = ?
             ORDER BY title
             ''', (status,))
-            
+
         elif choice == '4':
             # Export by date range
             start_date = input("Enter start date (YYYY-MM-DD): ").strip()
             end_date = input("Enter end date (YYYY-MM-DD): ").strip()
-            
+
             cursor.execute('''
             SELECT book_id, title, author, isbn, publisher, category, year_published,
                    description, location, status, reading_level, tags, barcode,
@@ -575,50 +575,50 @@ def bulk_export_books():
             WHERE date(added_date) BETWEEN ? AND ?
             ORDER BY title
             ''', (start_date, end_date))
-        
+
         else:
             print("Invalid choice.")
             conn.close()
             return
-        
+
         books = cursor.fetchall()
-        
+
         if not books:
             print("No books found matching criteria.")
             conn.close()
             return
-        
+
         # Convert to DataFrame
         columns = [
             'book_id', 'title', 'author', 'isbn', 'publisher', 'category', 'year_published',
             'description', 'location', 'status', 'reading_level', 'tags', 'barcode',
             'acquisition_cost', 'total_pages', 'language', 'edition', 'added_date'
         ]
-        
+
         df = pd.DataFrame(books, columns=columns)
-        
+
         # Parse tags column
         df['tags'] = df['tags'].apply(lambda x: ', '.join(json.loads(x)) if x else '')
-        
+
         # Choose export format
         format_choice = input("Export format (1=CSV, 2=Excel): ").strip()
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        
+
         if format_choice == '1':
             filename = f"books_export_{timestamp}.csv"
             df.to_csv(filename, index=False)
         else:
             filename = f"books_export_{timestamp}.xlsx"
             df.to_excel(filename, index=False)
-        
+
         print(f"✅ Books exported to {filename}")
         print(f"Total books exported: {len(books)}")
-        
+
         # FIXED: Log the action using get_current_user_id() helper function
         log_audit_event(get_current_user_id(), f"Exported {len(books)} books to {filename}", "books")
     except Exception as e:
         print(f"Error during export: {e}")
-    
+
     conn.close()
 
 
@@ -629,11 +629,11 @@ def manage_library_events():
     if not auth or not auth.current_user:
         print("You must be logged in to manage events.")
         return
-    
+
     if not auth.check_permission('manage_events'):
         print("You don't have permission to manage events.")
         return
-    
+
     print("\nLibrary Events Management:")
     print("=========================")
     print("1. View Upcoming Events")
@@ -643,15 +643,15 @@ def manage_library_events():
     print("5. Event Attendance")
     print("6. Event Reports")
     print("7. Return to menu")
-    
+
     choice = input("Enter your choice (1-7): ").strip()
-    
+
     if choice == '7':
         return
-    
+
     # This would require an events table in the database
     # For now, show what the functionality would include
-    
+
     event_features = {
         '1': "Display upcoming events with dates, descriptions, and registration status",
         '2': "Create events with scheduling, capacity limits, and registration requirements",
@@ -660,7 +660,7 @@ def manage_library_events():
         '5': "Track event attendance and participant feedback",
         '6': "Generate reports on event popularity and attendance trends"
     }
-    
+
     if choice in event_features:
         print(f"\n{event_features[choice]}")
         print("This feature requires additional database tables and implementation.")

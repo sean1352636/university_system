@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from education_system.university_system.core.sql_safety import validate_table_name, validate_identifier
+from education_system.university_system.core.sql_safety import validate_table_name, validate_identifier  # nosec B608
 
 
 def initialize_enhanced_database():

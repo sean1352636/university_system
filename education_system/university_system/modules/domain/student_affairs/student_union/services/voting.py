@@ -12,7 +12,7 @@ from education_system.university_system.infrastructure.email.template_utils impo
 logger = logging.getLogger(__name__)
 def manage_enhanced_voting():
     """Enhanced voting system with ranked choice and campaigns"""
-    
+
     if not ctx.auth or not ctx.auth.current_user:
         print("You must be logged in to access voting features.")
         return
@@ -100,7 +100,7 @@ def manage_enhanced_voting():
 def ranked_choice_voting(cursor, conn):
     """Implement ranked choice voting"""
     try:
-        
+
         # Get student ID
         cursor.execute('SELECT student_id FROM users WHERE id = ?', (ctx.auth.current_user['id'],))
         result = cursor.fetchone()
@@ -174,8 +174,8 @@ def ranked_choice_voting(cursor, conn):
                 if choice == '0':
                     break
 
-                if (choice.isdigit() and 
-                    1 <= int(choice) <= len(candidates) and 
+                if (choice.isdigit() and
+                    1 <= int(choice) <= len(candidates) and
                     int(choice) not in used_candidates):
 
                     candidate_idx = int(choice) - 1
@@ -224,7 +224,7 @@ def ranked_choice_voting(cursor, conn):
 
 def configure_voting_methods(cursor, conn):
     """Configure voting methods (admin only)"""
-    
+
     if not ctx.auth.check_permission('set_up_elections'):
         print("You don't have permission to configure voting methods.")
         return
@@ -299,7 +299,7 @@ def configure_voting_methods(cursor, conn):
                 print(f"\n🔧 Modifying: {description}")
                 print(f"Current value: {current_value}")
 
-                if config_key in ['allow_ranked_choice', 'online_voting_enabled', 'offline_voting_enabled', 
+                if config_key in ['allow_ranked_choice', 'online_voting_enabled', 'offline_voting_enabled',
                                 'voter_eligibility_check', 'email_notifications', 'candidate_photo_required']:
                     # Boolean configuration
                     new_value = input("Enable this option? (y/n): ").strip().lower()
@@ -361,7 +361,7 @@ def configure_voting_methods(cursor, conn):
 
                 if new_value != current_value:
                     cursor.execute('''
-                    UPDATE voting_configuration 
+                    UPDATE voting_configuration
                     SET config_value = ?, updated_by = ?, updated_at = ?
                     WHERE config_key = ?
                     ''', (new_value, ctx.auth.current_user['id'], datetime.now().strftime('%Y-%m-%d %H:%M:%S'), config_key))
@@ -411,7 +411,7 @@ def review_pending_materials(cursor):
     """Review pending campaign material approvals"""
     try:
         cursor.execute('''
-        SELECT 
+        SELECT
             cm.material_id,
             cm.material_type,
             cm.content,
@@ -492,7 +492,7 @@ def view_detailed_spending(cursor):
     """View detailed spending breakdown for all candidates"""
     try:
         cursor.execute('''
-        SELECT 
+        SELECT
             s.first_name,
             s.last_name,
             e.position,
@@ -549,7 +549,7 @@ def approve_reject_materials(cursor):
     """Approve or reject pending campaign materials"""
     try:
         cursor.execute('''
-        SELECT 
+        SELECT
             cm.material_id,
             cm.material_type,
             cm.content,
@@ -596,7 +596,7 @@ def approve_reject_materials(cursor):
 
             if action == 'a':
                 cursor.execute('''
-                UPDATE campaign_materials 
+                UPDATE campaign_materials
                 SET status = 'approved', reviewed_at = ?, reviewed_by = ?
                 WHERE material_id = ?
                 ''', (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), ctx.auth.current_user['id'], material_id))
@@ -606,7 +606,7 @@ def approve_reject_materials(cursor):
             elif action == 'r':
                 reason = input("Rejection reason: ").strip()
                 cursor.execute('''
-                UPDATE campaign_materials 
+                UPDATE campaign_materials
                 SET status = 'rejected', reviewed_at = ?, reviewed_by = ?, rejection_reason = ?
                 WHERE material_id = ?
                 ''', (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), ctx.auth.current_user['id'], reason, material_id))
@@ -704,11 +704,11 @@ def log_configuration_change(cursor, conn, config_key, old_value, new_value, des
         INSERT INTO configuration_audit (config_key, old_value, new_value, description, changed_by, changed_at)
         VALUES (?, ?, ?, ?, ?, ?)
         ''', (
-            config_key, 
-            old_value, 
-            new_value, 
-            description, 
-            ctx.auth.current_user['id'], 
+            config_key,
+            old_value,
+            new_value,
+            description,
+            ctx.auth.current_user['id'],
             datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         ))
 
@@ -799,7 +799,7 @@ def reset_voting_configuration(cursor, conn):
 
 def manage_union_reps():
     """Manage student union representatives (for admins)"""
-    
+
     if not ctx.auth or not ctx.auth.current_user:
         print("You must be logged in to manage union representatives.")
         return
@@ -826,7 +826,7 @@ def manage_union_reps():
             if choice == '1':
                 # View all representatives
                 cursor.execute('''
-                SELECT r.id, r.student_id, s.first_name, s.last_name, r.position, 
+                SELECT r.id, r.student_id, s.first_name, s.last_name, r.position,
                        r.department, r.election_date, r.term_end_date, r.status
                 FROM union_representatives r
                 JOIN students s ON r.student_id = s.student_id
@@ -893,7 +893,7 @@ def manage_union_reps():
 
                     # Set current holder to 'former'
                     cursor.execute('''
-                    UPDATE union_representatives 
+                    UPDATE union_representatives
                     SET status = 'former', term_end_date = ?
                     WHERE position = ? AND (department = ? OR (department IS NULL AND ? IS NULL))
                     AND status = 'active'
@@ -924,7 +924,7 @@ def manage_union_reps():
                 print(f"{student[0]} {student[1]} has been added as a {position} representative.")
 
                 # Send confirmation email
-                send_confirmation_email(student_id, f"Union Representative Appointment: {position}", 
+                send_confirmation_email(student_id, f"Union Representative Appointment: {position}",
                                        f"You have been appointed as a Student Union Representative for the position of {position}.")
 
             elif choice == '3':
@@ -936,7 +936,7 @@ def manage_union_reps():
 
                 # Check if representative exists
                 cursor.execute('''
-                SELECT r.id, r.student_id, s.first_name, s.last_name, r.position, 
+                SELECT r.id, r.student_id, s.first_name, s.last_name, r.position,
                        r.department, r.election_date, r.term_end_date, r.status
                 FROM union_representatives r
                 JOIN students s ON r.student_id = s.student_id
@@ -977,7 +977,7 @@ def manage_union_reps():
 
                 # Update the representative
                 cursor.execute('''
-                UPDATE union_representatives 
+                UPDATE union_representatives
                 SET position = ?, department = ?, election_date = ?, term_end_date = ?
                 WHERE id = ?
                 ''', (new_position, new_department, new_election_date, new_term_end, rep_id))
@@ -1031,13 +1031,13 @@ def manage_union_reps():
                 # If setting to former, update term end date to today
                 if new_status == 'former':
                     cursor.execute('''
-                    UPDATE union_representatives 
+                    UPDATE union_representatives
                     SET status = ?, term_end_date = ?
                     WHERE id = ?
                     ''', (new_status, datetime.now().strftime('%Y-%m-%d'), rep_id))
                 else:
                     cursor.execute('''
-                    UPDATE union_representatives 
+                    UPDATE union_representatives
                     SET status = ?
                     WHERE id = ?
                     ''', (new_status, rep_id))
@@ -1049,7 +1049,7 @@ def manage_union_reps():
                 cursor.execute('SELECT student_id FROM union_representatives WHERE id = ?', (rep_id,))
                 student_id = cursor.fetchone()[0]
 
-                send_confirmation_email(student_id, "Union Representative Status Change", 
+                send_confirmation_email(student_id, "Union Representative Status Change",
                                       f"Your status as a Student Union Representative has been changed to: {new_status}.")
 
             elif choice == '5':

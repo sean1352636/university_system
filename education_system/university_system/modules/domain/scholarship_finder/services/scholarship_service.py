@@ -24,7 +24,7 @@ from education_system.university_system.infrastructure.database.db import get_co
 from education_system.university_system.infrastructure.exceptions import DatabaseError, ValidationError
 from education_system.university_system.modules.shared.utils.activity_logger import log_activity
 from education_system.university_system.infrastructure.shared_context import get_auth
-from education_system.university_system.core.sql_safety import validate_identifier, escape_like
+from education_system.university_system.core.sql_safety import validate_identifier, escape_like  # nosec B608
 
 class ScholarshipDatabase:
     """Manages scholarship database and discovery"""

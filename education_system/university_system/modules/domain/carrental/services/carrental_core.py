@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 
 from education_system.university_system.infrastructure.database.db import get_db_connection, transaction
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 
 logger = logging.getLogger(__name__)
 

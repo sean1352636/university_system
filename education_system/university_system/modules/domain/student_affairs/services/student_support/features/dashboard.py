@@ -40,23 +40,23 @@ def get_dashboard_data(user_role, user_id):
     try:
         conn = sqlite3.connect(SUPPORT_DB)
         cursor = conn.cursor()
-        
+
         dashboard_data = {}
-        
+
         if user_role == 'student':
             dashboard_data = _get_student_dashboard(user_id, cursor)
         elif user_role in ('staff', 'admin'):
             dashboard_data = _get_staff_dashboard(user_id, cursor)
-        
+
         # Add common data
         dashboard_data['notifications'] = _get_recent_notifications(user_id, cursor)
         dashboard_data['system_status'] = _get_system_status()
-        
+
         conn.close()
-        
+
         logger.info(f"Dashboard data retrieved for {user_role} {user_id}")
         return dashboard_data
-        
+
     except Exception as e:
         logger.error(f"Error getting dashboard data: {e}")
         raise
@@ -69,30 +69,30 @@ def _get_student_dashboard(user_id, cursor):
     cursor_main.execute('SELECT student_id FROM users WHERE id = ?', (user_id,))
     result = cursor_main.fetchone()
     conn_main.close()
-    
+
     if not result:
         return {}
-    
+
     student_id = result[0]
-    
+
     # Get ticket statistics
     cursor.execute('SELECT status, COUNT(*) FROM support_tickets WHERE student_id = ? GROUP BY status', (student_id,))
     ticket_stats = dict(cursor.fetchall())
-    
+
     # Get recent tickets
     cursor.execute('''
-    SELECT ticket_id, title, status, created_datetime 
-    FROM support_tickets 
-    WHERE student_id = ? 
-    ORDER BY created_datetime DESC 
+    SELECT ticket_id, title, status, created_datetime
+    FROM support_tickets
+    WHERE student_id = ?
+    ORDER BY created_datetime DESC
     LIMIT 5
     ''', (student_id,))
     recent_tickets = [dict(zip(['ticket_id', 'title', 'status', 'created_datetime'], row)) for row in cursor.fetchall()]
-    
+
     # Get featured resources
     cursor.execute('SELECT * FROM support_resources WHERE is_featured = 1 LIMIT 5')
     featured_resources = [dict(zip([col[0] for col in cursor.description], row)) for row in cursor.fetchall()]
-    
+
     return {
         'ticket_stats': ticket_stats,
         'recent_tickets': recent_tickets,
@@ -126,15 +126,15 @@ def _get_staff_dashboard(user_id, cursor):
     GROUP BY status
     ''', (username,))
     assigned_stats = dict(cursor.fetchall())
-    
+
     # Get high priority tickets
     cursor.execute('''
     SELECT ticket_id, title, priority, created_datetime, student_id
-    FROM support_tickets 
-    WHERE priority IN ('High', 'Critical', 'Urgent') 
+    FROM support_tickets
+    WHERE priority IN ('High', 'Critical', 'Urgent')
     AND status NOT IN ('Resolved', 'Closed')
-    ORDER BY 
-        CASE priority 
+    ORDER BY
+        CASE priority
             WHEN 'Critical' THEN 1
             WHEN 'Urgent' THEN 2
             WHEN 'High' THEN 3
@@ -143,26 +143,26 @@ def _get_staff_dashboard(user_id, cursor):
     LIMIT 10
     ''')
     priority_tickets = [dict(zip(['ticket_id', 'title', 'priority', 'created_datetime', 'student_id'], row)) for row in cursor.fetchall()]
-    
+
     # Get team performance metrics
     cursor.execute('''
-    SELECT 
+    SELECT
         COUNT(*) as total_tickets,
-        AVG(CASE WHEN resolved_at IS NOT NULL 
-            THEN julianday(resolved_at) - julianday(created_datetime) 
+        AVG(CASE WHEN resolved_at IS NOT NULL
+            THEN julianday(resolved_at) - julianday(created_datetime)
             END) as avg_resolution_days,
         COUNT(CASE WHEN status = 'Resolved' THEN 1 END) as resolved_count
-    FROM support_tickets 
+    FROM support_tickets
     WHERE created_datetime >= date('now', '-30 days')
     ''')
-    
+
     performance_data = cursor.fetchone()
     performance_metrics = {
         'total_tickets_month': performance_data[0] or 0,
         'avg_resolution_time': round(performance_data[1] or 0, 2),
         'resolution_rate': round((performance_data[2] or 0) / max(performance_data[0] or 1, 1) * 100, 1)
     }
-    
+
     # Get recent activity
     cursor.execute('''
     SELECT tr.ticket_id, st.title, tr.response_datetime, tr.responder_role
@@ -173,7 +173,7 @@ def _get_staff_dashboard(user_id, cursor):
     LIMIT 10
     ''')
     recent_activity = [dict(zip(['ticket_id', 'title', 'datetime', 'responder_role'], row)) for row in cursor.fetchall()]
-    
+
     return {
         'assigned_stats': assigned_stats,
         'priority_tickets': priority_tickets,
@@ -199,35 +199,35 @@ def display_dashboard(support):
     """Display user dashboard"""
     try:
         dashboard_data = support.get_dashboard_data(_auth_mod.auth.current_user['role'], _auth_mod.auth.current_user['id'])
-        
+
         print("\n📊 DASHBOARD")
         print("="*50)
-        
+
         if _auth_mod.auth.current_user['role'] == 'student':
             # Student dashboard
             stats = dashboard_data.get('ticket_stats', {})
             print(f"🎫 Your Tickets: Open: {stats.get('Open', 0)}, In Progress: {stats.get('In Progress', 0)}, Resolved: {stats.get('Resolved', 0)}")
-            
+
             print("\n📋 Recent Tickets:")
             for ticket in dashboard_data.get('recent_tickets', [])[:5]:
                 print(f"  #{ticket['ticket_id']} - {ticket['title']} ({ticket['status']})")
-            
+
             print("\n⭐ Featured Resources:")
             for resource in dashboard_data.get('featured_resources', [])[:3]:
                 print(f"  📄 {resource['title']} - {resource['description'][:50]}...")
-        
+
         else:
             # Staff dashboard
             stats = dashboard_data.get('assigned_stats', {})
             print(f"🎫 Assigned Tickets: Open: {stats.get('Open', 0)}, In Progress: {stats.get('In Progress', 0)}")
-            
+
             metrics = dashboard_data.get('performance_metrics', {})
             print(f"📈 Performance (30 days): {metrics.get('total_tickets_month', 0)} tickets, {metrics.get('avg_resolution_time', 0)} days avg resolution")
-            
+
             print("\n🚨 High Priority Tickets:")
             for ticket in dashboard_data.get('priority_tickets', [])[:5]:
                 print(f"  #{ticket['ticket_id']} - {ticket['title']} ({ticket['priority']})")
-        
+
         # Notifications
         notifications = dashboard_data.get('notifications', [])
         if notifications:
@@ -235,10 +235,10 @@ def display_dashboard(support):
             for notif in notifications[:3]:
                 status = "📫" if notif['is_read'] else "📬"
                 print(f"  {status} {notif['title']}")
-        
+
     except Exception as e:
         print(f"Error loading dashboard: {e}")
-    
+
     input("\nPress Enter to continue...")
 
 def display_support_menu():
@@ -254,7 +254,7 @@ def display_support_menu():
         except Exception as e:
             print(f"Error initializing authentication system: {e}")
             return
-    
+
     # Initialize enhanced support system
     try:
         config = SupportConfig()
@@ -262,105 +262,105 @@ def display_support_menu():
     except Exception as e:
         print(f"Error initializing enhanced student support system: {e}")
         return
-    
+
     while True:
         print("\n" + "="*60)
         print("🎓 ENHANCED STUDENT SUPPORT PORTAL")
         print("="*60)
-        
+
         if not _auth_mod.auth or not _auth_mod.auth.current_user:
             print("❌ You must be logged in to access the support portal.")
             break
-        
+
         user_role = _auth_mod.auth.current_user['role']
         print(f"👤 Logged in as: {_auth_mod.auth.current_user['username']} ({user_role})")
-        
+
         options = []
         option_num = 1
-        
+
         # Dashboard
         print(f"{option_num}. 📊 View Dashboard")
         options.append('dashboard')
         option_num += 1
-        
+
         # Common features
         print(f"{option_num}. 🔍 Advanced Search")
         options.append('advanced_search')
         option_num += 1
-        
+
         print(f"{option_num}. ❓ Browse FAQs")
         options.append('view_faqs')
         option_num += 1
-        
+
         print(f"{option_num}. 📚 Knowledge Base")
         options.append('knowledge_base')
         option_num += 1
-        
+
         print(f"{option_num}. 📋 Support Resources")
         options.append('view_resources')
         option_num += 1
-        
+
         # Student features
         if user_role == 'student':
             print(f"{option_num}. 🎫 Create Support Ticket")
             options.append('create_ticket')
             option_num += 1
-            
+
             print(f"{option_num}. 📋 My Support Tickets")
             options.append('my_tickets')
             option_num += 1
-            
+
             print(f"{option_num}. 📋 Use Ticket Template")
             options.append('use_template')
             option_num += 1
-        
+
         # Staff features
         if user_role in ('staff', 'admin'):
             print(f"{option_num}. 🎫 All Support Tickets")
             options.append('all_tickets')
             option_num += 1
-            
+
             print(f"{option_num}. 📊 Generate Reports")
             options.append('reports')
             option_num += 1
-            
+
             print(f"{option_num}. 🔧 Manage Templates")
             options.append('manage_templates')
             option_num += 1
-            
+
             print(f"{option_num}. 📝 Manage Knowledge Base")
             options.append('manage_kb')
             option_num += 1
-            
+
             print(f"{option_num}. 🔄 Bulk Operations")
             options.append('bulk_operations')
             option_num += 1
-            
+
             print(f"{option_num}. 📤 Export Data")
             options.append('export_data')
             option_num += 1
-        
+
         # Settings and preferences
         print(f"{option_num}. ⚙️ Preferences")
         options.append('preferences')
         option_num += 1
-        
+
         print(f"{option_num}. 🔔 Notifications")
         options.append('notifications')
         option_num += 1
-        
+
         print(f"{option_num}. ↩️ Return to Main Menu")
-        
+
         print("\n" + "-"*60)
         choice = input("Enter your choice: ").strip()
-        
+
         if choice.isdigit() and 1 <= int(choice) <= len(options) + 1:
             idx = int(choice) - 1
             if idx == len(options):
                 break
-            
+
             action = options[idx]
-            
+
             try:
                 if action == 'dashboard':
                     display_dashboard(support)
@@ -394,11 +394,11 @@ def display_support_menu():
                     manage_preferences(support)
                 elif action == 'notifications':
                     view_notifications(support)
-            
+
             except Exception as e:
                 print(f"\n❌ Error: {e}")
                 input("Press Enter to continue...")
-        
+
         else:
             print("❌ Invalid choice. Please try again.")
 

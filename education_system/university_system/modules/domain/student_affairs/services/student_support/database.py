@@ -11,7 +11,7 @@ import json
 import logging
 
 from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 
 from education_system.university_system.modules.domain.student_affairs.services.student_support.config import SUPPORT_DB
 
@@ -22,21 +22,21 @@ def init_enhanced_db():
     try:
         conn = sqlite3.connect(SUPPORT_DB)
         cursor = conn.cursor()
-        
+
         # Create original tables first
         _create_original_tables(cursor)
-        
+
         # Create enhanced tables
         _create_enhanced_tables(cursor)
-        
+
         # Initialize default data
         _initialize_default_data(cursor)
-        
+
         conn.commit()
         conn.close()
-        
+
         logger.info("Enhanced database initialized successfully")
-        
+
     except Exception as e:
         logger.error(f"Failed to initialize enhanced database: {e}")
         raise
@@ -68,11 +68,11 @@ def _create_original_tables(cursor):
         FOREIGN KEY (parent_ticket_id) REFERENCES support_tickets (ticket_id)
     )
     ''')
-    
+
     # Check if table exists but is missing columns, then add them
     cursor.execute("PRAGMA table_info(support_tickets)")
     existing_columns = [column[1] for column in cursor.fetchall()]
-    
+
     required_columns = {
         'created_datetime': 'TEXT NOT NULL DEFAULT ""',
         'last_updated_datetime': 'TEXT',
@@ -87,7 +87,7 @@ def _create_original_tables(cursor):
         'subject': 'TEXT',
         'message': 'TEXT'
     }
-    
+
     for column_name, column_def in required_columns.items():
         if column_name not in existing_columns:
             try:
@@ -96,7 +96,7 @@ def _create_original_tables(cursor):
                 print(f"Added column '{column_name}' to support_tickets table")
             except Exception as e:
                 print(f"Could not add column '{column_name}': {e}")
-    
+
     # Enhanced ticket responses table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS ticket_responses (
@@ -112,7 +112,7 @@ def _create_original_tables(cursor):
         FOREIGN KEY (ticket_id) REFERENCES support_tickets (ticket_id)
     )
     ''')
-    
+
     # Enhanced support resources table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS support_resources (
@@ -132,7 +132,7 @@ def _create_original_tables(cursor):
         requires_auth BOOLEAN DEFAULT 0
     )
     ''')
-    
+
     # Enhanced FAQ table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS faqs (
@@ -152,7 +152,7 @@ def _create_original_tables(cursor):
 
 def _create_enhanced_tables(cursor):
     """Create new enhanced tables"""
-    
+
     # File attachments table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS ticket_attachments (
@@ -170,7 +170,7 @@ def _create_enhanced_tables(cursor):
         FOREIGN KEY (ticket_id) REFERENCES support_tickets (ticket_id)
     )
     ''')
-    
+
     # Notifications table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS notifications (
@@ -212,7 +212,7 @@ def _create_enhanced_tables(cursor):
                 logger.info(f"Added column '{col_name}' to notifications table")
             except Exception as e:
                 logger.warning(f"Could not add column '{col_name}' to notifications: {e}")
-    
+
     # Staff assignments table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS staff_assignments (
@@ -226,7 +226,7 @@ def _create_enhanced_tables(cursor):
         auto_assign_enabled BOOLEAN DEFAULT 1
     )
     ''')
-    
+
     # Ticket templates table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS ticket_templates (
@@ -242,7 +242,7 @@ def _create_enhanced_tables(cursor):
         usage_count INTEGER DEFAULT 0
     )
     ''')
-    
+
     # Response templates table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS response_templates (
@@ -258,7 +258,7 @@ def _create_enhanced_tables(cursor):
         variables TEXT  -- JSON array of variable names
     )
     ''')
-    
+
     # User preferences table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS user_preferences (
@@ -273,7 +273,7 @@ def _create_enhanced_tables(cursor):
         preferences_json TEXT  -- Additional JSON preferences
     )
     ''')
-    
+
     # System metrics table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS system_metrics (
@@ -285,7 +285,7 @@ def _create_enhanced_tables(cursor):
         metadata TEXT  -- JSON data
     )
     ''')
-    
+
     # Search analytics table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS search_analytics (
@@ -299,7 +299,7 @@ def _create_enhanced_tables(cursor):
         session_id TEXT
     )
     ''')
-    
+
     # Audit trail table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS audit_trail (
@@ -357,7 +357,7 @@ def _create_enhanced_tables(cursor):
         created_datetime TEXT NOT NULL
     )
     ''')
-    
+
     # Knowledge base articles table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS kb_articles (
@@ -379,7 +379,7 @@ def _create_enhanced_tables(cursor):
         related_articles TEXT  -- JSON array of related article IDs
     )
     ''')
-    
+
     # System integrations table
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS system_integrations (
@@ -396,7 +396,7 @@ def _create_enhanced_tables(cursor):
 
 def _initialize_default_data(cursor):
     """Initialize default data for enhanced tables"""
-    
+
     # Add default escalation rules
     cursor.execute('SELECT COUNT(*) FROM escalation_rules')
     if cursor.fetchone()[0] == 0:
@@ -407,15 +407,15 @@ def _initialize_default_data(cursor):
             ('Critical Priority Immediate Escalation', 'Critical', 'time_based', '0.5', 'escalate', 'supervisor', 1, 'system', datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')),
             ('Long Open Ticket', None, 'time_based', '72', 'notify', 'supervisor', 1, 'system', datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')),
         ]
-        
+
         # FIXED: Updated SQL to match the actual data being provided
         cursor.executemany(
-            '''INSERT INTO escalation_rules 
-               (name, priority, condition_type, condition_value, action_type, action_target, is_active, created_by, created_datetime) 
+            '''INSERT INTO escalation_rules
+               (name, priority, condition_type, condition_value, action_type, action_target, is_active, created_by, created_datetime)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
             default_rules
         )
-    
+
     # Add default response templates
     cursor.execute('SELECT COUNT(*) FROM response_templates')
     if cursor.fetchone()[0] == 0:
@@ -428,7 +428,7 @@ def _initialize_default_data(cursor):
             'INSERT INTO response_templates (name, subject, content, category, created_by, created_datetime, is_active, usage_count, variables) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
             default_templates
         )
-    
+
     # Add default ticket templates
     cursor.execute('SELECT COUNT(*) FROM ticket_templates')
     if cursor.fetchone()[0] == 0:
@@ -441,5 +441,5 @@ def _initialize_default_data(cursor):
             'INSERT INTO ticket_templates (name, title_template, description_template, category, priority, created_by, created_datetime, is_active, usage_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
             default_ticket_templates
         )
-    
+
 

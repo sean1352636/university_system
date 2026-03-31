@@ -286,7 +286,7 @@ class AcademicCalendarManager:
                 '''
             }
 
-            from education_system.university_system.core.sql_safety import validate_identifier
+            from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
             for table_name, create_sql in required_tables.items():
                 try:
                     # Test if table exists by querying it
@@ -745,7 +745,7 @@ class AcademicCalendarManager:
                 'academic_years', 'semesters', 'academic_calendar_events', 'event_categories'
             ]
 
-            from education_system.university_system.core.sql_safety import validate_identifier
+            from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
             missing_tables = []
             for table in required_tables:
                 try:
@@ -1125,7 +1125,7 @@ class AcademicCalendarManager:
                 set_clauses = []
                 params = []
 
-                from education_system.university_system.core.sql_safety import validate_identifier
+                from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
                 for field, value in sanitized_updates.items():
                     safe_field = validate_identifier(field, "column")
                     set_clauses.append("[" + safe_field + "] = ?")

@@ -61,19 +61,19 @@ def generate_qr_code(book_id: str, title: str) -> str:
     try:
         # Create QR code data
         qr_data = f"LIBRARY_BOOK:{book_id}:{title}"
-        
+
         # Generate QR code
         qr = qrcode.QRCode(version=1, box_size=10, border=5)
         qr.add_data(qr_data)
         qr.make(fit=True)
-        
+
         # Create QR code image
         qr_img = qr.make_image(fill_color="black", back_color="white")
-        
+
         # Save QR code
         qr_path = QR_CODES_DIR / f"book_{book_id}.png"
         qr_img.save(str(qr_path))
-        
+
         return qr_path
     except Exception as e:
         logging.error(f"Error generating QR code: {e}")
@@ -88,44 +88,44 @@ def scan_barcode():
    print("2. Simulate barcode scan")
    print("3. Batch barcode processing")
    print("4. Return to menu")
-   
+
    choice = input("Enter your choice (1-4): ").strip()
-   
+
    if choice == '4':
        return None
-   
+
    try:
        if choice == '1':
            # Manual entry
            barcode = input("Enter barcode: ").strip()
            return process_scanned_barcode(barcode)
-       
+
        elif choice == '2':
            # Simulate scan
            print("Simulating barcode scan...")
            print("In a real implementation, this would interface with barcode scanner hardware")
            barcode = input("Enter simulated barcode data: ").strip()
            return process_scanned_barcode(barcode)
-       
+
        elif choice == '3':
            # Batch processing
            print("Batch barcode processing:")
            barcodes = []
-           
+
            print("Enter barcodes (press Enter on empty line to finish):")
            while True:
                barcode = input("Barcode: ").strip()
                if not barcode:
                    break
                barcodes.append(barcode)
-           
+
            results = []
            for barcode in barcodes:
                result = process_scanned_barcode(barcode)
                results.append(result)
-           
+
            return results
-   
+
    except Exception as e:
        print(f"Error scanning barcode: {e}")
        return None
@@ -136,19 +136,19 @@ def process_scanned_barcode(barcode):
    conn = get_db_connection()
    if not conn:
        return None
-   
+
    cursor = conn.cursor()
-   
+
    try:
        # Check if it's a book barcode
        cursor.execute('''
-       SELECT book_id, title, author, status 
-       FROM books 
+       SELECT book_id, title, author, status
+       FROM books
        WHERE barcode = ?
        ''', (barcode,))
-       
+
        book = cursor.fetchone()
-       
+
        if book:
            book_id, title, author, status = book
            result = {
@@ -159,22 +159,22 @@ def process_scanned_barcode(barcode):
                'status': status,
                'barcode': barcode
            }
-           
+
            print(f"📚 Book found: {title} by {author}")
            print(f"   ID: {book_id}, Status: {status}")
-           
+
            conn.close()
            return result
-       
+
        # Check if it's a user ID barcode (library card)
        cursor.execute('''
-       SELECT student_id, first_name, last_name 
-       FROM students 
+       SELECT student_id, first_name, last_name
+       FROM students
        WHERE student_id = ? OR student_id = ?
        ''', (barcode, barcode.replace('LIB', '').lstrip('0')))
-       
+
        user = cursor.fetchone()
-       
+
        if user:
            student_id, first_name, last_name = user
            result = {
@@ -183,18 +183,18 @@ def process_scanned_barcode(barcode):
                'name': f"{first_name} {last_name}",
                'barcode': barcode
            }
-           
+
            print(f"👤 User found: {first_name} {last_name}")
            print(f"   Student ID: {student_id}")
-           
+
            conn.close()
            return result
-       
+
        # Unknown barcode
        print(f"❌ No item found for barcode: {barcode}")
        conn.close()
        return None
-       
+
    except sqlite3.Error as e:
        logging.error(f"Error processing barcode: {e}")
        conn.close()
@@ -208,44 +208,44 @@ def print_barcode_labels(book_ids):
    if not auth or not auth.current_user:
        print("You must be logged in to print labels.")
        return
-   
+
    if not auth.check_permission('manage_books'):
        print("You don't have permission to print labels.")
        return
-   
+
    conn = get_db_connection()
    if not conn:
        return
-   
+
    cursor = conn.cursor()
-   
+
    try:
        # Get book information
        book_data = []
-       
+
        for book_id in book_ids:
            cursor.execute('''
            SELECT book_id, title, author, barcode, category
            FROM books
            WHERE book_id = ?
            ''', (book_id,))
-           
+
            book = cursor.fetchone()
            if book:
                book_data.append(book)
-       
+
        if not book_data:
            print("No valid books found for label printing.")
            return
-       
+
        # Generate label file
        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
        label_filename = f"barcode_labels_{timestamp}.txt"
-       
+
        with open(label_filename, 'w') as f:
            f.write("LIBRARY BARCODE LABELS\n")
            f.write("=" * 50 + "\n\n")
-           
+
            for book_id, title, author, barcode, category in book_data:
                f.write(f"Book ID: {book_id}\n")
                f.write(f"Title: {title}\n")
@@ -254,17 +254,17 @@ def print_barcode_labels(book_ids):
                f.write(f"Barcode: {barcode}\n")
                f.write(f"[{barcode}]")  # Barcode representation
                f.write("\n" + "-" * 30 + "\n\n")
-       
+
        print(f"✅ Barcode labels generated: {label_filename}")
        print(f"Labels created for {len(book_data)} books")
        print("In a real implementation, this would send to a label printer.")
-       
-       log_audit_event(get_current_user_id(), 
-                      f"Generated barcode labels for {len(book_data)} books", 
+
+       log_audit_event(get_current_user_id(),
+                      f"Generated barcode labels for {len(book_data)} books",
                       "books")
-       
+
        conn.close()
-       
+
    except Exception as e:
        logging.error(f"Error printing barcode labels: {e}")
        print(f"Error generating labels: {e}")
@@ -278,49 +278,49 @@ def generate_library_cards():
     if not auth or not auth.current_user:
         print("You must be logged in to generate library cards.")
         return
-    
+
     if not auth.check_permission('manage_users'):
         print("You don't have permission to generate library cards.")
         return
-    
+
     print("\nLibrary Card Generator:")
     print("======================")
     print("1. Generate card for specific user")
     print("2. Bulk generate cards")
     print("3. Re-generate lost card")
-    
+
     choice = input("Select option (1-3): ").strip()
-    
+
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        
+
         if choice == '1':
             # Single user card
             user_id = input("Enter User/Student ID: ").strip()
-            
+
             # Get user information
             cursor.execute('''
-            SELECT first_name, last_name, grade_level, email 
+            SELECT first_name, last_name, grade_level, email
             FROM students WHERE student_id = ?
             ''', (user_id,))
-            
+
             user_info = cursor.fetchone()
-            
+
             if not user_info:
                 print("User not found.")
                 return
-            
+
             first_name, last_name, grade_level, email = user_info
-            
+
             # Generate library card
             card_data = generate_library_card_data(user_id, first_name, last_name, grade_level)
-            
+
             card_filename = f"library_card_{user_id}.png"
             create_library_card_image(card_data, card_filename)
-            
+
             print(f"✅ Library card generated: {card_filename}")
-            
+
         elif choice == '2':
             # Bulk generation
             print("Bulk card generation feature would:")
@@ -328,19 +328,19 @@ def generate_library_cards():
             print("2. Generate cards for users without them")
             print("3. Create a batch PDF with multiple cards")
             print("4. Track card generation status")
-            
+
             print("This feature requires additional implementation.")
-            
+
         elif choice == '3':
             # Re-generate lost card
             user_id = input("Enter User ID for replacement card: ").strip()
-            
+
             # Mark old card as invalid and generate new one
             print(f"Re-generating library card for {user_id}")
             print("Old card would be marked as invalid in the system.")
-            
+
         conn.close()
-        
+
     except Exception as e:
         print(f"Error generating library cards: {e}")
 
@@ -350,7 +350,7 @@ def generate_library_card_data(user_id: str, first_name: str, last_name: str, gr
     card_number = f"LIB{user_id.zfill(6)}"
     issue_date = datetime.now().strftime('%Y-%m-%d')
     expiry_date = (datetime.now() + timedelta(days=365)).strftime('%Y-%m-%d')
-    
+
     return {
         'card_number': card_number,
         'user_id': user_id,

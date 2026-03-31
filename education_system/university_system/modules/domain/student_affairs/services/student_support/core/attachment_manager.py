@@ -36,18 +36,18 @@ def _process_attachments(ticket_id, attachments, cursor):
     for attachment in attachments:
         if not _validate_file(attachment):
             continue
-            
+
         # Generate secure filename
         secure_filename = _generate_secure_filename(attachment['filename'])
         file_path = os.path.join(str(UPLOAD_DIR), 'tickets', str(ticket_id), secure_filename)
-        
+
         # Ensure directory exists
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        
+
         # Save file
         with open(file_path, 'wb') as f:
             f.write(attachment['data'])
-        
+
         # Store in database
         cursor.execute('''
         INSERT INTO ticket_attachments (
@@ -66,12 +66,12 @@ def _validate_file(attachment):
     if len(attachment['data']) > config.max_file_size:
         logger.warning(f"File too large: {len(attachment['data'])} bytes")
         return False
-        
+
     ext = os.path.splitext(attachment['filename'])[1].lower()
     if ext not in config.allowed_file_types:
         logger.warning(f"File type not allowed: {ext}")
         return False
-        
+
     return True
 
 def _generate_secure_filename(filename):
@@ -84,7 +84,7 @@ def _generate_secure_filename(filename):
 def _get_file_type(filename):
     """Determine file type from filename"""
     ext = os.path.splitext(filename)[1].lower()
-    
+
     if ext in ['.jpg', '.jpeg', '.png', '.gif', '.bmp']:
         return FileType.IMAGE.value
     elif ext in ['.pdf', '.doc', '.docx', '.txt', '.rtf']:
@@ -102,10 +102,10 @@ def _get_attachment_count(ticket_id, cursor):
 def _get_last_response_info(ticket_id, cursor):
     """Get information about the last response to a ticket"""
     cursor.execute('''
-    SELECT responder_role, response_datetime FROM ticket_responses 
+    SELECT responder_role, response_datetime FROM ticket_responses
     WHERE ticket_id = ? ORDER BY response_datetime DESC LIMIT 1
     ''', (ticket_id,))
-    
+
     result = cursor.fetchone()
     if result:
         return {'role': result[0], 'datetime': result[1]}
@@ -118,38 +118,38 @@ def download_attachment_menu(support, attachments):
     try:
         print(f"\n📎 DOWNLOAD ATTACHMENTS")
         print("="*40)
-        
+
         print("Available attachments:")
         for i, att in enumerate(attachments, 1):
             size_mb = att['file_size'] / (1024 * 1024)
             print(f"{i}. 📄 {att['original_filename']} ({size_mb:.1f}MB)")
             print(f"   📅 Uploaded: {att['uploaded_datetime']}")
             print(f"   👤 By: {att['uploaded_by']}")
-        
+
         choice = input(f"\nSelect attachment to download (1-{len(attachments)}): ").strip()
-        
+
         if not choice.isdigit() or not 1 <= int(choice) <= len(attachments):
             print("❌ Invalid choice.")
             return
-        
+
         attachment = attachments[int(choice) - 1]
         attachment_id = attachment['attachment_id']
-        
+
         # Download attachment
         print(f"📥 Downloading {attachment['original_filename']}...")
-        
+
         file_info = support.download_attachment(attachment_id)
-        
+
         # Save to current directory
         filename = file_info['filename']
         with open(filename, 'wb') as f:
             f.write(file_info['data'])
-        
+
         print(f"✅ File downloaded as {filename}")
-        
+
     except Exception as e:
         print(f"❌ Error downloading attachment: {e}")
-    
+
     input("\nPress Enter to continue...")
 
 # Ticket management enhancements

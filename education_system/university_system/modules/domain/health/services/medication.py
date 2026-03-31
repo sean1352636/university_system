@@ -72,7 +72,7 @@ def manage_refill_reminders(auth):
     thirty_days_from_now = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
 
     cursor.execute('''
-    SELECT p.id, s.student_id, s.first_name, s.last_name, p.medication_name, 
+    SELECT p.id, s.student_id, s.first_name, s.last_name, p.medication_name,
            p.dosage, p.end_date, p.pharmacy
     FROM prescriptions p
     JOIN students s ON p.student_id = s.student_id

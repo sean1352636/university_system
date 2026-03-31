@@ -347,7 +347,7 @@ def recording_and_replay_management(cursor):
 
 def manage_learning_integration():
     """Main learning integration interface"""
-    
+
     if not ctx.auth or not ctx.auth.current_user:
         print("You must be logged in to access learning features.")
         return
@@ -647,7 +647,7 @@ def research_presentation_platform(student_id, cursor, conn):
             print("5. Industry application")
 
             pres_type = input("Select type: ").strip()
-            types = ['Research findings', 'Work in progress', 'Literature review', 
+            types = ['Research findings', 'Work in progress', 'Literature review',
                     'Methodology discussion', 'Industry application']
 
             if pres_type.isdigit() and 1 <= int(pres_type) <= 5:

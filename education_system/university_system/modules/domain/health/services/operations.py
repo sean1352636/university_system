@@ -44,8 +44,8 @@ def block_time_slots(auth):
 
     # Create blocked appointment entries
     cursor.execute('''
-    INSERT INTO health_appointments 
-    (student_id, appointment_type, appointment_date, appointment_time, provider, 
+    INSERT INTO health_appointments
+    (student_id, appointment_type, appointment_date, appointment_time, provider,
      reason, status, scheduled_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ''', ('BLOCKED', 'BLOCKED_TIME', block_date, start_time, provider_name,
@@ -70,7 +70,7 @@ def patient_queue(auth):
            ha.appointment_type, ha.reason, ha.status
     FROM health_appointments ha
     JOIN students s ON ha.student_id = s.student_id
-    WHERE ha.provider = ? AND ha.appointment_date = ? 
+    WHERE ha.provider = ? AND ha.appointment_date = ?
     AND ha.status IN ('scheduled', 'checked_in')
     ORDER BY ha.appointment_time
     ''', (provider_name, today))
@@ -126,7 +126,7 @@ def pending_tasks(auth):
 
     # Unverified vaccinations
     cursor.execute('''
-    SELECT COUNT(*) FROM vaccination_records 
+    SELECT COUNT(*) FROM vaccination_records
     WHERE verified = 0
     ''')
     unverified_vax = cursor.fetchone()[0]
@@ -136,7 +136,7 @@ def pending_tasks(auth):
 
     # Pending referrals
     cursor.execute('''
-    SELECT COUNT(*) FROM referrals 
+    SELECT COUNT(*) FROM referrals
     WHERE status = 'pending'
     ''')
     pending_referrals = cursor.fetchone()[0]
@@ -146,7 +146,7 @@ def pending_tasks(auth):
 
     # Care plans needing updates
     cursor.execute('''
-    SELECT COUNT(*) FROM care_plans 
+    SELECT COUNT(*) FROM care_plans
     WHERE status = 'active' AND start_date < date('now', '-90 days')
     ''')
     stale_care_plans = cursor.fetchone()[0]
@@ -156,7 +156,7 @@ def pending_tasks(auth):
 
     # Students without emergency contacts
     cursor.execute('''
-    SELECT COUNT(DISTINCT s.student_id) 
+    SELECT COUNT(DISTINCT s.student_id)
     FROM students s
     LEFT JOIN emergency_contacts ec ON s.student_id = ec.student_id
     WHERE ec.student_id IS NULL

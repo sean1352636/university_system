@@ -54,17 +54,17 @@ def automated_notifications():
     if not auth or not auth.current_user:
         print("You must be logged in to manage notifications.")
         return
-    
+
     if not auth.check_permission('system_config'):
         print("You don't have permission to manage notifications.")
         return
-    
+
     conn = get_db_connection()
     if not conn:
         return
-    
+
     cursor = conn.cursor()
-    
+
     print("\nAutomated Notifications:")
     print("=======================")
     print("1. Send Due Date Reminders")
@@ -73,23 +73,23 @@ def automated_notifications():
     print("4. Process Notification Queue")
     print("5. Configure Notification Settings")
     print("6. Return to menu")
-    
+
     choice = input("Enter your choice (1-6): ").strip()
-    
+
     try:
         if choice == '1':
             # Send due date reminders
             tomorrow = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
-            
+
             cursor.execute('''
             SELECT bl.user_id, bl.book_id, b.title, bl.due_date
             FROM book_loans bl
             JOIN books b ON bl.book_id = b.book_id
             WHERE date(bl.due_date) = ? AND bl.status = 'active'
             ''', (tomorrow,))
-            
+
             due_soon = cursor.fetchall()
-            
+
             sent_count = 0
             for user_id, book_id, title, due_date in due_soon:
                 try:
@@ -97,13 +97,13 @@ def automated_notifications():
                     sent_count += 1
                 except Exception as e:
                     logging.error(f"Failed to send reminder to {user_id}: {e}")
-            
+
             print(f"✅ Sent {sent_count} due date reminders")
-            
+
         elif choice == '2':
             # Send overdue notifications
             today = datetime.now().strftime('%Y-%m-%d')
-            
+
             cursor.execute('''
             SELECT bl.user_id, bl.book_id, b.title, bl.due_date,
                    julianday('now') - julianday(bl.due_date) as days_overdue
@@ -111,60 +111,60 @@ def automated_notifications():
             JOIN books b ON bl.book_id = b.book_id
             WHERE date(bl.due_date) < date('now') AND bl.status IN ('active', 'overdue')
             ''')
-            
+
             overdue_items = cursor.fetchall()
-            
+
             sent_count = 0
             for user_id, book_id, title, due_date, days_overdue in overdue_items:
                 try:
                     # Update loan status to overdue
                     cursor.execute('''
-                    UPDATE book_loans SET status = 'overdue' 
+                    UPDATE book_loans SET status = 'overdue'
                     WHERE book_id = ? AND user_id = ? AND status = 'active'
                     ''', (book_id, user_id))
-                    
+
                     send_overdue_notification(user_id, book_id, title, due_date[:10], int(days_overdue))
                     sent_count += 1
                 except Exception as e:
                     logging.error(f"Failed to send overdue notice to {user_id}: {e}")
-            
+
             conn.commit()
             print(f"✅ Sent {sent_count} overdue notifications")
-            
+
         elif choice == '3':
             # Send reservation alerts for available books
             cursor.execute('''
             SELECT br.user_id, br.book_id, b.title, br.reservation_id
             FROM book_reservations br
             JOIN books b ON br.book_id = b.book_id
-            WHERE b.status = 'available' AND br.status = 'active' 
+            WHERE b.status = 'available' AND br.status = 'active'
             AND br.priority_order = 1 AND br.notification_sent = 0
             ''')
-            
+
             available_reservations = cursor.fetchall()
-            
+
             sent_count = 0
             for user_id, book_id, title, reservation_id in available_reservations:
                 try:
                     send_reservation_available_notification(user_id, book_id, title)
-                    
+
                     # Mark notification as sent and update book status
                     cursor.execute('''
-                    UPDATE book_reservations SET notification_sent = 1 
+                    UPDATE book_reservations SET notification_sent = 1
                     WHERE reservation_id = ?
                     ''', (reservation_id,))
-                    
+
                     cursor.execute('''
                     UPDATE books SET status = 'reserved' WHERE book_id = ?
                     ''', (book_id,))
-                    
+
                     sent_count += 1
                 except Exception as e:
                     logging.error(f"Failed to send reservation alert to {user_id}: {e}")
-            
+
             conn.commit()
             print(f"✅ Sent {sent_count} reservation alerts")
-            
+
         elif choice == '4':
             # Process notification queue
             cursor.execute('''
@@ -174,9 +174,9 @@ def automated_notifications():
             ORDER BY priority DESC, created_date
             LIMIT 50
             ''')
-            
+
             queued_notifications = cursor.fetchall()
-            
+
             processed_count = 0
             for notification_id, user_id, notif_type, title, message, method in queued_notifications:
                 try:
@@ -184,26 +184,26 @@ def automated_notifications():
                         send_generic_email_notification(user_id, title, message)
                     elif method == 'sms':
                         send_sms_notification(user_id, message)
-                    
+
                     cursor.execute('''
-                    UPDATE notification_queue SET sent = 1 
+                    UPDATE notification_queue SET sent = 1
                     WHERE notification_id = ?
                     ''', (notification_id,))
-                    
+
                     processed_count += 1
                 except Exception as e:
                     logging.error(f"Failed to send notification {notification_id}: {e}")
-            
+
             conn.commit()
             print(f"✅ Processed {processed_count} queued notifications")
-            
+
         elif choice == '5':
             # Configure notification settings
             configure_notification_settings()
-    
+
     except sqlite3.Error as e:
         print(f"Error processing notifications: {e}")
-    
+
     conn.close()
 
 
@@ -213,10 +213,10 @@ def send_enhanced_checkout_notification(user_id: str, book_id: str, title: str, 
         # Get user email if available
         conn = get_db_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute('SELECT email FROM students WHERE student_id = ?', (user_id,))
         user_email = cursor.fetchone()
-        
+
         if user_email and user_email[0]:
             from education_system.university_system.infrastructure.email.template_utils import render_template
 
@@ -228,9 +228,9 @@ def send_enhanced_checkout_notification(user_id: str, book_id: str, title: str, 
 
             if subject and message:
                 send_email_notification(user_email[0], subject, message)
-        
+
         conn.close()
-        
+
     except Exception as e:
         logging.error(f"Error sending checkout notification: {e}")
 
@@ -241,21 +241,21 @@ def send_overdue_notification(user_id: str, book_id: str, title: str, due_date: 
         # Calculate fine amount
         conn = get_db_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute('SELECT setting_value FROM library_settings WHERE setting_name = "fine_per_day"')
         fine_per_day = float(cursor.fetchone()[0])
         total_fine = days_overdue * fine_per_day
-        
+
         # Update fine in loan record
         cursor.execute('''
-        UPDATE book_loans 
+        UPDATE book_loans
         SET fine_amount = ?
         WHERE book_id = ? AND user_id = ? AND status IN ('active', 'overdue')
         ''', (total_fine, book_id, user_id))
-        
+
         conn.commit()
         conn.close()
-        
+
         # Send notification (implementation depends on your notification system)
         message = f"""
 OVERDUE NOTICE
@@ -269,9 +269,9 @@ Please return this book as soon as possible to avoid additional fines.
 
 Contact the library if you have any questions.
         """
-        
+
         logging.info(f"Overdue notification sent to {user_id} for book {book_id}")
-        
+
     except Exception as e:
         logging.error(f"Error sending overdue notification: {e}")
 
@@ -410,12 +410,12 @@ def configure_notification_settings():
     conn = get_db_connection()
     if not conn:
         return
-    
+
     cursor = conn.cursor()
-    
+
     print("\nNotification Settings:")
     print("=====================")
-    
+
     # Current notification settings
     notification_settings = [
         'email_notifications',
@@ -424,47 +424,47 @@ def configure_notification_settings():
         'overdue_notifications',
         'reservation_alerts'
     ]
-    
+
     try:
         for setting in notification_settings:
             cursor.execute('''
             SELECT setting_value FROM library_settings WHERE setting_name = ?
             ''', (setting,))
-            
+
             result = cursor.fetchone()
             current_value = result[0] if result else 'false'
-            
+
             print(f"{setting.replace('_', ' ').title()}: {current_value}")
-        
+
         print("\nUpdate Settings:")
         for setting in notification_settings:
             cursor.execute('''
             SELECT setting_value FROM library_settings WHERE setting_name = ?
             ''', (setting,))
-            
+
             result = cursor.fetchone()
             current_value = result[0] if result else 'false'
-            
+
             new_value = input(f"Enable {setting.replace('_', ' ')} (y/n) [{current_value}]: ").strip().lower()
-            
+
             if new_value in ['y', 'yes']:
                 new_value = 'true'
             elif new_value in ['n', 'no']:
                 new_value = 'false'
             else:
                 continue  # Keep current value
-            
+
             cursor.execute('''
             INSERT OR REPLACE INTO library_settings (setting_name, setting_value)
             VALUES (?, ?)
             ''', (setting, new_value))
-        
+
         conn.commit()
         print("✅ Notification settings updated!")
-        
+
     except sqlite3.Error as e:
         print(f"Error configuring notifications: {e}")
-    
+
     conn.close()
 
 

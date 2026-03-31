@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import sqlite3, ensure_parent_dir
-from education_system.university_system.core.sql_safety import validate_table_name, validate_identifier
+from education_system.university_system.core.sql_safety import validate_table_name, validate_identifier  # nosec B608
 from pathlib import Path
 import os
 

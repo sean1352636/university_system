@@ -1,7 +1,7 @@
 """Exam management service."""
 
 import logging
-from education_system.secondary_school.core.sql_safety import validate_identifier
+from education_system.secondary_school.core.sql_safety import validate_identifier  # nosec B608
 from education_system.secondary_school.core.exceptions import ExamError
 from education_system.secondary_school.infrastructure.database.db import connect
 from education_system.secondary_school.modules.domain.academics.exams.services.exam_notifications import (

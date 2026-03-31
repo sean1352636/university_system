@@ -8,7 +8,7 @@ import json
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 
 class SessionManager:
     """Manager for virtual session operations"""

@@ -43,7 +43,7 @@ def _start_background_tasks():
             except Exception as e:
                 logger.error(f"Background task error: {e}")
                 time.sleep(60)  # Wait 1 minute before retrying
-    
+
     # Only start background tasks if _auth_mod.auth is available
     if _auth_mod.auth and _auth_mod.auth.current_user:
         background_thread = threading.Thread(target=background_worker, daemon=True)
@@ -51,57 +51,57 @@ def _start_background_tasks():
         logger.info("Background tasks started")
     else:
         logger.info("Background tasks not started - no authentication available")
-        
+
 
 def _process_notification_queue():
     """Process pending notifications"""
     try:
         conn = sqlite3.connect(SUPPORT_DB)
         cursor = conn.cursor()
-        
+
         # Check if table exists
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='notifications'")
         if not cursor.fetchone():
             logger.debug("Notifications table doesn't exist yet, skipping notification processing")
             conn.close()
             return
-        
+
         # Mark expired notifications
         cursor.execute('''
-        UPDATE notifications 
-        SET is_read = 1 
+        UPDATE notifications
+        SET is_read = 1
         WHERE expires_at < datetime('now') AND is_read = 0
         ''')
-        
+
         conn.commit()
         conn.close()
-        
+
     except Exception as e:
         logger.error(f"Error processing notification queue: {e}")
-        
+
 
 def _update_metrics():
     """Update system performance metrics with improved error handling"""
     try:
         conn = sqlite3.connect(SUPPORT_DB)
         cursor = conn.cursor()
-        
+
         # Check if table exists
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='system_metrics'")
         if not cursor.fetchone():
             logger.debug("System metrics table doesn't exist yet, skipping metrics update")
             conn.close()
             return
-        
+
         # Check if support_tickets table has required columns
         cursor.execute("PRAGMA table_info(support_tickets)")
         columns = [column[1] for column in cursor.fetchall()]
-        
+
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
+
         # Calculate current metrics with fallback handling
         metrics = []
-        
+
         # Active tickets metric
         try:
             cursor.execute('SELECT COUNT(*) FROM support_tickets WHERE status NOT IN ("Resolved", "Closed")')
@@ -109,25 +109,25 @@ def _update_metrics():
             metrics.append(('active_tickets', active_count, 'tickets'))
         except Exception as e:
             logger.warning(f"Could not calculate active tickets metric: {e}")
-        
+
         # Average response time metric
         try:
             if 'last_updated_datetime' in columns and 'created_datetime' in columns:
                 cursor.execute('''
-                SELECT AVG(julianday(last_updated_datetime) - julianday(created_datetime)) * 24 
-                FROM support_tickets 
+                SELECT AVG(julianday(last_updated_datetime) - julianday(created_datetime)) * 24
+                FROM support_tickets
                 WHERE last_updated_datetime IS NOT NULL AND created_datetime IS NOT NULL
                 ''')
             else:
                 # Skip this metric if required columns don't exist
                 logger.debug("Skipping response time metric: required datetime columns missing")
                 cursor.execute('SELECT 0')  # Placeholder query
-            
+
             avg_response_time = cursor.fetchone()[0] or 0
             metrics.append(('avg_response_time', avg_response_time, 'performance'))
         except Exception as e:
             logger.warning(f"Could not calculate response time metric: {e}")
-        
+
         # User satisfaction metric
         try:
             cursor.execute('SELECT AVG(satisfaction_rating) FROM support_tickets WHERE satisfaction_rating IS NOT NULL')
@@ -135,7 +135,7 @@ def _update_metrics():
             metrics.append(('user_satisfaction', avg_satisfaction, 'satisfaction'))
         except Exception as e:
             logger.warning(f"Could not calculate satisfaction metric: {e}")
-        
+
         # Insert calculated metrics
         for metric_name, value, category in metrics:
             try:
@@ -146,13 +146,13 @@ def _update_metrics():
                 ''', (metric_name, value, category, timestamp))
             except Exception as e:
                 logger.warning(f"Could not insert metric {metric_name}: {e}")
-        
+
         conn.commit()
         conn.close()
-        
+
     except Exception as e:
         logger.error(f"Error updating metrics: {e}")
-    
+
 # Template management methods
 
 def _load_staff_assignments():
@@ -186,4 +186,3 @@ def _load_staff_assignments():
     except Exception as e:
         logger.error(f"Error loading staff assignments: {e}")
         return {}
-    

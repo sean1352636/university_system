@@ -9,7 +9,7 @@ from education_system.university_system.modules.domain.student_affairs.student_u
 
 def manage_peer_support_system():
     """Main peer support system interface"""
-    
+
     if not ctx.auth or not ctx.auth.current_user:
         print("You must be logged in to access peer support.")
         return
@@ -190,7 +190,7 @@ def join_support_group(student_id, cursor, conn):
 
         # Update member count
         cursor.execute('''
-        UPDATE peer_support_groups 
+        UPDATE peer_support_groups
         SET current_members = current_members + 1
         WHERE group_id = ?
         ''', (group_id,))
@@ -202,7 +202,7 @@ def join_support_group(student_id, cursor, conn):
         print("Please remember this ID for group communications.")
 
         # Award points for joining
-        auto_award_points(student_id, "Peer Support", 20, 
+        auto_award_points(student_id, "Peer Support", 20,
                         f"Joined support group: {group[0]}", cursor, conn)
 
     except sqlite3.Error as e:
@@ -269,7 +269,7 @@ def create_support_group(student_id, cursor, conn):
             return
 
         support_types = [
-            "Academic Stress", "Social Anxiety", "General Wellness", 
+            "Academic Stress", "Social Anxiety", "General Wellness",
             "Grief & Loss", "Relationship Issues", "Career Concerns",
             "Identity & Self-Esteem", "Addiction Recovery", "Other"
         ]
@@ -330,7 +330,7 @@ def create_support_group(student_id, cursor, conn):
         print("- Ensure a safe and supportive environment")
 
         # Award points for creating group
-        auto_award_points(student_id, "Peer Support", 50, 
+        auto_award_points(student_id, "Peer Support", 50,
                         f"Created support group: {group_name}", cursor, conn)
 
     except sqlite3.Error as e:
@@ -384,7 +384,7 @@ def anonymous_peer_matching(student_id, cursor, conn):
             print("In the meantime, please review our crisis resources if you need immediate support.")
 
             # Award points for seeking support
-            auto_award_points(student_id, "Peer Support", 10, 
+            auto_award_points(student_id, "Peer Support", 10,
                             "Sought anonymous peer support", cursor, conn)
 
     except Exception as e:
@@ -432,7 +432,7 @@ def view_wellness_resources():
 
 def manage_academic_support():
     """Main academic support system interface"""
-    
+
     if not ctx.auth or not ctx.auth.current_user:
         print("You must be logged in to access academic support.")
         return
@@ -570,7 +570,7 @@ def manage_study_groups(student_id, cursor, conn):
                 print(f"Study group created successfully! Group ID: {group_id}")
 
                 # Award points for organizing
-                auto_award_points(student_id, "Academic Support", 25, 
+                auto_award_points(student_id, "Academic Support", 25,
                                 f"Organized study group: {subject} - {topic}", cursor, conn)
 
             elif choice == '3':
@@ -602,7 +602,7 @@ def manage_study_groups(student_id, cursor, conn):
 
                 # Check if already joined (simplified - would need separate members table)
                 cursor.execute('''
-                UPDATE study_groups 
+                UPDATE study_groups
                 SET current_members = current_members + 1
                 WHERE study_group_id = ?
                 ''', (group_id,))
@@ -612,13 +612,13 @@ def manage_study_groups(student_id, cursor, conn):
                 print(f"Successfully joined study group: {group[0]} - {group[1]}")
 
                 # Award points for joining
-                auto_award_points(student_id, "Academic Support", 15, 
+                auto_award_points(student_id, "Academic Support", 15,
                                 f"Joined study group: {group[0]} - {group[1]}", cursor, conn)
 
             elif choice == '4':
                 # My study groups
                 cursor.execute('''
-                SELECT study_group_id, subject, topic, meeting_time, location, 
+                SELECT study_group_id, subject, topic, meeting_time, location,
                        study_date, current_members, status
                 FROM study_groups
                 WHERE organizer_id = ?
@@ -750,13 +750,13 @@ def manage_peer_tutoring(student_id, cursor, conn):
                 print(f"Tutoring offer created successfully! Offer ID: {offer_id}")
 
                 # Award points for offering tutoring
-                auto_award_points(student_id, "Academic Support", 30, 
+                auto_award_points(student_id, "Academic Support", 30,
                                 f"Offered tutoring in {subject}", cursor, conn)
 
             elif choice == '3':
                 # My tutoring offers
                 cursor.execute('''
-                SELECT offer_id, subject, topic, hourly_rate, rating, 
+                SELECT offer_id, subject, topic, hourly_rate, rating,
                        total_sessions, status
                 FROM tutoring_offers
                 WHERE tutor_id = ?
@@ -936,7 +936,7 @@ def manage_shared_resources(student_id, cursor, conn):
                 print(f"Resource uploaded successfully! Resource ID: {resource_id}")
 
                 # Award points for sharing
-                auto_award_points(student_id, "Academic Support", 20, 
+                auto_award_points(student_id, "Academic Support", 20,
                                 f"Shared resource: {title}", cursor, conn)
 
             elif choice == '3':
@@ -987,7 +987,7 @@ def manage_shared_resources(student_id, cursor, conn):
 
                 # Update download count
                 cursor.execute('''
-                UPDATE shared_resources 
+                UPDATE shared_resources
                 SET downloads = downloads + 1
                 WHERE resource_id = ?
                 ''', (resource_id,))
@@ -996,7 +996,7 @@ def manage_shared_resources(student_id, cursor, conn):
 
                 # Award points to uploader
                 if resource[2] != student_id:
-                    auto_award_points(resource[2], "Academic Support", 5, 
+                    auto_award_points(resource[2], "Academic Support", 5,
                                     f"Resource downloaded: {resource[0]}", cursor, conn)
 
                 print("Download count updated.")
@@ -1020,7 +1020,7 @@ def manage_shared_resources(student_id, cursor, conn):
                 # In a full implementation, this would track individual ratings
                 # For now, we'll update the average
                 cursor.execute('''
-                UPDATE shared_resources 
+                UPDATE shared_resources
                 SET rating = (COALESCE(rating, 0) + ?) / 2
                 WHERE resource_id = ?
                 ''', (rating, resource_id))
@@ -1082,7 +1082,7 @@ def exam_preparation_groups(student_id, cursor, conn):
             print("Exam preparation group created!")
 
             # Award points
-            auto_award_points(student_id, "Academic Support", 25, 
+            auto_award_points(student_id, "Academic Support", 25,
                             f"Created exam prep group: {subject}", cursor, conn)
 
     except sqlite3.Error as e:

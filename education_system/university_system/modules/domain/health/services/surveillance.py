@@ -177,7 +177,7 @@ def conduct_contact_tracing(auth):
 
     # Update case record
     cursor.execute('''
-    UPDATE disease_surveillance 
+    UPDATE disease_surveillance
     SET contact_tracing_completed = 1, contacts_identified = ?
     WHERE id = ?
     ''', (len(contacts), case_id))
@@ -353,7 +353,7 @@ def analyze_disease_trends(auth):
     twelve_months_ago = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
 
     cursor.execute('''
-    SELECT 
+    SELECT
         strftime('%Y-%m', case_date) as month,
         disease_name,
         COUNT(*) as case_count
@@ -376,8 +376,8 @@ def analyze_disease_trends(auth):
 
     # Seasonal patterns
     cursor.execute('''
-    SELECT 
-        CASE 
+    SELECT
+        CASE
             WHEN strftime('%m', case_date) IN ('12', '01', '02') THEN 'Winter'
             WHEN strftime('%m', case_date) IN ('03', '04', '05') THEN 'Spring'
             WHEN strftime('%m', case_date) IN ('06', '07', '08') THEN 'Summer'
@@ -404,7 +404,7 @@ def analyze_disease_trends(auth):
 
     # Disease severity trends
     cursor.execute('''
-    SELECT 
+    SELECT
         disease_name,
         severity,
         COUNT(*) as count,
@@ -412,12 +412,12 @@ def analyze_disease_trends(auth):
     FROM disease_surveillance
     WHERE case_date >= ?
     GROUP BY disease_name, severity
-    ORDER BY disease_name, 
-        CASE severity 
-            WHEN 'Critical' THEN 1 
-            WHEN 'Severe' THEN 2 
-            WHEN 'Moderate' THEN 3 
-            WHEN 'Mild' THEN 4 
+    ORDER BY disease_name,
+        CASE severity
+            WHEN 'Critical' THEN 1
+            WHEN 'Severe' THEN 2
+            WHEN 'Moderate' THEN 3
+            WHEN 'Mild' THEN 4
         END
     ''', (twelve_months_ago,))
 
@@ -437,7 +437,7 @@ def analyze_disease_trends(auth):
     sixty_days_ago = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d')
 
     cursor.execute('''
-    SELECT 
+    SELECT
         disease_name,
         SUM(CASE WHEN case_date >= ? THEN 1 ELSE 0 END) as recent_cases,
         SUM(CASE WHEN case_date BETWEEN ? AND ? THEN 1 ELSE 0 END) as previous_cases
@@ -581,8 +581,8 @@ def report_disease_case(auth):
     created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     cursor.execute('''
-    INSERT INTO disease_surveillance 
-    (disease_name, case_date, student_id, symptoms, severity, status, 
+    INSERT INTO disease_surveillance
+    (disease_name, case_date, student_id, symptoms, severity, status,
      contact_tracing_needed, isolation_required, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (disease_name, case_date, student_id, symptoms, severity, 'under_investigation',

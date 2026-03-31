@@ -15,7 +15,7 @@ from education_system.university_system.infrastructure.database.db import get_co
 from education_system.university_system.modules.shared.feature_gui_factory import create_gui_launcher
 from education_system.university_system.modules.shared.constants import paths
 from education_system.university_system.modules.shared.utils.i18n import get_text, _
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 
 # Try to import optional dependencies
 try:

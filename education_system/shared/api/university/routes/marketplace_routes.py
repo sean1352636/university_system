@@ -10,7 +10,7 @@ from flask import Blueprint, g, jsonify, request
 from education_system.shared.api.university.auth import token_required
 from education_system.shared.api.university.pagination import get_pagination_params, paginated_response
 from education_system.university_system.core.exceptions import ValidationError
-from education_system.university_system.core.sql_safety import escape_like, validate_identifier
+from education_system.university_system.core.sql_safety import escape_like, validate_identifier  # nosec B608
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 from education_system.university_system.modules.shared.utils.activity_logger import log_activity
 

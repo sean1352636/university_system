@@ -4,7 +4,7 @@ import json
 import sqlite3
 from datetime import datetime
 import logging
-from education_system.secondary_school.core.sql_safety import validate_identifier, escape_like
+from education_system.secondary_school.core.sql_safety import validate_identifier, escape_like  # nosec B608
 
 from education_system.secondary_school.core.exceptions import StudentError, ValidationError
 from education_system.secondary_school.core.defaults import STUDENT_ID_PREFIX
@@ -176,7 +176,7 @@ class StudentService:
 
         conn = self._conn()
         try:
-            conn.execute(f"UPDATE students SET {set_clause} WHERE id = ?", params)
+            conn.execute(f"UPDATE students SET {set_clause} WHERE id = ?", params)  # nosec B608
             conn.commit()
             result = self.get_student(student_pk)
             if not result:

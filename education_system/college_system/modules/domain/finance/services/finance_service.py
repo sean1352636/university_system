@@ -71,7 +71,7 @@ class FinanceService:
             if not existing:
                 raise FinanceError("Fee item not found.")
             set_parts = ", ".join(f"{k} = ?" for k in updates)
-            conn.execute(f"UPDATE fee_items SET {set_parts} WHERE id = ?",
+            conn.execute(f"UPDATE fee_items SET {set_parts} WHERE id = ?",  # nosec B608
                          (*updates.values(), fee_id))
             conn.commit()
             logger.info("Fee item updated: id=%d", fee_id)

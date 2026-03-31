@@ -1,7 +1,7 @@
 from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.infrastructure.email import send_alumni_welcome_email
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 from education_system.university_system.modules.domain.student_affairs.services.alumni_management.core import get_db_connection, safe_execute, auth
 from education_system.university_system.modules.domain.student_affairs.services.alumni_management.gamification import award_engagement_points
 

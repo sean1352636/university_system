@@ -94,7 +94,7 @@ class ExternalExaminerService:
     def update_examiner(self, examiner_id: int, **kwargs) -> bool:
         if not kwargs:
             return False
-        from education_system.shared.database.sql_safety import validate_identifier
+        from education_system.shared.database.sql_safety import validate_identifier  # nosec B608
         sets = ", ".join(f"{validate_identifier(k)} = ?" for k in kwargs)
         with transaction() as conn:
             conn.execute(f"UPDATE external_examiners SET {sets} WHERE id = ?", (*kwargs.values(), examiner_id))

@@ -132,8 +132,8 @@ def calculate_monthly_payroll():
 
         cursor.execute('''
             SELECT s.staff_id, s.name, s.role, s.hourly_rate,
-                   SUM(CASE 
-                       WHEN ss.actual_end IS NOT NULL AND ss.actual_start IS NOT NULL 
+                   SUM(CASE
+                       WHEN ss.actual_end IS NOT NULL AND ss.actual_start IS NOT NULL
                        THEN (strftime('%s', ss.actual_end) - strftime('%s', ss.actual_start)) / 3600.0
                        ELSE (strftime('%s', ss.end_time) - strftime('%s', ss.start_time)) / 3600.0
                    END) as total_hours,

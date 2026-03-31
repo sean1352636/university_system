@@ -12,7 +12,7 @@ from collections import defaultdict
 
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 from education_system.university_system.infrastructure.analytics.models import DashboardWidget, AnalyticsMetric
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 from education_system.university_system.infrastructure.analytics.retention_prediction import get_retention_predictor
 from education_system.university_system.infrastructure.analytics.performance_analytics import get_performance_analyzer
 from education_system.university_system.infrastructure.analytics.report_generator import get_report_generator

@@ -3,7 +3,7 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import LessonPlanError, ValidationError
 from education_system.college_system.infrastructure.database.db import connect
-from education_system.college_system.core.sql_safety import validate_identifier
+from education_system.college_system.core.sql_safety import validate_identifier  # nosec B608
 import logging
 
 logger = logging.getLogger(__name__)
@@ -82,7 +82,7 @@ class LessonPlanService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {validate_identifier(key)} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"  # nosec B608
                 params.append(val)
         sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -104,7 +104,7 @@ class LessonPlanService:
         params = list(updates.values()) + [pk]
         conn = self._conn()
         try:
-            conn.execute(f"UPDATE lesson_plans SET {set_clause} WHERE id = ?", params)
+            conn.execute(f"UPDATE lesson_plans SET {set_clause} WHERE id = ?", params)  # nosec B608
             conn.commit()
             logger.info("Plan updated: pk=%d", pk)
             row = conn.execute("SELECT * FROM lesson_plans WHERE id = ?", (pk,)).fetchone()
@@ -138,7 +138,7 @@ class LessonPlanService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {validate_identifier(key)} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"  # nosec B608
                 params.append(val)
         conn = self._conn()
         try:

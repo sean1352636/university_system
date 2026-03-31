@@ -1039,7 +1039,7 @@ def view_purchase_orders():
             order_date = order[2][:10] if order[2] else 'N/A'
             expected = order[3][:10] if order[3] else 'N/A'
             actual = order[4][:10] if order[4] else 'N/A'
-            
+
             print(f"{order[0]:<12} {order_date:<12} {order[9]:<20} £{order[5]:<9.2f} {order[6]:<12} {expected:<12} {actual:<12}")
 
         print("="*120)
@@ -1125,7 +1125,7 @@ def create_purchase_order():
         while True:
             print(f"\nItem #{item_count + 1}")
             item_name = input("Enter item name (or 'done' to finish): ").strip()
-            
+
             if item_name.lower() == 'done':
                 break
 
@@ -1251,7 +1251,7 @@ def update_purchase_order():
         if new_status == 'Delivered':
             actual_delivery = datetime.now().strftime('%Y-%m-%d')
             cursor.execute('''
-                UPDATE restaurant_purchase_orders 
+                UPDATE restaurant_purchase_orders
                 SET status = ?, actual_delivery = ?
                 WHERE po_id = ?
             ''', (new_status, actual_delivery, po_id))
@@ -1336,7 +1336,7 @@ def receive_purchase_order():
             # Update received quantity
             total_received = item[7] + received_qty
             cursor.execute('''
-                UPDATE restaurant_purchase_order_items 
+                UPDATE restaurant_purchase_order_items
                 SET received_quantity = ?
                 WHERE id = ?
             ''', (total_received, item[0]))
@@ -1347,7 +1347,7 @@ def receive_purchase_order():
 
             if inventory_item:
                 cursor.execute('''
-                    UPDATE restaurant_inventory 
+                    UPDATE restaurant_inventory
                     SET quantity = quantity + ?, last_updated = ?
                     WHERE item_id = ?
                 ''', (received_qty, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), inventory_item[0]))
@@ -1364,7 +1364,7 @@ def receive_purchase_order():
 
         # Check if all items fully received
         cursor.execute('''
-            SELECT COUNT(*) FROM restaurant_purchase_order_items 
+            SELECT COUNT(*) FROM restaurant_purchase_order_items
             WHERE po_id = ? AND received_quantity < quantity
         ''', (po_id,))
 
@@ -1373,7 +1373,7 @@ def receive_purchase_order():
         if pending_items == 0:
             # Mark PO as delivered
             cursor.execute('''
-                UPDATE restaurant_purchase_orders 
+                UPDATE restaurant_purchase_orders
                 SET status = ?, actual_delivery = ?
                 WHERE po_id = ?
             ''', ('Delivered', datetime.now().strftime('%Y-%m-%d'), po_id))
@@ -1425,21 +1425,21 @@ def purchase_order_reports():
                 GROUP BY status
                 ORDER BY count DESC
             ''')
-            
+
             status_data = cursor.fetchall()
-            
+
             print("\nPurchase Order Summary by Status:")
             print("-"*50)
             print(f"{'Status':<15} {'Count':<8} {'Total Value':<15}")
             print("-"*50)
-            
+
             for status, count, total_value in status_data:
                 print(f"{status:<15} {count:<8} £{total_value:<14.2f}")
 
         elif choice == '2':
             # Supplier performance
             cursor.execute('''
-                SELECT s.name, COUNT(po.po_id) as order_count, 
+                SELECT s.name, COUNT(po.po_id) as order_count,
                        SUM(po.total_amount) as total_value,
                        AVG(CASE WHEN po.actual_delivery IS NOT NULL AND po.expected_delivery IS NOT NULL
                            THEN julianday(po.actual_delivery) - julianday(po.expected_delivery)
@@ -1450,14 +1450,14 @@ def purchase_order_reports():
                 GROUP BY s.supplier_id, s.name
                 ORDER BY total_value DESC
             ''')
-            
+
             supplier_data = cursor.fetchall()
-            
+
             print("\nSupplier Performance:")
             print("-"*80)
             print(f"{'Supplier':<25} {'Orders':<8} {'Total Value':<15} {'Avg Delay (days)':<15}")
             print("-"*80)
-            
+
             for supplier, orders, value, delay in supplier_data:
                 delay_str = f"{delay:.1f}" if delay is not None else "N/A"
                 print(f"{supplier:<25} {orders:<8} £{value:<14.2f} {delay_str:<15}")
@@ -1465,7 +1465,7 @@ def purchase_order_reports():
         elif choice == '3':
             # Delivery performance
             cursor.execute('''
-                SELECT 
+                SELECT
                     COUNT(*) as total_orders,
                     COUNT(CASE WHEN actual_delivery <= expected_delivery THEN 1 END) as on_time,
                     COUNT(CASE WHEN actual_delivery > expected_delivery THEN 1 END) as late,
@@ -1473,16 +1473,16 @@ def purchase_order_reports():
                 FROM restaurant_purchase_orders
                 WHERE expected_delivery IS NOT NULL
             ''')
-            
+
             delivery_stats = cursor.fetchone()
-            
+
             print("\nDelivery Performance:")
             print("-"*40)
             print(f"Total Orders: {delivery_stats[0]}")
             print(f"On Time: {delivery_stats[1]}")
             print(f"Late: {delivery_stats[2]}")
             print(f"Pending: {delivery_stats[3]}")
-            
+
             if delivery_stats[0] > 0:
                 on_time_pct = (delivery_stats[1] / delivery_stats[0]) * 100
                 print(f"On-Time Percentage: {on_time_pct:.1f}%")
@@ -1490,7 +1490,7 @@ def purchase_order_reports():
         elif choice == '4':
             # PO value analysis
             cursor.execute('''
-                SELECT 
+                SELECT
                     COUNT(*) as total_pos,
                     SUM(total_amount) as total_value,
                     AVG(total_amount) as avg_value,
@@ -1498,9 +1498,9 @@ def purchase_order_reports():
                     MAX(total_amount) as max_value
                 FROM restaurant_purchase_orders
             ''')
-            
+
             value_stats = cursor.fetchone()
-            
+
             print("\nPurchase Order Value Analysis:")
             print("-"*40)
             print(f"Total POs: {value_stats[0]}")

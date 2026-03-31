@@ -35,7 +35,7 @@ def add_ticket_response(ticket_id, response_text, template_id=None, is_internal=
     """Add a response to a support ticket with enhanced features."""
     if not _auth_mod.auth or not _auth_mod.auth.current_user:
         raise PermissionError("You must be logged in to respond to a ticket")
-    
+
     if not response_text:
         raise ValueError("Response text is required")
 
@@ -125,13 +125,13 @@ def _apply_response_template(template_id, ticket_id, response_text, cursor):
     """Apply response template with variable substitution"""
     cursor.execute('SELECT content, variables FROM response_templates WHERE template_id = ? AND is_active = 1', (template_id,))
     template_data = cursor.fetchone()
-    
+
     if not template_data:
         return response_text
-    
+
     template_content, variables_json = template_data
     variables = json.loads(variables_json or '[]')
-    
+
     # Replace variables
     replacements = {
         'TICKET_ID': str(ticket_id),
@@ -139,30 +139,30 @@ def _apply_response_template(template_id, ticket_id, response_text, cursor):
         'CURRENT_DATE': datetime.datetime.now().strftime('%Y-%m-%d'),
         'CURRENT_TIME': datetime.datetime.now().strftime('%H:%M:%S')
     }
-    
+
     for var in variables:
         if var in replacements:
             template_content = template_content.replace(f'[{var}]', replacements[var])
-    
+
     # Combine template with additional text
     if response_text and response_text != template_content:
         return f"{template_content}\n\n{response_text}"
-    
+
     return template_content
 
 def _update_ticket_on_response(ticket_id, ticket, response_time, cursor):
     """Update ticket status and metadata when response is added"""
     new_status = ticket[6]  # Current status
     assigned_to = ticket[9]  # Current assigned_to
-    
+
     # Auto-update status based on responder role
     if ticket[6] == 'Open' and _auth_mod.auth.current_user['role'] in ('staff', 'admin'):
         new_status = 'In Progress'
         if not assigned_to:
             assigned_to = _auth_mod.auth.current_user['username']
-    
+
     cursor.execute('''
-    UPDATE support_tickets 
+    UPDATE support_tickets
     SET last_updated_datetime = ?, status = ?, assigned_to = ?
     WHERE ticket_id = ?
     ''', (response_time, new_status, assigned_to, ticket_id))
@@ -226,25 +226,25 @@ def add_response_enhanced(support, ticket_id):
     try:
         # Get response templates
         templates = support.get_response_templates()
-        
+
         if templates and _auth_mod.auth.current_user['role'] in ('staff', 'admin'):
             print("\n📝 Response Templates:")
             print("0. Write custom response")
             for i, template in enumerate(templates[:10], 1):  # Show first 10
                 print(f"{i}. {template['name']}")
-            
+
             template_choice = input("\nSelect template (0 for custom): ").strip()
-            
+
             if template_choice.isdigit() and 1 <= int(template_choice) <= len(templates):
                 template = templates[int(template_choice) - 1]
                 response_text = template['content']
                 print(f"\nUsing template: {template['name']}")
                 print(f"Template content:\n{response_text}")
-                
+
                 additional = input("\nAdditional text (optional): ").strip()
                 if additional:
                     response_text += f"\n\n{additional}"
-                
+
                 template_id = template['template_id']
             else:
                 response_text = input("\nEnter your response: ").strip()
@@ -252,19 +252,19 @@ def add_response_enhanced(support, ticket_id):
         else:
             response_text = input("\nEnter your response: ").strip()
             template_id = None
-        
+
         if not response_text:
             print("❌ Response cannot be empty.")
             return
-        
+
         # Internal note option for staff
         is_internal = False
         if _auth_mod.auth.current_user['role'] in ('staff', 'admin'):
             is_internal = input("Internal note (visible only to staff)? (y/n): ").lower() == 'y'
-        
+
         # Add response
         support.add_ticket_response(ticket_id, response_text, template_id, is_internal)
         print("✅ Response added successfully!")
-        
+
     except Exception as e:
         print(f"❌ Error adding response: {e}")

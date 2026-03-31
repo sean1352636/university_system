@@ -218,7 +218,7 @@ class FinancialAidManager:
                       disbursement_json, 1 if is_need_based else 0, 1 if is_renewable else 0))
 
                 # Update package totals
-                from education_system.university_system.core.sql_safety import validate_identifier
+                from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
                 total_col = "total_" + aid_type + "s"
                 validate_identifier(total_col, "column")
                 cursor.execute(

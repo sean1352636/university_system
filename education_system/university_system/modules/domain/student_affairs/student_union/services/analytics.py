@@ -5,7 +5,7 @@ from education_system.university_system.modules.domain.student_affairs.student_u
 
 def generate_advanced_analytics():
     """Advanced analytics dashboard"""
-    
+
     if not ctx.auth or not ctx.auth.current_user:
         print("You must be logged in to access analytics.")
         return
@@ -62,7 +62,7 @@ def activity_correlation_analysis(cursor):
 
         # Club membership vs event attendance correlation
         cursor.execute('''
-        SELECT 
+        SELECT
             COUNT(DISTINCT cm.club_id) as clubs_joined,
             COUNT(DISTINCT er.event_id) as events_attended,
             s.student_id
@@ -105,7 +105,7 @@ def activity_correlation_analysis(cursor):
 
         # Leadership roles vs overall engagement
         cursor.execute('''
-        SELECT 
+        SELECT
             s.student_id,
             CASE WHEN cm.role IN ('President', 'Treasurer', 'Secretary') THEN 1 ELSE 0 END as is_leader,
             COUNT(DISTINCT er.event_id) as events_attended,
@@ -139,7 +139,7 @@ def activity_correlation_analysis(cursor):
 
         # Event type preferences by demographics
         cursor.execute('''
-        SELECT 
+        SELECT
             s.course,
             e.category,
             COUNT(*) as attendance_count
@@ -170,7 +170,7 @@ def activity_correlation_analysis(cursor):
 def generate_personalized_recommendations(cursor):
     """Generate personalized recommendations for users"""
     try:
-        
+
         # Get current user's student ID
         cursor.execute('SELECT student_id FROM users WHERE id = ?', (ctx.auth.current_user['id'],))
         result = cursor.fetchone()
@@ -186,7 +186,7 @@ def generate_personalized_recommendations(cursor):
 
         # Get user's activity profile
         cursor.execute('''
-        SELECT 
+        SELECT
             COUNT(DISTINCT cm.club_id) as clubs_joined,
             COUNT(DISTINCT er.event_id) as events_attended,
             GROUP_CONCAT(DISTINCT e.category) as event_categories,
@@ -275,7 +275,7 @@ def generate_personalized_recommendations(cursor):
 
         # Recommend leadership opportunities
         cursor.execute('''
-        SELECT COUNT(*) FROM club_members 
+        SELECT COUNT(*) FROM club_members
         WHERE student_id = ? AND role IN ('President', 'Treasurer', 'Secretary')
         ''', (student_id,))
 
@@ -300,14 +300,14 @@ def performance_benchmarking(cursor):
 
         # Club performance benchmarks
         cursor.execute('''
-        SELECT 
+        SELECT
             c.club_name,
             c.member_count,
             COUNT(DISTINCT e.event_id) as events_organized,
             AVG(e.current_attendees) as avg_event_attendance,
             COUNT(DISTINCT er.student_id) as unique_event_attendees
         FROM student_clubs c
-        LEFT JOIN union_events e ON c.club_id = e.organizer_id 
+        LEFT JOIN union_events e ON c.club_id = e.organizer_id
             AND e.event_date >= date('now', '-12 months')
         LEFT JOIN unified_event_registrations er ON e.event_id = er.event_id
         WHERE c.status = 'active'
@@ -351,7 +351,7 @@ def performance_benchmarking(cursor):
 
         # Event success benchmarks
         cursor.execute('''
-        SELECT 
+        SELECT
             category,
             COUNT(*) as total_events,
             AVG(current_attendees) as avg_attendance,
@@ -378,14 +378,14 @@ def performance_benchmarking(cursor):
 
         # Engagement quality metrics
         cursor.execute('''
-        SELECT 
+        SELECT
             'High Engagement' as segment,
             COUNT(DISTINCT s.student_id) as student_count,
             AVG(club_count) as avg_clubs,
             AVG(event_count) as avg_events
         FROM students s
         JOIN (
-            SELECT 
+            SELECT
                 student_id,
                 COUNT(DISTINCT cm.club_id) as club_count,
                 COUNT(DISTINCT er.event_id) as event_count
@@ -398,14 +398,14 @@ def performance_benchmarking(cursor):
 
         UNION ALL
 
-        SELECT 
+        SELECT
             'Medium Engagement' as segment,
             COUNT(DISTINCT s.student_id) as student_count,
             AVG(club_count) as avg_clubs,
             AVG(event_count) as avg_events
         FROM students s
         JOIN (
-            SELECT 
+            SELECT
                 student_id,
                 COUNT(DISTINCT cm.club_id) as club_count,
                 COUNT(DISTINCT er.event_id) as event_count
@@ -443,7 +443,7 @@ def learning_analytics_dashboard(student_id, cursor):
         SELECT activity_type, COUNT(*) as count, SUM(points_earned) as points
         FROM student_points
         WHERE student_id = ? AND (
-            activity_type LIKE '%Learning%' OR 
+            activity_type LIKE '%Learning%' OR
             activity_type LIKE '%Academic%' OR
             activity_type LIKE '%Study%'
         )

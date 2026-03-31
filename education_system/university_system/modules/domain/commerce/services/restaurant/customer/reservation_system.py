@@ -14,7 +14,7 @@ import hashlib
 import logging
 from datetime import datetime, timedelta
 from education_system.university_system.modules.shared.constants.paths import QR_CODES_DIR
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -148,7 +148,7 @@ def view_all_tables():
             FROM restaurant_tables
             GROUP BY status
         ''')
-        
+
         status_summary = cursor.fetchall()
         print("\nTable Status Summary:")
         for status, count in status_summary:
@@ -203,7 +203,7 @@ def add_new_table():
             return
 
         location = input("Enter location (e.g., Main Dining, Patio, Private Room): ").strip()
-        
+
         print("\nTable types:")
         print("1. Standard")
         print("2. High-top")
@@ -297,7 +297,7 @@ def update_table():
         if choice == '1':
             try:
                 new_capacity = int(input("Enter new capacity: "))
-                cursor.execute('UPDATE restaurant_tables SET capacity = ? WHERE table_id = ?', 
+                cursor.execute('UPDATE restaurant_tables SET capacity = ? WHERE table_id = ?',
                               (new_capacity, table_id))
                 print("Capacity updated successfully.")
             except ValueError:
@@ -319,7 +319,7 @@ def update_table():
                 '5': 'Out of Order'
             }
             new_status = statuses.get(status_choice)
-            
+
             if new_status:
                 cursor.execute('UPDATE restaurant_tables SET status = ? WHERE table_id = ?',
                               (new_status, table_id))
@@ -348,7 +348,7 @@ def update_table():
                 '5': 'Outdoor'
             }
             new_type = types.get(type_choice)
-            
+
             if new_type:
                 cursor.execute('UPDATE restaurant_tables SET table_type = ? WHERE table_id = ?',
                               (new_type, table_id))
@@ -540,7 +540,7 @@ def create_reservation():
 
         # Get customer
         customer_id = input("Enter customer ID (or 'new' to create new customer): ")
-        
+
         conn = get_db_connection()
         cursor = conn.cursor()
 
@@ -759,7 +759,7 @@ def generate_qr_codes():
         if not conn:
             print("Database connection failed.")
             return
-            
+
         cursor = conn.cursor()
 
         # Use canonical QR codes directory
@@ -779,10 +779,10 @@ def generate_qr_codes():
             generated_count = 0
             for table in tables:
                 table_id, capacity, location = table
-                
+
                 # Generate QR code
                 qr_success, qr_filename = create_qr_code_image(table_id, capacity, location)
-                
+
                 if qr_success:
                     # Update/Insert QR code record in database
                     update_qr_database_record(cursor, table_id, qr_filename)
@@ -799,17 +799,17 @@ def generate_qr_codes():
 
             cursor.execute('SELECT table_id, capacity, location FROM restaurant_tables WHERE table_id = ?', (table_id,))
             table = cursor.fetchone()
-            
+
             if not table:
                 print("Table not found.")
                 conn.close()
                 return
 
             table_id, capacity, location = table
-            
+
             # Generate QR code
             qr_success, qr_filename = create_qr_code_image(table_id, capacity, location)
-            
+
             if qr_success:
                 update_qr_database_record(cursor, table_id, qr_filename)
                 print(f"✅ Generated QR code for table {table_id}: {qr_filename}")
@@ -819,7 +819,7 @@ def generate_qr_codes():
         elif choice == '3':
             # View existing QR codes
             cursor.execute('''
-                SELECT qr.qr_id, qr.table_id, qr.qr_data, qr.created_date, 
+                SELECT qr.qr_id, qr.table_id, qr.qr_data, qr.created_date,
                        qr.usage_count, qr.status, t.capacity, t.location
                 FROM restaurant_qr_codes qr
                 JOIN restaurant_tables t ON qr.table_id = t.table_id
@@ -839,20 +839,20 @@ def generate_qr_codes():
 
                 for qr in qr_codes:
                     created_date = qr[3][:10] if qr[3] else 'N/A'
-                    
+
                     # Check if QR code file exists
                     qr_filename = QR_CODES_DIR / f"table_{qr[1]}_qr.png"
                     file_exists = "✅ Yes" if qr_filename.exists() else "❌ No"
-                    
+
                     location = qr[7] or 'N/A'
-                    
+
                     print(f"{qr[0]:<15} {qr[1]:<8} {location:<15} {created_date:<12} {qr[4]:<8} {qr[5]:<8} {file_exists:<12}")
 
         elif choice == '4':
             # Regenerate existing QR codes
             print("This will regenerate ALL existing QR codes.")
             confirm = input("Continue? (y/n): ")
-            
+
             if confirm.lower() != 'y':
                 print("Operation cancelled.")
                 conn.close()
@@ -864,10 +864,10 @@ def generate_qr_codes():
             regenerated_count = 0
             for table in tables:
                 table_id, capacity, location = table
-                
+
                 # Generate QR code (will overwrite existing)
                 qr_success, qr_filename = create_qr_code_image(table_id, capacity, location)
-                
+
                 if qr_success:
                     update_qr_database_record(cursor, table_id, qr_filename)
                     regenerated_count += 1
@@ -898,7 +898,7 @@ def create_qr_code_image(table_id, capacity, location):
         # Create QR data - URL that links to online menu
         base_url = "/menu"
         qr_data = f"{base_url}?table={table_id}&capacity={capacity}"
-        
+
         # Create QR code instance
         qr = qrcode.QRCode(
             version=1,  # Controls size (1 is smallest)
@@ -906,25 +906,25 @@ def create_qr_code_image(table_id, capacity, location):
             box_size=10,  # Size of each box in pixels
             border=4,  # Border size in boxes
         )
-        
+
         # Add data and optimize
         qr.add_data(qr_data)
         qr.make(fit=True)
 
         # Create QR code image
         qr_image = qr.make_image(fill_color="black", back_color="white")
-        
+
         # Create filename
         qr_filename = QR_CODES_DIR / f"table_{table_id}_qr.png"
 
         # Save the image
         qr_image.save(qr_filename)
-        
+
         # Create a more detailed version with table info
         create_enhanced_qr_image(qr_image, table_id, capacity, location)
-        
+
         return True, qr_filename
-        
+
     except Exception as e:
         logging.error(f"Error creating QR code for table {table_id}: {e}")
         return False, None
@@ -933,26 +933,26 @@ def create_enhanced_qr_image(qr_image, table_id, capacity, location):
     """Create an enhanced QR code image with table information"""
     try:
         from PIL import Image, ImageDraw, ImageFont
-        
+
         # Get QR image size
         qr_width, qr_height = qr_image.size
-        
+
         # Create new image with extra space for text
         margin = 100
         total_width = qr_width + (margin * 2)
         total_height = qr_height + margin + 150  # Extra space for text
-        
+
         # Create white background
         enhanced_image = Image.new('RGB', (total_width, total_height), 'white')
-        
+
         # Paste QR code in center
         qr_x = margin
         qr_y = margin
         enhanced_image.paste(qr_image, (qr_x, qr_y))
-        
+
         # Add text information
         draw = ImageDraw.Draw(enhanced_image)
-        
+
         try:
             # Try to use a larger font
             title_font = ImageFont.truetype("arial.ttf", 24)
@@ -961,7 +961,7 @@ def create_enhanced_qr_image(qr_image, table_id, capacity, location):
             # Fallback to default font
             title_font = ImageFont.load_default()
             info_font = ImageFont.load_default()
-        
+
         # Add title
         title_text = f"Table {table_id}"
         title_bbox = draw.textbbox((0, 0), title_text, font=title_font)
@@ -969,30 +969,30 @@ def create_enhanced_qr_image(qr_image, table_id, capacity, location):
         title_x = (total_width - title_width) // 2
         title_y = 20
         draw.text((title_x, title_y), title_text, fill='black', font=title_font)
-        
+
         # Add table information below QR code
         info_y = qr_y + qr_height + 20
-        
+
         info_lines = [
             f"Capacity: {capacity} guests",
             f"Location: {location or 'Main dining'}",
             "Scan to view our menu",
             f"Generated: {datetime.now().strftime('%Y-%m-%d')}"
         ]
-        
+
         line_height = 25
         for i, line in enumerate(info_lines):
             line_bbox = draw.textbbox((0, 0), line, font=info_font)
             line_width = line_bbox[2] - line_bbox[0]
             line_x = (total_width - line_width) // 2
             draw.text((line_x, info_y + (i * line_height)), line, fill='black', font=info_font)
-        
+
         # Save enhanced version
         enhanced_filename = QR_CODES_DIR / f"table_{table_id}_qr_enhanced.png"
         enhanced_image.save(str(enhanced_filename))
-        
+
         print(f"📱 Enhanced QR code saved: {enhanced_filename}")
-        
+
     except Exception as e:
         logging.error(f"Error creating enhanced QR image for table {table_id}: {e}")
 
@@ -1002,15 +1002,15 @@ def update_qr_database_record(cursor, table_id, qr_filename):
         # Generate QR data for database
         qr_data = f"/menu?table={table_id}"
         qr_id = f"QR{table_id}{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        
+
         # Check if QR code record already exists
         cursor.execute('SELECT qr_id FROM restaurant_qr_codes WHERE table_id = ?', (table_id,))
         existing = cursor.fetchone()
-        
+
         if existing:
             # Update existing record
             cursor.execute('''
-                UPDATE restaurant_qr_codes 
+                UPDATE restaurant_qr_codes
                 SET qr_data = ?, created_date = ?, qr_id = ?, status = 'Active'
                 WHERE table_id = ?
             ''', (qr_data, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), qr_id, table_id))
@@ -1022,7 +1022,7 @@ def update_qr_database_record(cursor, table_id, qr_filename):
                 qr_id, table_id, qr_data, datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 None, 0, 'Active'
             ))
-            
+
     except Exception as e:
         logging.error(f"Error updating QR database record for table {table_id}: {e}")
 
@@ -1038,7 +1038,7 @@ def print_qr_codes():
         conn = get_db_connection()
         if not conn:
             return
-            
+
         cursor = conn.cursor()
 
         # Get all tables with QR codes
@@ -1050,7 +1050,7 @@ def print_qr_codes():
         ''')
 
         tables = cursor.fetchall()
-        
+
         if not tables:
             print("No tables found.")
             conn.close()
@@ -1059,10 +1059,10 @@ def print_qr_codes():
         # Create PDF with QR codes
         filename = f"qr_codes_printable_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
         doc = SimpleDocTemplate(filename, pagesize=A4, topMargin=0.5*inch, bottomMargin=0.5*inch)
-        
+
         # Build content for PDF
         content = []
-        
+
         # Title
         styles = getSampleStyleSheet()
         title = f"Restaurant Table QR Codes - Generated {datetime.now().strftime('%Y-%m-%d %H:%M')}"
@@ -1071,24 +1071,24 @@ def print_qr_codes():
 
         # Create simple table without complex colWidths
         table_data = [['Table ID', 'QR Code Status', 'Capacity', 'Location']]
-        
+
         for table in tables:
             table_id, capacity, location, qr_id = table
-            
+
             # Check if QR code file exists
             qr_filename = QR_CODES_DIR / f"table_{table_id}_qr.png"
             qr_status = "✓ Available" if qr_filename.exists() else "✗ Missing"
-            
+
             table_data.append([
-                table_id, 
-                qr_status, 
-                str(capacity), 
+                table_id,
+                qr_status,
+                str(capacity),
                 location or 'Main dining'
             ])
 
         # Create simple table
         pdf_table = Table(table_data)
-        
+
         pdf_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -1102,7 +1102,7 @@ def print_qr_codes():
 
         content.append(pdf_table)
         content.append(Spacer(1, 20))
-        
+
         # Instructions
         instructions = [
             "Instructions:",
@@ -1111,20 +1111,20 @@ def print_qr_codes():
             "3. Each QR code links to the restaurant menu system",
             "4. Replace missing QR codes using the QR generation function"
         ]
-        
+
         for instruction in instructions:
             content.append(Paragraph(instruction, styles['Normal']))
             content.append(Spacer(1, 6))
-        
+
         # Build PDF
         doc.build(content)
-        
+
         conn.close()
-        
+
         print(f"✅ Printable QR codes summary generated: {filename}")
         print(f"Tables included: {len(tables)}")
         print("Note: Actual QR code images should be printed separately from the qr_codes folder")
-        
+
         # Log audit action
         log_audit_action(
             auth.current_user['id'],
@@ -1143,17 +1143,17 @@ def scan_qr_code_usage():
     """Simulate QR code scanning and update usage statistics"""
     try:
         table_id = input("Enter table ID that was scanned: ")
-        
+
         conn = get_db_connection()
         if not conn:
             return
-            
+
         cursor = conn.cursor()
 
         # Check if QR code exists
         cursor.execute('SELECT qr_id, usage_count FROM restaurant_qr_codes WHERE table_id = ?', (table_id,))
         qr_record = cursor.fetchone()
-        
+
         if not qr_record:
             print(f"No QR code found for table {table_id}")
             conn.close()
@@ -1162,19 +1162,19 @@ def scan_qr_code_usage():
         # Update usage count and last used time
         new_usage_count = qr_record[1] + 1
         current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
+
         cursor.execute('''
-            UPDATE restaurant_qr_codes 
+            UPDATE restaurant_qr_codes
             SET usage_count = ?, last_used = ?
             WHERE table_id = ?
         ''', (new_usage_count, current_time, table_id))
 
         conn.commit()
         conn.close()
-        
+
         print(f"✅ QR code scan recorded for table {table_id}")
         print(f"Total scans: {new_usage_count}")
-        
+
     except Exception as e:
         logging.error(f"Error in scan_qr_code_usage: {e}")
         print(f"An error occurred: {e}")
@@ -1220,44 +1220,44 @@ def optimize_table_structure():
                 # Get table size
                 cursor.execute('SELECT COUNT(*) FROM [' + safe_table + ']')
                 row_count = cursor.fetchone()[0]
-                
+
                 print(f"\nTable: {table}")
                 print(f"Rows: {row_count:,}")
                 print(f"Columns: {len(columns)}")
-                
+
                 # Check for missing indexes on frequently queried columns
                 index_suggestions = []
-                
+
                 if table == 'orders':
                     # Check for date index
                     cursor.execute("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='orders' AND name LIKE '%order_date%'")
                     if not cursor.fetchone():
                         index_suggestions.append("order_date (for date queries)")
-                    
+
                     # Check for customer index
                     cursor.execute("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='orders' AND name LIKE '%customer%'")
                     if not cursor.fetchone():
                         index_suggestions.append("customer_id (for customer lookups)")
-                
+
                 elif table == 'restaurant_customers':
                     # Check for email index
                     cursor.execute("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='restaurant_customers' AND name LIKE '%email%'")
                     if not cursor.fetchone():
                         index_suggestions.append("email (for customer lookups)")
-                
+
                 elif table == 'restaurant_inventory':
                     # Check for reorder level index
                     cursor.execute("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='restaurant_inventory' AND name LIKE '%reorder%'")
                     if not cursor.fetchone():
                         index_suggestions.append("reorder_level (for low stock queries)")
-                
+
                 if index_suggestions:
                     print(f"Suggested indexes:")
                     for suggestion in index_suggestions:
                         print(f"  • {suggestion}")
                 else:
                     print("✅ Table structure appears optimized")
-                
+
                 # Check for potential data issues
                 if table == 'orders' and row_count > 0:
                     # Check for orders without customer info
@@ -1265,20 +1265,20 @@ def optimize_table_structure():
                     null_customers = cursor.fetchone()[0]
                     if null_customers > 0:
                         print(f"⚠️  {null_customers} orders without customer information")
-                
+
                 if table == 'restaurant_customers' and row_count > 0:
                     # Check for duplicate emails
                     cursor.execute('''
-                        SELECT email, COUNT(*) 
-                        FROM restaurant_customers 
-                        WHERE email IS NOT NULL 
-                        GROUP BY email 
+                        SELECT email, COUNT(*)
+                        FROM restaurant_customers
+                        WHERE email IS NOT NULL
+                        GROUP BY email
                         HAVING COUNT(*) > 1
                     ''')
                     duplicates = cursor.fetchall()
                     if duplicates:
                         print(f"⚠️  {len(duplicates)} duplicate email addresses found")
-                
+
             except Exception as e:
                 print(f"Error analyzing {table}: {e}")
                 continue

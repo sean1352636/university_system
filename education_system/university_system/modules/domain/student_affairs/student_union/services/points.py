@@ -83,7 +83,7 @@ def view_leaderboard(cursor):
 
         # Overall points leaderboard
         cursor.execute('''
-        SELECT s.first_name, s.last_name, 
+        SELECT s.first_name, s.last_name,
                COALESCE(SUM(sp.points_earned), 0) as total_points,
                COUNT(sb.badge_id) as badge_count
         FROM students s
@@ -112,7 +112,7 @@ def view_leaderboard(cursor):
         current_month = datetime.now().strftime('%Y-%m')
 
         cursor.execute('''
-        SELECT s.first_name, s.last_name, 
+        SELECT s.first_name, s.last_name,
                COALESCE(SUM(sp.points_earned), 0) as monthly_points
         FROM students s
         LEFT JOIN student_points sp ON s.student_id = sp.student_id

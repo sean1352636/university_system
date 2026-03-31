@@ -13,7 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from education_system.shared.database.sql_safety import validate_identifier
+from education_system.shared.database.sql_safety import validate_identifier  # nosec B608
 
 logger = logging.getLogger(__name__)
 

@@ -40,21 +40,21 @@ def submit_satisfaction_rating(ticket_id, rating, feedback=None):
     """Submit satisfaction rating for a resolved ticket"""
     if not _auth_mod.auth or not _auth_mod.auth.current_user:
         raise PermissionError("You must be logged in to submit ratings")
-    
+
     if not 1 <= rating <= 5:
         raise ValueError("Rating must be between 1 and 5")
-    
+
     try:
         conn = sqlite3.connect(SUPPORT_DB)
         cursor = conn.cursor()
-        
+
         # Verify ticket exists and is resolved
         cursor.execute('SELECT * FROM support_tickets WHERE ticket_id = ? AND status = "Resolved"', (ticket_id,))
         ticket = cursor.fetchone()
-        
+
         if not ticket:
             raise ValueError("Ticket not found or not resolved")
-        
+
         # Check if user owns the ticket (for students)
         if _auth_mod.auth.current_user['role'] == 'student':
             conn_main = get_connection()
@@ -62,17 +62,17 @@ def submit_satisfaction_rating(ticket_id, rating, feedback=None):
             cursor_main.execute('SELECT student_id FROM users WHERE id = ?', (_auth_mod.auth.current_user['id'],))
             result = cursor_main.fetchone()
             conn_main.close()
-            
+
             if not result or result[0] != ticket[1]:  # ticket[1] is student_id
                 raise PermissionError("You can only rate your own tickets")
-        
+
         # Update satisfaction rating
         cursor.execute('''
-        UPDATE support_tickets 
+        UPDATE support_tickets
         SET satisfaction_rating = ?, satisfaction_feedback = ?
         WHERE ticket_id = ?
         ''', (rating, feedback, ticket_id))
-        
+
         # Log the rating
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         cursor.execute('''
@@ -83,13 +83,13 @@ def submit_satisfaction_rating(ticket_id, rating, feedback=None):
             'satisfaction_rating', rating, 'satisfaction', timestamp,
             json.dumps({'ticket_id': ticket_id, 'user_id': _auth_mod.auth.current_user['id'], 'feedback': feedback})
         ))
-        
+
         conn.commit()
         conn.close()
-        
+
         logger.info(f"Satisfaction rating {rating} submitted for ticket #{ticket_id} by {_auth_mod.auth.current_user['username']}")
         return True
-        
+
     except Exception as e:
         logger.error(f"Error submitting satisfaction rating: {e}")
         raise
@@ -136,23 +136,23 @@ def _update_metrics():
     try:
         conn = sqlite3.connect(SUPPORT_DB)
         cursor = conn.cursor()
-        
+
         # Check if table exists
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='system_metrics'")
         if not cursor.fetchone():
             logger.debug("System metrics table doesn't exist yet, skipping metrics update")
             conn.close()
             return
-        
+
         # Check if support_tickets table has required columns
         cursor.execute("PRAGMA table_info(support_tickets)")
         columns = [column[1] for column in cursor.fetchall()]
-        
+
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
+
         # Calculate current metrics with fallback handling
         metrics = []
-        
+
         # Active tickets metric
         try:
             cursor.execute('SELECT COUNT(*) FROM support_tickets WHERE status NOT IN ("Resolved", "Closed")')
@@ -160,25 +160,25 @@ def _update_metrics():
             metrics.append(('active_tickets', active_count, 'tickets'))
         except Exception as e:
             logger.warning(f"Could not calculate active tickets metric: {e}")
-        
+
         # Average response time metric
         try:
             if 'last_updated_datetime' in columns and 'created_datetime' in columns:
                 cursor.execute('''
-                SELECT AVG(julianday(last_updated_datetime) - julianday(created_datetime)) * 24 
-                FROM support_tickets 
+                SELECT AVG(julianday(last_updated_datetime) - julianday(created_datetime)) * 24
+                FROM support_tickets
                 WHERE last_updated_datetime IS NOT NULL AND created_datetime IS NOT NULL
                 ''')
             else:
                 # Skip this metric if required columns don't exist
                 logger.debug("Skipping response time metric: required datetime columns missing")
                 cursor.execute('SELECT 0')  # Placeholder query
-            
+
             avg_response_time = cursor.fetchone()[0] or 0
             metrics.append(('avg_response_time', avg_response_time, 'performance'))
         except Exception as e:
             logger.warning(f"Could not calculate response time metric: {e}")
-        
+
         # User satisfaction metric
         try:
             cursor.execute('SELECT AVG(satisfaction_rating) FROM support_tickets WHERE satisfaction_rating IS NOT NULL')
@@ -186,7 +186,7 @@ def _update_metrics():
             metrics.append(('user_satisfaction', avg_satisfaction, 'satisfaction'))
         except Exception as e:
             logger.warning(f"Could not calculate satisfaction metric: {e}")
-        
+
         # Insert calculated metrics
         for metric_name, value, category in metrics:
             try:
@@ -197,11 +197,11 @@ def _update_metrics():
                 ''', (metric_name, value, category, timestamp))
             except Exception as e:
                 logger.warning(f"Could not insert metric {metric_name}: {e}")
-        
+
         conn.commit()
         conn.close()
-        
+
     except Exception as e:
         logger.error(f"Error updating metrics: {e}")
-    
+
 # Template management methods

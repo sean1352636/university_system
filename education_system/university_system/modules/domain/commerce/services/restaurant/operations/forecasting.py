@@ -13,7 +13,7 @@ def revenue_forecast():
 
         # Get historical revenue data (last 12 months)
         cursor.execute('''
-            SELECT 
+            SELECT
                 strftime('%Y-%m', order_date) as month,
                 SUM(total_amount) as monthly_revenue,
                 COUNT(*) as order_count,
@@ -105,7 +105,7 @@ def expense_forecast():
 
         # Get historical expense data by category
         cursor.execute('''
-            SELECT 
+            SELECT
                 category,
                 strftime('%Y-%m', expense_date) as month,
                 SUM(amount) as monthly_expense
@@ -284,12 +284,12 @@ def seasonal_analysis():
 
         # Monthly revenue analysis
         cursor.execute('''
-            SELECT 
+            SELECT
                 strftime('%m', order_date) as month,
                 AVG(monthly_revenue) as avg_revenue,
                 COUNT(DISTINCT strftime('%Y-%m', order_date)) as year_count
             FROM (
-                SELECT 
+                SELECT
                     order_date,
                     SUM(total_amount) as monthly_revenue
                 FROM orders
@@ -349,7 +349,7 @@ def seasonal_analysis():
 
         # Day of week analysis
         cursor.execute('''
-            SELECT 
+            SELECT
                 CASE strftime('%w', order_date)
                     WHEN '0' THEN 'Sunday'
                     WHEN '1' THEN 'Monday'
@@ -361,7 +361,7 @@ def seasonal_analysis():
                 END as day_name,
                 AVG(daily_revenue) as avg_daily_revenue
             FROM (
-                SELECT 
+                SELECT
                     order_date,
                     SUM(total_amount) as daily_revenue
                 FROM orders
@@ -401,7 +401,7 @@ def growth_projections():
 
         # Calculate historical growth
         cursor.execute('''
-            SELECT 
+            SELECT
                 strftime('%Y-%m', order_date) as month,
                 SUM(total_amount) as monthly_revenue,
                 COUNT(*) as order_count,

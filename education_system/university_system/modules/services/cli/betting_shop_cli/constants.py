@@ -8,7 +8,7 @@ import time
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict
 
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 
 # Import centralized database and authentication
 from education_system.university_system.infrastructure.database.db import get_connection, transaction

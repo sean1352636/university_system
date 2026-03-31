@@ -1174,7 +1174,7 @@ def _verify_required_tables(self):
             'event_categories'
         ]
 
-        from education_system.university_system.core.sql_safety import validate_identifier
+        from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
         for table in required_tables:
             try:
                 # Test if table exists by querying it

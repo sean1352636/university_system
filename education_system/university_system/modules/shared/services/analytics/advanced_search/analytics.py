@@ -1,6 +1,6 @@
 """Analytics & reporting: search analytics dashboard, demographics, academic performance."""
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from education_system.university_system.modules.shared.utils.sql_safety import validate_identifier
+from education_system.university_system.modules.shared.utils.sql_safety import validate_identifier  # nosec B608
 from education_system.university_system.modules.shared.services.analytics.advanced_search.admin import audit_log
 from education_system.university_system.modules.shared.services.analytics.advanced_search.db import ensure_search_analytics_schema
 

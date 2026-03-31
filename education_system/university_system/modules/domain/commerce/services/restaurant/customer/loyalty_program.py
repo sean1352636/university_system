@@ -743,7 +743,7 @@ def export_feedback_report(days: int = 90, filename: str | None = None) -> str |
             """
             SELECT cf.feedback_id,
                    cf.feedback_date,
-                   COALESCE(c.name, 'Anonymous') AS customer_name, 
+                   COALESCE(c.name, 'Anonymous') AS customer_name,
                    cf.rating,
                    COALESCE(cf.feedback_text, '') AS feedback_text,
                    COALESCE(cf.response_text, '') AS response_text,
@@ -853,8 +853,8 @@ def view_loyalty_tiers():
             SELECT loyalty_tier, COUNT(*) as customer_count, AVG(loyalty_points) as avg_points
             FROM restaurant_customers
             GROUP BY loyalty_tier
-            ORDER BY 
-                CASE loyalty_tier 
+            ORDER BY
+                CASE loyalty_tier
                     WHEN 'Bronze' THEN 1
                     WHEN 'Silver' THEN 2
                     WHEN 'Gold' THEN 3
@@ -897,7 +897,7 @@ def update_loyalty_points():
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        cursor.execute('SELECT name, loyalty_points, loyalty_tier FROM restaurant_customers WHERE customer_id = ?', 
+        cursor.execute('SELECT name, loyalty_points, loyalty_tier FROM restaurant_customers WHERE customer_id = ?',
                       (customer_id,))
         customer = cursor.fetchone()
 
@@ -948,7 +948,7 @@ def update_loyalty_points():
 
         # Update customer
         cursor.execute('''
-            UPDATE restaurant_customers 
+            UPDATE restaurant_customers
             SET loyalty_points = ?, loyalty_tier = ?
             WHERE customer_id = ?
         ''', (new_points, new_tier, customer_id))
@@ -998,7 +998,7 @@ def promote_customer_tier():
         cursor.execute('''
             SELECT customer_id, name, loyalty_points, loyalty_tier
             FROM restaurant_customers
-            WHERE 
+            WHERE
                 (loyalty_tier = 'Bronze' AND loyalty_points >= 500) OR
                 (loyalty_tier = 'Silver' AND loyalty_points >= 1000) OR
                 (loyalty_tier = 'Gold' AND loyalty_points >= 2000)
@@ -1149,7 +1149,7 @@ def award_bonus_points():
 
         if choice == '1':
             customer_id = input("Enter customer ID: ")
-            cursor.execute('SELECT name, loyalty_points FROM restaurant_customers WHERE customer_id = ?', 
+            cursor.execute('SELECT name, loyalty_points FROM restaurant_customers WHERE customer_id = ?',
                           (customer_id,))
             customer = cursor.fetchone()
 
@@ -1171,7 +1171,7 @@ def award_bonus_points():
                 new_tier = 'Bronze'
 
             cursor.execute('''
-                UPDATE restaurant_customers 
+                UPDATE restaurant_customers
                 SET loyalty_points = ?, loyalty_tier = ?
                 WHERE customer_id = ?
             ''', (new_points, new_tier, customer_id))
@@ -1180,7 +1180,7 @@ def award_bonus_points():
 
         elif choice == '2':
             tier = input("Enter tier (Bronze/Silver/Gold/Platinum): ")
-            cursor.execute('SELECT customer_id, loyalty_points FROM restaurant_customers WHERE loyalty_tier = ?', 
+            cursor.execute('SELECT customer_id, loyalty_points FROM restaurant_customers WHERE loyalty_tier = ?',
                           (tier,))
             customers = cursor.fetchall()
 
@@ -1198,7 +1198,7 @@ def award_bonus_points():
                     new_tier = 'Bronze'
 
                 cursor.execute('''
-                    UPDATE restaurant_customers 
+                    UPDATE restaurant_customers
                     SET loyalty_points = ?, loyalty_tier = ?
                     WHERE customer_id = ?
                 ''', (new_points, new_tier, customer[0]))
@@ -1228,7 +1228,7 @@ def award_bonus_points():
                     new_tier = 'Bronze'
 
                 cursor.execute('''
-                    UPDATE restaurant_customers 
+                    UPDATE restaurant_customers
                     SET loyalty_points = ?, loyalty_tier = ?
                     WHERE customer_id = ?
                 ''', (new_points, new_tier, customer[0]))
@@ -1266,7 +1266,7 @@ def export_feedback_report_pdf(days=90, filename=None):
         cursor.execute('''
             SELECT cf.feedback_id,
                    cf.feedback_date,
-                   COALESCE(c.name, 'Anonymous') AS customer_name, 
+                   COALESCE(c.name, 'Anonymous') AS customer_name,
                    cf.rating,
                    COALESCE(cf.feedback_text, '') AS feedback_text,
                    COALESCE(mi.name, '') AS item_name
@@ -1300,7 +1300,7 @@ def export_feedback_report_pdf(days=90, filename=None):
         # Summary
         total_feedback = len(feedback)
         avg_rating = sum(fb[3] for fb in feedback) / total_feedback if total_feedback > 0 else 0
-        
+
         summary_text = f"Total Feedback: {total_feedback} | Average Rating: {avg_rating:.1f}/5"
         content.append(Paragraph(summary_text, styles['Heading2']))
         content.append(Spacer(1, 15))
@@ -1312,7 +1312,7 @@ def export_feedback_report_pdf(days=90, filename=None):
             fb_date = str(fb[1])[:10] if fb[1] else "N/A"
             rating_stars = "★" * fb[3] + "☆" * (5 - fb[3])
             feedback_text = fb[4][:50] + "..." if len(fb[4]) > 50 else fb[4]
-            
+
             table_data.append([
                 fb_date,
                 fb[2][:15],  # Truncate long names

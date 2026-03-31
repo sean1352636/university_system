@@ -7,7 +7,7 @@ from education_system.university_system.modules.domain.student_affairs.student_u
 
 def manage_green_initiatives():
     """Main green initiatives interface"""
-    
+
     if not ctx.auth or not ctx.auth.current_user:
         print("You must be logged in to access green initiatives.")
         return
@@ -200,7 +200,7 @@ def track_carbon_footprint(student_id, cursor, conn):
         if cursor.fetchone()[0] > 0:
             # Update existing record
             cursor.execute('''
-            UPDATE sustainability_tracking 
+            UPDATE sustainability_tracking
             SET carbon_footprint = ?, sustainability_score = ?, notes = ?, recorded_date = ?
             WHERE event_id = ?
             ''', (total_carbon, sustainability_score, notes, recorded_date, event_id))
@@ -216,7 +216,7 @@ def track_carbon_footprint(student_id, cursor, conn):
         print("Carbon footprint data saved!")
 
         # Award points for tracking
-        auto_award_points(student_id, "Green Initiatives", 15, 
+        auto_award_points(student_id, "Green Initiatives", 15,
                         f"Tracked carbon footprint for {event_name}", cursor, conn)
 
         # Suggest improvements
@@ -302,7 +302,7 @@ def waste_reduction_tracking(student_id, cursor, conn):
 
                 # Update sustainability tracking
                 cursor.execute('''
-                UPDATE sustainability_tracking 
+                UPDATE sustainability_tracking
                 SET waste_generated = ?, waste_recycled = ?
                 WHERE event_id = ?
                 ''', (waste_generated, waste_recycled, event_id))
@@ -337,7 +337,7 @@ def waste_reduction_tracking(student_id, cursor, conn):
         elif choice == '2':
             # View waste statistics
             cursor.execute('''
-            SELECT 
+            SELECT
                 COUNT(*) as events_tracked,
                 SUM(waste_generated) as total_waste,
                 SUM(waste_recycled) as total_recycled,
@@ -357,7 +357,7 @@ def waste_reduction_tracking(student_id, cursor, conn):
 
             # Monthly trends
             cursor.execute('''
-            SELECT 
+            SELECT
                 strftime('%Y-%m', recorded_date) as month,
                 SUM(waste_generated) as monthly_waste,
                 SUM(waste_recycled) as monthly_recycled
@@ -499,7 +499,7 @@ def green_transport_tracking(student_id, cursor, conn):
             }
 
             points = points_map[selected_method] * max(1, int(distance))
-            auto_award_points(student_id, "Green Transport", points, 
+            auto_award_points(student_id, "Green Transport", points,
                             f"Used {selected_method} for {distance}km", cursor, conn)
 
             print(f"Earned {points} green transport points!")
@@ -733,7 +733,7 @@ def green_certification_system(student_id, cursor, conn):
             SELECT SUM(points_earned) as green_points
             FROM student_points
             WHERE student_id = ? AND (
-                activity_type LIKE '%Green%' OR 
+                activity_type LIKE '%Green%' OR
                 activity_type LIKE '%Environment%' OR
                 activity_type LIKE '%Sustainab%'
             )

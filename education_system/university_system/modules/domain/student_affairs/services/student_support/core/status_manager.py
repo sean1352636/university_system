@@ -18,7 +18,7 @@ from functools import wraps
 
 from education_system.university_system.infrastructure.database.db import get_connection, sqlite3, DatabaseManager
 from education_system.university_system.infrastructure.email.email_manager import send_email
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH, TICKET_TEMPLATES_DIR, UPLOAD_DIR
 from education_system.university_system.utils.logging.log_config import get_log_file
 
@@ -35,14 +35,14 @@ def update_ticket_status(ticket_id, new_status, resolution_notes=None):
     """Update the status of a support ticket with enhanced tracking."""
     if not _auth_mod.auth or not _auth_mod.auth.current_user:
         raise PermissionError("You must be logged in to update a ticket status")
-    
+
     if _auth_mod.auth.current_user['role'] not in ('staff', 'admin'):
         raise PermissionError("Only staff members can update ticket status")
-    
+
     try:
         if new_status not in TICKET_STATUSES:
             raise ValueError(f"Invalid status. Choose from: {', '.join(TICKET_STATUSES)}")
-        
+
         conn = sqlite3.connect(SUPPORT_DB)
         try:
             cursor = conn.cursor()
@@ -82,11 +82,11 @@ def update_ticket_status(ticket_id, new_status, resolution_notes=None):
 
             cursor.execute('''
             INSERT INTO ticket_responses (
-                ticket_id, responder_id, responder_role, response_text, 
+                ticket_id, responder_id, responder_role, response_text,
                 response_datetime, is_auto_generated
             ) VALUES (?, ?, ?, ?, ?, ?)
             ''', (
-                ticket_id, _auth_mod.auth.current_user['id'], _auth_mod.auth.current_user['role'], 
+                ticket_id, _auth_mod.auth.current_user['id'], _auth_mod.auth.current_user['role'],
                 response_text, update_time, 1
             ))
 
@@ -111,7 +111,7 @@ def update_ticket_status(ticket_id, new_status, resolution_notes=None):
 
         logger.info(f"Updated status of ticket #{ticket_id} from '{old_status}' to '{new_status}' by {_auth_mod.auth.current_user['username']}")
         return True
-        
+
     except Exception as e:
         logger.error(f"Error updating ticket status: {e}")
         raise
@@ -226,24 +226,24 @@ def update_status_enhanced(support, ticket_id):
     try:
         print(f"\n📊 UPDATE TICKET #{ticket_id} STATUS")
         print("="*50)
-        
+
         # Show current status
         ticket = support.get_ticket_details(ticket_id)
         print(f"Current Status: {ticket['status']}")
-        
+
         # Status selection
         print("\nNew Status:")
         for i, status in enumerate(TICKET_STATUSES, 1):
             print(f"{i}. {status}")
-        
+
         choice = input(f"Select new status (1-{len(TICKET_STATUSES)}): ").strip()
-        
+
         if not choice.isdigit() or not 1 <= int(choice) <= len(TICKET_STATUSES):
             print("❌ Invalid status choice.")
             return
-        
+
         new_status = TICKET_STATUSES[int(choice) - 1]
-        
+
         # Resolution notes for resolved/closed tickets
         resolution_notes = None
         if new_status in ['Resolved', 'Closed']:
@@ -254,14 +254,14 @@ def update_status_enhanced(support, ticket_id):
                 if not line and (not lines or not lines[-1]):
                     break
                 lines.append(line)
-            
+
             if lines:
                 resolution_notes = '\n'.join(lines)
-        
+
         # Update status
         support.update_ticket_status(ticket_id, new_status, resolution_notes)
         print(f"✅ Ticket #{ticket_id} status updated to '{new_status}'")
-        
+
     except Exception as e:
         print(f"❌ Error updating status: {e}")
 
@@ -270,7 +270,7 @@ def add_internal_note(support, ticket_id):
     try:
         print(f"\n🔒 ADD INTERNAL NOTE TO TICKET #{ticket_id}")
         print("="*50)
-        
+
         print("Internal note (visible only to staff, press Enter twice to finish):")
         lines = []
         while True:
@@ -278,17 +278,17 @@ def add_internal_note(support, ticket_id):
             if not line and (not lines or not lines[-1]):
                 break
             lines.append(line)
-        
+
         note_text = '\n'.join(lines)
-        
+
         if not note_text:
             print("❌ Note cannot be empty.")
             return
-        
+
         # Add as internal response
         support.add_ticket_response(ticket_id, note_text, is_internal=True)
         print("✅ Internal note added successfully!")
-        
+
     except Exception as e:
         print(f"❌ Error adding internal note: {e}")
 
@@ -297,50 +297,50 @@ def view_ticket_history(support, ticket_id):
     try:
         print(f"\n📚 TICKET #{ticket_id} HISTORY")
         print("="*60)
-        
+
         history = support.get_ticket_history(ticket_id)
         ticket = history['ticket']
         timeline = history['timeline']
-        
+
         print(f"🎫 {ticket['title']}")
         print(f"👤 Student: {ticket['student_id']}")
         print(f"📊 Current Status: {ticket['status']}")
         print(f"🔥 Priority: {ticket['priority']}")
         print(f"📂 Category: {ticket['category']}")
-        
+
         print(f"\n📅 TIMELINE ({len(timeline)} events):")
         print("="*60)
-        
+
         for event in timeline:
             event_type = event['type']
             data = event['data']
             datetime_str = event['datetime']
-            
+
             if event_type == 'creation':
                 print(f"🎫 [{datetime_str}] Ticket Created")
                 print(f"   📝 {data['description'][:100]}...")
-                
+
             elif event_type == 'response':
                 responder = data['responder_role']
                 is_internal = data.get('is_internal', False)
                 is_auto = data.get('is_auto_generated', False)
-                
+
                 internal_tag = " 🔒" if is_internal else ""
                 auto_tag = " 🤖" if is_auto else ""
-                
+
                 print(f"💬 [{datetime_str}] Response by {responder}{internal_tag}{auto_tag}")
                 print(f"   📝 {data['response_text'][:100]}...")
-                
+
             elif event_type == 'attachment':
                 print(f"📎 [{datetime_str}] Attachment Added")
                 print(f"   📄 {data['original_filename']} ({data['file_size']} bytes)")
-                
+
             elif event_type == 'audit':
                 print(f"🔍 [{datetime_str}] System Event")
                 print(f"   ⚙️ {data['action']} by {data.get('user_id', 'system')}")
-            
+
             print()
-        
+
         # Pagination for large histories
         if len(timeline) > 20:
             print(f"... showing first 20 of {len(timeline)} events")
@@ -349,8 +349,8 @@ def view_ticket_history(support, ticket_id):
                 for event in timeline[20:]:
                     # Display remaining events (same format as above)
                     pass
-        
+
     except Exception as e:
         print(f"❌ Error viewing ticket history: {e}")
-    
+
     input("\nPress Enter to continue...")

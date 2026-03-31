@@ -37,17 +37,17 @@ def _analyze_sentiment(text):
         'worst', 'furious', 'disgusted', 'outraged', 'urgent', 'immediately',
         'ridiculous', 'unacceptable', 'disappointed'
     ]
-    
+
     positive_keywords = [
         'thank', 'appreciate', 'great', 'excellent', 'wonderful', 'amazing',
         'perfect', 'love', 'fantastic', 'awesome', 'pleased'
     ]
-    
+
     text_lower = text.lower()
-    
+
     frustrated_count = sum(1 for keyword in frustrated_keywords if keyword in text_lower)
     positive_count = sum(1 for keyword in positive_keywords if keyword in text_lower)
-    
+
     if frustrated_count > 2:
         return TicketSentiment.FRUSTRATED.value
     elif frustrated_count > 0:
@@ -71,18 +71,18 @@ def _suggest_category(text):
         'Parking': ['parking', 'permit', 'ticket', 'car', 'vehicle', 'tow'],
         'Career Services': ['job', 'career', 'internship', 'resume', 'interview', 'employment']
     }
-    
+
     text_lower = text.lower()
     category_scores = {}
-    
+
     for category, keywords in category_keywords.items():
         score = sum(1 for keyword in keywords if keyword in text_lower)
         if score > 0:
             category_scores[category] = score
-    
+
     if category_scores:
         return max(category_scores, key=category_scores.get)
-    
+
     return None
 
 def _get_auto_assignment(category, priority, staff_assignments=None):
@@ -120,7 +120,7 @@ def _estimate_resolution_time(category, priority):
         'Registration': 8,
         'Other': 24
     }
-    
+
     priority_multipliers = {
         'Critical': 0.25,
         'Urgent': 0.5,
@@ -128,10 +128,10 @@ def _estimate_resolution_time(category, priority):
         'Medium': 1.0,
         'Low': 2.0
     }
-    
+
     base_hours = base_times.get(category, 24)
     multiplier = priority_multipliers.get(priority, 1.0)
     estimated_hours = base_hours * multiplier
-    
+
     resolution_time = datetime.datetime.now() + datetime.timedelta(hours=estimated_hours)
     return resolution_time.strftime('%Y-%m-%d %H:%M:%S')

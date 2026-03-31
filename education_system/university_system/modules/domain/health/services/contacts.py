@@ -102,7 +102,7 @@ def update_emergency_contact(auth):
         new_medical_dm = medical_dm
 
     cursor.execute('''
-    UPDATE emergency_contacts 
+    UPDATE emergency_contacts
     SET contact_name = ?, relationship = ?, phone_primary = ?, phone_secondary = ?,
         email = ?, address = ?, medical_decision_maker = ?
     WHERE id = ?
@@ -159,7 +159,7 @@ def delete_emergency_contact(auth):
 
     # Reorder remaining contacts
     cursor.execute('''
-    UPDATE emergency_contacts 
+    UPDATE emergency_contacts
     SET priority_order = priority_order - 1
     WHERE student_id = ? AND priority_order > ?
     ''', (student_id, priority))

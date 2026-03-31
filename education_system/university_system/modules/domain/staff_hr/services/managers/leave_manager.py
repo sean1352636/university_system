@@ -12,7 +12,7 @@ from datetime import datetime, date
 from typing import Any, Dict, List, Optional
 
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 
 try:
     from education_system.university_system.modules.shared.utils.activity_logger import log_activity

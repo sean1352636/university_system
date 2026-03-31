@@ -30,41 +30,41 @@ def is_gui_mode():
 
 class OutputCapture:
     """Context manager to capture console output for GUI display"""
-    
+
     def __init__(self):
         self.stdout_capture = io.StringIO()
         self.stderr_capture = io.StringIO()
         self.output = ""
         self.error = ""
-    
+
     def __enter__(self):
         self.old_stdout = sys.stdout
         self.old_stderr = sys.stderr
         sys.stdout = self.stdout_capture
         sys.stderr = self.stderr_capture
         return self
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         sys.stdout = self.old_stdout
         sys.stderr = self.old_stderr
         self.output = self.stdout_capture.getvalue()
         self.error = self.stderr_capture.getvalue()
-    
+
     def get_output(self):
         """Get captured stdout"""
         return self.output
-    
+
     def get_error(self):
         """Get captured stderr"""
         return self.error
-    
+
     def get_combined(self):
         """Get combined stdout and stderr"""
         return self.output + self.error
 
 def gui_compatible(func):
     """Decorator to make console functions compatible with GUI"""
-    
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         if GUI_MODE:
@@ -88,7 +88,7 @@ def gui_compatible(func):
         else:
             # In console mode, run normally
             return func(*args, **kwargs)
-    
+
     return wrapper
 
 def mock_input(prompt="", default=""):
@@ -111,7 +111,7 @@ def safe_import(module_name, fallback=None):
 
 def ensure_parking_management_compatibility():
     """Ensure compatibility with the existing parking_management.py module"""
-    
+
     try:
         # Try to import the parking management module from the refactored services
         import education_system.university_system.modules.domain.mobility.services.parking_management as parking_management
@@ -128,27 +128,27 @@ def validate_database_schema():
     """Validate that the database schema is compatible"""
     try:
         from education_system.university_system.infrastructure.database.db import get_connection
-        
+
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Check if required tables exist
         required_tables = [
-            'users', 'parking_permits', 'vehicles', 
+            'users', 'parking_permits', 'vehicles',
             'parking_violations', 'parking_lots'
         ]
-        
+
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
         existing_tables = [row[0] for row in cursor.fetchall()]
-        
+
         missing_tables = [table for table in required_tables if table not in existing_tables]
-        
+
         conn.close()
-        
+
         if missing_tables:
             print(get_text("mobility.parking.validation.missing_tables", "Warning: Missing database tables: {tables}").format(tables=missing_tables))
             return False
-        
+
         return True
     except Exception as e:
         print(get_text("mobility.parking.validation.schema_error", "Error validating database schema: {error}").format(error=e))
@@ -156,15 +156,15 @@ def validate_database_schema():
 
 def initialize_compatibility_layer():
     """Initialize the compatibility layer"""
-    
+
     # Ensure parking management compatibility
     if not ensure_parking_management_compatibility():
         print(get_text("mobility.parking.compatibility.parking_management_failed", "Warning: Could not ensure parking management compatibility"))
-    
+
     # Validate database schema
     if not validate_database_schema():
         print(get_text("mobility.parking.compatibility.schema_validation_failed", "Warning: Database schema validation failed"))
-    
+
     # Set up GUI-specific configurations
     if GUI_MODE:
         # Disable certain console-specific features
@@ -172,20 +172,20 @@ def initialize_compatibility_layer():
 
 def setup_gui_environment():
     """Set up environment variables and configurations for GUI mode"""
-    
+
     # Suppress matplotlib GUI warnings if using plotting
     try:
         import matplotlib
         matplotlib.use('Agg')  # Use non-interactive backend
     except ImportError:
         pass
-    
+
     # Set environment variables for GUI mode
     os.environ['PARKING_GUI_MODE'] = '1'
 
 def get_function_output(func, *args, **kwargs):
     """Execute a function and return its output for GUI display"""
-    
+
     with OutputCapture() as capture:
         try:
             result = func(*args, **kwargs)
@@ -205,37 +205,37 @@ def get_function_output(func, *args, **kwargs):
 
 class ConsoleToGUIAdapter:
     """Adapter class to make console functions work with GUI"""
-    
+
     def __init__(self):
         self.original_functions = {}
-    
+
     def wrap_function(self, module, function_name):
         """Wrap a console function for GUI use"""
-        
+
         if hasattr(module, function_name):
             original_func = getattr(module, function_name)
             self.original_functions[function_name] = original_func
-            
+
             @functools.wraps(original_func)
             def gui_wrapper(*args, **kwargs):
                 return get_function_output(original_func, *args, **kwargs)
-            
+
             setattr(module, function_name, gui_wrapper)
-    
+
     def restore_function(self, module, function_name):
         """Restore original console function"""
-        
+
         if function_name in self.original_functions:
             setattr(module, function_name, self.original_functions[function_name])
 
 def create_gui_menu_mapping():
     """Create mapping between GUI actions and console functions"""
-    
+
     try:
         # Import the parking management module from the refactored services
         import education_system.university_system.modules.domain.mobility.services.parking_management as pm
 
-        
+
         return {
             'permits': {
                 'create': pm.create_parking_permit,
@@ -278,31 +278,31 @@ def create_gui_menu_mapping():
 
 class InputSimulator:
     """Simulate user input for console functions when running in GUI mode"""
-    
+
     def __init__(self):
         self.responses = {}
         self.response_queue = []
-    
+
     def set_responses(self, responses):
         """Set predefined responses for input prompts"""
         self.responses = responses
-    
+
     def queue_response(self, response):
         """Queue a response for the next input call"""
         self.response_queue.append(response)
-    
+
     def mock_input(self, prompt=""):
         """Mock input function that returns predefined responses"""
-        
+
         # Try to get response from queue first
         if self.response_queue:
             return self.response_queue.pop(0)
-        
+
         # Look for response based on prompt
         for key, value in self.responses.items():
             if key.lower() in prompt.lower():
                 return value
-        
+
         # Return empty string as default
         return ""
 
@@ -311,25 +311,25 @@ input_simulator = InputSimulator()
 
 def patch_input_for_gui():
     """Patch the built-in input function for GUI compatibility"""
-    
+
     if GUI_MODE:
         import builtins
         builtins.input = input_simulator.mock_input
 
 def restore_input():
     """Restore the original input function"""
-    
+
     import builtins
     builtins.input = input
 
 def execute_console_function_with_params(func, params=None):
     """Execute a console function with GUI-provided parameters"""
-    
+
     if params:
         input_simulator.set_responses(params)
-    
+
     patch_input_for_gui()
-    
+
     try:
         result = get_function_output(func)
         return result
@@ -338,26 +338,26 @@ def execute_console_function_with_params(func, params=None):
 
 def format_console_output_for_gui(output):
     """Format console output for better GUI display"""
-    
+
     if not output:
         return ""
-    
+
     # Remove excessive newlines
     formatted = output.strip()
-    
+
     # Replace multiple consecutive newlines with double newlines
     import re
     formatted = re.sub(r'\n{3,}', '\n\n', formatted)
-    
+
     # Clean up formatting characters
     formatted = formatted.replace('=' * 50, '-' * 50)
     formatted = formatted.replace('=' * 100, '-' * 80)
-    
+
     return formatted
 
 def validate_gui_data(data, data_type):
     """Validate data from GUI forms before passing to console functions"""
-    
+
     validators = {
         'permit': {
             'required': ['full_name', 'email', 'zone', 'permit_type'],
@@ -379,24 +379,24 @@ def validate_gui_data(data, data_type):
             'numeric_fields': ['total_spaces']
         }
     }
-    
+
     if data_type not in validators:
         return True, get_text("mobility.parking.validation.unknown_data_type", "Unknown data type")
-    
+
     validator = validators[data_type]
     errors = []
-    
+
     # Check required fields
     for field in validator.get('required', []):
         if field not in data or not data[field]:
             errors.append(get_text("mobility.parking.validation.field_required", "Field '{field}' is required").format(field=field))
-    
+
     # Validate email fields
     for field in validator.get('email_fields', []):
         if field in data and data[field]:
             if '@' not in data[field]:
                 errors.append(get_text("mobility.parking.validation.invalid_email", "Field '{field}' must be a valid email address").format(field=field))
-    
+
     # Validate numeric fields
     for field in validator.get('numeric_fields', []):
         if field in data and data[field]:
@@ -404,7 +404,7 @@ def validate_gui_data(data, data_type):
                 float(data[field])
             except ValueError:
                 errors.append(get_text("mobility.parking.validation.must_be_number", "Field '{field}' must be a number").format(field=field))
-    
+
     # Validate date fields
     for field in validator.get('date_fields', []):
         if field in data and data[field]:
@@ -413,17 +413,17 @@ def validate_gui_data(data, data_type):
                 datetime.strptime(data[field], '%Y-%m-%d')
             except ValueError:
                 errors.append(get_text("mobility.parking.validation.invalid_date_format", "Field '{field}' must be in YYYY-MM-DD format").format(field=field))
-    
+
     # Auto-format uppercase fields
     for field in validator.get('uppercase_fields', []):
         if field in data and data[field]:
             data[field] = data[field].upper()
-    
+
     return len(errors) == 0, errors
 
 def get_user_permissions():
     """Get current user permissions for GUI access control"""
-    
+
     try:
         # Pull the shared auth object from the refactored parking management
         from education_system.university_system.modules.domain.mobility.services.parking_management import auth
@@ -457,7 +457,7 @@ def get_user_permissions():
             }
     except (ImportError, AttributeError):
         pass
-    
+
     # Default permissions for fallback
     return {
         'user': None,
@@ -489,14 +489,14 @@ def get_user_permissions():
 
 def cleanup_compatibility_layer():
     """Clean up the compatibility layer when shutting down"""
-    
+
     # Restore original functions
     restore_input()
-    
+
     # Clear environment variables
     if 'PARKING_GUI_MODE' in os.environ:
         del os.environ['PARKING_GUI_MODE']
-    
+
     # Reset GUI mode
     set_gui_mode(False)
 

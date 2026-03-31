@@ -45,7 +45,7 @@ def profit_loss_statement():
 
         # Operating Expenses
         cursor.execute('''
-            SELECT 
+            SELECT
                 category,
                 SUM(amount) as total
             FROM restaurant_expenses
@@ -128,7 +128,7 @@ def expense_tracking():
 
 def add_expense():
     """Add new expense"""
-    
+
     if not ctx.auth or not ctx.auth.current_user:
         print("You must be logged in to add expenses.")
         return
@@ -275,25 +275,25 @@ def view_expenses():
             cursor.execute('SELECT * FROM restaurant_expenses ORDER BY expense_date DESC LIMIT 50')
         elif filter_choice == '2':
             category = input("Enter category: ")
-            cursor.execute('SELECT * FROM restaurant_expenses WHERE category = ? ORDER BY expense_date DESC', 
+            cursor.execute('SELECT * FROM restaurant_expenses WHERE category = ? ORDER BY expense_date DESC',
                           (category,))
         elif filter_choice == '3':
             start_date = input("Enter start date (YYYY-MM-DD): ")
             end_date = input("Enter end date (YYYY-MM-DD): ")
             cursor.execute('''
-                SELECT * FROM restaurant_expenses 
-                WHERE DATE(expense_date) BETWEEN ? AND ? 
+                SELECT * FROM restaurant_expenses
+                WHERE DATE(expense_date) BETWEEN ? AND ?
                 ORDER BY expense_date DESC
             ''', (start_date, end_date))
         elif filter_choice == '4':
             current_month = datetime.now().strftime('%Y-%m')
             cursor.execute('''
-                SELECT * FROM restaurant_expenses 
+                SELECT * FROM restaurant_expenses
                 WHERE strftime('%Y-%m', expense_date) = ?
                 ORDER BY expense_date DESC
             ''', (current_month,))
         elif filter_choice == '5':
-            cursor.execute('SELECT * FROM restaurant_expenses WHERE status = ? ORDER BY expense_date DESC', 
+            cursor.execute('SELECT * FROM restaurant_expenses WHERE status = ? ORDER BY expense_date DESC',
                           ('Pending',))
 
         expenses = cursor.fetchall()
@@ -384,13 +384,13 @@ def view_budgets():
         elif filter_choice == '2':
             current_date = datetime.now().strftime('%Y-%m-%d')
             cursor.execute('''
-                SELECT * FROM restaurant_budgets 
-                WHERE ? BETWEEN period_start AND period_end 
+                SELECT * FROM restaurant_budgets
+                WHERE ? BETWEEN period_start AND period_end
                 ORDER BY category
             ''', (current_date,))
         elif filter_choice == '3':
             category = input("Enter category: ")
-            cursor.execute('SELECT * FROM restaurant_budgets WHERE category = ? ORDER BY period_start DESC', 
+            cursor.execute('SELECT * FROM restaurant_budgets WHERE category = ? ORDER BY period_start DESC',
                           (category,))
         elif filter_choice == '4':
             cursor.execute('SELECT * FROM restaurant_budgets WHERE spent_amount > allocated_amount ORDER BY (spent_amount - allocated_amount) DESC')
@@ -435,7 +435,7 @@ def view_budgets():
 
 def create_budget():
     """Create new budget - FIXED"""
-    
+
     if not ctx.auth or not ctx.auth.current_user:
         print("You must be logged in to create budgets.")
         return
@@ -540,7 +540,7 @@ def create_budget():
 
 def update_budget():
     """Update existing budget - FIXED"""
-    
+
     if not ctx.auth or not ctx.auth.current_user:
         print("You must be logged in to update budgets.")
         return
@@ -603,8 +603,8 @@ def update_budget():
                 datetime.strptime(new_end, '%Y-%m-%d')
 
                 cursor.execute('''
-                    UPDATE restaurant_budgets 
-                    SET period_start = ?, period_end = ? 
+                    UPDATE restaurant_budgets
+                    SET period_start = ?, period_end = ?
                     WHERE budget_id = ?
                 ''', (new_start, new_end, budget_id))
                 print("Period dates updated successfully.")
@@ -667,7 +667,7 @@ def budget_vs_actual():
         cursor.execute('''
             SELECT budget_id, category, allocated_amount, spent_amount,
                    period_start, period_end
-            FROM restaurant_budgets 
+            FROM restaurant_budgets
             WHERE ? BETWEEN period_start AND period_end
             ORDER BY category
         ''', (current_date,))
@@ -681,7 +681,7 @@ def budget_vs_actual():
             cursor.execute('''
                 SELECT budget_id, category, allocated_amount, spent_amount,
                        period_start, period_end
-                FROM restaurant_budgets 
+                FROM restaurant_budgets
                 ORDER BY period_start DESC
                 LIMIT 10
             ''')

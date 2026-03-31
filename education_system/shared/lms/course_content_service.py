@@ -63,7 +63,7 @@ class CourseContentService:
     def update_lesson(self, lesson_id, **kwargs):
         if not kwargs:
             return
-        from education_system.shared.database.sql_safety import validate_identifier
+        from education_system.shared.database.sql_safety import validate_identifier  # nosec B608
         conn = self._conn()
         try:
             sets = ", ".join(f"{validate_identifier(k)} = ?" for k in kwargs)

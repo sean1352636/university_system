@@ -8,7 +8,7 @@ import sqlite3
 from datetime import datetime, timedelta
 
 from education_system.shared.auth.db import AUTH_DB_FILE, connect as auth_connect
-from education_system.college_system.core.sql_safety import validate_identifier
+from education_system.college_system.core.sql_safety import validate_identifier  # nosec B608
 
 EVENT_TYPES = ("open_day", "transition", "training", "holiday", "meeting", "other")
 

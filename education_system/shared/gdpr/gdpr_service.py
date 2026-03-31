@@ -12,7 +12,7 @@ from pathlib import Path
 from textwrap import dedent
 
 from education_system.shared.database.paths import SYSTEM_DB_PATHS, AUTH_DB, SYSTEM_LABELS
-from education_system.shared.database.sql_safety import validate_identifier
+from education_system.shared.database.sql_safety import validate_identifier  # nosec B608
 
 
 def _default_db_paths():

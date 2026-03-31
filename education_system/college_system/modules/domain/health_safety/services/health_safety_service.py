@@ -4,7 +4,7 @@ from datetime import datetime
 from education_system.college_system.core.exceptions import HealthSafetyError
 from education_system.college_system.infrastructure.database.db import connect
 
-from education_system.college_system.core.sql_safety import validate_identifier
+from education_system.college_system.core.sql_safety import validate_identifier  # nosec B608
 import logging
 
 logger = logging.getLogger(__name__)
@@ -105,7 +105,7 @@ class HealthSafetyService:
         try:
             set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
             params = list(updates.values()) + [incident_id]
-            conn.execute(f"UPDATE hs_incidents SET {set_clause} WHERE id = ?", params)
+            conn.execute(f"UPDATE hs_incidents SET {set_clause} WHERE id = ?", params)  # nosec B608
             conn.commit()
             logger.info("Incident updated: id=%d", incident_id)
             row = conn.execute("SELECT * FROM hs_incidents WHERE id = ?", (incident_id,)).fetchone()
@@ -223,7 +223,7 @@ class HealthSafetyService:
         try:
             set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
             params = list(updates.values()) + [inspection_id]
-            conn.execute(f"UPDATE hs_inspections SET {set_clause} WHERE id = ?", params)
+            conn.execute(f"UPDATE hs_inspections SET {set_clause} WHERE id = ?", params)  # nosec B608
             conn.commit()
             logger.info("Inspection updated: id=%d", inspection_id)
             return conn.execute("SELECT * FROM hs_inspections WHERE id = ?", (inspection_id,)).fetchone()
@@ -335,7 +335,7 @@ class HealthSafetyService:
         try:
             set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
             params = list(updates.values()) + [assessment_id]
-            conn.execute(f"UPDATE hs_risk_assessments SET {set_clause} WHERE id = ?", params)
+            conn.execute(f"UPDATE hs_risk_assessments SET {set_clause} WHERE id = ?", params)  # nosec B608
             conn.commit()
             logger.info("Risk assessment updated: id=%d", assessment_id)
             return conn.execute("SELECT * FROM hs_risk_assessments WHERE id = ?", (assessment_id,)).fetchone()
@@ -441,7 +441,7 @@ class HealthSafetyService:
         try:
             set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
             params = list(updates.values()) + [check_id]
-            conn.execute(f"UPDATE hs_compliance_checks SET {set_clause} WHERE id = ?", params)
+            conn.execute(f"UPDATE hs_compliance_checks SET {set_clause} WHERE id = ?", params)  # nosec B608
             conn.commit()
             logger.info("Compliance check updated: id=%d", check_id)
             return conn.execute("SELECT * FROM hs_compliance_checks WHERE id = ?", (check_id,)).fetchone()

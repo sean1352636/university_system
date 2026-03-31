@@ -165,7 +165,7 @@ class WellnessService:
             # Insert default crisis resources
             conn.execute("""
                 INSERT OR IGNORE INTO crisis_resources (resource_id, resource_name, resource_type, contact_info, description)
-                VALUES 
+                VALUES
                 (1, 'National Suicide Prevention Lifeline', 'Crisis Hotline', '988', 'Free, confidential support 24/7'),
                 (2, 'Crisis Text Line', 'Text Support', 'Text HOME to 741741', 'Free crisis counseling via text'),
                 (3, 'Campus Counseling Center', 'On-Campus', '555-0100', 'Free counseling for students'),

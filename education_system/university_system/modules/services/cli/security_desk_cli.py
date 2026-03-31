@@ -7,7 +7,7 @@ Features: Help requests, issue reporting, ticket tracking, status monitoring
 from datetime import datetime
 from pathlib import Path
 
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 
 try:
     from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH

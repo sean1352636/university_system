@@ -23,38 +23,38 @@ from education_system.university_system.modules.shared.utils.i18n import get_tex
 def check_dependencies():
     """Check if all required dependencies are available"""
     missing_deps = []
-    
+
     # Check for GUI dependencies
     try:
         import tkinter
         import tkinter.ttk
     except ImportError:
         missing_deps.append("tkinter (required for GUI)")
-    
+
     # Check for core dependencies
     try:
         from education_system.university_system.infrastructure.database.db import sqlite3
     except ImportError:
         missing_deps.append("sqlite3")
-    
+
     try:
         from datetime import datetime, timedelta
     except ImportError:
         missing_deps.append("datetime")
-    
+
     # Check for optional dependencies
     optional_missing = []
-    
+
     try:
         import pandas
     except ImportError:
         optional_missing.append("pandas (for Excel export)")
-    
+
     try:
         from reportlab.lib.pagesizes import letter
     except ImportError:
         optional_missing.append("reportlab (for PDF export)")
-    
+
     if missing_deps:
         print(get_text("mobility.parking.error_missing_required_deps"))
         for dep in missing_deps:
@@ -67,7 +67,7 @@ def check_dependencies():
         for dep in optional_missing:
             print(get_text("mobility.parking.dep_item", dep=dep))
         print(get_text("mobility.parking.some_features_unavailable"))
-    
+
     return True
 
 def launch_gui():
@@ -78,21 +78,21 @@ def launch_gui():
         # GUI implementation exists it should be placed alongside
         # ``parking_management.py`` as ``parking_management_gui.py``.
         from education_system.university_system.modules.domain.mobility.gui.parking_management_gui import ParkingManagementGUI
-        
+
         print(get_text("mobility.parking.starting_gui"))
-        
+
         # Create and run the GUI
         root = tk.Tk()
         app = ParkingManagementGUI(root)
-        
+
         # Handle window closing
         def on_closing():
             if messagebox.askokcancel("Quit", "Do you want to quit?"):
                 root.destroy()
-        
+
         root.protocol("WM_DELETE_WINDOW", on_closing)
         root.mainloop()
-        
+
     except ImportError as e:
         print(get_text("mobility.parking.error_import_gui", error=str(e)))
         print(get_text("mobility.parking.ensure_gui_in_directory"))
@@ -100,7 +100,7 @@ def launch_gui():
     except Exception as e:
         print(get_text("mobility.parking.error_launching_gui", error=str(e)))
         return False
-    
+
     return True
 
 def launch_console():
@@ -120,10 +120,10 @@ def launch_console():
         if auth is None:
             auth = UserAuth()
         set_auth(auth)
-        
+
         # Run the original console interface
         display_parking_menu()
-        
+
     except ImportError as e:
         print(f"Error: Could not import console module: {e}")
         print("Please ensure parking_management.py and required modules are available.")
@@ -131,7 +131,7 @@ def launch_console():
     except Exception as e:
         print(f"Error launching console interface: {e}")
         return False
-    
+
     return True
 
 def show_interface_selection():
@@ -139,7 +139,7 @@ def show_interface_selection():
     try:
         root = tk.Tk()
         root.withdraw()  # Hide the main window
-        
+
         choice = messagebox.askyesnocancel(
             "Interface Selection",
             "Choose your preferred interface:\n\n"
@@ -147,9 +147,9 @@ def show_interface_selection():
             "No - Console Interface (Text-based)\n"
             "Cancel - Exit"
         )
-        
+
         root.destroy()
-        
+
         if choice is True:
             return "gui"
         elif choice is False:
@@ -175,37 +175,37 @@ Examples:
   python parking_launcher.py --console    # Launch console interface directly
         """
     )
-    
+
     parser.add_argument(
-        '--gui', 
+        '--gui',
         action='store_true',
         help='Launch GUI interface'
     )
-    
+
     parser.add_argument(
-        '--console', 
+        '--console',
         action='store_true',
         help='Launch console interface'
     )
-    
+
     parser.add_argument(
         '--no-deps-check',
         action='store_true',
         help='Skip dependency check'
     )
-    
+
     args = parser.parse_args()
-    
+
     # Check dependencies (unless skipped)
     if not args.no_deps_check:
         print("Checking dependencies...")
         if not check_dependencies():
             sys.exit(1)
         print("Dependencies check passed.\n")
-    
+
     # Determine which interface to launch
     interface = None
-    
+
     if args.gui and args.console:
         print("Error: Cannot specify both --gui and --console")
         sys.exit(1)
@@ -216,7 +216,7 @@ Examples:
     else:
         # No specific interface requested, show selection
         interface = show_interface_selection()
-    
+
     # Launch the selected interface
     if interface == "gui":
         print("Launching GUI interface...")
@@ -230,10 +230,10 @@ Examples:
     else:
         print("Error: Invalid interface selection")
         sys.exit(1)
-    
+
     if not success:
         print("\nFailed to launch the selected interface.")
-        
+
         # Offer fallback
         if interface == "gui":
             print("Would you like to try the console interface instead? (y/n): ", end="")
@@ -245,7 +245,7 @@ Examples:
             except KeyboardInterrupt:
                 print("\nExiting...")
                 sys.exit(1)
-        
+
         if not success:
             sys.exit(1)
 

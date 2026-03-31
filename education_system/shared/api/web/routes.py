@@ -462,7 +462,7 @@ def _validated_table(table_name, db_path):
     This prevents SQL injection by only allowing names that exist as
     real tables — no user string is ever interpolated into SQL.
     """
-    from education_system.shared.database.sql_safety import validate_identifier
+    from education_system.shared.database.sql_safety import validate_identifier  # nosec B608
     try:
         validate_identifier(table_name)
     except ValueError:

@@ -35,10 +35,10 @@ def get_user_notifications(user_id=None, unread_only=False):
     """Get notifications for a user"""
     if not user_id:
         user_id = _auth_mod.auth.current_user['id'] if _auth_mod.auth and _auth_mod.auth.current_user else None
-    
+
     if not user_id:
         raise ValueError("User ID required")
-    
+
     try:
         conn = sqlite3.connect(SUPPORT_DB)
         conn.row_factory = sqlite3.Row
@@ -73,38 +73,38 @@ def get_user_notifications(user_id=None, unread_only=False):
 
         conn.close()
         return notifications
-        
+
     except Exception as e:
         logger.error(f"Error getting user notifications: {e}")
         return []
 
-# Add this method to the EnhancedStudentSupport class  
+# Add this method to the EnhancedStudentSupport class
 
 def mark_notification_read(notification_id, user_id=None):
     """Mark a notification as read"""
     if not user_id:
         user_id = _auth_mod.auth.current_user['id'] if _auth_mod.auth and _auth_mod.auth.current_user else None
-    
+
     if not user_id:
         raise ValueError("User ID required")
-    
+
     try:
         conn = sqlite3.connect(SUPPORT_DB)
         cursor = conn.cursor()
-        
+
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
+
         cursor.execute('''
-        UPDATE notifications 
+        UPDATE notifications
         SET is_read = 1, read_datetime = ?
         WHERE notification_id = ? AND user_id = ?
         ''', (timestamp, notification_id, user_id))
-        
+
         conn.commit()
         conn.close()
-        
+
         return cursor.rowcount > 0
-        
+
     except Exception as e:
         logger.error(f"Error marking notification as read: {e}")
         return False
@@ -155,7 +155,7 @@ def _create_ticket_notifications(ticket_id, student_id, assigned_to, action):
     try:
         conn = sqlite3.connect(SUPPORT_DB)
         cursor = conn.cursor()
-        
+
         notifications = []
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -182,10 +182,10 @@ def _create_ticket_notifications(ticket_id, student_id, assigned_to, action):
                 related_ticket_id, created_datetime
             ) VALUES (?, ?, ?, ?, ?, ?)
             ''', notification)
-        
+
         conn.commit()
         conn.close()
-        
+
     except Exception as e:
         logger.error(f"Error creating notifications: {e}")
 
@@ -232,33 +232,33 @@ def view_notifications(support):
     try:
         print("\n🔔 NOTIFICATIONS")
         print("="*40)
-        
+
         # Get notifications from dashboard data
         dashboard_data = support.get_dashboard_data(_auth_mod.auth.current_user['role'], _auth_mod.auth.current_user['id'])
         notifications = dashboard_data.get('notifications', [])
-        
+
         if not notifications:
             print("📭 No notifications.")
             return
-        
+
         print(f"📬 You have {len(notifications)} notifications:")
-        
+
         for i, notif in enumerate(notifications, 1):
             status_icon = "📫" if notif['is_read'] else "📬"
             print(f"\n{i}. {status_icon} {notif['title']}")
             print(f"   📝 {notif['message']}")
             print(f"   📅 {notif['created']}")
             print(f"   🏷️ Type: {notif['type']}")
-        
+
         # Mark as read option
         mark_read = input(f"\nMark all as read? (y/n): ").lower()
         if mark_read == 'y':
             # In a real implementation, this would update the database
             print("✅ All notifications marked as read.")
-    
+
     except Exception as e:
         print(f"❌ Error viewing notifications: {e}")
-    
+
     input("\nPress Enter to continue...")
 
 # Additional helper functions for enhanced features

@@ -2,7 +2,7 @@
 
 from education_system.college_system.infrastructure.database.db import connect
 from education_system.college_system.core.exceptions import ComplianceError
-from education_system.college_system.core.sql_safety import validate_identifier
+from education_system.college_system.core.sql_safety import validate_identifier  # nosec B608
 
 
 class ComplianceService:

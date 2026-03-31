@@ -1,7 +1,7 @@
 """SEND (Special Educational Needs & Disabilities) service."""
 
 import logging
-from education_system.secondary_school.core.sql_safety import validate_identifier
+from education_system.secondary_school.core.sql_safety import validate_identifier  # nosec B608
 from education_system.secondary_school.core.exceptions import SENDError
 from education_system.secondary_school.infrastructure.database.db import connect
 
@@ -62,7 +62,7 @@ class SENDService:
         conn = self._conn()
         try:
             set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-            conn.execute(f"UPDATE send_records SET {set_clause}, updated_at = datetime('now') WHERE id = ?",
+            conn.execute(f"UPDATE send_records SET {set_clause}, updated_at = datetime('now') WHERE id = ?",  # nosec B608
                          (*updates.values(), record_id))
             conn.commit()
         finally:

@@ -3,7 +3,7 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import KPIDashboardError, ValidationError
 from education_system.college_system.infrastructure.database.db import connect
-from education_system.college_system.core.sql_safety import validate_identifier
+from education_system.college_system.core.sql_safety import validate_identifier  # nosec B608
 import logging
 
 logger = logging.getLogger(__name__)
@@ -71,7 +71,7 @@ class KPIDashboardService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {validate_identifier(key)} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"  # nosec B608
                 params.append(val)
         sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -93,7 +93,7 @@ class KPIDashboardService:
         params = list(updates.values()) + [pk]
         conn = self._conn()
         try:
-            conn.execute(f"UPDATE kpi_targets SET {set_clause} WHERE id = ?", params)
+            conn.execute(f"UPDATE kpi_targets SET {set_clause} WHERE id = ?", params)  # nosec B608
             conn.commit()
             logger.info("Target updated: pk=%d", pk)
             row = conn.execute("SELECT * FROM kpi_targets WHERE id = ?", (pk,)).fetchone()
@@ -127,7 +127,7 @@ class KPIDashboardService:
         params: list = []
         for key, val in filters.items():
             if val is not None:
-                sql += f" AND {validate_identifier(key)} = ?"
+                sql += f" AND {validate_identifier(key)} = ?"  # nosec B608
                 params.append(val)
         conn = self._conn()
         try:

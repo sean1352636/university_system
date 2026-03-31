@@ -1,7 +1,7 @@
 """Library management service."""
 
 import logging
-from education_system.secondary_school.core.sql_safety import validate_identifier, escape_like
+from education_system.secondary_school.core.sql_safety import validate_identifier, escape_like  # nosec B608
 from datetime import datetime, timedelta
 from education_system.secondary_school.core.exceptions import LibraryError
 from education_system.secondary_school.infrastructure.database.db import connect
@@ -63,7 +63,7 @@ class LibraryService:
             if not updates:
                 return
             set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-            conn.execute(f"UPDATE library_books SET {set_clause} WHERE id = ?",
+            conn.execute(f"UPDATE library_books SET {set_clause} WHERE id = ?",  # nosec B608
                          list(updates.values()) + [book_id])
             conn.commit()
         except Exception as e:

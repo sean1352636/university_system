@@ -16,8 +16,8 @@ def generate_employee_tax_summary():
         # Get staff payroll data for the year
         cursor.execute('''
             SELECT s.staff_id, s.name, s.role, s.hourly_rate,
-                   SUM(CASE 
-                       WHEN ss.actual_end IS NOT NULL AND ss.actual_start IS NOT NULL 
+                   SUM(CASE
+                       WHEN ss.actual_end IS NOT NULL AND ss.actual_start IS NOT NULL
                        THEN (strftime('%s', ss.actual_end) - strftime('%s', ss.actual_start)) / 3600.0
                        ELSE (strftime('%s', ss.end_time) - strftime('%s', ss.start_time)) / 3600.0
                    END) as total_hours
@@ -95,7 +95,7 @@ def generate_annual_tax_summary():
 
         # Annual sales and VAT
         cursor.execute('''
-            SELECT 
+            SELECT
                 SUM(total_amount) as total_sales,
                 SUM(tax_amount) as total_tax,
                 COUNT(*) as total_orders
@@ -107,7 +107,7 @@ def generate_annual_tax_summary():
 
         # Annual expenses
         cursor.execute('''
-            SELECT 
+            SELECT
                 SUM(amount) as total_expenses,
                 COUNT(*) as expense_count
             FROM restaurant_expenses
@@ -118,7 +118,7 @@ def generate_annual_tax_summary():
 
         # Monthly breakdown
         cursor.execute('''
-            SELECT 
+            SELECT
                 strftime('%m', order_date) as month,
                 SUM(total_amount) as monthly_sales,
                 SUM(tax_amount) as monthly_tax
@@ -246,7 +246,7 @@ def export_expense_data(start_date, end_date):
         cursor = conn.cursor()
 
         cursor.execute('''
-            SELECT expense_id, expense_date, category, description, amount, 
+            SELECT expense_id, expense_date, category, description, amount,
                    payment_method, vendor, status
             FROM restaurant_expenses
             WHERE DATE(expense_date) BETWEEN ? AND ?
@@ -266,7 +266,7 @@ def export_expense_data(start_date, end_date):
             writer = csv.writer(csvfile)
 
             # Header
-            writer.writerow(['Expense ID', 'Date', 'Category', 'Description', 'Amount', 
+            writer.writerow(['Expense ID', 'Date', 'Category', 'Description', 'Amount',
                            'Payment Method', 'Vendor', 'Status'])
 
             # Data

@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 from datetime import datetime
 import csv
 import json

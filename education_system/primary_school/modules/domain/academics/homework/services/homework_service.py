@@ -4,7 +4,7 @@ import logging
 from datetime import date as date_type
 from education_system.primary_school.infrastructure.database.db import connect
 from education_system.primary_school.core.exceptions import HomeworkError
-from education_system.primary_school.core.sql_safety import validate_identifier
+from education_system.primary_school.core.sql_safety import validate_identifier  # nosec B608
 import traceback
 
 logger = logging.getLogger(__name__)

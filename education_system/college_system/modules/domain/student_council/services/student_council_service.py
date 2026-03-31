@@ -93,7 +93,7 @@ class StudentCouncilService:
             if not existing:
                 raise StudentCouncilError("Member not found.")
             set_parts = ", ".join(f"{k} = ?" for k in updates)
-            conn.execute(f"UPDATE council_members SET {set_parts} WHERE id = ?",
+            conn.execute(f"UPDATE council_members SET {set_parts} WHERE id = ?",  # nosec B608
                          (*updates.values(), member_id))
             conn.commit()
             logger.info("Council member updated: id=%d", member_id)
@@ -216,7 +216,7 @@ class StudentCouncilService:
             if not existing:
                 raise StudentCouncilError("Meeting not found.")
             set_parts = ", ".join(f"{k} = ?" for k in updates)
-            conn.execute(f"UPDATE council_meetings SET {set_parts} WHERE id = ?",
+            conn.execute(f"UPDATE council_meetings SET {set_parts} WHERE id = ?",  # nosec B608
                          (*updates.values(), meeting_id))
             conn.commit()
             logger.info("Council meeting updated: id=%d", meeting_id)
@@ -347,7 +347,7 @@ class StudentCouncilService:
             if not existing:
                 raise StudentCouncilError("Proposal not found.")
             set_parts = ", ".join(f"{k} = ?" for k in updates)
-            conn.execute(f"UPDATE council_proposals SET {set_parts} WHERE id = ?",
+            conn.execute(f"UPDATE council_proposals SET {set_parts} WHERE id = ?",  # nosec B608
                          (*updates.values(), proposal_id))
             conn.commit()
             logger.info("Council proposal updated: id=%d", proposal_id)

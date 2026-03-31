@@ -118,7 +118,7 @@ def daily_sales_report():
 
         # Get daily sales data
         cursor.execute('''
-            SELECT 
+            SELECT
                 COUNT(*) as total_orders,
                 SUM(total_amount) as total_revenue,
                 AVG(total_amount) as avg_order_value,
@@ -214,8 +214,8 @@ def export_payroll_report():
 
         cursor.execute('''
             SELECT s.staff_id, s.name, s.role, s.hourly_rate,
-                   SUM(CASE 
-                       WHEN ss.actual_end IS NOT NULL AND ss.actual_start IS NOT NULL 
+                   SUM(CASE
+                       WHEN ss.actual_end IS NOT NULL AND ss.actual_start IS NOT NULL
                        THEN (strftime('%s', ss.actual_end) - strftime('%s', ss.actual_start)) / 3600.0
                        ELSE (strftime('%s', ss.end_time) - strftime('%s', ss.start_time)) / 3600.0
                    END) as total_hours,
@@ -242,7 +242,7 @@ def export_payroll_report():
 
             # Header
             writer.writerow([
-                'Staff ID', 'Name', 'Role', 'Hourly Rate', 'Total Hours', 
+                'Staff ID', 'Name', 'Role', 'Hourly Rate', 'Total Hours',
                 'Days Worked', 'Gross Pay', 'Period Start', 'Period End'
             ])
 
@@ -254,7 +254,7 @@ def export_payroll_report():
                 gross_pay = hours * hourly_rate
 
                 writer.writerow([
-                    staff[0], staff[1], staff[2], f"£{hourly_rate:.2f}", 
+                    staff[0], staff[1], staff[2], f"£{hourly_rate:.2f}",
                     f"{hours:.1f}", days, f"£{gross_pay:.2f}", start_date, end_date
                 ])
 
@@ -270,7 +270,7 @@ def monthly_financial_summary():
     try:
         month = int(input("Enter month (1-12): "))
         year = int(input("Enter year (YYYY): "))
-        
+
         if month < 1 or month > 12:
             print("Invalid month.")
             return
@@ -287,7 +287,7 @@ def monthly_financial_summary():
 
         # Get monthly sales data
         cursor.execute('''
-            SELECT 
+            SELECT
                 COUNT(*) as total_orders,
                 SUM(total_amount) as total_revenue,
                 AVG(total_amount) as avg_order_value
@@ -299,7 +299,7 @@ def monthly_financial_summary():
 
         # Get expenses for the month
         cursor.execute('''
-            SELECT 
+            SELECT
                 SUM(amount) as total_expenses,
                 COUNT(*) as expense_count
             FROM restaurant_expenses
@@ -348,7 +348,7 @@ def monthly_financial_summary():
 
         # Weekly breakdown
         cursor.execute('''
-            SELECT 
+            SELECT
                 strftime('%W', order_date) as week,
                 COUNT(*) as orders,
                 SUM(total_amount) as revenue
@@ -548,7 +548,7 @@ def generate_sales_tax_summary():
 
         # Daily sales tax breakdown
         cursor.execute('''
-            SELECT DATE(order_date) as sale_date, 
+            SELECT DATE(order_date) as sale_date,
                    SUM(total_amount) as daily_sales,
                    SUM(tax_amount) as daily_tax
             FROM orders
@@ -574,7 +574,7 @@ def generate_sales_tax_summary():
                 tax_rate = (tax / sales * 100) if sales > 0 and tax else 0
                 total_sales += sales or 0
                 total_tax += tax or 0
-                
+
                 print(f"{date:<12} £{sales or 0:<11.2f} £{tax or 0:<11.2f} {tax_rate:<9.2f}%")
 
             print("-"*50)
@@ -670,7 +670,7 @@ def export_complete_financial_data(start_date, end_date):
 
         # Get all financial data
         cursor.execute('''
-            SELECT 'REVENUE' as type, order_id as ref_id, order_date as date, 
+            SELECT 'REVENUE' as type, order_id as ref_id, order_date as date,
                    total_amount as amount, payment_method as description, customer_id as details
             FROM orders
             WHERE DATE(order_date) BETWEEN ? AND ? AND order_status = 'Completed'
@@ -703,7 +703,7 @@ def export_complete_financial_data(start_date, end_date):
 
         # Summary statistics
         cursor.execute('''
-            SELECT 
+            SELECT
                 SUM(CASE WHEN total_amount > 0 THEN total_amount ELSE 0 END) as total_revenue,
                 COUNT(CASE WHEN total_amount > 0 THEN 1 END) as revenue_transactions
             FROM orders
@@ -713,7 +713,7 @@ def export_complete_financial_data(start_date, end_date):
         revenue_stats = cursor.fetchone()
 
         cursor.execute('''
-            SELECT 
+            SELECT
                 SUM(amount) as total_expenses,
                 COUNT(*) as expense_transactions
             FROM restaurant_expenses
@@ -742,7 +742,7 @@ def export_sales_data(start_date, end_date):
         cursor = conn.cursor()
 
         cursor.execute('''
-            SELECT o.order_id, o.order_date, o.total_amount, o.tax_amount, 
+            SELECT o.order_id, o.order_date, o.total_amount, o.tax_amount,
                    o.payment_method, c.name as customer_name, o.order_status
             FROM orders o
             LEFT JOIN restaurant_customers c ON o.customer_id = c.customer_id
@@ -763,7 +763,7 @@ def export_sales_data(start_date, end_date):
             writer = csv.writer(csvfile)
 
             # Header
-            writer.writerow(['Order ID', 'Date/Time', 'Total Price', 'Tax Amount', 
+            writer.writerow(['Order ID', 'Date/Time', 'Total Price', 'Tax Amount',
                            'Payment Method', 'Customer', 'Status'])
 
             # Data

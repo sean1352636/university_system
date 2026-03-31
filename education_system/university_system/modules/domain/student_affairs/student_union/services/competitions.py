@@ -8,14 +8,14 @@ def view_active_competitions(cursor):
     """View currently active competitions"""
     try:
         cursor.execute('''
-        SELECT c.competition_id, c.competition_name, c.competition_type, 
+        SELECT c.competition_id, c.competition_name, c.competition_type,
                c.start_date, c.end_date, c.registration_deadline,
                c.max_participants_per_club, c.status,
                COUNT(DISTINCT cp.club_id) as registered_clubs
         FROM club_competitions c
         LEFT JOIN competition_participants cp ON c.competition_id = cp.competition_id
         WHERE c.status IN ('upcoming', 'active', 'registration_open')
-        GROUP BY c.competition_id, c.competition_name, c.competition_type, 
+        GROUP BY c.competition_id, c.competition_name, c.competition_type,
                  c.start_date, c.end_date, c.registration_deadline,
                  c.max_participants_per_club, c.status
         ORDER BY c.start_date
@@ -370,7 +370,7 @@ def update_competition_scores(cursor, conn):
                 return
 
             cursor.execute('''
-            UPDATE competition_participants 
+            UPDATE competition_participants
             SET score = ?
             WHERE competition_id = ? AND student_id = ?
             ''', (new_score, competition_id, selected_participant[0]))
@@ -397,7 +397,7 @@ def update_competition_scores(cursor, conn):
 
                 for i, score in enumerate(scores):
                     cursor.execute('''
-                    UPDATE competition_participants 
+                    UPDATE competition_participants
                     SET score = ?
                     WHERE competition_id = ? AND student_id = ?
                     ''', (score, competition_id, participants[i][0]))
@@ -427,7 +427,7 @@ def update_competition_scores(cursor, conn):
             # Calculate individual rankings
             for rank, participant in enumerate(scored_participants, 1):
                 cursor.execute('''
-                UPDATE competition_participants 
+                UPDATE competition_participants
                 SET rank_position = ?
                 WHERE competition_id = ? AND student_id = ?
                 ''', (rank, competition_id, participant[0]))

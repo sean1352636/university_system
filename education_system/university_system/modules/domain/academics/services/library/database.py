@@ -62,13 +62,13 @@ def init_library_db():
         conn = get_db_connection()
         if not conn:
             return False
-            
+
         cursor = conn.cursor()
-        
+
         # First, check if library_settings table exists and get its structure
         cursor.execute("PRAGMA table_info(library_settings)")
         existing_columns = {row[1]: row[2] for row in cursor.fetchall()}
-        
+
         # Drop and recreate library_settings table if it doesn't have the right structure
         expected_columns = {
             'setting_name': 'TEXT',
@@ -79,10 +79,10 @@ def init_library_db():
             'max_value': 'REAL',
             'allowed_values': 'TEXT'
         }
-        
+
         if not all(col in existing_columns for col in expected_columns.keys()):
             print(get_text("library.updating_settings_table"))
-            
+
             # Backup existing settings if table exists
             existing_settings = []
             try:
@@ -90,10 +90,10 @@ def init_library_db():
                 existing_settings = cursor.fetchall()
             except sqlite3.Error:
                 pass  # Table doesn't exist yet
-            
+
             # Drop the old table
             cursor.execute("DROP TABLE IF EXISTS library_settings")
-            
+
             # Create new table with correct structure
             cursor.execute('''
             CREATE TABLE library_settings (
@@ -106,15 +106,15 @@ def init_library_db():
                 allowed_values TEXT
             )
             ''')
-            
+
             # Restore existing settings with default values for new columns
             for setting_name, setting_value in existing_settings:
                 cursor.execute('''
-                INSERT INTO library_settings 
+                INSERT INTO library_settings
                 (setting_name, setting_value, description, setting_type)
                 VALUES (?, ?, ?, ?)
                 ''', (setting_name, setting_value, 'Existing setting', 'string'))
-        
+
         # Enhanced books table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS books (
@@ -143,7 +143,7 @@ def init_library_db():
             condition_notes TEXT
         )
         ''')
-        
+
         # Enhanced book_loans table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS book_loans (
@@ -162,7 +162,7 @@ def init_library_db():
             notes TEXT
         )
         ''')
-        
+
         # Enhanced book_reservations table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS book_reservations (
@@ -176,7 +176,7 @@ def init_library_db():
             notification_sent BOOLEAN DEFAULT FALSE
         )
         ''')
-        
+
         # Book reviews and ratings
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS book_reviews (
@@ -192,7 +192,7 @@ def init_library_db():
             moderation_date TEXT
         )
         ''')
-        
+
         # Reading lists
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS reading_lists (
@@ -207,7 +207,7 @@ def init_library_db():
             target_reading_level TEXT
         )
         ''')
-        
+
         # Reading list items
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS reading_list_items (
@@ -220,7 +220,7 @@ def init_library_db():
             order_index INTEGER DEFAULT 0
         )
         ''')
-        
+
         # User preferences and profiles
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS user_preferences (
@@ -234,7 +234,7 @@ def init_library_db():
             language_preference TEXT DEFAULT 'English'
         )
         ''')
-        
+
         # Reading goals and achievements
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS reading_goals (
@@ -249,7 +249,7 @@ def init_library_db():
             created_date TEXT NOT NULL
         )
         ''')
-        
+
         # User achievements
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS user_achievements (
@@ -262,7 +262,7 @@ def init_library_db():
             points INTEGER DEFAULT 0
         )
         ''')
-        
+
         # Book recommendations
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS book_recommendations (
@@ -276,7 +276,7 @@ def init_library_db():
             clicked BOOLEAN DEFAULT FALSE
         )
         ''')
-        
+
         # Notification queue
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS notification_queue (
@@ -292,7 +292,7 @@ def init_library_db():
             priority INTEGER DEFAULT 1
         )
         ''')
-        
+
         # Digital library items
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS digital_library (
@@ -309,7 +309,7 @@ def init_library_db():
             added_date TEXT NOT NULL
         )
         ''')
-        
+
         # System audit log
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS audit_log (
@@ -325,7 +325,7 @@ def init_library_db():
             success BOOLEAN DEFAULT TRUE
         )
         ''')
-        
+
         # Book suggestions/requests
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS book_requests (
@@ -343,7 +343,7 @@ def init_library_db():
             notes TEXT
         )
         ''')
-        
+
         # Inter-library loans
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS interlibrary_loans (
@@ -362,7 +362,7 @@ def init_library_db():
             cost REAL DEFAULT 0.0
         )
         ''')
-        
+
         # Usage analytics
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS usage_analytics (
@@ -410,14 +410,14 @@ def init_library_db():
             ('barcode_scanning', 'false', 'Enable barcode scanning support', 'boolean', None, None, 'true,false'),
             ('multi_location_support', 'false', 'Enable multi-location support', 'boolean', None, None, 'true,false')
         ]
-        
+
         for setting in enhanced_settings:
             cursor.execute('''
-            INSERT OR IGNORE INTO library_settings 
+            INSERT OR IGNORE INTO library_settings
             (setting_name, setting_value, description, setting_type, min_value, max_value, allowed_values)
             VALUES (?, ?, ?, ?, ?, ?, ?)
             ''', setting)
-        
+
         # Create indexes for better performance
         indexes = [
             'CREATE INDEX IF NOT EXISTS idx_books_status ON books(status)',
@@ -434,16 +434,16 @@ def init_library_db():
             'CREATE INDEX IF NOT EXISTS idx_payments_source_type ON payments(source_type)',
             'CREATE INDEX IF NOT EXISTS idx_payments_reference_id ON payments(reference_id)'
         ]
-        
+
         for index in indexes:
             cursor.execute(index)
-        
+
         conn.commit()
         conn.close()
         print("✅ " + get_text("library.db_init_success"))
         logging.info("Enhanced library database initialized successfully!")
         return True
-        
+
     except sqlite3.Error as e:
         print("❌ " + get_text("library.db_init_error", error=str(e)))
         logging.error(f"An error occurred while initializing the enhanced library database: {e}")
@@ -455,25 +455,25 @@ def verify_database_structure():
     conn = get_db_connection()
     if not conn:
         return False
-    
+
     cursor = conn.cursor()
-    
+
     try:
         # Check library_settings table structure
         cursor.execute("PRAGMA table_info(library_settings)")
         columns = [row[1] for row in cursor.fetchall()]
-        
+
         required_columns = ['setting_name', 'setting_value', 'description', 'setting_type', 'min_value', 'max_value', 'allowed_values']
-        
+
         missing_columns = [col for col in required_columns if col not in columns]
-        
+
         if missing_columns:
             print(get_text("library.db_structure_error", columns=str(missing_columns)))
             return False
-        
+
         print("✅ " + get_text("library.db_structure_verified"))
         return True
-        
+
     except sqlite3.Error as e:
         print(get_text("common.error") + f": {e}")
         return False
@@ -484,7 +484,7 @@ def verify_database_structure():
 def repair_database():
     """Repair database structure if needed"""
     print("🔧 " + get_text("library.db_repair_checking"))
-    
+
     if not verify_database_structure():
         print("🔄 " + get_text("library.db_repair_needed"))
         return init_library_db()
@@ -493,17 +493,17 @@ def repair_database():
         return True
 
 
-def log_audit_event(user_id: str, action: str, table_affected: str = None, 
-                   record_id: str = None, old_values: str = None, 
+def log_audit_event(user_id: str, action: str, table_affected: str = None,
+                   record_id: str = None, old_values: str = None,
                    new_values: str = None, ip_address: str = None, success: bool = True):
     """Log audit events for security and compliance"""
     try:
         conn = get_db_connection()
         if not conn:
             return
-            
+
         cursor = conn.cursor()
-        
+
         cursor.execute('''
         INSERT INTO audit_log (user_id, action, table_name, record_id,
                               old_values, new_values, timestamp, ip_address, details)
@@ -513,10 +513,10 @@ def log_audit_event(user_id: str, action: str, table_affected: str = None,
             old_values, new_values, datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             ip_address, str(success) if success is not True else None
         ))
-        
+
         conn.commit()
         conn.close()
-        
+
     except sqlite3.Error as e:
         logging.error(f"Error logging audit event: {e}")
 

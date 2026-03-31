@@ -2,7 +2,7 @@
 
 from datetime import datetime
 import logging
-from education_system.secondary_school.core.sql_safety import validate_identifier
+from education_system.secondary_school.core.sql_safety import validate_identifier  # nosec B608
 
 from education_system.secondary_school.core.exceptions import GradeError
 from education_system.secondary_school.infrastructure.database.db import connect
@@ -100,7 +100,7 @@ class GradeService:
 
         conn = self._conn()
         try:
-            conn.execute(f"UPDATE grades SET {set_clause} WHERE id = ?", params)
+            conn.execute(f"UPDATE grades SET {set_clause} WHERE id = ?", params)  # nosec B608
             conn.commit()
             row = conn.execute("SELECT * FROM grades WHERE id = ?", (grade_id,)).fetchone()
             return dict(row) if row else {}

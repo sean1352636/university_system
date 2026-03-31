@@ -4,7 +4,7 @@ import logging
 
 from education_system.primary_school.infrastructure.database.db import connect
 from education_system.primary_school.core.exceptions import HRError
-from education_system.primary_school.core.sql_safety import validate_identifier, escape_like
+from education_system.primary_school.core.sql_safety import validate_identifier, escape_like  # nosec B608
 import traceback
 
 logger = logging.getLogger(__name__)

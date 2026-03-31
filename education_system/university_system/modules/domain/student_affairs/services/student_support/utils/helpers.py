@@ -19,7 +19,7 @@ from functools import wraps
 from education_system.university_system.infrastructure.database.db import get_connection, sqlite3, DatabaseManager
 from education_system.university_system.infrastructure.email.email_manager import send_email
 from education_system.university_system.core.sql_safety import validate_field_for_query
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH, TICKET_TEMPLATES_DIR, UPLOAD_DIR
 from education_system.university_system.utils.logging.log_config import get_log_file
 
@@ -37,18 +37,18 @@ def get_user_preferences(self, user_id=None):
     """Get user notification and display preferences"""
     if not user_id:
         user_id = _auth_mod.auth.current_user['id'] if _auth_mod.auth and _auth_mod.auth.current_user else None
-    
+
     if not user_id:
         raise ValueError("User ID required")
-    
+
     try:
         conn = sqlite3.connect(SUPPORT_DB)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        
+
         cursor.execute('SELECT * FROM user_preferences WHERE user_id = ?', (user_id,))
         prefs = cursor.fetchone()
-        
+
         if not prefs:
             # Create default preferences
             default_prefs = {
@@ -60,28 +60,28 @@ def get_user_preferences(self, user_id=None):
                 'language': 'en',
                 'timezone': 'UTC'
             }
-            
+
             cursor.execute('''
             INSERT INTO user_preferences (
-                user_id, email_notifications, in_app_notifications, 
+                user_id, email_notifications, in_app_notifications,
                 push_notifications, digest_frequency, theme, language, timezone
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ''', (user_id, True, True, True, 'daily', 'light', 'en', 'UTC'))
-            
+
             conn.commit()
             conn.close()
             return default_prefs
-        
+
         conn.close()
-        
+
         # Convert to dict and parse JSON preferences
         prefs_dict = dict(prefs)
         if prefs_dict.get('preferences_json'):
             additional_prefs = json.loads(prefs_dict['preferences_json'])
             prefs_dict.update(additional_prefs)
-        
+
         return prefs_dict
-        
+
     except Exception as e:
         logger.error(f"Error getting user preferences: {e}")
         return {}
@@ -92,14 +92,14 @@ def update_user_preferences(self, preferences, user_id=None):
     """Update user preferences"""
     if not user_id:
         user_id = _auth_mod.auth.current_user['id'] if _auth_mod.auth and _auth_mod.auth.current_user else None
-    
+
     if not user_id:
         raise ValueError("User ID required")
-    
+
     try:
         conn = sqlite3.connect(SUPPORT_DB)
         cursor = conn.cursor()
-        
+
         # Extract known preferences
         known_prefs = {
             'email_notifications': preferences.get('email_notifications', True),
@@ -110,14 +110,14 @@ def update_user_preferences(self, preferences, user_id=None):
             'language': preferences.get('language', 'en'),
             'timezone': preferences.get('timezone', 'UTC')
         }
-        
+
         # Store additional preferences as JSON
         additional_prefs = {k: v for k, v in preferences.items() if k not in known_prefs}
-        
+
         # Update or insert preferences
         cursor.execute('SELECT user_id FROM user_preferences WHERE user_id = ?', (user_id,))
         exists = cursor.fetchone()
-        
+
         if exists:
             cursor.execute('''
             UPDATE user_preferences SET
@@ -142,13 +142,13 @@ def update_user_preferences(self, preferences, user_id=None):
                 known_prefs['theme'], known_prefs['language'], known_prefs['timezone'],
                 json.dumps(additional_prefs)
             ))
-        
+
         conn.commit()
         conn.close()
-        
+
         logger.info(f"User preferences updated for user {user_id}")
         return True
-        
+
     except Exception as e:
         logger.error(f"Error updating user preferences: {e}")
         raise
@@ -220,7 +220,7 @@ SUPPORT_DB = str(DEFAULT_DB_PATH)
 TICKET_STATUSES = ['Open', 'In Progress', 'Resolved', 'Closed', 'Escalated', 'On Hold']
 TICKET_PRIORITIES = ['Low', 'Medium', 'High', 'Urgent', 'Critical']
 SUPPORT_CATEGORIES = [
-    'Academic', 'Technical', 'Financial Aid', 
+    'Academic', 'Technical', 'Financial Aid',
     'Library Services', 'Accommodation', 'Accessibility',
     'Mental Health', 'Registration', 'Housing', 'Dining',
     'Parking', 'Career Services', 'Student Activities', 'Other'
@@ -232,7 +232,7 @@ def get_user_preferences_safe(support_instance, user_id=None):
     """Safely get user preferences with fallback for missing columns"""
     if not user_id and hasattr(support_instance, 'auth') and support_instance._auth_mod.auth and support_instance._auth_mod.auth.current_user:
         user_id = support_instance._auth_mod.auth.current_user['id']
-    
+
     if not user_id:
         return {
             'email_notifications': True,
@@ -243,11 +243,11 @@ def get_user_preferences_safe(support_instance, user_id=None):
             'language': 'en',
             'timezone': 'UTC'
         }
-    
+
     try:
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
-        
+
         # Check if table exists
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='user_preferences'")
         if not cursor.fetchone():
@@ -261,11 +261,11 @@ def get_user_preferences_safe(support_instance, user_id=None):
                 'language': 'en',
                 'timezone': 'UTC'
             }
-        
+
         # Get table columns
         cursor.execute("PRAGMA table_info(user_preferences)")
         columns = [column[1] for column in cursor.fetchall()]
-        
+
         # Build safe query with only existing columns
         available_columns = []
         default_values = {
@@ -278,7 +278,7 @@ def get_user_preferences_safe(support_instance, user_id=None):
             'timezone': 'UTC',
             'preferences_json': None
         }
-        
+
         _VALID_PREF_COLUMNS = frozenset(default_values.keys())
         for col in default_values.keys():
             if col in columns:
@@ -289,17 +289,17 @@ def get_user_preferences_safe(support_instance, user_id=None):
             query = f"SELECT {', '.join(available_columns)} FROM user_preferences WHERE user_id = ?"
             cursor.execute(query, (user_id,))
             result = cursor.fetchone()
-            
+
             if result:
                 prefs = {}
                 for i, col in enumerate(available_columns):
                     prefs[col] = result[i]
-                
+
                 # Fill in missing columns with defaults
                 for col, default_val in default_values.items():
                     if col not in prefs:
                         prefs[col] = default_val
-                
+
                 # Parse JSON preferences if available
                 if prefs.get('preferences_json'):
                     try:
@@ -307,13 +307,13 @@ def get_user_preferences_safe(support_instance, user_id=None):
                         prefs.update(additional_prefs)
                     except (json.JSONDecodeError, TypeError):
                         pass
-                
+
                 conn.close()
                 return prefs
-        
+
         conn.close()
         return default_values
-        
+
     except Exception as e:
         print(f"❌ Error getting user preferences: {e}")
         return {
@@ -333,10 +333,10 @@ def manage_preferences(support):
     try:
         print("\n⚙️ USER PREFERENCES")
         print("="*40)
-        
+
         # Get current preferences
         current_prefs = support.get_user_preferences()
-        
+
         print("Current Settings:")
         print(f"📧 Email Notifications: {'✅' if current_prefs.get('email_notifications', True) else '❌'}")
         print(f"🔔 In-App Notifications: {'✅' if current_prefs.get('in_app_notifications', True) else '❌'}")
@@ -345,10 +345,10 @@ def manage_preferences(support):
         print(f"🎨 Theme: {current_prefs.get('theme', 'light')}")
         print(f"🌍 Language: {current_prefs.get('language', 'en')}")
         print(f"🕐 Timezone: {current_prefs.get('timezone', 'UTC')}")
-        
+
         print("\nWhat would you like to change?")
         print("1. Email Notifications")
-        print("2. In-App Notifications") 
+        print("2. In-App Notifications")
         print("3. Push Notifications")
         print("4. Digest Frequency")
         print("5. Theme")
@@ -356,12 +356,12 @@ def manage_preferences(support):
         print("7. Timezone")
         print("8. Save and Exit")
         print("9. Cancel")
-        
+
         updated_prefs = current_prefs.copy()
-        
+
         while True:
             choice = input("\nSelect option: ").strip()
-            
+
             if choice == '1':
                 updated_prefs['email_notifications'] = input("Enable email notifications? (y/n): ").lower() == 'y'
             elif choice == '2':
@@ -392,10 +392,10 @@ def manage_preferences(support):
                 break
             else:
                 print("❌ Invalid choice.")
-    
+
     except Exception as e:
         print(f"❌ Error managing preferences: {e}")
-    
+
     input("\nPress Enter to continue...")
 
 def validate_ticket_permissions(ticket, current_user):
@@ -477,20 +477,20 @@ def display_faq_list(faqs, title):
     """Display a list of FAQs"""
     print(f"\n❓ {title}")
     print("="*50)
-    
+
     if not faqs:
         print("📭 No FAQs found.")
         return
-    
+
     for i, faq in enumerate(faqs[:10], 1):  # Show first 10
         views = faq.get('view_count', 0)
         votes = faq.get('helpful_votes', 0)
         print(f"{i}. Q: {faq['question']}")
         print(f"   👁️ {views} views | 👍 {votes} helpful")
-    
+
     if len(faqs) > 10:
         print(f"\n... and {len(faqs) - 10} more FAQs")
-    
+
     # View FAQ option
     view_choice = input(f"\nView FAQ (1-{min(len(faqs), 10)}) or press Enter to go back: ").strip()
     if view_choice.isdigit() and 1 <= int(view_choice) <= min(len(faqs), 10):
@@ -504,19 +504,19 @@ def display_full_faq(faq):
     print(f"📂 Category: {faq['category']}")
     print(f"👁️ Views: {faq.get('view_count', 0)}")
     print(f"👍 Helpful: {faq.get('helpful_votes', 0)}")
-    
+
     print(f"\n💡 Answer:")
     print("-" * 40)
     print(faq['answer'])
     print("-" * 40)
-    
+
     # Actions
     print("\n🔧 Actions:")
     print("1. Mark as helpful")
     print("2. Back")
-    
+
     action = input("Choose action: ").strip()
-    
+
     if action == '1':
         print("✅ Marked as helpful. Thank you for your feedback!")
 
@@ -525,7 +525,7 @@ def display_enhanced_faqs(support):
     try:
         print("\n❓ FREQUENTLY ASKED QUESTIONS")
         print("="*50)
-        
+
         # Get FAQ categories
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         try:
@@ -538,25 +538,25 @@ def display_enhanced_faqs(support):
         finally:
             conn.close()
             return
-            
+
         cursor.execute('SELECT DISTINCT category FROM faqs ORDER BY category')
         categories = [row[0] for row in cursor.fetchall()]
         conn.close()
-        
+
         if not categories:
             print("📭 No FAQs available.")
             return
-        
+
         print("📂 Categories:")
         print("0. All Categories")
         for i, category in enumerate(categories, 1):
             print(f"{i}. {category}")
-        
+
         print(f"{len(categories) + 1}. Search FAQs")
         print(f"{len(categories) + 2}. Back")
-        
+
         choice = input("\nSelect option: ").strip()
-        
+
         if choice == '0':
             # Show all FAQs
             faqs = support._search_faqs('', None)
@@ -576,31 +576,31 @@ def display_enhanced_faqs(support):
             return
         else:
             print("❌ Invalid choice.")
-    
+
     except Exception as e:
         print(f"❌ Error displaying FAQs: {e}")
-    
+
     input("\nPress Enter to continue...")
 
 def display_resource_list(resources, title):
     """Display a list of support resources"""
     print(f"\n📋 {title}")
     print("="*50)
-    
+
     if not resources:
         print("📭 No resources found.")
         return
-    
+
     for i, resource in enumerate(resources[:10], 1):  # Show first 10
         access_count = resource.get('access_count', 0)
         print(f"{i}. 📄 {resource['title']}")
         print(f"   📂 Category: {resource['category']}")
         print(f"   👁️ {access_count} accesses")
         print(f"   📝 {resource['description'][:80]}...")
-    
+
     if len(resources) > 10:
         print(f"\n... and {len(resources) - 10} more resources")
-    
+
     # View resource option
     view_choice = input(f"\nView resource (1-{min(len(resources), 10)}) or press Enter to go back: ").strip()
     if view_choice.isdigit() and 1 <= int(view_choice) <= min(len(resources), 10):
@@ -615,7 +615,7 @@ def display_full_resource(resource):
     print(f"✏️ Created by: {resource['created_by']}")
     print(f"📅 Created: {resource['created_datetime']}")
     print(f"👁️ Accesses: {resource.get('access_count', 0)}")
-    
+
     if resource.get('tags'):
         try:
             tags = json.loads(resource['tags']) if isinstance(resource['tags'], str) else resource['tags']
@@ -623,15 +623,15 @@ def display_full_resource(resource):
                 print(f"🏷️ Tags: {', '.join(tags)}")
         except (json.JSONDecodeError, TypeError):
             pass
-    
+
     print(f"\n📝 Description:")
     print("-" * 40)
     print(resource['description'])
     print("-" * 40)
-    
+
     if resource.get('url'):
         print(f"🔗 URL: {resource['url']}")
-    
+
     if resource.get('file_path'):
         print(f"📁 File: {resource['file_path']}")
 
@@ -640,7 +640,7 @@ def display_enhanced_resources(support):
     try:
         print("\n📋 SUPPORT RESOURCES")
         print("="*50)
-        
+
         # Get resource categories
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         try:
@@ -653,26 +653,26 @@ def display_enhanced_resources(support):
         finally:
             conn.close()
             return
-            
+
         cursor.execute('SELECT DISTINCT category FROM support_resources ORDER BY category')
         categories = [row[0] for row in cursor.fetchall()]
         conn.close()
-        
+
         if not categories:
             print("📭 No resources available.")
             return
-        
+
         print("📂 Categories:")
         print("0. All Categories")
         for i, category in enumerate(categories, 1):
             print(f"{i}. {category}")
-        
+
         print(f"{len(categories) + 1}. Featured Resources")
         print(f"{len(categories) + 2}. Search Resources")
         print(f"{len(categories) + 3}. Back")
-        
+
         choice = input("\nSelect option: ").strip()
-        
+
         if choice == '0':
             # Show all resources
             resources = support._search_resources('', None)
@@ -703,10 +703,10 @@ def display_enhanced_resources(support):
             return
         else:
             print("❌ Invalid choice.")
-    
+
     except Exception as e:
         print(f"❌ Error displaying resources: {e}")
-    
+
     input("\nPress Enter to continue...")
 
 def patch_enhanced_student_support():
@@ -714,12 +714,12 @@ def patch_enhanced_student_support():
     try:
         # Import the class
         from education_system.university_system.modules.domain.student_affairs.services.student_support import EnhancedStudentSupport
-        
+
         # Replace the problematic method
         EnhancedStudentSupport.get_user_preferences = lambda self, user_id=None: get_user_preferences_safe(self, user_id)
-        
+
         print("✅ Patched EnhancedStudentSupport.get_user_preferences method")
-        
+
     except ImportError as e:
         print(f"⚠️ Could not patch EnhancedStudentSupport class: {e}")
 
@@ -728,13 +728,13 @@ def patch_enhanced_student_support():
 def apply_student_support_fixes():
     """Apply all the fixes for the student support system"""
     print("🔧 Applying student support system fixes...")
-    
+
     # Fix database schema
     fix_user_preferences_table()
-    
+
     # Patch the class method
     patch_enhanced_student_support()
-    
+
     print("✅ All fixes applied successfully!")
 
 # Integration with existing CLI
@@ -744,7 +744,7 @@ def fix_user_preferences_table():
     try:
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
-        
+
         # Check if table exists
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='user_preferences'")
         if not cursor.fetchone():
@@ -767,10 +767,10 @@ def fix_user_preferences_table():
             # Check existing columns
             cursor.execute("PRAGMA table_info(user_preferences)")
             existing_columns = [column[1] for column in cursor.fetchall()]
-            
+
             required_columns = {
                 'email_notifications': 'BOOLEAN DEFAULT 1',
-                'in_app_notifications': 'BOOLEAN DEFAULT 1', 
+                'in_app_notifications': 'BOOLEAN DEFAULT 1',
                 'push_notifications': 'BOOLEAN DEFAULT 1',
                 'digest_frequency': 'TEXT DEFAULT "daily"',
                 'theme': 'TEXT DEFAULT "light"',
@@ -778,7 +778,7 @@ def fix_user_preferences_table():
                 'timezone': 'TEXT DEFAULT "UTC"',
                 'preferences_json': 'TEXT'
             }
-            
+
             for column_name, column_def in required_columns.items():
                 if column_name not in existing_columns:
                     try:
@@ -787,11 +787,11 @@ def fix_user_preferences_table():
                         print(f"Added column '{column_name}' to user_preferences table")
                     except Exception as e:
                         print(f"Could not add column '{column_name}': {e}")
-        
+
         conn.commit()
         conn.close()
         print("✅ User preferences table schema fixed")
-        
+
     except Exception as e:
         print(f"❌ Error fixing user_preferences table: {e}")
 
@@ -802,20 +802,20 @@ def create_enhanced_ticket(support):
     try:
         print("\n🎫 CREATE SUPPORT TICKET")
         print("="*40)
-        
+
         # Get student ID
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute('SELECT student_id FROM users WHERE id = ?', (_auth_mod.auth.current_user['id'],))
         result = cursor.fetchone()
         conn.close()
-        
+
         if not result:
             print("❌ No student ID associated with your account.")
             return
-        
+
         student_id = result[0]
-        
+
         # Show templates option
         templates = support.get_ticket_templates()
         if templates:
@@ -823,31 +823,31 @@ def create_enhanced_ticket(support):
             print("0. Create from scratch")
             for i, template in enumerate(templates, 1):
                 print(f"{i}. {template['name']} ({template['category']})")
-            
+
             template_choice = input("\nSelect template (0 for scratch): ").strip()
-            
+
             if template_choice.isdigit() and 1 <= int(template_choice) <= len(templates):
                 template = templates[int(template_choice) - 1]
                 title = template['title_template']
                 description = template['description_template']
                 category = template['category']
                 priority = template['priority']
-                
+
                 print(f"\n📝 Using template: {template['name']}")
                 print("You can modify the pre-filled content:")
-                
+
                 title = input(f"Title [{title}]: ").strip() or title
                 print("Description (press Enter twice to finish):")
                 print(f"Current: {description}")
                 print("Additional/Modified content:")
-                
+
                 lines = []
                 while True:
                     line = input()
                     if not line and (not lines or not lines[-1]):
                         break
                     lines.append(line)
-                
+
                 if lines:
                     description = '\n'.join(lines)
             else:
@@ -856,7 +856,7 @@ def create_enhanced_ticket(support):
                 if not title:
                     print("❌ Title is required.")
                     return
-                
+
                 print("Description (press Enter twice to finish):")
                 lines = []
                 while True:
@@ -864,20 +864,20 @@ def create_enhanced_ticket(support):
                     if not line and (not lines or not lines[-1]):
                         break
                     lines.append(line)
-                
+
                 description = '\n'.join(lines)
                 if not description:
                     print("❌ Description is required.")
                     return
-                
+
                 # Category selection with AI suggestion
                 suggested_category = support._suggest_category(title + " " + description)
-                
+
                 print("\nCategories:")
                 for i, cat in enumerate(SUPPORT_CATEGORIES, 1):
                     marker = " 🤖 (Suggested)" if cat == suggested_category else ""
                     print(f"{i}. {cat}{marker}")
-                
+
                 category_choice = input(f"\nSelect category (1-{len(SUPPORT_CATEGORIES)}): ").strip()
                 try:
                     category_index = int(category_choice) - 1
@@ -888,12 +888,12 @@ def create_enhanced_ticket(support):
                 except ValueError:
                     print("❌ Invalid category.")
                     return
-                
+
                 # Priority selection
                 print("\nPriorities:")
                 for i, pri in enumerate(TICKET_PRIORITIES, 1):
                     print(f"{i}. {pri}")
-                
+
                 priority_choice = input(f"\nSelect priority (1-{len(TICKET_PRIORITIES)}) [default: Medium]: ").strip()
                 if priority_choice:
                     try:
@@ -912,7 +912,7 @@ def create_enhanced_ticket(support):
             if not title:
                 print("❌ Title is required.")
                 return
-            
+
             print("Description (press Enter twice to finish):")
             lines = []
             while True:
@@ -920,20 +920,20 @@ def create_enhanced_ticket(support):
                 if not line and (not lines or not lines[-1]):
                     break
                 lines.append(line)
-            
+
             description = '\n'.join(lines)
             if not description:
                 print("❌ Description is required.")
                 return
-            
+
             # Category and priority selection (same as above)
             category = 'Other'  # Simplified for this example
             priority = 'Medium'
-        
+
         # Tags
         tags_input = input("\nTags (comma-separated, optional): ").strip()
         tags = [tag.strip() for tag in tags_input.split(',')] if tags_input else []
-        
+
         # File attachments
         attachments = []
         attach_more = input("\nAdd file attachment? (y/n): ").lower() == 'y'
@@ -943,7 +943,7 @@ def create_enhanced_ticket(support):
                 try:
                     with open(file_path, 'rb') as f:
                         file_data = f.read()
-                    
+
                     attachments.append({
                         'filename': os.path.basename(file_path),
                         'data': file_data,
@@ -954,24 +954,24 @@ def create_enhanced_ticket(support):
                     print(f"❌ Error reading file: {e}")
             else:
                 print("❌ File not found.")
-            
+
             attach_more = input("Add another file? (y/n): ").lower() == 'y'
-        
+
         # Create ticket
         print("\n🎫 Creating ticket...")
         ticket_id = support.create_support_ticket(
             student_id, title, description, category, priority,
             attachments=attachments, tags=tags
         )
-        
+
         print(f"✅ Support ticket #{ticket_id} created successfully!")
-        
+
         # Show ticket details
         view_choice = input("\nView ticket details? (y/n): ").lower()
         if view_choice == 'y':
             display_ticket_details_enhanced(support, ticket_id)
-    
+
     except Exception as e:
         print(f"❌ Error creating ticket: {e}")
-    
+
     input("\nPress Enter to continue...")

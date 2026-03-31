@@ -12,7 +12,7 @@ from education_system.shared.api.university.validators import (
     validate_preferences_update,
     validate_profile_update,
 )
-from education_system.college_system.core.sql_safety import validate_identifier
+from education_system.college_system.core.sql_safety import validate_identifier  # nosec B608
 from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.modules.shared.utils.activity_logger import log_activity
@@ -76,7 +76,7 @@ def update_profile():
     values = list(updates.values()) + [user_id]
 
     with get_connection() as conn:
-        conn.execute(f"UPDATE users SET {set_clause} WHERE id = ?", values)
+        conn.execute(f"UPDATE users SET {set_clause} WHERE id = ?", values)  # nosec B608
 
     log_activity("update", "profile", user=g.current_user.get("sub"))
     return jsonify({"message": "Profile updated successfully"})

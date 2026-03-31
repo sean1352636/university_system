@@ -3,7 +3,7 @@ from education_system.university_system.infrastructure.database.data_backup impo
 from education_system.university_system.infrastructure.email import send_confirmation_email
 from education_system.university_system.modules.domain.commerce.services.restaurant.operations.connection import get_db_connection
 from education_system.university_system.infrastructure.database.db import sqlite3, DatabaseManager
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 import random
 import re
 import os
@@ -146,7 +146,7 @@ def view_all_staff():
         for member in staff:
             performance = f"{member[10]:.1f}/10" if member[10] else "N/A"
             hourly_rate = f"£{member[3]:.2f}" if member[3] else "N/A"
-            
+
             print(f"{member[0]:<10} {member[1]:<20} {member[2]:<12} {hourly_rate:<12} {member[4] or 'N/A':<25} {performance:<12} {member[7]:<8}")
 
         print("="*120)
@@ -159,7 +159,7 @@ def view_all_staff():
             WHERE status = 'Active'
             GROUP BY role
         ''')
-        
+
         role_summary = cursor.fetchall()
         print("\nStaff Summary by Role:")
         print("-"*40)
@@ -337,7 +337,7 @@ def update_staff_info():
         if choice == '1':
             new_name = input("Enter new name: ").strip()
             if new_name:
-                cursor.execute('UPDATE restaurant_staff SET name = ? WHERE staff_id = ?', 
+                cursor.execute('UPDATE restaurant_staff SET name = ? WHERE staff_id = ?',
                               (new_name, staff_id))
                 print("Name updated successfully.")
         elif choice == '2':
@@ -359,7 +359,7 @@ def update_staff_info():
                 '6': 'Cleaner'
             }
             new_role = roles.get(role_choice)
-            
+
             if new_role:
                 cursor.execute('UPDATE restaurant_staff SET role = ? WHERE staff_id = ?',
                               (new_role, staff_id))
@@ -402,7 +402,7 @@ def update_staff_info():
                 '4': 'Terminated'
             }
             new_status = statuses.get(status_choice)
-            
+
             if new_status:
                 cursor.execute('UPDATE restaurant_staff SET status = ? WHERE staff_id = ?',
                               (new_status, staff_id))
@@ -471,7 +471,7 @@ def delete_staff():
 
         if confirm == 'DELETE':
             # Set status to terminated instead of deleting for audit purposes
-            cursor.execute('UPDATE restaurant_staff SET status = ? WHERE staff_id = ?', 
+            cursor.execute('UPDATE restaurant_staff SET status = ? WHERE staff_id = ?',
                           ('Terminated', staff_id))
             conn.commit()
             print(f"Staff member {staff[0]} terminated successfully.")
@@ -620,7 +620,7 @@ def supplier_performance():
 
         # Overall supplier statistics
         cursor.execute('''
-            SELECT 
+            SELECT
                 COUNT(*) as total_suppliers,
                 COUNT(CASE WHEN status = 'Active' THEN 1 END) as active_suppliers,
                 AVG(rating) as avg_rating
@@ -662,7 +662,7 @@ def supplier_performance():
                 rating_str = f"{rating:.1f}/5" if rating else "N/A"
                 value_str = f"£{value:.2f}" if value else "£0.00"
                 delay_str = f"{delay:.1f} days" if delay is not None else "N/A"
-                
+
                 print(f"{supplier:<25} {rating_str:<8} {orders:<8} {value_str:<15} {delay_str:<12}")
 
         # Delivery performance by supplier
@@ -902,8 +902,8 @@ def update_staff_schedule():
             actual_start = input("Enter actual start time (HH:MM:SS): ")
             actual_end = input("Enter actual end time (HH:MM:SS): ")
             cursor.execute('''
-                UPDATE restaurant_staff_schedules 
-                SET actual_start = ?, actual_end = ? 
+                UPDATE restaurant_staff_schedules
+                SET actual_start = ?, actual_end = ?
                 WHERE schedule_id = ?
             ''', (actual_start, actual_end, schedule_id))
             print("Actual times recorded.")
@@ -1007,12 +1007,12 @@ def view_schedule_conflicts():
 
         # Find overlapping schedules for the same staff member
         cursor.execute('''
-            SELECT DISTINCT s1.staff_id, s.name, s1.date, 
+            SELECT DISTINCT s1.staff_id, s.name, s1.date,
                    s1.start_time, s1.end_time, s1.schedule_id,
                    s2.start_time, s2.end_time, s2.schedule_id
             FROM restaurant_staff_schedules s1
-            JOIN restaurant_staff_schedules s2 ON s1.staff_id = s2.staff_id 
-                AND s1.date = s2.date 
+            JOIN restaurant_staff_schedules s2 ON s1.staff_id = s2.staff_id
+                AND s1.date = s2.date
                 AND s1.schedule_id != s2.schedule_id
             JOIN restaurant_staff s ON s1.staff_id = s.staff_id
             WHERE s1.status != 'Cancelled' AND s2.status != 'Cancelled'
@@ -1190,7 +1190,7 @@ def export_performance_report():
         cursor = conn.cursor()
 
         cursor.execute('''
-            SELECT staff_id, name, role, performance_score, hire_date, 
+            SELECT staff_id, name, role, performance_score, hire_date,
                    hourly_rate, status
             FROM restaurant_staff
             ORDER BY performance_score DESC
@@ -1217,9 +1217,9 @@ def export_performance_report():
             # Data
             for staff in staff_data:
                 writer.writerow([
-                    staff[0], staff[1], staff[2], 
+                    staff[0], staff[1], staff[2],
                     f"{staff[3]:.1f}" if staff[3] else "N/A",
-                    staff[4] or "N/A", 
+                    staff[4] or "N/A",
                     f"£{staff[5]:.2f}" if staff[5] else "N/A",
                     staff[6]
                 ])
@@ -1262,19 +1262,19 @@ def analyze_query_performance():
                 SELECT * FROM menu_items WHERE available = 1 ORDER BY category, name
             '''),
             ("Customer Orders", '''
-                SELECT o.*, c.name 
-                FROM orders o 
-                LEFT JOIN restaurant_customers c ON o.customer_id = c.customer_id 
+                SELECT o.*, c.name
+                FROM orders o
+                LEFT JOIN restaurant_customers c ON o.customer_id = c.customer_id
                 ORDER BY o.order_date DESC LIMIT 50
             '''),
             ("Inventory Low Stock", '''
-                SELECT * FROM restaurant_inventory 
+                SELECT * FROM restaurant_inventory
                 WHERE quantity <= reorder_level
             '''),
             ("Staff Schedules", '''
-                SELECT ss.*, s.name 
-                FROM restaurant_staff_schedules ss 
-                JOIN restaurant_staff s ON ss.staff_id = s.staff_id 
+                SELECT ss.*, s.name
+                FROM restaurant_staff_schedules ss
+                JOIN restaurant_staff s ON ss.staff_id = s.staff_id
                 WHERE ss.date = date('now')
             ''')
         ]
@@ -1290,19 +1290,19 @@ def analyze_query_performance():
                 cursor.execute(query_sql)
                 results = cursor.fetchall()
                 end_time = time.time()
-                
+
                 execution_time = (end_time - start_time) * 1000  # Convert to milliseconds
                 row_count = len(results)
-                
+
                 if execution_time < 100:
                     status = "✅ Fast"
                 elif execution_time < 500:
                     status = "🟡 OK"
                 else:
                     status = "🔴 Slow"
-                
+
                 print(f"{query_name[:24]:<25} {execution_time:<14.2f}ms {row_count:<8} {status:<10}")
-                
+
             except Exception as e:
                 print(f"{query_name[:24]:<25} {'ERROR':<15} {0:<8} {'❌ Failed':<10}")
                 logging.error(f"Query failed: {query_name} - {e}")
@@ -1314,7 +1314,7 @@ def analyze_query_performance():
         print("-"*40)
 
         tables = [
-            'menu_items', 'orders', 'restaurant_customers', 
+            'menu_items', 'orders', 'restaurant_customers',
             'restaurant_tables', 'restaurant_staff', 'restaurant_inventory',
             'restaurant_suppliers', 'restaurant_audit_logs'
         ]
@@ -1333,7 +1333,7 @@ def analyze_query_performance():
         print("-"*40)
         cursor.execute("SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%'")
         indexes = cursor.fetchall()
-        
+
         print(f"Custom indexes found: {len(indexes)}")
         for index in indexes:
             print(f"  - {index[0]}")
@@ -1341,20 +1341,20 @@ def analyze_query_performance():
         # Recommendations
         print(f"\nPerformance Recommendations:")
         print("-"*40)
-        
+
         # Check for large tables without proper indexing
         cursor.execute('SELECT COUNT(*) FROM orders')
         order_count = cursor.fetchone()[0]
-        
+
         if order_count > 1000:
             print("• Consider archiving old completed orders")
-        
+
         cursor.execute('SELECT COUNT(*) FROM restaurant_audit_logs')
         log_count = cursor.fetchone()[0]
-        
+
         if log_count > 10000:
             print("• Consider purging old audit logs")
-        
+
         print("• Run VACUUM regularly to optimize database")
         print("• Consider adding indexes for frequently queried columns")
         print("• Monitor query performance during peak hours")

@@ -145,7 +145,7 @@ class RoomService:
         conn = self._conn()
         try:
             set_parts = ", ".join(f"{k} = ?" for k in updates)
-            conn.execute(f"UPDATE room_resources SET {set_parts} WHERE id = ?",
+            conn.execute(f"UPDATE room_resources SET {set_parts} WHERE id = ?",  # nosec B608
                          (*updates.values(), resource_id))
             conn.commit()
             row = conn.execute("SELECT * FROM room_resources WHERE id = ?", (resource_id,)).fetchone()

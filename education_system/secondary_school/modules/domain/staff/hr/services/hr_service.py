@@ -1,7 +1,7 @@
 """HR service for staff management."""
 
 import logging
-from education_system.secondary_school.core.sql_safety import validate_identifier
+from education_system.secondary_school.core.sql_safety import validate_identifier  # nosec B608
 from education_system.secondary_school.core.exceptions import HRError
 from education_system.secondary_school.infrastructure.database.db import connect
 

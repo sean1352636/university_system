@@ -58,13 +58,13 @@ def enhanced_search_books():
     if not (auth.check_permission('view_books') or auth.check_permission('manage_books')):
         print(get_text("auth.permission_denied", action=get_text("book.search.title")))
         return
-    
+
     conn = get_db_connection()
     if not conn:
         return
-        
+
     cursor = conn.cursor()
-    
+
     print("\n" + get_text("book.search.title") + ":")
     print("=" * 20)
     print("1. " + get_text("book.search.quick_search"))
@@ -76,26 +76,26 @@ def enhanced_search_books():
     print("7. " + get_text("common.return_to_menu"))
 
     choice = input(get_text("common.enter_choice") + " (1-7): ").strip()
-    
+
     if choice == '7':
         conn.close()
         return
-    
+
     try:
         if choice == '1':
             # Quick search
             search_term = input(get_text("book.search.enter_search_term") + ": ").strip()
-            
+
             cursor.execute('''
             SELECT book_id, title, author, category, status, reading_level
             FROM books
             WHERE title LIKE ? OR author LIKE ?
             ORDER BY title
             ''', (f'%{search_term}%', f'%{search_term}%'))
-            
+
             books = cursor.fetchall()
             search_type = "quick search"
-            
+
         elif choice == '2':
             # Advanced search
             print("\n" + get_text("book.search.advanced_title") + ":")
@@ -107,64 +107,64 @@ def enhanced_search_books():
             year_from = input(get_text("book.search.year_from") + ": ").strip()
             year_to = input(get_text("book.search.year_to") + ": ").strip()
             status = input(get_text("book.search.status_prompt") + ": ").strip()
-            
+
             # Build dynamic query
             query = """
             SELECT book_id, title, author, category, status, reading_level, year_published
             FROM books WHERE 1=1
             """
             params = []
-            
+
             if title:
                 query += " AND title LIKE ?"
                 params.append(f'%{title}%')
-            
+
             if author:
                 query += " AND author LIKE ?"
                 params.append(f'%{author}%')
-            
+
             if category:
                 query += " AND category LIKE ?"
                 params.append(f'%{category}%')
-            
+
             if reading_level:
                 query += " AND reading_level = ?"
                 params.append(reading_level)
-            
+
             if tags:
                 tag_list = [tag.strip() for tag in tags.split(',')]
                 for tag in tag_list:
                     query += " AND tags LIKE ?"
                     params.append(f'%{tag}%')
-            
+
             if year_from:
                 try:
                     query += " AND year_published >= ?"
                     params.append(int(year_from))
                 except ValueError:
                     pass
-            
+
             if year_to:
                 try:
                     query += " AND year_published <= ?"
                     params.append(int(year_to))
                 except ValueError:
                     pass
-            
+
             if status:
                 query += " AND status = ?"
                 params.append(status)
-            
+
             query += " ORDER BY title"
-            
+
             cursor.execute(query, tuple(params))
             books = cursor.fetchall()
             search_type = "advanced search"
-            
+
         elif choice == '3':
             # Barcode/QR search
             code = input(get_text("book.search.enter_barcode") + ": ").strip()
-            
+
             if code.startswith("LIBRARY_BOOK:"):
                 # QR code format
                 parts = code.split(":")
@@ -183,15 +183,15 @@ def enhanced_search_books():
                 SELECT book_id, title, author, category, status, reading_level
                 FROM books WHERE barcode = ?
                 ''', (code,))
-            
+
             books = cursor.fetchall()
             search_type = "barcode/QR search"
-            
+
         elif choice == '4':
             # Browse by category
             cursor.execute('SELECT DISTINCT category FROM books ORDER BY category')
             categories = [row[0] for row in cursor.fetchall()]
-            
+
             if not categories:
                 print(get_text("book.search.no_categories"))
                 conn.close()
@@ -205,13 +205,13 @@ def enhanced_search_books():
                 cat_choice = int(input(get_text("book.search.select_category") + ": ")) - 1
                 if 0 <= cat_choice < len(categories):
                     selected_category = categories[cat_choice]
-                    
+
                     cursor.execute('''
                     SELECT book_id, title, author, category, status, reading_level
                     FROM books WHERE category = ?
                     ORDER BY title
                     ''', (selected_category,))
-                    
+
                     books = cursor.fetchall()
                     search_type = f"category: {selected_category}"
                 else:
@@ -223,7 +223,7 @@ def enhanced_search_books():
                 print(get_text("book.search.invalid_category"))
                 conn.close()
                 return
-                
+
         elif choice == '5':
             # Browse by reading level
             reading_levels = ['Elementary', 'Middle School', 'High School', 'College', 'Unknown']
@@ -236,13 +236,13 @@ def enhanced_search_books():
                 level_choice = int(input(get_text("book.search.select_reading_level") + ": ")) - 1
                 if 0 <= level_choice < len(reading_levels):
                     selected_level = reading_levels[level_choice]
-                    
+
                     cursor.execute('''
                     SELECT book_id, title, author, category, status, reading_level
                     FROM books WHERE reading_level = ?
                     ORDER BY title
                     ''', (selected_level,))
-                    
+
                     books = cursor.fetchall()
                     search_type = f"reading level: {selected_level}"
                 else:
@@ -254,12 +254,12 @@ def enhanced_search_books():
                 print(get_text("book.search.invalid_level"))
                 conn.close()
                 return
-                
+
         elif choice == '6':
             # Get recommendations
             books = get_book_recommendations(get_current_user_id())
             search_type = "recommendations"
-                
+
         else:
             print(get_text("common.invalid_choice"))
             conn.close()
@@ -275,20 +275,20 @@ def enhanced_search_books():
         print("=" * 100)
         print(f"{get_text('table_headers.id'):<8} {get_text('table_headers.title'):<30} {get_text('table_headers.author'):<20} {get_text('table_headers.category'):<15} {get_text('table_headers.status'):<12} {get_text('table_headers.level'):<10}")
         print("-" * 100)
-        
+
         for book in books:
             book_id, title, author, category, status = book[:5]
             reading_level = book[5] if len(book) > 5 else 'Unknown'
-            
+
             # Truncate strings if too long
             title = (title[:27] + '...') if len(title) > 30 else title
             author = (author[:17] + '...') if len(author) > 20 else author
             category = (category[:12] + '...') if len(category) > 15 else category
-            
+
             print(f"{book_id:<8} {title:<30} {author:<20} {category:<15} {status:<12} {reading_level:<10}")
-        
+
         print("=" * 100)
-        
+
         # Additional options
         print("\n" + get_text("book.search.options_title") + ":")
         print("1. " + get_text("book.search.view_details"))
@@ -298,7 +298,7 @@ def enhanced_search_books():
         print("5. " + get_text("book.search.return_to_search"))
 
         action = input(get_text("book.search.choose_action") + ": ").strip()
-        
+
         if action == '1':
             book_id = input(get_text("book.search.enter_book_id_view") + ": ").strip()
             if book_id:
@@ -318,7 +318,7 @@ def enhanced_search_books():
 
     except sqlite3.Error as e:
         print(get_text("book.search.error_searching", error=str(e)))
-    
+
     conn.close()
 
 
@@ -334,10 +334,10 @@ def advanced_search_interface():
     if not auth or not auth.current_user:
         print("You must be logged in to search.")
         return
-    
+
     print("\nAdvanced Search Interface:")
     print("=========================")
-    
+
     # Initialize search criteria
     search_criteria = {
         'title': '',
@@ -351,20 +351,20 @@ def advanced_search_interface():
         'tags': '',
         'location': ''
     }
-    
+
     sort_options = ['title', 'author', 'year_published', 'category', 'added_date']
     sort_by = 'title'
     sort_order = 'ASC'
-    
+
     while True:
         print(f"\nCurrent Search Criteria:")
         print("-" * 30)
         for key, value in search_criteria.items():
             display_value = value if value else "Any"
             print(f"{key.replace('_', ' ').title()}: {display_value}")
-        
+
         print(f"\nSort by: {sort_by} ({sort_order})")
-        
+
         print("\nOptions:")
         print("1-10. Set search criteria")
         print("11. Change sort options")
@@ -372,9 +372,9 @@ def advanced_search_interface():
         print("13. Clear all criteria")
         print("14. Save search")
         print("15. Return to menu")
-        
+
         choice = input("Enter your choice: ").strip()
-        
+
         if choice == '15':
             break
         elif choice == '12':
@@ -431,7 +431,7 @@ def execute_advanced_search(criteria: Dict, sort_by: str, sort_order: str) -> Li
     if sort_order.upper() not in ALLOWED_SORT_ORDERS:
         sort_order = 'ASC'
     query += f" ORDER BY {sort_by} {sort_order}"
-    
+
     try:
         cursor.execute(query, params)
         results = cursor.fetchall()
@@ -448,20 +448,20 @@ def display_search_results(results: List):
     if not results:
         print("No books found matching your criteria.")
         return
-    
+
     print(f"\nSearch Results ({len(results)} books found):")
     print("=" * 80)
     print(f"{'ID':<8} {'Title':<25} {'Author':<20} {'Category':<15} {'Status':<10}")
     print("-" * 80)
-    
+
     for result in results:
         book_id, title, author, category, status, reading_level = result
         title_display = title[:24] if len(title) > 25 else title
         author_display = author[:19] if len(author) > 20 else author
         category_display = category[:14] if len(category) > 15 else category
-        
+
         print(f"{book_id:<8} {title_display:<25} {author_display:<20} {category_display:<15} {status:<10}")
-    
+
     print("=" * 80)
 
 
@@ -470,9 +470,9 @@ def save_search_query(user_id, search_criteria, query_name):
    conn = get_db_connection()
    if not conn:
        return False
-   
+
    cursor = conn.cursor()
-   
+
    try:
        # Check if table exists, create if not
        cursor.execute('''
@@ -486,24 +486,24 @@ def save_search_query(user_id, search_criteria, query_name):
            use_count INTEGER DEFAULT 0
        )
        ''')
-       
+
        # Save the search
        cursor.execute('''
        INSERT INTO saved_searches (user_id, query_name, search_criteria, created_date)
        VALUES (?, ?, ?, ?)
        ''', (
-           user_id, 
-           query_name, 
+           user_id,
+           query_name,
            json.dumps(search_criteria),
            datetime.now().strftime('%Y-%m-%d %H:%M:%S')
        ))
-       
+
        conn.commit()
        conn.close()
-       
+
        print(f"✅ Search query '{query_name}' saved successfully!")
        return True
-       
+
    except sqlite3.Error as e:
        logging.error(f"Error saving search query: {e}")
        conn.close()
@@ -515,9 +515,9 @@ def load_saved_searches(user_id):
    conn = get_db_connection()
    if not conn:
        return []
-   
+
    cursor = conn.cursor()
-   
+
    try:
        cursor.execute('''
        SELECT search_id, query_name, search_criteria, created_date, use_count
@@ -525,9 +525,9 @@ def load_saved_searches(user_id):
        WHERE user_id = ?
        ORDER BY use_count DESC, created_date DESC
        ''', (user_id,))
-       
+
        saved_searches = cursor.fetchall()
-       
+
        # Parse JSON criteria
        parsed_searches = []
        for search_id, query_name, criteria_json, created_date, use_count in saved_searches:
@@ -542,10 +542,10 @@ def load_saved_searches(user_id):
                })
            except json.JSONDecodeError:
                continue
-       
+
        conn.close()
        return parsed_searches
-       
+
    except sqlite3.Error as e:
        logging.error(f"Error loading saved searches: {e}")
        conn.close()

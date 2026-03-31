@@ -155,7 +155,7 @@ def analyze_data_access_patterns(auth):
     cursor.execute('''
     SELECT user_id, COUNT(*) as after_hours_count
     FROM audit_trail
-    WHERE action LIKE '%view%' 
+    WHERE action LIKE '%view%'
     AND (strftime('%H', timestamp) < '07' OR strftime('%H', timestamp) > '19')
     AND timestamp >= ?
     GROUP BY user_id
@@ -284,7 +284,7 @@ def performance_improvement(auth):
 
     # High no-show rates
     cursor.execute('''
-    SELECT 
+    SELECT
         COUNT(*) as total_appointments,
         SUM(CASE WHEN status = 'no-show' THEN 1 ELSE 0 END) as no_shows
     FROM health_appointments
@@ -309,7 +309,7 @@ def performance_improvement(auth):
 
     # Incomplete health records
     cursor.execute('''
-    SELECT 
+    SELECT
         COUNT(*) as total_students,
         COUNT(DISTINCT hr.student_id) as with_health_records
     FROM students s
@@ -334,7 +334,7 @@ def performance_improvement(auth):
 
     # Low care plan utilization for chronic conditions
     cursor.execute('''
-    SELECT 
+    SELECT
         COUNT(DISTINCT mc.student_id) as chronic_patients,
         COUNT(DISTINCT cp.student_id) as with_care_plans
     FROM medical_conditions mc

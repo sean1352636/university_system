@@ -115,7 +115,7 @@ def view_all_suppliers():
 
         for supplier in suppliers:
             rating = f"{supplier[6]:.1f}/5" if supplier[6] else "N/A"
-            
+
             print(f"{supplier[0]:<12} {supplier[1]:<25} {supplier[2] or 'N/A':<20} {supplier[3] or 'N/A':<25} {supplier[4] or 'N/A':<15} {rating:<8} {supplier[10]:<8}")
 
         print("="*120)
@@ -295,7 +295,7 @@ def update_supplier():
             status_choice = input("Choose status (1-3): ")
             statuses = {'1': 'Active', '2': 'Inactive', '3': 'Suspended'}
             new_status = statuses.get(status_choice)
-            
+
             if new_status:
                 cursor.execute('UPDATE restaurant_suppliers SET status = ? WHERE supplier_id = ?',
                               (new_status, supplier_id))
@@ -525,7 +525,7 @@ def view_waste_reports():
         elif choice == '2':
             # Waste by category
             cursor.execute('''
-                SELECT mi.category, COUNT(wt.waste_id) as waste_count, 
+                SELECT mi.category, COUNT(wt.waste_id) as waste_count,
                        SUM(wt.cost_impact) as total_cost
                 FROM restaurant_waste_tracking wt
                 LEFT JOIN menu_items mi ON wt.item_id = mi.item_id
@@ -549,7 +549,7 @@ def view_waste_reports():
         elif choice == '3':
             # Waste trends
             cursor.execute('''
-                SELECT DATE(recorded_date) as waste_date, 
+                SELECT DATE(recorded_date) as waste_date,
                        COUNT(*) as entries, SUM(cost_impact) as daily_cost
                 FROM restaurant_waste_tracking
                 WHERE DATE(recorded_date) >= date('now', '-30 days')
@@ -591,7 +591,7 @@ def view_waste_reports():
             print("-"*40)
             print(f"Total Waste Cost: £{total_waste_cost:.2f}")
             print(f"Total Revenue: £{total_revenue:.2f}")
-            
+
             if total_revenue > 0:
                 waste_percentage = (total_waste_cost / total_revenue) * 100
                 print(f"Waste as % of Revenue: {waste_percentage:.2f}%")
@@ -650,7 +650,7 @@ def inventory_valuation_report():
         cursor = conn.cursor()
 
         cursor.execute('''
-            SELECT i.category, 
+            SELECT i.category,
                    COUNT(*) as item_count,
                    SUM(i.quantity * i.cost_per_unit) as total_value,
                    AVG(i.quantity * i.cost_per_unit) as avg_value
@@ -676,7 +676,7 @@ def inventory_valuation_report():
         for category in categories:
             percentage = (category[2] / total_value * 100) if total_value > 0 else 0
             cat_name = category[0] or 'Uncategorized'
-            
+
             print(f"{cat_name:<20} {category[1]:<8} £{category[2]:<14.2f} £{category[3]:<11.2f} {percentage:<9.1f}%")
 
         print("-"*80)
@@ -703,8 +703,8 @@ def stock_movement_report():
         cursor = conn.cursor()
 
         cursor.execute('''
-            SELECT it.item_id, i.name, it.transaction_type, 
-                   SUM(it.quantity) as total_quantity, 
+            SELECT it.item_id, i.name, it.transaction_type,
+                   SUM(it.quantity) as total_quantity,
                    COUNT(*) as transaction_count
             FROM restaurant_inventory_transactions it
             JOIN restaurant_inventory i ON it.item_id = i.item_id
@@ -739,7 +739,7 @@ def stock_movement_report():
 
         # Summary by transaction type
         cursor.execute('''
-            SELECT transaction_type, COUNT(*) as transaction_count, 
+            SELECT transaction_type, COUNT(*) as transaction_count,
                    SUM(quantity) as total_quantity
             FROM restaurant_inventory_transactions
             WHERE DATE(transaction_date) BETWEEN ? AND ?
@@ -775,7 +775,7 @@ def low_stock_report():
 
         # Get all low stock items with additional details
         cursor.execute('''
-            SELECT i.item_id, i.name, i.quantity, i.unit, i.reorder_level, 
+            SELECT i.item_id, i.name, i.quantity, i.unit, i.reorder_level,
                    i.max_level, s.name as supplier_name, i.cost_per_unit,
                    (i.quantity / i.reorder_level) as stock_ratio
             FROM restaurant_inventory i
@@ -800,7 +800,7 @@ def low_stock_report():
 
         for item in low_stock_items:
             stock_ratio = item[8] if item[8] else 0
-            
+
             if item[2] == 0:
                 status = "❌ OUT OF STOCK"
             elif stock_ratio <= 0.25:
@@ -812,7 +812,7 @@ def low_stock_report():
 
             supplier_name = item[6][:19] if item[6] else "No supplier"
             cost_str = f"£{item[7]:.2f}" if item[7] else "N/A"
-            
+
             # Calculate suggested reorder quantity and cost
             if item[5]:  # max_level exists
                 reorder_qty = item[5] - item[2]  # max - current
@@ -842,7 +842,7 @@ def low_stock_report():
             reorder_qty = item[2] - item[1]  # max - current
             cost = reorder_qty * item[3] if item[3] else 0
             supplier = item[4] or "No supplier"
-            
+
             print(f"• {item[0]}: Order {reorder_qty:.0f} units from {supplier} (Cost: £{cost:.2f})")
 
         print(f"\nTotal estimated reorder cost: £{total_reorder_cost:.2f}")
@@ -868,7 +868,7 @@ def expiry_report():
             SELECT item_id, name, quantity, unit, expiry_date,
                    (julianday(expiry_date) - julianday('now')) as days_until_expiry
             FROM restaurant_inventory
-            WHERE expiry_date IS NOT NULL 
+            WHERE expiry_date IS NOT NULL
                 AND expiry_date <= date('now', '+7 days')
             ORDER BY expiry_date
         ''')
@@ -887,7 +887,7 @@ def expiry_report():
 
         for item in expiring_items:
             days_left = int(item[5]) if item[5] else 0
-            
+
             if days_left < 0:
                 status = "❌ EXPIRED"
             elif days_left == 0:
@@ -904,7 +904,7 @@ def expiry_report():
 
         # Summary by urgency
         cursor.execute('''
-            SELECT 
+            SELECT
                 COUNT(CASE WHEN expiry_date < date('now') THEN 1 END) as expired,
                 COUNT(CASE WHEN expiry_date = date('now') THEN 1 END) as expires_today,
                 COUNT(CASE WHEN expiry_date BETWEEN date('now', '+1 day') AND date('now', '+2 days') THEN 1 END) as urgent,
@@ -956,25 +956,25 @@ def abc_analysis():
 
         # Calculate total value
         total_value = sum(item[4] for item in items)
-        
+
         # Classify items into A, B, C categories
         # A items: Top 20% by value (typically 70-80% of total value)
         # B items: Next 30% by value (typically 15-25% of total value)
         # C items: Remaining 50% by value (typically 5-10% of total value)
-        
+
         a_threshold = len(items) * 0.2
         b_threshold = len(items) * 0.5
-        
+
         a_items = []
         b_items = []
         c_items = []
-        
+
         cumulative_value = 0
-        
+
         for i, item in enumerate(items):
             cumulative_value += item[4]
             cumulative_percentage = (cumulative_value / total_value) * 100
-            
+
             if i < a_threshold:
                 category = 'A'
                 a_items.append((item, cumulative_percentage))
@@ -994,15 +994,15 @@ def abc_analysis():
         if a_items:
             a_value = sum(item[0][4] for item in a_items)
             a_percentage = (a_value / total_value) * 100
-            
+
             print(f"CATEGORY A - HIGH VALUE ITEMS ({len(a_items)} items, {a_percentage:.1f}% of value)")
             print("-"*80)
             print(f"{'Item':<25} {'Quantity':<12} {'Unit Cost':<12} {'Total Value':<15} {'Cum %':<8}")
             print("-"*80)
-            
+
             for item, cum_pct in a_items[:10]:  # Show top 10
                 print(f"{item[1][:24]:<25} {item[2]:<12.1f} £{item[3]:<11.2f} £{item[4]:<14.2f} {cum_pct:<7.1f}%")
-            
+
             if len(a_items) > 10:
                 print(f"... and {len(a_items) - 10} more items")
             print()
@@ -1011,11 +1011,11 @@ def abc_analysis():
         if b_items:
             b_value = sum(item[0][4] for item in b_items)
             b_percentage = (b_value / total_value) * 100
-            
+
             print(f"CATEGORY B - MEDIUM VALUE ITEMS ({len(b_items)} items, {b_percentage:.1f}% of value)")
             print("-"*80)
             print(f"Sample items (showing first 5):")
-            
+
             for item, cum_pct in b_items[:5]:
                 print(f"{item[1][:24]:<25} {item[2]:<12.1f} £{item[3]:<11.2f} £{item[4]:<14.2f} {cum_pct:<7.1f}%")
             print()
@@ -1024,7 +1024,7 @@ def abc_analysis():
         if c_items:
             c_value = sum(item[0][4] for item in c_items)
             c_percentage = (c_value / total_value) * 100
-            
+
             print(f"CATEGORY C - LOW VALUE ITEMS ({len(c_items)} items, {c_percentage:.1f}% of value)")
             print("-"*40)
             print(f"Total value of all C items: £{c_value:.2f}")
@@ -1174,7 +1174,7 @@ def view_inventory():
         for item in items:
             cost_str = f"£{item[4]:.2f}" if item[4] else "N/A"
             supplier_name = item[14] if item[14] else "N/A"
-            
+
             print(f"{item[0]:<10} {item[1]:<25} {item[2]:<10.1f} {item[3]:<8} {cost_str:<10} {item[5]:<8.1f} {item[8] or 'N/A':<12} {supplier_name:<15}")
 
         print("="*140)
@@ -1277,7 +1277,7 @@ def add_inventory_item():
             print("\nAvailable suppliers:")
             for i, supplier in enumerate(suppliers, 1):
                 print(f"{i}. {supplier[1]} (ID: {supplier[0]})")
-            
+
             try:
                 supplier_choice = int(input("Choose supplier (enter number, 0 for none): "))
                 if supplier_choice == 0:
@@ -1485,7 +1485,7 @@ def low_stock_alerts():
             current_qty = item[2]
             reorder_level = item[5]
             supplier_name = item[14] if item[14] else "No supplier"
-            
+
             if current_qty == 0:
                 status = "❌ OUT OF STOCK"
             elif current_qty <= reorder_level * 0.5:
@@ -1590,7 +1590,7 @@ def inventory_transactions():
             trans_date = trans[6][:10] if trans[6] else 'N/A'
             quantity_str = f"{trans[3]:.1f}" if trans[3] else "N/A"
             notes = trans[7][:24] if trans[7] else ""
-            
+
             print(f"{trans[0]:<15} {trans_date:<12} {trans[9]:<25} {trans[2]:<12} {quantity_str:<10} {notes:<25}")
 
         print("="*120)

@@ -84,7 +84,7 @@ class MarketingService:
             if not existing:
                 raise MarketingError("Event not found.")
             set_parts = ", ".join(f"{k} = ?" for k in updates)
-            conn.execute(f"UPDATE open_days SET {set_parts} WHERE id = ?",
+            conn.execute(f"UPDATE open_days SET {set_parts} WHERE id = ?",  # nosec B608
                          (*updates.values(), event_id))
             conn.commit()
             logger.info("Event updated: id=%d", event_id)

@@ -54,13 +54,13 @@ def rate_and_review_book(book_id: str = None):
     if not auth or not auth.current_user:
         print(get_text("auth.login_required", action=get_text("review.title")))
         return
-    
+
     conn = get_db_connection()
     if not conn:
         return
-        
+
     cursor = conn.cursor()
-    
+
     try:
         if book_id is None:
             book_id = input(get_text("review.enter_book_id") + ": ").strip()
@@ -73,26 +73,26 @@ def rate_and_review_book(book_id: str = None):
             print(get_text("review.not_found", book_id=book_id))
             conn.close()
             return
-        
+
         title, author = book
         # FIXED: Use the helper function to get user_id safely
         user_id = get_current_user_id()
-                
+
         # Check if user has already reviewed this book
         cursor.execute('''
-        SELECT review_id, rating, review_text FROM book_reviews 
+        SELECT review_id, rating, review_text FROM book_reviews
         WHERE book_id = ? AND user_id = ?
         ''', (book_id, user_id))
-        
+
         existing_review = cursor.fetchone()
-        
+
         if existing_review:
             print(get_text("review.already_reviewed", rating=existing_review[1]))
             update = input(get_text("review.update_prompt") + " " + get_text("common.yes_no_prompt") + ": ").strip().lower()
             if update != 'y':
                 conn.close()
                 return
-        
+
         print("\n" + get_text("review.reviewing", title=title, author=author))
 
         # Get rating
@@ -104,7 +104,7 @@ def rate_and_review_book(book_id: str = None):
                 print(get_text("review.rating_range_error"))
             except ValueError:
                 print(get_text("review.rating_invalid"))
-        
+
         # Get review text
         review_text = input(get_text("review.enter_review") + ": ").strip()
 
@@ -114,9 +114,9 @@ def rate_and_review_book(book_id: str = None):
             if not moderation_result['approved']:
                 print(get_text("review.inappropriate_content", reason=moderation_result['reason']))
                 review_text = input(get_text("review.enter_revised") + ": ").strip()
-        
+
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
+
         if existing_review:
             # Update existing review
             cursor.execute('''
@@ -129,34 +129,34 @@ def rate_and_review_book(book_id: str = None):
         else:
             # Create new review
             cursor.execute('''
-            INSERT INTO book_reviews 
+            INSERT INTO book_reviews
             (book_id, user_id, rating, review_text, review_date, status)
             VALUES (?, ?, ?, ?, ?, 'pending')
             ''', (book_id, user_id, rating, review_text, now))
-            
+
             review_id = cursor.lastrowid
             print("✅ " + get_text("review.review_submitted"))
-            
+
             # Award points for reviewing
             cursor.execute('''
-            INSERT INTO user_achievements 
+            INSERT INTO user_achievements
             (user_id, achievement_type, achievement_name, description, earned_date, points)
             VALUES (?, 'review', 'Book Reviewer', 'Submitted a book review', ?, 5)
             ''', (user_id, now))
-        
+
         conn.commit()
-        
+
         # Check if review moderation is enabled
         cursor.execute('SELECT setting_value FROM library_settings WHERE setting_name = "review_moderation"')
         moderation_enabled = cursor.fetchone()[0].lower() == 'true'
-        
+
         if moderation_enabled:
             print(get_text("review.pending_moderation"))
         else:
             # Auto-approve if moderation is disabled
             if not existing_review:
                 cursor.execute('''
-                UPDATE book_reviews SET status = 'approved' 
+                UPDATE book_reviews SET status = 'approved'
                 WHERE review_id = ?
                 ''', (review_id,))
                 conn.commit()
@@ -165,7 +165,7 @@ def rate_and_review_book(book_id: str = None):
     except sqlite3.Error as e:
         conn.rollback()
         print(get_text("review.error", error=str(e)))
-    
+
     conn.close()
 
 
@@ -175,23 +175,23 @@ def moderate_review_content(text: str) -> Dict:
         'spam', 'fake', 'scam', 'inappropriate', 'offensive'
         # Add more as needed
     ]
-    
+
     text_lower = text.lower()
-    
+
     for word in inappropriate_words:
         if word in text_lower:
             return {
                 'approved': False,
                 'reason': f'Contains inappropriate word: {word}'
             }
-    
+
     # Check for excessive caps
     if len([c for c in text if c.isupper()]) > len(text) * 0.7:
         return {
             'approved': False,
             'reason': 'Excessive use of capital letters'
         }
-    
+
     return {'approved': True, 'reason': 'Content approved'}
 
 

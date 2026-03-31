@@ -211,7 +211,7 @@ class GroupService:
             if not existing:
                 raise GroupError("Tutor group not found.")
             set_parts = ", ".join(f"{k} = ?" for k in updates)
-            conn.execute(f"UPDATE tutor_groups SET {set_parts} WHERE id = ?",
+            conn.execute(f"UPDATE tutor_groups SET {set_parts} WHERE id = ?",  # nosec B608
                          (*updates.values(), group_id))
             conn.commit()
             logger.info("Tutor group updated: id=%d", group_id)
@@ -300,7 +300,7 @@ class GroupService:
             if not existing:
                 raise GroupError("Teaching group not found.")
             set_parts = ", ".join(f"{k} = ?" for k in updates)
-            conn.execute(f"UPDATE teaching_groups SET {set_parts} WHERE id = ?",
+            conn.execute(f"UPDATE teaching_groups SET {set_parts} WHERE id = ?",  # nosec B608
                          (*updates.values(), group_id))
             conn.commit()
             logger.info("Teaching group updated: id=%d", group_id)

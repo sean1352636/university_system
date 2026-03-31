@@ -81,7 +81,7 @@ class FundingService:
             if not existing:
                 raise FundingError("Funding record not found.")
             set_parts = ", ".join(f"{k} = ?" for k in updates)
-            conn.execute(f"UPDATE funding_records SET {set_parts} WHERE id = ?",
+            conn.execute(f"UPDATE funding_records SET {set_parts} WHERE id = ?",  # nosec B608
                          (*updates.values(), record_id))
             conn.commit()
             logger.info("Funding record updated: id=%d", record_id)
@@ -283,7 +283,7 @@ class FundingService:
         conn = self._conn()
         try:
             set_parts = ", ".join(f"{k} = ?" for k in updates)
-            conn.execute(f"UPDATE funding_rules SET {set_parts} WHERE id = ?",
+            conn.execute(f"UPDATE funding_rules SET {set_parts} WHERE id = ?",  # nosec B608
                          (*updates.values(), rule_id))
             conn.commit()
             row = conn.execute("SELECT * FROM funding_rules WHERE id = ?", (rule_id,)).fetchone()

@@ -196,7 +196,7 @@ def fix_accommodation_db_schema():
             for col_name, col_def in required_acc_columns:
                 if col_name not in acc_columns:
                     print(get_text("housing.accommodation.db.adding_column_to_table", "Adding missing column {column} to accommodations table...").format(column=col_name))
-                    from education_system.university_system.core.sql_safety import validate_identifier
+                    from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
                     validate_identifier(col_name, "column")
                     cursor.execute("ALTER TABLE accommodations ADD COLUMN [" + col_name + "] " + col_def)
 

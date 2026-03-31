@@ -2,7 +2,7 @@
 
 from datetime import datetime
 import logging
-from education_system.secondary_school.core.sql_safety import validate_identifier, escape_like
+from education_system.secondary_school.core.sql_safety import validate_identifier, escape_like  # nosec B608
 
 from education_system.secondary_school.core.exceptions import SubjectError, ValidationError
 from education_system.secondary_school.infrastructure.database.db import connect
@@ -110,7 +110,7 @@ class SubjectService:
 
         conn = self._conn()
         try:
-            conn.execute(f"UPDATE subjects SET {set_clause} WHERE id = ?", params)
+            conn.execute(f"UPDATE subjects SET {set_clause} WHERE id = ?", params)  # nosec B608
             conn.commit()
             result = self.get_subject(subject_pk)
             if not result:

@@ -225,7 +225,7 @@ def mark_notification_read():
 
         # Mark as read
         cursor.execute('''
-            UPDATE restaurant_notifications 
+            UPDATE restaurant_notifications
             SET read_date = ?
             WHERE notification_id = ?
         ''', (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), notification_id))

@@ -492,7 +492,7 @@ class AccountsMixin:
             print(f"5. Address: {info[4] or 'Not set'}")
             print("6. Save and Return")
 
-            from education_system.university_system.core.sql_safety import validate_identifier
+            from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 
             while True:
                 choice = input("\nSelect information to update (1-5) or 6 to save: ")

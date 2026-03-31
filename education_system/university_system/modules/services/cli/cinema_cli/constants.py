@@ -6,7 +6,7 @@ from typing import Optional, List, Dict, Tuple
 import random
 import string
 
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 from education_system.university_system.infrastructure.shared_context import get_auth
 

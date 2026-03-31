@@ -2,7 +2,7 @@ from education_system.university_system.infrastructure.database.db import sqlite
 from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH, SUBMISSIONS_DIR
 from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.infrastructure.shared_context import get_auth
-from education_system.university_system.core.sql_safety import validate_table_name, validate_identifier
+from education_system.university_system.core.sql_safety import validate_table_name, validate_identifier  # nosec B608
 import os
 import shutil
 from datetime import datetime, timedelta

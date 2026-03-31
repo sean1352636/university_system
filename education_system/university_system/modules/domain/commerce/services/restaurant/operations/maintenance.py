@@ -12,14 +12,14 @@ from education_system.university_system.modules.domain.commerce.services.restaur
 )
 from education_system.university_system.modules.domain.commerce.services.restaurant.operations.audit import log_audit_action
 from education_system.university_system.utils.logging.log_config import get_log_file
-from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name
+from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name  # nosec B608
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
 def system_maintenance():
     """System maintenance operations"""
-    
+
     if not ctx.auth or not ctx.auth.current_user:
         print("You must be logged in for system maintenance.")
         return

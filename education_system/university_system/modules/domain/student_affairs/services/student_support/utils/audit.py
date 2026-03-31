@@ -162,9 +162,9 @@ def audit_action(action_type: str):
                 else:
                     # Use module-level _log_audit if no object method exists
                     _log_audit(audit_data)
-                
+
                 logger.error(f"Action {action_type} failed after {duration:.2f}s: {e}")
                 raise
-                
+
         return wrapper
     return decorator

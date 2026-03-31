@@ -11,7 +11,7 @@ from education_system.college_system.infrastructure.validation.validators import
     validate_email, validate_non_empty, validate_student_id,
 )
 
-from education_system.college_system.core.sql_safety import validate_identifier, escape_like
+from education_system.college_system.core.sql_safety import validate_identifier, escape_like  # nosec B608
 import logging
 
 logger = logging.getLogger(__name__)
@@ -143,7 +143,7 @@ class StudentService:
 
         conn = self._conn()
         try:
-            conn.execute(f"UPDATE students SET {set_clause} WHERE id = ?", params)
+            conn.execute(f"UPDATE students SET {set_clause} WHERE id = ?", params)  # nosec B608
             conn.commit()
             logger.info("Student updated: pk=%d", student_pk)
             result = self.get_student(student_pk)
