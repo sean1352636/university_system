@@ -1749,21 +1749,8 @@ def init_all_missing_tables():
     print("=" * 80)
 
 __all__ = [
-    'init_grade_system_db',
-    'init_finance_system_db',
-    'init_student_union_db',
-    'init_email_system_db',
-    'init_health_system_db',
-    'init_lms_system_db',
-    'init_attendance_system_db',
-    'init_mental_health_system_db',
-    'init_early_warning_system_db',
-    'init_degree_audit_system_db',
-    'init_career_services_system_db',
-    'init_admissions_crm_system_db',
-    'init_analytics_dashboard_system_db',
-    'create_performance_indexes',
-    'initialize_all_schemas',
+    'init_additional_missing_tables',
+    'init_all_missing_tables',
 ]
 
 

@@ -792,45 +792,10 @@ class HousingFinanceManager:
 
 # Export functions for backward compatibility
 __all__ = [
-    'HousingGUI',
-    'display_housing_accommodation_menu_gui',
-    'orig_init_housing_db',  # These should reference the orig_ versions
+    'HousingFinanceManager',
+    'orig_init_housing_db',
     'orig_generate_id',
     'orig_set_auth',
-    'orig_select_student',
-    'orig_create_building',
-    'orig_view_building',
-    'orig_update_building',
-    'orig_delete_building',
-    'orig_create_rooms_for_building',
-    'orig_create_application',
-    'orig_process_application',
-    'orig_view_application',
-    'orig_view_assignment',
-    'orig_update_assignment_status',
-    'orig_create_maintenance_request',
-    'orig_view_maintenance_requests',
-    'orig_update_maintenance_request',
-    'orig_record_payment',
-    'orig_view_payment_history',
-    'orig_manage_inventory',
-    'orig_create_inspection',
-    'orig_view_inspections',
-    'orig_generate_occupancy_report',
-    'orig_generate_financial_report',
-    'orig_export_housing_data',
-    'orig_search_housing_records',
-    'orig_check_room_availability',
-    'orig_maintenance_summary',
-    'orig_upcoming_moveouts_report',
-    'orig_display_housing_accommodation_menu',
-    'orig_display_reports_menu',
-    'orig_display_building_menu',
-    'orig_display_application_menu',
-    'orig_display_assignment_menu',
-    'orig_display_maintenance_menu',
-    'orig_display_payment_menu',
-    'orig_display_inspection_menu'
 ]
 
 # Create aliases for backward compatibility

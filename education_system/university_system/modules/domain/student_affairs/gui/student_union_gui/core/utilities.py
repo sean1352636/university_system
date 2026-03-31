@@ -1419,16 +1419,9 @@ if __name__ == "__main__":
 
 # Module-level exports for backwards compatibility
 __all__ = [
-    'StudentUnionGUI',
-    'launch_student_union_gui',
     'run_gui_with_cli_fallback',
     'main_menu',
-    'ClubJoinDialog',
-    'ClubCreateDialog', 
-    'ClubManageDialog',
-    'EventRegistrationDialog',
-    'FacilityBookingDialog',
     'DatabaseQueryDialog',
-    'SearchDialog'
+    'SearchDialog',
 ]
 
