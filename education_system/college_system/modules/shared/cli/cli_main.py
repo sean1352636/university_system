@@ -16,6 +16,64 @@ logger = logging.getLogger(__name__)
 
 
 # ================================================================
+# Dashboard summary (printed once after login)
+# ================================================================
+
+_DASHBOARD_SECTIONS = {
+    "admin": [
+        "Teaching & Learning", "Students & Pastoral", "Attendance & Timetable",
+        "Exams & Assessment", "Staff & HR", "Administration", "Finance & Funding",
+        "Communication", "Facilities", "Analytics", "Parent & Careers",
+        "Student Self-Service", "System & Settings", "Cross-System Tools",
+    ],
+    "instructor": [
+        "Teaching & Learning", "Students & Pastoral", "Attendance & Timetable",
+        "Exams & Assessment", "Staff & HR", "Communication", "Facilities",
+        "Analytics", "Student Self-Service",
+    ],
+    "student": [
+        "My Academics", "Self-Service & Activities", "Communication",
+        "Tools & Settings",
+    ],
+    "parent": [
+        "Parent Portal", "Messages", "Calendar", "Parents Evening",
+        "Announcements", "Feedback",
+    ],
+}
+
+
+def _show_dashboard_summary(role: str):
+    """Print a brief dashboard overview for the given role."""
+    sections = _DASHBOARD_SECTIONS.get(role)
+    if sections is None:
+        # staff reuses admin sections
+        sections = _DASHBOARD_SECTIONS.get("admin", [])
+
+    if not sections:
+        return
+
+    # Build wrapped section lines (indent continuation lines)
+    header = "  Sections: "
+    indent = " " * len(header)
+    line = header
+    lines = []
+    for i, s in enumerate(sections):
+        part = s if i == 0 else s
+        sep = ", " if i > 0 else ""
+        if len(line) + len(sep) + len(part) > 78:
+            lines.append(line + ",")
+            line = indent + part
+        else:
+            line += sep + part
+    lines.append(line)
+
+    print(f"\n  {'─' * 3} Your Dashboard {'─' * 3}")
+    for ln in lines:
+        print(ln)
+    print()
+
+
+# ================================================================
 # Admin sub-menus
 # ================================================================
 
@@ -420,6 +478,7 @@ def admin_menu(auth: UserAuth):
             ("E", "Cross-System Tools"),
             ("M", t("menu.mfa_settings")),
             ("P", t("menu.change_password")),
+            ("Q", "Security Questions"),
             ("G", "Switch to GUI"),
             ("L", "Logout"),
             ("0", t("menu.exit")),
@@ -462,6 +521,9 @@ def admin_menu(auth: UserAuth):
             mfa_settings_menu(auth)
         elif choice == "P":
             change_password_prompt(auth)
+        elif choice == "Q":
+            from education_system.shared.cli.security_questions_cli import security_questions_menu
+            security_questions_menu(auth)
         elif choice == "G":
             from education_system.switch import request_switch
             request_switch("college", "gui")
@@ -498,6 +560,7 @@ def instructor_menu(auth: UserAuth):
             ("9", "Student Self-Service"),
             ("M", t("menu.mfa_settings")),
             ("P", t("menu.change_password")),
+            ("Q", "Security Questions"),
             ("G", "Switch to GUI"),
             ("L", "Logout"),
             ("0", t("menu.exit")),
@@ -530,6 +593,9 @@ def instructor_menu(auth: UserAuth):
             mfa_settings_menu(auth)
         elif choice == "P":
             change_password_prompt(auth)
+        elif choice == "Q":
+            from education_system.shared.cli.security_questions_cli import security_questions_menu
+            security_questions_menu(auth)
         elif choice == "G":
             from education_system.switch import request_switch
             request_switch("college", "gui")
@@ -595,6 +661,7 @@ def student_menu_main(auth: UserAuth):
             ("4", "Tools & Settings"),
             ("M", t("menu.mfa_settings")),
             ("P", t("menu.change_password")),
+            ("Q", "Security Questions"),
             ("G", "Switch to GUI"),
             ("L", "Logout"),
             ("0", t("menu.exit")),
@@ -649,6 +716,9 @@ def student_menu_main(auth: UserAuth):
             mfa_settings_menu(auth)
         elif choice == "P":
             change_password_prompt(auth)
+        elif choice == "Q":
+            from education_system.shared.cli.security_questions_cli import security_questions_menu
+            security_questions_menu(auth)
         elif choice == "G":
             from education_system.switch import request_switch
             request_switch("college", "gui")
@@ -692,6 +762,7 @@ def parent_menu_main(auth: UserAuth):
             ("8", "Feedback"),
             ("M", t("menu.mfa_settings")),
             ("P", t("menu.change_password")),
+            ("Q", "Security Questions"),
             ("G", "Switch to GUI"),
             ("L", "Logout"),
             ("0", t("menu.exit")),
@@ -719,6 +790,9 @@ def parent_menu_main(auth: UserAuth):
             mfa_settings_menu(auth)
         elif choice == "P":
             change_password_prompt(auth)
+        elif choice == "Q":
+            from education_system.shared.cli.security_questions_cli import security_questions_menu
+            security_questions_menu(auth)
         elif choice == "G":
             from education_system.switch import request_switch
             request_switch("college", "gui")
@@ -792,6 +866,8 @@ def main(db_path: str | None = None, user_info=None, role=None, shared_auth=None
                 role = s["role"]
                 break
         auth._current_user["role"] = role
+
+    _show_dashboard_summary(role)
 
     while True:
         result = None

@@ -260,6 +260,7 @@ def create_navigation_panel(self, parent):
         ('login', _t("common.logout"), self.logout_user),
         ('change_password', _t("nav.buttons.change_password"), self.show_change_password),
         ('mfa_setup', _t("nav.buttons.mfa_setup"), self.show_mfa_setup),
+        ('security_questions', "Security Questions", self.show_security_questions),
         ('toggle_verification', _t("nav.buttons.toggle_verification"), self.toggle_login_verification),
     ]
 
@@ -753,7 +754,7 @@ def get_visible_buttons_for_role(self, role=None):
 
     # Base buttons for all logged-in users
     visible = {
-        'change_password', 'mfa_setup',
+        'change_password', 'mfa_setup', 'security_questions',
         # Student services available to all
         'assignments', 'academic_calendar', 'health_portal', 'student_union_portal',
         'campus_events', 'university_shop', 'cafe_system', 'takeaway_system', 'grocery_shop', 'bar', 'student_support', 'internship_portal',

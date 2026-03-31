@@ -42,6 +42,6 @@ except ImportError:
     view_vaccination_records = None
 
 # Version and metadata
-__version__ = "2.0.0"
+__version__ = "8.60.0"
 __author__ = "University System Team"
 __description__ = "Consolidated University System Services"

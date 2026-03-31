@@ -28,10 +28,50 @@ MAIN_BG = "#ecf0f1"
 class DashboardFrame(tk.Frame):
     """Dashboard / home screen with summary stats."""
 
-    def __init__(self, parent, db_path=None, auth=None, **kwargs):
+    # Role-based quick action definitions
+    _QUICK_ACTIONS = {
+        "admin": [
+            "Students", "Subjects", "Grades", "Attendance", "Timetable",
+            "Behaviour", "Exams", "Homework", "SEND", "Safeguarding",
+            "HR", "Finance", "Users", "Admissions", "Reports", "Payroll",
+            "Staff Directory", "Settings",
+        ],
+        "staff": [
+            "Students", "Subjects", "Grades", "Attendance", "Timetable",
+            "Behaviour", "Exams", "Homework", "SEND", "Safeguarding",
+            "HR", "Finance", "Users", "Admissions", "Reports", "Payroll",
+            "Staff Directory", "Settings",
+        ],
+        "teacher": [
+            "Students", "Grades", "Attendance", "Timetable", "Behaviour",
+            "Exams", "Homework", "Calendar", "Announcements", "SEND",
+            "Cover", "Rewards", "Lesson Plans", "Staff Directory",
+        ],
+        "instructor": [
+            "Students", "Grades", "Attendance", "Timetable", "Behaviour",
+            "Exams", "Homework", "Calendar", "Announcements", "SEND",
+            "Cover", "Rewards", "Lesson Plans", "Staff Directory",
+        ],
+        "parent": [
+            "Announcements", "Calendar", "Parents Evening", "Notifications",
+        ],
+        "student": [
+            "Grades", "Timetable", "Exams", "Homework", "Calendar",
+            "Announcements", "Library", "Clubs", "Rewards", "Portfolio",
+            "Study Planner", "LMS",
+        ],
+    }
+
+    _ACTION_COLORS = [
+        "#2980b9", "#27ae60", "#8e44ad", "#e67e22", "#16a085", "#c0392b",
+        "#2c3e50", "#f39c12", "#1abc9c", "#e74c3c", "#3498db", "#9b59b6",
+    ]
+
+    def __init__(self, parent, db_path=None, auth=None, on_navigate=None, **kwargs):
         super().__init__(parent, **kwargs)
         self._db_path = db_path
         self._auth = auth
+        self._on_navigate = on_navigate
         self._build_ui()
 
     def _build_ui(self):
@@ -55,6 +95,34 @@ class DashboardFrame(tk.Frame):
 
         self._cards_frame = tk.Frame(self._stats_frame, bg=MAIN_BG)
         self._cards_frame.pack(fill="x")
+
+        # Quick Actions section
+        role = self._auth.get("role", "student") if self._auth else "student"
+        actions = self._QUICK_ACTIONS.get(role, self._QUICK_ACTIONS["student"])
+        if actions:
+            tk.Label(self._stats_frame, text="Quick Actions",
+                     font=("Helvetica", 13, "bold"), bg=MAIN_BG).pack(
+                anchor="w", pady=(20, 10))
+            qa_frame = tk.Frame(self._stats_frame, bg=MAIN_BG)
+            qa_frame.pack(fill="x")
+            cols = 6
+            for i, action in enumerate(actions):
+                color = self._ACTION_COLORS[i % len(self._ACTION_COLORS)]
+                btn = tk.Button(
+                    qa_frame, text=action, font=("Helvetica", 9, "bold"),
+                    bg=color, fg="white", bd=0, padx=10, pady=8,
+                    activebackground=color, activeforeground="white",
+                    cursor="hand2",
+                    command=lambda a=action: self._navigate(a),
+                )
+                btn.grid(row=i // cols, column=i % cols, padx=4, pady=4, sticky="ew")
+            for c in range(cols):
+                qa_frame.columnconfigure(c, weight=1)
+
+    def _navigate(self, module_name):
+        """Invoke the on_navigate callback if set."""
+        if self._on_navigate:
+            self._on_navigate(module_name)
 
     def refresh(self):
         for w in self._cards_frame.winfo_children():
@@ -214,6 +282,7 @@ class MainApplication(tk.Tk):
             ("Payroll", None),
             ("Data Export", None),
             ("MFA Settings", None),
+            ("Security Questions", None),
             ("Cross-System Communications", None),
             ("Student Journey", None),
             # Shared modules
@@ -266,13 +335,18 @@ class MainApplication(tk.Tk):
         student_modules = {"Dashboard", "Grades", "Timetable", "Exams", "Homework",
                            "Calendar", "Announcements", "Library", "Clubs",
                            "Staff Directory", "Email", "Notifications", "Rewards",
-                           "MFA Settings", "LMS",
+                           "MFA Settings", "Security Questions", "LMS",
                            "Portfolio", "Skills Passport", "Study Planner",
                            "Feedback", "Student Council"}
 
         if self._user["role"] == "student":
             modules = [m for m in modules if m[0] in student_modules]
-        elif self._user["role"] == "teacher":
+        elif self._user["role"] == "parent":
+            parent_modules = {"Dashboard", "Announcements", "Calendar",
+                              "Notifications", "Parents Evening", "MFA Settings",
+                              "Security Questions"}
+            modules = [m for m in modules if m[0] in parent_modules]
+        elif self._user["role"] in ("teacher", "instructor", "staff"):
             modules = [m for m in modules if m[0] not in admin_only]
 
         self._nav_buttons = {}
@@ -361,6 +435,7 @@ class MainApplication(tk.Tk):
         from education_system.secondary_school.modules.domain.student_life.consent.gui.consent_gui import ConsentFrame
         from education_system.secondary_school.modules.domain.facilities.incidents.gui.incident_gui import IncidentFrame
         from education_system.secondary_school.modules.shared.gui.mfa_gui import MFASettingsFrame
+        from education_system.shared.gui.security_questions_gui import SecurityQuestionsFrame
         from education_system.shared.communications.gui import CrossSystemCommunicationsFrame
         from education_system.shared.cross_system.journey_dashboard import JourneyDashboardFrame
         from education_system.shared.analytics.analytics_gui import AnalyticsDashboardFrame
@@ -450,6 +525,7 @@ class MainApplication(tk.Tk):
             "Consent": ConsentFrame,
             "Incidents": IncidentFrame,
             "MFA Settings": MFASettingsFrame,
+            "Security Questions": SecurityQuestionsFrame,
             "Cross-System Communications": CrossSystemCommunicationsFrame,
             "Student Journey": JourneyDashboardFrame,
             # Shared modules
@@ -494,6 +570,10 @@ class MainApplication(tk.Tk):
                 else:
                     frame = cls(self._content, db_path=self._db_path, auth=self._user)
                 self._frames[name] = frame
+
+        # Wire up Dashboard quick-action navigation
+        if "Dashboard" in self._frames:
+            self._frames["Dashboard"]._on_navigate = self._show_module
 
     def _show_module(self, name: str):
         # Hide all frames

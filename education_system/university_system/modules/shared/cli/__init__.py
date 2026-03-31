@@ -11,6 +11,6 @@ startup fast.  For the main entry point use:
     from education_system.university_system.modules.shared.cli.cli_main import main
 """
 
-__version__ = '5.0.0'
+__version__ = '8.60.0'
 __author__ = 'University Management System Team'
 __description__ = 'Modular CLI system for university management'

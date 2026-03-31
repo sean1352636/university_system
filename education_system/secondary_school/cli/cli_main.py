@@ -533,6 +533,7 @@ def admin_menu(auth: UserAuth):
             ("8", "Cross-System Tools"),
             ("M", "MFA Settings"),
             ("P", "Change Password"),
+            ("Q", "Security Questions"),
             ("G", "Switch to GUI"),
             ("L", "Logout"),
             ("0", "Exit"),
@@ -564,6 +565,9 @@ def admin_menu(auth: UserAuth):
             mfa_settings_menu(auth)
         elif choice == "P":
             change_password_prompt(auth)
+        elif choice == "Q":
+            from education_system.shared.cli.security_questions_cli import security_questions_menu
+            security_questions_menu(auth)
         elif choice == "G":
             from education_system.switch import request_switch
             request_switch("school", "gui")
@@ -592,6 +596,7 @@ def teacher_menu(auth: UserAuth):
             ("3", "Communication"),
             ("M", "MFA Settings"),
             ("P", "Change Password"),
+            ("Q", "Security Questions"),
             ("G", "Switch to GUI"),
             ("L", "Logout"),
             ("0", "Exit"),
@@ -613,6 +618,9 @@ def teacher_menu(auth: UserAuth):
             mfa_settings_menu(auth)
         elif choice == "P":
             change_password_prompt(auth)
+        elif choice == "Q":
+            from education_system.shared.cli.security_questions_cli import security_questions_menu
+            security_questions_menu(auth)
         elif choice == "G":
             from education_system.switch import request_switch
             request_switch("school", "gui")
@@ -643,6 +651,7 @@ def student_menu_main(auth: UserAuth):
             ("2", "View My Attendance"),
             ("M", "MFA Settings"),
             ("P", "Change Password"),
+            ("Q", "Security Questions"),
             ("G", "Switch to GUI"),
             ("L", "Logout"),
             ("0", "Exit"),
@@ -662,6 +671,9 @@ def student_menu_main(auth: UserAuth):
             mfa_settings_menu(auth)
         elif choice == "P":
             change_password_prompt(auth)
+        elif choice == "Q":
+            from education_system.shared.cli.security_questions_cli import security_questions_menu
+            security_questions_menu(auth)
         elif choice == "G":
             from education_system.switch import request_switch
             request_switch("school", "gui")
@@ -696,6 +708,18 @@ def change_password_prompt(auth: UserAuth):
         print("\n  Password changed successfully.")
     except Exception as e:
         print(f"\n  Error: {e}")
+
+
+def _show_dashboard_summary(role):
+    """Print a brief role-specific dashboard summary."""
+    print(f"\n  \u2500\u2500\u2500 Your Dashboard ({role.title()}) \u2500\u2500\u2500")
+    if role in ("admin", "staff"):
+        print("  Sections: Academics, Pastoral Care, Staff, Administration,")
+        print("            Student Life, Facilities, Communication, Cross-System Tools")
+    elif role in ("teacher", "instructor", "parent"):
+        print("  Sections: Academics, Pastoral Care, Communication")
+    else:
+        print("  Sections: View My Grades, View My Attendance")
 
 
 def main(db_path: str | None = None, user_info=None, role=None, shared_auth=None):
@@ -741,13 +765,17 @@ def main(db_path: str | None = None, user_info=None, role=None, shared_auth=None
                 break
         auth._current_user["role"] = role
 
+    _show_dashboard_summary(role)
+
     while True:
         result = None
         try:
-            if role == "admin":
+            if role in ("admin", "staff"):
                 result = admin_menu(auth)
-            elif role == "teacher":
+            elif role in ("teacher", "instructor"):
                 result = teacher_menu(auth)
+            elif role == "parent":
+                result = teacher_menu(auth)  # parent sees teacher-level
             else:
                 result = student_menu_main(auth)
         except Exception:

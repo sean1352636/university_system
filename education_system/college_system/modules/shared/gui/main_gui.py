@@ -18,6 +18,7 @@ from education_system.college_system.modules.domain.timetable.gui.timetable_gui 
 from education_system.college_system.modules.domain.assignments.gui.assignment_gui import AssignmentFrame
 from education_system.college_system.modules.domain.notifications.gui.notification_gui import NotificationFrame
 from education_system.college_system.modules.shared.gui.mfa_gui import MFASettingsFrame
+from education_system.shared.gui.security_questions_gui import SecurityQuestionsFrame
 from education_system.college_system.modules.domain.staff.gui.staff_gui import StaffFrame
 from education_system.college_system.modules.domain.messaging.gui.message_gui import MessageFrame
 from education_system.college_system.modules.domain.todo.gui.todo_gui import TodoFrame
@@ -300,6 +301,7 @@ _SIDEBAR_SECTIONS = [
     ("Administration", [
         ("Settings",              "settings_gui",              "student"),
         ("MFA Settings",          "mfa_gui",                   "student"),
+        ("Security Questions",    "security_questions_gui",    "student"),
         ("User Management",       "user_management_gui",       "admin"),
         ("Academic Year",         "academic_year_gui",          "admin"),
         ("Bulk Operations",       "bulk_operation_gui",        "admin"),
@@ -375,6 +377,7 @@ class CollegeApp(tk.Tk):
         "assignment_gui":   AssignmentFrame,
         "notification_gui": NotificationFrame,
         "mfa_gui":          MFASettingsFrame,
+        "security_questions_gui": SecurityQuestionsFrame,
         "staff_gui":        StaffFrame,
         "message_gui":      MessageFrame,
         "todo_gui":         TodoFrame,

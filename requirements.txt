@@ -1,6 +1,13 @@
-# University Management System Requirements
-# Core dependencies for the comprehensive university management system
-# Versions pinned from working environment - update with: pip freeze
+# Education System — Pinned (Lock) Requirements
+# ================================================
+# This file pins exact versions for reproducible installs.
+# The *minimum* compatible ranges live in pyproject.toml.
+#
+# Workflow:
+#   pip install -r requirements.txt   # reproducible install
+#   pip install -e .                   # range-based install from pyproject.toml
+#
+# To refresh pins:  pip freeze > requirements.txt  (then tidy up)
 
 # ===============================
 # DATA PROCESSING & ANALYTICS
@@ -285,7 +292,7 @@ python-Levenshtein==0.27.3     # Fast string matching (optional speedup for fuzz
 #     Download installers from official websites
 #
 # REQUIREMENTS:
-#   - Python Version: 3.8+ (3.9+ recommended)
+#   - Python Version: 3.11+
 #   - Tested on: Windows 10/11, macOS 10.15+, Ubuntu 18.04+, Ubuntu 22.04+
 #   - Recommended RAM: 2GB minimum (8GB for advanced AI features)
 #   - Disk Space: 500MB minimum (5GB with all AI models)

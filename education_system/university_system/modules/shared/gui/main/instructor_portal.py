@@ -185,6 +185,7 @@ class InstructorPortalGUI:
         self._add_heading("Account")
         self._add_button("Change Password", self._launch('show_change_password'))
         self._add_button("MFA Setup", self._launch('show_mfa_setup'))
+        self._add_button("Security Questions", self._launch('show_security_questions'))
         self._add_button("Extras & Tools", self._launch('show_extras_launcher_gui'))
 
     # ------------------------------------------------------------------

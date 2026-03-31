@@ -1270,9 +1270,10 @@ def display_my_account_menu(auth):
             print("8. Delegated Access Management")
         else:
             print("8. Delegated Access")
-        print("9. Back")
+        print("9. Security Questions")
+        print("0. Back")
 
-        choice = input("\nEnter your choice (1-9): ")
+        choice = input("\nEnter your choice (1-0): ")
 
         if choice == '1':
             # Change password
@@ -1403,6 +1404,11 @@ def display_my_account_menu(auth):
             _display_delegated_access_menu(auth)
 
         elif choice == '9':
+            # Security Questions
+            from education_system.shared.cli.security_questions_cli import security_questions_menu
+            security_questions_menu(auth)
+
+        elif choice == '0':
             return
         else:
             print("Invalid choice. Please try again.")

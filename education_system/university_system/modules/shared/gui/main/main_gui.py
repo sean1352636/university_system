@@ -80,7 +80,7 @@ def init_gui(session_user=None):
     elif role == 'staff':
         from education_system.university_system.modules.shared.gui.main.staff_portal import StaffPortalGUI
         app = StaffPortalGUI(auth)
-    elif role == 'instructor':
+    elif role in ('instructor', 'teacher'):
         from education_system.university_system.modules.shared.gui.main.instructor_portal import InstructorPortalGUI
         app = InstructorPortalGUI(auth)
     elif role == 'parent':
@@ -483,6 +483,35 @@ UnifiedManagementGUI.show_change_password = show_change_password
 UnifiedManagementGUI.show_mfa_setup = show_mfa_setup
 UnifiedManagementGUI._open_mfa_wizard = _open_mfa_wizard
 UnifiedManagementGUI._reenable_mfa_with_confirmation = _reenable_mfa_with_confirmation
+
+
+def show_security_questions(self):
+    """Show the Security Questions management frame."""
+    try:
+        from education_system.shared.gui.security_questions_gui import SecurityQuestionsFrame
+        if self.content_frame:
+            for w in self.content_frame.winfo_children():
+                w.destroy()
+            frame = SecurityQuestionsFrame(
+                self.content_frame,
+                db_path=getattr(self.auth, '_db_path', None),
+                auth=self.auth,
+            )
+            frame.pack(fill="both", expand=True)
+        else:
+            # Fallback: open in a new Toplevel window
+            win = tk.Toplevel(self.root)
+            win.title("Security Questions")
+            win.geometry("500x520")
+            frame = SecurityQuestionsFrame(win, auth=self.auth)
+            frame.pack(fill="both", expand=True)
+    except Exception as e:
+        logger.error("Failed to show security questions: %s", e, exc_info=True)
+        from tkinter import messagebox
+        messagebox.showerror("Error", f"Could not open Security Questions: {e}")
+
+
+UnifiedManagementGUI.show_security_questions = show_security_questions
 UnifiedManagementGUI.toggle_login_verification = toggle_login_verification
 UnifiedManagementGUI.check_session_timer = check_session_timer
 UnifiedManagementGUI.switch_to_cli = switch_to_cli

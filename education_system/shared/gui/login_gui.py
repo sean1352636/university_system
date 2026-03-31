@@ -144,6 +144,15 @@ class UniversalLoginWindow(tk.Tk):
         )
         self._error_lbl.pack(fill="x", pady=(12, 0))
 
+        # Forgot password link
+        forgot_link = tk.Label(
+            card, text="Forgot Password?",
+            font=("Helvetica", 9, "underline"), fg="#2980b9",
+            bg=_CARD_BG, cursor="hand2",
+        )
+        forgot_link.pack(anchor="e", pady=(8, 0))
+        forgot_link.bind("<Button-1>", lambda _: self._show_forgot_username())
+
         # Hint
         tk.Label(
             self, text="Default: superadmin / SuperAdmin@123",
@@ -379,6 +388,205 @@ class UniversalLoginWindow(tk.Tk):
         self._on_login_success(user_info)
 
     # ------------------------------------------------------------------
+    #  Forgot password flow
+    # ------------------------------------------------------------------
+
+    def _show_forgot_username(self):
+        """Step 1: Ask for username to look up security questions."""
+        for w in self.winfo_children():
+            w.destroy()
+
+        self.geometry("500x380")
+
+        header = tk.Frame(self, bg=_HEADER_BG, height=70)
+        header.pack(fill="x")
+        header.pack_propagate(False)
+        tk.Label(
+            header, text="Forgot Password",
+            font=("Helvetica", 18, "bold"), fg="white", bg=_HEADER_BG,
+        ).pack(expand=True)
+
+        tk.Label(
+            self, text="Enter your username to verify your identity",
+            font=("Helvetica", 11), fg="#7f8c8d", bg=_BG,
+        ).pack(pady=(20, 15))
+
+        card = tk.Frame(self, bg=_CARD_BG, bd=1, relief="solid", padx=40, pady=30)
+        card.pack(padx=50)
+
+        tk.Label(
+            card, text="Username", font=("Helvetica", 10, "bold"),
+            bg=_CARD_BG, anchor="w",
+        ).pack(fill="x", pady=(0, 4))
+        self._forgot_username_var = tk.StringVar()
+        username_entry = ttk.Entry(
+            card, textvariable=self._forgot_username_var, width=30,
+            font=("Helvetica", 11),
+        )
+        username_entry.pack(fill="x", ipady=4, pady=(0, 14))
+        username_entry.focus_set()
+        username_entry.bind("<Return>", lambda _: self._forgot_lookup_questions())
+
+        ttk.Button(
+            card, text="Continue", command=self._forgot_lookup_questions,
+        ).pack(fill="x", ipady=6)
+
+        self._forgot_error_var = tk.StringVar()
+        tk.Label(
+            card, textvariable=self._forgot_error_var,
+            font=("Helvetica", 9), fg="red", bg=_CARD_BG, wraplength=280,
+        ).pack(fill="x", pady=(12, 0))
+
+        ttk.Button(
+            card, text="Back to Login", command=self._build_login_ui,
+        ).pack(fill="x", pady=(10, 0))
+
+    def _forgot_lookup_questions(self):
+        """Look up security questions for the entered username."""
+        username = self._forgot_username_var.get().strip()
+        if not username:
+            self._forgot_error_var.set("Please enter your username.")
+            return
+
+        try:
+            from education_system.shared.auth.forgot_password import ForgotPasswordService
+            svc = ForgotPasswordService(self._auth_db_path)
+            questions = svc.get_questions_for_user(username)
+        except Exception as exc:
+            self._forgot_error_var.set(str(exc))
+            return
+
+        self._show_forgot_questions(username, questions)
+
+    def _show_forgot_questions(self, username: str, questions: list[dict]):
+        """Step 2: Show security questions for the user to answer."""
+        for w in self.winfo_children():
+            w.destroy()
+
+        height = 320 + (len(questions) * 80)
+        self.geometry(f"500x{height}")
+
+        header = tk.Frame(self, bg=_HEADER_BG, height=70)
+        header.pack(fill="x")
+        header.pack_propagate(False)
+        tk.Label(
+            header, text="Security Questions",
+            font=("Helvetica", 18, "bold"), fg="white", bg=_HEADER_BG,
+        ).pack(expand=True)
+
+        tk.Label(
+            self, text=f"Answer all questions for: {username}",
+            font=("Helvetica", 11), fg="#7f8c8d", bg=_BG,
+        ).pack(pady=(15, 10))
+
+        card = tk.Frame(self, bg=_CARD_BG, bd=1, relief="solid", padx=40, pady=25)
+        card.pack(padx=50)
+
+        self._forgot_answer_vars = {}
+        for i, q in enumerate(questions):
+            tk.Label(
+                card, text=q["question"],
+                font=("Helvetica", 10, "bold"), bg=_CARD_BG, anchor="w",
+            ).pack(fill="x", pady=(10 if i > 0 else 0, 4))
+            var = tk.StringVar()
+            entry = ttk.Entry(card, textvariable=var, width=30, font=("Helvetica", 11))
+            entry.pack(fill="x", ipady=4)
+            if i == 0:
+                entry.focus_set()
+            self._forgot_answer_vars[q["id"]] = var
+
+        ttk.Button(
+            card, text="Verify & Reset Password",
+            command=lambda: self._forgot_verify(username),
+        ).pack(fill="x", ipady=6, pady=(15, 0))
+
+        self._forgot_q_error_var = tk.StringVar()
+        tk.Label(
+            card, textvariable=self._forgot_q_error_var,
+            font=("Helvetica", 9), fg="red", bg=_CARD_BG, wraplength=280,
+        ).pack(fill="x", pady=(10, 0))
+
+        ttk.Button(
+            card, text="Back to Login", command=self._build_login_ui,
+        ).pack(fill="x", pady=(10, 0))
+
+    def _forgot_verify(self, username: str):
+        """Verify answers and show temp password on success."""
+        answers = {qid: var.get() for qid, var in self._forgot_answer_vars.items()}
+
+        # Check none are blank
+        if any(not a.strip() for a in answers.values()):
+            self._forgot_q_error_var.set("Please answer all questions.")
+            return
+
+        try:
+            from education_system.shared.auth.forgot_password import ForgotPasswordService
+            svc = ForgotPasswordService(self._auth_db_path)
+            result = svc.verify_answers_and_reset(username, answers)
+        except Exception as exc:
+            self._forgot_q_error_var.set(str(exc))
+            return
+
+        self._show_temp_password(result)
+
+    def _show_temp_password(self, reset_info: dict):
+        """Step 3: Show the temporary password to the user."""
+        for w in self.winfo_children():
+            w.destroy()
+
+        self.geometry("500x460")
+
+        header = tk.Frame(self, bg="#27ae60", height=70)
+        header.pack(fill="x")
+        header.pack_propagate(False)
+        tk.Label(
+            header, text="Password Reset Successful",
+            font=("Helvetica", 18, "bold"), fg="white", bg="#27ae60",
+        ).pack(expand=True)
+
+        card = tk.Frame(self, bg=_CARD_BG, bd=1, relief="solid", padx=40, pady=30)
+        card.pack(padx=50, pady=30)
+
+        tk.Label(
+            card, text="Your password has been reset.",
+            font=("Helvetica", 12), bg=_CARD_BG,
+        ).pack(pady=(0, 10))
+
+        tk.Label(
+            card, text="Your temporary password is:",
+            font=("Helvetica", 10), bg=_CARD_BG, fg="#555",
+        ).pack()
+
+        # Temp password display with copy-friendly styling
+        pw_frame = tk.Frame(card, bg="#ecf0f1", bd=1, relief="solid", padx=15, pady=10)
+        pw_frame.pack(fill="x", pady=(8, 15))
+        pw_label = tk.Label(
+            pw_frame, text=reset_info["temp_password"],
+            font=("Courier", 14, "bold"), bg="#ecf0f1", fg="#2c3e50",
+        )
+        pw_label.pack()
+
+        tk.Label(
+            card,
+            text="Please write this down. You will be asked to\n"
+                 "change your password when you log in.",
+            font=("Helvetica", 10), bg=_CARD_BG, fg="#e67e22",
+            justify="center",
+        ).pack(pady=(0, 5))
+
+        if reset_info.get("email"):
+            tk.Label(
+                card,
+                text=f"A confirmation email has been sent to\n{reset_info['email']}",
+                font=("Helvetica", 9), bg=_CARD_BG, fg="#7f8c8d",
+                justify="center",
+            ).pack(pady=(5, 0))
+
+        ttk.Button(
+            card, text="Back to Login", command=self._build_login_ui,
+        ).pack(fill="x", ipady=6, pady=(15, 0))
+
+    # ------------------------------------------------------------------
     #  System selection screen
     # ------------------------------------------------------------------
 
@@ -389,7 +597,135 @@ class UniversalLoginWindow(tk.Tk):
         return admin_keys >= {"university", "college", "school", "primary"}
 
     def _on_login_success(self, user_info: dict):
-        """After login, show superadmin dashboard or system picker."""
+        """After login, show password change if expired, then system picker."""
+        # Force password change if expired (includes temp passwords)
+        if user_info.get("password_expired"):
+            self._show_change_password(user_info)
+            return
+
+        self._proceed_after_login(user_info)
+
+    def _show_change_password(self, user_info: dict):
+        """Show a mandatory password change screen."""
+        for w in self.winfo_children():
+            w.destroy()
+
+        self.geometry("500x500")
+
+        header = tk.Frame(self, bg="#e67e22", height=70)
+        header.pack(fill="x")
+        header.pack_propagate(False)
+        tk.Label(
+            header, text="Password Change Required",
+            font=("Helvetica", 18, "bold"), fg="white", bg="#e67e22",
+        ).pack(expand=True)
+
+        tk.Label(
+            self, text="Your password has expired or was reset.\nPlease set a new password.",
+            font=("Helvetica", 11), fg="#7f8c8d", bg=_BG, justify="center",
+        ).pack(pady=(15, 10))
+
+        card = tk.Frame(self, bg=_CARD_BG, bd=1, relief="solid", padx=40, pady=25)
+        card.pack(padx=50)
+
+        tk.Label(
+            card, text="Current Password", font=("Helvetica", 10, "bold"),
+            bg=_CARD_BG, anchor="w",
+        ).pack(fill="x", pady=(0, 4))
+        self._cp_old_var = tk.StringVar()
+        old_entry = ttk.Entry(card, textvariable=self._cp_old_var, width=30,
+                              show="*", font=("Helvetica", 11))
+        old_entry.pack(fill="x", ipady=4, pady=(0, 10))
+        old_entry.focus_set()
+
+        tk.Label(
+            card, text="New Password", font=("Helvetica", 10, "bold"),
+            bg=_CARD_BG, anchor="w",
+        ).pack(fill="x", pady=(0, 4))
+        self._cp_new_var = tk.StringVar()
+        ttk.Entry(card, textvariable=self._cp_new_var, width=30,
+                  show="*", font=("Helvetica", 11)).pack(fill="x", ipady=4, pady=(0, 10))
+
+        tk.Label(
+            card, text="Confirm New Password", font=("Helvetica", 10, "bold"),
+            bg=_CARD_BG, anchor="w",
+        ).pack(fill="x", pady=(0, 4))
+        self._cp_confirm_var = tk.StringVar()
+        ttk.Entry(card, textvariable=self._cp_confirm_var, width=30,
+                  show="*", font=("Helvetica", 11)).pack(fill="x", ipady=4, pady=(0, 14))
+
+        ttk.Button(
+            card, text="Change Password",
+            command=lambda: self._do_change_password(user_info),
+        ).pack(fill="x", ipady=6)
+
+        self._cp_error_var = tk.StringVar()
+        tk.Label(
+            card, textvariable=self._cp_error_var,
+            font=("Helvetica", 9), fg="red", bg=_CARD_BG, wraplength=280,
+        ).pack(fill="x", pady=(10, 0))
+
+        tk.Label(
+            card,
+            text="Min 12 chars, uppercase, lowercase, digit, special char",
+            font=("Helvetica", 8), fg="#95a5a6", bg=_CARD_BG,
+        ).pack(fill="x", pady=(5, 0))
+
+    def _do_change_password(self, user_info: dict):
+        """Process the password change form."""
+        old_pw = self._cp_old_var.get()
+        new_pw = self._cp_new_var.get()
+        confirm_pw = self._cp_confirm_var.get()
+
+        if not old_pw or not new_pw or not confirm_pw:
+            self._cp_error_var.set("Please fill in all fields.")
+            return
+
+        if new_pw != confirm_pw:
+            self._cp_error_var.set("New passwords do not match.")
+            return
+
+        try:
+            self._auth.change_password(user_info["id"], old_pw, new_pw)
+        except AuthError as exc:
+            self._cp_error_var.set(str(exc))
+            return
+        except Exception as exc:
+            logger.error("Password change error: %s", exc, exc_info=True)
+            self._cp_error_var.set("An unexpected error occurred.")
+            return
+
+        # Password changed — re-login with new credentials to get a fresh session
+        try:
+            new_user_info = self._auth.login(user_info["username"], new_pw)
+        except AuthError:
+            # MFA may kick in; just go back to login
+            messagebox.showinfo(
+                "Password Changed",
+                "Your password has been changed successfully.\nPlease log in again.",
+                parent=self,
+            )
+            self._build_login_ui()
+            return
+
+        if new_user_info.get("mfa_required"):
+            messagebox.showinfo(
+                "Password Changed",
+                "Your password has been changed successfully.\nPlease log in again.",
+                parent=self,
+            )
+            self._build_login_ui()
+            return
+
+        messagebox.showinfo(
+            "Password Changed",
+            "Your password has been changed successfully.",
+            parent=self,
+        )
+        self._proceed_after_login(new_user_info)
+
+    def _proceed_after_login(self, user_info: dict):
+        """Continue login flow after password is confirmed OK."""
         systems = user_info.get("systems", [])
 
         if not systems:

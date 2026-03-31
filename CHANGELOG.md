@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.60.0 — 2026-03-31](#8600---2026-03-31)
 - [8.59.0 — 2026-03-30](#8590---2026-03-30)
 - [8.58.0 — 2026-03-30](#8580---2026-03-30)
 - [8.57.0 — 2026-03-30](#8570---2026-03-30)
@@ -146,6 +147,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](education_system/docs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](education_system/docs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](education_system/docs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.60.0] — 2026-03-31
+
+### Infrastructure — Package Health & Architecture
+
+#### Fixed
+
+- **Fix broken imports in university_system/__init__.py** — Lazy loaders used bare `from university_system import infrastructure` which fails when not on sys.path; changed to fully qualified `from education_system.university_system import infrastructure`
+  - Files: `university_system/__init__.py`
+
+- **Resolve version/metadata drift** — Synced `__version__` across `university_system/__init__.py` (was 5.0.0), `infrastructure/__init__.py`, `modules/shared/cli/__init__.py`, `modules/services/__init__.py` to 8.60.0 matching pyproject.toml; commented out placeholder `your-org` URLs in pyproject.toml
+  - Files: `pyproject.toml`, `university_system/__init__.py`, `university_system/infrastructure/__init__.py`, `university_system/modules/shared/cli/__init__.py`, `university_system/modules/services/__init__.py`
+
+- **Stop tracking runtime artifacts in git** — Removed 48 tracked log/export files from the index (`git rm --cached`); fixed .gitignore patterns that used bare `university_system/` paths instead of `education_system/university_system/`
+  - Files: `.gitignore`, removed `university_system/logs/*`, `university_system/exports/*`
+
+- **Reduce dependency management drift** — Added missing core deps to pyproject.toml (scipy, python-docx, pypdf, flask-socketio, pydantic, defusedxml, nltk, etc.); added header comments to both files explaining the relationship (pyproject.toml = ranges, requirements.txt = lock file)
+  - Files: `pyproject.toml`, `requirements.txt`
+
+#### Changed
+
+- **Break up run.py into orchestrator modules** — Extracted 942-line run.py into `education_system/launcher/` package (auth, systems, menus, roles, dispatch); run.py reduced to 277-line thin entry point
+  - Files: `run.py`, `education_system/launcher/__init__.py`, `education_system/launcher/auth.py`, `education_system/launcher/systems.py`, `education_system/launcher/menus.py`, `education_system/launcher/roles.py`, `education_system/launcher/dispatch.py`
+
+### Shared Auth — Forgot Password via Security Questions
+
+#### Added
+
+- **Forgot Password flow on login page** — Users can click "Forgot Password?" on the login screen, enter their username, answer 3 security questions, and receive a temporary password
+  - Files: `shared/gui/login_gui.py`, `shared/auth/forgot_password.py`
+
+- **Security questions table and seeding** — New `security_questions` table in auth DB with SHA-256 hashed answers; demo accounts seeded with default Q&A
+  - Files: `shared/auth/schema.py`
+
+- **ForgotPasswordService** — Backend service for looking up security questions, verifying answers, generating temp passwords, and marking accounts for forced password change
+  - Files: `shared/auth/forgot_password.py`
+
+- **Forced password change on login** — When `password_expired` is True (including after security-question reset), the login GUI now shows a mandatory password change screen before proceeding
+  - Files: `shared/gui/login_gui.py`
+
+- **JSON email templates for password reset notifications** — Admin alert and student confirmation emails with both plain-text and HTML variants
+  - Files: `shared/templates/email/password_reset_admin_notification.json`, `shared/templates/email/password_reset_student_notification.json`
+
+- **Email notifications on reset** — Admin receives security alert; student receives confirmation of what changed on their account
+  - Files: `shared/auth/forgot_password.py`
+
+- **Security Questions settings in all 4 system GUIs** — New `SecurityQuestionsFrame` added to sidebar/module list in university, college, secondary school, and primary school GUIs
+  - Files: `shared/gui/security_questions_gui.py`, `university_system/modules/shared/gui/main/main_gui.py`, `university_system/modules/shared/gui/main/core/gui_setup.py`, `university_system/modules/shared/gui/main/student_portal.py`, `university_system/modules/shared/gui/main/staff_portal.py`, `university_system/modules/shared/gui/main/instructor_portal.py`, `college_system/modules/shared/gui/main_gui.py`, `secondary_school/main_gui.py`, `primary_school/main_gui.py`
+
+- **Security Questions settings in all 4 system CLIs** — New `[Q] Security Questions` option added to every role menu (admin, staff, teacher, student, parent) across all 4 systems
+  - Files: `shared/cli/security_questions_cli.py`, `university_system/infrastructure/auth/cli/cli_menus.py`, `college_system/modules/shared/cli/cli_main.py`, `secondary_school/cli/cli_main.py`, `primary_school/cli/cli_main.py`
+
+#### Fixed
+
+- **password_changed_at column migration** — Added migration to ensure `password_changed_at` column exists on older databases
+  - Files: `shared/auth/schema.py`
 
 ---
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "education-system"
-version = "8.47.0"
+version = "8.60.0"
 description = "Education Management System — University, Sixth Form College, Secondary School, and Primary School with CLI, GUI, and REST API"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -23,6 +23,12 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 
+# --------------------------------------------------------------------------
+# These are the *minimum* ranges for installability.  For exact pinned
+# versions used in development / CI, see requirements.txt (the lock file).
+# Keep the two files in sync: every package here must appear in
+# requirements.txt, and vice-versa for core (non-optional) deps.
+# --------------------------------------------------------------------------
 dependencies = [
     # Data Processing & Analytics
     "pandas>=1.3.0",
@@ -31,17 +37,23 @@ dependencies = [
     "seaborn>=0.11.0",
     "plotly>=5.0.0",
     "scikit-learn>=1.0.0",
+    "scipy>=1.7.0",
 
     # Document Generation & Reports
     "reportlab>=3.6.0",
     "openpyxl>=3.0.9",
     "fpdf2>=2.5.0",
+    "python-docx>=0.8.11",
+    "pypdf>=3.0.0",
 
     # Web & Networking
     "requests>=2.27.0",
     "flask>=2.0.0",
     "flask-cors>=4.0.0",
+    "flask-socketio>=5.3.0",
+    "Jinja2>=3.1.0",
     "urllib3>=1.26.0",
+    "pydantic>=2.0.0",
 
     # Security & Authentication
     "pyotp>=2.6.0",
@@ -49,6 +61,7 @@ dependencies = [
     "cryptography>=3.4.8",
     "bcrypt>=3.2.0",
     "PyJWT>=2.8.0",
+    "defusedxml>=0.7.1",
 
     # Image Processing & Barcodes
     "Pillow>=8.3.0",
@@ -62,6 +75,20 @@ dependencies = [
     "pytz>=2021.3",
     "PyYAML>=6.0",
     "python-dateutil>=2.8.0",
+    "python-dotenv>=1.0.0",
+
+    # Calendar
+    "ics>=0.7",
+    "holidays>=0.30",
+
+    # NLP (basic)
+    "nltk>=3.8.0",
+
+    # Misc utilities
+    "tqdm>=4.60.0",
+    "tabulate>=0.9.0",
+    "jsonschema>=4.0.0",
+    "email-validator>=2.0.0",
 ]
 
 [project.optional-dependencies]
@@ -110,10 +137,11 @@ include = ["education_system*"]
 [project.scripts]
 education-system = "run:main"
 
-[project.urls]
-Homepage = "https://github.com/your-org/education-system"
-Repository = "https://github.com/your-org/education-system.git"
-Issues = "https://github.com/your-org/education-system/issues"
+# Update these URLs when the repo is published to a hosting service.
+# [project.urls]
+# Homepage = "https://github.com/<org>/education-system"
+# Repository = "https://github.com/<org>/education-system.git"
+# Issues = "https://github.com/<org>/education-system/issues"
 
 # Black configuration
 [tool.black]

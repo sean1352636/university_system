@@ -5,33 +5,15 @@ A comprehensive enterprise-grade university management platform built with Pytho
 Integrates academic, financial, student affairs, health services, and administrative
 operations into a unified system.
 
-Version: 5.0.0
-Python: 3.8+
-Database: SQLite (default), PostgreSQL/MySQL supported
+Python: 3.11+
+Database: SQLite (default)
 Architecture: 4-layer domain-driven design
 
-Main Components:
-- Core: Fundamental primitives (paths, exceptions, types)
-- Infrastructure: Auth, database, email, security, real-time, ML
-- Modules: Domain logic and service implementations
-- API: REST API and WebSocket endpoints
-- Tests: Comprehensive test suite
-
-Usage:
-    # CLI Mode
-    python run.py --cli
-
-    # GUI Mode
-    python run.py --gui
-
-    # API Server
-    uvicorn shared.api.university.app:app --reload
-
-    # Tests
-    python -m pytest university_system/tests/
+Part of the Education System monorepo (university, college, secondary, primary).
 """
 
-__version__ = '5.0.0'
+# Version is authoritative in pyproject.toml; this must stay in sync.
+__version__ = '8.60.0'
 __author__ = 'University IT Team'
 __license__ = 'MIT'
 
@@ -71,7 +53,7 @@ def _load_infrastructure():
     """Lazy load infrastructure to prevent circular imports."""
     global _infrastructure_loaded
     if not _infrastructure_loaded:
-        from university_system import infrastructure
+        from education_system.university_system import infrastructure
         _infrastructure_loaded = True
         return infrastructure
     return None
@@ -90,7 +72,7 @@ def __getattr__(name):
     ml_exports = {'get_course_recommender', 'get_essay_grader', 'get_plagiarism_detector'}
 
     if name in infrastructure_exports:
-        from university_system import infrastructure
+        from education_system.university_system import infrastructure
         return getattr(infrastructure, name)
 
     if name in ml_exports:

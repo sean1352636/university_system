@@ -1,5 +1,6 @@
 """Schema initialisation and seed data for the shared auth database."""
 
+import hashlib
 import logging
 
 from education_system.shared.auth.db import connect
@@ -110,6 +111,17 @@ CREATE TABLE IF NOT EXISTS consent_records (
 );
 CREATE INDEX IF NOT EXISTS idx_consent_user ON consent_records(user_id);
 CREATE INDEX IF NOT EXISTS idx_consent_type ON consent_records(consent_type);
+
+CREATE TABLE IF NOT EXISTS security_questions (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id     INTEGER NOT NULL,
+    question    TEXT    NOT NULL,
+    answer_hash TEXT    NOT NULL,
+    created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+    updated_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+CREATE INDEX IF NOT EXISTS idx_security_questions_user ON security_questions(user_id);
 """
 
 # ── Default account definitions ──────────────────────────────────────────────
@@ -261,6 +273,53 @@ _DEFAULT_ACCOUNTS = [
 ]
 
 
+# ── Default security questions for demo accounts ────────────────────────────
+# Maps username → list of (question, answer) tuples
+# Answers are stored as lowercase SHA-256 hashes in the database.
+_DEFAULT_SECURITY_QA = {
+    "superadmin": [
+        ("What is your mother's maiden name?", "smith"),
+        ("What city were you born in?", "london"),
+        ("What is the name of your first pet?", "buddy"),
+    ],
+    "S12345": [
+        ("What is your mother's maiden name?", "jones"),
+        ("What city were you born in?", "manchester"),
+        ("What is the name of your first pet?", "max"),
+    ],
+    "student1": [
+        ("What is your mother's maiden name?", "williams"),
+        ("What city were you born in?", "birmingham"),
+        ("What is the name of your first pet?", "charlie"),
+    ],
+    "student2": [
+        ("What is your mother's maiden name?", "brown"),
+        ("What city were you born in?", "leeds"),
+        ("What is the name of your first pet?", "bella"),
+    ],
+    "student3": [
+        ("What is your mother's maiden name?", "taylor"),
+        ("What city were you born in?", "bristol"),
+        ("What is the name of your first pet?", "daisy"),
+    ],
+}
+
+# Canonical list of security questions users can choose from
+SECURITY_QUESTIONS = [
+    "What is your mother's maiden name?",
+    "What city were you born in?",
+    "What is the name of your first pet?",
+    "What was the name of your first school?",
+    "What is your favourite book?",
+    "What is your favourite film?",
+]
+
+
+def _hash_answer(answer: str) -> str:
+    """Hash a security question answer (case-insensitive)."""
+    return hashlib.sha256(answer.strip().lower().encode()).hexdigest()
+
+
 def initialise_auth_db(db_path: str | None = None):
     """Create the auth tables if they don't already exist."""
     conn = connect(db_path)
@@ -268,11 +327,13 @@ def initialise_auth_db(db_path: str | None = None):
         conn.executescript(_TABLES_SQL)
         conn.commit()
 
-        # Add legacy_salt column to existing databases (migration)
+        # Add missing columns to existing databases (migrations)
         cols = {r[1] for r in conn.execute("PRAGMA table_info(users)").fetchall()}
         if "legacy_salt" not in cols:
             conn.execute("ALTER TABLE users ADD COLUMN legacy_salt TEXT")
-            conn.commit()
+        if "password_changed_at" not in cols:
+            conn.execute("ALTER TABLE users ADD COLUMN password_changed_at TEXT")
+        conn.commit()
 
         logger.info("Auth database initialised")
     finally:
@@ -296,6 +357,7 @@ def seed_default_users(db_path: str | None = None):
                     email=acct["email"],
                     systems=acct["systems"],
                 )
+            _seed_security_questions(conn)
             conn.commit()
             logger.info("Seeded %d default auth accounts", len(_DEFAULT_ACCOUNTS))
             logger.warning(
@@ -305,6 +367,7 @@ def seed_default_users(db_path: str | None = None):
         else:
             # Existing database — ensure new accounts and system access exist
             _ensure_default_accounts(conn)
+            _seed_security_questions(conn)
             conn.commit()
     finally:
         conn.close()
@@ -361,3 +424,26 @@ def _create_default_user(
                    (user_id, system_key, role) VALUES (?, ?, ?)""",
                 (user_id, system_key, role),
             )
+
+
+def _seed_security_questions(conn):
+    """Seed security questions for demo accounts that don't already have them."""
+    for username, qa_list in _DEFAULT_SECURITY_QA.items():
+        row = conn.execute(
+            "SELECT id FROM users WHERE username = ?", (username,)
+        ).fetchone()
+        if not row:
+            continue
+        user_id = row["id"]
+        existing = conn.execute(
+            "SELECT COUNT(*) as cnt FROM security_questions WHERE user_id = ?",
+            (user_id,),
+        ).fetchone()
+        if existing["cnt"] > 0:
+            continue
+        for question, answer in qa_list:
+            conn.execute(
+                "INSERT INTO security_questions (user_id, question, answer_hash) VALUES (?, ?, ?)",
+                (user_id, question, _hash_answer(answer)),
+            )
+    logger.info("Security questions seeded for demo accounts")

@@ -256,6 +256,7 @@ def admin_menu(auth: UserAuth):
             ("8", "Cross-System Tools"),
             ("M", "MFA Settings"),
             ("P", "Change Password"),
+            ("Q", "Security Questions"),
             ("G", "Switch to GUI"),
             ("L", "Logout"),
             ("0", "Exit"),
@@ -287,6 +288,9 @@ def admin_menu(auth: UserAuth):
             mfa_settings_menu(auth)
         elif choice == "P":
             change_password_prompt(auth)
+        elif choice == "Q":
+            from education_system.shared.cli.security_questions_cli import security_questions_menu
+            security_questions_menu(auth)
         elif choice == "G":
             from education_system.switch import request_switch
             request_switch("primary", "gui")
@@ -318,6 +322,7 @@ def teacher_menu(auth: UserAuth):
             ("6", "Facilities"),
             ("M", "MFA Settings"),
             ("P", "Change Password"),
+            ("Q", "Security Questions"),
             ("G", "Switch to GUI"),
             ("L", "Logout"),
             ("0", "Exit"),
@@ -345,6 +350,9 @@ def teacher_menu(auth: UserAuth):
             mfa_settings_menu(auth)
         elif choice == "P":
             change_password_prompt(auth)
+        elif choice == "Q":
+            from education_system.shared.cli.security_questions_cli import security_questions_menu
+            security_questions_menu(auth)
         elif choice == "G":
             from education_system.switch import request_switch
             request_switch("primary", "gui")
@@ -374,6 +382,7 @@ def parent_menu(auth: UserAuth):
             ("4", "Communication Log"),
             ("M", "MFA Settings"),
             ("P", "Change Password"),
+            ("Q", "Security Questions"),
             ("G", "Switch to GUI"),
             ("L", "Logout"),
             ("0", "Exit"),
@@ -398,6 +407,9 @@ def parent_menu(auth: UserAuth):
             mfa_settings_menu(auth)
         elif choice == "P":
             change_password_prompt(auth)
+        elif choice == "Q":
+            from education_system.shared.cli.security_questions_cli import security_questions_menu
+            security_questions_menu(auth)
         elif choice == "G":
             from education_system.switch import request_switch
             request_switch("primary", "gui")
@@ -422,6 +434,7 @@ def student_menu(auth: UserAuth):
             ("3", "Library"),
             ("M", "MFA Settings"),
             ("P", "Change Password"),
+            ("Q", "Security Questions"),
             ("G", "Switch to GUI"),
             ("L", "Logout"),
             ("0", "Exit"),
@@ -443,6 +456,9 @@ def student_menu(auth: UserAuth):
             mfa_settings_menu(auth)
         elif choice == "P":
             change_password_prompt(auth)
+        elif choice == "Q":
+            from education_system.shared.cli.security_questions_cli import security_questions_menu
+            security_questions_menu(auth)
         elif choice == "G":
             from education_system.switch import request_switch
             request_switch("primary", "gui")
@@ -455,6 +471,63 @@ def student_menu(auth: UserAuth):
             break
         else:
             print("\n  Invalid option.")
+
+
+def _show_dashboard_summary(auth, role):
+    """Print a dashboard summary showing role and available sections."""
+    _ROLE_SECTIONS = {
+        "admin": [
+            "Academics", "Pastoral Care", "Staff", "Administration",
+            "Pupil Life", "Communication", "Facilities", "Cross-System Tools",
+        ],
+        "staff": [
+            "Academics", "Pastoral Care", "Staff", "Administration",
+            "Pupil Life", "Communication", "Facilities", "Cross-System Tools",
+        ],
+        "teacher": [
+            "Academics", "Pastoral Care", "Staff", "Pupil Life",
+            "Communication", "Facilities",
+        ],
+        "instructor": [
+            "Academics", "Pastoral Care", "Staff", "Pupil Life",
+            "Communication", "Facilities",
+        ],
+        "parent": [
+            "Announcements", "Calendar", "Parents Evening", "Communication Log",
+        ],
+        "student": [
+            "Announcements", "Calendar", "Library",
+        ],
+    }
+
+    sections = _ROLE_SECTIONS.get(role, ["Announcements", "Calendar", "Library"])
+    role_display = role.replace("_", " ").title()
+
+    # Format sections with wrapping at ~55 chars
+    lines = []
+    current_line = ""
+    for i, s in enumerate(sections):
+        sep = ", " if i > 0 else ""
+        candidate = current_line + sep + s
+        if len(candidate) > 55 and current_line:
+            lines.append(current_line + ",")
+            current_line = s
+        else:
+            current_line = candidate
+    if current_line:
+        lines.append(current_line)
+
+    print()
+    print("  =======================================================")
+    print("    Dashboard Summary")
+    print("  =======================================================")
+    print()
+    print(f"    Role: {role_display}")
+    if lines:
+        print(f"    Available Sections: {lines[0]}")
+        for line in lines[1:]:
+            print(f"                        {line}")
+    print()
 
 
 def main(db_path: str | None = None, user_info=None, role=None, shared_auth=None):
@@ -498,6 +571,8 @@ def main(db_path: str | None = None, user_info=None, role=None, shared_auth=None
                 role = s["role"]
                 break
         auth._current_user["role"] = role
+
+    _show_dashboard_summary(auth, role)
 
     while True:
         result = None

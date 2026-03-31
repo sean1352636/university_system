@@ -30,10 +30,81 @@ ACCENT = "#2980b9"
 class DashboardFrame(tk.Frame):
     """Welcome dashboard with summary statistics."""
 
-    def __init__(self, parent, db_path, auth=None):
+    # Colour palette for quick action buttons
+    QUICK_ACTION_COLORS = {
+        "Pupils": "#2980b9",
+        "Subjects": "#8e44ad",
+        "Assessment": "#27ae60",
+        "Attendance": "#e67e22",
+        "Timetable": "#16a085",
+        "Behaviour": "#c0392b",
+        "Safeguarding": "#e74c3c",
+        "HR": "#2c3e50",
+        "Finance": "#f39c12",
+        "Users": "#7f8c8d",
+        "Admissions": "#1abc9c",
+        "Settings": "#95a5a6",
+        "Reports (Data Dashboard)": "#3498db",
+        "SEND": "#d35400",
+        "Staff Directory": "#34495e",
+        "Homework": "#9b59b6",
+        "Rewards": "#f1c40f",
+        "Lesson Plans": "#1a5276",
+        "Class Groups": "#117a65",
+        "Calendar": "#2471a3",
+        "Library": "#6c3483",
+        "Announcements": "#2e86c1",
+        "Notifications": "#ca6f1e",
+        "Parents Evening": "#148f77",
+    }
+
+    # Role-based quick action definitions
+    ROLE_QUICK_ACTIONS = {
+        "admin": [
+            "Pupils", "Subjects", "Assessment", "Attendance", "Timetable",
+            "Behaviour", "Safeguarding", "HR", "Finance", "Users",
+            "Admissions", "Settings", "Reports (Data Dashboard)", "SEND",
+            "Staff Directory",
+        ],
+        "staff": [
+            "Pupils", "Subjects", "Assessment", "Attendance", "Timetable",
+            "Behaviour", "Safeguarding", "HR", "Finance", "Users",
+            "Admissions", "Settings", "Reports (Data Dashboard)", "SEND",
+            "Staff Directory",
+        ],
+        "teacher": [
+            "Pupils", "Assessment", "Attendance", "Homework", "Timetable",
+            "Behaviour", "Rewards", "SEND", "Lesson Plans", "Class Groups",
+            "Calendar", "Library",
+        ],
+        "instructor": [
+            "Pupils", "Assessment", "Attendance", "Homework", "Timetable",
+            "Behaviour", "Rewards", "SEND", "Lesson Plans", "Class Groups",
+            "Calendar", "Library",
+        ],
+        "teaching_assistant": [
+            "Pupils", "Assessment", "Attendance", "Homework", "Timetable",
+            "Behaviour", "Rewards", "SEND", "Lesson Plans", "Class Groups",
+            "Calendar", "Library",
+        ],
+        "parent": [
+            "Announcements", "Calendar", "Parents Evening", "Notifications",
+        ],
+        "student": [
+            "Announcements", "Calendar", "Library",
+        ],
+    }
+
+    # Map quick action labels to sidebar module names
+    _ACTION_TO_MODULE = {
+        "Reports (Data Dashboard)": "Data Dashboard",
+    }
+
+    def __init__(self, parent, db_path, auth=None, on_navigate=None):
         super().__init__(parent, bg=MAIN_BG)
         self._db_path = db_path
         self._auth = auth
+        self._on_navigate = on_navigate
 
         # Welcome
         user_name = auth.current_user.get("display_name", "User") if auth and auth.current_user else "User"
@@ -49,6 +120,41 @@ class DashboardFrame(tk.Frame):
         self._cards_frame = tk.Frame(self, bg=MAIN_BG)
         self._cards_frame.pack(fill="x", padx=30)
         self._build_stats()
+
+        # Quick actions
+        self._build_quick_actions(role)
+
+    def _build_quick_actions(self, role):
+        """Build role-appropriate quick action buttons."""
+        actions = self.ROLE_QUICK_ACTIONS.get(role, [])
+        if not actions:
+            return
+
+        tk.Label(self, text="Quick Actions", font=("Helvetica", 14, "bold"),
+                 bg=MAIN_BG, fg="#2c3e50").pack(pady=(20, 8))
+
+        qa_frame = tk.Frame(self, bg=MAIN_BG)
+        qa_frame.pack(fill="x", padx=30)
+
+        default_colour = "#2980b9"
+        for idx, action in enumerate(actions):
+            row, col = divmod(idx, 5)
+            colour = self.QUICK_ACTION_COLORS.get(action, default_colour)
+            module_name = self._ACTION_TO_MODULE.get(action, action)
+            btn = tk.Button(
+                qa_frame, text=action, font=("Helvetica", 9, "bold"),
+                bg=colour, fg="white", bd=0, padx=10, pady=8,
+                activebackground=colour, activeforeground="white",
+                cursor="hand2",
+                command=lambda m=module_name: self._navigate(m),
+            )
+            btn.grid(row=row, column=col, padx=4, pady=4, sticky="nsew")
+            qa_frame.columnconfigure(col, weight=1)
+
+    def _navigate(self, module_name):
+        """Navigate to a module via the callback."""
+        if self._on_navigate:
+            self._on_navigate(module_name)
 
     def _build_stats(self):
         for w in self._cards_frame.winfo_children():
@@ -200,7 +306,9 @@ class MainApplication(tk.Tk):
         # Instantiate frames
         for name, frame_cls in modules:
             try:
-                if frame_cls is MisconductFrame:
+                if frame_cls is DashboardFrame:
+                    frame = frame_cls(self._content, self._db_path, auth=self._auth, on_navigate=self._show_module)
+                elif frame_cls is MisconductFrame:
                     frame = frame_cls(self._content, self._db_path, auth=self._auth, system_key='primary')
                 else:
                     frame = frame_cls(self._content, self._db_path, auth=self._auth)
@@ -264,6 +372,7 @@ class MainApplication(tk.Tk):
         from education_system.primary_school.modules.domain.facilities.visitors.gui.visitor_gui import VisitorFrame
         from education_system.primary_school.modules.domain.facilities.incidents.gui.incident_gui import IncidentFrame
         from education_system.primary_school.modules.shared.gui.mfa_gui import MFASettingsFrame
+        from education_system.shared.gui.security_questions_gui import SecurityQuestionsFrame
         from education_system.shared.communications.gui import CrossSystemCommunicationsFrame
         from education_system.shared.cross_system.journey_dashboard import JourneyDashboardFrame
         from education_system.shared.analytics.analytics_gui import AnalyticsDashboardFrame
@@ -356,6 +465,7 @@ class MainApplication(tk.Tk):
             ("Incidents", IncidentFrame),
             # ── Security ──────────────────
             ("MFA Settings", MFASettingsFrame),
+            ("Security Questions", SecurityQuestionsFrame),
             # ── Cross-System ─────────────
             ("Cross-System Communications", CrossSystemCommunicationsFrame),
             ("Student Journey", JourneyDashboardFrame),
@@ -412,21 +522,23 @@ class MainApplication(tk.Tk):
             "Email", "Parents Evening", "Communication Log",
             "Admissions", "Documents", "Room Bookings", "Incidents",
             "MFA Settings",
-            "Certificates", "LMS",
+            "Certificates", "LMS", "Security Questions",
             "Pupil Wellbeing", "Feedback", "Lesson Plans",
             "Staff Wellbeing", "Portfolio", "Skills Tracker",
         }
         parent_modules = {
             "Dashboard", "Announcements", "Calendar", "Notifications",
-            "MFA Settings",
+            "MFA Settings", "Security Questions",
         }
 
-        if role == "admin":
+        if role in ("admin", "staff"):
             return all_modules
-        elif role in ("teacher", "teaching_assistant"):
+        elif role in ("teacher", "teaching_assistant", "instructor"):
             return [(n, c) for n, c in all_modules if n in staff_modules]
         elif role == "parent":
             return [(n, c) for n, c in all_modules if n in parent_modules]
+        elif role == "student":
+            return [("Dashboard", DashboardFrame)]
         else:
             return [("Dashboard", DashboardFrame)]
 
