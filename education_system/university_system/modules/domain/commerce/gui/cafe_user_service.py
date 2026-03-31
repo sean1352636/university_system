@@ -9,7 +9,10 @@ from tkinter import messagebox
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
-from education_system.university_system.modules.domain.commerce.gui.cafe_system_gui import get_db_connection
+def _get_db_connection():
+    """Lazy import to break circular dependency with cafe_system_gui."""
+    from education_system.university_system.modules.domain.commerce.gui.cafe_system_gui import get_db_connection
+    return get_db_connection()
 
 
 class CafeUserMixin:
@@ -66,7 +69,7 @@ class CafeUserMixin:
     def _fetch_user_details_from_db(self):
         """Fetch user details from database (users table)"""
         try:
-            conn = get_db_connection()
+            conn = _get_db_connection()
             if not conn:
                 return
 
@@ -117,7 +120,7 @@ class CafeUserMixin:
     def _ensure_finance_account_exists(self, account_id):
         """Ensure a finance account exists for the given ID, create if not"""
         try:
-            conn = get_db_connection()
+            conn = _get_db_connection()
             if not conn:
                 return False
 
