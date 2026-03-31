@@ -449,8 +449,7 @@ class TemplateManager:
                     conn.close()
 
             else:  # template_type == 'file'
-                # Load from file
-                import json
+                # Load from file (json already imported at module level)
                 with open(template_ref, 'r', encoding='utf-8') as f:
                     template_data = json.load(f)
 

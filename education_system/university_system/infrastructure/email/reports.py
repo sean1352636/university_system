@@ -79,14 +79,15 @@ def generate_report(start_date=None, end_date=None, output_format='json'):
     def _generate_report(cursor):
         _ensure_metrics_table(cursor)
         # Set default date range if not provided
-        if not end_date:
-            end_date = datetime.now().strftime('%Y-%m-%d')
-        
-        if not start_date:
+        effective_end = end_date if end_date else datetime.now().strftime('%Y-%m-%d')
+
+        if start_date:
+            effective_start = start_date
+        else:
             # Default to 30 days before end date
-            end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+            end_dt = datetime.strptime(effective_end, '%Y-%m-%d')
             start_dt = end_dt - timedelta(days=30)
-            start_date = start_dt.strftime('%Y-%m-%d')
+            effective_start = start_dt.strftime('%Y-%m-%d')
         
         # Get metrics for date range
         cursor.execute('''
@@ -94,12 +95,12 @@ def generate_report(start_date=None, end_date=None, output_format='json'):
         FROM email_metrics
         WHERE date BETWEEN ? AND ?
         ORDER BY date
-        ''', (start_date, end_date))
-        
+        ''', (effective_start, effective_end))
+
         records = cursor.fetchall()
-        
+
         if not records:
-            log_event('warning', f"No metrics found for date range {start_date} to {end_date}")
+            log_event('warning', f"No metrics found for date range {effective_start} to {effective_end}")
             return {'data': [], 'totals': {}}
         
         # Prepare report data
@@ -149,8 +150,8 @@ def generate_report(start_date=None, end_date=None, output_format='json'):
         return {
             'data': report_data,
             'totals': totals,
-            'start_date': start_date,
-            'end_date': end_date
+            'start_date': effective_start,
+            'end_date': effective_end
         }
     
     try:

@@ -833,8 +833,8 @@ def generate_course_stats_report(cursor, course, reports_dir, timestamp):
         if gender_counts:
             labels = [g.capitalize() for g in gender_counts.keys()]
             sizes = list(gender_counts.values())
-            colors = ['lightblue', 'lightpink', 'lightgreen']
-            plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
+            pie_colors = ['lightblue', 'lightpink', 'lightgreen']
+            plt.pie(sizes, labels=labels, colors=pie_colors, autopct='%1.1f%%', startangle=90)
             plt.axis('equal')
             plt.title('Gender Distribution')
         else:

@@ -186,7 +186,7 @@ class PaymentPlansMixin:
                     return
 
                 template_info = self.template_data[selected_template]
-                _, _, _, num_installments, frequency, setup_fee, interest_rate = template_info
+                *_unused, num_installments, frequency, setup_fee, interest_rate = template_info
 
                 principal_amount = outstanding
                 interest_amount = principal_amount * (interest_rate / 100)
@@ -234,7 +234,7 @@ class PaymentPlansMixin:
 
                 # Get template details
                 template_info = self.template_data[selected_template]
-                template_id, template_name, _, num_installments, frequency, setup_fee, interest_rate = template_info
+                template_id, template_name, _desc, num_installments, frequency, setup_fee, interest_rate = template_info
 
                 # Calculate plan details
                 principal_amount = outstanding

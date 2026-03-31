@@ -74,7 +74,6 @@ class HealthPortalGUI(
         self.setup_current_user()
 
         # Check authentication status - require login through main system
-        from education_system.university_system.infrastructure.shared_context import get_auth
         auth = get_auth()
         if not auth.current_user:
             messagebox.showerror(_t("health_portal.messages.auth_required"),
