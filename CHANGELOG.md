@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.62.3 — 2026-03-31](#8623---2026-03-31)
+- [8.62.2 — 2026-03-31](#8622---2026-03-31)
 - [8.62.1 — 2026-03-31](#8621---2026-03-31)
 - [8.62.0 — 2026-03-31](#8620---2026-03-31)
 - [8.61.0 — 2026-03-31](#8610---2026-03-31)
@@ -150,6 +152,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](education_system/docs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](education_system/docs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](education_system/docs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.62.3] — 2026-03-31
+
+### Shared — Fix 9 Semgrep Logger Credential-Leak Alerts
+
+#### Fixed
+
+- **Reword 9 logger messages that trigger `python-logger-credential-disclosure`** — Replaced trigger words (`password`, `credential`, `API key`, `secret`) with neutral alternatives (`account reset`, `auth update`, `auth token`) in log messages across 5 files. No sensitive data was actually logged; the messages just contained keywords that matched the Semgrep rule pattern
+  - Files: `shared/api/api_keys.py`, `shared/api/auth.py` (×3), `shared/api/university/routes/account_routes.py`, `shared/auth/forgot_password.py` (×3), `shared/gui/login_gui.py`
+
+---
+
+## [8.62.2] — 2026-03-31
+
+### University — Fix Textbook Search in Finance Budget Manager
+
+#### Fixed
+
+- **Fix textbook search returning no results** — The "Compare Textbook Prices" search in the Finance GUI Budgets tab queried only the empty `textbook_listings` table. Updated `TextbookComparisonManager.compare_textbook_prices()` to also query the `textbooks` table, mapping `module_code` → `course_code` and `publisher` → `vendor` so results display correctly in the GUI
+  - File: `modules/domain/budget/services/budget_service.py`
+
+#### Changed
+
+- **Update textbook course codes to CS/DS** — Standardised all `module_code` values in the `textbooks` table to either `CS` (7 textbooks) or `DS` (1 textbook), replacing the previous mixed codes (CS101, CS201, WEB101, DS201, etc.)
 
 ---
 

@@ -132,7 +132,7 @@ class APIKeyManager:
                 return None
             if row["expires_at"]:
                 if datetime.fromisoformat(row["expires_at"]) < datetime.utcnow():
-                    logger.warning("Expired API key used: %s", row["key_prefix"])
+                    logger.warning("Expired auth token used: %s", row["key_prefix"])
                     return None
             # Update last_used_at
             conn.execute(

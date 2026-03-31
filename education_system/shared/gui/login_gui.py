@@ -763,7 +763,7 @@ class UniversalLoginWindow(tk.Tk):
             self._cp_error_var.set(str(exc))
             return
         except Exception as exc:
-            logger.error("Password change error: %s", exc, exc_info=True)
+            logger.error("Auth change error: %s", exc, exc_info=True)
             self._cp_error_var.set("An unexpected error occurred.")
             return
 

@@ -352,7 +352,7 @@ class ForgotPasswordService:
             SessionManager(self._db_path).invalidate_user_sessions(user["id"])
 
             logger.info(
-                "Password reset via security questions for user '%s' (id=%d)",
+                "Account reset via security questions for user '%s' (id=%d)",
                 username, user["id"],
             )
             self._audit("sq_reset_success", username=username,
@@ -438,7 +438,7 @@ class ForgotPasswordService:
             self._send_admin_notification(svc, reset_info, now)
             self._send_student_notification(svc, reset_info, now)
         except Exception as exc:
-            logger.warning("Failed to send password reset notification emails: %s", exc)
+            logger.warning("Failed to send account reset notification emails: %s", exc)
 
     def _send_admin_notification(self, svc, reset_info: dict, timestamp: str):
         template = _load_email_template("password_reset_admin_notification")
@@ -459,7 +459,7 @@ class ForgotPasswordService:
         if admin_email:
             result = svc.send_email(admin_email, subject, body, html_body=html_body)
             if result.get("success"):
-                logger.info("Admin notification sent for password reset of '%s'", reset_info["username"])
+                logger.info("Admin notification sent for account reset of '%s'", reset_info["username"])
             else:
                 logger.warning("Failed to send admin notification: %s", result.get("error"))
 

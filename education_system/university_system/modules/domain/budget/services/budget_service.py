@@ -814,6 +814,7 @@ class TextbookComparisonManager:
     def compare_textbook_prices(isbn: str = None, course_code: str = None) -> List[Dict[str, Any]]:
         """Compare textbook prices across vendors"""
         with get_connection() as conn:
+            # Search textbook_listings first
             query = "SELECT * FROM textbook_listings WHERE 1=1"
             params = []
 
@@ -826,7 +827,34 @@ class TextbookComparisonManager:
 
             query += " ORDER BY price ASC"
             cursor = conn.execute(query, params)
-            return [dict(row) for row in cursor.fetchall()]
+            results = [dict(row) for row in cursor.fetchall()]
+
+            # Also search the textbooks table
+            tb_query = "SELECT * FROM textbooks WHERE 1=1"
+            tb_params = []
+
+            if isbn:
+                tb_query += " AND isbn = ?"
+                tb_params.append(isbn)
+            if course_code:
+                tb_query += " AND module_code = ?"
+                tb_params.append(course_code)
+
+            tb_query += " ORDER BY price ASC"
+            cursor = conn.execute(tb_query, tb_params)
+            for row in cursor.fetchall():
+                row = dict(row)
+                results.append({
+                    'title': row['title'],
+                    'vendor': row.get('publisher', 'N/A'),
+                    'condition': 'new',
+                    'price': row.get('price', 0.0),
+                    'shipping_cost': 0.0,
+                    'course_code': row.get('module_code', ''),
+                    'isbn': row.get('isbn', ''),
+                })
+
+            return results
 
     @staticmethod
     def get_best_textbook_deals(course_code: str) -> Dict[str, Any]:

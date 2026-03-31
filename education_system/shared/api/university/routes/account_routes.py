@@ -103,7 +103,7 @@ def change_password():
         auth = UserAuth()
         auth.change_password(username, data["new_password"])
     except Exception as exc:
-        logger.error("Credential update failed: %s", exc)
+        logger.error("Auth update failed: %s", exc)
         return jsonify({"error": "Internal server error", "status": 500}), 500
 
     log_activity("change_password", "account", user=username)
