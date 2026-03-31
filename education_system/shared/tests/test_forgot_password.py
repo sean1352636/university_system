@@ -1,10 +1,12 @@
 """Tests for ForgotPasswordService — security question reset flow.
 
-Covers: correct/wrong answers, rate limiting, lockout, enumeration
-prevention, answer policy validation, question management, and
-audit logging.
+Covers: correct/wrong answers, rate limiting (per-user/IP/global), lockout,
+enumeration prevention, answer policy validation, question management,
+audit logging, legacy rehash, entropy checks, retention cleanup, and
+integration tests for the full recovery path.
 """
 
+import hashlib
 import sqlite3
 import pytest
 
@@ -12,8 +14,12 @@ from education_system.shared.auth.schema import (
     initialise_auth_db,
     _hash_answer,
     _verify_answer,
+    rehash_answer_if_legacy,
     validate_answer,
+    cleanup_sq_tables,
+    check_weak_defaults,
     SECURITY_QUESTIONS,
+    MIN_ANSWER_LENGTH,
 )
 from education_system.shared.auth.password_manager import hash_password, verify_password
 from education_system.shared.auth.forgot_password import (
@@ -228,7 +234,7 @@ class TestSetSecurityQuestions:
     def test_minimum_3_required(self, db):
         svc = ForgotPasswordService(db)
         with pytest.raises(AuthError, match="3 security questions"):
-            svc.set_security_questions(1, [("Q?", "A"), ("Q2?", "A2")])
+            svc.set_security_questions(1, [("Q?", "answer1"), ("Q2?", "answer2")])
 
     def test_banned_answer_rejected(self, db):
         conn = sqlite3.connect(db)
@@ -315,3 +321,230 @@ class TestSecurityQuestionsList:
 
     def test_no_duplicates(self):
         assert len(SECURITY_QUESTIONS) == len(set(SECURITY_QUESTIONS))
+
+
+# ── Entropy / policy checks ─────────────────────────────────────────────────
+
+class TestEntropyValidation:
+    def test_repeated_char_rejected(self):
+        ok, msg = validate_answer("aaaa")
+        assert not ok
+        assert "distinct" in msg.lower()
+
+    def test_repeated_digit_rejected(self):
+        ok, msg = validate_answer("1111")
+        assert not ok
+
+    def test_min_length_is_at_least_4(self):
+        assert MIN_ANSWER_LENGTH >= 4
+
+    def test_3_char_answer_rejected(self):
+        ok, _ = validate_answer("cat")
+        assert not ok
+
+    def test_4_char_diverse_answer_accepted(self):
+        ok, msg = validate_answer("fish")
+        assert ok
+
+
+# ── Legacy SHA-256 auto-rehash ───────────────────────────────────────────────
+
+class TestLegacyRehash:
+    def test_rehash_returns_bcrypt(self):
+        legacy = hashlib.sha256("fluffy".encode()).hexdigest()
+        new_hash = rehash_answer_if_legacy("fluffy", legacy)
+        assert new_hash is not None
+        assert new_hash.startswith("$2")
+        assert _verify_answer("fluffy", new_hash)
+
+    def test_no_rehash_for_bcrypt(self):
+        bcrypt_hash = _hash_answer("fluffy")
+        assert rehash_answer_if_legacy("fluffy", bcrypt_hash) is None
+
+    def test_no_rehash_for_wrong_answer(self):
+        legacy = hashlib.sha256("fluffy".encode()).hexdigest()
+        assert rehash_answer_if_legacy("wrong", legacy) is None
+
+    def test_rehash_on_successful_verify(self, db):
+        """Legacy answers should be auto-rehashed to bcrypt on successful reset."""
+        # Replace one answer with a legacy SHA-256 hash
+        conn = sqlite3.connect(db)
+        conn.row_factory = sqlite3.Row
+        uid = conn.execute("SELECT id FROM users WHERE username='testuser'").fetchone()["id"]
+        q = conn.execute(
+            "SELECT id FROM security_questions WHERE user_id=? LIMIT 1", (uid,)
+        ).fetchone()
+        legacy_hash = hashlib.sha256("fluffy".encode()).hexdigest()
+        conn.execute(
+            "UPDATE security_questions SET answer_hash=? WHERE id=?",
+            (legacy_hash, q["id"]),
+        )
+        conn.commit()
+        conn.close()
+
+        # Perform successful reset
+        svc = ForgotPasswordService(db)
+        qs = svc.get_questions_for_user("testuser")
+        correct = {"What is your pet's name?": "fluffy",
+                    "What city were you born in?": "oxford",
+                    "What is your favourite colour?": "blue"}
+        answers = {q["id"]: correct[q["question"]] for q in qs}
+        svc.verify_answers_and_reset("testuser", answers)
+
+        # Verify the hash was upgraded to bcrypt
+        conn = sqlite3.connect(db)
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            "SELECT answer_hash FROM security_questions WHERE id=?", (q["id"],)
+        ).fetchone()
+        conn.close()
+        assert row["answer_hash"].startswith("$2")
+
+
+# ── Per-IP rate limiting ─────────────────────────────────────────────────────
+
+class TestIPRateLimiting:
+    def test_ip_recorded_in_attempts(self, svc, db):
+        qs = svc.get_questions_for_user("testuser")
+        bad = {q["id"]: "wrong" for q in qs}
+        with pytest.raises(AuthError):
+            svc.verify_answers_and_reset("testuser", bad, ip_address="10.0.0.1")
+
+        conn = sqlite3.connect(db)
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            "SELECT ip_address FROM sq_verification_attempts WHERE username='testuser' LIMIT 1"
+        ).fetchone()
+        conn.close()
+        assert row["ip_address"] == "10.0.0.1"
+
+
+# ── Retention cleanup ────────────────────────────────────────────────────────
+
+class TestRetentionCleanup:
+    def test_cleanup_removes_old_attempts(self, db):
+        conn = sqlite3.connect(db)
+        # Insert an old attempt (200 days ago)
+        conn.execute(
+            "INSERT INTO sq_verification_attempts (username, success, created_at) "
+            "VALUES (?, 0, datetime('now', '-200 days'))",
+            ("testuser",),
+        )
+        # Insert a recent attempt
+        conn.execute(
+            "INSERT INTO sq_verification_attempts (username, success) VALUES (?, 0)",
+            ("testuser",),
+        )
+        conn.commit()
+        conn.close()
+
+        cleanup_sq_tables(db)
+
+        conn = sqlite3.connect(db)
+        cnt = conn.execute("SELECT COUNT(*) FROM sq_verification_attempts").fetchone()[0]
+        conn.close()
+        assert cnt == 1  # only the recent one survives
+
+    def test_cleanup_removes_old_audit_entries(self, db):
+        conn = sqlite3.connect(db)
+        conn.execute(
+            "INSERT INTO security_audit_log (event_type, username, created_at) "
+            "VALUES ('test', 'u', datetime('now', '-400 days'))"
+        )
+        conn.execute(
+            "INSERT INTO security_audit_log (event_type, username) VALUES ('test', 'u')"
+        )
+        conn.commit()
+        conn.close()
+
+        cleanup_sq_tables(db)
+
+        conn = sqlite3.connect(db)
+        cnt = conn.execute("SELECT COUNT(*) FROM security_audit_log").fetchone()[0]
+        conn.close()
+        assert cnt == 1
+
+
+# ── Weak defaults check ─────────────────────────────────────────────────────
+
+class TestWeakDefaults:
+    def test_check_weak_defaults_on_seeded_db(self, tmp_path):
+        """Seeded DB should report weak default accounts."""
+        import os
+        db = str(tmp_path / "seeded.db")
+        initialise_auth_db(db)
+        # Force seeding by simulating fresh DB
+        from education_system.shared.auth.schema import seed_default_users
+        seed_default_users(db)
+        weak = check_weak_defaults(db)
+        assert len(weak) > 0
+        assert "superadmin" in weak
+
+
+# ── Integration: full recovery path ──────────────────────────────────────────
+
+class TestFullRecoveryPath:
+    """End-to-end integration test covering the complete forgot-password flow:
+    username lookup → security questions → answer verification → temp password →
+    login with temp password → forced password change.
+    """
+
+    def test_full_recovery_flow(self, db):
+        from education_system.shared.auth.core import UserAuth
+
+        svc = ForgotPasswordService(db)
+
+        # Step 1: look up questions
+        qs = svc.get_questions_for_user("testuser")
+        assert len(qs) == 3
+
+        # Step 2: verify answers and reset
+        correct = {"What is your pet's name?": "fluffy",
+                    "What city were you born in?": "oxford",
+                    "What is your favourite colour?": "blue"}
+        answers = {q["id"]: correct[q["question"]] for q in qs}
+        result = svc.verify_answers_and_reset("testuser", answers, ip_address="127.0.0.1")
+
+        assert "temp_password" in result
+        temp_pw = result["temp_password"]
+
+        # Step 3: login with temp password should succeed and flag password_expired
+        auth = UserAuth(db)
+        user_info = auth.login("testuser", temp_pw)
+        assert user_info["password_expired"] is True
+
+        # Step 4: change password
+        auth.change_password(user_info["id"], temp_pw, "NewSecure@Pass99")
+
+        # Step 5: login with new password, should not be expired
+        auth2 = UserAuth(db)
+        user_info2 = auth2.login("testuser", "NewSecure@Pass99")
+        assert user_info2["password_expired"] is False
+
+    def test_recovery_with_wrong_answers_then_correct(self, db):
+        """User fails once, then succeeds — both events audited."""
+        svc = ForgotPasswordService(db)
+        qs = svc.get_questions_for_user("testuser")
+        bad = {q["id"]: "wrong" for q in qs}
+        correct = {"What is your pet's name?": "fluffy",
+                    "What city were you born in?": "oxford",
+                    "What is your favourite colour?": "blue"}
+        good = {q["id"]: correct[q["question"]] for q in qs}
+
+        with pytest.raises(AuthError):
+            svc.verify_answers_and_reset("testuser", bad)
+
+        result = svc.verify_answers_and_reset("testuser", good)
+        assert "temp_password" in result
+
+        # Verify audit trail has both failure and success
+        conn = sqlite3.connect(db)
+        conn.row_factory = sqlite3.Row
+        events = [
+            r["event_type"] for r in conn.execute(
+                "SELECT event_type FROM security_audit_log WHERE username='testuser' ORDER BY id"
+            ).fetchall()
+        ]
+        conn.close()
+        assert "sq_verify_failed" in events
+        assert "sq_reset_success" in events

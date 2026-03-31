@@ -27,6 +27,7 @@ from education_system.shared.auth.password_manager import hash_password
 from education_system.shared.auth.schema import (
     _hash_answer,
     _verify_answer,
+    rehash_answer_if_legacy,
     validate_answer,
     BANNED_ANSWERS,
     MIN_ANSWER_LENGTH,
@@ -38,9 +39,13 @@ logger = logging.getLogger(__name__)
 _TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates" / "email"
 
 # ── Rate-limiting constants ──────────────────────────────────────────────────
-MAX_SQ_ATTEMPTS = 5           # max failed attempts per user within window
+MAX_SQ_ATTEMPTS_PER_USER = 5     # max failed attempts per username within window
+MAX_SQ_ATTEMPTS_PER_IP = 15      # max failed attempts per IP within window
+MAX_SQ_ATTEMPTS_GLOBAL = 50      # global burst limit within window
 SQ_ATTEMPT_WINDOW_MINUTES = 60   # rolling window for attempt counting
-SQ_LOCKOUT_MINUTES = 15          # lockout duration after exceeding max attempts
+
+# Keep the old name as an alias for tests
+MAX_SQ_ATTEMPTS = MAX_SQ_ATTEMPTS_PER_USER
 
 # Generic error shown to the user for all lookup/verification failures.
 # Specific reason is logged server-side only.
@@ -103,7 +108,11 @@ class ForgotPasswordService:
     def _audit(self, event_type: str, username: str | None = None,
                user_id: int | None = None, detail: str | None = None,
                ip_address: str | None = None):
-        """Write a structured event to the security audit log."""
+        """Write a structured event to the local security_audit_log and
+        forward to the centralized AuditService for single-pane-of-glass
+        monitoring.
+        """
+        # Local auth-DB log (always, for the forgot-password tests)
         try:
             conn = self._conn()
             try:
@@ -117,25 +126,65 @@ class ForgotPasswordService:
             finally:
                 conn.close()
         except Exception as exc:
-            logger.debug("Audit log write failed: %s", exc)
+            logger.debug("Local audit log write failed: %s", exc)
+
+        # Forward to centralized AuditService (best-effort)
+        try:
+            from education_system.shared.audit.audit_service import AuditService
+            audit = AuditService()
+            audit.log_security(
+                action=event_type,
+                system_key="shared",
+                username=username,
+                user_id=user_id,
+                details=detail,
+                ip_address=ip_address,
+            )
+        except Exception:
+            pass  # Centralized audit unavailable — local log is authoritative
 
     # ------------------------------------------------------------------
     #  Rate limiting
     # ------------------------------------------------------------------
 
-    def _check_rate_limit(self, conn, username: str) -> bool:
-        """Check whether the user has exceeded the SQ verification rate limit.
+    def _check_rate_limit(self, conn, username: str,
+                          ip_address: str | None = None) -> str | None:
+        """Check per-user, per-IP, and global burst rate limits.
 
-        Returns True if the request should be BLOCKED (too many attempts).
-        Uses the caller's connection for transactional consistency.
+        Returns a reason string if the request should be BLOCKED, or
+        None if allowed.
         """
         cutoff = (datetime.utcnow() - timedelta(minutes=SQ_ATTEMPT_WINDOW_MINUTES)).strftime("%Y-%m-%d %H:%M:%S")
+
+        # Per-user limit
         row = conn.execute(
             "SELECT COUNT(*) as cnt FROM sq_verification_attempts "
             "WHERE username = ? AND success = 0 AND created_at > ?",
             (username, cutoff),
         ).fetchone()
-        return row["cnt"] >= MAX_SQ_ATTEMPTS
+        if row["cnt"] >= MAX_SQ_ATTEMPTS_PER_USER:
+            return f"per-user limit ({MAX_SQ_ATTEMPTS_PER_USER})"
+
+        # Per-IP limit
+        if ip_address:
+            row = conn.execute(
+                "SELECT COUNT(*) as cnt FROM sq_verification_attempts "
+                "WHERE ip_address = ? AND success = 0 AND created_at > ?",
+                (ip_address, cutoff),
+            ).fetchone()
+            if row["cnt"] >= MAX_SQ_ATTEMPTS_PER_IP:
+                return f"per-IP limit ({MAX_SQ_ATTEMPTS_PER_IP})"
+
+        # Global burst limit
+        row = conn.execute(
+            "SELECT COUNT(*) as cnt FROM sq_verification_attempts "
+            "WHERE success = 0 AND created_at > ?",
+            (cutoff,),
+        ).fetchone()
+        if row["cnt"] >= MAX_SQ_ATTEMPTS_GLOBAL:
+            return f"global burst limit ({MAX_SQ_ATTEMPTS_GLOBAL})"
+
+        return None
 
     def _record_attempt(self, conn, username: str, success: bool,
                         ip_address: str | None = None):
@@ -207,13 +256,15 @@ class ForgotPasswordService:
         """
         conn = self._conn()
         try:
-            # Rate-limit check
-            if self._check_rate_limit(conn, username):
+            # Rate-limit check (per-user, per-IP, global)
+            limit_reason = self._check_rate_limit(conn, username, ip_address)
+            if limit_reason:
                 logger.warning(
-                    "SQ verification rate-limited for user '%s' (>%d attempts in %d min)",
-                    username, MAX_SQ_ATTEMPTS, SQ_ATTEMPT_WINDOW_MINUTES,
+                    "SQ verification rate-limited for user '%s': %s",
+                    username, limit_reason,
                 )
-                self._audit("sq_rate_limited", username=username, ip_address=ip_address)
+                self._audit("sq_rate_limited", username=username,
+                            detail=limit_reason, ip_address=ip_address)
                 raise AuthError(
                     "Too many failed attempts. Please wait before trying again."
                 )
@@ -243,6 +294,7 @@ class ForgotPasswordService:
                 raise AuthError(_GENERIC_VERIFY_ERROR)
 
             # Verify every stored question
+            legacy_rehashes = []
             for qid, expected_hash in stored.items():
                 user_answer = answers.get(qid, "")
                 if not _verify_answer(user_answer, expected_hash):
@@ -255,6 +307,24 @@ class ForgotPasswordService:
                                 user_id=user["id"], detail=f"failed_question={qid}",
                                 ip_address=ip_address)
                     raise AuthError(_GENERIC_VERIFY_ERROR)
+                # Queue legacy SHA-256 → bcrypt rehash
+                new_hash = rehash_answer_if_legacy(user_answer, expected_hash)
+                if new_hash:
+                    legacy_rehashes.append((qid, new_hash))
+
+            # Opportunistic rehash of legacy SHA-256 answer hashes to bcrypt
+            for qid, new_hash in legacy_rehashes:
+                conn.execute(
+                    "UPDATE security_questions SET answer_hash = ?, "
+                    "updated_at = datetime('now') WHERE id = ?",
+                    (new_hash, qid),
+                )
+            if legacy_rehashes:
+                conn.commit()
+                logger.info(
+                    "Rehashed %d legacy SHA-256 answer(s) to bcrypt for user '%s'",
+                    len(legacy_rehashes), username,
+                )
 
             # All correct — generate temp password and reset
             self._record_attempt(conn, username, success=True, ip_address=ip_address)

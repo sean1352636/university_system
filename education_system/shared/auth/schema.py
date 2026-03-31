@@ -350,14 +350,20 @@ SECURITY_QUESTIONS = [
 
 # ── Security-answer policy ──────────────────────────────────────────────────
 
-MIN_ANSWER_LENGTH = 2
+MIN_ANSWER_LENGTH = 4
 
 # Answers that are too common / obvious to provide meaningful security.
 BANNED_ANSWERS = frozenset({
-    "password", "123456", "none", "n/a", "na", "test", "unknown", "no",
-    "yes", "default", "abc", "xxx", "admin", "user", "answer", "secret",
-    "idk", "null", "blank", "nothing", "same", "me", "myself",
+    "password", "123456", "none", "n/a", "test", "unknown",
+    "default", "abc", "abcd", "xxxx", "admin", "user", "answer", "secret",
+    "idk", "null", "blank", "nothing", "same", "myself", "asdf",
+    "1234", "qwerty", "hello", "name", "word", "pass", "true", "false",
 })
+
+# Retention: how many days to keep rate-limit attempts and audit entries.
+# Override via environment variables.
+SQ_ATTEMPTS_RETENTION_DAYS = int(os.environ.get("SQ_ATTEMPTS_RETENTION_DAYS", "90"))
+SECURITY_AUDIT_RETENTION_DAYS = int(os.environ.get("SECURITY_AUDIT_RETENTION_DAYS", "365"))
 
 
 def _hash_answer(answer: str) -> str:
@@ -386,8 +392,21 @@ def _verify_answer(answer: str, answer_hash: str) -> bool:
         return False
 
 
+def rehash_answer_if_legacy(answer: str, answer_hash: str) -> str | None:
+    """If *answer_hash* is a legacy SHA-256 hash and the answer matches,
+    return a fresh bcrypt hash.  Otherwise return None (no rehash needed)."""
+    if len(answer_hash) == 64 and not answer_hash.startswith("$"):
+        normalised = answer.strip().lower().encode("utf-8")
+        if hashlib.sha256(normalised).hexdigest() == answer_hash:
+            return bcrypt.hashpw(normalised, bcrypt.gensalt()).decode("utf-8")
+    return None
+
+
 def validate_answer(answer: str) -> tuple[bool, str]:
     """Validate a security-question answer against policy rules.
+
+    Checks: minimum length, banned answers, and basic entropy (must not
+    be a single repeated character).
 
     Returns (is_valid, error_message).
     """
@@ -396,7 +415,44 @@ def validate_answer(answer: str) -> tuple[bool, str]:
         return False, f"Answer must be at least {MIN_ANSWER_LENGTH} characters."
     if stripped.lower() in BANNED_ANSWERS:
         return False, "That answer is too common. Please choose something more specific."
+    # Entropy check: reject single-character repetition (e.g. "aaaa", "1111")
+    if len(set(stripped.lower())) == 1:
+        return False, "Answer must contain more than one distinct character."
     return True, ""
+
+
+def cleanup_sq_tables(db_path: str | None = None):
+    """Delete expired rows from sq_verification_attempts and security_audit_log.
+
+    Called opportunistically (e.g. on startup or via a scheduled job).
+    Retention periods are controlled by ``SQ_ATTEMPTS_RETENTION_DAYS`` and
+    ``SECURITY_AUDIT_RETENTION_DAYS`` (env-var overridable).
+    """
+    from datetime import datetime, timedelta
+    conn = connect(db_path)
+    try:
+        attempt_cutoff = (datetime.utcnow() - timedelta(days=SQ_ATTEMPTS_RETENTION_DAYS)).strftime("%Y-%m-%d %H:%M:%S")
+        cur = conn.execute(
+            "DELETE FROM sq_verification_attempts WHERE created_at < ?",
+            (attempt_cutoff,),
+        )
+        attempts_deleted = cur.rowcount
+
+        audit_cutoff = (datetime.utcnow() - timedelta(days=SECURITY_AUDIT_RETENTION_DAYS)).strftime("%Y-%m-%d %H:%M:%S")
+        cur = conn.execute(
+            "DELETE FROM security_audit_log WHERE created_at < ?",
+            (audit_cutoff,),
+        )
+        audit_deleted = cur.rowcount
+
+        conn.commit()
+        if attempts_deleted or audit_deleted:
+            logger.info(
+                "Retention cleanup: removed %d expired SQ attempts, %d audit entries",
+                attempts_deleted, audit_deleted,
+            )
+    finally:
+        conn.close()
 
 
 def initialise_auth_db(db_path: str | None = None):
@@ -418,22 +474,56 @@ def initialise_auth_db(db_path: str | None = None):
     finally:
         conn.close()
 
+    # Opportunistic retention cleanup
+    try:
+        cleanup_sq_tables(db_path)
+    except Exception:
+        pass  # table may not exist on very first init
+
+
+_WEAK_DEFAULT_USERNAMES = {a["username"] for a in _DEFAULT_ACCOUNTS}
+_WEAK_DEFAULT_PASSWORDS = {a["password"] for a in _DEFAULT_ACCOUNTS}
+
+
+def check_weak_defaults(db_path: str | None = None) -> list[str]:
+    """Check whether any default demo accounts still use their original weak
+    passwords.  Returns a list of usernames that should be rotated.
+
+    In production (``EDU_PRODUCTION=true``), logs a critical warning.
+    """
+    from education_system.shared.auth.password_manager import verify_password
+    conn = connect(db_path)
+    try:
+        weak = []
+        for acct in _DEFAULT_ACCOUNTS:
+            row = conn.execute(
+                "SELECT password_hash FROM users WHERE username = ? AND is_active = 1",
+                (acct["username"],),
+            ).fetchone()
+            if row and verify_password(acct["password"], row["password_hash"]):
+                weak.append(acct["username"])
+        if weak and os.environ.get("EDU_PRODUCTION", "").strip().lower() in ("1", "true", "yes"):
+            logger.critical(
+                "PRODUCTION SECURITY WARNING: %d default account(s) still use "
+                "weak demo passwords: %s. Rotate them immediately.",
+                len(weak), ", ".join(weak),
+            )
+        return weak
+    finally:
+        conn.close()
+
 
 def _is_dev_mode() -> bool:
-    """Check whether dev/demo seeding is enabled.
+    """Check whether dev/demo seeding is explicitly enabled.
 
-    Returns True when EDU_DEV_SEED is set to a truthy value, or when the
-    environment doesn't explicitly disable it (backwards-compatible default
-    for local development).  Set ``EDU_DEV_SEED=false`` in production.
+    Returns True **only** when ``EDU_DEV_SEED`` is set to a truthy value
+    (``true``, ``1``, ``yes``, ``on``).  Default is False (opt-in).
+    Fresh databases are always seeded regardless of this flag so the
+    system is usable out of the box; this flag only controls re-seeding
+    of *existing* databases with additional demo accounts.
     """
     val = os.environ.get("EDU_DEV_SEED", "").strip().lower()
-    if val in ("0", "false", "no", "off"):
-        return False
-    # If explicitly set to truthy, always seed
-    if val in ("1", "true", "yes", "on"):
-        return True
-    # Default: seed only for fresh databases (see caller)
-    return True
+    return val in ("1", "true", "yes", "on")
 
 
 def seed_default_users(db_path: str | None = None):

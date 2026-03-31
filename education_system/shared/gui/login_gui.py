@@ -514,6 +514,15 @@ class UniversalLoginWindow(tk.Tk):
             card, text="Back to Login", command=self._build_login_ui,
         ).pack(fill="x", pady=(10, 0))
 
+    @staticmethod
+    def _get_client_ip() -> str | None:
+        """Best-effort local IP for audit trails in desktop GUI."""
+        try:
+            import socket
+            return socket.gethostbyname(socket.gethostname())
+        except Exception:
+            return "127.0.0.1"
+
     def _forgot_verify(self, username: str):
         """Verify answers and show temp password on success."""
         answers = {qid: var.get() for qid, var in self._forgot_answer_vars.items()}
@@ -525,10 +534,10 @@ class UniversalLoginWindow(tk.Tk):
         try:
             from education_system.shared.auth.forgot_password import ForgotPasswordService
             svc = ForgotPasswordService(self._auth_db_path)
-            result = svc.verify_answers_and_reset(username, answers)
+            result = svc.verify_answers_and_reset(
+                username, answers, ip_address=self._get_client_ip(),
+            )
         except Exception as exc:
-            # Show the error from the service (already generic for
-            # verification failures; rate-limit messages are explicit)
             self._forgot_q_error_var.set(str(exc))
             return
 
@@ -605,6 +614,8 @@ class UniversalLoginWindow(tk.Tk):
             self.clipboard_append(temp_pw)
             copy_btn.configure(text="Copied!")
             self.after(2000, lambda: copy_btn.configure(text="Copy"))
+            # Auto-clear clipboard after 60 seconds for security
+            self.after(60_000, lambda: (self.clipboard_clear(), self.clipboard_append("")))
 
         reveal_btn = ttk.Button(btn_row, text="Show Password", command=_toggle_reveal)
         reveal_btn.pack(side="left", padx=(0, 8))

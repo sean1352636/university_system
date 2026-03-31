@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.62.0 — 2026-03-31](#8620---2026-03-31)
 - [8.61.0 — 2026-03-31](#8610---2026-03-31)
 - [8.60.0 — 2026-03-31](#8600---2026-03-31)
 - [8.59.0 — 2026-03-30](#8590---2026-03-30)
@@ -148,6 +149,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](education_system/docs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](education_system/docs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](education_system/docs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.62.0] — 2026-03-31
+
+### Security Hardening — Forgot Password Deep Hardening (10 items)
+
+#### Security
+
+- **Raise minimum security-answer length to 4 + entropy check** — `MIN_ANSWER_LENGTH` raised from 2 to 4; added entropy validation rejecting single-character repetition (e.g. "aaaa", "1111"); expanded banned answers list to 30 entries
+  - Files: `shared/auth/schema.py`
+
+- **Per-IP and global burst rate limits** — Rate limiting now checks per-username (5/hr), per-IP (15/hr), and global burst (50/hr); `_check_rate_limit` returns reason string for audit trail
+  - Files: `shared/auth/forgot_password.py`
+
+- **Pass client IP from GUI into verification calls** — Added `_get_client_ip()` helper; `_forgot_verify()` now passes IP to `verify_answers_and_reset()` for audit/rate-limit tracking
+  - Files: `shared/gui/login_gui.py`
+
+- **Auto-migrate legacy SHA-256 answers to bcrypt on successful verification** — `rehash_answer_if_legacy()` detects old hashes; `verify_answers_and_reset()` opportunistically upgrades them after successful match
+  - Files: `shared/auth/schema.py`, `shared/auth/forgot_password.py`
+
+- **Make demo seeding opt-in by default** — `_is_dev_mode()` now returns False unless `EDU_DEV_SEED=true` is explicitly set; fresh databases still seed for usability
+  - Files: `shared/auth/schema.py`
+
+- **Production startup guard for weak defaults** — `check_weak_defaults()` scans for demo accounts with original passwords; logs CRITICAL warning when `EDU_PRODUCTION=true`
+  - Files: `shared/auth/schema.py`
+
+- **Clipboard auto-clear after 60 seconds** — Copy button now schedules clipboard wipe to prevent password leakage on shared systems
+  - Files: `shared/gui/login_gui.py`
+
+#### Added
+
+- **Retention cleanup for rate-limit and audit tables** — `cleanup_sq_tables()` with configurable retention (`SQ_ATTEMPTS_RETENTION_DAYS=90`, `SECURITY_AUDIT_RETENTION_DAYS=365`); runs opportunistically on DB init
+  - Files: `shared/auth/schema.py`
+
+- **Forward audit events to centralized AuditService** — `_audit()` now writes to both local `security_audit_log` and the shared `AuditService` for single-pane-of-glass monitoring
+  - Files: `shared/auth/forgot_password.py`
+
+- **15 new tests (39 total)** — Covers: entropy validation, MIN_ANSWER_LENGTH >= 4, legacy SHA-256 auto-rehash (4 tests), per-IP recording, retention cleanup (2 tests), weak-defaults check, full recovery integration (username → questions → reset → temp login → password change), mixed fail/success audit trail
+  - Files: `shared/tests/test_forgot_password.py`
 
 ---
 
