@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.59.0 — 2026-03-30](#8590---2026-03-30)
 - [8.58.0 — 2026-03-30](#8580---2026-03-30)
 - [8.57.0 — 2026-03-30](#8570---2026-03-30)
 - [8.56.0 — 2026-03-29](#8560---2026-03-29)
@@ -145,6 +146,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](education_system/docs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](education_system/docs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](education_system/docs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.59.0] — 2026-03-30
+
+### All Systems — Security & Quality Fixes
+
+#### Security
+
+- **Webhook routes require admin auth** — All 5 webhook endpoints now decorated with `@role_required("admin")`; previously unprotected
+  - Files: `shared/api/webhook_routes.py`
+
+#### Fixed
+
+- **Webhook deliveries use service method** — Replaced direct `_db_path` access with new `get_recent_deliveries()` method on `WebhookService`
+  - Files: `shared/api/webhook_routes.py`, `shared/webhooks/webhook_service.py`
+
+- **Removed tracked log files from git** — `app.log.1` through `app.log.5` untracked (were committed before `.gitignore` update)
+
+- **Added pysqlcipher3 to requirements.txt** — Listed as optional dependency for database encryption at rest
+  - Files: `requirements.txt`
+
+#### Added
+
+- **31 unit tests for new shared services** — ConsentService (5), WebhookService (6), AuditService (5), PasswordResetService (4), OfflineSyncService (7), EarlyWarningService (4)
+  - Files: `shared/tests/test_shared_services.py`
 
 ---
 

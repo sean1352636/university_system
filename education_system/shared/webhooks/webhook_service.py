@@ -131,6 +131,18 @@ class WebhookService:
         finally:
             conn.close()
 
+    def get_recent_deliveries(self, limit: int = 50) -> list[dict]:
+        """Get recent webhook deliveries."""
+        conn = self._conn()
+        try:
+            rows = conn.execute(
+                "SELECT * FROM webhook_deliveries ORDER BY created_at DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+            return [dict(r) for r in rows]
+        finally:
+            conn.close()
+
     def dispatch(self, event_type: str, payload: dict, system_key: str = "shared") -> int:
         """Dispatch an event to all matching subscribers.
 

@@ -46,6 +46,10 @@ pydantic==2.12.5               # Data validation and schema definition
 psycopg2-binary==2.9.11        # PostgreSQL database support
 PyMySQL==1.1.2                 # MySQL database support
 
+# OPTIONAL: Database encryption at rest (SQLCipher)
+# Requires system library: sudo apt-get install libsqlcipher-dev
+# pysqlcipher3>=1.2.0           # SQLCipher bindings for encrypted SQLite
+
 # ===============================
 # SECURITY & AUTHENTICATION
 # ===============================
