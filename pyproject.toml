@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "education-system"
-version = "8.62.0"
+version = "8.62.1"
 description = "Education Management System — University, Sixth Form College, Secondary School, and Primary School with CLI, GUI, and REST API"
 readme = "README.md"
 requires-python = ">=3.11"

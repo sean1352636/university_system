@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.62.1 — 2026-03-31](#8621---2026-03-31)
 - [8.62.0 — 2026-03-31](#8620---2026-03-31)
 - [8.61.0 — 2026-03-31](#8610---2026-03-31)
 - [8.60.0 — 2026-03-31](#8600---2026-03-31)
@@ -149,6 +150,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](education_system/docs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](education_system/docs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](education_system/docs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.62.1] — 2026-03-31
+
+### Code Quality — Ruff Lint Fixes
+
+#### Fixed
+
+- **Fix 6 F823 undefined-local errors** — Shadowed variables in 5 files: `end_date`/`start_date` reassigned in inner function (email reports), `colors` list shadowing `reportlab.lib.colors` (grading reports), redundant inner `import json` (template manager), tuple unpacking `_` shadowing i18n `_()` (payment plans), redundant inner `import get_auth` (health portal)
+  - Files: `infrastructure/email/reports.py`, `modules/domain/academics/grading/reports.py`, `modules/domain/academics/gui/assignment_system/template_manager.py`, `modules/domain/finance/gui/finance/transaction_manager/payment_plans.py`, `modules/domain/health/gui/health_portal/main.py`
+
+- **Fix 58 F822 undefined-export errors** — Removed phantom names from `__all__` lists in 3 files: 15 undefined `init_*_db` names (aggregators.py), 35 undefined `HousingGUI`/`orig_*` aliases (finance_integration.py), 7 undefined dialog/GUI class names (utilities.py)
+  - Files: `infrastructure/database/schemas/aggregators.py`, `modules/domain/housing/gui/housing_accommodation_gui/finance_integration.py`, `modules/domain/student_affairs/gui/student_union_gui/core/utilities.py`
+
+- **Fix 82 F821 exception variable bugs** — Python 3 deletes `e` when `except` block exits; 21 files had lambdas/f-strings referencing deleted `e` via `self.after(0, lambda: ...{e}...)`. Fixed with `lambda _e=e:` default-arg capture or `_err = str(e)` saved inside the block
+  - Files: 21 files across academics (calendar, AI detector, assignments, attendance, library), finance (report_manager, analysis_tab, ml_analytics, feature_dialogs, reports_tab), health (import_export), student affairs (reports_export), enhanced reporting (core + 5 mixins)
 
 ---
 
