@@ -130,7 +130,7 @@ class ApiServiceMixin:
                         }), 200
 
                     else:
-                        return jsonify({'error': f'Unsupported import type: {import_type}'}), 400
+                        return jsonify({'error': 'Unsupported import type'}), 400
 
                 except Exception as e:
                     logger.error("API import error: %s", e)
@@ -209,7 +209,7 @@ class ApiServiceMixin:
                         # Verify student exists
                         cursor.execute("SELECT * FROM students WHERE student_id = ?", (student_id,))
                         if not cursor.fetchone():
-                            return jsonify({'error': f'Student {student_id} not found'}), 404
+                            return jsonify({'error': 'Student not found'}), 404
 
                         # Build update query
                         update_fields = []

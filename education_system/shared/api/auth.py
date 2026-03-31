@@ -458,6 +458,7 @@ def reset_password():
         svc = PasswordResetService(_auth_db_path or str(AUTH_DB_FILE))
         svc.reset_password(data["token"], data["new_password"])
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        logger.error("Password reset failed: %s", e)
+        return jsonify({"error": "Password reset failed"}), 400
 
     return jsonify({"message": "Password reset successful. Please login with your new password."})

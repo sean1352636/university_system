@@ -85,7 +85,8 @@ def assign_ta():
         log_activity("create", "teaching_assistant", user=g.current_user.get("sub"))
         return jsonify(item), 201
     except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+        logger.warning("Invalid TA assignment request: %s", e)
+        return jsonify({"error": "Invalid request parameters"}), 400
     except Exception as e:
         logger.error(f"Error assigning TA: {e}")
         return jsonify({"error": "Internal server error"}), 500
@@ -112,7 +113,8 @@ def update_ta(id: int):
         log_activity("update", "teaching_assistant", user=g.current_user.get("sub"))
         return jsonify(item)
     except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+        logger.warning("Invalid TA update request for %s: %s", id, e)
+        return jsonify({"error": "Invalid request parameters"}), 400
     except Exception as e:
         logger.error(f"Error updating TA {id}: {e}")
         return jsonify({"error": "Internal server error"}), 500
@@ -200,7 +202,8 @@ def set_ta_permissions(id: int):
             "permissions": data["permission_types"],
         })
     except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+        logger.warning("Invalid permissions request for TA %s: %s", id, e)
+        return jsonify({"error": "Invalid request parameters"}), 400
     except Exception as e:
         logger.error(f"Error setting permissions for TA {id}: {e}")
         return jsonify({"error": "Internal server error"}), 500

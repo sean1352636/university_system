@@ -470,9 +470,10 @@ def create_unified_app() -> Flask:
 
     @app.errorhandler(PayloadValidationError)
     def handle_payload_validation(e):
+        logger.warning("Payload validation error: %s", e)
         return jsonify({
             "error": "Validation Error",
-            "message": str(e),
+            "message": "The request payload failed validation.",
             "details": e.errors,
         }), 422
 

@@ -64,8 +64,7 @@ def api_get_section_data(section):
 
     try:
         if section not in AVAILABLE_SECTIONS:
-            from markupsafe import escape
-            return jsonify({'error': f'Invalid section: {escape(section)}'}), 400
+            return jsonify({'error': 'Invalid section'}), 400
 
         # Get date parameters
         start_date = request.args.get('start_date')
@@ -137,8 +136,7 @@ def api_generate_report():
         # Verify template exists
         template = get_template(template_name)
         if not template:
-            from markupsafe import escape
-            return jsonify({'error': f'Template "{escape(template_name)}" not found'}), 404
+            return jsonify({'error': 'Template not found'}), 404
 
         start_date = data.get('start_date')
         end_date = data.get('end_date')
